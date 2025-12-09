@@ -17,6 +17,8 @@
         <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.11"/>
         <PackageReference Include="HotChocolate.Data.EntityFramework" Version="15.1.11"/>
         <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.11"/>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.Cookies" Version="2.3.0" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.1" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.0">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using QuizManagement.Api;
 using QuizManagement.Application.Services;
@@ -9,6 +10,9 @@ var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 var configuration = builder.Configuration;
+
+services.AddSecurityConfiguration(configuration);
+services.AddControllersWithViews();
 
 services.AddDbContext<QuizManagementContext>(options =>
 {
@@ -60,6 +64,24 @@ var app = builder.Build();
 
 await app.MigrateQuizManagementDatabase();
 
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto
+});
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    "default",
+    "{controller}/{action=Index}/{id?}"
+);
+
 app.MapGraphQL();
+app.MapFallbackToFile("index.html");
 
 app.RunWithGraphQLCommands(args);

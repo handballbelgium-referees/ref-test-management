@@ -1,7 +1,6 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using QuizManagement.Api.Graphql.Models;
 using QuizManagement.Application.Services;
 using QuizManagement.Infrastructure;
@@ -103,7 +102,7 @@ public static class QuizMutations
     /// Create quiz sessions for multiple participants at once (Admin only)
     /// </summary>
     /// <returns>Bulk creation result</returns>
-    // [Authorize]
+    [Authorize]
     public static async Task<BulkQuizSessionResult> CreateBulkQuizSessions(
         CreateBulkQuizSessionsInput input,
         QuizManagementContext context,
