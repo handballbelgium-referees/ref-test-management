@@ -1,0 +1,14 @@
+query getQuestionsById($ids: [ID!]!) {
+    questionsById(ids: $ids) {
+        id
+        phrase
+        translations
+        answers {
+            nodes {
+                id
+                phrase
+                translations
+            }
+        }
+    }
+}

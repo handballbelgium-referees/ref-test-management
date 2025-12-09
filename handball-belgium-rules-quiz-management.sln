@@ -1,17 +1,18 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Handball.Belgium.Rules.Quiz.Domain", "Handball.Belgium.Rules.Quiz.Domain\Handball.Belgium.Rules.Quiz.Domain.csproj", "{5BC1136B-A1AA-4837-B432-5C9C3605E85D}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuizManagement.Domain", "QuizManagement.Domain\QuizManagement.Domain.csproj", "{5BC1136B-A1AA-4837-B432-5C9C3605E85D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Handball.Belgium.Rules.Quiz.Infrastructure", "Handball.Belgium.Rules.Quiz.Infrastructure\Handball.Belgium.Rules.Quiz.Infrastructure.csproj", "{284DF281-98C8-485D-B372-7FA3E4DB956A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuizManagement.Infrastructure", "QuizManagement.Infrastructure\QuizManagement.Infrastructure.csproj", "{284DF281-98C8-485D-B372-7FA3E4DB956A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Handball.Belgium.Rules.Quiz.Application", "Handball.Belgium.Rules.Quiz.Application\Handball.Belgium.Rules.Quiz.Application.csproj", "{DDC1C550-52ED-4986-86A8-3BDB044CD959}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuizManagement.Application", "QuizManagement.Application\QuizManagement.Application.csproj", "{DDC1C550-52ED-4986-86A8-3BDB044CD959}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Handball.Belgium.Rules.Quiz.Api", "Handball.Belgium.Rules.Quiz.Api\Handball.Belgium.Rules.Quiz.Api.csproj", "{6D1596A7-1C50-4C6C-B083-49FF834245BA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "QuizManagement.Api", "QuizManagement.Api\QuizManagement.Api.csproj", "{6D1596A7-1C50-4C6C-B083-49FF834245BA}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{5D121D3F-777E-4C19-9815-4AACAE785239}"
 	ProjectSection(SolutionItems) = preProject
 		.gitignore = .gitignore
 		README.md = README.md
+		dotnet-tools.json = dotnet-tools.json
 	EndProjectSection
 EndProject
 Global
