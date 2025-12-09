@@ -2,7 +2,7 @@
 
 public record CompleteQuizInput(
     string Token,
-    List<Guid> QuestionIds,
-    List<Guid> SelectedAnswerIds
+    List<string> QuestionIds,
+    List<string> SelectedAnswerIds
 );
 

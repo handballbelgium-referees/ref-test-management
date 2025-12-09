@@ -10,6 +10,8 @@ public class QuizSessionSortType : SortInputType<QuizSession>
         descriptor.BindFieldsExplicitly();
         descriptor.Description("Sort quiz sessions by Id, Email, Status, Creation Date, Start Date, Completion Date, Percentage, Score, Number of Questions and Maximum Time");
         descriptor.Field(x => x.Id).Description("Sort on quiz session id");
+        descriptor.Field(x => x.FirstName).Description("Sort on first name of the user who started the quiz");
+        descriptor.Field(x => x.LastName).Description("Sort on last name of the user who started the quiz");
         descriptor.Field(x => x.Email).Description("Sort on email of the user who started the quiz");
         descriptor.Field(x => x.Status).Description("Sort on status of the quiz session");
         descriptor.Field(x => x.CreatedAt).Description("Sort on creation date of the quiz session");

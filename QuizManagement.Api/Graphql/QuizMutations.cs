@@ -52,56 +52,52 @@ public static class QuizMutations
     /// Complete the quiz with all answers and calculate the score
     /// </summary>
     /// <returns>Quiz session with calculated score</returns>
-    // [Error<QuizSessionNotFoundException>]
-    // [Error<InvalidQuizSessionStatusException>]
-    // public static async Task<QuizSession> CompleteQuiz(
-    //     CompleteQuizInput input,
-    //     QuizManagementContext context,
-    //     RulesQuestionsContext rulesContext,
-    //     [Service] IEmailService emailService,
-    //     [Service] IOptions<ScoreConfiguration> scoreOptions,
-    //     [Service] IExecutionContextAccessor executionContextAccessor,
-    //     CancellationToken cancellationToken)
-    // {
-    //     var session = await context.QuizSessions
-    //         .FirstOrDefaultAsync(s => s.Token == input.Token, cancellationToken);
-    //
-    //     if (session == null)
-    //         throw new QuizSessionNotFoundException(input.Token);
-    //
-    //     if (session.Status != QuizSessionStatus.InProgress)
-    //         throw new InvalidQuizSessionStatusException(session.Status, QuizSessionStatus.InProgress);
-    //
-    //     // Use existing score calculation logic
-    //     var scoreResult = ScoreCalculationQueries.CalculateScore(
-    //         input.QuestionIds,
-    //         input.SelectedAnswerIds,
-    //         scoreOptions,
-    //         executionContextAccessor,
-    //         rulesContext
-    //     );
-    //
-    //     // Complete session with calculated results
-    //     session.CompleteSession(
-    //         scoreResult.Score,
-    //         scoreResult.Total,
-    //         scoreResult.Percentage,
-    //         scoreResult.WrongQuestionsIds.ToList(),
-    //         scoreResult.WrongAnswerIds.ToList()
-    //     );
-    //
-    //     await context.SaveChangesAsync(cancellationToken);
-    //
-    //     // Send results email
-    //     await emailService.SendQuizResultsAsync(
-    //         session.Email,
-    //         scoreResult.Score,
-    //         scoreResult.Total,
-    //         scoreResult.Percentage * 100
-    //     );
-    //
-    //     return session;
-    // }
+    [Error<QuizSessionNotFoundException>]
+    [Error<InvalidQuizSessionStatusException>]
+    public static async Task<QuizSession> CompleteQuiz(
+        CompleteQuizInput input,
+        QuizManagementContext context,
+        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
+        [Service] IEmailService emailService,
+        CancellationToken cancellationToken)
+    {
+        var session = await context.QuizSessions
+            .FirstOrDefaultAsync(s => s.Token == input.Token, cancellationToken);
+    
+        if (session == null)
+            throw new QuizSessionNotFoundException(input.Token);
+    
+        if (session.Status != QuizSessionStatus.InProgress)
+            throw new InvalidQuizSessionStatusException(session.Status, QuizSessionStatus.InProgress);
+    
+        // Use existing score calculation logic
+        var scoreResult = await ihfRulesQuestionsService.CalculateScoreAsync(
+            input.QuestionIds,
+            input.SelectedAnswerIds,
+            cancellationToken
+        );
+    
+        // Complete session with calculated results
+        session.CompleteSession(
+            scoreResult.Score,
+            scoreResult.Total,
+            scoreResult.Percentage,
+            scoreResult.WrongQuestionsIds.ToList(),
+            scoreResult.WrongAnswerIds.ToList()
+        );
+    
+        await context.SaveChangesAsync(cancellationToken);
+    
+        // Send results email
+        await emailService.SendQuizResultsAsync(
+            session.Email,
+            scoreResult.Score,
+            scoreResult.Total,
+            scoreResult.Percentage
+        );
+    
+        return session;
+    }
     
      /// <summary>
     /// Create quiz sessions for multiple participants at once (Admin only)

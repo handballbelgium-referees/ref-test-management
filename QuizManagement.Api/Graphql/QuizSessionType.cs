@@ -22,6 +22,8 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
             .ResolveNode((ctx, id) => ctx.DataLoader<QuizSessionByIdDataLoader>().LoadAsync(id, ctx.RequestAborted)!)
             .Description("The quiz session id");
 
+        descriptor.Field("name").Description("Name of the user who started the quiz (e.g., )").Resolve(ctx =>
+            $"{ctx.Parent<QuizSession>().FirstName} {ctx.Parent<QuizSession>().LastName}");
         descriptor.Field(x => x.Email).Description("Email of the user who started the quiz");
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Maximum time in minutes for the quiz");
         descriptor.Field(x => x.NumberOfQuestions).Description("Number of questions in the quiz");
@@ -34,7 +36,8 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
             .Description("Status of the quiz session (e.g., InProgress, Completed, Expired)");
         descriptor.Field("questions")
             .Description("Questions for this quiz session")
-            .Resolve((ctx, ct) => GetQuestions(ctx.Parent<QuizSession>(), ctx.Service<IIhfRulesQuestionsService>(), ct));
+            .Resolve((ctx, ct) =>
+                GetQuestions(ctx.Parent<QuizSession>(), ctx.Service<IIhfRulesQuestionsService>(), ct));
     }
 
     /// <summary>

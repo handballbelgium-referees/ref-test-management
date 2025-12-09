@@ -10,6 +10,8 @@ public class QuizSessionFilterType : FilterInputType<QuizSession>
         descriptor.BindFieldsExplicitly();
         descriptor.Description("Filter quiz sessions based on Id, Email or Status");
         descriptor.Field(x => x.Id).Description("Filter on quiz session id");
+        descriptor.Field(x => x.FirstName).Description("Filter on first name of the user who started the quiz");
+        descriptor.Field(x => x.LastName).Description("Filter on last name of the user who started the quiz");
         descriptor.Field(x => x.Email).Description("Filter on email of the user who started the quiz");
         descriptor.Field(x => x.Status).Description("Filter on status of the quiz session");
         descriptor.Field(x => x.CreatedAt).Description("Filter on creation date of the quiz session");
