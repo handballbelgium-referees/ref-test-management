@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using QuizManagement.Api;
@@ -58,7 +60,15 @@ services.AddGraphQLServer()
     .AddSorting()
     .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
     .AddGlobalObjectIdentification(true)
-    .AddAuthorization();
+    .AddAuthorization()
+    .AddHttpRequestInterceptor(async (ctx, _, _, _) =>
+    {
+        var result = await ctx.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+        if (result is { Succeeded: true, Principal: not null })
+            ctx.User = result.Principal;
+
+        await Task.CompletedTask;
+    });
 
 var app = builder.Build();
 

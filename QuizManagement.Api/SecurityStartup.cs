@@ -1,10 +1,11 @@
 ﻿using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
 
 namespace QuizManagement.Api;
 
-internal static class SecurityStartup
+public static class SecurityStartup
 {
     internal static void AddSecurityConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
@@ -20,7 +21,12 @@ internal static class SecurityStartup
                 options.Cookie.SameSite = SameSiteMode.Strict;
                 options.Cookie.HttpOnly = true;
             })
-            .AddOpenIdConnect("Auth0", options => ConfigureOpenIdConnect(options, configuration));
+            .AddOpenIdConnect("Auth0", options => ConfigureOpenIdConnect(options, configuration))
+            .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+            {
+                options.Authority = $"https://{configuration["Auth0:Domain"]}";
+                options.Audience = configuration["Auth0:Audience"];
+            });
     }
 
     private static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration configuration)
