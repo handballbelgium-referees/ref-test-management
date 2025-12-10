@@ -123,7 +123,7 @@ public partial class EmailService(
             var from = new EmailAddress(configuration.FromEmail, configuration.FromName);
             var to = new EmailAddress(toEmail);
             
-            // Create plain text version by stripping HTML tags (simple version)
+            // Create a plain text version by stripping HTML tags (simple version)
             var plainTextBody = System.Text.RegularExpressions.Regex.Replace(body, "<[^>]*>", "");
             plainTextBody = System.Text.RegularExpressions.Regex.Replace(plainTextBody, @"\s+", " ").Trim();
             

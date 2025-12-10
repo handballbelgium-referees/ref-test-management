@@ -12,28 +12,39 @@ namespace QuizManagement.Api.Graphql;
 public static class QuizQueries
 {
     /// <summary>
-    /// Get quiz session by token (includes questions via resolver)
+    /// Get a quiz session by token
     /// </summary>
-    public static async Task<QuizSession?> GetQuizSession(
+    /// <param name="token"></param>
+    /// <param name="dataLoader"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    public static Task<QuizSession?> GetQuizSessionByTokenAsync(
         string token,
-        [Service] QuizManagementContext context,
+        QuizSessionByTokenDataLoader dataLoader,
         CancellationToken cancellationToken)
-    {
-        return await context.QuizSessions
-            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
-    }
-    
+        => dataLoader.LoadAsync(token, cancellationToken);
+
     /// <summary>
-    /// Get all quiz sessions with filtering and sorting
+    /// Get a quiz session by id
     /// </summary>
+    /// <param name="id"></param>
+    /// <param name="dataLoader"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [Authorize]
+    public static Task<QuizSession?> GetQuizSessionByIdAsync(Guid id, QuizSessionByIdDataLoader dataLoader,
+        CancellationToken cancellationToken)
+        => dataLoader.LoadAsync(id, cancellationToken);
+
+    /// <summary>
+    /// Get all quiz sessions
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
     [Authorize]
     [UsePaging]
     [UseFiltering]
     [UseSorting]
-    public static IQueryable<QuizSession> GetQuizSessions(
-        [Service] QuizManagementContext context)
-    {
-        return context.QuizSessions;
-    }
+    public static IQueryable<QuizSession> GetQuizSessions(QuizManagementContext context)
+        => context.QuizSessions;
 }
-

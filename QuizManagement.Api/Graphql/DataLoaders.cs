@@ -17,4 +17,16 @@ public static class DataLoaders
             .Where(x => ids.Contains(x.Id))
             .ToDictionaryAsync(x => x.Id, cancellationToken);
     }
+
+    [DataLoader]
+    public static async Task<IReadOnlyDictionary<string, QuizSession>> GetQuizSessionByToken(
+        IReadOnlyList<string> tokens,
+        IDbContextFactory<QuizManagementContext> contextFactory,
+        CancellationToken cancellationToken)
+    {
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        return await context.QuizSessions
+            .Where(x => tokens.Contains(x.Token))
+            .ToDictionaryAsync(x => x.Token, cancellationToken);
+    }
 }

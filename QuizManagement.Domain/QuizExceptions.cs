@@ -1,6 +1,4 @@
-﻿using Handball.Belgium.Rules.Quiz.Domain;
-
-namespace QuizManagement.Api.Graphql;
+﻿namespace Handball.Belgium.Rules.Quiz.Domain;
 
 /// <summary>
 /// Exception thrown when a quiz session is not found

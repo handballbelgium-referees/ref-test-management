@@ -69,7 +69,7 @@ public class QuizSession
     public void StartSession()
     {
         if (Status != QuizSessionStatus.Pending)
-            throw new InvalidOperationException("Quiz session can only be started from Pending status");
+            throw new InvalidQuizSessionStatusException("Quiz session can only be started from Pending status");
 
         Status = QuizSessionStatus.InProgress;
         StartedAt = DateTime.UtcNow;
@@ -79,7 +79,7 @@ public class QuizSession
         List<string> wrongAnswerIds)
     {
         if (Status != QuizSessionStatus.InProgress)
-            throw new InvalidOperationException("Can only complete in-progress quiz sessions");
+            throw new InvalidQuizSessionStatusException("Can only complete in-progress quiz sessions");
 
         Status = QuizSessionStatus.Completed;
         CompletedAt = DateTime.UtcNow;

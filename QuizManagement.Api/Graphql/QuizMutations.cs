@@ -15,12 +15,19 @@ namespace QuizManagement.Api.Graphql;
 public static class QuizMutations
 {
     /// <summary>
-    /// Start a quiz session using the token
+    /// Start a quiz session
     /// </summary>
-    /// <returns>Quiz session with questions</returns>
+    /// <param name="token"></param>
+    /// <param name="context"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="QuizSessionNotFoundException"></exception>
+    /// <exception cref="QuizSessionExpiredException"></exception>
+    /// <exception cref="InvalidQuizSessionStatusException"></exception>
     [Error<QuizSessionNotFoundException>]
     [Error<QuizSessionExpiredException>]
-    public static async Task<QuizSession> StartQuizSession(
+    [Error<InvalidQuizSessionStatusException>]
+    public static async Task<QuizSession> StartQuizSessionAsync(
         string token,
         QuizManagementContext context,
         CancellationToken cancellationToken)
@@ -37,7 +44,7 @@ public static class QuizMutations
             await context.SaveChangesAsync(cancellationToken);
             throw new QuizSessionExpiredException(token);
         }
-
+        
         if (session.Status == QuizSessionStatus.InProgress)
             return session;
 
@@ -48,12 +55,19 @@ public static class QuizMutations
     }
 
     /// <summary>
-    /// Complete the quiz with all answers and calculate the score
+    /// Complete a quiz session and send results email
     /// </summary>
-    /// <returns>Quiz session with calculated score</returns>
+    /// <param name="input"></param>
+    /// <param name="context"></param>
+    /// <param name="ihfRulesQuestionsService"></param>
+    /// <param name="emailService"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="QuizSessionNotFoundException"></exception>
+    /// <exception cref="InvalidQuizSessionStatusException"></exception>
     [Error<QuizSessionNotFoundException>]
     [Error<InvalidQuizSessionStatusException>]
-    public static async Task<QuizSession> CompleteQuiz(
+    public static async Task<QuizSession> CompleteQuizAsync(
         CompleteQuizInput input,
         QuizManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
@@ -62,20 +76,20 @@ public static class QuizMutations
     {
         var session = await context.QuizSessions
             .FirstOrDefaultAsync(s => s.Token == input.Token, cancellationToken);
-    
+
         if (session == null)
             throw new QuizSessionNotFoundException(input.Token);
-    
+
         if (session.Status != QuizSessionStatus.InProgress)
             throw new InvalidQuizSessionStatusException(session.Status, QuizSessionStatus.InProgress);
-    
+
         // Use existing score calculation logic
         var scoreResult = await ihfRulesQuestionsService.CalculateScoreAsync(
             input.QuestionIds,
             input.SelectedAnswerIds,
             cancellationToken
         );
-    
+
         // Complete session with calculated results
         session.CompleteSession(
             scoreResult.Score,
@@ -84,9 +98,9 @@ public static class QuizMutations
             scoreResult.WrongQuestionsIds.ToList(),
             scoreResult.WrongAnswerIds.ToList()
         );
-    
+
         await context.SaveChangesAsync(cancellationToken);
-    
+
         // Send results email
         await emailService.SendQuizResultsAsync(
             session.Email,
@@ -94,16 +108,21 @@ public static class QuizMutations
             scoreResult.Total,
             scoreResult.Percentage
         );
-    
+
         return session;
     }
-    
-     /// <summary>
-    /// Create quiz sessions for multiple participants at once (Admin only)
+
+    /// <summary>
+    /// Create multiple quiz sessions for multiple users
     /// </summary>
-    /// <returns>Bulk creation result</returns>
+    /// <param name="input"></param>
+    /// <param name="context"></param>
+    /// <param name="ihfRulesQuestionsService"></param>
+    /// <param name="emailService"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [Authorize]
-    public static async Task<BulkQuizSessionResult> CreateBulkQuizSessions(
+    public static async Task<BulkQuizSessionResult> CreateBulkQuizSessionsAsync(
         CreateBulkQuizSessionsInput input,
         QuizManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
@@ -116,21 +135,23 @@ public static class QuizMutations
         };
 
         var createdSessions = new List<QuizSession>();
-        
+
         // Get questionIds from question numbers if specified
         var specifiedQuestionIds = input.SpecificQuestionNumbers is null
             ? []
-            : await ihfRulesQuestionsService.GetQuestionIdsByNumberAsync(input.SpecificQuestionNumbers, cancellationToken);
-        
+            : await ihfRulesQuestionsService.GetQuestionIdsByNumberAsync(input.SpecificQuestionNumbers,
+                cancellationToken);
+
         foreach (var user in input.Users)
         {
             try
             {
                 // If no specific question numbers were specified, get random questions
                 var questionIds = specifiedQuestionIds.Count == 0
-                    ? await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions, cancellationToken)
+                    ? await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions,
+                        cancellationToken)
                     : specifiedQuestionIds;
-                
+
                 var session = QuizSession.Create(
                     user.FirstName,
                     user.LastName,
@@ -188,5 +209,80 @@ public static class QuizMutations
         }
 
         return result;
+    }
+
+    /// <summary>
+    /// Resend quiz invitation email to a specific quiz session
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="context"></param>
+    /// <param name="emailService"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="QuizSessionNotFoundException"></exception>
+    [Authorize]
+    [Error<QuizSessionNotFoundException>]
+    public static async Task<QuizSession> ResendInvitationAsync(
+        ResendInvitationInput input,
+        QuizManagementContext context,
+        [Service] IEmailService emailService,
+        CancellationToken cancellationToken)
+    {
+        var session = await context.QuizSessions
+            .FirstOrDefaultAsync(s => s.Id == input.Id, cancellationToken);
+
+        if (session is null)
+            throw new QuizSessionNotFoundException(input.Id.ToString());
+
+        await emailService.SendQuizInvitationAsync(
+            session.Email,
+            session.Token,
+            session.NumberOfQuestions,
+            session.MaxTimeInMinutes
+        );
+
+        return session;
+    }
+
+    /// <summary>
+    /// Delete a quiz session
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="context"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="QuizSessionNotFoundException"></exception>
+    [Authorize]
+    [Error<QuizSessionNotFoundException>]
+    public static async Task<QuizSession> DeleteQuizSessionAsync(
+        DeleteQuizSessionInput input,
+        QuizManagementContext context,
+        CancellationToken cancellationToken)
+    {
+        var session = await context.QuizSessions.FirstOrDefaultAsync(s => s.Id == input.Id, cancellationToken);
+
+        if (session is null)
+            throw new QuizSessionNotFoundException(input.Id.ToString());
+        
+        context.QuizSessions.Remove(session);
+        await context.SaveChangesAsync(cancellationToken);
+        
+        return session;
+    }
+    
+    /// <summary>
+    /// Delete all quiz sessions
+    /// </summary>
+    /// <param name="context"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [Authorize]
+    public static async Task<bool> DeleteAllQuizSessionsAsync(
+        QuizManagementContext context,
+        CancellationToken cancellationToken)
+    {
+        var sessions = await context.QuizSessions.ToListAsync(cancellationToken);
+        context.QuizSessions.RemoveRange(sessions);
+        return await context.SaveChangesAsync(cancellationToken) > 0;
     }
 }

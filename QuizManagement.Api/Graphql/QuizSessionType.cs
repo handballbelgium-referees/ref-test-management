@@ -1,7 +1,9 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
+using Microsoft.EntityFrameworkCore;
 using QuizManagement.Application;
 using QuizManagement.Application.Models;
 using QuizManagement.Application.Services;
+using QuizManagement.Infrastructure;
 
 namespace QuizManagement.Api.Graphql;
 
@@ -33,7 +35,19 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
         descriptor.Field(x => x.Percentage).Description("Percentage of correct answers");
         descriptor.Field(x => x.Score).Description("Score of the quiz session");
         descriptor.Field(x => x.Status)
-            .Description("Status of the quiz session (e.g., InProgress, Completed, Expired)");
+            .Description("Status of the quiz session (e.g., InProgress, Completed, Expired)")
+            .Resolve(async ctx =>
+            {
+                var session = ctx.Parent<QuizSession>();
+                var contextFactory = ctx.Services.GetRequiredService<IDbContextFactory<QuizManagementContext>>();
+                await using var context = await contextFactory.CreateDbContextAsync(ctx.RequestAborted);
+                
+                if (session.IsExpired())
+                    session.ExpireSession();
+                await context.SaveChangesAsync(ctx.RequestAborted);
+                
+                return session.Status;
+            });
         descriptor.Field("questions")
             .Description("Questions for this quiz session")
             .Resolve((ctx, ct) =>
@@ -43,14 +57,9 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
     /// <summary>
     /// Get questions for this quiz session
     /// </summary>
-    private static async Task<List<Question>> GetQuestions(
+    private static Task<List<Question>> GetQuestions(
         [Parent] QuizSession session,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         CancellationToken cancellationToken)
-    {
-        if (session.IsExpired())
-            throw new Exception("Quiz session has expired");
-
-        return await ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, cancellationToken);
-    }
+        => ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, cancellationToken);
 }
