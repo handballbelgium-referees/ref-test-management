@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -17,5 +18,24 @@ public class AccountController : Controller
     {
         await HttpContext.SignOutAsync("Auth0");
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    }
+
+    [Authorize]
+    [HttpGet("user")]
+    public IActionResult GetUser()
+    {
+        var user = new
+        {
+            Name = User.FindFirst(ClaimTypes.Name)?.Value
+                ?? User.FindFirst("name")?.Value
+                ?? "Unknown",
+            Email = User.FindFirst(ClaimTypes.Email)?.Value
+                ?? User.FindFirst("email")?.Value,
+            Picture = User.FindFirst("picture")?.Value,
+            Sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
+                ?? User.FindFirst("sub")?.Value
+        };
+
+        return Ok(user);
     }
 }
