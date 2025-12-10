@@ -1,0 +1,55 @@
+{
+  "app": {
+    "title": "Handball-Quiz-Verwaltung"
+  },
+  "nav": {
+    "home": "Startseite",
+    "language": "Sprache",
+    "login": "Anmelden"
+  },
+  "home": {
+    "hero": {
+      "title": "Handball-Regelquiz-Verwaltungssystem",
+      "subtitle": "Erstellen, verwalten und verfolgen Sie Handball-Regelquizze für Benutzer. Leistungsstarke Tools zum Erstellen und Überwachen von Quiz-Inhalten in mehreren Sprachen.",
+      "login": "Zum Dashboard"
+    },
+    "features": {
+      "create": {
+        "title": "Quizze Erstellen",
+        "description": "Entwerfen Sie benutzerdefinierte Quizze mit einer intuitiven Oberfläche. Fügen Sie Fragen hinzu, legen Sie Schwierigkeitsgrade fest und organisieren Sie Inhalte mühelos."
+      },
+      "manage": {
+        "title": "Inhalte Verwalten",
+        "description": "Bearbeiten und aktualisieren Sie Quiz-Inhalte in Echtzeit. Organisieren Sie Fragen in Kategorien und pflegen Sie eine strukturierte Bibliothek."
+      },
+      "track": {
+        "title": "Leistung Verfolgen",
+        "description": "Überwachen Sie Benutzeraktivitäten und Quiz-Ergebnisse. Gewinnen Sie Einblicke in Lernbemühungen und identifizieren Sie Verbesserungsbereiche."
+      },
+      "multilingual": {
+        "title": "Mehrsprachige Unterstützung",
+        "description": "Erstellen Sie Quizze in mehreren Sprachen (EN, NL, FR, DE). Erreichen Sie ein breiteres Publikum mit lokalisierten Inhalten."
+      }
+    },
+    "stats": {
+      "quizzes": "Aktive Quizze",
+      "questions": "Gesamtfragen",
+      "users": "Registrierte Benutzer",
+      "languages": "Unterstützte Sprachen"
+    },
+    "cta": {
+      "title": "Bereit Anzufangen?",
+      "description": "Melden Sie sich bei Ihrem Dashboard an und beginnen Sie noch heute mit der Erstellung ansprechender Quizze.",
+      "button": "Zum Dashboard"
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} Handball-Quiz-Verwaltung. Basierend auf IHF- und KBHB/URBH-Regeln."
+  },
+  "languages": {
+    "en": "English",
+    "nl": "Nederlands",
+    "fr": "Français",
+    "de": "Deutsch"
+  }
+}

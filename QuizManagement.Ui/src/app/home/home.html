@@ -1,0 +1,183 @@
+<!-- Hero Section -->
+<section class="relative bg-linear-to-br from-primary-600 to-primary-800 text-white py-20 px-4">
+  <div class="max-w-6xl mx-auto">
+    <div class="text-center space-y-6">
+      <h1 class="text-4xl md:text-6xl font-bold">
+        {{ 'home.hero.title' | translate }}
+      </h1>
+      <p class="text-xl md:text-2xl text-primary-100 max-w-4xl mx-auto">
+        {{ 'home.hero.subtitle' | translate }}
+      </p>
+      <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
+        <button
+          type="button"
+          class="bg-white text-primary-700 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors shadow-lg"
+        >
+          {{ 'home.hero.login' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decorative wave -->
+  <div class="absolute bottom-0 left-0 right-0">
+    <svg viewBox="0 0 1440 100" class="w-full h-auto text-neutral-50" preserveAspectRatio="none">
+      <path fill="currentColor" d="M0,50 Q360,100 720,50 T1440,50 L1440,100 L0,100 Z"></path>
+    </svg>
+  </div>
+</section>
+
+<!-- Features Section -->
+<section class="py-16 px-4 bg-neutral-50">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <!-- Create Quizzes -->
+      <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
+          <svg
+            class="w-6 h-6 text-primary-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 4v16m8-8H4"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-neutral-900 mb-3">
+          {{ 'home.features.create.title' | translate }}
+        </h3>
+        <p class="text-neutral-600">
+          {{ 'home.features.create.description' | translate }}
+        </p>
+      </div>
+
+      <!-- Manage Content -->
+      <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+        <div class="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center mb-4">
+          <svg
+            class="w-6 h-6 text-secondary-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-neutral-900 mb-3">
+          {{ 'home.features.manage.title' | translate }}
+        </h3>
+        <p class="text-neutral-600">
+          {{ 'home.features.manage.description' | translate }}
+        </p>
+      </div>
+
+      <!-- Track Performance -->
+      <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+        <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
+          <svg
+            class="w-6 h-6 text-primary-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-neutral-900 mb-3">
+          {{ 'home.features.track.title' | translate }}
+        </h3>
+        <p class="text-neutral-600">
+          {{ 'home.features.track.description' | translate }}
+        </p>
+      </div>
+
+      <!-- Multilingual Support -->
+      <div class="bg-white p-8 rounded-xl shadow-md hover:shadow-lg transition-shadow">
+        <div class="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center mb-4">
+          <svg
+            class="w-6 h-6 text-secondary-700"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+            ></path>
+          </svg>
+        </div>
+        <h3 class="text-2xl font-bold text-neutral-900 mb-3">
+          {{ 'home.features.multilingual.title' | translate }}
+        </h3>
+        <p class="text-neutral-600">
+          {{ 'home.features.multilingual.description' | translate }}
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Stats Section -->
+<section class="py-16 px-4 bg-white">
+  <div class="max-w-6xl mx-auto">
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+      <div class="space-y-2">
+        <div class="text-4xl md:text-5xl font-bold text-primary-600">50+</div>
+        <div class="text-neutral-600 font-medium">{{ 'home.stats.quizzes' | translate }}</div>
+      </div>
+      <div class="space-y-2">
+        <div class="text-4xl md:text-5xl font-bold text-primary-600">500+</div>
+        <div class="text-neutral-600 font-medium">{{ 'home.stats.questions' | translate }}</div>
+      </div>
+      <div class="space-y-2">
+        <div class="text-4xl md:text-5xl font-bold text-primary-600">1,200+</div>
+        <div class="text-neutral-600 font-medium">{{ 'home.stats.users' | translate }}</div>
+      </div>
+      <div class="space-y-2">
+        <div class="text-4xl md:text-5xl font-bold text-primary-600">4</div>
+        <div class="text-neutral-600 font-medium">{{ 'home.stats.languages' | translate }}</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA Section -->
+<section class="py-20 px-4 bg-linear-to-br from-neutral-900 to-neutral-800 text-white">
+  <div class="max-w-4xl mx-auto text-center space-y-6">
+    <h2 class="text-3xl md:text-5xl font-bold">
+      {{ 'home.cta.title' | translate }}
+    </h2>
+    <p class="text-xl text-neutral-300">
+      {{ 'home.cta.description' | translate }}
+    </p>
+    <button
+      class="bg-primary-600 hover:bg-primary-700 text-white px-10 py-4 rounded-lg font-semibold text-lg transition-colors shadow-lg mt-4"
+    >
+      {{ 'home.cta.button' | translate }}
+    </button>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-neutral-900 text-neutral-400 py-8 px-4">
+  <div class="max-w-6xl mx-auto text-center">
+    <p>{{ 'footer.copyright' | translate : { year: currentYear() } }}</p>
+  </div>
+</footer>

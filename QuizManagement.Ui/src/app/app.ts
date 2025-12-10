@@ -1,0 +1,49 @@
+import { Component, OnInit, inject, signal } from '@angular/core';
+import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+
+type Language = 'en' | 'nl' | 'fr' | 'de';
+
+interface LanguageInfo {
+  code: Language;
+  name: string;
+}
+
+@Component({
+  selector: 'app-root',
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe],
+  templateUrl: './app.html',
+  styleUrl: './app.css',
+})
+export class App implements OnInit {
+  private readonly translate = inject(TranslateService);
+
+  protected readonly showLanguageMenu = signal(false);
+  protected readonly availableLanguages: LanguageInfo[] = [
+    { code: 'en', name: 'English' },
+    { code: 'nl', name: 'Nederlands' },
+    { code: 'fr', name: 'Français' },
+    { code: 'de', name: 'Deutsch' },
+  ];
+
+  ngOnInit(): void {
+    this.translate.addLangs(['en', 'nl', 'fr', 'de']);
+    const browserLang = this.translate.getBrowserLang();
+    const defaultLang =
+      browserLang && ['en', 'nl', 'fr', 'de'].includes(browserLang) ? browserLang : 'en';
+    this.translate.use(defaultLang);
+  }
+
+  protected get currentLocale(): Language {
+    return (this.translate.getCurrentLang() as Language) || 'en';
+  }
+
+  protected setLanguage(lang: Language): void {
+    this.translate.use(lang);
+    this.showLanguageMenu.set(false);
+  }
+
+  protected toggleLanguageMenu(): void {
+    this.showLanguageMenu.update((v) => !v);
+  }
+}

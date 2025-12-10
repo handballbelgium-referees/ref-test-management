@@ -1,0 +1,18 @@
+{
+  "/Account": {
+    "target": "https://localhost:7039",
+    "secure": false,
+    "changeOrigin": true
+  },
+  "/graphql": {
+    "target": "https://localhost:7039",
+    "secure": false,
+    "changeOrigin": true,
+    "ws": true
+  },
+  "/callback": {
+    "target": "https://localhost:7039",
+    "secure": false,
+    "changeOrigin": true
+  }
+}

@@ -1,0 +1,57 @@
+{
+  "app": {
+    "title": "Handball Quiz Management"
+  },
+  "nav": {
+    "home": "Home",
+    "language": "Language",
+    "login": "Login"
+  },
+  "home": {
+    "hero": {
+      "title": "Handball Quiz Management System",
+      "subtitle": "Create, manage, and deploy interactive quizzes for handball rules and regulations",
+      "login": "Login to Dashboard"
+    },
+    "features": {
+      "title": "Powerful Features for Quiz Management",
+      "subtitle": "Everything you need to create engaging quizzes",
+      "create": {
+        "title": "Create Quizzes",
+        "description": "Build comprehensive quizzes with multiple question types, media support, and customizable settings"
+      },
+      "manage": {
+        "title": "Manage Content",
+        "description": "Organize questions, categories, and difficulty levels with an intuitive management interface"
+      },
+      "track": {
+        "title": "Track Results",
+        "description": "Monitor user performance, generate reports, and analyze quiz statistics in real-time"
+      },
+      "multilingual": {
+        "title": "Multilingual Support",
+        "description": "Create quizzes in multiple languages (EN, NL, FR, DE) to reach a wider audience"
+      }
+    },
+    "stats": {
+      "quizzes": "Active Quizzes",
+      "questions": "Total Questions",
+      "users": "Active Users",
+      "languages": "Languages"
+    },
+    "cta": {
+      "title": "Ready to get started?",
+      "description": "Login to access the quiz management dashboard and start creating engaging content",
+      "button": "Access Dashboard"
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} Handball Quiz Management System. Powered by KBHB/URBH."
+  },
+  "languages": {
+    "en": "English",
+    "nl": "Nederlands",
+    "fr": "Français",
+    "de": "Deutsch"
+  }
+}

@@ -1,0 +1,122 @@
+<div class="min-h-screen bg-neutral-50">
+  <!-- Header with Navigation -->
+  <header class="bg-white shadow-sm">
+    <nav class="container mx-auto flex items-center justify-between px-4 py-4">
+      <!-- Logo and Title -->
+      <div class="flex items-center gap-3">
+        <img src="/URBH-KBHB-logo.png" alt="Handball Belgium Logo" class="h-10" />
+        <a href="/" class="text-xl font-bold text-neutral-900">
+          {{ 'app.title' | translate }}
+        </a>
+      </div>
+
+      <!-- Navigation Links -->
+      <div class="flex items-center gap-6">
+        <a
+          routerLink="/"
+          routerLinkActive="text-primary-600"
+          class="text-neutral-700 transition-colors hover:text-primary-600"
+        >
+          {{ 'nav.home' | translate }}
+        </a>
+
+        <!-- Login Button -->
+        <button
+          type="button"
+          class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm"
+        >
+          {{ 'nav.login' | translate }}
+        </button>
+
+        <!-- Language Switcher -->
+        <div class="relative">
+          <button
+            (click)="toggleLanguageMenu()"
+            class="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            [attr.aria-expanded]="showLanguageMenu()"
+            aria-haspopup="true"
+            [attr.aria-label]="'nav.language' | translate"
+          >
+            <svg
+              class="h-5 w-5"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
+              />
+            </svg>
+            <span class="uppercase">{{ currentLocale }}</span>
+            <svg
+              class="h-4 w-4 transition-transform"
+              [class.rotate-180]="showLanguageMenu()"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
+
+          @if (showLanguageMenu()) {
+          <div
+            class="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-neutral-200 bg-white shadow-lg"
+            role="menu"
+          >
+            @for (lang of availableLanguages; track lang.code) {
+            <button
+              type="button"
+              (click)="setLanguage(lang.code)"
+              class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-neutral-50 first:rounded-t-lg last:rounded-b-lg"
+              [class.bg-primary-50]="currentLocale === lang.code"
+              [class.font-semibold]="currentLocale === lang.code"
+              [class.text-primary-600]="currentLocale === lang.code"
+              role="menuitem"
+            >
+              <span
+                class="flex h-6 w-6 items-center justify-center rounded bg-neutral-100 text-xs font-bold uppercase"
+              >
+                {{ lang.code }}
+              </span>
+              <span>{{ lang.name }}</span>
+              @if (currentLocale === lang.code) {
+              <svg
+                class="ml-auto h-5 w-5 text-primary-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              }
+            </button>
+            }
+          </div>
+          }
+        </div>
+      </div>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <main>
+    <router-outlet />
+  </main>
+</div>

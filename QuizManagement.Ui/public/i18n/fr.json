@@ -1,0 +1,55 @@
+{
+  "app": {
+    "title": "Gestion des Quiz Handball"
+  },
+  "nav": {
+    "home": "Accueil",
+    "language": "Langue",
+    "login": "Connexion"
+  },
+  "home": {
+    "hero": {
+      "title": "Système de Gestion de Quiz de Règles de Handball",
+      "subtitle": "Créez, gérez et suivez des quiz sur les règles de handball pour les utilisateurs. Des outils puissants pour créer et surveiller le contenu des quiz dans plusieurs langues.",
+      "login": "Accéder au Tableau de Bord"
+    },
+    "features": {
+      "create": {
+        "title": "Créer des Quiz",
+        "description": "Concevez des quiz personnalisés avec une interface intuitive. Ajoutez des questions, définissez les niveaux de difficulté et organisez le contenu sans effort."
+      },
+      "manage": {
+        "title": "Gérer le Contenu",
+        "description": "Modifiez et mettez à jour le contenu des quiz en temps réel. Organisez les questions en catégories et maintenez une bibliothèque structurée."
+      },
+      "track": {
+        "title": "Suivre les Performances",
+        "description": "Surveillez l'activité des utilisateurs et les résultats des quiz. Obtenez des informations sur les efforts d'apprentissage et identifiez les domaines à améliorer."
+      },
+      "multilingual": {
+        "title": "Support Multilingue",
+        "description": "Créez des quiz en plusieurs langues (EN, NL, FR, DE). Touchez un public plus large avec du contenu localisé."
+      }
+    },
+    "stats": {
+      "quizzes": "Quiz Actifs",
+      "questions": "Total Questions",
+      "users": "Utilisateurs Inscrits",
+      "languages": "Langues Prises en Charge"
+    },
+    "cta": {
+      "title": "Prêt à Commencer?",
+      "description": "Connectez-vous à votre tableau de bord et commencez à créer des quiz engageants dès aujourd'hui.",
+      "button": "Accéder au Tableau de Bord"
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} Gestion des Quiz Handball. Basé sur les règles IHF et KBHB/URBH."
+  },
+  "languages": {
+    "en": "English",
+    "nl": "Nederlands",
+    "fr": "Français",
+    "de": "Deutsch"
+  }
+}
