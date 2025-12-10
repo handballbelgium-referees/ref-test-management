@@ -20,8 +20,8 @@ export class App implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly auth = inject(Auth);
 
+  protected readonly isLoggedIn = computed(() => !!this.auth.isAuthenticated());
   protected readonly user = this.auth.user;
-  protected readonly isLoggedIn = computed(() => !!this.user());
 
   protected readonly showLanguageMenu = signal(false);
   protected readonly availableLanguages: LanguageInfo[] = [

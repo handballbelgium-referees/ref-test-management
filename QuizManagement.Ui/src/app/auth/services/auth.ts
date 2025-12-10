@@ -1,7 +1,7 @@
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, of, shareReplay } from 'rxjs';
+import { catchError, of, shareReplay, switchMap } from 'rxjs';
 import { User } from '../models/user';
 
 @Injectable({
@@ -10,27 +10,23 @@ import { User } from '../models/user';
 export class Auth {
   private readonly _http = inject(HttpClient);
 
-  // Fetch user with error handling - returns null if not authenticated
+  private readonly isAuthenticatedObs = this._http
+    .get<boolean>('/Account/IsAuthenticated')
+    .pipe(shareReplay(1));
+
+  readonly isAuthenticated = toSignal(this.isAuthenticatedObs);
+
   readonly user = toSignal(
-    this._http.get<User>('/Account/User').pipe(
-      catchError((error: HttpErrorResponse) => {
-        // If 401, 404, 302 (redirect), or 500 (proxy error from redirect), user is not logged in
-        // The backend returns 302 redirect when not authenticated, which the proxy converts to 500
-        if (
-          error.status === 401 ||
-          error.status === 404 ||
-          error.status === 302 ||
-          error.status === 500
-        ) {
-          return of(null);
+    this.isAuthenticatedObs.pipe(
+      switchMap((authenticated) => {
+        if (authenticated) {
+          // Fetch user data when authenticated
+          return this._http.get<User>('/Account/User').pipe(catchError(() => of(null)));
         }
-        // For other errors, also return null but log for debugging
-        console.error('Error fetching user:', error);
+        // Return null when not authenticated
         return of(null);
-      }),
-      shareReplay(1)
-    ),
-    { initialValue: null }
+      })
+    )
   );
 
   login(): void {
