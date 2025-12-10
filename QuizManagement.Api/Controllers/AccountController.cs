@@ -6,22 +6,25 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace QuizManagement.Api.Controllers;
 
+[Route("[controller]")]
 public class AccountController : Controller
 {
+    [HttpGet("Login")]
     public Task Login(string returnUrl = "/")
     {
         return HttpContext.ChallengeAsync("Auth0", new AuthenticationProperties { RedirectUri = returnUrl });
     }
     
     [Authorize]
-    public async Task Logout()
+    [HttpGet("Logout")]
+    public async Task Logout(string returnUrl = "/")
     {
-        await HttpContext.SignOutAsync("Auth0");
+        await HttpContext.SignOutAsync("Auth0", new AuthenticationProperties { RedirectUri = returnUrl });
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }
 
     [Authorize]
-    [HttpGet("user")]
+    [HttpGet("User")]
     public IActionResult GetUser()
     {
         var user = new
