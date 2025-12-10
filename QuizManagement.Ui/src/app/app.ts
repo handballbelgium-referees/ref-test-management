@@ -1,6 +1,7 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { Auth } from './auth/services/auth';
 
 type Language = 'en' | 'nl' | 'fr' | 'de';
 
@@ -17,6 +18,10 @@ interface LanguageInfo {
 })
 export class App implements OnInit {
   private readonly translate = inject(TranslateService);
+  private readonly auth = inject(Auth);
+
+  protected readonly user = this.auth.user;
+  protected readonly isLoggedIn = computed(() => !!this.user());
 
   protected readonly showLanguageMenu = signal(false);
   protected readonly availableLanguages: LanguageInfo[] = [
@@ -45,5 +50,13 @@ export class App implements OnInit {
 
   protected toggleLanguageMenu(): void {
     this.showLanguageMenu.update((v) => !v);
+  }
+
+  protected login(): void {
+    this.auth.login();
+  }
+
+  protected logout(): void {
+    this.auth.logout();
   }
 }

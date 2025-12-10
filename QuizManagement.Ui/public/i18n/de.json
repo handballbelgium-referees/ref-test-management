@@ -5,7 +5,8 @@
   "nav": {
     "home": "Startseite",
     "language": "Sprache",
-    "login": "Anmelden"
+    "login": "Anmelden",
+    "logout": "Abmelden"
   },
   "home": {
     "hero": {

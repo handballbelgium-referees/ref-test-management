@@ -5,7 +5,8 @@
   "nav": {
     "home": "Home",
     "language": "Taal",
-    "login": "Inloggen"
+    "login": "Inloggen",
+    "logout": "Uitloggen"
   },
   "home": {
     "hero": {

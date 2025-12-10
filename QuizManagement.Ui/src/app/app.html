@@ -20,13 +20,38 @@
           {{ 'nav.home' | translate }}
         </a>
 
-        <!-- Login Button -->
-        <button
-          type="button"
-          class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm"
-        >
-          {{ 'nav.login' | translate }}
-        </button>
+        @if (!isLoggedIn()) {
+          <!-- Login Button -->
+          <button
+            type="button"
+            (click)="login()"
+            class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm"
+          >
+            {{ 'nav.login' | translate }}
+          </button>
+        } @else {
+          <!-- User Profile & Logout -->
+          <div class="flex items-center gap-4">
+            <div class="flex items-center gap-2">
+              @if (user()?.picture) {
+                <img
+                  title="user picture"
+                  [src]="user()!.picture"
+                  [alt]="user()!.name"
+                  class="h-8 w-8 rounded-full border-2 border-primary-200"
+                />
+              }
+              <span class="text-sm font-medium text-neutral-700">{{ user()?.name }}</span>
+            </div>
+            <button
+              type="button"
+              (click)="logout()"
+              class="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-4 py-2 rounded-lg font-semibold transition-colors"
+            >
+              {{ 'nav.logout' | translate }}
+            </button>
+          </div>
+        }
 
         <!-- Language Switcher -->
         <div class="relative">
