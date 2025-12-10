@@ -41,4 +41,10 @@ public class AccountController : Controller
 
         return Ok(user);
     }
+    
+    [HttpGet("IsAuthenticated")]
+    public ActionResult IsAuthenticated()
+    {
+        return Ok(User.Identity is { IsAuthenticated: true });
+    }
 }
