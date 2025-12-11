@@ -1,4 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Title } from '@angular/platform-browser';
 import { RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Auth } from './auth/services/auth';
@@ -22,6 +23,7 @@ interface LanguageInfo {
 export class App implements OnInit {
   private readonly translate = inject(TranslateService);
   private readonly auth = inject(Auth);
+  private readonly titleService = inject(Title);
 
   protected readonly isLoggedIn = computed(() => !!this.auth.isAuthenticated());
   protected readonly user = this.auth.user;
@@ -40,6 +42,18 @@ export class App implements OnInit {
     const defaultLang =
       browserLang && ['en', 'nl', 'fr', 'de'].includes(browserLang) ? browserLang : 'en';
     this.translate.use(defaultLang);
+
+    // Update page title when language changes
+    this.translate.onLangChange.subscribe(() => {
+      this.translate.get('app.pageTitle').subscribe((title: string) => {
+        this.titleService.setTitle(title);
+      });
+    });
+
+    // Set initial title
+    this.translate.get('app.pageTitle').subscribe((title: string) => {
+      this.titleService.setTitle(title);
+    });
   }
 
   protected get currentLocale(): Language {

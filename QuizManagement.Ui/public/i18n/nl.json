@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "Handbal Quiz Beheer"
+    "title": "Handbal Quiz Beheer",
+    "pageTitle": "Handbal Quiz Beheer"
   },
   "common": {
     "cancel": "Annuleren"

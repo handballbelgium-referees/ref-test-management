@@ -1,6 +1,7 @@
 {
   "app": {
-    "title": "Gestion des Quiz Handball"
+    "title": "Gestion du Quiz de Handball",
+    "pageTitle": "Gestion du Quiz de Handball"
   },
   "common": {
     "cancel": "Annuler"
