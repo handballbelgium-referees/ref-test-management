@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { applyEach, email, Field, form, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   catchError,
   debounceTime,
@@ -51,6 +51,7 @@ export class CreateSessions {
   private readonly createBulkQuizSessionsGQL = inject(CreateBulkQuizSessionsGQL);
   private readonly searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
   private readonly router = inject(Router);
+  private readonly translate = inject(TranslateService);
 
   // Angular v21 Signal Forms - model signal
   protected readonly sessionModel = signal<SessionFormData>({
@@ -65,17 +66,31 @@ export class CreateSessions {
   protected readonly sessionForm = form(this.sessionModel, (schemaPath) => {
     // Validate each user in the array
     applyEach(schemaPath.users, (user) => {
-      required(user.firstName, { message: 'First name is required' });
-      required(user.email, { message: 'Email is required' });
-      email(user.email, { message: 'Please enter a valid email address' });
+      required(user.firstName, {
+        message: this.translate.instant('sessions.create.form.users.firstNameRequired'),
+      });
+      required(user.email, {
+        message: this.translate.instant('sessions.create.form.users.emailRequired'),
+      });
+      email(user.email, {
+        message: this.translate.instant('sessions.create.form.users.emailInvalid'),
+      });
     });
 
     // Validate quiz configuration
-    required(schemaPath.numberOfQuestions, { message: 'Number of questions is required' });
-    min(schemaPath.numberOfQuestions, 1, { message: 'Must have at least 1 question' });
+    required(schemaPath.numberOfQuestions, {
+      message: this.translate.instant('sessions.create.form.numberOfQuestions.required'),
+    });
+    min(schemaPath.numberOfQuestions, 1, {
+      message: this.translate.instant('sessions.create.form.numberOfQuestions.min'),
+    });
 
-    required(schemaPath.maxTimeInMinutes, { message: 'Time limit is required' });
-    min(schemaPath.maxTimeInMinutes, 1, { message: 'Must have at least 1 minute' });
+    required(schemaPath.maxTimeInMinutes, {
+      message: this.translate.instant('sessions.create.form.maxTimeInMinutes.required'),
+    });
+    min(schemaPath.maxTimeInMinutes, 1, {
+      message: this.translate.instant('sessions.create.form.maxTimeInMinutes.min'),
+    });
   });
 
   // Additional state signals
@@ -351,14 +366,14 @@ export class CreateSessions {
     if (this.sessionForm().invalid()) {
       // Mark all fields as touched to reveal validation errors
       this.sessionForm().markAsTouched();
-      this.error.set('Please fix the validation errors before submitting');
+      this.error.set(this.translate.instant('sessions.create.form.validationError'));
       return;
     }
 
     const formData = this.sessionModel();
 
     if (formData.users.length === 0) {
-      this.error.set('Please add at least one participant');
+      this.error.set(this.translate.instant('sessions.create.form.noParticipants'));
       return;
     }
 
@@ -424,7 +439,7 @@ export class CreateSessions {
         }),
         catchError((err) => {
           this.loading.set(false);
-          this.error.set(err.message || 'An error occurred while creating sessions');
+          this.error.set(err.message || this.translate.instant('sessions.create.form.submitError'));
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)

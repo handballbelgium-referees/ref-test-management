@@ -56,36 +56,77 @@
     "create": {
       "back": "Retour à l'accueil",
       "title": "Créer des Sessions de Quiz",
+      "subtitle": "Ajoutez des participants et configurez les paramètres du quiz pour créer de nouvelles sessions",
       "description": "Créez des sessions de quiz en masse pour plusieurs utilisateurs. Entrez les adresses e-mail et configurez les paramètres de session.",
       "form": {
+        "config": {
+          "label": "Configuration du Quiz"
+        },
         "users": {
           "label": "Utilisateurs",
           "placeholder": "Jean Dupont jean.dupont@example.com\nMarie Martin marie.martin@example.com\nutilisateur@example.com",
           "hint": "Entrez un utilisateur par ligne. Format : \"Prénom Nom email@example.com\" ou \"email@example.com\"",
-          "error": "Veuillez entrer au moins un utilisateur"
+          "error": "Veuillez entrer au moins un utilisateur",
+          "firstNameRequired": "Le prénom est requis",
+          "emailRequired": "L'e-mail est requis",
+          "emailInvalid": "Veuillez entrer une adresse e-mail valide",
+          "count": "{{count}} participant",
+          "count_other": "{{count}} participants",
+          "bulkImport": "Import en Masse",
+          "bulkImportLabel": "Collez les données des participants (un par ligne)",
+          "bulkImportHint": "Format : \"Prénom Nom email\" ou juste \"email\"",
+          "bulkImportButton": "Importer",
+          "firstName": "Prénom",
+          "firstNamePlaceholder": "Jean",
+          "lastName": "Nom",
+          "lastNamePlaceholder": "Dupont",
+          "email": "E-mail",
+          "emailPlaceholder": "jean.dupont@example.com",
+          "removeParticipant": "Supprimer le participant",
+          "addParticipant": "Ajouter un Participant"
         },
         "numberOfQuestions": {
           "label": "Nombre de Questions",
           "hint": "Nombre total de questions dans le quiz",
-          "error": "Le nombre de questions doit être au moins 1"
+          "error": "Le nombre de questions doit être au moins 1",
+          "required": "Le nombre de questions est requis",
+          "min": "Doit avoir au moins 1 question"
         },
         "maxTimeInMinutes": {
           "label": "Temps Maximum (minutes)",
           "hint": "Temps maximum autorisé pour compléter le quiz",
-          "error": "Le temps maximum doit être au moins 1 minute"
+          "error": "Le temps maximum doit être au moins 1 minute",
+          "required": "La limite de temps est requise",
+          "min": "Doit avoir au moins 1 minute"
         },
         "specificQuestionNumbers": {
           "label": "Numéros de Questions Spécifiques (Optionnel)",
           "placeholder": "1.1, 1.2, 2.3",
-          "hint": "Liste séparée par des virgules de numéros de questions spécifiques à inclure. Laisser vide pour des questions aléatoires."
+          "hint": "Liste séparée par des virgules de numéros de questions spécifiques à inclure. Laisser vide pour des questions aléatoires.",
+          "bulkImport": "Import en Masse",
+          "count": "{{count}} question sélectionnée",
+          "count_other": "{{count}} questions sélectionnées",
+          "searchPlaceholder": "Rechercher et ajouter des questions par numéro...",
+          "bulkImportLabel": "Collez les numéros de questions (un par ligne ou séparés par des virgules)",
+          "bulkImportHint": "Format : Un numéro de question par ligne, ou séparés par des virgules",
+          "bulkImportButton": "Importer",
+          "bulkImportImporting": "Importation...",
+          "noResults": "Aucune question trouvée",
+          "tableNumber": "Numéro",
+          "tableQuestion": "Question",
+          "removeQuestion": "Supprimer la question"
         },
         "sendInvitations": {
           "label": "Envoyer les invitations par e-mail automatiquement",
-          "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des sessions"
+          "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des sessions",
+          "description": "Les invitations par e-mail seront envoyées automatiquement"
         },
         "submit": "Créer les Sessions",
         "submitting": "Création...",
-        "cancel": "Annuler"
+        "cancel": "Annuler",
+        "validationError": "Veuillez corriger les erreurs de validation avant de soumettre",
+        "noParticipants": "Veuillez ajouter au moins un participant",
+        "submitError": "Une erreur s'est produite lors de la création des sessions"
       },
       "success": {
         "title": "Sessions Créées avec Succès",

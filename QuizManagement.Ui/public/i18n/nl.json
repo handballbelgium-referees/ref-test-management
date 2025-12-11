@@ -56,36 +56,77 @@
     "create": {
       "back": "Terug naar Home",
       "title": "Quiz Sessies Aanmaken",
+      "subtitle": "Voeg deelnemers toe en configureer quiz instellingen om nieuwe sessies aan te maken",
       "description": "Maak quiz sessies bulksgewijs aan voor meerdere gebruikers. Voer e-mailadressen in en configureer sessie-instellingen.",
       "form": {
+        "config": {
+          "label": "Quiz Configuratie"
+        },
         "users": {
           "label": "Gebruikers",
           "placeholder": "Jan Jansen jan.jansen@example.com\nMarie Smit marie.smit@example.com\ngebruiker@example.com",
           "hint": "Voer één gebruiker per regel in. Formaat: \"Voornaam Achternaam email@example.com\" of \"email@example.com\"",
-          "error": "Voer minimaal één gebruiker in"
+          "error": "Voer minimaal één gebruiker in",
+          "firstNameRequired": "Voornaam is verplicht",
+          "emailRequired": "E-mail is verplicht",
+          "emailInvalid": "Voer een geldig e-mailadres in",
+          "count": "{{count}} deelnemer",
+          "count_other": "{{count}} deelnemers",
+          "bulkImport": "Bulk Import",
+          "bulkImportLabel": "Plak deelnemersgegevens (één per regel)",
+          "bulkImportHint": "Formaat: \"Voornaam Achternaam email\" of alleen \"email\"",
+          "bulkImportButton": "Importeren",
+          "firstName": "Voornaam",
+          "firstNamePlaceholder": "Jan",
+          "lastName": "Achternaam",
+          "lastNamePlaceholder": "Jansen",
+          "email": "E-mail",
+          "emailPlaceholder": "jan.jansen@example.com",
+          "removeParticipant": "Deelnemer verwijderen",
+          "addParticipant": "Deelnemer Toevoegen"
         },
         "numberOfQuestions": {
           "label": "Aantal Vragen",
           "hint": "Totaal aantal vragen in de quiz",
-          "error": "Aantal vragen moet minimaal 1 zijn"
+          "error": "Aantal vragen moet minimaal 1 zijn",
+          "required": "Aantal vragen is verplicht",
+          "min": "Moet minimaal 1 vraag zijn"
         },
         "maxTimeInMinutes": {
           "label": "Maximale Tijd (minuten)",
           "hint": "Maximale tijd om de quiz te voltooien",
-          "error": "Maximale tijd moet minimaal 1 minuut zijn"
+          "error": "Maximale tijd moet minimaal 1 minuut zijn",
+          "required": "Tijdslimiet is verplicht",
+          "min": "Moet minimaal 1 minuut zijn"
         },
         "specificQuestionNumbers": {
           "label": "Specifieke Vraagnummers (Optioneel)",
           "placeholder": "1.1, 1.2, 2.3",
-          "hint": "Kommagescheiden lijst van specifieke vraagnummers om op te nemen. Laat leeg voor willekeurige vragen."
+          "hint": "Kommagescheiden lijst van specifieke vraagnummers om op te nemen. Laat leeg voor willekeurige vragen.",
+          "bulkImport": "Bulk Import",
+          "count": "{{count}} vraag geselecteerd",
+          "count_other": "{{count}} vragen geselecteerd",
+          "searchPlaceholder": "Zoek en voeg vragen toe op nummer...",
+          "bulkImportLabel": "Plak vraagnummers (één per regel of gescheiden door komma's)",
+          "bulkImportHint": "Formaat: Eén vraagnummer per regel, of gescheiden door komma's",
+          "bulkImportButton": "Importeren",
+          "bulkImportImporting": "Importeren...",
+          "noResults": "Geen vragen gevonden",
+          "tableNumber": "Nummer",
+          "tableQuestion": "Vraag",
+          "removeQuestion": "Vraag verwijderen"
         },
         "sendInvitations": {
           "label": "E-mail uitnodigingen automatisch versturen",
-          "hint": "Vink aan om uitnodigingsmails direct na aanmaken van sessies te versturen"
+          "hint": "Vink aan om uitnodigingsmails direct na aanmaken van sessies te versturen",
+          "description": "E-mailuitnodigingen worden automatisch verzonden"
         },
         "submit": "Sessies Aanmaken",
         "submitting": "Aanmaken...",
-        "cancel": "Annuleren"
+        "cancel": "Annuleren",
+        "validationError": "Corrigeer de validatiefouten voordat u verzendt",
+        "noParticipants": "Voeg minimaal één deelnemer toe",
+        "submitError": "Er is een fout opgetreden bij het aanmaken van sessies"
       },
       "success": {
         "title": "Sessies Succesvol Aangemaakt",

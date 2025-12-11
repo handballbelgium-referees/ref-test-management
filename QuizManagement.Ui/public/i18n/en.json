@@ -56,36 +56,77 @@
     "create": {
       "back": "Back to Home",
       "title": "Create Quiz Sessions",
+      "subtitle": "Add participants and configure quiz settings to create new sessions",
       "description": "Create quiz sessions in bulk for multiple users. Enter email addresses and configure session settings.",
       "form": {
+        "config": {
+          "label": "Quiz Configuration"
+        },
         "users": {
           "label": "Users",
           "placeholder": "John Doe john.doe@example.com\nJane Smith jane.smith@example.com\nuser@example.com",
           "hint": "Enter one user per line. Format: \"FirstName LastName email@example.com\" or \"email@example.com\"",
-          "error": "Please enter at least one user"
+          "error": "Please enter at least one user",
+          "firstNameRequired": "First name is required",
+          "emailRequired": "Email is required",
+          "emailInvalid": "Please enter a valid email address",
+          "count": "{{count}} participant",
+          "count_other": "{{count}} participants",
+          "bulkImport": "Bulk Import",
+          "bulkImportLabel": "Paste participant data (one per line)",
+          "bulkImportHint": "Format: \"FirstName LastName email\" or just \"email\"",
+          "bulkImportButton": "Import",
+          "firstName": "First Name",
+          "firstNamePlaceholder": "John",
+          "lastName": "Last Name",
+          "lastNamePlaceholder": "Doe",
+          "email": "Email",
+          "emailPlaceholder": "john.doe@example.com",
+          "removeParticipant": "Remove participant",
+          "addParticipant": "Add Participant"
         },
         "numberOfQuestions": {
           "label": "Number of Questions",
           "hint": "Total number of questions in the quiz",
-          "error": "Number of questions must be at least 1"
+          "error": "Number of questions must be at least 1",
+          "required": "Number of questions is required",
+          "min": "Must have at least 1 question"
         },
         "maxTimeInMinutes": {
           "label": "Maximum Time (minutes)",
           "hint": "Maximum time allowed to complete the quiz",
-          "error": "Maximum time must be at least 1 minute"
+          "error": "Maximum time must be at least 1 minute",
+          "required": "Time limit is required",
+          "min": "Must have at least 1 minute"
         },
         "specificQuestionNumbers": {
           "label": "Specific Question Numbers (Optional)",
           "placeholder": "1.1, 1.2, 2.3",
-          "hint": "Comma-separated list of specific question numbers to include. Leave empty for random questions."
+          "hint": "Comma-separated list of specific question numbers to include. Leave empty for random questions.",
+          "bulkImport": "Bulk Import",
+          "count": "{{count}} question selected",
+          "count_other": "{{count}} questions selected",
+          "searchPlaceholder": "Search and add questions by number...",
+          "bulkImportLabel": "Paste question numbers (one per line or comma-separated)",
+          "bulkImportHint": "Format: One question number per line, or comma-separated",
+          "bulkImportButton": "Import",
+          "bulkImportImporting": "Importing...",
+          "noResults": "No questions found",
+          "tableNumber": "Number",
+          "tableQuestion": "Question",
+          "removeQuestion": "Remove question"
         },
         "sendInvitations": {
           "label": "Send email invitations automatically",
-          "hint": "Check to send invitation emails immediately after creating sessions"
+          "hint": "Check to send invitation emails immediately after creating sessions",
+          "description": "Email invitations will be sent automatically"
         },
         "submit": "Create Sessions",
         "submitting": "Creating...",
-        "cancel": "Cancel"
+        "cancel": "Cancel",
+        "validationError": "Please fix the validation errors before submitting",
+        "noParticipants": "Please add at least one participant",
+        "submitError": "An error occurred while creating sessions"
       },
       "success": {
         "title": "Sessions Created Successfully",

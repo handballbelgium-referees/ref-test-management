@@ -56,36 +56,77 @@
     "create": {
       "back": "Zurück zur Startseite",
       "title": "Quiz-Sitzungen Erstellen",
+      "subtitle": "Teilnehmer hinzufügen und Quiz-Einstellungen konfigurieren, um neue Sitzungen zu erstellen",
       "description": "Erstellen Sie Quiz-Sitzungen in großen Mengen für mehrere Benutzer. Geben Sie E-Mail-Adressen ein und konfigurieren Sie Sitzungseinstellungen.",
       "form": {
+        "config": {
+          "label": "Quiz-Konfiguration"
+        },
         "users": {
           "label": "Benutzer",
           "placeholder": "Hans Müller hans.mueller@example.com\nMaria Schmidt maria.schmidt@example.com\nbenutzer@example.com",
           "hint": "Geben Sie einen Benutzer pro Zeile ein. Format: \"Vorname Nachname email@example.com\" oder \"email@example.com\"",
-          "error": "Bitte geben Sie mindestens einen Benutzer ein"
+          "error": "Bitte geben Sie mindestens einen Benutzer ein",
+          "firstNameRequired": "Vorname ist erforderlich",
+          "emailRequired": "E-Mail ist erforderlich",
+          "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+          "count": "{{count}} Teilnehmer",
+          "count_other": "{{count}} Teilnehmer",
+          "bulkImport": "Massenimport",
+          "bulkImportLabel": "Teilnehmerdaten einfügen (eine pro Zeile)",
+          "bulkImportHint": "Format: \"Vorname Nachname E-Mail\" oder nur \"E-Mail\"",
+          "bulkImportButton": "Importieren",
+          "firstName": "Vorname",
+          "firstNamePlaceholder": "Hans",
+          "lastName": "Nachname",
+          "lastNamePlaceholder": "Müller",
+          "email": "E-Mail",
+          "emailPlaceholder": "hans.mueller@example.com",
+          "removeParticipant": "Teilnehmer entfernen",
+          "addParticipant": "Teilnehmer Hinzufügen"
         },
         "numberOfQuestions": {
           "label": "Anzahl der Fragen",
           "hint": "Gesamtzahl der Fragen im Quiz",
-          "error": "Die Anzahl der Fragen muss mindestens 1 sein"
+          "error": "Die Anzahl der Fragen muss mindestens 1 sein",
+          "required": "Anzahl der Fragen ist erforderlich",
+          "min": "Muss mindestens 1 Frage haben"
         },
         "maxTimeInMinutes": {
           "label": "Maximale Zeit (Minuten)",
           "hint": "Maximale Zeit zum Abschließen des Quiz",
-          "error": "Die maximale Zeit muss mindestens 1 Minute betragen"
+          "error": "Die maximale Zeit muss mindestens 1 Minute betragen",
+          "required": "Zeitlimit ist erforderlich",
+          "min": "Muss mindestens 1 Minute betragen"
         },
         "specificQuestionNumbers": {
           "label": "Spezifische Fragennummern (Optional)",
           "placeholder": "1.1, 1.2, 2.3",
-          "hint": "Kommagetrennte Liste spezifischer Fragennummern, die einbezogen werden sollen. Leer lassen für zufällige Fragen."
+          "hint": "Kommagetrennte Liste spezifischer Fragennummern, die einbezogen werden sollen. Leer lassen für zufällige Fragen.",
+          "bulkImport": "Massenimport",
+          "count": "{{count}} Frage ausgewählt",
+          "count_other": "{{count}} Fragen ausgewählt",
+          "searchPlaceholder": "Fragen nach Nummer suchen und hinzufügen...",
+          "bulkImportLabel": "Fragennummern einfügen (eine pro Zeile oder durch Kommas getrennt)",
+          "bulkImportHint": "Format: Eine Fragennummer pro Zeile oder durch Kommas getrennt",
+          "bulkImportButton": "Importieren",
+          "bulkImportImporting": "Importiert...",
+          "noResults": "Keine Fragen gefunden",
+          "tableNumber": "Nummer",
+          "tableQuestion": "Frage",
+          "removeQuestion": "Frage entfernen"
         },
         "sendInvitations": {
           "label": "E-Mail-Einladungen automatisch senden",
-          "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der Sitzungen zu senden"
+          "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der Sitzungen zu senden",
+          "description": "E-Mail-Einladungen werden automatisch versendet"
         },
         "submit": "Sitzungen Erstellen",
         "submitting": "Erstellen...",
-        "cancel": "Abbrechen"
+        "cancel": "Abbrechen",
+        "validationError": "Bitte beheben Sie die Validierungsfehler vor dem Absenden",
+        "noParticipants": "Bitte fügen Sie mindestens einen Teilnehmer hinzu",
+        "submitError": "Beim Erstellen der Sitzungen ist ein Fehler aufgetreten"
       },
       "success": {
         "title": "Sitzungen Erfolgreich Erstellt",
