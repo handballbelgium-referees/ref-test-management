@@ -10,14 +10,14 @@ import { User } from '../models/user';
 export class Auth {
   private readonly _http = inject(HttpClient);
 
-  private readonly isAuthenticatedObs = this._http
+  readonly isAuthenticated$ = this._http
     .get<boolean>('/Account/IsAuthenticated')
     .pipe(shareReplay(1));
 
-  readonly isAuthenticated = toSignal(this.isAuthenticatedObs);
+  readonly isAuthenticated = toSignal(this.isAuthenticated$);
 
   readonly user = toSignal(
-    this.isAuthenticatedObs.pipe(
+    this.isAuthenticated$.pipe(
       switchMap((authenticated) => {
         if (authenticated) {
           // Fetch user data when authenticated

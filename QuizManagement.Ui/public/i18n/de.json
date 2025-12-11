@@ -52,6 +52,50 @@
       }
     }
   },
+  "sessions": {
+    "create": {
+      "back": "Zurück zur Startseite",
+      "title": "Quiz-Sitzungen Erstellen",
+      "description": "Erstellen Sie Quiz-Sitzungen in großen Mengen für mehrere Benutzer. Geben Sie E-Mail-Adressen ein und konfigurieren Sie Sitzungseinstellungen.",
+      "form": {
+        "users": {
+          "label": "Benutzer",
+          "placeholder": "Hans Müller hans.mueller@example.com\nMaria Schmidt maria.schmidt@example.com\nbenutzer@example.com",
+          "hint": "Geben Sie einen Benutzer pro Zeile ein. Format: \"Vorname Nachname email@example.com\" oder \"email@example.com\"",
+          "error": "Bitte geben Sie mindestens einen Benutzer ein"
+        },
+        "numberOfQuestions": {
+          "label": "Anzahl der Fragen",
+          "hint": "Gesamtzahl der Fragen im Quiz",
+          "error": "Die Anzahl der Fragen muss mindestens 1 sein"
+        },
+        "maxTimeInMinutes": {
+          "label": "Maximale Zeit (Minuten)",
+          "hint": "Maximale Zeit zum Abschließen des Quiz",
+          "error": "Die maximale Zeit muss mindestens 1 Minute betragen"
+        },
+        "specificQuestionNumbers": {
+          "label": "Spezifische Fragennummern (Optional)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Kommagetrennte Liste spezifischer Fragennummern, die einbezogen werden sollen. Leer lassen für zufällige Fragen."
+        },
+        "sendInvitations": {
+          "label": "E-Mail-Einladungen automatisch senden",
+          "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der Sitzungen zu senden"
+        },
+        "submit": "Sitzungen Erstellen",
+        "submitting": "Erstellen...",
+        "cancel": "Abbrechen"
+      },
+      "success": {
+        "title": "Sitzungen Erfolgreich Erstellt",
+        "message": "Quiz-Sitzungen wurden erstellt. Weiterleitung zur Sitzungsliste..."
+      },
+      "error": {
+        "title": "Fehler beim Erstellen von Sitzungen"
+      }
+    }
+  },
   "footer": {
     "copyright": "© {{year}} Handball-Quiz-Verwaltung. Basierend auf IHF- und KBHB/URBH-Regeln.",
     "creator": "Erstellt von Kristof Gilis"

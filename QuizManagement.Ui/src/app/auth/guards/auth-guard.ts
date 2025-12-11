@@ -1,17 +1,21 @@
 import { inject } from '@angular/core';
 import { type CanActivateFn } from '@angular/router';
+import { map } from 'rxjs';
 import { Auth } from '../services/auth';
 
 export const authGuard: CanActivateFn = (_route, _state) => {
   const authService = inject(Auth);
-  const user = authService.user();
 
-  // If user is authenticated, allow access
-  if (user) {
-    return true;
-  }
+  // Access the underlying observable instead of the signal to avoid loops
+  return authService.isAuthenticated$.pipe(
+    map((authenticated) => {
+      if (authenticated) {
+        return true;
+      }
 
-  // If not authenticated, redirect to login page
-  authService.login();
-  return false;
+      // Only redirect if not authenticated
+      authService.login();
+      return false;
+    })
+  );
 };

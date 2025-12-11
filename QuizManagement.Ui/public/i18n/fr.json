@@ -52,6 +52,50 @@
       }
     }
   },
+  "sessions": {
+    "create": {
+      "back": "Retour à l'accueil",
+      "title": "Créer des Sessions de Quiz",
+      "description": "Créez des sessions de quiz en masse pour plusieurs utilisateurs. Entrez les adresses e-mail et configurez les paramètres de session.",
+      "form": {
+        "users": {
+          "label": "Utilisateurs",
+          "placeholder": "Jean Dupont jean.dupont@example.com\nMarie Martin marie.martin@example.com\nutilisateur@example.com",
+          "hint": "Entrez un utilisateur par ligne. Format : \"Prénom Nom email@example.com\" ou \"email@example.com\"",
+          "error": "Veuillez entrer au moins un utilisateur"
+        },
+        "numberOfQuestions": {
+          "label": "Nombre de Questions",
+          "hint": "Nombre total de questions dans le quiz",
+          "error": "Le nombre de questions doit être au moins 1"
+        },
+        "maxTimeInMinutes": {
+          "label": "Temps Maximum (minutes)",
+          "hint": "Temps maximum autorisé pour compléter le quiz",
+          "error": "Le temps maximum doit être au moins 1 minute"
+        },
+        "specificQuestionNumbers": {
+          "label": "Numéros de Questions Spécifiques (Optionnel)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Liste séparée par des virgules de numéros de questions spécifiques à inclure. Laisser vide pour des questions aléatoires."
+        },
+        "sendInvitations": {
+          "label": "Envoyer les invitations par e-mail automatiquement",
+          "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des sessions"
+        },
+        "submit": "Créer les Sessions",
+        "submitting": "Création...",
+        "cancel": "Annuler"
+      },
+      "success": {
+        "title": "Sessions Créées avec Succès",
+        "message": "Les sessions de quiz ont été créées. Redirection vers la liste des sessions..."
+      },
+      "error": {
+        "title": "Erreur lors de la Création des Sessions"
+      }
+    }
+  },
   "footer": {
     "copyright": "© {{year}} Gestion des Quiz Handball. Basé sur les règles IHF et KBHB/URBH.",
     "creator": "Créé par Kristof Gilis"

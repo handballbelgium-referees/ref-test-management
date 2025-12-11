@@ -52,6 +52,50 @@
       }
     }
   },
+  "sessions": {
+    "create": {
+      "back": "Terug naar Home",
+      "title": "Quiz Sessies Aanmaken",
+      "description": "Maak quiz sessies bulksgewijs aan voor meerdere gebruikers. Voer e-mailadressen in en configureer sessie-instellingen.",
+      "form": {
+        "users": {
+          "label": "Gebruikers",
+          "placeholder": "Jan Jansen jan.jansen@example.com\nMarie Smit marie.smit@example.com\ngebruiker@example.com",
+          "hint": "Voer één gebruiker per regel in. Formaat: \"Voornaam Achternaam email@example.com\" of \"email@example.com\"",
+          "error": "Voer minimaal één gebruiker in"
+        },
+        "numberOfQuestions": {
+          "label": "Aantal Vragen",
+          "hint": "Totaal aantal vragen in de quiz",
+          "error": "Aantal vragen moet minimaal 1 zijn"
+        },
+        "maxTimeInMinutes": {
+          "label": "Maximale Tijd (minuten)",
+          "hint": "Maximale tijd om de quiz te voltooien",
+          "error": "Maximale tijd moet minimaal 1 minuut zijn"
+        },
+        "specificQuestionNumbers": {
+          "label": "Specifieke Vraagnummers (Optioneel)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Kommagescheiden lijst van specifieke vraagnummers om op te nemen. Laat leeg voor willekeurige vragen."
+        },
+        "sendInvitations": {
+          "label": "E-mail uitnodigingen automatisch versturen",
+          "hint": "Vink aan om uitnodigingsmails direct na aanmaken van sessies te versturen"
+        },
+        "submit": "Sessies Aanmaken",
+        "submitting": "Aanmaken...",
+        "cancel": "Annuleren"
+      },
+      "success": {
+        "title": "Sessies Succesvol Aangemaakt",
+        "message": "Quiz sessies zijn aangemaakt. Doorverwijzen naar sessielijst..."
+      },
+      "error": {
+        "title": "Fout bij Aanmaken van Sessies"
+      }
+    }
+  },
   "footer": {
     "copyright": "© {{year}} Handbal Quiz Beheer. Gebaseerd op IHF en KBHB/URBH regels.",
     "creator": "Gemaakt door Kristof Gilis"

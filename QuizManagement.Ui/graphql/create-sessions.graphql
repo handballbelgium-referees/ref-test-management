@@ -1,0 +1,23 @@
+mutation CreateBulkQuizSessions($input: CreateBulkQuizSessionsInput!) {
+  createBulkQuizSessions(input: $input) {
+    bulkQuizSessionResult {
+      totalRequested
+      successfullyCreated
+      failed
+      createdSessions {
+        id
+        email
+        status
+        createdAt
+      }
+      errors {
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}

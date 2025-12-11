@@ -52,6 +52,50 @@
       }
     }
   },
+  "sessions": {
+    "create": {
+      "back": "Back to Home",
+      "title": "Create Quiz Sessions",
+      "description": "Create quiz sessions in bulk for multiple users. Enter email addresses and configure session settings.",
+      "form": {
+        "users": {
+          "label": "Users",
+          "placeholder": "John Doe john.doe@example.com\nJane Smith jane.smith@example.com\nuser@example.com",
+          "hint": "Enter one user per line. Format: \"FirstName LastName email@example.com\" or \"email@example.com\"",
+          "error": "Please enter at least one user"
+        },
+        "numberOfQuestions": {
+          "label": "Number of Questions",
+          "hint": "Total number of questions in the quiz",
+          "error": "Number of questions must be at least 1"
+        },
+        "maxTimeInMinutes": {
+          "label": "Maximum Time (minutes)",
+          "hint": "Maximum time allowed to complete the quiz",
+          "error": "Maximum time must be at least 1 minute"
+        },
+        "specificQuestionNumbers": {
+          "label": "Specific Question Numbers (Optional)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Comma-separated list of specific question numbers to include. Leave empty for random questions."
+        },
+        "sendInvitations": {
+          "label": "Send email invitations automatically",
+          "hint": "Check to send invitation emails immediately after creating sessions"
+        },
+        "submit": "Create Sessions",
+        "submitting": "Creating...",
+        "cancel": "Cancel"
+      },
+      "success": {
+        "title": "Sessions Created Successfully",
+        "message": "Quiz sessions have been created. Redirecting to sessions list..."
+      },
+      "error": {
+        "title": "Error Creating Sessions"
+      }
+    }
+  },
   "footer": {
     "copyright": "© {{year}} Handball Quiz Management System. Powered by KBHB/URBH.",
     "creator": "Created by Kristof Gilis"

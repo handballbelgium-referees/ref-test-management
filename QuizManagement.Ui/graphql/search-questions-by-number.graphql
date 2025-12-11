@@ -1,0 +1,8 @@
+query SearchQuestionsByNumber($number: String) {
+  searchQuestionsByNumber(number: $number) {
+    id
+    number
+    phrase
+    translations
+  }
+}
