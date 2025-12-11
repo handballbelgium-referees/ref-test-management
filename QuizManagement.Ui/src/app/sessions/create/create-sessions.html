@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <form (ngSubmit)="onSubmit()">
+    <form (ngSubmit)="$event.preventDefault(); onSubmit()">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Participants (2/3 width on large screens) -->
         <div class="contents lg:grid lg:col-span-2 lg:gap-6">
@@ -44,12 +44,13 @@
                       {{ 'sessions.create.form.users.label' | translate }}
                     </h2>
                     <p class="text-xs text-neutral-500 mt-0.5">
-                      {{ 'sessions.create.form.users.count' | translate: {count: userCount()} }}
+                      {{ 'sessions.create.form.users.count' | translate : { count: userCount() } }}
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
+                  tabindex="1"
                   (click)="toggleBulkImport()"
                   class="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors"
                 >
@@ -75,6 +76,7 @@
                   </label>
                   <textarea
                     id="bulkText"
+                    tabindex="2"
                     [value]="bulkText()"
                     (input)="bulkText.set($any($event.target).value)"
                     rows="6"
@@ -90,6 +92,7 @@
                 <div class="flex gap-2">
                   <button
                     type="button"
+                    tabindex="3"
                     (click)="importBulk()"
                     class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors"
                   >
@@ -97,6 +100,7 @@
                   </button>
                   <button
                     type="button"
+                    tabindex="4"
                     (click)="toggleBulkImport()"
                     class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium text-sm transition-colors"
                   >
@@ -123,6 +127,7 @@
                       <input
                         [id]="'firstName-' + i"
                         type="text"
+                        [attr.tabindex]="i * 4 + 5"
                         [field]="sessionForm.users[i].firstName"
                         [class.border-red-500]="
                           sessionForm.users[i].firstName().touched() &&
@@ -131,7 +136,9 @@
                         [title]="'sessions.create.form.users.firstName' | translate"
                         [attr.aria-label]="'sessions.create.form.users.firstName' | translate"
                         class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
-                        [placeholder]="'sessions.create.form.users.firstNamePlaceholder' | translate"
+                        [placeholder]="
+                          'sessions.create.form.users.firstNamePlaceholder' | translate
+                        "
                       />
                       @if (sessionForm.users[i].firstName().touched() &&
                       sessionForm.users[i].firstName().invalid()) {
@@ -151,6 +158,7 @@
                       <input
                         [id]="'lastName-' + i"
                         type="text"
+                        [attr.tabindex]="i * 4 + 6"
                         [field]="sessionForm.users[i].lastName"
                         [class.border-red-500]="
                           sessionForm.users[i].lastName().touched() &&
@@ -179,6 +187,7 @@
                       <input
                         [id]="'email-' + i"
                         type="email"
+                        [attr.tabindex]="i * 4 + 7"
                         [field]="sessionForm.users[i].email"
                         [class.border-red-500]="
                           sessionForm.users[i].email().touched() &&
@@ -197,12 +206,16 @@
                       }
                     </div>
                   </div>
+                  @if (sessionModel().users.length > 1) {
                   <button
                     type="button"
+                    [attr.tabindex]="i * 4 + 8"
                     title="{{ 'sessions.create.form.users.removeParticipant' | translate }}"
                     (click)="removeUser(i)"
-                    class="mt-6 p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
-                    [attr.aria-label]="('sessions.create.form.users.removeParticipant' | translate) + ' ' + (i + 1)"
+                    class="mt-6 p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                    [attr.aria-label]="
+                      ('sessions.create.form.users.removeParticipant' | translate) + ' ' + (i + 1)
+                    "
                   >
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path
@@ -213,12 +226,14 @@
                       />
                     </svg>
                   </button>
+                  }
                 </div>
                 }
               </div>
 
               <button
                 type="button"
+                tabindex="2100"
                 (click)="addUser()"
                 class="mt-3 w-full py-2.5 border border-dashed border-neutral-300 rounded-lg text-neutral-600 hover:text-primary-600 hover:border-primary-400 hover:bg-primary-50 transition-colors font-medium flex items-center justify-center text-sm"
               >
@@ -254,11 +269,11 @@
               </svg>
               <div>
                 <h3 class="text-green-800 font-semibold text-sm">
-                  {{ 'sessions.create.success.created' | translate: {count: successCount()} }}
+                  {{ 'sessions.create.success.created' | translate : { count: successCount() } }}
                 </h3>
                 @if (failedCount() > 0) {
                 <p class="text-green-700 mt-1 text-sm">
-                  {{ 'sessions.create.success.failedInfo' | translate: {count: failedCount()} }}
+                  {{ 'sessions.create.success.failedInfo' | translate : { count: failedCount() } }}
                 </p>
                 }
               </div>
@@ -285,7 +300,9 @@
           </div>
           } @if (errors().length > 0) {
           <div class="bg-red-50 border border-red-200 rounded-xl p-4">
-            <h4 class="text-red-800 font-semibold mb-2 text-sm">{{ 'sessions.create.success.failedTitle' | translate }}</h4>
+            <h4 class="text-red-800 font-semibold mb-2 text-sm">
+              {{ 'sessions.create.success.failedTitle' | translate }}
+            </h4>
             <ul class="space-y-1">
               @for (err of errors(); track err.email) {
               <li class="text-red-700 text-sm">
@@ -303,18 +320,45 @@
               <div class="flex items-center justify-between">
                 <div class="flex items-center gap-3">
                   <div class="p-2 bg-primary-50 rounded-lg">
-                    <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    <svg
+                      class="w-5 h-5 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
                     </svg>
                   </div>
                   <div>
-                    <h2 class="text-lg font-bold text-neutral-900">{{ 'sessions.create.form.specificQuestionNumbers.label' | translate }}</h2>
-                    <p class="text-xs text-neutral-500 mt-0.5">{{ 'sessions.create.form.specificQuestionNumbers.count' | translate: {count: selectedQuestions().length} }}</p>
+                    <h2 class="text-lg font-bold text-neutral-900">
+                      {{ 'sessions.create.form.specificQuestionNumbers.label' | translate }}
+                    </h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">
+                      {{
+                        'sessions.create.form.specificQuestionNumbers.count'
+                          | translate : { count: selectedQuestions().length }
+                      }}
+                    </p>
                   </div>
                 </div>
-                <button type="button" (click)="toggleBulkQuestionImport()" class="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors">
+                <button
+                  type="button"
+                  (click)="toggleBulkQuestionImport()"
+                  tabindex="2104"
+                  class="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors"
+                >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
                   </svg>
                   {{ 'sessions.create.form.specificQuestionNumbers.bulkImport' | translate }}
                 </button>
@@ -324,43 +368,160 @@
               @if (showBulkQuestionImport()) {
               <div class="p-4 bg-secondary-50 rounded-xl border border-secondary-200">
                 <div class="mb-3">
-                  <label for="bulkQuestionText" class="block text-sm font-semibold text-neutral-900 mb-2">{{ 'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate }}</label>
-                  <textarea id="bulkQuestionText" [value]="bulkQuestionText()" (input)="bulkQuestionText.set($any($event.target).value)" rows="6" [title]="'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate" [attr.aria-label]="'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate" class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm bg-white" [placeholder]="'1.1\n1.2, 1.3\n2.1'"></textarea>
-                  <p class="mt-2 text-xs text-neutral-600">{{ 'sessions.create.form.specificQuestionNumbers.bulkImportHint' | translate }}</p>
+                  <label
+                    for="bulkQuestionText"
+                    class="block text-sm font-semibold text-neutral-900 mb-2"
+                    >{{
+                      'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate
+                    }}</label
+                  >
+                  <textarea
+                    id="bulkQuestionText"
+                    [value]="bulkQuestionText()"
+                    (input)="bulkQuestionText.set($any($event.target).value)"
+                    rows="6"
+                    [title]="
+                      'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate
+                    "
+                    [attr.aria-label]="
+                      'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate
+                    "
+                    class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm bg-white"
+                    [placeholder]="'1.1\n1.2, 1.3\n2.1'"
+                  ></textarea>
+                  <p class="mt-2 text-xs text-neutral-600">
+                    {{ 'sessions.create.form.specificQuestionNumbers.bulkImportHint' | translate }}
+                  </p>
                 </div>
                 <div class="flex gap-2">
-                  <button type="button" (click)="importBulkQuestions()" [disabled]="searchingQuestions()" class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
+                  <button
+                    type="button"
+                    (click)="importBulkQuestions()"
+                    [disabled]="searchingQuestions()"
+                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                  >
                     @if (searchingQuestions()) {
-                    <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                    {{ 'sessions.create.form.specificQuestionNumbers.bulkImportImporting' | translate }}
+                    <svg
+                      class="animate-spin h-4 w-4 text-white"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                    >
+                      <circle
+                        class="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
+                        stroke-width="4"
+                      ></circle>
+                      <path
+                        class="opacity-75"
+                        fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                      ></path>
+                    </svg>
+                    {{
+                      'sessions.create.form.specificQuestionNumbers.bulkImportImporting' | translate
+                    }}
                     } @else {
-                    {{ 'sessions.create.form.specificQuestionNumbers.bulkImportButton' | translate }}
+                    {{
+                      'sessions.create.form.specificQuestionNumbers.bulkImportButton' | translate
+                    }}
                     }
                   </button>
-                  <button type="button" (click)="toggleBulkQuestionImport()" class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium text-sm transition-colors">{{ 'common.cancel' | translate }}</button>
+                  <button
+                    type="button"
+                    tabindex="103"
+                    (click)="toggleBulkQuestionImport()"
+                    class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium text-sm transition-colors"
+                  >
+                    {{ 'common.cancel' | translate }}
+                  </button>
                 </div>
               </div>
               }
               <div class="relative">
-                <label for="questionSearch" class="sr-only">{{ 'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate }}</label>
-                <input id="questionSearch" type="text" title="{{ 'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate }}" [attr.aria-label]="'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate" [value]="questionSearchTerm()" (input)="onQuestionSearchInput($event)" (keydown)="onQuestionKeydown($event)" (blur)="closeDropdown()" class="w-full px-3 py-2.5 border border-dashed border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white hover:border-primary-400 hover:bg-primary-50 transition-colors" [placeholder]="'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate" autocomplete="off" />
+                <label for="questionSearch" class="sr-only">{{
+                  'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
+                }}</label>
+                <input
+                  id="questionSearch"
+                  type="text"
+                  tabindex="2150"
+                  title="{{
+                    'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
+                  }}"
+                  [attr.aria-label]="
+                    'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
+                  "
+                  [value]="questionSearchTerm()"
+                  (input)="onQuestionSearchInput($event)"
+                  (keydown)="onQuestionKeydown($event)"
+                  (blur)="closeDropdown()"
+                  class="w-full px-3 py-2.5 border border-dashed border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white hover:border-primary-400 hover:bg-primary-50 transition-colors"
+                  [placeholder]="
+                    'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
+                  "
+                  autocomplete="off"
+                />
                 @if (searchingQuestions()) {
                 <div class="absolute right-3 top-1/2 -translate-y-1/2">
-                  <svg class="animate-spin h-4 w-4 text-primary-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                  <svg
+                    class="animate-spin h-4 w-4 text-primary-600"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      class="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      stroke-width="4"
+                    ></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
                 </div>
-                }
-                @if (showDropdown() && questionSuggestions().length > 0) {
-                <div class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                  @for (suggestion of questionSuggestions(); track suggestion.id; let idx = $index) {
-                  <button type="button" (mousedown)="$event.preventDefault(); selectQuestion(suggestion)" [class]="'w-full px-4 py-3 text-left focus:outline-none border-b border-neutral-100 last:border-b-0 transition-colors flex items-start gap-3 ' + (highlightedIndex() === idx ? 'bg-primary-50' : 'hover:bg-primary-50')">
-                    <span class="inline-flex items-center justify-center min-w-8 h-8 px-2 bg-primary-100 text-primary-700 rounded-lg font-bold text-sm shrink-0 pointer-events-none">{{ suggestion.number }}</span>
-                    <div class="flex-1 min-w-0 pointer-events-none"><p class="text-sm text-neutral-900 font-medium truncate">{{ suggestion.phrase }}</p></div>
+                } @if (showDropdown() && questionSuggestions().length > 0) {
+                <div
+                  class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                >
+                  @for (suggestion of questionSuggestions(); track suggestion.id; let idx = $index)
+                  {
+                  <button
+                    type="button"
+                    (mousedown)="$event.preventDefault(); selectQuestion(suggestion)"
+                    [class]="
+                      'w-full px-4 py-3 text-left focus:outline-none border-b border-neutral-100 last:border-b-0 transition-colors flex items-start gap-3 ' +
+                      (highlightedIndex() === idx ? 'bg-primary-50' : 'hover:bg-primary-50')
+                    "
+                  >
+                    <span
+                      class="inline-flex items-center justify-center min-w-8 h-8 px-2 bg-primary-100 text-primary-700 rounded-lg font-bold text-sm shrink-0 pointer-events-none"
+                      >{{ suggestion.number }}</span
+                    >
+                    <div class="flex-1 min-w-0 pointer-events-none">
+                      <p class="text-sm text-neutral-900 font-medium truncate">
+                        {{ suggestion.phrase }}
+                      </p>
+                    </div>
                   </button>
                   }
                 </div>
-                } @else if (showDropdown() && !searchingQuestions() && questionSearchTerm().trim().length > 0) {
-                <div class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg p-4">
-                  <p class="text-sm text-neutral-500 text-center">{{ 'sessions.create.form.specificQuestionNumbers.noResults' | translate }}</p>
+                } @else if (showDropdown() && !searchingQuestions() &&
+                questionSearchTerm().trim().length > 0) {
+                <div
+                  class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg p-4"
+                >
+                  <p class="text-sm text-neutral-500 text-center">
+                    {{ 'sessions.create.form.specificQuestionNumbers.noResults' | translate }}
+                  </p>
                 </div>
                 }
               </div>
@@ -369,19 +530,60 @@
                 <table class="w-full">
                   <thead class="bg-neutral-50 border-b border-neutral-200">
                     <tr>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24">{{ 'sessions.create.form.specificQuestionNumbers.tableNumber' | translate }}</th>
-                      <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider">{{ 'sessions.create.form.specificQuestionNumbers.tableQuestion' | translate }}</th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24"
+                      >
+                        {{ 'sessions.create.form.specificQuestionNumbers.tableNumber' | translate }}
+                      </th>
+                      <th
+                        class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
+                      >
+                        {{
+                          'sessions.create.form.specificQuestionNumbers.tableQuestion' | translate
+                        }}
+                      </th>
                       <th class="px-4 py-3 w-16"></th>
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-neutral-200">
                     @for (question of selectedQuestions(); track question.number) {
                     <tr class="hover:bg-neutral-50 transition-colors group">
-                      <td class="px-4 py-3"><span class="inline-flex items-center justify-center px-2 py-1 bg-primary-100 text-primary-700 rounded font-bold text-sm">{{ question.number }}</span></td>
+                      <td class="px-4 py-3">
+                        <span
+                          class="inline-flex items-center justify-center px-2 py-1 bg-primary-100 text-primary-700 rounded font-bold text-sm"
+                          >{{ question.number }}</span
+                        >
+                      </td>
                       <td class="px-4 py-3 text-sm text-neutral-900">{{ question.phrase }}</td>
                       <td class="px-4 py-3 text-right">
-                        <button type="button" title="{{ 'sessions.create.form.specificQuestionNumbers.removeQuestion' | translate }}" (click)="removeSelectedQuestion(question.number)" class="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100" [attr.aria-label]="('sessions.create.form.specificQuestionNumbers.removeQuestion' | translate) + ' ' + question.number">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                        <button
+                          type="button"
+                          title="{{
+                            'sessions.create.form.specificQuestionNumbers.removeQuestion'
+                              | translate
+                          }}"
+                          (click)="removeSelectedQuestion(question.number)"
+                          class="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100"
+                          [attr.aria-label]="
+                            ('sessions.create.form.specificQuestionNumbers.removeQuestion'
+                              | translate) +
+                            ' ' +
+                            question.number
+                          "
+                        >
+                          <svg
+                            class="w-4 h-4"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              stroke-linecap="round"
+                              stroke-linejoin="round"
+                              stroke-width="2"
+                              d="M6 18L18 6M6 6l12 12"
+                            />
+                          </svg>
                         </button>
                       </td>
                     </tr>
@@ -390,7 +592,12 @@
                 </table>
               </div>
               }
-              <input type="hidden" [field]="sessionForm.specificQuestionNumbers" title="Specific question numbers" aria-label="Specific question numbers" />
+              <input
+                type="hidden"
+                [field]="sessionForm.specificQuestionNumbers"
+                title="Specific question numbers"
+                aria-label="Specific question numbers"
+              />
             </div>
           </div>
         </div>
@@ -432,6 +639,7 @@
                 <input
                   id="numberOfQuestions"
                   type="number"
+                  tabindex="2101"
                   [field]="sessionForm.numberOfQuestions"
                   [class.border-red-500]="
                     sessionForm.numberOfQuestions().touched() &&
@@ -460,6 +668,7 @@
                 <input
                   id="maxTimeInMinutes"
                   type="number"
+                  tabindex="2102"
                   [field]="sessionForm.maxTimeInMinutes"
                   [class.border-red-500]="
                     sessionForm.maxTimeInMinutes().touched() &&
@@ -481,45 +690,51 @@
           </div>
 
           <!-- Send Invitations Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-4 lg:order-0">
+          <div
+            class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-4 lg:order-0"
+          >
             <div class="flex items-start gap-3">
               <input
                 id="sendInvitations"
                 type="checkbox"
+                tabindex="2103"
                 [field]="sessionForm.sendInvitations"
                 [title]="'sessions.create.form.sendInvitations.label' | translate"
                 [attr.aria-label]="'sessions.create.form.sendInvitations.label' | translate"
                 class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
               />
-                  <label for="sendInvitations" class="text-sm text-neutral-700 flex-1">
-                    <div class="flex items-center gap-2 font-medium mb-0.5">
-                      <svg
-                        class="w-4 h-4 text-primary-600"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="2"
-                          d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                        />
-                      </svg>
-                      {{ 'sessions.create.form.sendInvitations.label' | translate }}
-                    </div>
-                    <p class="text-xs text-neutral-500">
-                      {{ 'sessions.create.form.sendInvitations.description' | translate }}
-                    </p>
-                  </label>
+              <label for="sendInvitations" class="text-sm text-neutral-700 flex-1">
+                <div class="flex items-center gap-2 font-medium mb-0.5">
+                  <svg
+                    class="w-4 h-4 text-primary-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {{ 'sessions.create.form.sendInvitations.label' | translate }}
+                </div>
+                <p class="text-xs text-neutral-500">
+                  {{ 'sessions.create.form.sendInvitations.description' | translate }}
+                </p>
+              </label>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-5 lg:order-0">
+          <div
+            class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-5 lg:order-0"
+          >
             <div class="flex flex-col gap-3">
               <button
                 type="submit"
+                tabindex="2300"
                 [disabled]="loading() || sessionForm().invalid()"
                 class="w-full py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
@@ -558,6 +773,7 @@
               </button>
               <button
                 type="button"
+                tabindex="2301"
                 (click)="cancel()"
                 [disabled]="loading()"
                 class="w-full py-2.5 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

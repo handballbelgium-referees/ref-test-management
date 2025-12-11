@@ -384,7 +384,6 @@ export class CreateSessions {
       .map((q) => q.trim())
       .filter((q) => q.length > 0);
 
-    this.loading.set(true);
     this.error.set(null);
     this.successCount.set(0);
     this.failedCount.set(0);

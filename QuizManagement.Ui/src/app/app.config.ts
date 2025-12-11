@@ -23,16 +23,21 @@ export const appConfig: ApplicationConfig = {
       }),
     }),
     provideHttpClient(),
-    provideApollo(() => {
-      const httpLink = inject(HttpLink);
+    provideApollo(
+      () => {
+        const httpLink = inject(HttpLink);
 
-      return {
-        link: httpLink.create({
-          uri: '/graphql',
-          withCredentials: true,
-        }),
-        cache: new InMemoryCache(),
-      };
-    }),
+        return {
+          link: httpLink.create({
+            uri: '/graphql',
+            withCredentials: true,
+          }),
+          cache: new InMemoryCache(),
+        };
+      },
+      {
+        useMutationLoading: true,
+      }
+    ),
   ],
 };
