@@ -15,7 +15,7 @@
       </div>
     </div>
 
-    <form (ngSubmit)="$event.preventDefault(); onSubmit()">
+    <form (submit)="onSubmit(); $event.preventDefault()">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Participants (2/3 width on large screens) -->
         <div class="contents lg:grid lg:col-span-2 lg:gap-6">
