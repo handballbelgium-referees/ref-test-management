@@ -2,6 +2,9 @@
   "app": {
     "title": "Handball Quiz Management"
   },
+  "common": {
+    "cancel": "Cancel"
+  },
   "nav": {
     "language": "Language",
     "logout": "Logout"
@@ -68,13 +71,14 @@
           "hint": "Enter one user per line. Format: \"FirstName LastName email@example.com\" or \"email@example.com\"",
           "error": "Please enter at least one user",
           "firstNameRequired": "First name is required",
+          "lastNameRequired": "Last name is required",
           "emailRequired": "Email is required",
           "emailInvalid": "Please enter a valid email address",
           "count": "{{count}} participant",
           "count_other": "{{count}} participants",
           "bulkImport": "Bulk Import",
           "bulkImportLabel": "Paste participant data (one per line)",
-          "bulkImportHint": "Format: \"FirstName LastName email\" or just \"email\"",
+          "bulkImportHint": "Format: \"FirstName LastName email\" (all fields required)",
           "bulkImportButton": "Import",
           "firstName": "First Name",
           "firstNamePlaceholder": "John",
@@ -130,7 +134,11 @@
       },
       "success": {
         "title": "Sessions Created Successfully",
-        "message": "Quiz sessions have been created. Redirecting to sessions list..."
+        "message": "Quiz sessions have been created. Redirecting to sessions list...",
+        "created": "Successfully created {{count}} session!",
+        "created_other": "Successfully created {{count}} sessions!",
+        "failedInfo": "{{count}} failed. See errors below.",
+        "failedTitle": "Failed Sessions:"
       },
       "error": {
         "title": "Error Creating Sessions"

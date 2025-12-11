@@ -2,6 +2,9 @@
   "app": {
     "title": "Handball-Quiz-Verwaltung"
   },
+  "common": {
+    "cancel": "Abbrechen"
+  },
   "nav": {
     "language": "Sprache",
     "logout": "Abmelden"
@@ -68,13 +71,14 @@
           "hint": "Geben Sie einen Benutzer pro Zeile ein. Format: \"Vorname Nachname email@example.com\" oder \"email@example.com\"",
           "error": "Bitte geben Sie mindestens einen Benutzer ein",
           "firstNameRequired": "Vorname ist erforderlich",
+          "lastNameRequired": "Nachname ist erforderlich",
           "emailRequired": "E-Mail ist erforderlich",
           "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
           "count": "{{count}} Teilnehmer",
           "count_other": "{{count}} Teilnehmer",
           "bulkImport": "Massenimport",
           "bulkImportLabel": "Teilnehmerdaten einfügen (eine pro Zeile)",
-          "bulkImportHint": "Format: \"Vorname Nachname E-Mail\" oder nur \"E-Mail\"",
+          "bulkImportHint": "Format: \"Vorname Nachname E-Mail\" (alle Felder erforderlich)",
           "bulkImportButton": "Importieren",
           "firstName": "Vorname",
           "firstNamePlaceholder": "Hans",
@@ -130,7 +134,11 @@
       },
       "success": {
         "title": "Sitzungen Erfolgreich Erstellt",
-        "message": "Quiz-Sitzungen wurden erstellt. Weiterleitung zur Sitzungsliste..."
+        "message": "Quiz-Sitzungen wurden erstellt. Weiterleitung zur Sitzungsliste...",
+        "created": "Erfolgreich {{count}} Sitzung erstellt!",
+        "created_other": "Erfolgreich {{count}} Sitzungen erstellt!",
+        "failedInfo": "{{count}} fehlgeschlagen. Siehe Fehler unten.",
+        "failedTitle": "Fehlgeschlagene Sitzungen:"
       },
       "error": {
         "title": "Fehler beim Erstellen von Sitzungen"

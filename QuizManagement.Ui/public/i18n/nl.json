@@ -2,6 +2,9 @@
   "app": {
     "title": "Handbal Quiz Beheer"
   },
+  "common": {
+    "cancel": "Annuleren"
+  },
   "nav": {
     "language": "Taal",
     "logout": "Uitloggen"
@@ -68,13 +71,14 @@
           "hint": "Voer één gebruiker per regel in. Formaat: \"Voornaam Achternaam email@example.com\" of \"email@example.com\"",
           "error": "Voer minimaal één gebruiker in",
           "firstNameRequired": "Voornaam is verplicht",
+          "lastNameRequired": "Achternaam is verplicht",
           "emailRequired": "E-mail is verplicht",
           "emailInvalid": "Voer een geldig e-mailadres in",
           "count": "{{count}} deelnemer",
           "count_other": "{{count}} deelnemers",
           "bulkImport": "Bulk Import",
           "bulkImportLabel": "Plak deelnemersgegevens (één per regel)",
-          "bulkImportHint": "Formaat: \"Voornaam Achternaam email\" of alleen \"email\"",
+          "bulkImportHint": "Formaat: \"Voornaam Achternaam email\" (alle velden verplicht)",
           "bulkImportButton": "Importeren",
           "firstName": "Voornaam",
           "firstNamePlaceholder": "Jan",
@@ -130,7 +134,11 @@
       },
       "success": {
         "title": "Sessies Succesvol Aangemaakt",
-        "message": "Quiz sessies zijn aangemaakt. Doorverwijzen naar sessielijst..."
+        "message": "Quiz-sessies zijn aangemaakt. Doorverwijzen naar sessielijst...",
+        "created": "Succesvol {{count}} sessie aangemaakt!",
+        "created_other": "Succesvol {{count}} sessies aangemaakt!",
+        "failedInfo": "{{count}} mislukt. Zie onderstaande fouten.",
+        "failedTitle": "Mislukte Sessies:"
       },
       "error": {
         "title": "Fout bij Aanmaken van Sessies"

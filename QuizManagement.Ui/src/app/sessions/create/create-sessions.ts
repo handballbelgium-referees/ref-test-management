@@ -9,7 +9,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { applyEach, email, Field, form, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import {
   catchError,
   debounceTime,
@@ -51,7 +51,6 @@ export class CreateSessions {
   private readonly createBulkQuizSessionsGQL = inject(CreateBulkQuizSessionsGQL);
   private readonly searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
   private readonly router = inject(Router);
-  private readonly translate = inject(TranslateService);
 
   // Angular v21 Signal Forms - model signal
   protected readonly sessionModel = signal<SessionFormData>({
@@ -67,29 +66,32 @@ export class CreateSessions {
     // Validate each user in the array
     applyEach(schemaPath.users, (user) => {
       required(user.firstName, {
-        message: this.translate.instant('sessions.create.form.users.firstNameRequired'),
+        message: 'sessions.create.form.users.firstNameRequired',
+      });
+      required(user.lastName, {
+        message: 'sessions.create.form.users.lastNameRequired',
       });
       required(user.email, {
-        message: this.translate.instant('sessions.create.form.users.emailRequired'),
+        message: 'sessions.create.form.users.emailRequired',
       });
       email(user.email, {
-        message: this.translate.instant('sessions.create.form.users.emailInvalid'),
+        message: 'sessions.create.form.users.emailInvalid',
       });
     });
 
     // Validate quiz configuration
     required(schemaPath.numberOfQuestions, {
-      message: this.translate.instant('sessions.create.form.numberOfQuestions.required'),
+      message: 'sessions.create.form.numberOfQuestions.required',
     });
     min(schemaPath.numberOfQuestions, 1, {
-      message: this.translate.instant('sessions.create.form.numberOfQuestions.min'),
+      message: 'sessions.create.form.numberOfQuestions.min',
     });
 
     required(schemaPath.maxTimeInMinutes, {
-      message: this.translate.instant('sessions.create.form.maxTimeInMinutes.required'),
+      message: 'sessions.create.form.maxTimeInMinutes.required',
     });
     min(schemaPath.maxTimeInMinutes, 1, {
-      message: this.translate.instant('sessions.create.form.maxTimeInMinutes.min'),
+      message: 'sessions.create.form.maxTimeInMinutes.min',
     });
   });
 
@@ -366,14 +368,14 @@ export class CreateSessions {
     if (this.sessionForm().invalid()) {
       // Mark all fields as touched to reveal validation errors
       this.sessionForm().markAsTouched();
-      this.error.set(this.translate.instant('sessions.create.form.validationError'));
+      this.error.set('sessions.create.form.validationError');
       return;
     }
 
     const formData = this.sessionModel();
 
     if (formData.users.length === 0) {
-      this.error.set(this.translate.instant('sessions.create.form.noParticipants'));
+      this.error.set('sessions.create.form.noParticipants');
       return;
     }
 
@@ -439,7 +441,7 @@ export class CreateSessions {
         }),
         catchError((err) => {
           this.loading.set(false);
-          this.error.set(err.message || this.translate.instant('sessions.create.form.submitError'));
+          this.error.set(err.message || 'sessions.create.form.submitError');
           return of(null);
         }),
         takeUntilDestroyed(this.destroyRef)

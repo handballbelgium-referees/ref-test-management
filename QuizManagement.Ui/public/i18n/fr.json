@@ -2,6 +2,9 @@
   "app": {
     "title": "Gestion des Quiz Handball"
   },
+  "common": {
+    "cancel": "Annuler"
+  },
   "nav": {
     "language": "Langue",
     "logout": "Déconnexion"
@@ -68,13 +71,14 @@
           "hint": "Entrez un utilisateur par ligne. Format : \"Prénom Nom email@example.com\" ou \"email@example.com\"",
           "error": "Veuillez entrer au moins un utilisateur",
           "firstNameRequired": "Le prénom est requis",
+          "lastNameRequired": "Le nom de famille est requis",
           "emailRequired": "L'e-mail est requis",
           "emailInvalid": "Veuillez entrer une adresse e-mail valide",
           "count": "{{count}} participant",
           "count_other": "{{count}} participants",
           "bulkImport": "Import en Masse",
           "bulkImportLabel": "Collez les données des participants (un par ligne)",
-          "bulkImportHint": "Format : \"Prénom Nom email\" ou juste \"email\"",
+          "bulkImportHint": "Format : \"Prénom Nom email\" (tous les champs obligatoires)",
           "bulkImportButton": "Importer",
           "firstName": "Prénom",
           "firstNamePlaceholder": "Jean",
@@ -130,7 +134,11 @@
       },
       "success": {
         "title": "Sessions Créées avec Succès",
-        "message": "Les sessions de quiz ont été créées. Redirection vers la liste des sessions..."
+        "message": "Les sessions de quiz ont été créées. Redirection vers la liste des sessions...",
+        "created": "Créé avec succès {{count}} session !",
+        "created_other": "Créé avec succès {{count}} sessions !",
+        "failedInfo": "{{count}} échoué. Voir les erreurs ci-dessous.",
+        "failedTitle": "Sessions échouées :"
       },
       "error": {
         "title": "Erreur lors de la Création des Sessions"
