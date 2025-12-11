@@ -17,7 +17,7 @@ export type Scalars = {
   Float: { input: number; output: number; }
   /** The `DateTime` scalar represents an ISO-8601 compliant date time type. */
   DateTime: { input: string; output: string; }
-  JSON: { input: any; output: any; }
+  JSON: { input: Record<string, string>; output: Record<string, string>; }
   UUID: { input: string; output: string; }
 };
 
@@ -26,10 +26,8 @@ export type Answer = {
   __typename?: 'Answer';
   /** Answer id */
   id: Scalars['String']['output'];
-  /** Answer phrase */
-  phrase: Scalars['String']['output'];
   /** Translations of the answer phrase */
-  translations?: Maybe<Scalars['JSON']['output']>;
+  phrase?: Maybe<Scalars['JSON']['output']>;
 };
 
 /** Defines when a policy shall be executed. */
@@ -269,10 +267,8 @@ export type Question = {
   id: Scalars['String']['output'];
   /** Question number */
   number: Scalars['String']['output'];
-  /** Question phrase */
-  phrase: Scalars['String']['output'];
   /** Translations of the question phrase */
-  translations?: Maybe<Scalars['JSON']['output']>;
+  phrase?: Maybe<Scalars['JSON']['output']>;
 };
 
 /** IHF quiz session */
@@ -507,7 +503,7 @@ export type SearchQuestionsByNumberQueryVariables = Exact<{
 }>;
 
 
-export type SearchQuestionsByNumberQuery = { __typename?: 'Query', searchQuestionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase: string, translations?: any | null }> };
+export type SearchQuestionsByNumberQuery = { __typename?: 'Query', searchQuestionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null }> };
 
 export const CreateBulkQuizSessionsDocument = gql`
     mutation CreateBulkQuizSessions($input: CreateBulkQuizSessionsInput!) {
@@ -551,7 +547,6 @@ export const SearchQuestionsByNumberDocument = gql`
     id
     number
     phrase
-    translations
   }
 }
     `;

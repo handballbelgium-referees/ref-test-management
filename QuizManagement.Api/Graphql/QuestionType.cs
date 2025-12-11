@@ -14,11 +14,10 @@ public class QuestionType : ObjectType<Question>
         
         descriptor.Field(x => x.Id).Description("Question id");
         descriptor.Field(x => x.Number).Description("Question number");
-        descriptor.Field(x => x.Phrase).Description("Question phrase");
-        descriptor.Field(x => x.Translations)
+        descriptor.Field(x => x.Phrase)
             .Type<JsonType>()
             .Description("Translations of the question phrase")
-            .Resolve(ctx => JsonSerializer.Serialize(ctx.Parent<Question>().Translations));
+            .Resolve(ctx => JsonSerializer.Serialize(ctx.Parent<Question>().Phrase));
         
         descriptor.Field(x => x.Answers).Description("Answers for this question");
     }

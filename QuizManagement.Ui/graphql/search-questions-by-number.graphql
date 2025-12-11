@@ -3,6 +3,5 @@ query SearchQuestionsByNumber($number: String) {
     id
     number
     phrase
-    translations
   }
 }

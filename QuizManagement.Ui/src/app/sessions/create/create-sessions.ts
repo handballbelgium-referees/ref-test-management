@@ -6,10 +6,10 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { applyEach, email, Field, form, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import {
   catchError,
   debounceTime,
@@ -24,6 +24,7 @@ import {
   CreateBulkQuizSessionsGQL,
   SearchQuestionsByNumberGQL,
 } from '../../../../graphql/generated';
+import { TranslationPipe } from '../../pipes/translation-pipe';
 
 interface UserData {
   firstName: string;
@@ -41,16 +42,17 @@ interface SessionFormData {
 
 @Component({
   selector: 'app-create-sessions',
-  imports: [TranslatePipe, Field],
+  imports: [TranslatePipe, Field, TranslationPipe],
   templateUrl: './create-sessions.html',
   styleUrl: './create-sessions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateSessions {
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly createBulkQuizSessionsGQL = inject(CreateBulkQuizSessionsGQL);
-  private readonly searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
-  private readonly router = inject(Router);
+  private readonly _destroyRef = inject(DestroyRef);
+  private readonly _createBulkQuizSessionsGQL = inject(CreateBulkQuizSessionsGQL);
+  private readonly _searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
+  private readonly _router = inject(Router);
+  private readonly _translate = inject(TranslateService);
 
   // Angular v21 Signal Forms - model signal
   protected readonly sessionModel = signal<SessionFormData>({
@@ -108,13 +110,21 @@ export class CreateSessions {
   protected readonly questionSearchTerm = signal('');
   protected readonly searchingQuestions = signal(false);
   protected readonly questionSuggestions = signal<
-    Array<{ number: string; phrase: string; id: string }>
+    Array<{ number: string; phrase: Record<string, string>; id: string }>
   >([]);
   protected readonly showDropdown = signal(false);
   protected readonly highlightedIndex = signal(-1);
-  protected readonly selectedQuestions = signal<Array<{ number: string; phrase: string }>>([]);
+  protected readonly selectedQuestions = signal<
+    Array<{ number: string; phrase: Record<string, string> }>
+  >([]);
   protected readonly showBulkQuestionImport = signal(false);
   protected readonly bulkQuestionText = signal('');
+  readonly currentLanguage = toSignal(
+    this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
+    {
+      initialValue: this._translate.getCurrentLang(),
+    }
+  );
 
   // Computed signals
   protected readonly userCount = computed(() => this.sessionModel().users.length);
@@ -169,18 +179,18 @@ export class CreateSessions {
         debounceTime(300),
         distinctUntilChanged(),
         switchMap((searchTerm) =>
-          this.searchQuestionsByNumberGQL.fetch({ variables: { number: searchTerm } }).pipe(
+          this._searchQuestionsByNumberGQL.fetch({ variables: { number: searchTerm } }).pipe(
             map((result) =>
               (result.data?.searchQuestionsByNumber || []).map((q) => ({
                 number: q.number,
-                phrase: q.phrase,
+                phrase: q.phrase ?? {},
                 id: q.id,
               }))
             ),
             catchError(() => of([]))
           )
         ),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this._destroyRef)
       )
       .subscribe((results) => {
         this.searchingQuestions.set(false);
@@ -193,7 +203,7 @@ export class CreateSessions {
       });
   }
 
-  protected selectQuestion(question: { number: string; phrase: string }): void {
+  protected selectQuestion(question: { number: string; phrase: Record<string, string> }): void {
     const current = this.selectedQuestions();
     if (!current.some((q) => q.number === question.number)) {
       this.selectedQuestions.set([...current, question]);
@@ -282,7 +292,7 @@ export class CreateSessions {
     // Validate and add questions
     this.searchingQuestions.set(true);
     const validationRequests = questionNumbers.map((number) =>
-      this.searchQuestionsByNumberGQL.fetch({ variables: { number } }).pipe(
+      this._searchQuestionsByNumberGQL.fetch({ variables: { number } }).pipe(
         map((result) => {
           const question = result.data?.searchQuestionsByNumber?.[0];
           return question
@@ -296,13 +306,13 @@ export class CreateSessions {
     of(validationRequests)
       .pipe(
         switchMap((requests) => Promise.all(requests.map((r) => r.toPromise()))),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this._destroyRef)
       )
       .subscribe((results) => {
         this.searchingQuestions.set(false);
         const validQuestions = results
           .filter(
-            (r): r is { number: string; phrase: string; isValid: boolean } =>
+            (r): r is { number: string; phrase: Record<string, string>; isValid: boolean } =>
               r !== null && (r?.isValid ?? false)
           )
           .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number));
@@ -389,7 +399,7 @@ export class CreateSessions {
     this.failedCount.set(0);
     this.errors.set([]);
 
-    this.createBulkQuizSessionsGQL
+    this._createBulkQuizSessionsGQL
       .mutate({
         variables: {
           input: {
@@ -433,8 +443,8 @@ export class CreateSessions {
 
             if (data.successfullyCreated > 0 && data.failed === 0) {
               of(null)
-                .pipe(delay(2000), takeUntilDestroyed(this.destroyRef))
-                .subscribe(() => this.router.navigate(['/sessions']));
+                .pipe(delay(2000), takeUntilDestroyed(this._destroyRef))
+                .subscribe(() => this._router.navigate(['/sessions']));
             }
           }
         }),
@@ -443,12 +453,12 @@ export class CreateSessions {
           this.error.set(err.message || 'sessions.create.form.submitError');
           return of(null);
         }),
-        takeUntilDestroyed(this.destroyRef)
+        takeUntilDestroyed(this._destroyRef)
       )
       .subscribe();
   }
 
   protected cancel(): void {
-    this.router.navigate(['/']);
+    this._router.navigate(['/']);
   }
 }

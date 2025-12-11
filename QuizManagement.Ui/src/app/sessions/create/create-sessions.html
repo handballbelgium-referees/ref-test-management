@@ -508,7 +508,7 @@
                     >
                     <div class="flex-1 min-w-0 pointer-events-none">
                       <p class="text-sm text-neutral-900 font-medium truncate">
-                        {{ suggestion.phrase }}
+                        {{ suggestion.phrase | appTranslation: currentLanguage() }}
                       </p>
                     </div>
                   </button>
@@ -554,7 +554,7 @@
                           >{{ question.number }}</span
                         >
                       </td>
-                      <td class="px-4 py-3 text-sm text-neutral-900">{{ question.phrase }}</td>
+                      <td class="px-4 py-3 text-sm text-neutral-900">{{ question.phrase | appTranslation: currentLanguage() }}</td>
                       <td class="px-4 py-3 text-right">
                         <button
                           type="button"

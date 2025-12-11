@@ -31,6 +31,9 @@ services.AddDbContextFactory<QuizManagementContext>(options =>
 var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>()
                   ?? new EmailConfiguration();
 services.AddSingleton(emailConfig);
+var languageConfig = configuration.GetSection("LanguageConfiguration").Get<LanguageConfiguration>()
+                     ?? new LanguageConfiguration();
+services.AddSingleton(languageConfig);
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 
@@ -39,7 +42,7 @@ services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
     .ConfigureHttpClient(c =>
     {
         c.BaseAddress = new Uri(configuration["RulesQuestions:Url"]!);
-        c.DefaultRequestHeaders.Add("Accept-Language", "en");
+        c.DefaultRequestHeaders.Add("Accept-Language", languageConfig.DefaultPhraseLanguage);
     });
 
 services.AddGraphQLServer()

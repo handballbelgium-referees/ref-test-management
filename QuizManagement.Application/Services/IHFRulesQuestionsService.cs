@@ -19,7 +19,7 @@ public interface IIhfRulesQuestionsService
         CancellationToken cancellationToken = default);
 }
 
-public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client) : IIhfRulesQuestionsService
+public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageConfiguration languageConfiguration) : IIhfRulesQuestionsService
 {
     public async Task<List<string>> GetRandomQuestionIdsAsync(int count,
         CancellationToken cancellationToken = default)
@@ -48,16 +48,22 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client) : IIhfRul
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.QuestionsById?.OfType<GetQuestionsById_QuestionsById_Question>();
-        return nodes?.Select(x => new Question(
-            x.Id,
-            x.Phrase ?? string.Empty,
-            x.Translations?.Deserialize<Dictionary<string, string>>() ?? new Dictionary<string, string>(),
-            x.Answers?.Nodes?.OfType<IGetQuestionsById_QuestionsById_Answers_Nodes>().Select(a => new Answer(
-                    a.Id,
-                    a.Phrase ?? string.Empty,
-                    a.Translations?.Deserialize<Dictionary<string, string>>() ?? new Dictionary<string, string>()))
-                .ToList() ?? []
-        )).ToList() ?? [];
+        return nodes?.Select(x =>
+        {
+            var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+            if (!string.IsNullOrEmpty(x.Phrase))
+                questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
+            
+            var answers = x.Answers?.Nodes?.OfType<IGetQuestionsById_QuestionsById_Answers_Nodes>().Select(a =>
+            {
+                var answerTranslations = a.Translations?.Deserialize<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+                if (!string.IsNullOrEmpty(a.Phrase))
+                    answerTranslations[languageConfiguration.DefaultPhraseLanguage] = a.Phrase;
+                return new Answer(a.Id, answerTranslations);
+            }).ToList() ?? [];
+            
+            return new Question(x.Id, questionPhrases, answers);
+        }).ToList() ?? [];
     }
 
     public async Task<List<Question>> SearchQuestionsByNumberAsync(string? number,
@@ -67,13 +73,16 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client) : IIhfRul
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.Questions?.Nodes?.OfType<SearchQuestionsByNumber_Questions_Nodes_Question>();
-        return nodes?.Select(x => new Question(
-            x.Id,
-            x.Phrase ?? string.Empty,
-            x.Translations?.Deserialize<Dictionary<string, string>>() ?? new Dictionary<string, string>(),
-            [])
+        return nodes?.Select(x =>
         {
-            Number = x.Number ?? string.Empty
+            var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ?? new Dictionary<string, string>();
+            if (!string.IsNullOrEmpty(x.Phrase))
+                questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
+            
+            return new Question(x.Id, questionPhrases, [])
+            {
+                Number = x.Number ?? string.Empty
+            };
         }).ToList() ?? [];
     }
 

@@ -7,7 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "codegen": "graphql-codegen"
+    "codegen": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 graphql-codegen"
   },
   "prettier": {
     "printWidth": 100,
@@ -47,6 +47,7 @@
     "@graphql-codegen/typescript-apollo-angular": "^4.0.1",
     "@graphql-codegen/typescript-operations": "^5.0.6",
     "@tailwindcss/postcss": "^4.1.12",
+    "cross-env": "^10.1.0",
     "jsdom": "^27.1.0",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.12",

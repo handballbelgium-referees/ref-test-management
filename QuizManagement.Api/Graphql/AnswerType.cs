@@ -13,10 +13,9 @@ public class AnswerType : ObjectType<Answer>
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(x => x.Id).Description("Answer id");
-        descriptor.Field(x => x.Phrase).Description("Answer phrase");
-        descriptor.Field(x => x.Translations)
+        descriptor.Field(x => x.Phrase)
             .Type<JsonType>()
             .Description("Translations of the answer phrase")
-            .Resolve(ctx => JsonSerializer.Serialize(ctx.Parent<Answer>().Translations));
+            .Resolve(ctx => JsonSerializer.Serialize(ctx.Parent<Answer>().Phrase));
     }
 }
