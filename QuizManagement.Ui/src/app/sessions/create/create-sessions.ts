@@ -10,8 +10,20 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { applyEach, email, Field, form, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { catchError, delay, map, of, tap } from 'rxjs';
-import { CreateBulkQuizSessionsGQL } from '../../../../graphql/generated';
+import {
+  catchError,
+  debounceTime,
+  delay,
+  distinctUntilChanged,
+  map,
+  of,
+  switchMap,
+  tap,
+} from 'rxjs';
+import {
+  CreateBulkQuizSessionsGQL,
+  SearchQuestionsByNumberGQL,
+} from '../../../../graphql/generated';
 
 interface UserData {
   firstName: string;
@@ -37,6 +49,7 @@ interface SessionFormData {
 export class CreateSessions {
   private readonly destroyRef = inject(DestroyRef);
   private readonly createBulkQuizSessionsGQL = inject(CreateBulkQuizSessionsGQL);
+  private readonly searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
   private readonly router = inject(Router);
 
   // Angular v21 Signal Forms - model signal
@@ -74,6 +87,18 @@ export class CreateSessions {
   protected readonly showBulkImport = signal(false);
   protected readonly bulkText = signal('');
 
+  // Autocomplete state
+  protected readonly questionSearchTerm = signal('');
+  protected readonly searchingQuestions = signal(false);
+  protected readonly questionSuggestions = signal<
+    Array<{ number: string; phrase: string; id: string }>
+  >([]);
+  protected readonly showDropdown = signal(false);
+  protected readonly highlightedIndex = signal(-1);
+  protected readonly selectedQuestions = signal<Array<{ number: string; phrase: string }>>([]);
+  protected readonly showBulkQuestionImport = signal(false);
+  protected readonly bulkQuestionText = signal('');
+
   // Computed signals
   protected readonly userCount = computed(() => this.sessionModel().users.length);
 
@@ -102,6 +127,177 @@ export class CreateSessions {
 
   protected toggleBulkImport(): void {
     this.showBulkImport.update((v) => !v);
+  }
+
+  protected toggleBulkQuestionImport(): void {
+    this.showBulkQuestionImport.update((v) => !v);
+  }
+
+  protected onQuestionSearchInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const value = input.value;
+    this.questionSearchTerm.set(value);
+
+    if (!value || value.trim().length < 1) {
+      this.showDropdown.set(false);
+      this.questionSuggestions.set([]);
+      return;
+    }
+
+    this.searchingQuestions.set(true);
+    this.showDropdown.set(true);
+
+    of(value)
+      .pipe(
+        debounceTime(300),
+        distinctUntilChanged(),
+        switchMap((searchTerm) =>
+          this.searchQuestionsByNumberGQL.fetch({ variables: { number: searchTerm } }).pipe(
+            map((result) =>
+              (result.data?.searchQuestionsByNumber || []).map((q) => ({
+                number: q.number,
+                phrase: q.phrase,
+                id: q.id,
+              }))
+            ),
+            catchError(() => of([]))
+          )
+        ),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((results) => {
+        this.searchingQuestions.set(false);
+        this.questionSuggestions.set(results);
+
+        // Auto-highlight if only one suggestion
+        if (results.length === 1) {
+          this.highlightedIndex.set(0);
+        }
+      });
+  }
+
+  protected selectQuestion(question: { number: string; phrase: string }): void {
+    const current = this.selectedQuestions();
+    if (!current.some((q) => q.number === question.number)) {
+      this.selectedQuestions.set([...current, question]);
+      this.updateQuestionNumbersField();
+    }
+    this.questionSearchTerm.set('');
+    this.showDropdown.set(false);
+    this.highlightedIndex.set(-1);
+  }
+
+  protected onQuestionKeydown(event: KeyboardEvent): void {
+    const suggestions = this.questionSuggestions();
+    if (suggestions.length === 0 || !this.showDropdown()) {
+      return;
+    }
+
+    const currentIndex = this.highlightedIndex();
+
+    switch (event.key) {
+      case 'ArrowDown':
+        event.preventDefault();
+        const nextIndex = currentIndex < suggestions.length - 1 ? currentIndex + 1 : 0;
+        this.highlightedIndex.set(nextIndex);
+        break;
+
+      case 'ArrowUp':
+        event.preventDefault();
+        const prevIndex = currentIndex > 0 ? currentIndex - 1 : suggestions.length - 1;
+        this.highlightedIndex.set(prevIndex);
+        break;
+
+      case 'Enter':
+        event.preventDefault();
+        if (currentIndex >= 0 && currentIndex < suggestions.length) {
+          this.selectQuestion(suggestions[currentIndex]);
+        }
+        break;
+
+      case 'Escape':
+        event.preventDefault();
+        this.showDropdown.set(false);
+        this.highlightedIndex.set(-1);
+        break;
+    }
+  }
+
+  protected removeSelectedQuestion(questionNumber: string): void {
+    this.selectedQuestions.update((current) => current.filter((q) => q.number !== questionNumber));
+    this.updateQuestionNumbersField();
+  }
+
+  private updateQuestionNumbersField(): void {
+    const numbers = this.selectedQuestions()
+      .map((q) => q.number)
+      .join(', ');
+    const current = this.sessionModel();
+    this.sessionModel.set({
+      ...current,
+      specificQuestionNumbers: numbers,
+    });
+  }
+
+  protected closeDropdown(): void {
+    setTimeout(() => {
+      this.showDropdown.set(false);
+      this.highlightedIndex.set(-1);
+    }, 200);
+  }
+
+  protected importBulkQuestions(): void {
+    const text = this.bulkQuestionText();
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    const questionNumbers = lines
+      .flatMap((line) => line.split(','))
+      .map((num) => num.trim())
+      .filter((num) => num.length > 0);
+
+    if (questionNumbers.length === 0) {
+      return;
+    }
+
+    // Validate and add questions
+    this.searchingQuestions.set(true);
+    const validationRequests = questionNumbers.map((number) =>
+      this.searchQuestionsByNumberGQL.fetch({ variables: { number } }).pipe(
+        map((result) => {
+          const question = result.data?.searchQuestionsByNumber?.[0];
+          return question
+            ? { number: question.number, phrase: question.phrase, isValid: true }
+            : null;
+        }),
+        catchError(() => of(null))
+      )
+    );
+
+    of(validationRequests)
+      .pipe(
+        switchMap((requests) => Promise.all(requests.map((r) => r.toPromise()))),
+        takeUntilDestroyed(this.destroyRef)
+      )
+      .subscribe((results) => {
+        this.searchingQuestions.set(false);
+        const validQuestions = results
+          .filter(
+            (r): r is { number: string; phrase: string; isValid: boolean } =>
+              r !== null && (r?.isValid ?? false)
+          )
+          .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number));
+
+        if (validQuestions.length > 0) {
+          this.selectedQuestions.update((current) => [...current, ...validQuestions]);
+          this.updateQuestionNumbersField();
+        }
+
+        this.showBulkQuestionImport.set(false);
+        this.bulkQuestionText.set('');
+      });
   }
 
   protected importBulk(): void {
@@ -134,15 +330,17 @@ export class CreateSessions {
       }
     });
 
-    if (users.length === 0) {
-      users.push({ firstName: '', lastName: '', email: '' });
+    if (users.length > 0) {
+      const current = this.sessionModel();
+      // Filter out empty users (all fields empty)
+      const nonEmptyUsers = current.users.filter(
+        (user) => user.firstName.trim() || user.lastName.trim() || user.email.trim()
+      );
+      this.sessionModel.set({
+        ...current,
+        users: [...nonEmptyUsers, ...users],
+      });
     }
-
-    const current = this.sessionModel();
-    this.sessionModel.set({
-      ...current,
-      users,
-    });
 
     this.showBulkImport.set(false);
     this.bulkText.set('');
