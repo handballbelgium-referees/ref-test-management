@@ -1,5 +1,6 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace QuizManagement.Infrastructure.Configurations;
@@ -40,7 +41,11 @@ public class QuizSessionConfiguration : IEntityTypeConfiguration<QuizSession>
                 v => string.Join(',', v.Select(g => g.ToString())),
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .ToList())
-            .HasMaxLength(4000);
+            .HasMaxLength(4000)
+            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
 
         builder.Property(x => x.Status)
             .IsRequired()
@@ -56,14 +61,22 @@ public class QuizSessionConfiguration : IEntityTypeConfiguration<QuizSession>
                 v => string.Join(',', v.Select(g => g.ToString())),
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .ToList())
-            .HasMaxLength(4000);
+            .HasMaxLength(4000)
+            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
 
         builder.Property(x => x.WrongAnswerIds)
             .HasConversion(
                 v => string.Join(',', v.Select(g => g.ToString())),
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
                     .ToList())
-            .HasMaxLength(4000);
+            .HasMaxLength(4000)
+            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
 
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);

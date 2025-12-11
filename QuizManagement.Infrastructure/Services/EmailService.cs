@@ -145,7 +145,7 @@ public partial class EmailService(
         catch (Exception ex)
         {
             LogErrorSendingEmailToEmail(logger, ex, toEmail);
-            throw;
+            throw new EmailException(toEmail);
         }
     }
 
@@ -176,3 +176,5 @@ public partial class EmailService(
     [LoggerMessage(LogLevel.Error, "Error sending email to {email}")]
     static partial void LogErrorSendingEmailToEmail(ILogger<EmailService> logger, Exception ex, string email);
 }
+
+public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");

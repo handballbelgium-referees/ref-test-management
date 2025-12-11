@@ -15,14 +15,32 @@ public static class QuizQueries
     /// Get a quiz session by token
     /// </summary>
     /// <param name="token"></param>
-    /// <param name="dataLoader"></param>
+    /// <param name="context"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    public static Task<QuizSession?> GetQuizSessionByTokenAsync(
+    /// <exception cref="QuizSessionNotFoundException"></exception>
+    /// <exception cref="InvalidQuizSessionStatusException"></exception>
+    /// <exception cref="QuizSessionExpiredException"></exception>
+    [Error<QuizSessionNotFoundException>]
+    [Error<InvalidQuizSessionStatusException>]
+    [Error<QuizSessionExpiredException>]
+    public static async Task<QuizSession?> GetQuizSessionByTokenAsync(
         string token,
-        QuizSessionByTokenDataLoader dataLoader,
+        QuizManagementContext context,
         CancellationToken cancellationToken)
-        => dataLoader.LoadAsync(token, cancellationToken);
+    {
+        var session = await context.QuizSessions
+            .FirstOrDefaultAsync(x => x.Token == token, cancellationToken);
+
+        if (session is null)
+            throw new QuizSessionNotFoundException(token);
+
+        if (session.Status == QuizSessionStatus.Completed)
+            throw new InvalidQuizSessionStatusException(session.Status,
+                [QuizSessionStatus.Pending, QuizSessionStatus.InProgress]);
+
+        return session.IsExpired() ? throw new QuizSessionExpiredException(token) : session;
+    }
 
     /// <summary>
     /// Get a quiz session by id

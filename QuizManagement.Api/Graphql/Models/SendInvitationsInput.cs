@@ -2,4 +2,4 @@
 
 namespace QuizManagement.Api.Graphql.Models;
 
-public record ResendInvitationInput([property: ID<QuizSession>]Guid Id);
+public record SendInvitationsInput([property: ID<QuizSession>] List<Guid> Ids);

@@ -37,8 +37,13 @@ public class InvalidQuizSessionStatusException : Exception
     {
     }
 
-    public InvalidQuizSessionStatusException(QuizSessionStatus currentStatus, QuizSessionStatus expectedStatus) 
-        : base($"Quiz session is in '{currentStatus}' status. Expected '{expectedStatus}' status.")
+    public InvalidQuizSessionStatusException(QuizSessionStatus currentStatus, QuizSessionStatus expectedStatus)
+        : base($"Quiz session is in '{currentStatus}' status. Expected status: '{expectedStatus}'.")
+    {
+    }
+
+    public InvalidQuizSessionStatusException(QuizSessionStatus currentStatus, QuizSessionStatus[] expectedStatuses) 
+        : base($"Quiz session is in '{currentStatus}' status. Expected statuses: '{string.Join(", '", expectedStatuses)}'.")
     {
     }
 }

@@ -44,7 +44,7 @@ public static class QuizMutations
             await context.SaveChangesAsync(cancellationToken);
             throw new QuizSessionExpiredException(token);
         }
-        
+
         if (session.Status == QuizSessionStatus.InProgress)
             return session;
 
@@ -65,8 +65,10 @@ public static class QuizMutations
     /// <returns></returns>
     /// <exception cref="QuizSessionNotFoundException"></exception>
     /// <exception cref="InvalidQuizSessionStatusException"></exception>
+    /// <exception cref="EmailException"></exception>
     [Error<QuizSessionNotFoundException>]
     [Error<InvalidQuizSessionStatusException>]
+    [Error<EmailException>]
     public static async Task<QuizSession> CompleteQuizAsync(
         CompleteQuizInput input,
         QuizManagementContext context,
@@ -182,6 +184,9 @@ public static class QuizMutations
         context.QuizSessions.AddRange(createdSessions);
         await context.SaveChangesAsync(cancellationToken);
 
+        if (!input.SendInvitations)
+            return result;
+
         // Send invitation emails to all participants
         foreach (var session in createdSessions)
         {
@@ -208,40 +213,74 @@ public static class QuizMutations
             }
         }
 
+
         return result;
     }
 
     /// <summary>
-    /// Resend quiz invitation email to a specific quiz session
+    /// Send quiz invitation emails to quiz sessions
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <param name="emailService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="QuizSessionNotFoundException"></exception>
     [Authorize]
-    [Error<QuizSessionNotFoundException>]
-    public static async Task<QuizSession> ResendInvitationAsync(
-        ResendInvitationInput input,
+    public static async Task<SendInvitationsResult> SendInvitationsAsync(
+        SendInvitationsInput input,
         QuizManagementContext context,
         [Service] IEmailService emailService,
         CancellationToken cancellationToken)
     {
-        var session = await context.QuizSessions
-            .FirstOrDefaultAsync(s => s.Id == input.Id, cancellationToken);
+        var sessions = await context.QuizSessions
+            .Where(s => input.Ids.Contains(s.Id))
+            .ToListAsync(cancellationToken);
 
-        if (session is null)
-            throw new QuizSessionNotFoundException(input.Id.ToString());
+        var result = new SendInvitationsResult
+        {
+            TotalRequested = input.Ids.Count,
+            SentSessions = [],
+            Errors = []
+        };
 
-        await emailService.SendQuizInvitationAsync(
-            session.Email,
-            session.Token,
-            session.NumberOfQuestions,
-            session.MaxTimeInMinutes
-        );
+        foreach (var id in input.Ids)
+        {
+            var session = sessions.FirstOrDefault(x => x.Id == id);
 
-        return session;
+            try
+            {
+                if (session is null)
+                    throw new QuizSessionNotFoundException(id.ToString());
+
+                if (session.Status != QuizSessionStatus.Pending)
+                    throw new InvalidQuizSessionStatusException(session.Status, QuizSessionStatus.Pending);
+
+                await emailService.SendQuizInvitationAsync(
+                    session.Email,
+                    session.Token,
+                    session.NumberOfQuestions,
+                    session.MaxTimeInMinutes
+                );
+
+                result.SentSessions.Add(session);
+                result.SuccessfullySent++;
+            }
+            catch (Exception e)
+            {
+                result.Failed++;
+
+                // Email failed, or session was not found, or session is not pending
+                // Log the error but don't fail the entire operation
+                result.Errors.Add(new SendInvitationError
+                {
+                    QuizSessionId = id,
+                    User = session is null ? null : new User(session.FirstName, session.LastName, session.Email),
+                    ErrorMessage = e.Message
+                });
+            }
+        }
+
+        return result;
     }
 
     /// <summary>
@@ -263,13 +302,13 @@ public static class QuizMutations
 
         if (session is null)
             throw new QuizSessionNotFoundException(input.Id.ToString());
-        
+
         context.QuizSessions.Remove(session);
         await context.SaveChangesAsync(cancellationToken);
-        
+
         return session;
     }
-    
+
     /// <summary>
     /// Delete all quiz sessions
     /// </summary>
