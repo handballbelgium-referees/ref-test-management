@@ -16,7 +16,7 @@ var configuration = builder.Configuration;
 services.AddSecurityConfiguration(configuration);
 services.AddControllersWithViews();
 
-services.AddDbContext<QuizManagementContext>(options =>
+services.AddDbContextFactory<QuizManagementContext>(options =>
 {
     options.UseSqlServer(configuration.GetConnectionString("QuizManagement"),
         x => x
@@ -55,7 +55,7 @@ services.AddGraphQLServer()
         options.MaxPageSize = 100;
         options.AllowBackwardPagination = true;
     })
-    .ModifyCostOptions(o => { o.EnforceCostLimits = false; })
+    .RegisterDbContextFactory<QuizManagementContext>()
     .AddFiltering()
     .AddSorting()
     .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)

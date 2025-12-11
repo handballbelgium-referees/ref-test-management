@@ -11,7 +11,8 @@ public static class QuizManagementMigrationExtensions
     public static async Task MigrateQuizManagementDatabase(this WebApplication app)
     {
         using var scope = app.Services.CreateScope();
-        await using var context = scope.ServiceProvider.GetRequiredService<QuizManagementContext>();
+        await using var context = await scope.ServiceProvider
+            .GetRequiredService<IDbContextFactory<QuizManagementContext>>().CreateDbContextAsync();
 
         if (await context.Database.CanConnectAsync())
         {
@@ -19,4 +20,3 @@ public static class QuizManagementMigrationExtensions
         }
     }
 }
-
