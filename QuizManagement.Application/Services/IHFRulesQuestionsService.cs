@@ -13,6 +13,8 @@ public interface IIhfRulesQuestionsService
     Task<List<Question>> GetQuestionsByIdAsync(IEnumerable<string> ids,
         CancellationToken cancellationToken = default);
 
+    Task<List<Question>> SearchQuestionsByNumberAsync(string? number, CancellationToken cancellationToken = default);
+
     Task<ScoreCalculation> CalculateScoreAsync(IEnumerable<string> questionIds, IEnumerable<string> selectedAnswerIds,
         CancellationToken cancellationToken = default);
 }
@@ -58,16 +60,36 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client) : IIhfRul
         )).ToList() ?? [];
     }
 
-    public async Task<ScoreCalculation> CalculateScoreAsync(IEnumerable<string> questionIds, IEnumerable<string> selectedAnswerIds,
+    public async Task<List<Question>> SearchQuestionsByNumberAsync(string? number,
         CancellationToken cancellationToken = default)
     {
-        var result = await client.CalculateScore.ExecuteAsync(questionIds.ToList(), selectedAnswerIds.ToList(), cancellationToken);
+        var result = await client.SearchQuestionsByNumber.ExecuteAsync(number, cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        
+        var nodes = result.Data?.Questions?.Nodes?.OfType<SearchQuestionsByNumber_Questions_Nodes_Question>();
+        return nodes?.Select(x => new Question(
+            x.Id,
+            x.Phrase ?? string.Empty,
+            x.Translations?.Deserialize<Dictionary<string, string>>() ?? new Dictionary<string, string>(),
+            [])
+        {
+            Number = x.Number ?? string.Empty
+        }).ToList() ?? [];
+    }
+
+    public async Task<ScoreCalculation> CalculateScoreAsync(IEnumerable<string> questionIds,
+        IEnumerable<string> selectedAnswerIds,
+        CancellationToken cancellationToken = default)
+    {
+        var result =
+            await client.CalculateScore.ExecuteAsync(questionIds.ToList(), selectedAnswerIds.ToList(),
+                cancellationToken);
+        if (result.Errors.Any())
+            throw new Exception(result.Errors[0].Message);
+
         if (result.Data?.CalculateScore is null)
             throw new Exception("Failed to calculate score");
-        
+
         return new ScoreCalculation(
             result.Data.CalculateScore.Score ?? 0,
             result.Data.CalculateScore.Total ?? 0,

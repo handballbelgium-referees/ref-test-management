@@ -13,6 +13,7 @@ public class QuestionType : ObjectType<Question>
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(x => x.Id).Description("Question id");
+        descriptor.Field(x => x.Number).Description("Question number");
         descriptor.Field(x => x.Phrase).Description("Question phrase");
         descriptor.Field(x => x.Translations)
             .Type<JsonType>()

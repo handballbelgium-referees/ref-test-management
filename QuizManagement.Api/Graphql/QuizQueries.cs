@@ -1,6 +1,8 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
+using QuizManagement.Application.Models;
+using QuizManagement.Application.Services;
 using QuizManagement.Infrastructure;
 
 namespace QuizManagement.Api.Graphql;
@@ -65,4 +67,9 @@ public static class QuizQueries
     [UseSorting]
     public static IQueryable<QuizSession> GetQuizSessions(QuizManagementContext context)
         => context.QuizSessions;
+
+    [Authorize]
+    public static Task<List<Question>> SearchQuestionsByNumber(string? number,
+        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService)
+        => ihfRulesQuestionsService.SearchQuestionsByNumberAsync(number);
 }

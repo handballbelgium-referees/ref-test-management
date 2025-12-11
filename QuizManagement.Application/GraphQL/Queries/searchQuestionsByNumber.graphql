@@ -1,0 +1,10 @@
+﻿query searchQuestionsByNumber($number: String) {
+    questions(where: {number: {startsWith: $number}}) {
+        nodes {
+            id
+            number
+            phrase
+            translations
+        }
+    }
+}
