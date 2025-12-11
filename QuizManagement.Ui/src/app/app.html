@@ -3,50 +3,35 @@
   <header class="bg-white shadow-sm">
     <nav class="container mx-auto flex items-center justify-between px-4 py-4">
       <!-- Logo and Title -->
-      <div class="flex items-center gap-3">
-        <img src="/URBH-KBHB-logo.png" alt="Handball Belgium Logo" class="h-10" />
-        <a href="/" class="text-xl font-bold text-neutral-900">
+      <div class="flex items-center gap-2 md:gap-3">
+        <img src="/URBH-KBHB-logo.png" alt="Handball Belgium Logo" class="h-8 md:h-10 w-auto" />
+        <img src="/IHF-logo.png" alt="IHF Logo" class="h-8 md:h-10 w-auto" />
+        <img src="/EHF-logo.png" alt="EHF Logo" class="h-10 md:h-15 w-auto" />
+        <a href="/" class="text-base md:text-xl font-bold text-neutral-900 hidden sm:block">
           {{ 'app.title' | translate }}
         </a>
       </div>
 
       <!-- Navigation Links -->
-      <div class="flex items-center gap-6">
-        <a
-          routerLink="/"
-          routerLinkActive="text-primary-600"
-          class="text-neutral-700 transition-colors hover:text-primary-600"
-        >
-          {{ 'nav.home' | translate }}
-        </a>
-
-        @if (!isLoggedIn()) {
-          <!-- Login Button -->
-          <button
-            type="button"
-            (click)="login()"
-            class="bg-primary-600 hover:bg-primary-700 text-white px-4 py-2 rounded-lg font-semibold transition-colors shadow-sm"
-          >
-            {{ 'nav.login' | translate }}
-          </button>
-        } @else {
+      <div class="flex items-center gap-3 md:gap-6">
+        @if (isLoggedIn() && user(); as user) {
           <!-- User Profile & Logout -->
-          <div class="flex items-center gap-4">
+          <div class="flex items-center gap-2 md:gap-4">
             <div class="flex items-center gap-2">
-              @if (user()?.picture) {
+              @if (user.picture) {
                 <img
                   title="user picture"
-                  [src]="user()!.picture"
-                  [alt]="user()!.name"
+                  [src]="user.picture"
+                  [alt]="user.name"
                   class="h-8 w-8 rounded-full border-2 border-primary-200"
                 />
               }
-              <span class="text-sm font-medium text-neutral-700">{{ user()?.name }}</span>
+              <span class="text-xs md:text-sm font-medium text-neutral-700 hidden sm:inline">{{ user.name }}</span>
             </div>
             <button
               type="button"
               (click)="logout()"
-              class="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-4 py-2 rounded-lg font-semibold transition-colors"
+              class="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-3 md:px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
             >
               {{ 'nav.logout' | translate }}
             </button>
@@ -56,8 +41,9 @@
         <!-- Language Switcher -->
         <div class="relative">
           <button
-            (click)="toggleLanguageMenu()"
-            class="flex items-center gap-2 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
+            type="button"
+            (click)="toggleLanguageMenu($event)"
+            class="flex items-center gap-1 md:gap-2 rounded-lg border border-neutral-300 bg-white px-2 md:px-3 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary-500"
             [attr.aria-expanded]="showLanguageMenu()"
             aria-haspopup="true"
             [attr.aria-label]="'nav.language' | translate"
@@ -76,7 +62,7 @@
                 d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129"
               />
             </svg>
-            <span class="uppercase">{{ currentLocale }}</span>
+            <span class="uppercase hidden sm:inline">{{ currentLocale }}</span>
             <svg
               class="h-4 w-4 transition-transform"
               [class.rotate-180]="showLanguageMenu()"
@@ -96,7 +82,7 @@
 
           @if (showLanguageMenu()) {
           <div
-            class="absolute right-0 z-10 mt-2 w-48 rounded-lg border border-neutral-200 bg-white shadow-lg"
+            class="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-neutral-200 bg-white shadow-lg"
             role="menu"
           >
             @for (lang of availableLanguages; track lang.code) {

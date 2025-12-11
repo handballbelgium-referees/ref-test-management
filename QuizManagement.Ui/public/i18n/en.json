@@ -3,56 +3,57 @@
     "title": "Handball Quiz Management"
   },
   "nav": {
-    "home": "Home",
     "language": "Language",
-    "login": "Login",
     "logout": "Logout"
   },
   "home": {
     "hero": {
       "title": "Handball Quiz Management System",
-      "subtitle": "Create, manage, and deploy interactive quizzes for handball rules and regulations",
+      "subtitle": "Create and manage handball rule quizzes for referees and delegates of the Belgian Handball Federation",
       "login": "Login to Dashboard"
     },
-    "features": {
-      "title": "Powerful Features for Quiz Management",
-      "subtitle": "Everything you need to create engaging quizzes",
+    "actions": {
+      "title": "Quick Actions",
       "create": {
-        "title": "Create Quizzes",
-        "description": "Build comprehensive quizzes with multiple question types, media support, and customizable settings"
+        "title": "Create Sessions",
+        "description": "Create quiz sessions in bulk"
+      },
+      "invite": {
+        "title": "Send Invitations",
+        "description": "Send email invitations to users"
       },
       "manage": {
-        "title": "Manage Content",
-        "description": "Organize questions, categories, and difficulty levels with an intuitive management interface"
+        "title": "Manage Sessions",
+        "description": "Track and manage quiz sessions"
       },
-      "track": {
-        "title": "Track Results",
-        "description": "Monitor user performance, generate reports, and analyze quiz statistics in real-time"
-      },
-      "multilingual": {
-        "title": "Multilingual Support",
-        "description": "Create quizzes in multiple languages (EN, NL, FR, DE) to reach a wider audience"
+      "analytics": {
+        "title": "View Analytics",
+        "description": "Review session performance and metrics"
       }
     },
-    "stats": {
-      "quizzes": "Active Quizzes",
-      "questions": "Total Questions",
-      "users": "Active Users",
-      "languages": "Languages"
-    },
-    "cta": {
-      "title": "Ready to get started?",
-      "description": "Login to access the quiz management dashboard and start creating engaging content",
-      "button": "Access Dashboard"
+    "about": {
+      "title": "Quiz Session Management System",
+      "description": "This application manages handball rules quiz sessions. Administrators can create quiz sessions in bulk for multiple users, send email invitations, track session progress and completion status, filter and sort sessions by various criteria, and view performance analytics including scores and completion rates. Quizzes support 4 languages (English, Dutch, French, German).",
+      "bulk": {
+        "title": "Bulk Session Creation",
+        "description": "Create quiz sessions for multiple users at once. Each session is assigned to a specific user with unique tracking capabilities."
+      },
+      "invitations": {
+        "title": "Email Invitations",
+        "description": "Send quiz invitations directly to users via email. Users receive a link to start their assigned quiz session."
+      },
+      "management": {
+        "title": "Session Management",
+        "description": "Track quiz sessions through their lifecycle: pending, in progress, completed, or expired. Filter and sort by status, date, score, or user email."
+      },
+      "analytics": {
+        "title": "Performance Analytics",
+        "description": "View detailed analytics for each quiz session including scores, percentages, completion rates, and time to completion."
+      }
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handball Quiz Management System. Powered by KBHB/URBH."
-  },
-  "languages": {
-    "en": "English",
-    "nl": "Nederlands",
-    "fr": "Français",
-    "de": "Deutsch"
+    "copyright": "© {{year}} Handball Quiz Management System. Powered by KBHB/URBH.",
+    "creator": "Created by Kristof Gilis"
   }
 }

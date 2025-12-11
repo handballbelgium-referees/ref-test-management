@@ -1,5 +1,5 @@
 import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Auth } from './auth/services/auth';
 
@@ -12,9 +12,12 @@ interface LanguageInfo {
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslatePipe],
+  imports: [RouterOutlet, TranslatePipe],
   templateUrl: './app.html',
   styleUrl: './app.css',
+  host: {
+    '(document:click)': 'onDocumentClick()',
+  },
 })
 export class App implements OnInit {
   private readonly translate = inject(TranslateService);
@@ -48,8 +51,15 @@ export class App implements OnInit {
     this.showLanguageMenu.set(false);
   }
 
-  protected toggleLanguageMenu(): void {
+  protected toggleLanguageMenu(event: Event): void {
+    event.stopPropagation();
     this.showLanguageMenu.update((v) => !v);
+  }
+
+  protected onDocumentClick(): void {
+    if (this.showLanguageMenu()) {
+      this.showLanguageMenu.set(false);
+    }
   }
 
   protected login(): void {

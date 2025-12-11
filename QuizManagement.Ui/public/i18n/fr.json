@@ -3,54 +3,57 @@
     "title": "Gestion des Quiz Handball"
   },
   "nav": {
-    "home": "Accueil",
     "language": "Langue",
-    "login": "Connexion",
     "logout": "Déconnexion"
   },
   "home": {
     "hero": {
       "title": "Système de Gestion de Quiz de Règles de Handball",
-      "subtitle": "Créez, gérez et suivez des quiz sur les règles de handball pour les utilisateurs. Des outils puissants pour créer et surveiller le contenu des quiz dans plusieurs langues.",
+      "subtitle": "Créer et gérer des quiz de règles de handball pour les arbitres et observateurs de la Fédération Belge de Handball",
       "login": "Accéder au Tableau de Bord"
     },
-    "features": {
+    "actions": {
+      "title": "Actions Rapides",
       "create": {
-        "title": "Créer des Quiz",
-        "description": "Concevez des quiz personnalisés avec une interface intuitive. Ajoutez des questions, définissez les niveaux de difficulté et organisez le contenu sans effort."
+        "title": "Créer des Sessions",
+        "description": "Créer des sessions de quiz en masse"
+      },
+      "invite": {
+        "title": "Envoyer des Invitations",
+        "description": "Envoyer des invitations par e-mail aux utilisateurs"
       },
       "manage": {
-        "title": "Gérer le Contenu",
-        "description": "Modifiez et mettez à jour le contenu des quiz en temps réel. Organisez les questions en catégories et maintenez une bibliothèque structurée."
+        "title": "Gérer les Sessions",
+        "description": "Suivre et gérer les sessions de quiz"
       },
-      "track": {
-        "title": "Suivre les Performances",
-        "description": "Surveillez l'activité des utilisateurs et les résultats des quiz. Obtenez des informations sur les efforts d'apprentissage et identifiez les domaines à améliorer."
-      },
-      "multilingual": {
-        "title": "Support Multilingue",
-        "description": "Créez des quiz en plusieurs langues (EN, NL, FR, DE). Touchez un public plus large avec du contenu localisé."
+      "analytics": {
+        "title": "Voir les Analyses",
+        "description": "Consulter les performances et statistiques des sessions"
       }
     },
-    "stats": {
-      "quizzes": "Quiz Actifs",
-      "questions": "Total Questions",
-      "users": "Utilisateurs Inscrits",
-      "languages": "Langues Prises en Charge"
-    },
-    "cta": {
-      "title": "Prêt à Commencer?",
-      "description": "Connectez-vous à votre tableau de bord et commencez à créer des quiz engageants dès aujourd'hui.",
-      "button": "Accéder au Tableau de Bord"
+    "about": {
+      "title": "Système de Gestion des Sessions de Quiz",
+      "description": "Cette application gère les sessions de quiz sur les règles du handball. Les administrateurs peuvent créer des sessions de quiz en masse pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des sessions, filtrer et trier les sessions selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les quiz prennent en charge 4 langues (anglais, néerlandais, français, allemand).",
+      "bulk": {
+        "title": "Création de Sessions en Masse",
+        "description": "Créez des sessions de quiz pour plusieurs utilisateurs à la fois. Chaque session est attribuée à un utilisateur spécifique avec des capacités de suivi uniques."
+      },
+      "invitations": {
+        "title": "Invitations par E-mail",
+        "description": "Envoyez des invitations au quiz directement aux utilisateurs par e-mail. Les utilisateurs reçoivent un lien pour commencer leur session de quiz assignée."
+      },
+      "management": {
+        "title": "Gestion des Sessions",
+        "description": "Suivez les sessions de quiz tout au long de leur cycle de vie : en attente, en cours, terminées ou expirées. Filtrez et triez par statut, date, score ou e-mail utilisateur."
+      },
+      "analytics": {
+        "title": "Analyses de Performance",
+        "description": "Consultez des analyses détaillées pour chaque session de quiz incluant les scores, les pourcentages, les taux d'achèvement et le temps jusqu'à l'achèvement."
+      }
     }
   },
   "footer": {
-    "copyright": "© {{year}} Gestion des Quiz Handball. Basé sur les règles IHF et KBHB/URBH."
-  },
-  "languages": {
-    "en": "English",
-    "nl": "Nederlands",
-    "fr": "Français",
-    "de": "Deutsch"
+    "copyright": "© {{year}} Gestion des Quiz Handball. Basé sur les règles IHF et KBHB/URBH.",
+    "creator": "Créé par Kristof Gilis"
   }
 }

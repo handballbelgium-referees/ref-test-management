@@ -1,6 +1,6 @@
 {
   "/Account": {
-    "target": "http://localhost:5252",
+    "target": "https://localhost:7039",
     "secure": false,
     "changeOrigin": true,
     "headers": {
@@ -8,7 +8,7 @@
     }
   },
   "/graphql": {
-    "target": "http://localhost:5252",
+    "target": "https://localhost:7039",
     "secure": false,
     "changeOrigin": true,
     "ws": true,
@@ -17,7 +17,7 @@
     }
   },
   "/callback": {
-    "target": "http://localhost:5252",
+    "target": "https://localhost:7039",
     "secure": false,
     "changeOrigin": true,
     "headers": {

@@ -3,54 +3,57 @@
     "title": "Handbal Quiz Beheer"
   },
   "nav": {
-    "home": "Home",
     "language": "Taal",
-    "login": "Inloggen",
     "logout": "Uitloggen"
   },
   "home": {
     "hero": {
       "title": "Handbal Regelquiz Beheersysteem",
-      "subtitle": "Creëer, beheer en volg handbalregelquizzen voor gebruikers. Krachtige tools voor het opbouwen en monitoren van quizinhoud in meerdere talen.",
+      "subtitle": "Creëer en beheer handbalregelquizzen voor scheidsrechters en waarnemers van de Belgische Handbalbond",
       "login": "Inloggen op Dashboard"
     },
-    "features": {
+    "actions": {
+      "title": "Snelle Acties",
       "create": {
-        "title": "Maak Quizzen",
-        "description": "Ontwerp aangepaste quizzen met een intuïtieve interface. Voeg vragen toe, stel moeilijkheidsgraden in en organiseer inhoud moeiteloos."
+        "title": "Sessies Aanmaken",
+        "description": "Maak quiz sessies bulksgewijs aan"
+      },
+      "invite": {
+        "title": "Uitnodigingen Versturen",
+        "description": "Verstuur e-mail uitnodigingen naar gebruikers"
       },
       "manage": {
-        "title": "Beheer Inhoud",
-        "description": "Bewerk en update quizinhoud in realtime. Organiseer vragen in categorieën en onderhoud een gestructureerde vragenbibliotheek."
+        "title": "Sessies Beheren",
+        "description": "Volg en beheer quiz sessies"
       },
-      "track": {
-        "title": "Volg Prestaties",
-        "description": "Monitor gebruikersactiviteit en quizresultaten. Krijg inzichten in leerpogingen en identificeer verbeterpunten."
-      },
-      "multilingual": {
-        "title": "Meertalige Ondersteuning",
-        "description": "Creëer quizzen in meerdere talen (EN, NL, FR, DE). Bereik een breder publiek met gelokaliseerde inhoud."
+      "analytics": {
+        "title": "Analyses Bekijken",
+        "description": "Bekijk sessie prestaties en statistieken"
       }
     },
-    "stats": {
-      "quizzes": "Actieve Quizzen",
-      "questions": "Totaal Vragen",
-      "users": "Geregistreerde Gebruikers",
-      "languages": "Ondersteunde Talen"
-    },
-    "cta": {
-      "title": "Klaar om te Beginnen?",
-      "description": "Log in op je dashboard en begin vandaag nog met het maken van boeiende quizzen.",
-      "button": "Toegang tot Dashboard"
+    "about": {
+      "title": "Quiz Sessie Beheersysteem",
+      "description": "Deze applicatie beheert handbalregels quiz sessies. Beheerders kunnen quiz sessies bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, sessie voortgang en voltooiingsstatus volgen, sessies filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. Quizzen ondersteunen 4 talen (Engels, Nederlands, Frans, Duits).",
+      "bulk": {
+        "title": "Bulk Sessie Aanmaak",
+        "description": "Maak quiz sessies aan voor meerdere gebruikers tegelijk. Elke sessie wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
+      },
+      "invitations": {
+        "title": "E-mail Uitnodigingen",
+        "description": "Verstuur quiz uitnodigingen rechtstreeks naar gebruikers via e-mail. Gebruikers ontvangen een link om hun toegewezen quiz sessie te starten."
+      },
+      "management": {
+        "title": "Sessie Beheer",
+        "description": "Volg quiz sessies door hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail."
+      },
+      "analytics": {
+        "title": "Prestatie Analyses",
+        "description": "Bekijk gedetailleerde analyses voor elke quiz sessie inclusief scores, percentages, voltooiingspercentages en tijd tot voltooiing."
+      }
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handbal Quiz Beheer. Gebaseerd op IHF en KBHB/URBH regels."
-  },
-  "languages": {
-    "en": "English",
-    "nl": "Nederlands",
-    "fr": "Français",
-    "de": "Deutsch"
+    "copyright": "© {{year}} Handbal Quiz Beheer. Gebaseerd op IHF en KBHB/URBH regels.",
+    "creator": "Gemaakt door Kristof Gilis"
   }
 }
