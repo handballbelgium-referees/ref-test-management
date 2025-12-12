@@ -3,8 +3,10 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { applyEach, email, Field, form, min, required } from '@angular/forms/signals';
@@ -53,6 +55,8 @@ export class CreateSessions {
   private readonly _searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
   private readonly _router = inject(Router);
   private readonly _translate = inject(TranslateService);
+
+  protected readonly messagesContainer = viewChild<ElementRef>('messagesContainer');
 
   // Angular v21 Signal Forms - model signal
   protected readonly sessionModel = signal<SessionFormData>({
@@ -441,6 +445,14 @@ export class CreateSessions {
               this.sessionForm().reset();
             }
 
+            // Scroll to messages
+            setTimeout(() => {
+              this.messagesContainer()?.nativeElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+              });
+            }, 100);
+
             if (data.successfullyCreated > 0 && data.failed === 0) {
               of(null)
                 .pipe(delay(2000), takeUntilDestroyed(this._destroyRef))
@@ -451,6 +463,13 @@ export class CreateSessions {
         catchError((err) => {
           this.loading.set(false);
           this.error.set(err.message || 'sessions.create.form.submitError');
+          // Scroll to error message
+          setTimeout(() => {
+            this.messagesContainer()?.nativeElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          }, 100);
           return of(null);
         }),
         takeUntilDestroyed(this._destroyRef)
