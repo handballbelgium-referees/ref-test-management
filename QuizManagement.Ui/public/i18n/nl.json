@@ -42,17 +42,9 @@
         "title": "Bulk Sessie Aanmaak",
         "description": "Maak quiz sessies aan voor meerdere gebruikers tegelijk. Elke sessie wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
       },
-      "invitations": {
-        "title": "E-mail Uitnodigingen",
-        "description": "Verstuur quiz uitnodigingen rechtstreeks naar gebruikers via e-mail. Gebruikers ontvangen een link om hun toegewezen quiz sessie te starten."
-      },
       "management": {
         "title": "Sessie Beheer",
-        "description": "Volg quiz sessies door hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail."
-      },
-      "analytics": {
-        "title": "Prestatie Analyses",
-        "description": "Bekijk gedetailleerde analyses voor elke quiz sessie inclusief scores, percentages, voltooiingspercentages en tijd tot voltooiing."
+        "description": "Volg quiz sessies gedurende hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail. Verstuur uitnodigingen en beheer alle sessie acties."
       }
     }
   },

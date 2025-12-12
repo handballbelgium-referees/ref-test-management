@@ -36,7 +36,7 @@
     @if (isLoggedIn()) {
       <!-- Quick Actions for Authenticated Users -->
       <h2 class="text-3xl font-bold text-neutral-900 text-center mb-12">{{ 'home.actions.title' | translate }}</h2>
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         <!-- Create Bulk Sessions -->
         <a
           href="/sessions/create"
@@ -53,51 +53,19 @@
           </div>
         </a>
 
-        <!-- Send Invitations -->
-        <button
-          type="button"
-          class="bg-linear-to-br from-indigo-500 to-indigo-600 text-white p-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all group min-h-60"
-        >
-          <div class="flex flex-col items-center text-center space-y-4">
-            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold">{{ 'home.actions.invite.title' | translate }}</h3>
-            <p class="text-indigo-100 min-h-[3rem]">{{ 'home.actions.invite.description' | translate }}</p>
-          </div>
-        </button>
-
         <!-- Manage Sessions -->
         <button
           type="button"
-          class="bg-linear-to-br from-secondary-600 to-secondary-700 text-neutral-900 p-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all group min-h-60"
+          class="bg-linear-to-br from-secondary-600 to-secondary-700 text-white p-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all group min-h-60"
         >
           <div class="flex flex-col items-center text-center space-y-4">
-            <div class="w-16 h-16 bg-white/30 rounded-full flex items-center justify-center group-hover:bg-white/40 transition-colors">
+            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
               <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
               </svg>
             </div>
             <h3 class="text-xl font-bold">{{ 'home.actions.manage.title' | translate }}</h3>
-            <p class="text-neutral-700 min-h-[3rem]">{{ 'home.actions.manage.description' | translate }}</p>
-          </div>
-        </button>
-
-        <!-- View Analytics -->
-        <button
-          type="button"
-          class="bg-linear-to-br from-neutral-700 to-neutral-800 text-white p-8 rounded-xl shadow-lg hover:shadow-xl hover:scale-105 transition-all group min-h-60"
-        >
-          <div class="flex flex-col items-center text-center space-y-4">
-            <div class="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center group-hover:bg-white/30 transition-colors">
-              <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-            </div>
-            <h3 class="text-xl font-bold">{{ 'home.actions.analytics.title' | translate }}</h3>
-            <p class="text-neutral-300 min-h-[3rem]">{{ 'home.actions.analytics.description' | translate }}</p>
+            <p class="text-secondary-100 min-h-[3rem]">{{ 'home.actions.manage.description' | translate }}</p>
           </div>
         </button>
       </div>
@@ -123,47 +91,17 @@
           </div>
         </div>
 
-        <!-- Invitation System -->
+        <!-- Session Management -->
         <div class="bg-white p-8 rounded-xl shadow-md">
           <div class="flex items-start gap-4">
             <div class="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center shrink-0">
               <svg class="w-6 h-6 text-secondary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-xl font-bold text-neutral-900 mb-2">{{ 'home.about.invitations.title' | translate }}</h3>
-              <p class="text-neutral-600">{{ 'home.about.invitations.description' | translate }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Session Tracking -->
-        <div class="bg-white p-8 rounded-xl shadow-md">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center shrink-0">
-              <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path>
               </svg>
             </div>
             <div>
               <h3 class="text-xl font-bold text-neutral-900 mb-2">{{ 'home.about.management.title' | translate }}</h3>
               <p class="text-neutral-600">{{ 'home.about.management.description' | translate }}</p>
-            </div>
-          </div>
-        </div>
-
-        <!-- Analytics & Reporting -->
-        <div class="bg-white p-8 rounded-xl shadow-md">
-          <div class="flex items-start gap-4">
-            <div class="w-12 h-12 bg-secondary-100 rounded-lg flex items-center justify-center shrink-0">
-              <svg class="w-6 h-6 text-secondary-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
-              </svg>
-            </div>
-            <div>
-              <h3 class="text-xl font-bold text-neutral-900 mb-2">{{ 'home.about.analytics.title' | translate }}</h3>
-              <p class="text-neutral-600">{{ 'home.about.analytics.description' | translate }}</p>
             </div>
           </div>
         </div>

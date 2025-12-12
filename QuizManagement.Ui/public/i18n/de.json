@@ -22,17 +22,9 @@
         "title": "Sitzungen Erstellen",
         "description": "Quiz-Sitzungen in großen Mengen erstellen"
       },
-      "invite": {
-        "title": "Einladungen Senden",
-        "description": "E-Mail-Einladungen an Benutzer senden"
-      },
       "manage": {
         "title": "Sitzungen Verwalten",
         "description": "Quiz-Sitzungen verfolgen und verwalten"
-      },
-      "analytics": {
-        "title": "Analysen Anzeigen",
-        "description": "Sitzungsleistung und Metriken überprüfen"
       }
     },
     "about": {
@@ -42,17 +34,9 @@
         "title": "Massen-Sitzungserstellung",
         "description": "Erstellen Sie Quiz-Sitzungen für mehrere Benutzer auf einmal. Jede Sitzung wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
       },
-      "invitations": {
-        "title": "E-Mail-Einladungen",
-        "description": "Senden Sie Quiz-Einladungen direkt per E-Mail an Benutzer. Benutzer erhalten einen Link zum Starten ihrer zugewiesenen Quiz-Sitzung."
-      },
       "management": {
         "title": "Sitzungsverwaltung",
-        "description": "Verfolgen Sie Quiz-Sitzungen durch ihren Lebenszyklus: ausstehend, in Bearbeitung, abgeschlossen oder abgelaufen. Filtern und sortieren Sie nach Status, Datum, Punktzahl oder Benutzer-E-Mail."
-      },
-      "analytics": {
-        "title": "Leistungsanalysen",
-        "description": "Zeigen Sie detaillierte Analysen für jede Quiz-Sitzung an, einschließlich Punktzahlen, Prozentsätzen, Abschlussraten und Zeit bis zum Abschluss."
+        "description": "Verfolgen Sie Quiz-Sitzungen während ihres gesamten Lebenszyklus: ausstehend, in Bearbeitung, abgeschlossen oder abgelaufen. Filtern und sortieren Sie nach Status, Datum, Punktzahl oder Benutzer-E-Mail. Senden Sie Einladungen und verwalten Sie alle Sitzungsaktionen."
       }
     }
   },

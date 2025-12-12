@@ -22,17 +22,9 @@
         "title": "Créer des Sessions",
         "description": "Créer des sessions de quiz en masse"
       },
-      "invite": {
-        "title": "Envoyer des Invitations",
-        "description": "Envoyer des invitations par e-mail aux utilisateurs"
-      },
       "manage": {
         "title": "Gérer les Sessions",
         "description": "Suivre et gérer les sessions de quiz"
-      },
-      "analytics": {
-        "title": "Voir les Analyses",
-        "description": "Consulter les performances et statistiques des sessions"
       }
     },
     "about": {
@@ -42,17 +34,9 @@
         "title": "Création de Sessions en Masse",
         "description": "Créez des sessions de quiz pour plusieurs utilisateurs à la fois. Chaque session est attribuée à un utilisateur spécifique avec des capacités de suivi uniques."
       },
-      "invitations": {
-        "title": "Invitations par E-mail",
-        "description": "Envoyez des invitations au quiz directement aux utilisateurs par e-mail. Les utilisateurs reçoivent un lien pour commencer leur session de quiz assignée."
-      },
       "management": {
         "title": "Gestion des Sessions",
-        "description": "Suivez les sessions de quiz tout au long de leur cycle de vie : en attente, en cours, terminées ou expirées. Filtrez et triez par statut, date, score ou e-mail utilisateur."
-      },
-      "analytics": {
-        "title": "Analyses de Performance",
-        "description": "Consultez des analyses détaillées pour chaque session de quiz incluant les scores, les pourcentages, les taux d'achèvement et le temps jusqu'à l'achèvement."
+        "description": "Suivez les sessions de quiz tout au long de leur cycle de vie : en attente, en cours, terminées ou expirées. Filtrez et triez par statut, date, score ou e-mail de l'utilisateur. Envoyez des invitations et gérez toutes les actions de session."
       }
     }
   },

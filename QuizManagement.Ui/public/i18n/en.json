@@ -22,17 +22,9 @@
         "title": "Create Sessions",
         "description": "Create quiz sessions in bulk"
       },
-      "invite": {
-        "title": "Send Invitations",
-        "description": "Send email invitations to users"
-      },
       "manage": {
         "title": "Manage Sessions",
         "description": "Track and manage quiz sessions"
-      },
-      "analytics": {
-        "title": "View Analytics",
-        "description": "Review session performance and metrics"
       }
     },
     "about": {
@@ -42,17 +34,9 @@
         "title": "Bulk Session Creation",
         "description": "Create quiz sessions for multiple users at once. Each session is assigned to a specific user with unique tracking capabilities."
       },
-      "invitations": {
-        "title": "Email Invitations",
-        "description": "Send quiz invitations directly to users via email. Users receive a link to start their assigned quiz session."
-      },
       "management": {
         "title": "Session Management",
-        "description": "Track quiz sessions through their lifecycle: pending, in progress, completed, or expired. Filter and sort by status, date, score, or user email."
-      },
-      "analytics": {
-        "title": "Performance Analytics",
-        "description": "View detailed analytics for each quiz session including scores, percentages, completion rates, and time to completion."
+        "description": "Track quiz sessions through their lifecycle: pending, in progress, completed, or expired. Filter and sort by status, date, score, or user email. Send invitations and manage all session actions."
       }
     }
   },
