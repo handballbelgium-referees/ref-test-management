@@ -1,6 +1,6 @@
-﻿using Microsoft.Extensions.Logging;
-using SendGrid;
-using SendGrid.Helpers.Mail;
+﻿using System.Text;
+using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace QuizManagement.Infrastructure.Services;
 
@@ -111,26 +111,39 @@ public partial class EmailService(
     {
         LogSendingEmailToEmailWithSubjectAndBody(logger, toEmail, subject, body);
 
-        if (string.IsNullOrWhiteSpace(configuration.SendGridApiKey))
+        if (string.IsNullOrWhiteSpace(configuration.BrevoApiKey))
         {
-            LogSendGridApiKeyNotConfiguredEmailNotSent(logger);
+            LogBrevoApiKeyNotConfiguredEmailNotSent(logger);
             return;
         }
 
         try
         {
-            var client = new SendGridClient(configuration.SendGridApiKey);
-            var from = new EmailAddress(configuration.FromEmail, configuration.FromName);
-            var to = new EmailAddress(toEmail);
+            using var httpClient = new HttpClient();
+            
+            // Set up API key authentication for Brevo
+            httpClient.DefaultRequestHeaders.Add("api-key", configuration.BrevoApiKey);
+            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
             
             // Create a plain text version by stripping HTML tags (simple version)
             var plainTextBody = System.Text.RegularExpressions.Regex.Replace(body, "<[^>]*>", "");
             plainTextBody = System.Text.RegularExpressions.Regex.Replace(plainTextBody, @"\s+", " ").Trim();
             
-            // Send both plain text and HTML versions
-            var msg = MailHelper.CreateSingleEmail(from, to, subject, plainTextBody, body);
+            // Prepare JSON payload for Brevo API
+            var emailData = new
+            {
+                sender = new { name = configuration.FromName, email = configuration.FromEmail },
+                to = new[] { new { email = toEmail } },
+                subject = subject,
+                htmlContent = body,
+                textContent = plainTextBody
+            };
             
-            var response = await client.SendEmailAsync(msg);
+            var jsonContent = JsonSerializer.Serialize(emailData);
+            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            
+            var brevoUrl = $"{configuration.BrevoApiUrl}/smtp/email";
+            var response = await httpClient.PostAsync(brevoUrl, content);
 
             if (response.IsSuccessStatusCode)
             {
@@ -138,7 +151,7 @@ public partial class EmailService(
             }
             else
             {
-                var responseBody = await response.Body.ReadAsStringAsync();
+                var responseBody = await response.Content.ReadAsStringAsync();
                 LogEmailFailedWithStatusCode(logger, toEmail, (int)response.StatusCode, responseBody);
             }
         }
@@ -164,8 +177,8 @@ public partial class EmailService(
     [LoggerMessage(LogLevel.Information, "Sending email to {email} with {subject} and {body}")]
     static partial void LogSendingEmailToEmailWithSubjectAndBody(ILogger<EmailService> logger, string email, string subject, string body);
 
-    [LoggerMessage(LogLevel.Warning, "SendGrid API key not configured. Email not sent.")]
-    static partial void LogSendGridApiKeyNotConfiguredEmailNotSent(ILogger<EmailService> logger);
+    [LoggerMessage(LogLevel.Warning, "Brevo API key not configured. Email not sent.")]
+    static partial void LogBrevoApiKeyNotConfiguredEmailNotSent(ILogger<EmailService> logger);
 
     [LoggerMessage(LogLevel.Information, "Email sent successfully to {email}")]
     static partial void LogEmailSentSuccessfully(ILogger<EmailService> logger, string email);

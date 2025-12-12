@@ -3,8 +3,9 @@
 public class EmailConfiguration
 {
     public string BaseUrl { get; init; } = "http://localhost:5000";
-    public string SendGridApiKey { get; init; } = string.Empty;
-    public string FromEmail { get; init; } = "noreply@ihf-rules.com";
-    public string FromName { get; init; } = "IHF Rules Quiz";
+    public string BrevoApiKey { get; init; } = string.Empty;
+    public string BrevoApiUrl { get; init; } = "https://api.brevo.com/v3";
+    public string FromEmail { get; init; } = string.Empty;
+    public string FromName { get; init; } = string.Empty;
 }
 
