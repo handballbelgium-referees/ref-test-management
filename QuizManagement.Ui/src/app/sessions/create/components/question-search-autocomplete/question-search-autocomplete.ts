@@ -1,13 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  DestroyRef,
+  effect,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
 import { catchError, debounceTime, distinctUntilChanged, map, of, Subject, switchMap } from 'rxjs';
 import { SearchQuestionsByNumberGQL } from '../../../../../../graphql/generated';
@@ -18,6 +18,11 @@ interface Question {
   phrase: Record<string, string>;
 }
 
+interface SearchResult {
+  questions: Array<Question & { id: string }>;
+  isSearching: boolean;
+}
+
 @Component({
   selector: 'app-question-search-autocomplete',
   imports: [TranslatePipe, TranslationPipe],
@@ -25,7 +30,6 @@ interface Question {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class QuestionSearchAutocomplete {
-  private readonly _destroyRef = inject(DestroyRef);
   private readonly _searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
 
   readonly currentLanguage = input.required<string>();
@@ -36,49 +40,57 @@ export class QuestionSearchAutocomplete {
   readonly bulkImport = output<void>();
 
   protected readonly searchTerm = signal('');
-  protected readonly searching = signal(false);
   protected readonly suggestions = signal<Array<Question & { id: string }>>([]);
+  protected readonly searching = signal(false);
   protected readonly showDropdown = signal(false);
   protected readonly highlightedIndex = signal(-1);
 
   private readonly searchSubject = new Subject<string>();
 
-  constructor() {
-    this.searchSubject
-      .pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        switchMap((searchTerm) => {
-          if (!searchTerm || searchTerm.trim().length === 0) {
-            return of([]);
-          }
+  private readonly searchResult = toSignal(
+    this.searchSubject.pipe(
+      debounceTime(300),
+      distinctUntilChanged(),
+      switchMap((searchTerm) => {
+        if (!searchTerm || searchTerm.trim().length === 0) {
+          return of({ questions: [], isSearching: false } as SearchResult);
+        }
 
-          this.searching.set(true);
-          return this._searchQuestionsByNumberGQL
-            .fetch({
-              variables: { number: searchTerm },
-            })
-            .pipe(
-              map((result) => {
-                const questions = result.data?.searchQuestionsByNumber ?? [];
-                return questions
+        return this._searchQuestionsByNumberGQL
+          .watch({ variables: { number: searchTerm }, fetchPolicy: 'cache-and-network' })
+          .valueChanges.pipe(
+            map((result) => {
+              const questions = result.data?.searchQuestionsByNumber ?? [];
+              return {
+                questions: questions
                   .filter((q) => !!q)
                   .map((q) => ({
                     id: q!.id,
                     number: q!.number,
                     phrase: q!.phrase as Record<string, string>,
-                  }));
-              }),
-              catchError(() => of([]))
-            );
-        }),
-        takeUntilDestroyed(this._destroyRef)
-      )
-      .subscribe((questions) => {
-        this.suggestions.set(questions);
-        this.searching.set(false);
-        this.showDropdown.set(questions.length > 0 || this.searchTerm().trim().length > 0);
-      });
+                  })),
+                isSearching: result.loading,
+              } as SearchResult;
+            }),
+            catchError(() => of({ questions: [], isSearching: false } as SearchResult))
+          );
+      })
+    ),
+    { initialValue: { questions: [], isSearching: false } }
+  );
+
+  constructor() {
+    effect(() => {
+      const result = this.searchResult();
+      this.suggestions.set(result.questions);
+      this.searching.set(result.isSearching);
+      this.showDropdown.set(result.questions.length > 0 || this.searchTerm().trim().length > 0);
+
+      // Auto-select first suggestion when results arrive
+      if (result.questions.length > 0) {
+        this.highlightedIndex.set(0);
+      }
+    });
   }
 
   protected onSearchInput(event: Event): void {
