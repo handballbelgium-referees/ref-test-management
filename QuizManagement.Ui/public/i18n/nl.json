@@ -111,7 +111,6 @@
       },
       "actions": {
         "sendInvitation": "Uitnodiging Versturen",
-        "resendInvitation": "Uitnodiging Opnieuw Versturen",
         "delete": "Verwijderen"
       },
       "dialogs": {

@@ -103,7 +103,6 @@
       },
       "actions": {
         "sendInvitation": "Envoyer l'Invitation",
-        "resendInvitation": "Renvoyer l'Invitation",
         "delete": "Supprimer"
       },
       "dialogs": {
