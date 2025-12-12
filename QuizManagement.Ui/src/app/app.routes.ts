@@ -17,6 +17,10 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'quiz/:token',
+    loadComponent: () => import('./quiz/welcome/quiz-welcome').then((m) => m.QuizWelcomeComponent),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

@@ -1,8 +1,9 @@
-import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { ActivatedRoute, RouterOutlet } from '@angular/router';
+import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { filter, map } from 'rxjs';
 import { Auth } from './auth/services/auth';
 
 type Language = 'en' | 'nl' | 'fr' | 'de';
@@ -25,10 +26,21 @@ export class App {
   private readonly _auth = inject(Auth);
   private readonly _titleService = inject(Title);
   private readonly _route = inject(ActivatedRoute);
+  private readonly _router = inject(Router);
   private readonly _destroyRef = inject(DestroyRef);
+
+  private readonly _isQuizRoute = toSignal(
+    this._router.events.pipe(
+      filter((event) => event instanceof NavigationEnd),
+      map(() => this._router.url.startsWith('/quiz')),
+      takeUntilDestroyed(this._destroyRef)
+    ),
+    { initialValue: this._router.url.startsWith('/quiz') }
+  );
 
   protected readonly isLoggedIn = computed(() => !!this._auth.isAuthenticated());
   protected readonly user = this._auth.user;
+  protected readonly showAuthUI = computed(() => !this._isQuizRoute());
 
   protected readonly showLanguageMenu = signal(false);
   protected readonly availableLanguages: LanguageInfo[] = [
@@ -64,20 +76,26 @@ export class App {
       }
     });
 
-    // Update page title when language changes
+    // Update page title when language changes or route changes
     this._translate.onLangChange.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => {
-      this._translate.get('app.pageTitle').subscribe((title: string) => {
-        this._titleService.setTitle(title);
-      });
+      this.updateTitle();
     });
 
     // Set initial title
-    this._translate
-      .get('app.pageTitle')
-      .pipe(takeUntilDestroyed(this._destroyRef))
-      .subscribe((title: string) => {
-        this._titleService.setTitle(title);
-      });
+    this.updateTitle();
+
+    // Update title when route changes
+    effect(() => {
+      this._isQuizRoute();
+      this.updateTitle();
+    });
+  }
+
+  private updateTitle(): void {
+    const titleKey = this._isQuizRoute() ? 'quiz.page_title' : 'app.pageTitle';
+    this._translate.get(titleKey).subscribe((title: string) => {
+      this._titleService.setTitle(title);
+    });
   }
 
   protected get currentLocale(): Language {

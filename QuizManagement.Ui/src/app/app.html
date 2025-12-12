@@ -7,14 +7,20 @@
         <img src="/URBH-KBHB-logo.png" alt="Handball Belgium Logo" class="h-8 md:h-10 w-auto" />
         <img src="/IHF-logo.png" alt="IHF Logo" class="h-8 md:h-10 w-auto" />
         <img src="/EHF-logo.png" alt="EHF Logo" class="h-10 md:h-15 w-auto" />
-        <a href="/" class="text-base md:text-xl font-bold text-neutral-900 hidden sm:block">
-          {{ 'app.title' | translate }}
-        </a>
+        @if (showAuthUI()) {
+          <a href="/" class="text-base md:text-xl font-bold text-neutral-900 hidden sm:block">
+            {{ 'app.title' | translate }}
+          </a>
+        } @else {
+          <span class="text-base md:text-xl font-bold text-neutral-900 hidden sm:block">
+            {{ 'app.title' | translate }}
+          </span>
+        }
       </div>
 
       <!-- Navigation Links -->
       <div class="flex items-center gap-3 md:gap-6">
-        @if (isLoggedIn() && user(); as user) {
+        @if (showAuthUI() && isLoggedIn() && user(); as user) {
           <!-- User Profile & Logout -->
           <div class="flex items-center gap-2 md:gap-4">
             <div class="flex items-center gap-2">

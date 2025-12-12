@@ -239,6 +239,25 @@
       }
     }
   },
+  "quiz": {
+    "page_title": "Handbalregels Quiz",
+    "loading": "Quiz laden...",
+    "error_title": "Kan quiz niet laden",
+    "welcome_title": "Welkom bij je quiz",
+    "welcome_subtitle": "Bekijk de informatie hieronder voordat je begint",
+    "participant_name": "Naam",
+    "participant_email": "E-mail",
+    "number_of_questions": "Vragen",
+    "time_limit": "Tijdslimiet",
+    "minutes": "min",
+    "no_limit": "Geen limiet",
+    "instructions_title": "Instructies",
+    "instruction_1": "Lees elke vraag zorgvuldig voordat je je antwoorden selecteert",
+    "instruction_2": "Sommige vragen kunnen meerdere juiste antwoorden hebben",
+    "instruction_3": "Je kunt heen en weer navigeren tussen vragen",
+    "instruction_4": "Voltooi de quiz binnen de tijdslimiet",
+    "start_button": "Start Quiz"
+  },
   "footer": {
     "copyright": "© {{year}} Handbal Quiz Beheer. Gebaseerd op IHF en KBHB/URBH regels.",
     "creator": "Gemaakt door Kristof Gilis"

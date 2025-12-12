@@ -231,6 +231,25 @@
       }
     }
   },
+  "quiz": {
+    "page_title": "Handball Rules Quiz",
+    "loading": "Loading quiz...",
+    "error_title": "Unable to Load Quiz",
+    "welcome_title": "Welcome to Your Quiz",
+    "welcome_subtitle": "Please review the information below before starting",
+    "participant_name": "Name",
+    "participant_email": "Email",
+    "number_of_questions": "Questions",
+    "time_limit": "Time Limit",
+    "minutes": "min",
+    "no_limit": "No limit",
+    "instructions_title": "Instructions",
+    "instruction_1": "Read each question carefully before selecting your answers",
+    "instruction_2": "Some questions may have multiple correct answers",
+    "instruction_3": "You can navigate back and forth between questions",
+    "instruction_4": "Complete the quiz within the time limit",
+    "start_button": "Start Quiz"
+  },
   "footer": {
     "copyright": "© {{year}} Handball Quiz Management System. Powered by KBHB/URBH.",
     "creator": "Created by Kristof Gilis"

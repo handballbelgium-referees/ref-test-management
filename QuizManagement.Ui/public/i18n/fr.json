@@ -231,6 +231,25 @@
       }
     }
   },
+  "quiz": {
+    "page_title": "Quiz sur les règles de handball",
+    "loading": "Chargement du quiz...",
+    "error_title": "Impossible de charger le quiz",
+    "welcome_title": "Bienvenue à votre quiz",
+    "welcome_subtitle": "Veuillez consulter les informations ci-dessous avant de commencer",
+    "participant_name": "Nom",
+    "participant_email": "Email",
+    "number_of_questions": "Questions",
+    "time_limit": "Limite de temps",
+    "minutes": "min",
+    "no_limit": "Sans limite",
+    "instructions_title": "Instructions",
+    "instruction_1": "Lisez attentivement chaque question avant de sélectionner vos réponses",
+    "instruction_2": "Certaines questions peuvent avoir plusieurs réponses correctes",
+    "instruction_3": "Vous pouvez naviguer entre les questions",
+    "instruction_4": "Terminez le quiz dans le délai imparti",
+    "start_button": "Commencer le quiz"
+  },
   "footer": {
     "copyright": "© {{year}} Gestion des Quiz Handball. Basé sur les règles IHF et KBHB/URBH.",
     "creator": "Créé par Kristof Gilis"
