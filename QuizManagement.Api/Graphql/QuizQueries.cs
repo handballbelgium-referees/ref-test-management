@@ -46,18 +46,6 @@ public static class QuizQueries
     }
 
     /// <summary>
-    /// Get a quiz session by id
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="dataLoader"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    [Authorize]
-    public static Task<QuizSession?> GetQuizSessionByIdAsync(Guid id, QuizSessionByIdDataLoader dataLoader,
-        CancellationToken cancellationToken)
-        => dataLoader.LoadAsync(id, cancellationToken);
-
-    /// <summary>
     /// Get all quiz sessions
     /// </summary>
     /// <param name="context"></param>
