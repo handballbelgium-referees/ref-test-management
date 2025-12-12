@@ -26,6 +26,7 @@ public class QuizSession
     public string LastName { get; private set; }
     public string Email { get; private set; }
     public string Token { get; private set; }
+    public bool InvitationSent { get; private set; }
     public int NumberOfQuestions { get; private set; }
     public int MaxTimeInMinutes { get; private set; }
     public List<string> QuestionIds { get; private set; }
@@ -64,6 +65,11 @@ public class QuizSession
 
         return new QuizSession(firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
             questionIds);
+    }
+    
+    public void SendInvitation()
+    {
+        InvitationSent = true;
     }
 
     public void StartSession()

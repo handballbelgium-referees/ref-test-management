@@ -181,11 +181,13 @@ public static class QuizMutations
         if (createdSessions.Count == 0)
             return result;
 
-        context.QuizSessions.AddRange(createdSessions);
-        await context.SaveChangesAsync(cancellationToken);
-
         if (!input.SendInvitations)
+        {
+            context.QuizSessions.AddRange(createdSessions);
+            await context.SaveChangesAsync(cancellationToken);
+
             return result;
+        }
 
         // Send invitation emails to all participants
         foreach (var session in createdSessions)
@@ -200,6 +202,7 @@ public static class QuizMutations
                 );
 
                 result.CreatedSessions.Add(session);
+                session.SendInvitation();
             }
             catch (Exception ex)
             {
@@ -212,7 +215,9 @@ public static class QuizMutations
                 });
             }
         }
-
+        
+        context.QuizSessions.AddRange(createdSessions);
+        await context.SaveChangesAsync(cancellationToken);
 
         return result;
     }
@@ -264,6 +269,8 @@ public static class QuizMutations
 
                 result.SentSessions.Add(session);
                 result.SuccessfullySent++;
+                
+                session.SendInvitation();
             }
             catch (Exception e)
             {
@@ -279,6 +286,9 @@ public static class QuizMutations
                 });
             }
         }
+
+        context.QuizSessions.UpdateRange(sessions);
+        await context.SaveChangesAsync(cancellationToken);
 
         return result;
     }

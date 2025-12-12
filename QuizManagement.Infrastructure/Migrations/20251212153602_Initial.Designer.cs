@@ -12,7 +12,7 @@ using QuizManagement.Infrastructure;
 namespace QuizManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(QuizManagementContext))]
-    [Migration("20251209194015_Initial")]
+    [Migration("20251212153602_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -46,6 +46,9 @@ namespace QuizManagement.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
+
+                    b.Property<bool>("InvitationSent")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .IsRequired()

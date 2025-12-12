@@ -27,11 +27,12 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
         descriptor.Field("name").Description("Name of the user who started the quiz (e.g., )").Resolve(ctx =>
             $"{ctx.Parent<QuizSession>().FirstName} {ctx.Parent<QuizSession>().LastName}");
         descriptor.Field(x => x.Email).Description("Email of the user who started the quiz");
+        descriptor.Field(x => x.InvitationSent).Description("Indication of invitation was sent").Authorize();
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Maximum time in minutes for the quiz");
         descriptor.Field(x => x.NumberOfQuestions).Description("Number of questions in the quiz");
-        descriptor.Field(x => x.CreatedAt).Description("Creation date and time of the quiz session");
-        descriptor.Field(x => x.StartedAt).Description("Start date and time of the quiz session");
-        descriptor.Field(x => x.CompletedAt).Description("Completion date and time of the quiz session");
+        descriptor.Field(x => x.CreatedAt).Description("Creation date and time of the quiz session").Authorize();
+        descriptor.Field(x => x.StartedAt).Description("Start date and time of the quiz session").Authorize();
+        descriptor.Field(x => x.CompletedAt).Description("Completion date and time of the quiz session").Authorize();
         descriptor.Field(x => x.Percentage).Description("Percentage of correct answers");
         descriptor.Field(x => x.Score).Description("Score of the quiz session");
         descriptor.Field(x => x.Status)
@@ -47,7 +48,8 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
                 await context.SaveChangesAsync(ctx.RequestAborted);
                 
                 return session.Status;
-            });
+            })
+            .Authorize();
         descriptor.Field("questions")
             .Description("Questions for this quiz session")
             .Resolve((ctx, ct) =>
