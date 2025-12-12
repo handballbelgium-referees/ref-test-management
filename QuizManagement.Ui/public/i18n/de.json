@@ -94,6 +94,35 @@
         "title": "Keine Sitzungen gefunden",
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten Quiz-Sitzungen",
         "action": "Sitzungen Erstellen"
+      },
+      "bulk": {
+        "sessionSelected": "Sitzung ausgewählt",
+        "sessionsSelected": "Sitzungen ausgewählt",
+        "sendInvitations": "Einladungen Senden",
+        "delete": "Löschen"
+      },
+      "actions": {
+        "sendInvitation": "Einladung Senden",
+        "resendInvitation": "Einladung Erneut Senden",
+        "delete": "Löschen"
+      },
+      "dialogs": {
+        "sendInvitations": {
+          "title": "Einladungen Senden",
+          "message": "Sind Sie sicher, dass Sie Einladungen senden möchten?",
+          "newInvitations": "Neue Einladungen ({{count}})",
+          "resendInvitations": "Erneut senden ({{count}})",
+          "confirm": "Einladungen Senden",
+          "cancel": "Abbrechen"
+        },
+        "delete": {
+          "title": "Sitzungen Löschen",
+          "message": "Sind Sie sicher, dass Sie {{count}} Sitzung(en) löschen möchten?",
+          "warning": "Diese Aktion kann nicht rückgängig gemacht werden.",
+          "sessions": "Zu löschende Sitzungen:",
+          "confirm": "Löschen",
+          "cancel": "Abbrechen"
+        }
       }
     },
     "create": {

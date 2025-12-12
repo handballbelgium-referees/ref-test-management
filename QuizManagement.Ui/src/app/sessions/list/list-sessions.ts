@@ -11,13 +11,17 @@ import {
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { map } from 'rxjs';
+import { catchError, finalize, map, of, tap } from 'rxjs';
 import {
+  DeleteQuizSessionsGQL,
   GetQuizSessionsGQL,
   GetQuizSessionsQuery,
   QuizSessionStatus,
+  SendInvitationsGQL,
   SortEnumType,
 } from '../../../../graphql/generated';
+import { DeleteSessionsDialog } from './components/delete-sessions-dialog/delete-sessions-dialog';
+import { SendInvitationsDialog } from './components/send-invitations-dialog/send-invitations-dialog';
 import { SessionFiltersCard } from './components/session-filters-card/session-filters-card';
 
 type SortField =
@@ -44,13 +48,21 @@ type SessionNode = NonNullable<
 
 @Component({
   selector: 'app-list-sessions',
-  imports: [TranslatePipe, DatePipe, SessionFiltersCard],
+  imports: [
+    TranslatePipe,
+    DatePipe,
+    SessionFiltersCard,
+    SendInvitationsDialog,
+    DeleteSessionsDialog,
+  ],
   templateUrl: './list-sessions.html',
   styleUrl: './list-sessions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListSessions {
   private readonly _getQuizSessionsGQL = inject(GetQuizSessionsGQL);
+  private readonly _deleteQuizSessionsGQL = inject(DeleteQuizSessionsGQL);
+  private readonly _sendInvitationsGQL = inject(SendInvitationsGQL);
   private readonly _router = inject(Router);
 
   protected readonly filter = signal<SessionFilter>({
@@ -67,6 +79,48 @@ export class ListSessions {
   protected readonly allLoadedSessions = signal<SessionNode[]>([]);
   private endCursor = signal<string | undefined>(undefined);
   protected readonly hasNextPage = signal(false);
+  protected readonly deletingSessionIds = signal<Set<string>>(new Set());
+  protected readonly sendingInvitationIds = signal<Set<string>>(new Set());
+  protected readonly selectedSessionIds = signal<Set<string>>(new Set());
+  protected readonly showSendInvitationsDialog = signal(false);
+  protected readonly showDeleteDialog = signal(false);
+
+  protected readonly invitationSummary = computed(() => {
+    const selectedIds = this.selectedSessionIds();
+    const allSessions = this.allLoadedSessions();
+    const selected = allSessions.filter((s) => selectedIds.has(s.id));
+
+    return {
+      newInvitations: selected
+        .filter((s) => !s.invitationSent)
+        .map((s) => ({ name: s.name || '', email: s.email || '' })),
+      resendInvitations: selected
+        .filter((s) => s.invitationSent)
+        .map((s) => ({ name: s.name || '', email: s.email || '' })),
+    };
+  });
+
+  protected readonly sessionsToDelete = computed(() => {
+    const selectedIds = this.selectedSessionIds();
+    const allSessions = this.allLoadedSessions();
+    return allSessions
+      .filter((s) => selectedIds.has(s.id))
+      .map((s) => ({ name: s.name || '', email: s.email || '' }));
+  });
+
+  protected readonly allSelected = computed(() => {
+    const sessions = this.sessions();
+    const selected = this.selectedSessionIds();
+    return sessions.length > 0 && sessions.every((s) => selected.has(s.id));
+  });
+
+  protected readonly someSelected = computed(() => {
+    const sessions = this.sessions();
+    const selected = this.selectedSessionIds();
+    return sessions.some((s) => selected.has(s.id)) && !this.allSelected();
+  });
+
+  protected readonly selectedCount = computed(() => this.selectedSessionIds().size);
 
   private readonly queryRef = this._getQuizSessionsGQL.watch({
     variables: {
@@ -266,5 +320,140 @@ export class ListSessions {
       default:
         return 'bg-neutral-100 text-neutral-800';
     }
+  }
+
+  protected deleteSelectedSessions(): void {
+    const sessionIds = Array.from(this.selectedSessionIds());
+    if (sessionIds.length === 0) {
+      return;
+    }
+
+    this.showDeleteDialog.set(true);
+  }
+
+  protected confirmDelete(): void {
+    this.showDeleteDialog.set(false);
+    const sessionIds = Array.from(this.selectedSessionIds());
+
+    sessionIds.forEach((id) => {
+      this.deletingSessionIds.update((ids) => new Set(ids).add(id));
+    });
+
+    this._deleteQuizSessionsGQL
+      .mutate({
+        variables: { input: { ids: sessionIds } },
+        fetchPolicy: 'no-cache',
+      })
+      .pipe(
+        tap((result) => {
+          const deleteResult = result.data?.deleteQuizSessions?.deleteQuizSessionsResult;
+          if (deleteResult && deleteResult.deletedSessions.length > 0) {
+            const deletedIds = new Set(deleteResult.deletedSessions.map((s) => s.id));
+            this.allLoadedSessions.update((sessions) =>
+              sessions.filter((s) => !deletedIds.has(s.id))
+            );
+            this.selectedSessionIds.set(new Set());
+          }
+        }),
+        catchError(() => of(null)),
+        finalize(() => {
+          sessionIds.forEach((id) => {
+            this.deletingSessionIds.update((ids) => {
+              const newIds = new Set(ids);
+              newIds.delete(id);
+              return newIds;
+            });
+          });
+        })
+      )
+      .subscribe();
+  }
+
+  protected cancelDelete(): void {
+    this.showDeleteDialog.set(false);
+  }
+
+  protected sendInvitationsToSelected(): void {
+    const sessionIds = Array.from(this.selectedSessionIds());
+    if (sessionIds.length === 0) {
+      return;
+    }
+
+    this.showSendInvitationsDialog.set(true);
+  }
+
+  protected confirmSendInvitations(): void {
+    this.showSendInvitationsDialog.set(false);
+    const sessionIds = Array.from(this.selectedSessionIds());
+
+    sessionIds.forEach((id) => {
+      this.sendingInvitationIds.update((ids) => new Set(ids).add(id));
+    });
+
+    this._sendInvitationsGQL
+      .mutate({
+        variables: { input: { ids: sessionIds } },
+        fetchPolicy: 'no-cache',
+      })
+      .pipe(
+        tap((result) => {
+          const sendResult = result.data?.sendInvitations?.sendInvitationsResult;
+          if (sendResult && sendResult.sentSessions.length > 0) {
+            const sentIds = new Set(sendResult.sentSessions.map((s) => s.id));
+            this.allLoadedSessions.update((sessions) =>
+              sessions.map((s) => (sentIds.has(s.id) ? { ...s, invitationSent: true } : s))
+            );
+            this.selectedSessionIds.set(new Set());
+          }
+        }),
+        catchError(() => of(null)),
+        finalize(() => {
+          sessionIds.forEach((id) => {
+            this.sendingInvitationIds.update((ids) => {
+              const newIds = new Set(ids);
+              newIds.delete(id);
+              return newIds;
+            });
+          });
+        })
+      )
+      .subscribe();
+  }
+
+  protected cancelSendInvitations(): void {
+    this.showSendInvitationsDialog.set(false);
+  }
+
+  protected isDeleting(sessionId: string): boolean {
+    return this.deletingSessionIds().has(sessionId);
+  }
+
+  protected isSendingInvitation(sessionId: string): boolean {
+    return this.sendingInvitationIds().has(sessionId);
+  }
+
+  protected toggleSelectAll(): void {
+    if (this.allSelected()) {
+      this.selectedSessionIds.set(new Set());
+    } else {
+      const allIds = this.sessions().map((s) => s.id);
+      this.selectedSessionIds.set(new Set(allIds));
+    }
+  }
+
+  protected toggleSessionSelection(sessionId: string): void {
+    this.selectedSessionIds.update((ids) => {
+      const newIds = new Set(ids);
+      if (newIds.has(sessionId)) {
+        newIds.delete(sessionId);
+      } else {
+        newIds.add(sessionId);
+      }
+      return newIds;
+    });
+  }
+
+  protected isSelected(sessionId: string): boolean {
+    return this.selectedSessionIds().has(sessionId);
   }
 }

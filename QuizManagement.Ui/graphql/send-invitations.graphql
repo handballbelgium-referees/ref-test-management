@@ -1,0 +1,22 @@
+mutation SendInvitations($input: SendInvitationsInput!) {
+  sendInvitations(input: $input) {
+    sendInvitationsResult {
+      totalRequested
+      successfullySent
+      failed
+      sentSessions {
+        id
+        invitationSent
+      }
+      errors {
+        quizSessionId
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}

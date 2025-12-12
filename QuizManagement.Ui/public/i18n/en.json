@@ -94,6 +94,35 @@
         "title": "No sessions found",
         "subtitle": "Get started by creating your first quiz sessions",
         "action": "Create Sessions"
+      },
+      "bulk": {
+        "sessionSelected": "session selected",
+        "sessionsSelected": "sessions selected",
+        "sendInvitations": "Send Invitations",
+        "delete": "Delete"
+      },
+      "actions": {
+        "sendInvitation": "Send Invitation",
+        "resendInvitation": "Resend Invitation",
+        "delete": "Delete"
+      },
+      "dialogs": {
+        "sendInvitations": {
+          "title": "Send Invitations",
+          "message": "Are you sure you want to send invitations?",
+          "newInvitations": "New invitations ({{count}})",
+          "resendInvitations": "Resend invitations ({{count}})",
+          "confirm": "Send Invitations",
+          "cancel": "Cancel"
+        },
+        "delete": {
+          "title": "Delete Sessions",
+          "message": "Are you sure you want to delete {{count}} session(s)?",
+          "warning": "This action cannot be undone.",
+          "sessions": "Sessions to be deleted:",
+          "confirm": "Delete",
+          "cancel": "Cancel"
+        }
       }
     },
     "create": {

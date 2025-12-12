@@ -94,6 +94,35 @@
         "title": "Aucune session trouvée",
         "subtitle": "Commencez par créer vos premières sessions de quiz",
         "action": "Créer des Sessions"
+      },
+      "bulk": {
+        "sessionSelected": "session sélectionnée",
+        "sessionsSelected": "sessions sélectionnées",
+        "sendInvitations": "Envoyer les Invitations",
+        "delete": "Supprimer"
+      },
+      "actions": {
+        "sendInvitation": "Envoyer l'Invitation",
+        "resendInvitation": "Renvoyer l'Invitation",
+        "delete": "Supprimer"
+      },
+      "dialogs": {
+        "sendInvitations": {
+          "title": "Envoyer les Invitations",
+          "message": "Êtes-vous sûr de vouloir envoyer les invitations?",
+          "newInvitations": "Nouvelles invitations ({{count}})",
+          "resendInvitations": "Renvoyer les invitations ({{count}})",
+          "confirm": "Envoyer les Invitations",
+          "cancel": "Annuler"
+        },
+        "delete": {
+          "title": "Supprimer les Sessions",
+          "message": "Êtes-vous sûr de vouloir supprimer {{count}} session(s)?",
+          "warning": "Cette action ne peut pas être annulée.",
+          "sessions": "Sessions à supprimer:",
+          "confirm": "Supprimer",
+          "cancel": "Annuler"
+        }
       }
     },
     "create": {

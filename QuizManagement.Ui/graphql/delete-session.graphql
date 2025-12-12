@@ -1,0 +1,16 @@
+mutation DeleteQuizSessions($input: DeleteQuizSessionsInput!) {
+  deleteQuizSessions(input: $input) {
+    deleteQuizSessionsResult {
+      totalRequested
+      successfullySent
+      failed
+      deletedSessions {
+        id
+      }
+      errors {
+        quizSessionId
+        errorMessage
+      }
+    }
+  }
+}

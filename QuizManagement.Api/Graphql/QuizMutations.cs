@@ -302,36 +302,48 @@ public static class QuizMutations
     /// <returns></returns>
     /// <exception cref="QuizSessionNotFoundException"></exception>
     [Authorize]
-    [Error<QuizSessionNotFoundException>]
-    public static async Task<QuizSession> DeleteQuizSessionAsync(
-        DeleteQuizSessionInput input,
+    public static async Task<DeleteQuizSessionsResult> DeleteQuizSessionsAsync(
+        DeleteQuizSessionsInput input,
         QuizManagementContext context,
         CancellationToken cancellationToken)
     {
-        var session = await context.QuizSessions.FirstOrDefaultAsync(s => s.Id == input.Id, cancellationToken);
+        var sessions = await context.QuizSessions
+            .Where(s => input.Ids.Contains(s.Id))
+            .ToListAsync(cancellationToken);
+        
+        var result = new DeleteQuizSessionsResult
+        {
+            TotalRequested = input.Ids.Count,
+            DeletedSessions = [],
+            Errors = []
+        };
 
-        if (session is null)
-            throw new QuizSessionNotFoundException(input.Id.ToString());
+        foreach (var id in input.Ids)
+        {
+            var session = sessions.FirstOrDefault(x => x.Id == id);
 
-        context.QuizSessions.Remove(session);
+            try
+            {
+                if (session is null)
+                    throw new QuizSessionNotFoundException(id.ToString());
+                
+                context.QuizSessions.Remove(session);
+                result.SuccessfullySent++;
+                result.DeletedSessions.Add(session);
+            }
+            catch (Exception e)
+            {
+                result.Failed++;
+                result.Errors.Add(new DeleteQuizSessionError
+                {
+                    QuizSessionId = id,
+                    ErrorMessage = e.Message
+                });
+            }
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
-        return session;
-    }
-
-    /// <summary>
-    /// Delete all quiz sessions
-    /// </summary>
-    /// <param name="context"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
-    [Authorize]
-    public static async Task<bool> DeleteAllQuizSessionsAsync(
-        QuizManagementContext context,
-        CancellationToken cancellationToken)
-    {
-        var sessions = await context.QuizSessions.ToListAsync(cancellationToken);
-        context.QuizSessions.RemoveRange(sessions);
-        return await context.SaveChangesAsync(cancellationToken) > 0;
+        return result;
     }
 }

@@ -2,4 +2,4 @@
 
 namespace QuizManagement.Api.Graphql.Models;
 
-public record DeleteQuizSessionInput([property: ID<QuizSession>] Guid Id);
+public record DeleteQuizSessionsInput([property: ID<QuizSession>] List<Guid> Ids);

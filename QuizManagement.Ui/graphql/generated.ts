@@ -40,6 +40,11 @@ export enum ApplyPolicy {
   Validation = 'VALIDATION'
 }
 
+export type BooleanOperationFilterInput = {
+  eq?: InputMaybe<Scalars['Boolean']['input']>;
+  neq?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export type BulkCreationError = {
   __typename?: 'BulkCreationError';
   errorMessage: Scalars['String']['output'];
@@ -97,21 +102,28 @@ export type DateTimeOperationFilterInput = {
   nlte?: InputMaybe<Scalars['DateTime']['input']>;
 };
 
-export type DeleteAllQuizSessionsPayload = {
-  __typename?: 'DeleteAllQuizSessionsPayload';
-  boolean?: Maybe<Scalars['Boolean']['output']>;
+export type DeleteQuizSessionError = {
+  __typename?: 'DeleteQuizSessionError';
+  errorMessage: Scalars['String']['output'];
+  quizSessionId: Scalars['UUID']['output'];
 };
 
-export type DeleteQuizSessionError = QuizSessionNotFoundError;
-
-export type DeleteQuizSessionInput = {
-  id: Scalars['ID']['input'];
+export type DeleteQuizSessionsInput = {
+  ids: Array<Scalars['ID']['input']>;
 };
 
-export type DeleteQuizSessionPayload = {
-  __typename?: 'DeleteQuizSessionPayload';
-  errors?: Maybe<Array<DeleteQuizSessionError>>;
-  quizSession?: Maybe<QuizSession>;
+export type DeleteQuizSessionsPayload = {
+  __typename?: 'DeleteQuizSessionsPayload';
+  deleteQuizSessionsResult?: Maybe<DeleteQuizSessionsResult>;
+};
+
+export type DeleteQuizSessionsResult = {
+  __typename?: 'DeleteQuizSessionsResult';
+  deletedSessions: Array<QuizSession>;
+  errors: Array<DeleteQuizSessionError>;
+  failed: Scalars['Int']['output'];
+  successfullySent: Scalars['Int']['output'];
+  totalRequested: Scalars['Int']['output'];
 };
 
 export type EmailError = Error & {
@@ -162,8 +174,7 @@ export type Mutation = {
   __typename?: 'Mutation';
   completeQuiz: CompleteQuizPayload;
   createBulkQuizSessions: CreateBulkQuizSessionsPayload;
-  deleteAllQuizSessions: DeleteAllQuizSessionsPayload;
-  deleteQuizSession: DeleteQuizSessionPayload;
+  deleteQuizSessions: DeleteQuizSessionsPayload;
   sendInvitations: SendInvitationsPayload;
   startQuizSession: StartQuizSessionPayload;
 };
@@ -179,8 +190,8 @@ export type MutationCreateBulkQuizSessionsArgs = {
 };
 
 
-export type MutationDeleteQuizSessionArgs = {
-  input: DeleteQuizSessionInput;
+export type MutationDeleteQuizSessionsArgs = {
+  input: DeleteQuizSessionsInput;
 };
 
 
@@ -322,6 +333,8 @@ export type QuizSessionFilterInput = {
   firstName?: InputMaybe<StringOperationFilterInput>;
   /** Filter on quiz session id */
   id?: InputMaybe<UuidOperationFilterInput>;
+  /** Filter on invitation was sent */
+  invitationSent?: InputMaybe<BooleanOperationFilterInput>;
   /** Filter on last name of the user who started the quiz */
   lastName?: InputMaybe<StringOperationFilterInput>;
   /** Filter on maximum time in minutes for the quiz */
@@ -356,6 +369,8 @@ export type QuizSessionSortInput = {
   firstName?: InputMaybe<SortEnumType>;
   /** Sort on quiz session id */
   id?: InputMaybe<SortEnumType>;
+  /** Sort on invitation was sent */
+  invitationSent?: InputMaybe<SortEnumType>;
   /** Sort on last name of the user who started the quiz */
   lastName?: InputMaybe<SortEnumType>;
   /** Sort on maximum time in minutes for the quiz */
@@ -500,6 +515,13 @@ export type CreateBulkQuizSessionsMutationVariables = Exact<{
 
 export type CreateBulkQuizSessionsMutation = { __typename?: 'Mutation', createBulkQuizSessions: { __typename?: 'CreateBulkQuizSessionsPayload', bulkQuizSessionResult?: { __typename?: 'BulkQuizSessionResult', totalRequested: number, successfullyCreated: number, failed: number, createdSessions: Array<{ __typename?: 'QuizSession', id: string, email: string, status: QuizSessionStatus, createdAt: string }>, errors: Array<{ __typename?: 'BulkCreationError', errorMessage: string, user: { __typename?: 'User', firstName: string, lastName: string, email: string } }> } | null } };
 
+export type DeleteQuizSessionsMutationVariables = Exact<{
+  input: DeleteQuizSessionsInput;
+}>;
+
+
+export type DeleteQuizSessionsMutation = { __typename?: 'Mutation', deleteQuizSessions: { __typename?: 'DeleteQuizSessionsPayload', deleteQuizSessionsResult?: { __typename?: 'DeleteQuizSessionsResult', totalRequested: number, successfullySent: number, failed: number, deletedSessions: Array<{ __typename?: 'QuizSession', id: string }>, errors: Array<{ __typename?: 'DeleteQuizSessionError', quizSessionId: string, errorMessage: string }> } | null } };
+
 export type GetQuizSessionsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
   after?: InputMaybe<Scalars['String']['input']>;
@@ -516,6 +538,13 @@ export type SearchQuestionsByNumberQueryVariables = Exact<{
 
 
 export type SearchQuestionsByNumberQuery = { __typename?: 'Query', searchQuestionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null }> };
+
+export type SendInvitationsMutationVariables = Exact<{
+  input: SendInvitationsInput;
+}>;
+
+
+export type SendInvitationsMutation = { __typename?: 'Mutation', sendInvitations: { __typename?: 'SendInvitationsPayload', sendInvitationsResult?: { __typename?: 'SendInvitationsResult', totalRequested: number, successfullySent: number, failed: number, sentSessions: Array<{ __typename?: 'QuizSession', id: string, invitationSent: boolean }>, errors: Array<{ __typename?: 'SendInvitationError', quizSessionId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
 
 export const CreateBulkQuizSessionsDocument = gql`
     mutation CreateBulkQuizSessions($input: CreateBulkQuizSessionsInput!) {
@@ -548,6 +577,35 @@ export const CreateBulkQuizSessionsDocument = gql`
   })
   export class CreateBulkQuizSessionsGQL extends Apollo.Mutation<CreateBulkQuizSessionsMutation, CreateBulkQuizSessionsMutationVariables> {
     override document = CreateBulkQuizSessionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const DeleteQuizSessionsDocument = gql`
+    mutation DeleteQuizSessions($input: DeleteQuizSessionsInput!) {
+  deleteQuizSessions(input: $input) {
+    deleteQuizSessionsResult {
+      totalRequested
+      successfullySent
+      failed
+      deletedSessions {
+        id
+      }
+      errors {
+        quizSessionId
+        errorMessage
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class DeleteQuizSessionsGQL extends Apollo.Mutation<DeleteQuizSessionsMutation, DeleteQuizSessionsMutationVariables> {
+    override document = DeleteQuizSessionsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -606,6 +664,41 @@ export const SearchQuestionsByNumberDocument = gql`
   })
   export class SearchQuestionsByNumberGQL extends Apollo.Query<SearchQuestionsByNumberQuery, SearchQuestionsByNumberQueryVariables> {
     override document = SearchQuestionsByNumberDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const SendInvitationsDocument = gql`
+    mutation SendInvitations($input: SendInvitationsInput!) {
+  sendInvitations(input: $input) {
+    sendInvitationsResult {
+      totalRequested
+      successfullySent
+      failed
+      sentSessions {
+        id
+        invitationSent
+      }
+      errors {
+        quizSessionId
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SendInvitationsGQL extends Apollo.Mutation<SendInvitationsMutation, SendInvitationsMutationVariables> {
+    override document = SendInvitationsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

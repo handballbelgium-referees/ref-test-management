@@ -102,6 +102,35 @@
         "title": "Geen sessies gevonden",
         "subtitle": "Begin met het aanmaken van uw eerste quiz sessies",
         "action": "Sessies Aanmaken"
+      },
+      "bulk": {
+        "sessionSelected": "sessie geselecteerd",
+        "sessionsSelected": "sessies geselecteerd",
+        "sendInvitations": "Uitnodigingen Versturen",
+        "delete": "Verwijderen"
+      },
+      "actions": {
+        "sendInvitation": "Uitnodiging Versturen",
+        "resendInvitation": "Uitnodiging Opnieuw Versturen",
+        "delete": "Verwijderen"
+      },
+      "dialogs": {
+        "sendInvitations": {
+          "title": "Uitnodigingen Versturen",
+          "message": "Weet u zeker dat u uitnodigingen wilt versturen?",
+          "newInvitations": "Nieuwe uitnodigingen ({{count}})",
+          "resendInvitations": "Opnieuw versturen ({{count}})",
+          "confirm": "Uitnodigingen Versturen",
+          "cancel": "Annuleren"
+        },
+        "delete": {
+          "title": "Sessies Verwijderen",
+          "message": "Weet u zeker dat u {{count}} sessie(s) wilt verwijderen?",
+          "warning": "Deze actie kan niet ongedaan worden gemaakt.",
+          "sessions": "Sessies die verwijderd worden:",
+          "confirm": "Verwijderen",
+          "cancel": "Annuleren"
+        }
       }
     },
     "create": {

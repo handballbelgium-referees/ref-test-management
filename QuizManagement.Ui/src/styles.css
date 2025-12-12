@@ -144,3 +144,14 @@
   --breakpoint-xl: 1280px;
   --breakpoint-2xl: 1536px;
 }
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox - fallback to -webkit-scrollbar for older browsers */
+}
+
+/* Safari and Chrome - this covers the browsers where scrollbar-width isn't supported */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
