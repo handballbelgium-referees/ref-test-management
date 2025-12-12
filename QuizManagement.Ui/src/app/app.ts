@@ -1,6 +1,7 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
-import { RouterOutlet } from '@angular/router';
+import { ActivatedRoute, RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Auth } from './auth/services/auth';
 
@@ -20,10 +21,12 @@ interface LanguageInfo {
     '(document:click)': 'onDocumentClick()',
   },
 })
-export class App implements OnInit {
+export class App {
   private readonly translate = inject(TranslateService);
   private readonly auth = inject(Auth);
   private readonly titleService = inject(Title);
+  private readonly route = inject(ActivatedRoute);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly isLoggedIn = computed(() => !!this.auth.isAuthenticated());
   protected readonly user = this.auth.user;
@@ -36,10 +39,10 @@ export class App implements OnInit {
     { code: 'de', name: 'Deutsch' },
   ];
 
-  ngOnInit(): void {
+  constructor() {
     this.translate.addLangs(['en', 'nl', 'fr', 'de']);
 
-    // Check for saved language preference
+    // Set initial language from localStorage or browser
     const savedLang = localStorage.getItem('app-language') as Language | null;
     let defaultLang: string;
 
@@ -53,17 +56,29 @@ export class App implements OnInit {
 
     this.translate.use(defaultLang);
 
+    // Subscribe to query params for language changes
+    this.route.queryParams.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((params) => {
+      const queryLang = params['lang'] as Language | undefined;
+      if (queryLang && ['en', 'nl', 'fr', 'de'].includes(queryLang)) {
+        this.translate.use(queryLang);
+        localStorage.setItem('app-language', queryLang);
+      }
+    });
+
     // Update page title when language changes
-    this.translate.onLangChange.subscribe(() => {
+    this.translate.onLangChange.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.translate.get('app.pageTitle').subscribe((title: string) => {
         this.titleService.setTitle(title);
       });
     });
 
     // Set initial title
-    this.translate.get('app.pageTitle').subscribe((title: string) => {
-      this.titleService.setTitle(title);
-    });
+    this.translate
+      .get('app.pageTitle')
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((title: string) => {
+        this.titleService.setTitle(title);
+      });
   }
 
   protected get currentLocale(): Language {
