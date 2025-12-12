@@ -47,7 +47,6 @@ interface SessionFormData {
     BulkQuestionImportModal,
   ],
   templateUrl: './create-sessions.html',
-  styleUrl: './create-sessions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class CreateSessions {

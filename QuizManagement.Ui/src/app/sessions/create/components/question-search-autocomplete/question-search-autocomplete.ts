@@ -45,10 +45,10 @@ export class QuestionSearchAutocomplete {
   protected readonly showDropdown = signal(false);
   protected readonly highlightedIndex = signal(-1);
 
-  private readonly searchSubject = new Subject<string>();
+  private readonly _searchSubject = new Subject<string>();
 
-  private readonly searchResult = toSignal(
-    this.searchSubject.pipe(
+  private readonly _searchResult = toSignal(
+    this._searchSubject.pipe(
       debounceTime(300),
       distinctUntilChanged(),
       switchMap((searchTerm) => {
@@ -81,7 +81,7 @@ export class QuestionSearchAutocomplete {
 
   constructor() {
     effect(() => {
-      const result = this.searchResult();
+      const result = this._searchResult();
       this.suggestions.set(result.questions);
       this.searching.set(result.isSearching);
       this.showDropdown.set(result.questions.length > 0 || this.searchTerm().trim().length > 0);
@@ -96,7 +96,7 @@ export class QuestionSearchAutocomplete {
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
-    this.searchSubject.next(value);
+    this._searchSubject.next(value);
     this.highlightedIndex.set(-1);
   }
 

@@ -6,16 +6,15 @@ import { Auth } from '../auth/services/auth';
   selector: 'app-home',
   imports: [TranslatePipe],
   templateUrl: './home.html',
-  styleUrl: './home.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Home {
-  private readonly auth = inject(Auth);
+  private readonly _auth = inject(Auth);
 
   protected readonly currentYear = computed(() => new Date().getFullYear());
-  protected readonly isLoggedIn = computed(() => !!this.auth.isAuthenticated());
+  protected readonly isLoggedIn = computed(() => !!this._auth.isAuthenticated());
 
   protected login(): void {
-    this.auth.login();
+    this._auth.login();
   }
 }

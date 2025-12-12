@@ -66,7 +66,6 @@ type SessionNode = NonNullable<
     DeleteSessionsDialog,
   ],
   templateUrl: './list-sessions.html',
-  styleUrl: './list-sessions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ListSessions {
@@ -76,7 +75,7 @@ export class ListSessions {
   private readonly _router = inject(Router);
   private readonly _destroyRef = inject(DestroyRef);
 
-  private readonly searchSubject = new Subject<string>();
+  private readonly _searchSubject = new Subject<string>();
 
   protected readonly filter = signal<SessionFilter>({
     searchTerm: '',
@@ -87,10 +86,10 @@ export class ListSessions {
   protected readonly QuizSessionStatus = QuizSessionStatus;
   protected readonly SortEnumType = SortEnumType;
 
-  private readonly pageSize = 20;
+  private readonly _pageSize = 20;
   protected readonly loadingMore = signal(false);
   protected readonly allLoadedSessions = signal<SessionNode[]>([]);
-  private endCursor = signal<string | undefined>(undefined);
+  private _endCursor = signal<string | undefined>(undefined);
   protected readonly hasNextPage = signal(false);
   protected readonly deletingSessionIds = signal<Set<string>>(new Set());
   protected readonly sendingInvitationIds = signal<Set<string>>(new Set());
@@ -135,44 +134,23 @@ export class ListSessions {
 
   protected readonly selectedCount = computed(() => this.selectedSessionIds().size);
 
-  private readonly queryRef = this._getQuizSessionsGQL.watch({
+  private readonly _queryRef = this._getQuizSessionsGQL.watch({
     variables: {
-      first: this.pageSize,
+      first: this._pageSize,
       where: this.buildWhereFilter(),
       order: this.buildOrderClause(),
     },
     fetchPolicy: 'cache-and-network',
   });
 
-  private readonly queryResult = toSignal(
-    this.queryRef.valueChanges.pipe(
-      map((result) => {
-        if (result.data?.quizSessions) {
-          const edges = result.data.quizSessions.edges ?? [];
-          const newSessions = edges
-            .filter(
-              (edge): edge is NonNullable<typeof edge> & { node: SessionNode } =>
-                !!edge && !!edge.node
-            )
-            .map((edge) => edge.node);
-
-          this.allLoadedSessions.set(newSessions);
-          this.hasNextPage.set(result.data.quizSessions.pageInfo?.hasNextPage ?? false);
-          this.endCursor.set(result.data.quizSessions.pageInfo?.endCursor ?? undefined);
-        }
-        return result.data?.quizSessions;
-      })
-    )
-  );
-
   protected readonly loading = toSignal(
-    this.queryRef.valueChanges.pipe(map((result) => result.loading)),
+    this._queryRef.valueChanges.pipe(map((result) => result.loading)),
     { initialValue: true }
   );
 
   constructor() {
     // Debounced search effect
-    this.searchSubject
+    this._searchSubject
       .pipe(debounceTime(300), takeUntilDestroyed(this._destroyRef))
       .subscribe((searchTerm) => {
         this.filter.update((f) => ({ ...f, searchTerm }));
@@ -180,8 +158,8 @@ export class ListSessions {
 
     effect(() => {
       this.allLoadedSessions.set([]);
-      this.queryRef.refetch({
-        first: this.pageSize,
+      this._queryRef.refetch({
+        first: this._pageSize,
         after: undefined,
         where: this.buildWhereFilter(),
         order: this.buildOrderClause(),
@@ -211,11 +189,11 @@ export class ListSessions {
 
     this.loadingMore.set(true);
 
-    this.queryRef
+    this._queryRef
       .fetchMore({
         variables: {
-          first: this.pageSize,
-          after: this.endCursor(),
+          first: this._pageSize,
+          after: this._endCursor(),
           where: this.buildWhereFilter(),
           order: this.buildOrderClause(),
         },
@@ -232,7 +210,7 @@ export class ListSessions {
 
           this.allLoadedSessions.update((current) => [...current, ...newSessions]);
           this.hasNextPage.set(result.data.quizSessions.pageInfo?.hasNextPage ?? false);
-          this.endCursor.set(result.data.quizSessions.pageInfo?.endCursor ?? undefined);
+          this._endCursor.set(result.data.quizSessions.pageInfo?.endCursor ?? undefined);
         }
         this.loadingMore.set(false);
       })
@@ -260,7 +238,9 @@ export class ListSessions {
     );
   });
 
-  protected readonly totalCount = computed(() => this.queryResult()?.totalCount ?? 0);
+  protected readonly totalCount = computed(
+    () => this._queryRef.getCurrentResult()?.data?.quizSessions?.totalCount ?? 0
+  );
 
   protected readonly statusCounts = computed(() => {
     const allSessions = this.allSessions();
@@ -401,7 +381,7 @@ export class ListSessions {
 
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.searchSubject.next(value);
+    this._searchSubject.next(value);
   }
 
   protected navigateToCreate(): void {
