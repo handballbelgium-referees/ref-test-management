@@ -41,6 +41,61 @@
     }
   },
   "sessions": {
+    "list": {
+      "title": "Manage Quiz Sessions",
+      "subtitle": "View, filter, and track all quiz sessions",
+      "createNew": "Create New Sessions",
+      "searchPlaceholder": "Search by name or email...",
+      "loading": "Loading sessions...",
+      "loadMore": "Load More Sessions",
+      "loadingMore": "Loading...",
+      "showing": "Showing {{count}} of {{total}} sessions",
+      "filters": {
+        "all": "All",
+        "pending": "Pending",
+        "inProgress": "In Progress",
+        "completed": "Completed",
+        "expired": "Expired",
+        "invitationLabel": "Invitation Status",
+        "invitationAll": "All",
+        "invitationSent": "Sent",
+        "invitationNotSent": "Not Sent"
+      },
+      "sorting": {
+        "sortBy": "Sort By",
+        "direction": "Direction",
+        "email": "Participant",
+        "status": "Status",
+        "numberOfQuestions": "Questions",
+        "score": "Score",
+        "invitationSent": "Invitation",
+        "startedAt": "Start Date",
+        "completedAt": "Completion Date",
+        "percentage": "Percentage",
+        "asc": "Ascending",
+        "desc": "Descending"
+      },
+      "status": {
+        "PENDING": "Pending",
+        "IN_PROGRESS": "In Progress",
+        "COMPLETED": "Completed",
+        "EXPIRED": "Expired"
+      },
+      "table": {
+        "participant": "Participant",
+        "status": "Status",
+        "questions": "Questions",
+        "score": "Score",
+        "invitation": "Invitation",
+        "started": "Started",
+        "completed": "Completed"
+      },
+      "empty": {
+        "title": "No sessions found",
+        "subtitle": "Get started by creating your first quiz sessions",
+        "action": "Create Sessions"
+      }
+    },
     "create": {
       "back": "Back to Home",
       "title": "Create Quiz Sessions",

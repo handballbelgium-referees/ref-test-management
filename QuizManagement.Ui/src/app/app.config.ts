@@ -5,6 +5,7 @@ import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
 import { InMemoryCache } from '@apollo/client';
+import { relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
 import { routes } from './app.routes';
@@ -32,7 +33,11 @@ export const appConfig: ApplicationConfig = {
             uri: '/graphql',
             withCredentials: true,
           }),
-          cache: new InMemoryCache(),
+          cache: new InMemoryCache({
+            typePolicies: {
+              quizSessions: relayStylePagination(['where', 'order']),
+            },
+          }),
         };
       },
       {

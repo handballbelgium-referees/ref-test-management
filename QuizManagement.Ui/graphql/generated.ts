@@ -282,6 +282,8 @@ export type QuizSession = Node & {
   email: Scalars['String']['output'];
   /** The quiz session id */
   id: Scalars['ID']['output'];
+  /** Indication of invitation was sent */
+  invitationSent: Scalars['Boolean']['output'];
   /** Maximum time in minutes for the quiz */
   maxTimeInMinutes: Scalars['Int']['output'];
   /** Name of the user who started the quiz (e.g., ) */
@@ -498,6 +500,16 @@ export type CreateBulkQuizSessionsMutationVariables = Exact<{
 
 export type CreateBulkQuizSessionsMutation = { __typename?: 'Mutation', createBulkQuizSessions: { __typename?: 'CreateBulkQuizSessionsPayload', bulkQuizSessionResult?: { __typename?: 'BulkQuizSessionResult', totalRequested: number, successfullyCreated: number, failed: number, createdSessions: Array<{ __typename?: 'QuizSession', id: string, email: string, status: QuizSessionStatus, createdAt: string }>, errors: Array<{ __typename?: 'BulkCreationError', errorMessage: string, user: { __typename?: 'User', firstName: string, lastName: string, email: string } }> } | null } };
 
+export type GetQuizSessionsQueryVariables = Exact<{
+  first?: InputMaybe<Scalars['Int']['input']>;
+  after?: InputMaybe<Scalars['String']['input']>;
+  where?: InputMaybe<QuizSessionFilterInput>;
+  order?: InputMaybe<Array<QuizSessionSortInput> | QuizSessionSortInput>;
+}>;
+
+
+export type GetQuizSessionsQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizSessionsEdge', cursor: string, node: { __typename?: 'QuizSession', id: string, name?: string | null, email: string, invitationSent: boolean, status: QuizSessionStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, score?: number | null, percentage?: number | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
+
 export type SearchQuestionsByNumberQueryVariables = Exact<{
   number?: InputMaybe<Scalars['String']['input']>;
 }>;
@@ -536,6 +548,44 @@ export const CreateBulkQuizSessionsDocument = gql`
   })
   export class CreateBulkQuizSessionsGQL extends Apollo.Mutation<CreateBulkQuizSessionsMutation, CreateBulkQuizSessionsMutationVariables> {
     override document = CreateBulkQuizSessionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetQuizSessionsDocument = gql`
+    query GetQuizSessions($first: Int, $after: String, $where: QuizSessionFilterInput, $order: [QuizSessionSortInput!]) {
+  quizSessions(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        name
+        email
+        invitationSent
+        status
+        numberOfQuestions
+        maxTimeInMinutes
+        startedAt
+        completedAt
+        score
+        percentage
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetQuizSessionsGQL extends Apollo.Query<GetQuizSessionsQuery, GetQuizSessionsQueryVariables> {
+    override document = GetQuizSessionsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

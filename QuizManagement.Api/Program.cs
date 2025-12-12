@@ -58,6 +58,7 @@ services.AddGraphQLServer()
         options.MaxPageSize = 100;
         options.AllowBackwardPagination = true;
     })
+    .ModifyCostOptions(o => o.EnforceCostLimits = false)
     .RegisterDbContextFactory<QuizManagementContext>()
     .AddFiltering()
     .AddSorting()

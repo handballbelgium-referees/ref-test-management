@@ -7,6 +7,11 @@ export const routes: Routes = [
     loadComponent: () => import('./home/home').then((m) => m.Home),
   },
   {
+    path: 'sessions',
+    loadComponent: () => import('./sessions/list/list-sessions').then((m) => m.ListSessions),
+    canActivate: [authGuard],
+  },
+  {
     path: 'sessions/create',
     loadComponent: () => import('./sessions/create/create-sessions').then((m) => m.CreateSessions),
     canActivate: [authGuard],

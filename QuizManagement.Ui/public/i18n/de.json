@@ -41,6 +41,61 @@
     }
   },
   "sessions": {
+    "list": {
+      "title": "Quiz-Sitzungen Verwalten",
+      "subtitle": "Alle Quiz-Sitzungen anzeigen, filtern und verfolgen",
+      "createNew": "Neue Sitzungen Erstellen",
+      "searchPlaceholder": "Nach Name oder E-Mail suchen...",
+      "loading": "Sitzungen werden geladen...",
+      "loadMore": "Weitere Sitzungen Laden",
+      "loadingMore": "Lädt...",
+      "showing": "{{count}} von {{total}} Sitzungen werden angezeigt",
+      "filters": {
+        "all": "Alle",
+        "pending": "Ausstehend",
+        "inProgress": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "expired": "Abgelaufen",
+        "invitationLabel": "Einladungsstatus",
+        "invitationAll": "Alle",
+        "invitationSent": "Gesendet",
+        "invitationNotSent": "Nicht Gesendet"
+      },
+      "sorting": {
+        "sortBy": "Sortieren Nach",
+        "direction": "Richtung",
+        "email": "Teilnehmer",
+        "status": "Status",
+        "numberOfQuestions": "Fragen",
+        "score": "Ergebnis",
+        "invitationSent": "Einladung",
+        "startedAt": "Startdatum",
+        "completedAt": "Abschlussdatum",
+        "percentage": "Prozentsatz",
+        "asc": "Aufsteigend",
+        "desc": "Absteigend"
+      },
+      "status": {
+        "PENDING": "Ausstehend",
+        "IN_PROGRESS": "In Bearbeitung",
+        "COMPLETED": "Abgeschlossen",
+        "EXPIRED": "Abgelaufen"
+      },
+      "table": {
+        "participant": "Teilnehmer",
+        "status": "Status",
+        "questions": "Fragen",
+        "score": "Ergebnis",
+        "invitation": "Einladung",
+        "started": "Gestartet",
+        "completed": "Abgeschlossen"
+      },
+      "empty": {
+        "title": "Keine Sitzungen gefunden",
+        "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten Quiz-Sitzungen",
+        "action": "Sitzungen Erstellen"
+      }
+    },
     "create": {
       "back": "Zurück zur Startseite",
       "title": "Quiz-Sitzungen Erstellen",

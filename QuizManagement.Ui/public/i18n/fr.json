@@ -41,6 +41,61 @@
     }
   },
   "sessions": {
+    "list": {
+      "title": "Gérer les Sessions de Quiz",
+      "subtitle": "Afficher, filtrer et suivre toutes les sessions de quiz",
+      "createNew": "Créer de Nouvelles Sessions",
+      "searchPlaceholder": "Rechercher par nom ou e-mail...",
+      "loading": "Chargement des sessions...",
+      "loadMore": "Charger Plus de Sessions",
+      "loadingMore": "Chargement...",
+      "showing": "Affichage de {{count}} sur {{total}} sessions",
+      "filters": {
+        "all": "Toutes",
+        "pending": "En Attente",
+        "inProgress": "En Cours",
+        "completed": "Terminées",
+        "expired": "Expirées",
+        "invitationLabel": "Statut d'Invitation",
+        "invitationAll": "Toutes",
+        "invitationSent": "Envoyée",
+        "invitationNotSent": "Non Envoyée"
+      },
+      "sorting": {
+        "sortBy": "Trier Par",
+        "direction": "Direction",
+        "email": "Participant",
+        "status": "Statut",
+        "numberOfQuestions": "Questions",
+        "score": "Score",
+        "invitationSent": "Invitation",
+        "startedAt": "Date de Début",
+        "completedAt": "Date de Fin",
+        "percentage": "Pourcentage",
+        "asc": "Croissant",
+        "desc": "Décroissant"
+      },
+      "status": {
+        "PENDING": "En Attente",
+        "IN_PROGRESS": "En Cours",
+        "COMPLETED": "Terminée",
+        "EXPIRED": "Expirée"
+      },
+      "table": {
+        "participant": "Participant",
+        "status": "Statut",
+        "questions": "Questions",
+        "score": "Score",
+        "invitation": "Invitation",
+        "started": "Démarré",
+        "completed": "Terminé"
+      },
+      "empty": {
+        "title": "Aucune session trouvée",
+        "subtitle": "Commencez par créer vos premières sessions de quiz",
+        "action": "Créer des Sessions"
+      }
+    },
     "create": {
       "back": "Retour à l'accueil",
       "title": "Créer des Sessions de Quiz",

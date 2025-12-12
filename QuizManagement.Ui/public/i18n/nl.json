@@ -49,6 +49,61 @@
     }
   },
   "sessions": {
+    "list": {
+      "title": "Beheer Quiz Sessies",
+      "subtitle": "Bekijk, filter en volg alle quiz sessies",
+      "createNew": "Nieuwe Sessies Aanmaken",
+      "searchPlaceholder": "Zoeken op naam of e-mail...",
+      "loading": "Sessies laden...",
+      "loadMore": "Meer Sessies Laden",
+      "loadingMore": "Laden...",
+      "showing": "{{count}} van {{total}} sessies weergegeven",
+      "filters": {
+        "all": "Alle",
+        "pending": "In Afwachting",
+        "inProgress": "Bezig",
+        "completed": "Voltooid",
+        "expired": "Verlopen",
+        "invitationLabel": "Uitnodigingsstatus",
+        "invitationAll": "Alle",
+        "invitationSent": "Verzonden",
+        "invitationNotSent": "Niet Verzonden"
+      },
+      "sorting": {
+        "sortBy": "Sorteren Op",
+        "direction": "Richting",
+        "email": "Deelnemer",
+        "status": "Status",
+        "numberOfQuestions": "Vragen",
+        "score": "Score",
+        "invitationSent": "Uitnodiging",
+        "startedAt": "Startdatum",
+        "completedAt": "Voltooiingsdatum",
+        "percentage": "Percentage",
+        "asc": "Oplopend",
+        "desc": "Aflopend"
+      },
+      "status": {
+        "PENDING": "In Afwachting",
+        "IN_PROGRESS": "Bezig",
+        "COMPLETED": "Voltooid",
+        "EXPIRED": "Verlopen"
+      },
+      "table": {
+        "participant": "Deelnemer",
+        "status": "Status",
+        "questions": "Vragen",
+        "score": "Score",
+        "invitation": "Uitnodiging",
+        "started": "Gestart",
+        "completed": "Voltooid"
+      },
+      "empty": {
+        "title": "Geen sessies gevonden",
+        "subtitle": "Begin met het aanmaken van uw eerste quiz sessies",
+        "action": "Sessies Aanmaken"
+      }
+    },
     "create": {
       "back": "Terug naar Home",
       "title": "Quiz Sessies Aanmaken",

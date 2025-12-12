@@ -1,0 +1,520 @@
+<!-- Hero Section -->
+<div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ 'sessions.list.title' | translate }}</h1>
+    <p class="text-primary-100 text-lg">{{ 'sessions.list.subtitle' | translate }}</p>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+  <!-- Top Actions Bar -->
+  <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+    <button
+      type="button"
+      (click)="navigateToCreate()"
+      class="w-full sm:w-auto px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
+    >
+      {{ 'sessions.list.createNew' | translate }}
+    </button>
+
+    <!-- Search Bar -->
+    <div class="w-full sm:w-96">
+      <input
+        type="search"
+        [placeholder]="'sessions.list.searchPlaceholder' | translate"
+        (input)="onSearchInput($event)"
+        class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+      />
+    </div>
+  </div>
+
+  <!-- Filters and Sorting -->
+  <div class="mb-6 space-y-4">
+    <!-- Status Filter Tabs -->
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-2">
+      <div class="flex flex-wrap gap-2">
+        <button
+          type="button"
+          (click)="setStatusFilter()"
+          [class.bg-primary-100]="!filter().status"
+          [class.text-primary-700]="!filter().status"
+          [class.font-medium]="!filter().status"
+          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+        >
+          {{ 'sessions.list.filters.all' | translate }} ({{ statusCounts().all }})
+        </button>
+        <button
+          type="button"
+          (click)="setStatusFilter(QuizSessionStatus.Pending)"
+          [class.bg-primary-100]="filter().status === QuizSessionStatus.Pending"
+          [class.text-primary-700]="filter().status === QuizSessionStatus.Pending"
+          [class.font-medium]="filter().status === QuizSessionStatus.Pending"
+          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+        >
+          {{ 'sessions.list.filters.pending' | translate }} ({{ statusCounts().pending }})
+        </button>
+        <button
+          type="button"
+          (click)="setStatusFilter(QuizSessionStatus.InProgress)"
+          [class.bg-primary-100]="filter().status === QuizSessionStatus.InProgress"
+          [class.text-primary-700]="filter().status === QuizSessionStatus.InProgress"
+          [class.font-medium]="filter().status === QuizSessionStatus.InProgress"
+          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+        >
+          {{ 'sessions.list.filters.inProgress' | translate }} ({{ statusCounts().inProgress }})
+        </button>
+        <button
+          type="button"
+          (click)="setStatusFilter(QuizSessionStatus.Completed)"
+          [class.bg-primary-100]="filter().status === QuizSessionStatus.Completed"
+          [class.text-primary-700]="filter().status === QuizSessionStatus.Completed"
+          [class.font-medium]="filter().status === QuizSessionStatus.Completed"
+          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+        >
+          {{ 'sessions.list.filters.completed' | translate }} ({{ statusCounts().completed }})
+        </button>
+        <button
+          type="button"
+          (click)="setStatusFilter(QuizSessionStatus.Expired)"
+          [class.bg-primary-100]="filter().status === QuizSessionStatus.Expired"
+          [class.text-primary-700]="filter().status === QuizSessionStatus.Expired"
+          [class.font-medium]="filter().status === QuizSessionStatus.Expired"
+          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
+        >
+          {{ 'sessions.list.filters.expired' | translate }} ({{ statusCounts().expired }})
+        </button>
+      </div>
+    </div>
+
+    <!-- Additional Filters and Sorting -->
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <!-- Invitation Filter -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'sessions.list.filters.invitationLabel' | translate }}
+          </label>
+          <select
+            (change)="
+              setInvitationFilter(
+                $any($event.target).value === '' ? undefined : $any($event.target).value === 'true'
+              )
+            "
+            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="">{{ 'sessions.list.filters.invitationAll' | translate }}</option>
+            <option value="true">{{ 'sessions.list.filters.invitationSent' | translate }}</option>
+            <option value="false">
+              {{ 'sessions.list.filters.invitationNotSent' | translate }}
+            </option>
+          </select>
+        </div>
+
+        <!-- Sort Field -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'sessions.list.sorting.sortBy' | translate }}
+          </label>
+          <select
+            [value]="filter().sortField"
+            (change)="setSorting($any($event.target).value, filter().sortDirection)"
+            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="email">{{ 'sessions.list.sorting.email' | translate }}</option>
+            <option value="status">{{ 'sessions.list.sorting.status' | translate }}</option>
+            <option value="numberOfQuestions">
+              {{ 'sessions.list.sorting.numberOfQuestions' | translate }}
+            </option>
+            <option value="score">{{ 'sessions.list.sorting.score' | translate }}</option>
+            <option value="invitationSent">
+              {{ 'sessions.list.sorting.invitationSent' | translate }}
+            </option>
+            <option value="startedAt">{{ 'sessions.list.sorting.startedAt' | translate }}</option>
+            <option value="completedAt">
+              {{ 'sessions.list.sorting.completedAt' | translate }}
+            </option>
+            <option value="percentage">{{ 'sessions.list.sorting.percentage' | translate }}</option>
+          </select>
+        </div>
+
+        <!-- Sort Direction -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'sessions.list.sorting.direction' | translate }}
+          </label>
+          <select
+            [value]="filter().sortDirection"
+            (change)="setSorting(filter().sortField, $any($event.target).value)"
+            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="DESC">
+              {{ 'sessions.list.sorting.desc' | translate }}
+            </option>
+            <option value="ASC">
+              {{ 'sessions.list.sorting.asc' | translate }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  @if (loading()) {
+  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+    <div
+      class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"
+    ></div>
+    <p class="text-neutral-600">{{ 'sessions.list.loading' | translate }}</p>
+  </div>
+  }
+
+  <!-- Empty State -->
+  @else if (sessions().length === 0) {
+  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+    <svg
+      class="mx-auto h-12 w-12 text-neutral-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
+    <h3 class="mt-4 text-lg font-medium text-neutral-900">
+      {{ 'sessions.list.empty.title' | translate }}
+    </h3>
+    <p class="mt-2 text-sm text-neutral-600">{{ 'sessions.list.empty.subtitle' | translate }}</p>
+    <button
+      type="button"
+      (click)="navigateToCreate()"
+      class="mt-6 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
+    >
+      {{ 'sessions.list.empty.action' | translate }}
+    </button>
+  </div>
+  }
+
+  <!-- Sessions List -->
+  @else {
+  <!-- Desktop Table View -->
+  <div
+    class="hidden md:block bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden"
+  >
+    <table class="min-w-full divide-y divide-neutral-200">
+      <thead class="bg-neutral-50">
+        <tr>
+          <th
+            (click)="sortByColumn('email')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.participant' | translate }}
+              @if (filter().sortField === 'email') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+          <th
+            (click)="sortByColumn('status')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.status' | translate }}
+              @if (filter().sortField === 'status') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+          <th
+            (click)="sortByColumn('numberOfQuestions')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.questions' | translate }}
+              @if (filter().sortField === 'numberOfQuestions') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+          <th
+            (click)="sortByColumn('score')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.score' | translate }}
+              @if (filter().sortField === 'score') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+          <th
+            (click)="sortByColumn('invitationSent')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.invitation' | translate }}
+              @if (filter().sortField === 'invitationSent') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+          <th
+            (click)="sortByColumn('startedAt')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.started' | translate }}
+              @if (filter().sortField === 'startedAt') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+          <th
+            (click)="sortByColumn('completedAt')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.completed' | translate }}
+              @if (filter().sortField === 'completedAt') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-neutral-200">
+        @for (session of sessions(); track session.id) {
+        <tr class="hover:bg-neutral-50 transition-colors">
+          <td class="px-6 py-4 whitespace-nowrap">
+            <div class="flex flex-col">
+              <div class="text-sm font-medium text-neutral-900">{{ session.name }}</div>
+              <div class="text-sm text-neutral-500">{{ session.email }}</div>
+            </div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
+            <span
+              [class]="getStatusClass(session.status)"
+              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+            >
+              {{ 'sessions.list.status.' + session.status | translate }}
+            </span>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+            {{ session.numberOfQuestions }}
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+            @if (session.score !== null) {
+            <div class="flex flex-col">
+              <span class="font-medium">{{ session.score }} / {{ session.numberOfQuestions }}</span>
+              <span class="text-xs text-neutral-500">{{ session.percentage }}%</span>
+            </div>
+            } @else {
+            <span class="text-neutral-400">-</span>
+            }
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+            @if (session.invitationSent) {
+            <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            } @else {
+            <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            }
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+            @if (session.startedAt) {
+            {{ session.startedAt | date : 'short' }}
+            } @else {
+            <span class="text-neutral-400">-</span>
+            }
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+            @if (session.completedAt) {
+            {{ session.completedAt | date : 'short' }}
+            } @else {
+            <span class="text-neutral-400">-</span>
+            }
+          </td>
+        </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Mobile Card View -->
+  <div class="md:hidden space-y-4">
+    @for (session of sessions(); track session.id) {
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
+      <!-- Header -->
+      <div class="flex justify-between items-start mb-3">
+        <div class="flex-1">
+          <h3 class="text-sm font-medium text-neutral-900">{{ session.name }}</h3>
+          <p class="text-sm text-neutral-500">{{ session.email }}</p>
+        </div>
+        <span
+          [class]="getStatusClass(session.status)"
+          class="px-2 py-1 text-xs font-semibold rounded-full"
+        >
+          {{ 'sessions.list.status.' + session.status | translate }}
+        </span>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="grid grid-cols-2 gap-3 text-sm">
+        <div>
+          <span class="text-neutral-500">{{ 'sessions.list.table.questions' | translate }}:</span>
+          <span class="ml-1 font-medium text-neutral-900">{{ session.numberOfQuestions }}</span>
+        </div>
+        <div>
+          <span class="text-neutral-500">{{ 'sessions.list.table.invitation' | translate }}:</span>
+          @if (session.invitationSent) {
+          <svg class="inline h-4 w-4 ml-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          } @else {
+          <svg class="inline h-4 w-4 ml-1 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          }
+        </div>
+        @if (session.score !== null) {
+        <div>
+          <span class="text-neutral-500">{{ 'sessions.list.table.score' | translate }}:</span>
+          <span class="ml-1 font-medium text-neutral-900"
+            >{{ session.score }} / {{ session.numberOfQuestions }}</span
+          >
+          <span class="ml-1 text-xs text-neutral-500">({{ session.percentage }}%)</span>
+        </div>
+        } @if (session.startedAt) {
+        <div>
+          <span class="text-neutral-500">{{ 'sessions.list.table.started' | translate }}:</span>
+          <span class="ml-1 text-neutral-900">{{ session.startedAt | date : 'short' }}</span>
+        </div>
+        } @if (session.completedAt) {
+        <div>
+          <span class="text-neutral-500">{{ 'sessions.list.table.completed' | translate }}:</span>
+          <span class="ml-1 text-neutral-900">{{ session.completedAt | date : 'short' }}</span>
+        </div>
+        }
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Results Count -->
+  <div class="mt-6 text-center">
+    <div class="text-sm text-neutral-600 mb-4">
+      {{ 'sessions.list.showing' | translate : { count: sessions().length, total: totalCount() } }}
+    </div>
+
+    <!-- Loading More Indicator -->
+    @if (loadingMore()) {
+    <div class="flex items-center justify-center gap-2 text-primary-600">
+      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+      <span class="text-sm">{{ 'sessions.list.loadingMore' | translate }}</span>
+    </div>
+    }
+  </div>
+  }
+</div>

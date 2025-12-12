@@ -1,0 +1,30 @@
+query GetQuizSessions(
+  $first: Int
+  $after: String
+  $where: QuizSessionFilterInput
+  $order: [QuizSessionSortInput!]
+) {
+  quizSessions(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        name
+        email
+        invitationSent
+        status
+        numberOfQuestions
+        maxTimeInMinutes
+        startedAt
+        completedAt
+        score
+        percentage
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}

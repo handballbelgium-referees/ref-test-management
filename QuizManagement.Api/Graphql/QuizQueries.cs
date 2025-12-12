@@ -1,5 +1,6 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
 using HotChocolate.Authorization;
+using HotChocolate.CostAnalysis.Types;
 using Microsoft.EntityFrameworkCore;
 using QuizManagement.Application.Models;
 using QuizManagement.Application.Services;

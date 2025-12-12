@@ -13,6 +13,7 @@ public class QuizSessionFilterType : FilterInputType<QuizSession>
         descriptor.Field(x => x.FirstName).Description("Filter on first name of the user who started the quiz");
         descriptor.Field(x => x.LastName).Description("Filter on last name of the user who started the quiz");
         descriptor.Field(x => x.Email).Description("Filter on email of the user who started the quiz");
+        descriptor.Field(x => x.InvitationSent).Description("Filter on invitation was sent");
         descriptor.Field(x => x.Status).Description("Filter on status of the quiz session");
         descriptor.Field(x => x.CreatedAt).Description("Filter on creation date of the quiz session");
         descriptor.Field(x => x.StartedAt).Description("Filter on start date of the quiz session");

@@ -13,6 +13,7 @@ public class QuizSessionSortType : SortInputType<QuizSession>
         descriptor.Field(x => x.FirstName).Description("Sort on first name of the user who started the quiz");
         descriptor.Field(x => x.LastName).Description("Sort on last name of the user who started the quiz");
         descriptor.Field(x => x.Email).Description("Sort on email of the user who started the quiz");
+        descriptor.Field(x => x.InvitationSent).Description("Sort on invitation was sent");
         descriptor.Field(x => x.Status).Description("Sort on status of the quiz session");
         descriptor.Field(x => x.CreatedAt).Description("Sort on creation date of the quiz session");
         descriptor.Field(x => x.StartedAt).Description("Sort on start date of the quiz session");
