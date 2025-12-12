@@ -3,15 +3,16 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   HostListener,
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { catchError, finalize, map, of, tap } from 'rxjs';
+import { catchError, debounceTime, finalize, map, of, Subject, tap } from 'rxjs';
 import {
   DeleteQuizSessionsGQL,
   GetQuizSessionsGQL,
@@ -40,6 +41,15 @@ interface SessionFilter {
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
+  minScore?: number;
+  maxScore?: number;
+  percentageRange?: 'low' | 'medium' | 'high';
+  minQuestions?: number;
+  maxQuestions?: number;
+  startedAfter?: string;
+  startedBefore?: string;
+  completedAfter?: string;
+  completedBefore?: string;
 }
 
 type SessionNode = NonNullable<
@@ -64,6 +74,9 @@ export class ListSessions {
   private readonly _deleteQuizSessionsGQL = inject(DeleteQuizSessionsGQL);
   private readonly _sendInvitationsGQL = inject(SendInvitationsGQL);
   private readonly _router = inject(Router);
+  private readonly _destroyRef = inject(DestroyRef);
+
+  private readonly searchSubject = new Subject<string>();
 
   protected readonly filter = signal<SessionFilter>({
     searchTerm: '',
@@ -158,6 +171,13 @@ export class ListSessions {
   );
 
   constructor() {
+    // Debounced search effect
+    this.searchSubject
+      .pipe(debounceTime(300), takeUntilDestroyed(this._destroyRef))
+      .subscribe((searchTerm) => {
+        this.filter.update((f) => ({ ...f, searchTerm }));
+      });
+
     effect(() => {
       this.allLoadedSessions.set([]);
       this.queryRef.refetch({
@@ -265,11 +285,72 @@ export class ListSessions {
       filters.invitationSent = { eq: currentFilter.invitationSent };
     }
 
+    if (currentFilter.minScore !== undefined || currentFilter.maxScore !== undefined) {
+      filters.score = {};
+      if (currentFilter.minScore !== undefined) {
+        filters.score.gte = currentFilter.minScore;
+      }
+      if (currentFilter.maxScore !== undefined) {
+        filters.score.lte = currentFilter.maxScore;
+      }
+    }
+
+    if (currentFilter.percentageRange) {
+      filters.percentage = {};
+      if (currentFilter.percentageRange === 'low') {
+        filters.percentage.lt = 50;
+      } else if (currentFilter.percentageRange === 'medium') {
+        filters.percentage.gte = 50;
+        filters.percentage.lt = 75;
+      } else if (currentFilter.percentageRange === 'high') {
+        filters.percentage.gte = 75;
+      }
+    }
+
+    if (currentFilter.minQuestions !== undefined || currentFilter.maxQuestions !== undefined) {
+      filters.numberOfQuestions = {};
+      if (currentFilter.minQuestions !== undefined) {
+        filters.numberOfQuestions.gte = currentFilter.minQuestions;
+      }
+      if (currentFilter.maxQuestions !== undefined) {
+        filters.numberOfQuestions.lte = currentFilter.maxQuestions;
+      }
+    }
+
+    if (currentFilter.startedAfter || currentFilter.startedBefore) {
+      filters.startedAt = {};
+      if (currentFilter.startedAfter) {
+        filters.startedAt.gte = currentFilter.startedAfter;
+      }
+      if (currentFilter.startedBefore) {
+        filters.startedAt.lte = currentFilter.startedBefore;
+      }
+    }
+
+    if (currentFilter.completedAfter || currentFilter.completedBefore) {
+      filters.completedAt = {};
+      if (currentFilter.completedAfter) {
+        filters.completedAt.gte = currentFilter.completedAfter;
+      }
+      if (currentFilter.completedBefore) {
+        filters.completedAt.lte = currentFilter.completedBefore;
+      }
+    }
+
     return Object.keys(filters).length > 0 ? filters : undefined;
   }
 
   private buildOrderClause() {
     const currentFilter = this.filter();
+
+    // When sorting by participant (email), sort by lastName then firstName
+    if (currentFilter.sortField === 'email') {
+      return [
+        { lastName: currentFilter.sortDirection },
+        { firstName: currentFilter.sortDirection },
+      ];
+    }
+
     return [{ [currentFilter.sortField]: currentFilter.sortDirection }];
   }
 
@@ -283,6 +364,26 @@ export class ListSessions {
 
   protected setSorting(sortField: SortField, sortDirection: SortEnumType): void {
     this.filter.update((f) => ({ ...f, sortField, sortDirection }));
+  }
+
+  protected setScoreRange(min?: number, max?: number): void {
+    this.filter.update((f) => ({ ...f, minScore: min, maxScore: max }));
+  }
+
+  protected setPercentageRange(range?: 'low' | 'medium' | 'high'): void {
+    this.filter.update((f) => ({ ...f, percentageRange: range }));
+  }
+
+  protected setQuestionsRange(min?: number, max?: number): void {
+    this.filter.update((f) => ({ ...f, minQuestions: min, maxQuestions: max }));
+  }
+
+  protected setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
+    if (type === 'started') {
+      this.filter.update((f) => ({ ...f, startedAfter: after, startedBefore: before }));
+    } else {
+      this.filter.update((f) => ({ ...f, completedAfter: after, completedBefore: before }));
+    }
   }
 
   protected sortByColumn(field: SortField): void {
@@ -300,7 +401,7 @@ export class ListSessions {
 
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.filter.update((f) => ({ ...f, searchTerm: value }));
+    this.searchSubject.next(value);
   }
 
   protected navigateToCreate(): void {

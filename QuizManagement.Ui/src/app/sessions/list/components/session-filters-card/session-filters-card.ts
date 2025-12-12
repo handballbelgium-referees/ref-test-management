@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { QuizSessionStatus, SortEnumType } from '../../../../../../graphql/generated';
 
@@ -18,6 +18,15 @@ interface SessionFilter {
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
+  minScore?: number;
+  maxScore?: number;
+  percentageRange?: 'low' | 'medium' | 'high';
+  minQuestions?: number;
+  maxQuestions?: number;
+  startedAfter?: string;
+  startedBefore?: string;
+  completedAfter?: string;
+  completedBefore?: string;
 }
 
 interface StatusCounts {
@@ -41,9 +50,28 @@ export class SessionFiltersCard {
   readonly statusFilterChange = output<QuizSessionStatus | undefined>();
   readonly invitationFilterChange = output<boolean | undefined>();
   readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
+  readonly scoreRangeChange = output<{ min?: number; max?: number }>();
+  readonly percentageRangeChange = output<'low' | 'medium' | 'high' | undefined>();
+  readonly questionsRangeChange = output<{ min?: number; max?: number }>();
+  readonly dateRangeChange = output<{
+    type: 'started' | 'completed';
+    after?: string;
+    before?: string;
+  }>();
 
   protected readonly QuizSessionStatus = QuizSessionStatus;
   protected readonly SortEnumType = SortEnumType;
+
+  protected readonly filtersExpanded = signal(false);
+  protected readonly sortingExpanded = signal(false);
+
+  protected toggleFilters(): void {
+    this.filtersExpanded.update((v) => !v);
+  }
+
+  protected toggleSorting(): void {
+    this.sortingExpanded.update((v) => !v);
+  }
 
   protected onStatusChange(status?: QuizSessionStatus): void {
     this.statusFilterChange.emit(status);
@@ -64,6 +92,64 @@ export class SessionFiltersCard {
     this.sortingChange.emit({
       field: this.filter().sortField,
       direction: direction as SortEnumType,
+    });
+  }
+
+  protected onMinScoreChange(value: string): void {
+    const min = value ? Number(value) : undefined;
+    this.scoreRangeChange.emit({ min, max: this.filter().maxScore });
+  }
+
+  protected onMaxScoreChange(value: string): void {
+    const max = value ? Number(value) : undefined;
+    this.scoreRangeChange.emit({ min: this.filter().minScore, max });
+  }
+
+  protected onPercentageRangeChange(value: string): void {
+    this.percentageRangeChange.emit(
+      value === '' ? undefined : (value as 'low' | 'medium' | 'high')
+    );
+  }
+
+  protected onMinQuestionsChange(value: string): void {
+    const min = value ? Number(value) : undefined;
+    this.questionsRangeChange.emit({ min, max: this.filter().maxQuestions });
+  }
+
+  protected onMaxQuestionsChange(value: string): void {
+    const max = value ? Number(value) : undefined;
+    this.questionsRangeChange.emit({ min: this.filter().minQuestions, max });
+  }
+
+  protected onStartedAfterChange(value: string): void {
+    this.dateRangeChange.emit({
+      type: 'started',
+      after: value || undefined,
+      before: this.filter().startedBefore,
+    });
+  }
+
+  protected onStartedBeforeChange(value: string): void {
+    this.dateRangeChange.emit({
+      type: 'started',
+      after: this.filter().startedAfter,
+      before: value || undefined,
+    });
+  }
+
+  protected onCompletedAfterChange(value: string): void {
+    this.dateRangeChange.emit({
+      type: 'completed',
+      after: value || undefined,
+      before: this.filter().completedBefore,
+    });
+  }
+
+  protected onCompletedBeforeChange(value: string): void {
+    this.dateRangeChange.emit({
+      type: 'completed',
+      after: this.filter().completedAfter,
+      before: value || undefined,
     });
   }
 }

@@ -1,5 +1,5 @@
 <div class="space-y-4">
-  <!-- Status Filter Tabs -->
+  <!-- Status Filter Tabs (Always Visible) -->
   <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-2">
     <div class="flex flex-wrap gap-2">
       <button
@@ -55,71 +55,287 @@
     </div>
   </div>
 
-  <!-- Additional Filters and Sorting -->
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-      <!-- Invitation Filter -->
-      <div>
-        <label class="block text-sm font-medium text-neutral-700 mb-2">
-          {{ 'sessions.list.filters.invitationLabel' | translate }}
-        </label>
-        <select
-          (change)="onInvitationChange($any($event.target).value)"
-          class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        >
-          <option value="">{{ 'sessions.list.filters.invitationAll' | translate }}</option>
-          <option value="true">{{ 'sessions.list.filters.invitationSent' | translate }}</option>
-          <option value="false">
-            {{ 'sessions.list.filters.invitationNotSent' | translate }}
-          </option>
-        </select>
-      </div>
+  <!-- Advanced Filters Panel -->
+  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+    <button
+      type="button"
+      (click)="toggleFilters()"
+      class="w-full px-4 py-3 flex items-center justify-between hover:bg-neutral-50 transition-colors"
+    >
+      <span class="text-sm font-medium text-neutral-900">
+        {{ 'sessions.list.filters.advancedFilters' | translate }}
+      </span>
+      <svg
+        class="w-5 h-5 text-neutral-500 transition-transform"
+        [class.rotate-180]="filtersExpanded()"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
 
-      <!-- Sort Field -->
-      <div>
-        <label class="block text-sm font-medium text-neutral-700 mb-2">
-          {{ 'sessions.list.sorting.sortBy' | translate }}
-        </label>
-        <select
-          [value]="filter().sortField"
-          (change)="onSortFieldChange($any($event.target).value)"
-          class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        >
-          <option value="email">{{ 'sessions.list.sorting.email' | translate }}</option>
-          <option value="status">{{ 'sessions.list.sorting.status' | translate }}</option>
-          <option value="numberOfQuestions">
-            {{ 'sessions.list.sorting.numberOfQuestions' | translate }}
-          </option>
-          <option value="score">{{ 'sessions.list.sorting.score' | translate }}</option>
-          <option value="invitationSent">
-            {{ 'sessions.list.sorting.invitationSent' | translate }}
-          </option>
-          <option value="startedAt">{{ 'sessions.list.sorting.startedAt' | translate }}</option>
-          <option value="completedAt">
-            {{ 'sessions.list.sorting.completedAt' | translate }}
-          </option>
-          <option value="percentage">{{ 'sessions.list.sorting.percentage' | translate }}</option>
-        </select>
-      </div>
+    @if (filtersExpanded()) {
+    <div class="p-6 border-t border-neutral-200 bg-neutral-50">
+      <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Left Column: Invitation & Performance Filters -->
+        <div class="space-y-6">
+          <!-- Invitation Status -->
+          <div class="bg-white rounded-lg p-4 border border-neutral-200">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              <label class="text-sm font-semibold text-neutral-900">
+                {{ 'sessions.list.filters.invitationLabel' | translate }}
+              </label>
+            </div>
+            <select
+              [value]="filter().invitationSent === undefined ? '' : filter().invitationSent"
+              (change)="onInvitationChange($any($event.target).value)"
+              class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+            >
+              <option value="">{{ 'sessions.list.filters.invitationAll' | translate }}</option>
+              <option value="true">{{ 'sessions.list.filters.invitationSent' | translate }}</option>
+              <option value="false">{{ 'sessions.list.filters.invitationNotSent' | translate }}</option>
+            </select>
+          </div>
 
-      <!-- Sort Direction -->
-      <div>
-        <label class="block text-sm font-medium text-neutral-700 mb-2">
-          {{ 'sessions.list.sorting.direction' | translate }}
-        </label>
-        <select
-          [value]="filter().sortDirection"
-          (change)="onSortDirectionChange($any($event.target).value)"
-          class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-        >
-          <option value="DESC">
-            {{ 'sessions.list.sorting.desc' | translate }}
-          </option>
-          <option value="ASC">
-            {{ 'sessions.list.sorting.asc' | translate }}
-          </option>
-        </select>
+          <!-- Performance Filters -->
+          <div class="bg-white rounded-lg p-4 border border-neutral-200">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              </svg>
+              <h3 class="text-sm font-semibold text-neutral-900">
+                {{ 'sessions.list.filters.performanceTitle' | translate }}
+              </h3>
+            </div>
+
+            <div class="space-y-4">
+              <!-- Score Range -->
+              <div>
+                <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+                  {{ 'sessions.list.filters.scoreRange' | translate }}
+                </label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    [value]="filter().minScore || ''"
+                    (input)="onMinScoreChange($any($event.target).value)"
+                    [placeholder]="'sessions.list.filters.minScore' | translate"
+                    min="0"
+                    class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  />
+                  <span class="text-neutral-400">—</span>
+                  <input
+                    type="number"
+                    [value]="filter().maxScore || ''"
+                    (input)="onMaxScoreChange($any($event.target).value)"
+                    [placeholder]="'sessions.list.filters.maxScore' | translate"
+                    min="0"
+                    class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+
+              <!-- Percentage Range -->
+              <div>
+                <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+                  {{ 'sessions.list.filters.percentageRange' | translate }}
+                </label>
+                <select
+                  [value]="filter().percentageRange || ''"
+                  (change)="onPercentageRangeChange($any($event.target).value)"
+                  class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                >
+                  <option value="">{{ 'sessions.list.filters.percentageAll' | translate }}</option>
+                  <option value="low">{{ 'sessions.list.filters.percentageLow' | translate }}</option>
+                  <option value="medium">{{ 'sessions.list.filters.percentageMedium' | translate }}</option>
+                  <option value="high">{{ 'sessions.list.filters.percentageHigh' | translate }}</option>
+                </select>
+              </div>
+
+              <!-- Questions Range -->
+              <div>
+                <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+                  {{ 'sessions.list.filters.questionsRange' | translate }}
+                </label>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="number"
+                    [value]="filter().minQuestions || ''"
+                    (input)="onMinQuestionsChange($any($event.target).value)"
+                    [placeholder]="'sessions.list.filters.min' | translate"
+                    min="1"
+                    class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  />
+                  <span class="text-neutral-400">—</span>
+                  <input
+                    type="number"
+                    [value]="filter().maxQuestions || ''"
+                    (input)="onMaxQuestionsChange($any($event.target).value)"
+                    [placeholder]="'sessions.list.filters.max' | translate"
+                    min="1"
+                    class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: Date Filters -->
+        <div class="space-y-6">
+          <!-- Started Date -->
+          <div class="bg-white rounded-lg p-4 border border-neutral-200">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <label class="text-sm font-semibold text-neutral-900">
+                {{ 'sessions.list.filters.startedDateRange' | translate }}
+              </label>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+                  {{ 'sessions.list.filters.from' | translate }}
+                </label>
+                <input
+                  type="date"
+                  [value]="filter().startedAfter || ''"
+                  (input)="onStartedAfterChange($any($event.target).value)"
+                  class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+                  {{ 'sessions.list.filters.to' | translate }}
+                </label>
+                <input
+                  type="date"
+                  [value]="filter().startedBefore || ''"
+                  (input)="onStartedBeforeChange($any($event.target).value)"
+                  class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Completed Date -->
+          <div class="bg-white rounded-lg p-4 border border-neutral-200">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <label class="text-sm font-semibold text-neutral-900">
+                {{ 'sessions.list.filters.completedDateRange' | translate }}
+              </label>
+            </div>
+            <div class="space-y-3">
+              <div>
+                <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+                  {{ 'sessions.list.filters.from' | translate }}
+                </label>
+                <input
+                  type="date"
+                  [value]="filter().completedAfter || ''"
+                  (input)="onCompletedAfterChange($any($event.target).value)"
+                  class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                />
+              </div>
+              <div>
+                <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+                  {{ 'sessions.list.filters.to' | translate }}
+                </label>
+                <input
+                  type="date"
+                  [value]="filter().completedBefore || ''"
+                  (input)="onCompletedBeforeChange($any($event.target).value)"
+                  class="w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
+    }
+  </div>
+
+  <!-- Sorting Panel -->
+  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+    <button
+      type="button"
+      (click)="toggleSorting()"
+      class="w-full px-4 py-3 flex items-center justify-between hover:bg-neutral-50 transition-colors"
+    >
+      <span class="text-sm font-medium text-neutral-900">
+        {{ 'sessions.list.sorting.title' | translate }}
+      </span>
+      <svg
+        class="w-5 h-5 text-neutral-500 transition-transform"
+        [class.rotate-180]="sortingExpanded()"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+
+    @if (sortingExpanded()) {
+    <div class="px-4 pb-4 border-t border-neutral-200">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+        <!-- Sort Field -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'sessions.list.sorting.sortBy' | translate }}
+          </label>
+          <select
+            [value]="filter().sortField"
+            (change)="onSortFieldChange($any($event.target).value)"
+            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="email">{{ 'sessions.list.sorting.email' | translate }}</option>
+            <option value="status">{{ 'sessions.list.sorting.status' | translate }}</option>
+            <option value="numberOfQuestions">
+              {{ 'sessions.list.sorting.numberOfQuestions' | translate }}
+            </option>
+            <option value="score">{{ 'sessions.list.sorting.score' | translate }}</option>
+            <option value="invitationSent">
+              {{ 'sessions.list.sorting.invitationSent' | translate }}
+            </option>
+            <option value="startedAt">{{ 'sessions.list.sorting.startedAt' | translate }}</option>
+            <option value="completedAt">
+              {{ 'sessions.list.sorting.completedAt' | translate }}
+            </option>
+            <option value="percentage">{{ 'sessions.list.sorting.percentage' | translate }}</option>
+          </select>
+        </div>
+
+        <!-- Sort Direction -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'sessions.list.sorting.direction' | translate }}
+          </label>
+          <select
+            [value]="filter().sortDirection"
+            (change)="onSortDirectionChange($any($event.target).value)"
+            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          >
+            <option value="DESC">
+              {{ 'sessions.list.sorting.desc' | translate }}
+            </option>
+            <option value="ASC">
+              {{ 'sessions.list.sorting.asc' | translate }}
+            </option>
+          </select>
+        </div>
+      </div>
+    </div>
+    }
   </div>
 </div>
