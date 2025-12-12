@@ -1,20 +1,14 @@
+<!-- Hero Section -->
+<div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ 'sessions.create.title' | translate }}</h1>
+    <p class="text-primary-100 text-lg">{{ 'sessions.create.subtitle' | translate }}</p>
+  </div>
+</div>
+
+<!-- Main Content -->
 <div class="min-h-screen bg-neutral-50 py-8 px-4">
   <div class="max-w-7xl mx-auto">
-    <!-- Header with Accent -->
-    <div class="mb-8">
-      <div class="flex items-center gap-3 mb-3">
-        <div class="h-12 w-1 bg-primary-600 rounded-full"></div>
-        <div>
-          <h1 class="text-3xl font-bold text-neutral-900">
-            {{ 'sessions.create.title' | translate }}
-          </h1>
-          <p class="text-sm text-neutral-600 mt-1">
-            {{ 'sessions.create.subtitle' | translate }}
-          </p>
-        </div>
-      </div>
-    </div>
-
     <form (submit)="onSubmit(); $event.preventDefault()">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <!-- Left Column: Participants (2/3 width on large screens) -->
@@ -68,166 +62,21 @@
             </div>
 
             <div class="p-6">
-              @if (showBulkImport()) {
-              <div class="mb-6 p-4 bg-secondary-50 rounded-xl border border-secondary-200">
-                <div class="mb-3">
-                  <label for="bulkText" class="block text-sm font-semibold text-neutral-900 mb-2">
-                    {{ 'sessions.create.form.users.bulkImportLabel' | translate }}
-                  </label>
-                  <textarea
-                    id="bulkText"
-                    tabindex="2"
-                    [value]="bulkText()"
-                    (input)="bulkText.set($any($event.target).value)"
-                    rows="6"
-                    [title]="'sessions.create.form.users.bulkImportLabel' | translate"
-                    [attr.aria-label]="'sessions.create.form.users.bulkImportLabel' | translate"
-                    class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm bg-white"
-                    placeholder="John Doe john.doe@example.com&#10;Jane Smith jane.smith@example.com"
-                  ></textarea>
-                  <p class="mt-2 text-xs text-neutral-600">
-                    {{ 'sessions.create.form.users.bulkImportHint' | translate }}
-                  </p>
-                </div>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    tabindex="3"
-                    (click)="importBulk()"
-                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors"
-                  >
-                    {{ 'sessions.create.form.users.bulkImportButton' | translate }}
-                  </button>
-                  <button
-                    type="button"
-                    tabindex="4"
-                    (click)="toggleBulkImport()"
-                    class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium text-sm transition-colors"
-                  >
-                    {{ 'sessions.create.form.cancel' | translate }}
-                  </button>
-                </div>
-              </div>
-              }
+              <app-bulk-user-import-modal
+                [show]="showBulkImport()"
+                (import)="onBulkUserImport($event)"
+                (cancel)="onBulkUserCancel()"
+              />
+
 
               <div class="space-y-2">
                 @for (user of sessionModel().users; track $index; let i = $index) {
-                <div
-                  class="flex gap-2 items-start p-3 bg-neutral-50 rounded-lg border border-neutral-200 hover:border-primary-200 hover:bg-primary-50/30 transition-all group"
-                >
-                  <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    <div role="group" [attr.aria-labelledby]="'firstName-label-' + i">
-                      <label
-                        [id]="'firstName-label-' + i"
-                        [for]="'firstName-' + i"
-                        class="block text-xs font-medium text-neutral-700 mb-1"
-                      >
-                        {{ 'sessions.create.form.users.firstName' | translate }} *
-                      </label>
-                      <input
-                        [id]="'firstName-' + i"
-                        type="text"
-                        [attr.tabindex]="i * 4 + 5"
-                        [field]="sessionForm.users[i].firstName"
-                        [class.border-red-500]="
-                          sessionForm.users[i].firstName().touched() &&
-                          sessionForm.users[i].firstName().invalid()
-                        "
-                        [title]="'sessions.create.form.users.firstName' | translate"
-                        [attr.aria-label]="'sessions.create.form.users.firstName' | translate"
-                        class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
-                        [placeholder]="
-                          'sessions.create.form.users.firstNamePlaceholder' | translate
-                        "
-                      />
-                      @if (sessionForm.users[i].firstName().touched() &&
-                      sessionForm.users[i].firstName().invalid()) {
-                      <p class="text-xs text-red-600 mt-1">
-                        {{ sessionForm.users[i].firstName().errors()[0]?.message | translate }}
-                      </p>
-                      }
-                    </div>
-                    <div role="group" [attr.aria-labelledby]="'lastName-label-' + i">
-                      <label
-                        [id]="'lastName-label-' + i"
-                        [for]="'lastName-' + i"
-                        class="block text-xs font-medium text-neutral-700 mb-1"
-                      >
-                        {{ 'sessions.create.form.users.lastName' | translate }} *
-                      </label>
-                      <input
-                        [id]="'lastName-' + i"
-                        type="text"
-                        [attr.tabindex]="i * 4 + 6"
-                        [field]="sessionForm.users[i].lastName"
-                        [class.border-red-500]="
-                          sessionForm.users[i].lastName().touched() &&
-                          sessionForm.users[i].lastName().invalid()
-                        "
-                        [title]="'sessions.create.form.users.lastName' | translate"
-                        [attr.aria-label]="'sessions.create.form.users.lastName' | translate"
-                        class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
-                        [placeholder]="'sessions.create.form.users.lastNamePlaceholder' | translate"
-                      />
-                      @if (sessionForm.users[i].lastName().touched() &&
-                      sessionForm.users[i].lastName().invalid()) {
-                      <p class="text-xs text-red-600 mt-1">
-                        {{ sessionForm.users[i].lastName().errors()[0]?.message | translate }}
-                      </p>
-                      }
-                    </div>
-                    <div role="group" [attr.aria-labelledby]="'email-label-' + i">
-                      <label
-                        [id]="'email-label-' + i"
-                        [for]="'email-' + i"
-                        class="block text-xs font-medium text-neutral-700 mb-1"
-                      >
-                        {{ 'sessions.create.form.users.email' | translate }} *
-                      </label>
-                      <input
-                        [id]="'email-' + i"
-                        type="email"
-                        [attr.tabindex]="i * 4 + 7"
-                        [field]="sessionForm.users[i].email"
-                        [class.border-red-500]="
-                          sessionForm.users[i].email().touched() &&
-                          sessionForm.users[i].email().invalid()
-                        "
-                        [title]="'sessions.create.form.users.email' | translate"
-                        [attr.aria-label]="'sessions.create.form.users.email' | translate"
-                        class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
-                        [placeholder]="'sessions.create.form.users.emailPlaceholder' | translate"
-                      />
-                      @if (sessionForm.users[i].email().touched() &&
-                      sessionForm.users[i].email().invalid()) {
-                      <p class="text-xs text-red-600 mt-1">
-                        {{ sessionForm.users[i].email().errors()[0]?.message | translate }}
-                      </p>
-                      }
-                    </div>
-                  </div>
-                  @if (sessionModel().users.length > 1) {
-                  <button
-                    type="button"
-                    [attr.tabindex]="i * 4 + 8"
-                    title="{{ 'sessions.create.form.users.removeParticipant' | translate }}"
-                    (click)="removeUser(i)"
-                    class="mt-6 p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                    [attr.aria-label]="
-                      ('sessions.create.form.users.removeParticipant' | translate) + ' ' + (i + 1)
-                    "
-                  >
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                  }
-                </div>
+                <app-session-user-list-item
+                  [userFormControl]="sessionForm.users[i]"
+                  [index]="i"
+                  [showRemove]="sessionModel().users.length > 1"
+                  (remove)="removeUser(i)"
+                />
                 }
               </div>
 
@@ -301,234 +150,18 @@
               </div>
             </div>
             <div class="p-6 space-y-4">
-              @if (showBulkQuestionImport()) {
-              <div class="p-4 bg-secondary-50 rounded-xl border border-secondary-200">
-                <div class="mb-3">
-                  <label
-                    for="bulkQuestionText"
-                    class="block text-sm font-semibold text-neutral-900 mb-2"
-                    >{{
-                      'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate
-                    }}</label
-                  >
-                  <textarea
-                    id="bulkQuestionText"
-                    [value]="bulkQuestionText()"
-                    (input)="bulkQuestionText.set($any($event.target).value)"
-                    rows="6"
-                    [title]="
-                      'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate
-                    "
-                    [attr.aria-label]="
-                      'sessions.create.form.specificQuestionNumbers.bulkImportLabel' | translate
-                    "
-                    class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm bg-white"
-                    [placeholder]="'1.1\n1.2, 1.3\n2.1'"
-                  ></textarea>
-                  <p class="mt-2 text-xs text-neutral-600">
-                    {{ 'sessions.create.form.specificQuestionNumbers.bulkImportHint' | translate }}
-                  </p>
-                </div>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    (click)="importBulkQuestions()"
-                    [disabled]="searchingQuestions()"
-                    class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-                  >
-                    @if (searchingQuestions()) {
-                    <svg
-                      class="animate-spin h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        class="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        stroke-width="4"
-                      ></circle>
-                      <path
-                        class="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    {{
-                      'sessions.create.form.specificQuestionNumbers.bulkImportImporting' | translate
-                    }}
-                    } @else {
-                    {{
-                      'sessions.create.form.specificQuestionNumbers.bulkImportButton' | translate
-                    }}
-                    }
-                  </button>
-                  <button
-                    type="button"
-                    tabindex="103"
-                    (click)="toggleBulkQuestionImport()"
-                    class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium text-sm transition-colors"
-                  >
-                    {{ 'common.cancel' | translate }}
-                  </button>
-                </div>
-              </div>
-              }
-              <div class="relative">
-                <label for="questionSearch" class="sr-only">{{
-                  'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
-                }}</label>
-                <input
-                  id="questionSearch"
-                  type="text"
-                  tabindex="2150"
-                  title="{{
-                    'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
-                  }}"
-                  [attr.aria-label]="
-                    'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
-                  "
-                  [value]="questionSearchTerm()"
-                  (input)="onQuestionSearchInput($event)"
-                  (keydown)="onQuestionKeydown($event)"
-                  (blur)="closeDropdown()"
-                  class="w-full px-3 py-2.5 border border-dashed border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white hover:border-primary-400 hover:bg-primary-50 transition-colors"
-                  [placeholder]="
-                    'sessions.create.form.specificQuestionNumbers.searchPlaceholder' | translate
-                  "
-                  autocomplete="off"
-                />
-                @if (searchingQuestions()) {
-                <div class="absolute right-3 top-1/2 -translate-y-1/2">
-                  <svg
-                    class="animate-spin h-4 w-4 text-primary-600"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      class="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      stroke-width="4"
-                    ></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                </div>
-                } @if (showDropdown() && questionSuggestions().length > 0) {
-                <div
-                  class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-                >
-                  @for (suggestion of questionSuggestions(); track suggestion.id; let idx = $index)
-                  {
-                  <button
-                    type="button"
-                    (mousedown)="$event.preventDefault(); selectQuestion(suggestion)"
-                    [class]="
-                      'w-full px-4 py-3 text-left focus:outline-none border-b border-neutral-100 last:border-b-0 transition-colors flex items-start gap-3 ' +
-                      (highlightedIndex() === idx ? 'bg-primary-50' : 'hover:bg-primary-50')
-                    "
-                  >
-                    <span
-                      class="inline-flex items-center justify-center min-w-8 h-8 px-2 bg-primary-100 text-primary-700 rounded-lg font-bold text-sm shrink-0 pointer-events-none"
-                      >{{ suggestion.number }}</span
-                    >
-                    <div class="flex-1 min-w-0 pointer-events-none">
-                      <p class="text-sm text-neutral-900 font-medium truncate">
-                        {{ suggestion.phrase | appTranslation: currentLanguage() }}
-                      </p>
-                    </div>
-                  </button>
-                  }
-                </div>
-                } @else if (showDropdown() && !searchingQuestions() &&
-                questionSearchTerm().trim().length > 0) {
-                <div
-                  class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg p-4"
-                >
-                  <p class="text-sm text-neutral-500 text-center">
-                    {{ 'sessions.create.form.specificQuestionNumbers.noResults' | translate }}
-                  </p>
-                </div>
-                }
-              </div>
-              @if (selectedQuestions().length > 0) {
-              <div class="border border-neutral-200 rounded-lg overflow-hidden">
-                <table class="w-full">
-                  <thead class="bg-neutral-50 border-b border-neutral-200">
-                    <tr>
-                      <th
-                        class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider w-24"
-                      >
-                        {{ 'sessions.create.form.specificQuestionNumbers.tableNumber' | translate }}
-                      </th>
-                      <th
-                        class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wider"
-                      >
-                        {{
-                          'sessions.create.form.specificQuestionNumbers.tableQuestion' | translate
-                        }}
-                      </th>
-                      <th class="px-4 py-3 w-16"></th>
-                    </tr>
-                  </thead>
-                  <tbody class="bg-white divide-y divide-neutral-200">
-                    @for (question of selectedQuestions(); track question.number; let i = $index) {
-                    <tr class="hover:bg-neutral-50 transition-colors group">
-                      <td class="px-4 py-3">
-                        <span
-                          class="inline-flex items-center justify-center px-2 py-1 bg-primary-100 text-primary-700 rounded font-bold text-sm"
-                          >{{ question.number }}</span
-                        >
-                      </td>
-                      <td class="px-4 py-3 text-sm text-neutral-900">{{ question.phrase | appTranslation: currentLanguage() }}</td>
-                      <td class="px-4 py-3 text-right">
-                        <button
-                          type="button"
-                          [attr.tabindex]="2200 + i"
-                          title="{{
-                            'sessions.create.form.specificQuestionNumbers.removeQuestion'
-                              | translate
-                          }}"
-                          (click)="removeSelectedQuestion(question.number)"
-                          class="p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
-                          [attr.aria-label]="
-                            ('sessions.create.form.specificQuestionNumbers.removeQuestion'
-                              | translate) +
-                            ' ' +
-                            question.number
-                          "
-                        >
-                          <svg
-                            class="w-4 h-4"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              stroke-linecap="round"
-                              stroke-linejoin="round"
-                              stroke-width="2"
-                              d="M6 18L18 6M6 6l12 12"
-                            />
-                          </svg>
-                        </button>
-                      </td>
-                    </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-              }
+              <app-bulk-question-import-modal
+                [show]="showBulkQuestionImport()"
+                (import)="onBulkQuestionImport($event)"
+                (cancel)="onBulkQuestionCancel()"
+              />
+              <app-question-search-autocomplete
+                [currentLanguage]="currentLanguage()"
+                [selectedQuestions]="selectedQuestions()"
+                (selectQuestion)="onQuestionSelect($event)"
+                (removeQuestion)="onQuestionRemove($event)"
+                (bulkImport)="toggleBulkQuestionImport()"
+              />
               <input
                 type="hidden"
                 [field]="sessionForm.specificQuestionNumbers"

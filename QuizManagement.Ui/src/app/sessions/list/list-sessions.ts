@@ -18,6 +18,7 @@ import {
   QuizSessionStatus,
   SortEnumType,
 } from '../../../../graphql/generated';
+import { SessionFiltersCard } from './components/session-filters-card/session-filters-card';
 
 type SortField =
   | 'completedAt'
@@ -43,7 +44,7 @@ type SessionNode = NonNullable<
 
 @Component({
   selector: 'app-list-sessions',
-  imports: [TranslatePipe, DatePipe],
+  imports: [TranslatePipe, DatePipe, SessionFiltersCard],
   templateUrl: './list-sessions.html',
   styleUrl: './list-sessions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,

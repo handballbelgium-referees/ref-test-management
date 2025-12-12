@@ -30,134 +30,14 @@
   </div>
 
   <!-- Filters and Sorting -->
-  <div class="mb-6 space-y-4">
-    <!-- Status Filter Tabs -->
-    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-2">
-      <div class="flex flex-wrap gap-2">
-        <button
-          type="button"
-          (click)="setStatusFilter()"
-          [class.bg-primary-100]="!filter().status"
-          [class.text-primary-700]="!filter().status"
-          [class.font-medium]="!filter().status"
-          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
-        >
-          {{ 'sessions.list.filters.all' | translate }} ({{ statusCounts().all }})
-        </button>
-        <button
-          type="button"
-          (click)="setStatusFilter(QuizSessionStatus.Pending)"
-          [class.bg-primary-100]="filter().status === QuizSessionStatus.Pending"
-          [class.text-primary-700]="filter().status === QuizSessionStatus.Pending"
-          [class.font-medium]="filter().status === QuizSessionStatus.Pending"
-          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
-        >
-          {{ 'sessions.list.filters.pending' | translate }} ({{ statusCounts().pending }})
-        </button>
-        <button
-          type="button"
-          (click)="setStatusFilter(QuizSessionStatus.InProgress)"
-          [class.bg-primary-100]="filter().status === QuizSessionStatus.InProgress"
-          [class.text-primary-700]="filter().status === QuizSessionStatus.InProgress"
-          [class.font-medium]="filter().status === QuizSessionStatus.InProgress"
-          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
-        >
-          {{ 'sessions.list.filters.inProgress' | translate }} ({{ statusCounts().inProgress }})
-        </button>
-        <button
-          type="button"
-          (click)="setStatusFilter(QuizSessionStatus.Completed)"
-          [class.bg-primary-100]="filter().status === QuizSessionStatus.Completed"
-          [class.text-primary-700]="filter().status === QuizSessionStatus.Completed"
-          [class.font-medium]="filter().status === QuizSessionStatus.Completed"
-          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
-        >
-          {{ 'sessions.list.filters.completed' | translate }} ({{ statusCounts().completed }})
-        </button>
-        <button
-          type="button"
-          (click)="setStatusFilter(QuizSessionStatus.Expired)"
-          [class.bg-primary-100]="filter().status === QuizSessionStatus.Expired"
-          [class.text-primary-700]="filter().status === QuizSessionStatus.Expired"
-          [class.font-medium]="filter().status === QuizSessionStatus.Expired"
-          class="px-4 py-2 rounded-lg hover:bg-neutral-100 transition-colors"
-        >
-          {{ 'sessions.list.filters.expired' | translate }} ({{ statusCounts().expired }})
-        </button>
-      </div>
-    </div>
-
-    <!-- Additional Filters and Sorting -->
-    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <!-- Invitation Filter -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">
-            {{ 'sessions.list.filters.invitationLabel' | translate }}
-          </label>
-          <select
-            (change)="
-              setInvitationFilter(
-                $any($event.target).value === '' ? undefined : $any($event.target).value === 'true'
-              )
-            "
-            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="">{{ 'sessions.list.filters.invitationAll' | translate }}</option>
-            <option value="true">{{ 'sessions.list.filters.invitationSent' | translate }}</option>
-            <option value="false">
-              {{ 'sessions.list.filters.invitationNotSent' | translate }}
-            </option>
-          </select>
-        </div>
-
-        <!-- Sort Field -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">
-            {{ 'sessions.list.sorting.sortBy' | translate }}
-          </label>
-          <select
-            [value]="filter().sortField"
-            (change)="setSorting($any($event.target).value, filter().sortDirection)"
-            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="email">{{ 'sessions.list.sorting.email' | translate }}</option>
-            <option value="status">{{ 'sessions.list.sorting.status' | translate }}</option>
-            <option value="numberOfQuestions">
-              {{ 'sessions.list.sorting.numberOfQuestions' | translate }}
-            </option>
-            <option value="score">{{ 'sessions.list.sorting.score' | translate }}</option>
-            <option value="invitationSent">
-              {{ 'sessions.list.sorting.invitationSent' | translate }}
-            </option>
-            <option value="startedAt">{{ 'sessions.list.sorting.startedAt' | translate }}</option>
-            <option value="completedAt">
-              {{ 'sessions.list.sorting.completedAt' | translate }}
-            </option>
-            <option value="percentage">{{ 'sessions.list.sorting.percentage' | translate }}</option>
-          </select>
-        </div>
-
-        <!-- Sort Direction -->
-        <div>
-          <label class="block text-sm font-medium text-neutral-700 mb-2">
-            {{ 'sessions.list.sorting.direction' | translate }}
-          </label>
-          <select
-            [value]="filter().sortDirection"
-            (change)="setSorting(filter().sortField, $any($event.target).value)"
-            class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-          >
-            <option value="DESC">
-              {{ 'sessions.list.sorting.desc' | translate }}
-            </option>
-            <option value="ASC">
-              {{ 'sessions.list.sorting.asc' | translate }}
-            </option>
-          </select>
-        </div>
-      </div>
-    </div>
+  <div class="mb-6">
+    <app-session-filters-card
+      [filter]="filter()"
+      [statusCounts]="statusCounts()"
+      (statusFilterChange)="setStatusFilter($event)"
+      (invitationFilterChange)="setInvitationFilter($event)"
+      (sortingChange)="setSorting($event.field, $event.direction)"
+    />
   </div>
 
   <!-- Loading State -->
