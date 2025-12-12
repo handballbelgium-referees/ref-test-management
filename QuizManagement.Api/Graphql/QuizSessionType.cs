@@ -35,6 +35,8 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
         descriptor.Field(x => x.CompletedAt).Description("Completion date and time of the quiz session").Authorize();
         descriptor.Field(x => x.Percentage).Description("Percentage of correct answers");
         descriptor.Field(x => x.Score).Description("Score of the quiz session");
+        descriptor.Field(x => x.WrongQuestionIds).Description("List of question IDs that were answered incorrectly");
+        descriptor.Field(x => x.WrongAnswerIds).Description("List of answer IDs that were answered incorrectly");
         descriptor.Field(x => x.Status)
             .Description("Status of the quiz session (e.g., InProgress, Completed, Expired)")
             .Resolve(async ctx =>

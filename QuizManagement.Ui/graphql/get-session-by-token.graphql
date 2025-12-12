@@ -1,0 +1,20 @@
+query GetQuizSessionByToken($token: String!) {
+  quizSessionByToken(token: $token) {
+    ... on QuizSession {
+      id
+      name
+      email
+      numberOfQuestions
+      maxTimeInMinutes
+    }
+    ... on QuizSessionNotFoundError {
+      message
+    }
+    ... on QuizSessionExpiredError {
+      message
+    }
+    ... on InvalidQuizSessionStatusError {
+      message
+    }
+  }
+}

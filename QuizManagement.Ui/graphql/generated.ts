@@ -228,7 +228,6 @@ export type Query = {
   node?: Maybe<Node>;
   /** Lookup nodes by a list of IDs. */
   nodes: Array<Maybe<Node>>;
-  quizSessionById?: Maybe<QuizSession>;
   quizSessionByToken: QuizSessionByTokenResult;
   quizSessions?: Maybe<QuizSessionsConnection>;
   searchQuestionsByNumber: Array<Question>;
@@ -242,11 +241,6 @@ export type QueryNodeArgs = {
 
 export type QueryNodesArgs = {
   ids: Array<Scalars['ID']['input']>;
-};
-
-
-export type QueryQuizSessionByIdArgs = {
-  id: Scalars['UUID']['input'];
 };
 
 
@@ -508,6 +502,13 @@ export type UuidOperationFilterInput = {
   nlte?: InputMaybe<Scalars['UUID']['input']>;
 };
 
+export type CompleteQuizSessionMutationVariables = Exact<{
+  input: CompleteQuizInput;
+}>;
+
+
+export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, completedAt?: string | null, score?: number | null, percentage?: number | null, questions?: Array<{ __typename?: 'Question', id: string, number: string } | null> | null } | null } };
+
 export type CreateBulkQuizSessionsMutationVariables = Exact<{
   input: CreateBulkQuizSessionsInput;
 }>;
@@ -521,6 +522,18 @@ export type DeleteQuizSessionsMutationVariables = Exact<{
 
 
 export type DeleteQuizSessionsMutation = { __typename?: 'Mutation', deleteQuizSessions: { __typename?: 'DeleteQuizSessionsPayload', deleteQuizSessionsResult?: { __typename?: 'DeleteQuizSessionsResult', totalRequested: number, successfullySent: number, failed: number, deletedSessions: Array<{ __typename?: 'QuizSession', id: string }>, errors: Array<{ __typename?: 'DeleteQuizSessionError', quizSessionId: string, errorMessage: string }> } | null } };
+
+export type GetQuizSessionByTokenQueryVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+
+export type GetQuizSessionByTokenQuery = { __typename?: 'Query', quizSessionByToken:
+    | { __typename?: 'InvalidQuizSessionStatusError', message: string }
+    | { __typename?: 'QuizSession', id: string, name?: string | null, email: string, numberOfQuestions: number, maxTimeInMinutes: number }
+    | { __typename?: 'QuizSessionExpiredError', message: string }
+    | { __typename?: 'QuizSessionNotFoundError', message: string }
+   };
 
 export type GetQuizSessionsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -546,6 +559,44 @@ export type SendInvitationsMutationVariables = Exact<{
 
 export type SendInvitationsMutation = { __typename?: 'Mutation', sendInvitations: { __typename?: 'SendInvitationsPayload', sendInvitationsResult?: { __typename?: 'SendInvitationsResult', totalRequested: number, successfullySent: number, failed: number, sentSessions: Array<{ __typename?: 'QuizSession', id: string, invitationSent: boolean }>, errors: Array<{ __typename?: 'SendInvitationError', quizSessionId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
 
+export type StartQuizSessionMutationVariables = Exact<{
+  input: StartQuizSessionInput;
+}>;
+
+
+export type StartQuizSessionMutation = { __typename?: 'Mutation', startQuizSession: { __typename?: 'StartQuizSessionPayload', quizSession?: { __typename?: 'QuizSession', id: string, startedAt?: string | null, questions?: Array<{ __typename?: 'Question', id: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, phrase?: Record<string, string> | null }> } | null> | null } | null, errors?: Array<
+      | { __typename?: 'InvalidQuizSessionStatusError', message: string }
+      | { __typename?: 'QuizSessionExpiredError', message: string }
+      | { __typename?: 'QuizSessionNotFoundError', message: string }
+    > | null } };
+
+export const CompleteQuizSessionDocument = gql`
+    mutation CompleteQuizSession($input: CompleteQuizInput!) {
+  completeQuiz(input: $input) {
+    quizSession {
+      id
+      completedAt
+      score
+      percentage
+      questions {
+        id
+        number
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CompleteQuizSessionGQL extends Apollo.Mutation<CompleteQuizSessionMutation, CompleteQuizSessionMutationVariables> {
+    override document = CompleteQuizSessionDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const CreateBulkQuizSessionsDocument = gql`
     mutation CreateBulkQuizSessions($input: CreateBulkQuizSessionsInput!) {
   createBulkQuizSessions(input: $input) {
@@ -606,6 +657,39 @@ export const DeleteQuizSessionsDocument = gql`
   })
   export class DeleteQuizSessionsGQL extends Apollo.Mutation<DeleteQuizSessionsMutation, DeleteQuizSessionsMutationVariables> {
     override document = DeleteQuizSessionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetQuizSessionByTokenDocument = gql`
+    query GetQuizSessionByToken($token: String!) {
+  quizSessionByToken(token: $token) {
+    ... on QuizSession {
+      id
+      name
+      email
+      numberOfQuestions
+      maxTimeInMinutes
+    }
+    ... on QuizSessionNotFoundError {
+      message
+    }
+    ... on QuizSessionExpiredError {
+      message
+    }
+    ... on InvalidQuizSessionStatusError {
+      message
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetQuizSessionByTokenGQL extends Apollo.Query<GetQuizSessionByTokenQuery, GetQuizSessionByTokenQueryVariables> {
+    override document = GetQuizSessionByTokenDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -699,6 +783,46 @@ export const SendInvitationsDocument = gql`
   })
   export class SendInvitationsGQL extends Apollo.Mutation<SendInvitationsMutation, SendInvitationsMutationVariables> {
     override document = SendInvitationsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const StartQuizSessionDocument = gql`
+    mutation StartQuizSession($input: StartQuizSessionInput!) {
+  startQuizSession(input: $input) {
+    quizSession {
+      id
+      startedAt
+      questions {
+        id
+        phrase
+        answers {
+          id
+          phrase
+        }
+      }
+    }
+    errors {
+      ... on QuizSessionNotFoundError {
+        message
+      }
+      ... on QuizSessionExpiredError {
+        message
+      }
+      ... on InvalidQuizSessionStatusError {
+        message
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class StartQuizSessionGQL extends Apollo.Mutation<StartQuizSessionMutation, StartQuizSessionMutationVariables> {
+    override document = StartQuizSessionDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

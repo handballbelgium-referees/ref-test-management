@@ -1,0 +1,27 @@
+mutation StartQuizSession($input: StartQuizSessionInput!) {
+  startQuizSession(input: $input) {
+    quizSession {
+      id
+      startedAt
+      questions {
+        id
+        phrase
+        answers {
+          id
+          phrase
+        }
+      }
+    }
+    errors {
+      ... on QuizSessionNotFoundError {
+        message
+      }
+      ... on QuizSessionExpiredError {
+        message
+      }
+      ... on InvalidQuizSessionStatusError {
+        message
+      }
+    }
+  }
+}
