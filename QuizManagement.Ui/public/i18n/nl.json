@@ -259,7 +259,7 @@
     "start_button": "Start Quiz"
   },
   "footer": {
-    "copyright": "© {{year}} Handbal Quiz Beheer. Gebaseerd op IHF en KBHB/URBH regels.",
+    "copyright": "© {{year}} Handbal Quiz Beheer. Alle rechten voorbehouden.",
     "creator": "Gemaakt door Kristof Gilis"
   }
 }

@@ -251,7 +251,7 @@
     "start_button": "Quiz starten"
   },
   "footer": {
-    "copyright": "© {{year}} Handball-Quiz-Verwaltung. Basierend auf IHF- und KBHB/URBH-Regeln.",
+    "copyright": "© {{year}} Handball-Quiz-Verwaltung. Alle Rechte vorbehalten.",
     "creator": "Erstellt von Kristof Gilis"
   }
 }

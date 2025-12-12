@@ -251,7 +251,7 @@
     "start_button": "Start Quiz"
   },
   "footer": {
-    "copyright": "© {{year}} Handball Quiz Management System. Powered by KBHB/URBH.",
+    "copyright": "© {{year}} Handball Quiz Management System. All rights reserved.",
     "creator": "Created by Kristof Gilis"
   }
 }
