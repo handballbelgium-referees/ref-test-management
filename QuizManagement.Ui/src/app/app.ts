@@ -38,9 +38,19 @@ export class App implements OnInit {
 
   ngOnInit(): void {
     this.translate.addLangs(['en', 'nl', 'fr', 'de']);
-    const browserLang = this.translate.getBrowserLang();
-    const defaultLang =
-      browserLang && ['en', 'nl', 'fr', 'de'].includes(browserLang) ? browserLang : 'en';
+
+    // Check for saved language preference
+    const savedLang = localStorage.getItem('app-language') as Language | null;
+    let defaultLang: string;
+
+    if (savedLang && ['en', 'nl', 'fr', 'de'].includes(savedLang)) {
+      defaultLang = savedLang;
+    } else {
+      const browserLang = this.translate.getBrowserLang();
+      defaultLang =
+        browserLang && ['en', 'nl', 'fr', 'de'].includes(browserLang) ? browserLang : 'en';
+    }
+
     this.translate.use(defaultLang);
 
     // Update page title when language changes
@@ -62,6 +72,7 @@ export class App implements OnInit {
 
   protected setLanguage(lang: Language): void {
     this.translate.use(lang);
+    localStorage.setItem('app-language', lang);
     this.showLanguageMenu.set(false);
   }
 
