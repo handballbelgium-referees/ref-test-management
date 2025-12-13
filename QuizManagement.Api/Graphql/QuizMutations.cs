@@ -103,10 +103,12 @@ public static class QuizMutations
 
         await context.SaveChangesAsync(cancellationToken);
 
-        if (!session.ResultsSent) 
+        if (!session.ResultsSent)
             return session;
 
-        var questionsWithCorrectAnswers = await ihfRulesQuestionsService.GetQuestionsByIdAsync(input.QuestionIds, true, true, cancellationToken);
+        var questionsWithCorrectAnswers =
+            await ihfRulesQuestionsService.GetQuestionsByIdAsync(input.QuestionIds, true, true, false,
+                cancellationToken);
 
         // Send results email
         await emailService.SendQuizResultsAsync(
@@ -153,7 +155,7 @@ public static class QuizMutations
             ? []
             : await ihfRulesQuestionsService.GetQuestionIdsByNumberAsync(input.SpecificQuestionNumbers,
                 cancellationToken);
-        
+
         Guid titleId;
 
         switch (input.Title.Id)
@@ -166,7 +168,7 @@ public static class QuizMutations
                 var title = QuizTitle.Create(input.Title.Name);
                 context.QuizTitles.Add(title);
                 await context.SaveChangesAsync(cancellationToken);
-            
+
                 titleId = title.Id;
                 break;
             }
@@ -247,7 +249,7 @@ public static class QuizMutations
                 });
             }
         }
-        
+
         context.QuizSessions.AddRange(createdSessions);
         await context.SaveChangesAsync(cancellationToken);
 
@@ -302,7 +304,7 @@ public static class QuizMutations
 
                 result.SentSessions.Add(session);
                 result.SuccessfullySent++;
-                
+
                 session.SendInvitation();
             }
             catch (Exception e)
@@ -368,7 +370,9 @@ public static class QuizMutations
                 if (session.Status != QuizSessionStatus.Completed)
                     throw new InvalidQuizSessionStatusException(session.Status, QuizSessionStatus.Completed);
 
-                var questionsWithCorrectAnswers = await ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, true, true, cancellationToken);
+                var questionsWithCorrectAnswers =
+                    await ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, true, true, false,
+                        cancellationToken);
 
                 // Send results email
                 await emailService.SendQuizResultsAsync(
@@ -385,7 +389,7 @@ public static class QuizMutations
 
                 result.SentSessions.Add(session);
                 result.SuccessfullySent++;
-                
+
                 session.SendResults();
             }
             catch (Exception e)
@@ -426,7 +430,7 @@ public static class QuizMutations
         var sessions = await context.QuizSessions
             .Where(s => input.Ids.Contains(s.Id))
             .ToListAsync(cancellationToken);
-        
+
         var result = new DeleteQuizSessionsResult
         {
             TotalRequested = input.Ids.Count,
@@ -442,7 +446,7 @@ public static class QuizMutations
             {
                 if (session is null)
                     throw new QuizSessionNotFoundException(id.ToString());
-                
+
                 context.QuizSessions.Remove(session);
                 result.SuccessfullyDeleted++;
                 result.DeletedSessions.Add(session);

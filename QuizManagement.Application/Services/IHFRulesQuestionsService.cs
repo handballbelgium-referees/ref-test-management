@@ -13,6 +13,7 @@ public interface IIhfRulesQuestionsService
 
     Task<List<Question>> GetQuestionsByIdAsync(List<string> ids, bool includeNumber = false,
         bool includeIsCorrect = false,
+        bool randomAnswerOrder = true,
         CancellationToken cancellationToken = default);
 
     Task<List<Question>> SearchQuestionsByNumberAsync(string? number, CancellationToken cancellationToken = default);
@@ -56,10 +57,10 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
     }
 
     public async Task<List<Question>> GetQuestionsByIdAsync(List<string> ids, bool includeNumber = false,
-        bool includeIsCorrect = false,
+        bool includeIsCorrect = false, bool randomAnswerOrder = true,
         CancellationToken cancellationToken = default)
     {
-        var result = await client.GetQuestionsById.ExecuteAsync(ids.ToList(), includeNumber, includeIsCorrect, cancellationToken);
+        var result = await client.GetQuestionsById.ExecuteAsync(ids.ToList(), includeNumber, includeIsCorrect, randomAnswerOrder, cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.QuestionsById?.OfType<GetQuestionsById_QuestionsById_Question>();
@@ -130,12 +131,6 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
 
         if (result.Data?.CalculateScore is null)
             throw new Exception("Failed to calculate score");
-
-        // Get questions with isCorrect flag to determine correct answer IDs
-        var questionsResult =
-            await client.GetQuestionsByIdWithIsCorrectAnswers.ExecuteAsync(questionIds, cancellationToken);
-        if (questionsResult.Errors.Any())
-            throw new Exception(questionsResult.Errors[0].Message);
 
         double percentage;
         var percentageString = result.Data.CalculateScore.Percentage;

@@ -24,9 +24,16 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 page.Margin(40);
                 page.DefaultTextStyle(x => x.FontSize(10));
 
-                page.Header().Element(c => ComposeHeader(c, name, language, totalQuestions));
-                page.Content().Element(c => ComposeContent(c, language, questionsWithCorrectAnswers, selectedAnswerIds,
-                    wrongQuestionIds, wrongAnswerIds));
+                page.Content().Column(column =>
+                {
+                    // Header only on the first page
+                    column.Item().Element(c => ComposeHeader(c, name, language, totalQuestions));
+                    
+                    // Content
+                    column.Item().Element(c => ComposeContent(c, language, questionsWithCorrectAnswers, selectedAnswerIds,
+                        wrongQuestionIds, wrongAnswerIds));
+                });
+                
                 page.Footer().AlignCenter().Text(text =>
                 {
                     text.Span("Referees Handball Belgium - IHF Rules Quiz Results").FontSize(9)
@@ -105,25 +112,25 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 var questionText = question.Phrase.TryGetValue(language, out var questionValue) 
                     ? questionValue : string.Empty;
 
-                column.Item().PaddingBottom(16).Layers(layers =>
+                column.Item().PaddingBottom(16).Element(cardContainer =>
                 {
-                    // Border layer with rounded corners
-                    layers.Layer().Svg(size =>
-                        $@"<svg width=""{size.Width}"" height=""{size.Height}"" xmlns=""http://www.w3.org/2000/svg"">
-                            <rect width=""{size.Width}"" height=""{size.Height}"" rx=""8"" ry=""8"" 
-                                  fill=""{(isQuestionCorrect ? "#bbf7d0" : "#fecaca")}""/>
-                        </svg>");
-                    
-                    // Background layer with rounded corners (inset for border effect)
-                    layers.Layer().Padding(2).Svg(size =>
-                        $@"<svg width=""{size.Width}"" height=""{size.Height}"" xmlns=""http://www.w3.org/2000/svg"">
-                            <rect width=""{size.Width}"" height=""{size.Height}"" rx=""7"" ry=""7"" 
-                                  fill=""{(isQuestionCorrect ? "#f0fdf4" : "#fef2f2")}""/>
-                        </svg>");
-                    
-                    // Content layer
-                    layers.PrimaryLayer().Padding(14).Column(questionColumn =>
+                    cardContainer.Layers(layers =>
                     {
+                        // Border layer with rounded corners
+                        layers.Layer().Svg(size =>
+                            $"<svg width='{size.Width}' height='{size.Height}' xmlns='http://www.w3.org/2000/svg'>" +
+                            $"<rect width='{size.Width}' height='{size.Height}' rx='8' ry='8' fill='{(isQuestionCorrect ? "#bbf7d0" : "#fecaca")}'/>" +
+                            $"</svg>");
+                        
+                        // Background layer with rounded corners (inset for border effect)
+                        layers.Layer().Padding(2).Svg(size =>
+                            $"<svg width='{size.Width}' height='{size.Height}' xmlns='http://www.w3.org/2000/svg'>" +
+                            $"<rect width='{size.Width}' height='{size.Height}' rx='7' ry='7' fill='{(isQuestionCorrect ? "#f0fdf4" : "#fef2f2")}'/>" +
+                            $"</svg>");
+                        
+                        // Content layer
+                        layers.PrimaryLayer().Padding(14).Column(questionColumn =>
+                        {
                         // Question header with icon
                         questionColumn.Item().Row(row =>
                         {
@@ -220,6 +227,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                                 });
                             });
                         }
+                        });
                     });
                 });
             }

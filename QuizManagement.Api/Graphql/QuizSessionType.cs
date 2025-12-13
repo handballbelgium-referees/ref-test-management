@@ -62,9 +62,11 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
             .Description("Questions for this quiz session")
             .Argument("includeNumber", x => x.Type<BooleanType>().DefaultValue(false))
             .Argument("includeIsCorrect", x => x.Type<BooleanType>().DefaultValue(false))
+            .Argument("randomAnswerOrder", x => x.Type<BooleanType>().DefaultValue(true))
             .Resolve((ctx, ct) =>
                 GetQuestions(ctx.Parent<QuizSession>(), ctx.Service<IIhfRulesQuestionsService>(),
-                    ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"), ct));
+                    ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"),
+                    ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
     }
 
     /// <summary>
@@ -75,7 +77,9 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Argument] bool includeNumber,
         [Argument] bool includeIsCorrect,
+        [Argument] bool randomAnswerOrder,
         CancellationToken cancellationToken)
         => ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, includeNumber, includeIsCorrect,
+            randomAnswerOrder,
             cancellationToken);
 }
