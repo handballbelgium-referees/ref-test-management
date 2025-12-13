@@ -1,7 +1,7 @@
 <div class="space-y-3">
   <!-- Question progress and navigation -->
-  <div class="flex items-center justify-center gap-2">
-    <span class="text-sm text-neutral-600">
+  <div class="flex flex-wrap items-center justify-center gap-2">
+    <span class="text-sm text-neutral-600 whitespace-nowrap">
       {{ 'quiz.question' | translate }}
     </span>
     <select
@@ -15,21 +15,21 @@
       </option>
       }
     </select>
-    <span class="text-sm text-neutral-600">
+    <span class="text-sm text-neutral-600 whitespace-nowrap">
       {{ 'quiz.of' | translate }} {{ questions().length }}
     </span>
-    <span class="text-sm text-green-600 font-medium ml-2">
+    <span class="text-sm text-green-600 font-medium">
       ({{ answeredCount() }} {{ 'quiz.answered' | translate }})
     </span>
   </div>
 
   <!-- Previous/Next buttons -->
-  <div class="flex items-center justify-between gap-4">
+  <div class="flex items-center justify-between gap-3">
     <button
       type="button"
       (click)="previousClick.emit()"
       [disabled]="!canPrevious()"
-      class="px-6 py-3 border-2 border-neutral-300 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50"
+      class="flex-1 sm:flex-none px-4 sm:px-6 py-3 border-2 border-neutral-300 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50"
     >
       {{ 'quiz.previous' | translate }}
     </button>
@@ -39,7 +39,7 @@
       type="button"
       (click)="submitClick.emit()"
       [disabled]="!canSubmit()"
-      class="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {{ 'quiz.submit' | translate }}
     </button>
@@ -48,7 +48,7 @@
       type="button"
       (click)="nextClick.emit()"
       [disabled]="!canNext()"
-      class="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      class="flex-1 sm:flex-none px-4 sm:px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {{ 'quiz.next' | translate }}
     </button>

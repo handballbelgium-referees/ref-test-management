@@ -8,7 +8,8 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [TranslatePipe],
 })
 export class QuizHeaderComponent {
-  readonly timeRemaining = input.required<number>();
+  readonly timeRemaining = input.required<string>();
+  readonly timeRemainingSeconds = input.required<number>();
   readonly answeredCount = input.required<number>();
   readonly totalQuestions = input.required<number>();
   readonly progress = input.required<number>();

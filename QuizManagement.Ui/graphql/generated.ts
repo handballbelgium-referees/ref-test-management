@@ -646,7 +646,7 @@ export type StartQuizSessionMutationVariables = Exact<{
 }>;
 
 
-export type StartQuizSessionMutation = { __typename?: 'Mutation', startQuizSession: { __typename?: 'StartQuizSessionPayload', quizSession?: { __typename?: 'QuizSession', id: string, startedAt?: string | null, questions?: Array<{ __typename?: 'Question', id: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, phrase?: Record<string, string> | null }> } | null> | null } | null, errors?: Array<
+export type StartQuizSessionMutation = { __typename?: 'Mutation', startQuizSession: { __typename?: 'StartQuizSessionPayload', quizSession?: { __typename?: 'QuizSession', id: string, startedAt?: string | null, maxTimeInMinutes: number, questions?: Array<{ __typename?: 'Question', id: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, phrase?: Record<string, string> | null }> } | null> | null } | null, errors?: Array<
       | { __typename?: 'InvalidQuizSessionStatusError', message: string }
       | { __typename?: 'QuizSessionExpiredError', message: string }
       | { __typename?: 'QuizSessionNotFoundError', message: string }
@@ -929,6 +929,7 @@ export const StartQuizSessionDocument = gql`
     quizSession {
       id
       startedAt
+      maxTimeInMinutes
       questions {
         id
         phrase

@@ -286,6 +286,17 @@
       "percentage": "Pourcentage",
       "total": "Total des Questions",
       "review": "Revoir Vos Réponses"
+    },
+    "dialog": {
+      "submit": {
+        "title": "Soumettre le Quiz?",
+        "message": "Êtes-vous sûr de vouloir soumettre votre quiz? Une fois soumis, vous ne pourrez plus modifier vos réponses.",
+        "answered": "Questions Répondues",
+        "unanswered": "Questions Non Répondues",
+        "warning": "Vous avez des questions non répondues. Elles seront marquées comme incorrectes.",
+        "confirm": "Soumettre le Quiz",
+        "cancel": "Continuer le Quiz"
+      }
     }
   },
   "footer": {

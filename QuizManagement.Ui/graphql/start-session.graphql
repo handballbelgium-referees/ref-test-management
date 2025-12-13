@@ -3,6 +3,7 @@ mutation StartQuizSession($input: StartQuizSessionInput!) {
     quizSession {
       id
       startedAt
+      maxTimeInMinutes
       questions {
         id
         phrase

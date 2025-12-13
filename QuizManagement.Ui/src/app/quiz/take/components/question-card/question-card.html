@@ -1,9 +1,9 @@
-<div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-6">
+<div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-6 md:p-8 mb-6">
   <div class="mb-6">
     <div class="text-sm text-neutral-500 mb-2">
       {{ 'quiz.question' | translate }} {{ currentIndex() + 1 }} / {{ totalQuestions() }}
     </div>
-    <h2 class="text-xl md:text-2xl font-bold text-neutral-900">
+    <h2 class="text-xl md:text-2xl font-bold text-neutral-900 wrap-break-word">
       {{ question().phrase | appTranslation : currentLanguage() }}
     </h2>
   </div>

@@ -47,7 +47,8 @@
   <!-- Quiz Taking Screen -->
   <div class="max-w-4xl mx-auto">
     <app-quiz-header
-      [timeRemaining]="timeRemaining()"
+      [timeRemaining]="formattedTimeRemaining()"
+      [timeRemainingSeconds]="timeRemainingSeconds()"
       [answeredCount]="answeredCount()"
       [totalQuestions]="questions().length"
       [progress]="progress()"
@@ -76,9 +77,18 @@
       [isQuestionVisited]="isQuestionVisited.bind(this)"
       (previousClick)="previousQuestion()"
       (nextClick)="nextQuestion()"
-      (submitClick)="submitQuiz()"
+      (submitClick)="requestSubmitQuiz()"
       (questionSelected)="goToQuestion($event)"
     />
   </div>
   }
+
+  <!-- Submit Confirmation Dialog -->
+  <app-submit-quiz-dialog
+    [show]="showSubmitDialog()"
+    [answeredCount]="answeredCount()"
+    [totalQuestions]="questions().length"
+    (confirm)="confirmSubmitQuiz()"
+    (cancel)="cancelSubmit()"
+  />
 </div>

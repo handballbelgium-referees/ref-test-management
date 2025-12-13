@@ -16,6 +16,7 @@ import { QuestionCardComponent } from './components/question-card/question-card'
 import { QuizHeaderComponent } from './components/quiz-header/quiz-header';
 import { QuizNavigationComponent } from './components/quiz-navigation/quiz-navigation';
 import { QuizResultsComponent } from './components/quiz-results/quiz-results';
+import { SubmitQuizDialog } from './components/submit-quiz-dialog/submit-quiz-dialog';
 
 interface Answer {
   id: string;
@@ -38,6 +39,7 @@ interface Question {
     QuestionCardComponent,
     QuizNavigationComponent,
     QuizResultsComponent,
+    SubmitQuizDialog,
   ],
 })
 export class TakeQuizComponent {
@@ -60,12 +62,13 @@ export class TakeQuizComponent {
   protected readonly selectedAnswers = signal<Record<string, string[]>>({});
   protected readonly startTime = signal<Date | null>(null);
   protected readonly maxTimeInMinutes = signal<number>(60);
-  protected readonly timeRemaining = signal<number>(0);
+  protected readonly timeRemainingSeconds = signal<number>(0);
   protected readonly quizCompleted = signal(false);
   protected readonly score = signal<number | null>(null);
   protected readonly percentage = signal<number | null>(null);
   protected readonly wrongQuestionIds = signal<string[]>([]);
   protected readonly wrongAnswerIds = signal<string[]>([]);
+  protected readonly showSubmitDialog = signal(false);
 
   protected readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
@@ -89,6 +92,13 @@ export class TakeQuizComponent {
     const total = this.questions().length;
     const current = this.currentQuestionIndex() + 1;
     return total > 0 ? (current / total) * 100 : 0;
+  });
+
+  protected readonly formattedTimeRemaining = computed(() => {
+    const totalSeconds = this.timeRemainingSeconds();
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   });
 
   protected readonly canPrevious = computed(() => this.currentQuestionIndex() > 0);
@@ -130,13 +140,14 @@ export class TakeQuizComponent {
 
       const interval = setInterval(() => {
         const now = new Date();
-        const elapsed = Math.floor((now.getTime() - startTime.getTime()) / 1000 / 60);
-        const remaining = Math.max(0, this.maxTimeInMinutes() - elapsed);
-        this.timeRemaining.set(remaining);
+        const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+        const totalSeconds = this.maxTimeInMinutes() * 60;
+        const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+        this.timeRemainingSeconds.set(remaining);
 
         if (remaining === 0) {
           clearInterval(interval);
-          this.submitQuiz();
+          this.confirmSubmitQuiz();
         }
       }, 1000);
 
@@ -190,10 +201,24 @@ export class TakeQuizComponent {
             });
             this.selectedAnswers.set(initialAnswers);
 
-            if (data.quizSession.startedAt) {
-              this.startTime.set(new Date(data.quizSession.startedAt));
+            // Set max time
+            if (data.quizSession.maxTimeInMinutes) {
+              this.maxTimeInMinutes.set(data.quizSession.maxTimeInMinutes);
             }
-            this.timeRemaining.set(this.maxTimeInMinutes());
+
+            // Calculate remaining time
+            if (data.quizSession.startedAt) {
+              const startTime = new Date(data.quizSession.startedAt);
+              this.startTime.set(startTime);
+
+              const now = new Date();
+              const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+              const totalSeconds = this.maxTimeInMinutes() * 60;
+              const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+              this.timeRemainingSeconds.set(remaining);
+            } else {
+              this.timeRemainingSeconds.set(this.maxTimeInMinutes() * 60);
+            }
           }
         }),
         catchError((err) => {
@@ -239,7 +264,20 @@ export class TakeQuizComponent {
     }
   }
 
-  protected submitQuiz(): void {
+  protected requestSubmitQuiz(): void {
+    this.showSubmitDialog.set(true);
+  }
+
+  protected cancelSubmit(): void {
+    this.showSubmitDialog.set(false);
+  }
+
+  protected confirmSubmitQuiz(): void {
+    this.showSubmitDialog.set(false);
+    this.submitQuiz();
+  }
+
+  private submitQuiz(): void {
     const token = this._token();
     if (!token) return;
 

@@ -286,6 +286,17 @@
       "percentage": "Prozentsatz",
       "total": "Gesamtzahl der Fragen",
       "review": "Überprüfen Sie Ihre Antworten"
+    },
+    "dialog": {
+      "submit": {
+        "title": "Quiz Einreichen?",
+        "message": "Sind Sie sicher, dass Sie Ihr Quiz einreichen möchten? Nach dem Einreichen können Sie Ihre Antworten nicht mehr ändern.",
+        "answered": "Beantwortete Fragen",
+        "unanswered": "Unbeantwortete Fragen",
+        "warning": "Sie haben unbeantwortete Fragen. Diese werden als falsch markiert.",
+        "confirm": "Quiz Einreichen",
+        "cancel": "Quiz Fortsetzen"
+      }
     }
   },
   "footer": {

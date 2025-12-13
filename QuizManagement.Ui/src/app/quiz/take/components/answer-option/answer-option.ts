@@ -6,6 +6,9 @@ import { TranslationPipe } from '../../../../pipes/translation-pipe';
   templateUrl: './answer-option.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslationPipe],
+  host: {
+    class: 'block',
+  },
 })
 export class AnswerOptionComponent {
   readonly phrase = input.required<Record<string, string>>();

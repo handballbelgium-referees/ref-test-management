@@ -294,6 +294,17 @@
       "percentage": "Percentage",
       "total": "Totaal Aantal Vragen",
       "review": "Bekijk Je Antwoorden"
+    },
+    "dialog": {
+      "submit": {
+        "title": "Quiz Indienen?",
+        "message": "Weet je zeker dat je de quiz wilt indienen? Na het indienen kun je je antwoorden niet meer wijzigen.",
+        "answered": "Beantwoorde Vragen",
+        "unanswered": "Onbeantwoorde Vragen",
+        "warning": "Je hebt onbeantwoorde vragen. Deze worden als fout gemarkeerd.",
+        "confirm": "Quiz Indienen",
+        "cancel": "Quiz Voortzetten"
+      }
     }
   },
   "footer": {

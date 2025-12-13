@@ -286,6 +286,17 @@
       "percentage": "Percentage",
       "total": "Total Questions",
       "review": "Review Your Answers"
+    },
+    "dialog": {
+      "submit": {
+        "title": "Submit Quiz?",
+        "message": "Are you sure you want to submit your quiz? Once submitted, you cannot change your answers.",
+        "answered": "Answered Questions",
+        "unanswered": "Unanswered Questions",
+        "warning": "You have unanswered questions. They will be marked as incorrect.",
+        "confirm": "Submit Quiz",
+        "cancel": "Continue Quiz"
+      }
     }
   },
   "footer": {
