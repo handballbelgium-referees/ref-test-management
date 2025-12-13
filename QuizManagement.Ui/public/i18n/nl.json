@@ -259,7 +259,10 @@
     "page_title": "Handbalregels Quiz",
     "loading": "Quiz laden...",
     "error": {
-      "title": "Kan quiz niet laden"
+      "title": "Kan quiz niet laden",
+      "QuizSessionNotFoundError": "Deze quizsessie kon niet worden gevonden. Controleer de link.",
+      "QuizSessionExpiredError": "Deze quizsessie is verlopen. Neem contact op met de beheerder.",
+      "InvalidQuizSessionStatusError": "Deze quizsessie is niet meer beschikbaar of is al voltooid."
     },
     "backToWelcome": "Terug naar Welkom",
     "welcome_title": "Welkom bij je quiz",

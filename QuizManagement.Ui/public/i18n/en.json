@@ -251,7 +251,10 @@
     "page_title": "Handball Rules Quiz",
     "loading": "Loading quiz...",
     "error": {
-      "title": "Unable to Load Quiz"
+      "title": "Unable to Load Quiz",
+      "QuizSessionNotFoundError": "This quiz session could not be found. Please check your link.",
+      "QuizSessionExpiredError": "This quiz session has expired. Please contact the administrator.",
+      "InvalidQuizSessionStatusError": "This quiz session is no longer available or has already been completed."
     },
     "backToWelcome": "Back to Welcome",
     "welcome_title": "Welcome to Your Quiz",

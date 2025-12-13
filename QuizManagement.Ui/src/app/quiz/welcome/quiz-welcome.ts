@@ -4,12 +4,22 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { map, switchMap } from 'rxjs';
 import { GetQuizSessionByTokenGQL } from '../../../../graphql/generated';
+import { QuizErrorComponent } from './components/quiz-error/quiz-error';
+import { QuizHeroComponent } from './components/quiz-hero/quiz-hero';
+import { QuizInstructionsComponent } from './components/quiz-instructions/quiz-instructions';
+import { SessionDetailsComponent } from './components/session-details/session-details';
 
 @Component({
   selector: 'app-quiz-welcome',
   templateUrl: './quiz-welcome.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  imports: [
+    TranslatePipe,
+    QuizHeroComponent,
+    QuizErrorComponent,
+    SessionDetailsComponent,
+    QuizInstructionsComponent,
+  ],
 })
 export class QuizWelcomeComponent {
   private readonly _route = inject(ActivatedRoute);
@@ -46,8 +56,8 @@ export class QuizWelcomeComponent {
     if (!result?.data?.quizSessionByToken) return null;
 
     const data = result.data.quizSessionByToken;
-    if (data.__typename !== 'QuizSession' && 'message' in data) {
-      return data.message;
+    if (data.__typename !== 'QuizSession') {
+      return data.__typename;
     }
     return null;
   });

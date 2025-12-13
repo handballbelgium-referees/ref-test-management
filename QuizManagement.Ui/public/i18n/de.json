@@ -251,7 +251,10 @@
     "page_title": "Handballregeln-Quiz",
     "loading": "Quiz wird geladen...",
     "error": {
-      "title": "Quiz konnte nicht geladen werden"
+      "title": "Quiz kann nicht geladen werden",
+      "QuizSessionNotFoundError": "Diese Quiz-Sitzung wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
+      "QuizSessionExpiredError": "Diese Quiz-Sitzung ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
+      "InvalidQuizSessionStatusError": "Diese Quiz-Sitzung ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
     },
     "backToWelcome": "Zurück zur Begrüßung",
     "welcome_title": "Willkommen zu Ihrem Quiz",

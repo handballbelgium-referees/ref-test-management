@@ -251,7 +251,10 @@
     "page_title": "Quiz sur les règles de handball",
     "loading": "Chargement du quiz...",
     "error": {
-      "title": "Impossible de charger le quiz"
+      "title": "Impossible de charger le quiz",
+      "QuizSessionNotFoundError": "Cette session de quiz est introuvable. Veuillez vérifier votre lien.",
+      "QuizSessionExpiredError": "Cette session de quiz a expiré. Veuillez contacter l'administrateur.",
+      "InvalidQuizSessionStatusError": "Cette session de quiz n'est plus disponible ou a déjà été complétée."
     },
     "backToWelcome": "Retour à l'accueil",
     "welcome_title": "Bienvenue à votre quiz",
