@@ -27,105 +27,109 @@ public partial class EmailService(
         body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }}
     </style>
 </head>
-<body style='margin: 0; padding: 0; background-color: #f5f5f5;'>
-    <!-- Header with Belgian Handball Colors -->
-    <div style='background: linear-gradient(135deg, #e30613 0%, #b30510 100%); padding: 40px 20px; text-align: center;'>
-        <div style='max-width: 600px; margin: 0 auto;'>
-            <div style='background-color: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;'>
-                <svg width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='#ffffff' stroke-width='2'>
-                    <path d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'/>
-                </svg>
-            </div>
+<body style='margin: 0; padding: 0;'>
+    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
+        <!-- Header with Belgian Handball Colors -->
+        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
             <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules Quiz</h1>
             <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium Quiz Invitation</p>
         </div>
-    </div>
 
-    <!-- Main Content -->
-    <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-        <!-- English Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>English</h2>
-            
-            <!-- Quiz Details -->
-            <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Questions:</strong> {numberOfQuestions}</p>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Time Limit:</strong> {maxTimeInMinutes} minutes</p>
-                <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ This quiz is valid for 7 days</em></p>
+        <!-- Main Content -->
+        <div style='padding: 20px;'>
+            <!-- English Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>English</h2>
+                
+                <!-- Quiz Details -->
+                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Questions:</strong> {numberOfQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Time Limit:</strong> {maxTimeInMinutes} minutes</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ This quiz is valid for 7 days</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hello,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:</p>
+                
+                <div style='text-align: center; margin: 20px 0;'>
+                    <a href='{quizUrlEn}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Start Quiz</a>
+                </div>
             </div>
 
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hello,</p>
-            <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:</p>
-            
-            <div style='text-align: center; margin: 20px 0;'>
-                <a href='{quizUrlEn}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Start Quiz</a>
-            </div>
-        </div>
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
 
-        <!-- Dutch Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Nederlands</h2>
-            
-            <!-- Quiz Details -->
-            <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Vragen:</strong> {numberOfQuestions}</p>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Tijdslimiet:</strong> {maxTimeInMinutes} minuten</p>
-                <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Deze quiz is 7 dagen geldig</em></p>
-            </div>
+            <!-- Dutch Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Nederlands</h2>
+                
+                <!-- Quiz Details -->
+                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Vragen:</strong> {numberOfQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Tijdslimiet:</strong> {maxTimeInMinutes} minuten</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Deze quiz is 7 dagen geldig</em></p>
+                </div>
 
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo,</p>
-            <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:</p>
-            
-            <div style='text-align: center; margin: 20px 0;'>
-                <a href='{quizUrlNl}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Start Quiz</a>
-            </div>
-        </div>
-
-        <!-- French Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Français</h2>
-            
-            <!-- Quiz Details -->
-            <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Détails du Quiz</h3>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Questions:</strong> {numberOfQuestions}</p>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Limite de Temps:</strong> {maxTimeInMinutes} minutes</p>
-                <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Ce quiz est valide pendant 7 jours</em></p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:</p>
+                
+                <div style='text-align: center; margin: 20px 0;'>
+                    <a href='{quizUrlNl}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Start Quiz</a>
+                </div>
             </div>
 
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Bonjour,</p>
-            <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:</p>
-            
-            <div style='text-align: center; margin: 20px 0;'>
-                <a href='{quizUrlFr}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Démarrer le Quiz</a>
-            </div>
-        </div>
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
 
-        <!-- German Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Deutsch</h2>
-            
-            <!-- Quiz Details -->
-            <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz-Details</h3>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Fragen:</strong> {numberOfQuestions}</p>
-                <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Zeitlimit:</strong> {maxTimeInMinutes} Minuten</p>
-                <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Dieses Quiz ist 7 Tage lang gültig</em></p>
+            <!-- French Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Français</h2>
+                
+                <!-- Quiz Details -->
+                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Détails du Quiz</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Questions:</strong> {numberOfQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Limite de Temps:</strong> {maxTimeInMinutes} minutes</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Ce quiz est valide pendant 7 jours</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Bonjour,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:</p>
+                
+                <div style='text-align: center; margin: 20px 0;'>
+                    <a href='{quizUrlFr}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Démarrer le Quiz</a>
+                </div>
             </div>
 
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo,</p>
-            <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:</p>
-            
-            <div style='text-align: center; margin: 20px 0;'>
-                <a href='{quizUrlDe}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Quiz starten</a>
-            </div>
-        </div>
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
 
-        <!-- Footer -->
-        <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px;'>
-            <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
+            <!-- German Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Deutsch</h2>
+                
+                <!-- Quiz Details -->
+                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz-Details</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Fragen:</strong> {numberOfQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Zeitlimit:</strong> {maxTimeInMinutes} Minuten</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Dieses Quiz ist 7 Tage lang gültig</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:</p>
+                
+                <div style='text-align: center; margin: 20px 0;'>
+                    <a href='{quizUrlDe}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Quiz starten</a>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
+                <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
+            </div>
         </div>
     </div>
 </body>
@@ -220,7 +224,7 @@ public partial class EmailService(
         </div>
 
         <!-- French Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
+        <div style='background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px; overflow: hidden;'>
             <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Français</h2>
             
             <!-- Score Display -->
@@ -243,7 +247,7 @@ public partial class EmailService(
         </div>
 
         <!-- German Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
+        <div style='background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px; overflow: hidden;'>
             <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Deutsch</h2>
             
             <!-- Score Display -->
@@ -265,9 +269,10 @@ public partial class EmailService(
             </p>
         </div>
 
-        <!-- Footer -->
-        <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px;'>
-            <p style='margin: 0; font-weight: bold; color: #000000;'>IHF Rules Quiz Team</p>
+            <!-- Footer -->
+            <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
+                <p style='margin: 0; font-weight: bold; color: #000000;'>IHF Rules Quiz Team</p>
+            </div>
         </div>
     </div>
 </body>
