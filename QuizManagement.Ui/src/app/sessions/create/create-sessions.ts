@@ -129,6 +129,7 @@ export class CreateSessions {
     Array<{ number: string; phrase: Record<string, string> }>
   >([]);
   protected readonly showBulkQuestionImport = signal(false);
+  protected readonly loadingBulkQuestions = signal(false);
   readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
     {
@@ -229,6 +230,8 @@ export class CreateSessions {
       return;
     }
 
+    this.loadingBulkQuestions.set(true);
+
     // Validate and add questions
     const validationRequests = questionNumbers.map((number) =>
       this._searchQuestionsByNumberGQL.fetch({ variables: { number } }).pipe(
@@ -259,8 +262,13 @@ export class CreateSessions {
           }
         }),
         tap(() => {
+          this.loadingBulkQuestions.set(false);
           this.showBulkQuestionImport.set(false);
           this.resetQuestionCount();
+        }),
+        catchError(() => {
+          this.loadingBulkQuestions.set(false);
+          return of([]);
         }),
         takeUntilDestroyed(this._destroyRef)
       )

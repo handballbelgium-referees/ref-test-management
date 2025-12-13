@@ -118,7 +118,8 @@
         "results": "Ergebnisse",
         "started": "Gestartet",
         "completed": "Abgeschlossen"
-      },      "columns": {
+      },
+      "columns": {
         "toggle": "Spalten ein-/ausblenden",
         "title": "Titel",
         "participant": "Teilnehmer",
@@ -129,7 +130,8 @@
         "results": "Ergebnisse",
         "started": "Gestartet",
         "completed": "Abgeschlossen"
-      }      "empty": {
+      },
+      "empty": {
         "title": "Keine Sitzungen gefunden",
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten Quiz-Sitzungen",
         "action": "Sitzungen Erstellen"
@@ -248,15 +250,18 @@
           "tableQuestion": "Frage",
           "removeQuestion": "Frage entfernen"
         },
+        "emailOptions": {
+          "title": "E-Mail-Automatisierung"
+        },
         "sendInvitations": {
-          "label": "E-Mail-Einladungen automatisch senden",
+          "label": "Einladungs-E-Mails senden",
           "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der Sitzungen zu senden",
-          "description": "E-Mail-Einladungen werden automatisch versendet"
+          "description": "Teilnehmer erhalten eine E-Mail mit ihrem Quiz-Link"
         },
         "sendResults": {
-          "label": "Quiz-Ergebnisse automatisch senden",
+          "label": "Ergebnis-E-Mails senden",
           "hint": "Aktivieren, um Ergebnis-E-Mails sofort nach Erstellung der Sitzungen zu senden",
-          "description": "Quiz-Ergebnisse werden automatisch versendet"
+          "description": "Teilnehmer erhalten eine E-Mail mit ihren Quiz-Ergebnissen"
         },
         "submit": "Sitzungen Erstellen",
         "submitting": "Erstellen...",

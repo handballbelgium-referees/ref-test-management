@@ -44,28 +44,44 @@ public class QuizResultsPdfService : IQuizResultsPdfService
 
         container.Column(column =>
         {
-            // Title section
-            column.Item().Background("#b30510").Padding(20).Column(titleColumn =>
+            // Title section with rounded corners using SVG
+            column.Item().Layers(layers =>
             {
-                titleColumn.Item().AlignCenter().Text("IHF Rules Quiz").FontSize(24).Bold().FontColor(Colors.White);
-                titleColumn.Item().AlignCenter().Text(translations["resultsTitle"]).FontSize(14).FontColor("#fecaca");
+                layers.Layer().ExtendVertical().Svg(size => 
+                    $@"<svg width=""{size.Width}"" height=""{size.Height}"" xmlns=""http://www.w3.org/2000/svg"">
+                        <rect width=""{size.Width}"" height=""{size.Height}"" rx=""12"" ry=""12"" fill=""#b30510""/>
+                    </svg>");
+                
+                layers.PrimaryLayer().Padding(20).Column(titleColumn =>
+                {
+                    titleColumn.Item().AlignCenter().Text("IHF Rules Quiz").FontSize(24).Bold().FontColor(Colors.White);
+                    titleColumn.Item().AlignCenter().Text(translations["resultsTitle"]).FontSize(14).FontColor("#fecaca");
+                });
             });
 
             column.Item().PaddingVertical(10);
 
-            // Name and info section
-            column.Item().Background("#f5f5f5").Padding(15).Column(infoColumn =>
+            // Name and info section with rounded corners using SVG
+            column.Item().Layers(layers =>
             {
-                infoColumn.Item().Text(text =>
+                layers.Layer().ExtendVertical().Svg(size =>
+                    $@"<svg width=""{size.Width}"" height=""{size.Height}"" xmlns=""http://www.w3.org/2000/svg"">
+                        <rect width=""{size.Width}"" height=""{size.Height}"" rx=""8"" ry=""8"" fill=""#f5f5f5""/>
+                    </svg>");
+                
+                layers.PrimaryLayer().Padding(15).Column(infoColumn =>
                 {
-                    text.Span(translations["name"] + ": ").Bold().FontSize(11);
-                    text.Span(name).FontSize(11);
-                });
+                    infoColumn.Item().Text(text =>
+                    {
+                        text.Span(translations["name"] + ": ").Bold().FontSize(11);
+                        text.Span(name).FontSize(11);
+                    });
 
-                infoColumn.Item().PaddingTop(4).Text(text =>
-                {
-                    text.Span(translations["totalQuestions"] + ": ").Bold().FontSize(11);
-                    text.Span($"{totalQuestions}").FontSize(11);
+                    infoColumn.Item().PaddingTop(4).Text(text =>
+                    {
+                        text.Span(translations["totalQuestions"] + ": ").Bold().FontSize(11);
+                        text.Span($"{totalQuestions}").FontSize(11);
+                    });
                 });
             });
 
@@ -87,14 +103,26 @@ public class QuizResultsPdfService : IQuizResultsPdfService
             {
                 var isQuestionCorrect = !wrongQuestionIds.Contains(question.Id);
                 var questionText = question.Phrase.TryGetValue(language, out var questionValue) 
-                    ? questionValue 
-                    : string.Empty;
+                    ? questionValue : string.Empty;
 
-                column.Item().PaddingBottom(8)
-                    .Background(isQuestionCorrect ? "#f0fdf4" : "#fef2f2")
-                    .Border(1, isQuestionCorrect ? "#bbf7d0" : "#fecaca")
-                    .Padding(12)
-                    .Column(questionColumn =>
+                column.Item().PaddingBottom(16).Layers(layers =>
+                {
+                    // Border layer with rounded corners
+                    layers.Layer().Svg(size =>
+                        $@"<svg width=""{size.Width}"" height=""{size.Height}"" xmlns=""http://www.w3.org/2000/svg"">
+                            <rect width=""{size.Width}"" height=""{size.Height}"" rx=""8"" ry=""8"" 
+                                  fill=""{(isQuestionCorrect ? "#bbf7d0" : "#fecaca")}""/>
+                        </svg>");
+                    
+                    // Background layer with rounded corners (inset for border effect)
+                    layers.Layer().Padding(2).Svg(size =>
+                        $@"<svg width=""{size.Width}"" height=""{size.Height}"" xmlns=""http://www.w3.org/2000/svg"">
+                            <rect width=""{size.Width}"" height=""{size.Height}"" rx=""7"" ry=""7"" 
+                                  fill=""{(isQuestionCorrect ? "#f0fdf4" : "#fef2f2")}""/>
+                        </svg>");
+                    
+                    // Content layer
+                    layers.PrimaryLayer().Padding(14).Column(questionColumn =>
                     {
                         // Question header with icon
                         questionColumn.Item().Row(row =>
@@ -193,6 +221,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                             });
                         }
                     });
+                });
             }
         });
     }

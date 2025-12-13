@@ -250,15 +250,18 @@
           "tableQuestion": "Question",
           "removeQuestion": "Remove question"
         },
+        "emailOptions": {
+          "title": "Email Automation"
+        },
         "sendInvitations": {
-          "label": "Send email invitations automatically",
+          "label": "Send invitation emails",
           "hint": "Check to send invitation emails immediately after creating sessions",
-          "description": "Email invitations will be sent automatically"
+          "description": "Participants will receive an email with their quiz link"
         },
         "sendResults": {
-          "label": "Send quiz results automatically",
+          "label": "Send result emails",
           "hint": "Check to send result emails immediately after creating sessions",
-          "description": "Quiz results will be sent automatically"
+          "description": "Participants will receive an email with their quiz results"
         },
         "submit": "Create Sessions",
         "submitting": "Creating...",

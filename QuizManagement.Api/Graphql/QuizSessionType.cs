@@ -20,7 +20,7 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
 
         descriptor.ImplementsNode()
             .IdField(x => x.Id)
-            .ResolveNode((ctx, id) => ctx.DataLoader<QuizSessionByIdDataLoader>().LoadAsync(id, ctx.RequestAborted)!)
+            .ResolveNode((ctx, id) => ctx.DataLoader<QuizSessionByIdDataLoader>().LoadAsync(id, ctx.RequestAborted))
             .Description("The quiz session id");
 
         descriptor.Field(x => x.Title)

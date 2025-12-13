@@ -2,6 +2,7 @@ query getQuestionsByNumber($numbers: [String!]!) {
     questions(where: {number: {in: $numbers}}) {
         nodes {
             id
+            number
         }
     }
 }

@@ -136,11 +136,15 @@ export class ListSessions {
   protected readonly showSendInvitationsDialog = signal(false);
   protected readonly showSendResultsDialog = signal(false);
   protected readonly showDeleteDialog = signal(false);
+  protected readonly sendingInvitations = signal(false);
+  protected readonly sendingResults = signal(false);
 
   protected readonly invitationSummary = computed(() => {
     const selectedIds = this.selectedSessionIds();
     const allSessions = this.allLoadedSessions();
-    const selected = allSessions.filter((s) => selectedIds.has(s.id));
+    const selected = allSessions.filter(
+      (s) => selectedIds.has(s.id) && s.status === QuizSessionStatus.Pending
+    );
 
     return {
       newInvitations: selected
@@ -597,7 +601,14 @@ export class ListSessions {
   protected confirmSendResults(): void {
     this.showSendResultsDialog.set(false);
 
-    const sessionIds = Array.from(this.selectedSessionIds());
+    const selectedIds = Array.from(this.selectedSessionIds());
+    const allSessions = this.allLoadedSessions();
+
+    // Only send results to completed sessions
+    const sessionIds = selectedIds.filter((id) => {
+      const session = allSessions.find((s) => s.id === id);
+      return session?.status === QuizSessionStatus.Completed;
+    });
 
     sessionIds.forEach((id) => {
       this.sendingResultsIds.update((ids) => new Set(ids).add(id));
@@ -606,6 +617,7 @@ export class ListSessions {
     this._sendResultsGQL
       .mutate({ variables: { input: { ids: sessionIds } } })
       .pipe(
+        tap((result) => this.sendingResults.set(result.loading ?? false)),
         tap((result) => {
           const sendResult = result.data?.sendResults?.sendResultsResult;
           if (sendResult) {
@@ -627,6 +639,7 @@ export class ListSessions {
               return newIds;
             });
           });
+          this.sendingResults.set(false);
         }),
         takeUntilDestroyed(this._destroyRef)
       )
@@ -648,7 +661,14 @@ export class ListSessions {
 
   protected confirmSendInvitations(): void {
     this.showSendInvitationsDialog.set(false);
-    const sessionIds = Array.from(this.selectedSessionIds());
+    const selectedIds = Array.from(this.selectedSessionIds());
+    const allSessions = this.allLoadedSessions();
+
+    // Only send invitations to pending sessions
+    const sessionIds = selectedIds.filter((id) => {
+      const session = allSessions.find((s) => s.id === id);
+      return session?.status === QuizSessionStatus.Pending;
+    });
 
     sessionIds.forEach((id) => {
       this.sendingInvitationIds.update((ids) => new Set(ids).add(id));
@@ -660,6 +680,7 @@ export class ListSessions {
         fetchPolicy: 'no-cache',
       })
       .pipe(
+        tap((result) => this.sendingInvitations.set(result.loading ?? false)),
         tap((result) => {
           const sendResult = result.data?.sendInvitations?.sendInvitationsResult;
           if (sendResult && sendResult.sentSessions.length > 0) {
@@ -679,6 +700,7 @@ export class ListSessions {
               return newIds;
             });
           });
+          this.sendingInvitations.set(false);
         })
       )
       .subscribe();

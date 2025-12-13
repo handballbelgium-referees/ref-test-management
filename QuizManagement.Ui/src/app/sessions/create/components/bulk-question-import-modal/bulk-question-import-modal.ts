@@ -9,6 +9,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 })
 export class BulkQuestionImportModal {
   readonly show = input<boolean>(false);
+  readonly loading = input<boolean>(false);
 
   readonly import = output<string>();
   readonly cancel = output<void>();

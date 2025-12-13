@@ -41,7 +41,18 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.Questions?.Nodes?.OfType<IGetQuestionsByNumber_Questions_Nodes>();
-        return nodes is null ? [] : nodes.Select(x => x.Id).ToList();
+        
+        if (nodes is null)
+            return [];
+        
+        // Convert nodes to dictionary for fast lookup by number (filter out null numbers)
+        var questionDict = nodes.Where(x => x.Number != null)
+                                .ToDictionary(x => x.Number!, x => x.Id);
+        
+        // Return question IDs in the same order as the input numbers
+        return numbers.Where(number => questionDict.ContainsKey(number))
+                     .Select(number => questionDict[number])
+                     .ToList();
     }
 
     public async Task<List<Question>> GetQuestionsByIdAsync(List<string> ids, bool includeNumber = false,
@@ -112,7 +123,7 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
         CancellationToken cancellationToken = default)
     {
         var result =
-            await client.CalculateScore.ExecuteAsync(questionIds.ToList(), selectedAnswerIds.ToList(),
+            await client.CalculateScore.ExecuteAsync(questionIds, selectedAnswerIds,
                 cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
@@ -122,7 +133,7 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
 
         // Get questions with isCorrect flag to determine correct answer IDs
         var questionsResult =
-            await client.GetQuestionsByIdWithIsCorrectAnswers.ExecuteAsync(questionIds.ToList(), cancellationToken);
+            await client.GetQuestionsByIdWithIsCorrectAnswers.ExecuteAsync(questionIds, cancellationToken);
         if (questionsResult.Errors.Any())
             throw new Exception(questionsResult.Errors[0].Message);
 

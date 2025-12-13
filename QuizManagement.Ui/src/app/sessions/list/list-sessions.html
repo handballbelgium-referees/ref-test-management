@@ -62,6 +62,8 @@
     [selectedCount]="selectedCount()"
     [hasCompletedSessionsSelected]="hasCompletedSessionsSelected()"
     [hasPendingSessionsSelected]="hasPendingSessionsSelected()"
+    [sendingInvitations]="sendingInvitations()"
+    [sendingResults]="sendingResults()"
     (sendInvitations)="sendInvitationsToSelected()"
     (sendResults)="sendResultsToSelected()"
     (deleteSelected)="deleteSelectedSessions()"
@@ -71,7 +73,7 @@
   @if (loading()) {
   <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
     <div
-      class="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"
+      class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto mb-4"
     ></div>
     <p class="text-neutral-600">{{ 'sessions.list.loading' | translate }}</p>
   </div>
@@ -361,7 +363,7 @@
     <!-- Loading More Indicator -->
     @if (loadingMore()) {
     <div class="flex items-center justify-center gap-2 text-primary-600">
-      <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
+      <div class="animate-spin rounded-full h-6 w-6 border-b-4 border-primary-600"></div>
       <span class="text-sm">{{ 'sessions.list.loadingMore' | translate }}</span>
     </div>
     }

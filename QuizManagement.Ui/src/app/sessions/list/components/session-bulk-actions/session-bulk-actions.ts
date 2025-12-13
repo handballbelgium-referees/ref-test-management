@@ -11,6 +11,8 @@ export class SessionBulkActions {
   readonly selectedCount = input.required<number>();
   readonly hasCompletedSessionsSelected = input.required<boolean>();
   readonly hasPendingSessionsSelected = input.required<boolean>();
+  readonly sendingInvitations = input.required<boolean>();
+  readonly sendingResults = input.required<boolean>();
 
   readonly sendInvitations = output<void>();
   readonly sendResults = output<void>();

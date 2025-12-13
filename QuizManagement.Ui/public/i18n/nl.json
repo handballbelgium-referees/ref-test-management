@@ -258,15 +258,18 @@
           "tableQuestion": "Vraag",
           "removeQuestion": "Vraag verwijderen"
         },
+        "emailOptions": {
+          "title": "E-mailautomatisering"
+        },
         "sendInvitations": {
-          "label": "E-mail uitnodigingen automatisch versturen",
+          "label": "Uitnodigingsmails versturen",
           "hint": "Vink aan om uitnodigingsmails direct na aanmaken van sessies te versturen",
-          "description": "E-mailuitnodigingen worden automatisch verzonden"
+          "description": "Deelnemers ontvangen een e-mail met hun quizlink"
         },
         "sendResults": {
-          "label": "Quiz resultaten automatisch versturen",
+          "label": "Resultatenmails versturen",
           "hint": "Vink aan om resultaatmails direct na aanmaken van sessies te versturen",
-          "description": "Quizresultaten worden automatisch verzonden"
+          "description": "Deelnemers ontvangen een e-mail met hun quizresultaten"
         },
         "submit": "Sessies Aanmaken",
         "submitting": "Aanmaken...",
