@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { applyEach, email, Field, form, min, required } from '@angular/forms/signals';
+import { applyEach, disabled, email, Field, form, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, delay, map, of, switchMap, tap } from 'rxjs';
@@ -97,6 +97,12 @@ export class CreateSessions {
     // Validate quiz configuration
     required(schemaPath.numberOfQuestions, {
       message: 'sessions.create.form.numberOfQuestions.required',
+      when: () => {
+        return this.selectedQuestions().length === 0;
+      },
+    });
+    disabled(schemaPath.numberOfQuestions, () => {
+      return this.selectedQuestions().length > 0;
     });
     min(schemaPath.numberOfQuestions, 1, {
       message: 'sessions.create.form.numberOfQuestions.min',
@@ -175,12 +181,14 @@ export class CreateSessions {
     if (!current.some((q) => q.number === question.number)) {
       this.selectedQuestions.set([...current, question]);
       this.updateQuestionNumbersField();
+      this.resetQuestionCount();
     }
   }
 
   protected onQuestionRemove(questionNumber: string): void {
     this.selectedQuestions.update((current) => current.filter((q) => q.number !== questionNumber));
     this.updateQuestionNumbersField();
+    this.resetQuestionCount();
   }
 
   private updateQuestionNumbersField(): void {
@@ -191,6 +199,15 @@ export class CreateSessions {
     this.sessionModel.set({
       ...current,
       specificQuestionNumbers: numbers,
+    });
+  }
+
+  private resetQuestionCount(): void {
+    const count = this.selectedQuestions().length;
+    const current = this.sessionModel();
+    this.sessionModel.set({
+      ...current,
+      numberOfQuestions: count > 0 ? count : 30,
     });
   }
 
