@@ -42,29 +42,38 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.Questions?.Nodes?.OfType<IGetQuestionsByNumber_Questions_Nodes>();
-        
+
         if (nodes is null)
             return [];
-        
+
         // Convert nodes to dictionary for fast lookup by number (filter out null numbers)
         var questionDict = nodes.Where(x => x.Number != null)
-                                .ToDictionary(x => x.Number!, x => x.Id);
-        
+            .ToDictionary(x => x.Number!, x => x.Id);
+
         // Return question IDs in the same order as the input numbers
         return numbers.Where(number => questionDict.ContainsKey(number))
-                     .Select(number => questionDict[number])
-                     .ToList();
+            .Select(number => questionDict[number])
+            .ToList();
     }
 
     public async Task<List<Question>> GetQuestionsByIdAsync(List<string> ids, bool includeNumber = false,
         bool includeIsCorrect = false, bool randomAnswerOrder = true,
         CancellationToken cancellationToken = default)
     {
-        var result = await client.GetQuestionsById.ExecuteAsync(ids.ToList(), includeNumber, includeIsCorrect, randomAnswerOrder, cancellationToken);
+        var result = await client.GetQuestionsById.ExecuteAsync(ids.ToList(), includeNumber, includeIsCorrect,
+            randomAnswerOrder
+                ? null
+                :
+                [
+                    new AnswerSortInput
+                    {
+                        Number = SortEnumType.Asc
+                    }
+                ], cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.QuestionsById?.OfType<GetQuestionsById_QuestionsById_Question>();
-        
+
         // Convert nodes to dictionary for fast lookup
         var questionDict = nodes?.ToDictionary(x => x.Id, x =>
         {
@@ -91,11 +100,11 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
                 Number = x.Number ?? string.Empty,
             };
         }) ?? new Dictionary<string, Question>();
-        
+
         // Return questions in the same order as the input IDs
         return ids.Where(id => questionDict.ContainsKey(id))
-                  .Select(id => questionDict[id])
-                  .ToList();
+            .Select(id => questionDict[id])
+            .ToList();
     }
 
     public async Task<List<Question>> SearchQuestionsByNumberAsync(string? number,

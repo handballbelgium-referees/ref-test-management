@@ -1,10 +1,10 @@
-query getQuestionsById($ids: [ID!]!, $includeNumber: Boolean!, $includeIsCorrect: Boolean!, $randomAnswersOrder: Boolean!) {
+query getQuestionsById($ids: [ID!]!, $includeNumber: Boolean!, $includeIsCorrect: Boolean!, $answerOrder: [AnswerSortInput!]) {
     questionsById(ids: $ids) {
         id
         number @include(if: $includeNumber)
         phrase
         translations
-        answers(random: $randomAnswersOrder) {
+        answers(order: $answerOrder) {
             nodes {
                 id
                 number @include(if: $includeNumber)
