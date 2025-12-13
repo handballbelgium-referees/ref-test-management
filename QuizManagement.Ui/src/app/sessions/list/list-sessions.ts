@@ -138,6 +138,7 @@ export class ListSessions {
   protected readonly showDeleteDialog = signal(false);
   protected readonly sendingInvitations = signal(false);
   protected readonly sendingResults = signal(false);
+  protected readonly deletingSessions = signal(false);
 
   protected readonly invitationSummary = computed(() => {
     const selectedIds = this.selectedSessionIds();
@@ -561,6 +562,7 @@ export class ListSessions {
         fetchPolicy: 'no-cache',
       })
       .pipe(
+        tap((result) => this.deletingSessions.set(result.loading ?? false)),
         tap((result) => {
           const deleteResult = result.data?.deleteQuizSessions?.deleteQuizSessionsResult;
           if (deleteResult && deleteResult.deletedSessions.length > 0) {
@@ -580,6 +582,7 @@ export class ListSessions {
               return newIds;
             });
           });
+          this.deletingSessions.set(false);
         })
       )
       .subscribe();

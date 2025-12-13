@@ -13,6 +13,7 @@ export class SessionBulkActions {
   readonly hasPendingSessionsSelected = input.required<boolean>();
   readonly sendingInvitations = input.required<boolean>();
   readonly sendingResults = input.required<boolean>();
+  readonly deletingSessions = input.required<boolean>();
 
   readonly sendInvitations = output<void>();
   readonly sendResults = output<void>();
