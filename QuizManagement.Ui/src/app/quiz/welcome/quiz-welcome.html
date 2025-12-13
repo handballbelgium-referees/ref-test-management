@@ -1,5 +1,5 @@
 <!-- Hero Section -->
-@if(!error()) {
+@if(!error() && session() && !loading()) {
 <app-quiz-hero />
 }
 
