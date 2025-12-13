@@ -296,6 +296,12 @@
         "warning": "You have unanswered questions. They will be marked as incorrect.",
         "confirm": "Submit Quiz",
         "cancel": "Continue Quiz"
+      },
+      "leave": {
+        "title": "Leave Quiz?",
+        "message": "Are you sure you want to leave? Your progress will be lost if you haven't submitted the quiz.",
+        "confirm": "Leave Quiz",
+        "cancel": "Stay on Quiz"
       }
     }
   },

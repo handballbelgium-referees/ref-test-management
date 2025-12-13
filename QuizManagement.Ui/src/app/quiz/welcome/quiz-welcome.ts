@@ -4,7 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { map, switchMap } from 'rxjs';
 import { GetQuizSessionByTokenGQL } from '../../../../graphql/generated';
-import { QuizErrorComponent } from './components/quiz-error/quiz-error';
+import { QuizErrorComponent } from '../components/quiz-error/quiz-error';
 import { QuizHeroComponent } from './components/quiz-hero/quiz-hero';
 import { QuizInstructionsComponent } from './components/quiz-instructions/quiz-instructions';
 import { SessionDetailsComponent } from './components/session-details/session-details';

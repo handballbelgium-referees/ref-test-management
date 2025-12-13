@@ -296,6 +296,12 @@
         "warning": "Vous avez des questions non répondues. Elles seront marquées comme incorrectes.",
         "confirm": "Soumettre le Quiz",
         "cancel": "Continuer le Quiz"
+      },
+      "leave": {
+        "title": "Quitter le Quiz?",
+        "message": "Êtes-vous sûr de vouloir partir? Votre progression sera perdue si vous n'avez pas soumis le quiz.",
+        "confirm": "Quitter le Quiz",
+        "cancel": "Rester sur le Quiz"
       }
     }
   },

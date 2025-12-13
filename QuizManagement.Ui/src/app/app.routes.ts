@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/guards/auth-guard';
+import { canDeactivateQuizGuard } from './quiz/take/guards/can-deactivate-quiz.guard';
 
 export const routes: Routes = [
   {
@@ -23,6 +24,7 @@ export const routes: Routes = [
   {
     path: 'quiz/:token/take',
     loadComponent: () => import('./quiz/take/take-quiz').then((m) => m.TakeQuizComponent),
+    canDeactivate: [canDeactivateQuizGuard],
   },
   {
     path: '**',

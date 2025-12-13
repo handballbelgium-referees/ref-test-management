@@ -296,6 +296,12 @@
         "warning": "Sie haben unbeantwortete Fragen. Diese werden als falsch markiert.",
         "confirm": "Quiz Einreichen",
         "cancel": "Quiz Fortsetzen"
+      },
+      "leave": {
+        "title": "Quiz Verlassen?",
+        "message": "Sind Sie sicher, dass Sie gehen möchten? Ihr Fortschritt geht verloren, wenn Sie das Quiz nicht eingereicht haben.",
+        "confirm": "Quiz Verlassen",
+        "cancel": "Beim Quiz Bleiben"
       }
     }
   },

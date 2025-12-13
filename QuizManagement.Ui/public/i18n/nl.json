@@ -304,6 +304,12 @@
         "warning": "Je hebt onbeantwoorde vragen. Deze worden als fout gemarkeerd.",
         "confirm": "Quiz Indienen",
         "cancel": "Quiz Voortzetten"
+      },
+      "leave": {
+        "title": "Quiz Verlaten?",
+        "message": "Weet je zeker dat je wilt vertrekken? Je voortgang gaat verloren als je de quiz niet hebt ingediend.",
+        "confirm": "Quiz Verlaten",
+        "cancel": "Blijf bij Quiz"
       }
     }
   },

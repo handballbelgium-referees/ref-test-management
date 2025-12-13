@@ -4,6 +4,7 @@ import {
   computed,
   DestroyRef,
   effect,
+  HostListener,
   inject,
   signal,
 } from '@angular/core';
@@ -12,6 +13,8 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, map, of, tap } from 'rxjs';
 import { CompleteQuizSessionGQL, StartQuizSessionGQL } from '../../../../graphql/generated';
+import { QuizErrorComponent } from '../components/quiz-error/quiz-error';
+import { LeaveQuizDialogComponent } from './components/leave-quiz-dialog/leave-quiz-dialog';
 import { QuestionCardComponent } from './components/question-card/question-card';
 import { QuizHeaderComponent } from './components/quiz-header/quiz-header';
 import { QuizNavigationComponent } from './components/quiz-navigation/quiz-navigation';
@@ -25,6 +28,7 @@ interface Answer {
 
 interface Question {
   id: string;
+  number?: string;
   phrase: Record<string, string>;
   answers: Answer[];
 }
@@ -40,6 +44,8 @@ interface Question {
     QuizNavigationComponent,
     QuizResultsComponent,
     SubmitQuizDialog,
+    LeaveQuizDialogComponent,
+    QuizErrorComponent,
   ],
 })
 export class TakeQuizComponent {
@@ -69,6 +75,9 @@ export class TakeQuizComponent {
   protected readonly wrongQuestionIds = signal<string[]>([]);
   protected readonly wrongAnswerIds = signal<string[]>([]);
   protected readonly showSubmitDialog = signal(false);
+  protected readonly showLeaveDialog = signal(false);
+  private _leaveConfirmed = false;
+  private _tempLeaveHandlers?: { handleConfirm: () => void; handleCancel: () => void };
 
   protected readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
@@ -121,17 +130,22 @@ export class TakeQuizComponent {
     return answeredCount === totalQuestions;
   });
 
+  @HostListener('window:beforeunload', ['$event'])
+  beforeUnloadHandler(event: BeforeUnloadEvent): void {
+    // Check if quiz is in progress (has questions loaded but not completed)
+    if (this.questions().length > 0 && !this.quizCompleted()) {
+      event.preventDefault();
+    }
+  }
+
   constructor() {
     // Start the quiz session when component initializes
-    effect(
-      () => {
-        const token = this._token();
-        if (token) {
-          this.startQuiz(token);
-        }
-      },
-      { allowSignalWrites: true }
-    );
+    effect(() => {
+      const token = this._token();
+      if (token) {
+        this.startQuiz(token);
+      }
+    });
 
     // Timer effect
     effect(() => {
@@ -172,8 +186,8 @@ export class TakeQuizComponent {
         tap((data) => {
           if (data?.errors && data.errors.length > 0) {
             const error = data.errors[0];
-            if ('message' in error) {
-              this.error.set(error.message);
+            if ('__typename' in error && error.__typename) {
+              this.error.set(error.__typename);
             }
             return;
           }
@@ -221,9 +235,9 @@ export class TakeQuizComponent {
             }
           }
         }),
-        catchError((err) => {
+        catchError(() => {
           this.loading.set(false);
-          this.error.set(err.message || 'Failed to start quiz');
+          this.error.set('general');
           return of(null);
         }),
         takeUntilDestroyed(this._destroyRef)
@@ -315,11 +329,21 @@ export class TakeQuizComponent {
             this.percentage.set(session.percentage ?? null);
             this.wrongQuestionIds.set(session.wrongQuestionIds ?? []);
             this.wrongAnswerIds.set(session.wrongAnswerIds ?? []);
+
+            // Update questions with numbers from the response
+            if (session.questions) {
+              const currentQuestions = this.questions();
+              const updatedQuestions = currentQuestions.map((q) => {
+                const responseQuestion = session.questions?.find((rq) => rq?.id === q.id);
+                return responseQuestion ? { ...q, number: responseQuestion.number } : q;
+              });
+              this.questions.set(updatedQuestions);
+            }
           }
         }),
-        catchError((err) => {
+        catchError(() => {
           this.loading.set(false);
-          this.error.set(err.message || 'Failed to submit quiz');
+          this.error.set('submitFailed');
           return of(null);
         }),
         takeUntilDestroyed(this._destroyRef)
@@ -346,6 +370,55 @@ export class TakeQuizComponent {
     const token = this._token();
     if (token) {
       this._router.navigate(['/quiz', token]);
+    }
+  }
+
+  canDeactivate(): boolean | Promise<boolean> {
+    // Allow navigation if quiz is completed or user already confirmed leaving
+    if (this.quizCompleted() || this._leaveConfirmed) {
+      return true;
+    }
+
+    // Show dialog and return a promise
+    return new Promise<boolean>((resolve) => {
+      this.showLeaveDialog.set(true);
+
+      // Create a temporary handler to resolve the promise
+      const handleConfirm = () => {
+        this._leaveConfirmed = true;
+        this.showLeaveDialog.set(false);
+        resolve(true);
+      };
+
+      const handleCancel = () => {
+        this.showLeaveDialog.set(false);
+        resolve(false);
+      };
+
+      // Store handlers temporarily
+      this._tempLeaveHandlers = { handleConfirm, handleCancel };
+    });
+  }
+
+  protected confirmLeave(): void {
+    const handlers = this._tempLeaveHandlers;
+    if (handlers) {
+      handlers.handleConfirm();
+      this._tempLeaveHandlers = undefined;
+    } else {
+      // If no handlers (e.g., dialog shown but not from canDeactivate), just close dialog
+      this.showLeaveDialog.set(false);
+    }
+  }
+
+  protected cancelLeave(): void {
+    const handlers = this._tempLeaveHandlers;
+    if (handlers) {
+      handlers.handleCancel();
+      this._tempLeaveHandlers = undefined;
+    } else {
+      // If no handlers (e.g., dialog shown but not from canDeactivate), just close dialog
+      this.showLeaveDialog.set(false);
     }
   }
 }

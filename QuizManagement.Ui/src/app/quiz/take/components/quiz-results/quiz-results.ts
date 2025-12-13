@@ -9,6 +9,7 @@ interface Answer {
 
 interface Question {
   id: string;
+  number?: string;
   phrase: Record<string, string>;
   answers: Answer[];
 }
