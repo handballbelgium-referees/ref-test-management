@@ -112,7 +112,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 var questionText = question.Phrase.TryGetValue(language, out var questionValue) 
                     ? questionValue : string.Empty;
 
-                column.Item().PaddingBottom(16).Element(cardContainer =>
+                column.Item().PaddingBottom(16).ShowEntire().Element(cardContainer =>
                 {
                     cardContainer.Layers(layers =>
                     {
@@ -131,102 +131,102 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                         // Content layer
                         layers.PrimaryLayer().Padding(14).Column(questionColumn =>
                         {
-                        // Question header with icon
-                        questionColumn.Item().Row(row =>
-                        {
-                            row.ConstantItem(20).Text(text =>
-                            {
-                                text.Span(isQuestionCorrect ? "✓" : "✗")
-                                    .FontSize(14)
-                                    .FontColor(isQuestionCorrect ? "#16a34a" : "#dc2626");
-                            });
-
-                            row.RelativeItem().Text(text =>
-                            {
-                                text.Span($"{translations["question"]} {question.Number}: ")
-                                    .Bold()
-                                    .FontSize(10)
-                                    .FontColor("#404040");
-                                text.Span(questionText)
-                                    .FontSize(10)
-                                    .FontColor("#404040");
-                            });
-                        });
-
-                        questionColumn.Item().PaddingTop(8);
-
-                        // Answers
-                        foreach (var answer in question.Answers)
-                        {
-                            var answerText = answer.Phrase.TryGetValue(language, out var answerValue)
-                                ? answerValue
-                                : string.Empty;
-                            var isUserSelected = selectedAnswerIds.Contains(answer.Id);
-                            var isWrongAnswer = wrongAnswerIds.Contains(answer.Id);
-                            var isCorrectAnswer = answer.IsCorrect;
-
-                            string textColor;
-                            var icon = "";
-                            bool bold;
-
-                            switch (isUserSelected)
-                            {
-                                case true when isWrongAnswer:
-                                    // User selected the wrong answer
-                                    textColor = "#dc2626"; // red-600
-                                    icon = "✗";
-                                    bold = true;
-                                    break;
-                                case true when !isWrongAnswer:
-                                    // User selected the correct answer
-                                    textColor = "#16a34a"; // green-600
-                                    icon = "✓";
-                                    bold = true;
-                                    break;
-                                default:
+                            // Question header with icon
+                            questionColumn.Item().Row(row =>
                                 {
-                                    if (isCorrectAnswer)
+                                    row.ConstantItem(20).Text(text =>
                                     {
-                                        // Correct answer (not selected by the user)
-                                        textColor = "#16a34a"; // green-600
-                                        icon = "✓";
-                                    }
-                                    else
+                                        text.Span(isQuestionCorrect ? "✓" : "✗")
+                                            .FontSize(14)
+                                            .FontColor(isQuestionCorrect ? "#16a34a" : "#dc2626");
+                                    });
+
+                                    row.RelativeItem().Text(text =>
                                     {
-                                        // Other answers
-                                        textColor = "#737373"; // neutral-500
-                                    }
-
-                                    bold = false;
-
-                                    break;
-                                }
-                            }
-
-                            questionColumn.Item().PaddingTop(3).Row(row =>
-                            {
-                                if (!string.IsNullOrEmpty(icon))
-                                {
-                                    row.ConstantItem(15).Text(icon).FontSize(10).FontColor(textColor);
-                                }
-                                else
-                                {
-                                    row.ConstantItem(15);
-                                }
-
-                                row.RelativeItem().Text(text =>
-                                {
-                                    var span = text.Span($"{answer.Number}: {answerText}")
-                                        .FontSize(9)
-                                        .FontColor(textColor);
-
-                                    if (bold)
-                                    {
-                                        span.Bold();
-                                    }
+                                        text.Span($"{translations["question"]} {question.Number}: ")
+                                            .Bold()
+                                            .FontSize(10)
+                                            .FontColor("#404040");
+                                        text.Span(questionText)
+                                            .FontSize(10)
+                                            .FontColor("#404040");
+                                    });
                                 });
-                            });
-                        }
+
+                                questionColumn.Item().PaddingTop(8);
+
+                                // Answers
+                                foreach (var answer in question.Answers)
+                                {
+                                    var answerText = answer.Phrase.ContainsKey(language)
+                                        ? answer.Phrase[language]
+                                        : string.Empty;
+                                    var isUserSelected = selectedAnswerIds.Contains(answer.Id);
+                                    var isWrongAnswer = wrongAnswerIds.Contains(answer.Id);
+                                    var isCorrectAnswer = answer.IsCorrect;
+
+                                    string textColor;
+                                    var icon = "";
+                                    bool bold;
+
+                                    switch (isUserSelected)
+                                    {
+                                        case true when isWrongAnswer:
+                                            // User selected the wrong answer
+                                            textColor = "#dc2626"; // red-600
+                                            icon = "✗";
+                                            bold = true;
+                                            break;
+                                        case true when !isWrongAnswer:
+                                            // User selected the correct answer
+                                            textColor = "#16a34a"; // green-600
+                                            icon = "✓";
+                                            bold = true;
+                                            break;
+                                        default:
+                                        {
+                                            if (isCorrectAnswer)
+                                            {
+                                                // Correct answer (not selected by the user)
+                                                textColor = "#16a34a"; // green-600
+                                                icon = "✓";
+                                            }
+                                            else
+                                            {
+                                                // Other answers
+                                                textColor = "#737373"; // neutral-500
+                                            }
+
+                                            bold = false;
+
+                                            break;
+                                        }
+                                    }
+
+                                    questionColumn.Item().PaddingTop(3).Row(row =>
+                                    {
+                                        if (!string.IsNullOrEmpty(icon))
+                                        {
+                                            row.ConstantItem(15).Text(icon).FontSize(10).FontColor(textColor);
+                                        }
+                                        else
+                                        {
+                                            row.ConstantItem(15);
+                                        }
+
+                                        row.RelativeItem().Text(text =>
+                                        {
+                                            var span = text.Span($"{answer.Number}: {answerText}")
+                                                .FontSize(9)
+                                                .FontColor(textColor);
+
+                                            if (bold)
+                                            {
+                                                span.Bold();
+                                            }
+                                    });
+                                });
+                            }
                         });
                     });
                 });
