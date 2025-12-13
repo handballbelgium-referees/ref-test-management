@@ -35,6 +35,7 @@
       [filter]="filter()"
       [statusCounts]="statusCounts()"
       (statusFilterChange)="setStatusFilter($event)"
+      (titleFilterChange)="setTitleFilter($event)"
       (invitationFilterChange)="setInvitationFilter($event)"
       (sortingChange)="setSorting($event.field, $event.direction)"
       (scoreRangeChange)="setScoreRange($event.min, $event.max)"
@@ -144,6 +145,11 @@
               (change)="toggleSelectAll()"
               class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
             />
+          </th>
+          <th
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
+          >
+            {{ 'sessions.list.table.title' | translate }}
           </th>
           <th
             (click)="sortByColumn('email')"
@@ -313,6 +319,9 @@
             />
           </td>
           <td class="px-6 py-4 whitespace-nowrap">
+            <div class="text-sm text-neutral-900">{{ session.title?.value || '-' }}</div>
+          </td>
+          <td class="px-6 py-4 whitespace-nowrap">
             <div class="flex flex-col">
               <div class="text-sm font-medium text-neutral-900">{{ session.name }}</div>
               <div class="text-sm text-neutral-500">{{ session.email }}</div>
@@ -393,6 +402,9 @@
         <div class="flex-1">
           <h3 class="text-sm font-medium text-neutral-900">{{ session.name }}</h3>
           <p class="text-sm text-neutral-500">{{ session.email }}</p>
+          @if (session.title) {
+          <p class="text-xs text-neutral-400 mt-1">{{ session.title.value }}</p>
+          }
         </div>
         <span
           [class]="getStatusClass(session.status)"

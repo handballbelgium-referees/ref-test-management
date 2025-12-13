@@ -21,6 +21,7 @@ import { BulkQuestionImportModal } from './components/bulk-question-import-modal
 import { BulkUserImportModal } from './components/bulk-user-import-modal/bulk-user-import-modal';
 import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
 import { SessionUserListItem } from './components/session-user-list-item/session-user-list-item';
+import { TitleAutocomplete } from './components/title-autocomplete/title-autocomplete';
 
 interface UserData {
   firstName: string;
@@ -30,6 +31,7 @@ interface UserData {
 
 interface SessionFormData {
   users: UserData[];
+  title: { id?: string; name: string } | null;
   numberOfQuestions: number;
   maxTimeInMinutes: number;
   specificQuestionNumbers: string;
@@ -45,6 +47,7 @@ interface SessionFormData {
     BulkUserImportModal,
     QuestionSearchAutocomplete,
     BulkQuestionImportModal,
+    TitleAutocomplete,
   ],
   templateUrl: './create-sessions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,6 +64,7 @@ export class CreateSessions {
   // Angular v21 Signal Forms - model signal
   protected readonly sessionModel = signal<SessionFormData>({
     users: [{ firstName: '', lastName: '', email: '' }],
+    title: null,
     numberOfQuestions: 30,
     maxTimeInMinutes: 60,
     specificQuestionNumbers: '',
@@ -83,6 +87,11 @@ export class CreateSessions {
       email(user.email, {
         message: 'sessions.create.form.users.emailInvalid',
       });
+    });
+
+    // Validate title
+    required(schemaPath.title, {
+      message: 'sessions.create.form.title.required',
     });
 
     // Validate quiz configuration
@@ -151,6 +160,14 @@ export class CreateSessions {
 
   protected toggleBulkQuestionImport(): void {
     this.showBulkQuestionImport.update((v) => !v);
+  }
+
+  protected onTitleSelect(title: { id?: string; name: string }): void {
+    const current = this.sessionModel();
+    this.sessionModel.set({
+      ...current,
+      title: title.name ? title : null,
+    });
   }
 
   protected onQuestionSelect(question: { number: string; phrase: Record<string, string> }): void {
@@ -311,6 +328,10 @@ export class CreateSessions {
         variables: {
           input: {
             users: formData.users,
+            title: {
+              id: formData.title?.id,
+              name: formData.title?.name,
+            },
             numberOfQuestions: formData.numberOfQuestions,
             maxTimeInMinutes: formData.maxTimeInMinutes,
             specificQuestionNumbers: specificQuestions.length > 0 ? specificQuestions : undefined,
@@ -339,6 +360,7 @@ export class CreateSessions {
               // Reset form to initial state
               this.sessionModel.set({
                 users: [{ firstName: '', lastName: '', email: '' }],
+                title: null,
                 numberOfQuestions: 30,
                 maxTimeInMinutes: 60,
                 specificQuestionNumbers: '',

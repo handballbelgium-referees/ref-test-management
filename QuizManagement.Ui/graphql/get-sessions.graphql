@@ -9,6 +9,10 @@ query GetQuizSessions(
       cursor
       node {
         id
+        title {
+          id
+          value
+        }
         name
         email
         invitationSent

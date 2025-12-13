@@ -24,6 +24,12 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
             .ResolveNode((ctx, id) => ctx.DataLoader<QuizSessionByIdDataLoader>().LoadAsync(id, ctx.RequestAborted)!)
             .Description("The quiz session id");
 
+        descriptor.Field(x => x.Title)
+            .Description("Title of the quiz")
+            .Resolve(ctx =>
+                ctx.DataLoader<QuizTitleByIdDataLoader>()
+                    .LoadAsync(ctx.Parent<QuizSession>().TitleId, ctx.RequestAborted));
+
         descriptor.Field("name").Description("Name of the user who started the quiz (e.g., )").Resolve(ctx =>
             $"{ctx.Parent<QuizSession>().FirstName} {ctx.Parent<QuizSession>().LastName}");
         descriptor.Field(x => x.Email).Description("Email of the user who started the quiz");
@@ -44,11 +50,11 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
                 var session = ctx.Parent<QuizSession>();
                 var contextFactory = ctx.Services.GetRequiredService<IDbContextFactory<QuizManagementContext>>();
                 await using var context = await contextFactory.CreateDbContextAsync(ctx.RequestAborted);
-                
+
                 if (session.IsExpired())
                     session.ExpireSession();
                 await context.SaveChangesAsync(ctx.RequestAborted);
-                
+
                 return session.Status;
             })
             .Authorize();

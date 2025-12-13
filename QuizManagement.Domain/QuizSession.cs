@@ -3,6 +3,7 @@
 public class QuizSession
 {
     private QuizSession(
+        Guid titleId,
         string firstName,
         string lastName,
         string email,
@@ -10,6 +11,7 @@ public class QuizSession
         int maxTimeInMinutes,
         List<string> questionIds)
     {
+        TitleId = titleId;
         FirstName = firstName;
         LastName = lastName;
         Email = email;
@@ -22,6 +24,9 @@ public class QuizSession
     }
 
     public Guid Id { get; private set; } = Guid.NewGuid();
+    
+    public Guid TitleId { get; private set; }
+    public QuizTitle? Title { get; init; }
     public string FirstName { get; private set; }
     public string LastName { get; private set; }
     public string Email { get; private set; }
@@ -41,6 +46,7 @@ public class QuizSession
     public List<string> WrongAnswerIds { get; private set; } = [];
 
     public static QuizSession Create(
+        Guid titleId,
         string firstName,
         string lastName,
         string email,
@@ -63,10 +69,10 @@ public class QuizSession
         if (maxTimeInMinutes <= 0)
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
-        return new QuizSession(firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
+        return new QuizSession(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
             questionIds);
     }
-    
+
     public void SendInvitation()
     {
         InvitationSent = true;

@@ -12,10 +12,23 @@ namespace QuizManagement.Infrastructure.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.CreateTable(
+                name: "QuizTitles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Value = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_QuizTitles", x => x.Id);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "QuizSessions",
                 columns: table => new
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TitleId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     FirstName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     LastName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
@@ -37,6 +50,12 @@ namespace QuizManagement.Infrastructure.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_QuizSessions", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_QuizSessions_QuizTitles_TitleId",
+                        column: x => x.TitleId,
+                        principalTable: "QuizTitles",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -55,6 +74,11 @@ namespace QuizManagement.Infrastructure.Migrations
                 column: "Status");
 
             migrationBuilder.CreateIndex(
+                name: "IX_QuizSessions_TitleId",
+                table: "QuizSessions",
+                column: "TitleId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_QuizSessions_Token",
                 table: "QuizSessions",
                 column: "Token",
@@ -66,6 +90,9 @@ namespace QuizManagement.Infrastructure.Migrations
         {
             migrationBuilder.DropTable(
                 name: "QuizSessions");
+
+            migrationBuilder.DropTable(
+                name: "QuizTitles");
         }
     }
 }

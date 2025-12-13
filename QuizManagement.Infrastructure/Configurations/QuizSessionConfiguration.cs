@@ -10,6 +10,11 @@ public class QuizSessionConfiguration : IEntityTypeConfiguration<QuizSession>
     public void Configure(EntityTypeBuilder<QuizSession> builder)
     {
         builder.HasKey(x => x.Id);
+        
+        builder.HasOne(x => x.Title)
+            .WithMany()
+            .HasForeignKey(x => x.TitleId)
+            .IsRequired();
 
         builder.Property(x => x.FirstName)
             .IsRequired()

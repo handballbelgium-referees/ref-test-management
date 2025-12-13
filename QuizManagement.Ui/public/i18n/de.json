@@ -60,6 +60,10 @@
         "inProgress": "In Bearbeitung",
         "completed": "Abgeschlossen",
         "expired": "Abgelaufen",
+        "titleLabel": "Quiz Titel",
+        "titleAll": "Alle Titel",
+        "titleSearchPlaceholder": "Titel suchen...",
+        "noTitlesFound": "Keine Titel gefunden",
         "invitationLabel": "Einladungsstatus",
         "invitationAll": "Alle",
         "invitationSent": "Gesendet",
@@ -100,6 +104,7 @@
         "EXPIRED": "Abgelaufen"
       },
       "table": {
+        "title": "Titel",
         "participant": "Teilnehmer",
         "status": "Status",
         "questions": "Fragen",
@@ -150,6 +155,17 @@
       "form": {
         "config": {
           "label": "Quiz-Konfiguration"
+        },
+        "title": {
+          "label": "Quiz Titel",
+          "placeholder": "Suchen Sie nach einem vorhandenen Titel oder geben Sie einen neuen ein...",
+          "required": "Titel ist erforderlich",
+          "tooltip": "Beispiel: Schulung {{date}}",
+          "noResults": "Keine vorhandenen Titel gefunden",
+          "createNew": "Drücken Sie Enter, um einen neuen Titel mit diesem Namen zu erstellen",
+          "existingTitle": "Vorhandenen Titel verwenden",
+          "newTitle": "Wird neuen Titel erstellen",
+          "clear": "Titel löschen"
         },
         "users": {
           "label": "Benutzer",

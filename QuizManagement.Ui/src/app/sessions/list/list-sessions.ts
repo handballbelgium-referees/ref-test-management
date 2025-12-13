@@ -14,19 +14,27 @@ import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { catchError, debounceTime, finalize, map, of, Subject, tap } from 'rxjs';
 import {
+  BooleanOperationFilterInput,
+  DateTimeOperationFilterInput,
   DeleteQuizSessionsGQL,
+  FloatOperationFilterInput,
   GetQuizSessionsCountGQL,
   GetQuizSessionsGQL,
   GetQuizSessionsQuery,
+  IntOperationFilterInput,
+  QuizSessionFilterInput,
   QuizSessionStatus,
+  QuizSessionStatusOperationFilterInput,
   SendInvitationsGQL,
   SortEnumType,
+  UuidOperationFilterInput,
 } from '../../../../graphql/generated';
 import { DeleteSessionsDialog } from './components/delete-sessions-dialog/delete-sessions-dialog';
 import { SendInvitationsDialog } from './components/send-invitations-dialog/send-invitations-dialog';
 import { SessionFiltersCard } from './components/session-filters-card/session-filters-card';
 
 type SortField =
+  | 'title'
   | 'completedAt'
   | 'startedAt'
   | 'email'
@@ -39,6 +47,7 @@ type SortField =
 interface SessionFilter {
   status?: QuizSessionStatus;
   invitationSent?: boolean;
+  titleId?: string;
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
@@ -294,68 +303,77 @@ export class ListSessions {
     expired: this._expiredCountResult()?.data?.quizSessions?.totalCount ?? 0,
   }));
 
-  private buildWhereFilter() {
+  private buildWhereFilter(): QuizSessionFilterInput | undefined {
     const currentFilter = this.filter();
-    const filters: any = {};
+    const filters: QuizSessionFilterInput = {};
 
     if (currentFilter.status) {
-      filters.status = { eq: currentFilter.status };
+      filters.status = { eq: currentFilter.status } as QuizSessionStatusOperationFilterInput;
+    }
+
+    if (currentFilter.titleId) {
+      filters.titleId = { eq: currentFilter.titleId } as UuidOperationFilterInput;
     }
 
     if (currentFilter.invitationSent !== undefined) {
-      filters.invitationSent = { eq: currentFilter.invitationSent };
+      filters.invitationSent = { eq: currentFilter.invitationSent } as BooleanOperationFilterInput;
     }
 
     if (currentFilter.minScore !== undefined || currentFilter.maxScore !== undefined) {
-      filters.score = {};
+      const scoreFilter: IntOperationFilterInput = {};
       if (currentFilter.minScore !== undefined) {
-        filters.score.gte = currentFilter.minScore;
+        scoreFilter.gte = currentFilter.minScore;
       }
       if (currentFilter.maxScore !== undefined) {
-        filters.score.lte = currentFilter.maxScore;
+        scoreFilter.lte = currentFilter.maxScore;
       }
+      filters.score = scoreFilter;
     }
 
     if (currentFilter.percentageRange) {
-      filters.percentage = {};
+      const percentageFilter: FloatOperationFilterInput = {};
       if (currentFilter.percentageRange === 'low') {
-        filters.percentage.lt = 50;
+        percentageFilter.lt = 50;
       } else if (currentFilter.percentageRange === 'medium') {
-        filters.percentage.gte = 50;
-        filters.percentage.lt = 75;
+        percentageFilter.gte = 50;
+        percentageFilter.lt = 75;
       } else if (currentFilter.percentageRange === 'high') {
-        filters.percentage.gte = 75;
+        percentageFilter.gte = 75;
       }
+      filters.percentage = percentageFilter;
     }
 
     if (currentFilter.minQuestions !== undefined || currentFilter.maxQuestions !== undefined) {
-      filters.numberOfQuestions = {};
+      const questionsFilter: IntOperationFilterInput = {};
       if (currentFilter.minQuestions !== undefined) {
-        filters.numberOfQuestions.gte = currentFilter.minQuestions;
+        questionsFilter.gte = currentFilter.minQuestions;
       }
       if (currentFilter.maxQuestions !== undefined) {
-        filters.numberOfQuestions.lte = currentFilter.maxQuestions;
+        questionsFilter.lte = currentFilter.maxQuestions;
       }
+      filters.numberOfQuestions = questionsFilter;
     }
 
     if (currentFilter.startedAfter || currentFilter.startedBefore) {
-      filters.startedAt = {};
+      const startedAtFilter: DateTimeOperationFilterInput = {};
       if (currentFilter.startedAfter) {
-        filters.startedAt.gte = currentFilter.startedAfter;
+        startedAtFilter.gte = currentFilter.startedAfter;
       }
       if (currentFilter.startedBefore) {
-        filters.startedAt.lte = currentFilter.startedBefore;
+        startedAtFilter.lte = currentFilter.startedBefore;
       }
+      filters.startedAt = startedAtFilter;
     }
 
     if (currentFilter.completedAfter || currentFilter.completedBefore) {
-      filters.completedAt = {};
+      const completedAtFilter: DateTimeOperationFilterInput = {};
       if (currentFilter.completedAfter) {
-        filters.completedAt.gte = currentFilter.completedAfter;
+        completedAtFilter.gte = currentFilter.completedAfter;
       }
       if (currentFilter.completedBefore) {
-        filters.completedAt.lte = currentFilter.completedBefore;
+        completedAtFilter.lte = currentFilter.completedBefore;
       }
+      filters.completedAt = completedAtFilter;
     }
 
     return Object.keys(filters).length > 0 ? filters : undefined;
@@ -377,6 +395,10 @@ export class ListSessions {
 
   protected setStatusFilter(status?: QuizSessionStatus): void {
     this.filter.update((f) => ({ ...f, status }));
+  }
+
+  protected setTitleFilter(titleId?: string): void {
+    this.filter.update((f) => ({ ...f, titleId }));
   }
 
   protected setInvitationFilter(invitationSent?: boolean): void {

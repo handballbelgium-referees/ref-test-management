@@ -1,6 +1,5 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
 using HotChocolate.Authorization;
-using HotChocolate.CostAnalysis.Types;
 using Microsoft.EntityFrameworkCore;
 using QuizManagement.Application.Models;
 using QuizManagement.Application.Services;
@@ -44,6 +43,18 @@ public static class QuizQueries
 
         return session.IsExpired() ? throw new QuizSessionExpiredException(token) : session;
     }
+    
+    /// <summary>
+    /// Get all quiz titles
+    /// </summary>
+    /// <param name="context"></param>
+    /// <returns></returns>
+    [Authorize]
+    [UsePaging]
+    [UseFiltering]
+    [UseSorting]
+    public static IQueryable<QuizTitle> GetQuizTitles(QuizManagementContext context)
+    => context.QuizTitles;
 
     /// <summary>
     /// Get all quiz sessions

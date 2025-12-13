@@ -68,6 +68,10 @@
         "inProgress": "Bezig",
         "completed": "Voltooid",
         "expired": "Verlopen",
+        "titleLabel": "Quiz Titel",
+        "titleAll": "Alle Titels",
+        "titleSearchPlaceholder": "Titels zoeken...",
+        "noTitlesFound": "Geen titels gevonden",
         "invitationLabel": "Uitnodigingsstatus",
         "invitationAll": "Alle",
         "invitationSent": "Verzonden",
@@ -108,6 +112,7 @@
         "EXPIRED": "Verlopen"
       },
       "table": {
+        "title": "Titel",
         "participant": "Deelnemer",
         "status": "Status",
         "questions": "Vragen",
@@ -158,6 +163,17 @@
       "form": {
         "config": {
           "label": "Quiz Configuratie"
+        },
+        "title": {
+          "label": "Quiz Titel",
+          "placeholder": "Zoek naar een bestaande titel of voer een nieuwe in...",
+          "required": "Titel is verplicht",
+          "tooltip": "Voorbeeld: Bijscholing {{date}}",
+          "noResults": "Geen bestaande titels gevonden",
+          "createNew": "Druk op Enter om een nieuwe titel aan te maken met deze naam",
+          "existingTitle": "Gebruik bestaande titel",
+          "newTitle": "Zal nieuwe titel aanmaken",
+          "clear": "Wis titel"
         },
         "users": {
           "label": "Gebruikers",

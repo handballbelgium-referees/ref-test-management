@@ -1,0 +1,21 @@
+query GetQuizTitles(
+  $first: Int!
+  $after: String
+  $where: QuizTitleFilterInput
+  $order: [QuizTitleSortInput!]
+) {
+  quizTitles(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        value
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}

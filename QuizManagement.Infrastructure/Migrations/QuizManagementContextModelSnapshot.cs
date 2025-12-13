@@ -76,6 +76,9 @@ namespace QuizManagement.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<Guid>("TitleId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -102,10 +105,39 @@ namespace QuizManagement.Infrastructure.Migrations
 
                     b.HasIndex("Status");
 
+                    b.HasIndex("TitleId");
+
                     b.HasIndex("Token")
                         .IsUnique();
 
                     b.ToTable("QuizSessions");
+                });
+
+            modelBuilder.Entity("Handball.Belgium.Rules.Quiz.Domain.QuizTitle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("QuizTitles");
+                });
+
+            modelBuilder.Entity("Handball.Belgium.Rules.Quiz.Domain.QuizSession", b =>
+                {
+                    b.HasOne("Handball.Belgium.Rules.Quiz.Domain.QuizTitle", "Title")
+                        .WithMany()
+                        .HasForeignKey("TitleId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Title");
                 });
 #pragma warning restore 612, 618
         }

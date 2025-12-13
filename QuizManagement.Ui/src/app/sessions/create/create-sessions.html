@@ -200,6 +200,15 @@
             </div>
             <div class="p-6 space-y-4">
               <div>
+                <app-title-autocomplete (selectTitle)="onTitleSelect($event)" />
+                @if (sessionForm.title().touched() && sessionForm.title().invalid()) {
+                <p class="text-xs text-red-600 mt-1">
+                  {{ sessionForm.title().errors()[0]?.message | translate }}
+                </p>
+                }
+              </div>
+
+              <div>
                 <label
                   for="numberOfQuestions"
                   class="block text-sm font-semibold text-neutral-700 mb-2"

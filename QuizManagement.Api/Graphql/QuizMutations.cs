@@ -143,6 +143,26 @@ public static class QuizMutations
             ? []
             : await ihfRulesQuestionsService.GetQuestionIdsByNumberAsync(input.SpecificQuestionNumbers,
                 cancellationToken);
+        
+        Guid titleId;
+
+        switch (input.Title.Id)
+        {
+            case not null:
+                titleId = input.Title.Id.Value;
+                break;
+            case null when input.Title.Name is not null:
+            {
+                var title = QuizTitle.Create(input.Title.Name);
+                context.QuizTitles.Add(title);
+                await context.SaveChangesAsync(cancellationToken);
+            
+                titleId = title.Id;
+                break;
+            }
+            default:
+                throw new ArgumentException("Either Title.Id or Title.Name must be provided.");
+        }
 
         foreach (var user in input.Users)
         {
@@ -155,6 +175,7 @@ public static class QuizMutations
                     : specifiedQuestionIds;
 
                 var session = QuizSession.Create(
+                    titleId,
                     user.FirstName,
                     user.LastName,
                     user.Email,

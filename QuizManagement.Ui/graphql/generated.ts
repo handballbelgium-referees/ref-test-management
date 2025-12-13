@@ -79,6 +79,7 @@ export type CreateBulkQuizSessionsInput = {
   numberOfQuestions: Scalars['Int']['input'];
   sendInvitations?: Scalars['Boolean']['input'];
   specificQuestionNumbers?: InputMaybe<Array<Scalars['String']['input']>>;
+  title: TitleInput;
   users: Array<UserInput>;
 };
 
@@ -230,6 +231,7 @@ export type Query = {
   nodes: Array<Maybe<Node>>;
   quizSessionByToken: QuizSessionByTokenResult;
   quizSessions?: Maybe<QuizSessionsConnection>;
+  quizTitles?: Maybe<QuizTitlesConnection>;
   searchQuestionsByNumber: Array<Question>;
 };
 
@@ -256,6 +258,16 @@ export type QueryQuizSessionsArgs = {
   last?: InputMaybe<Scalars['Int']['input']>;
   order?: InputMaybe<Array<QuizSessionSortInput>>;
   where?: InputMaybe<QuizSessionFilterInput>;
+};
+
+
+export type QueryQuizTitlesArgs = {
+  after?: InputMaybe<Scalars['String']['input']>;
+  before?: InputMaybe<Scalars['String']['input']>;
+  first?: InputMaybe<Scalars['Int']['input']>;
+  last?: InputMaybe<Scalars['Int']['input']>;
+  order?: InputMaybe<Array<QuizTitleSortInput>>;
+  where?: InputMaybe<QuizTitleFilterInput>;
 };
 
 
@@ -305,6 +317,8 @@ export type QuizSession = Node & {
   startedAt?: Maybe<Scalars['DateTime']['output']>;
   /** Status of the quiz session (e.g., InProgress, Completed, Expired) */
   status: QuizSessionStatus;
+  /** Title of the quiz */
+  title?: Maybe<QuizTitle>;
   /** List of answer IDs that were answered incorrectly */
   wrongAnswerIds: Array<Scalars['String']['output']>;
   /** List of question IDs that were answered incorrectly */
@@ -348,6 +362,8 @@ export type QuizSessionFilterInput = {
   startedAt?: InputMaybe<DateTimeOperationFilterInput>;
   /** Filter on status of the quiz session */
   status?: InputMaybe<QuizSessionStatusOperationFilterInput>;
+  /** Filter on title id */
+  titleId?: InputMaybe<UuidOperationFilterInput>;
 };
 
 export type QuizSessionNotFoundError = Error & {
@@ -421,6 +437,46 @@ export type QuizSessionsEdge = {
   node: QuizSession;
 };
 
+export type QuizTitle = {
+  __typename?: 'QuizTitle';
+  id: Scalars['UUID']['output'];
+  value: Scalars['String']['output'];
+};
+
+export type QuizTitleFilterInput = {
+  and?: InputMaybe<Array<QuizTitleFilterInput>>;
+  id?: InputMaybe<UuidOperationFilterInput>;
+  or?: InputMaybe<Array<QuizTitleFilterInput>>;
+  value?: InputMaybe<StringOperationFilterInput>;
+};
+
+export type QuizTitleSortInput = {
+  id?: InputMaybe<SortEnumType>;
+  value?: InputMaybe<SortEnumType>;
+};
+
+/** A connection to a list of items. */
+export type QuizTitlesConnection = {
+  __typename?: 'QuizTitlesConnection';
+  /** A list of edges. */
+  edges?: Maybe<Array<QuizTitlesEdge>>;
+  /** A flattened list of the nodes. */
+  nodes?: Maybe<Array<QuizTitle>>;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** Identifies the total count of items in the connection. */
+  totalCount: Scalars['Int']['output'];
+};
+
+/** An edge in a connection. */
+export type QuizTitlesEdge = {
+  __typename?: 'QuizTitlesEdge';
+  /** A cursor for use in pagination. */
+  cursor: Scalars['String']['output'];
+  /** The item at the end of the edge. */
+  node: QuizTitle;
+};
+
 export type SendInvitationError = {
   __typename?: 'SendInvitationError';
   errorMessage: Scalars['String']['output'];
@@ -476,6 +532,11 @@ export type StringOperationFilterInput = {
   nstartsWith?: InputMaybe<Scalars['String']['input']>;
   or?: InputMaybe<Array<StringOperationFilterInput>>;
   startsWith?: InputMaybe<Scalars['String']['input']>;
+};
+
+export type TitleInput = {
+  id?: InputMaybe<Scalars['UUID']['input']>;
+  name?: InputMaybe<Scalars['String']['input']>;
 };
 
 export type User = {
@@ -554,7 +615,17 @@ export type GetQuizSessionsQueryVariables = Exact<{
 }>;
 
 
-export type GetQuizSessionsQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizSessionsEdge', cursor: string, node: { __typename?: 'QuizSession', id: string, name?: string | null, email: string, invitationSent: boolean, status: QuizSessionStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, score?: number | null, percentage?: number | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
+export type GetQuizSessionsQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizSessionsEdge', cursor: string, node: { __typename?: 'QuizSession', id: string, name?: string | null, email: string, invitationSent: boolean, status: QuizSessionStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, score?: number | null, percentage?: number | null, title?: { __typename?: 'QuizTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
+
+export type GetQuizTitlesQueryVariables = Exact<{
+  first: Scalars['Int']['input'];
+  after?: InputMaybe<Scalars['String']['input']>;
+  where?: InputMaybe<QuizTitleFilterInput>;
+  order?: InputMaybe<Array<QuizTitleSortInput> | QuizTitleSortInput>;
+}>;
+
+
+export type GetQuizTitlesQuery = { __typename?: 'Query', quizTitles?: { __typename?: 'QuizTitlesConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizTitlesEdge', cursor: string, node: { __typename?: 'QuizTitle', id: string, value: string } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
 
 export type SearchQuestionsByNumberQueryVariables = Exact<{
   number?: InputMaybe<Scalars['String']['input']>;
@@ -733,6 +804,10 @@ export const GetQuizSessionsDocument = gql`
       cursor
       node {
         id
+        title {
+          id
+          value
+        }
         name
         email
         invitationSent
@@ -759,6 +834,35 @@ export const GetQuizSessionsDocument = gql`
   })
   export class GetQuizSessionsGQL extends Apollo.Query<GetQuizSessionsQuery, GetQuizSessionsQueryVariables> {
     override document = GetQuizSessionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetQuizTitlesDocument = gql`
+    query GetQuizTitles($first: Int!, $after: String, $where: QuizTitleFilterInput, $order: [QuizTitleSortInput!]) {
+  quizTitles(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        value
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetQuizTitlesGQL extends Apollo.Query<GetQuizTitlesQuery, GetQuizTitlesQueryVariables> {
+    override document = GetQuizTitlesDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

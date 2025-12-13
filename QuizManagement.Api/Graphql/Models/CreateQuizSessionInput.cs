@@ -1,6 +1,7 @@
 ﻿namespace QuizManagement.Api.Graphql.Models;
 
 public record CreateBulkQuizSessionsInput(
+    Title Title,
     List<User> Users,
     int NumberOfQuestions,
     int MaxTimeInMinutes,
@@ -9,3 +10,6 @@ public record CreateBulkQuizSessionsInput(
 );
 
 public record User(string FirstName, string LastName, string Email);
+
+[OneOf]
+public record Title(Guid? Id, string? Name);

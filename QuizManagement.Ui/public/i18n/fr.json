@@ -60,6 +60,10 @@
         "inProgress": "En Cours",
         "completed": "Terminées",
         "expired": "Expirées",
+        "titleLabel": "Titre du Quiz",
+        "titleAll": "Tous les Titres",
+        "titleSearchPlaceholder": "Rechercher des titres...",
+        "noTitlesFound": "Aucun titre trouvé",
         "invitationLabel": "Statut d'Invitation",
         "invitationAll": "Toutes",
         "invitationSent": "Envoyée",
@@ -100,6 +104,7 @@
         "EXPIRED": "Expirée"
       },
       "table": {
+        "title": "Titre",
         "participant": "Participant",
         "status": "Statut",
         "questions": "Questions",
@@ -150,6 +155,17 @@
       "form": {
         "config": {
           "label": "Configuration du Quiz"
+        },
+        "title": {
+          "label": "Titre du Quiz",
+          "placeholder": "Rechercher un titre existant ou entrer un nouveau...",
+          "required": "Le titre est requis",
+          "tooltip": "Exemple : Recyclage {{date}}",
+          "noResults": "Aucun titre existant trouvé",
+          "createNew": "Appuyez sur Entrée pour créer un nouveau titre avec ce nom",
+          "existingTitle": "Utilisation du titre existant",
+          "newTitle": "Créera un nouveau titre",
+          "clear": "Effacer le titre"
         },
         "users": {
           "label": "Utilisateurs",
