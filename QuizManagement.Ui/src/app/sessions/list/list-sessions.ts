@@ -15,6 +15,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { catchError, debounceTime, finalize, map, of, Subject, tap } from 'rxjs';
 import {
   DeleteQuizSessionsGQL,
+  GetQuizSessionsCountGQL,
   GetQuizSessionsGQL,
   GetQuizSessionsQuery,
   QuizSessionStatus,
@@ -70,6 +71,7 @@ type SessionNode = NonNullable<
 })
 export class ListSessions {
   private readonly _getQuizSessionsGQL = inject(GetQuizSessionsGQL);
+  private readonly _getQuizSessionsCountGQL = inject(GetQuizSessionsCountGQL);
   private readonly _deleteQuizSessionsGQL = inject(DeleteQuizSessionsGQL);
   private readonly _sendInvitationsGQL = inject(SendInvitationsGQL);
   private readonly _router = inject(Router);
@@ -143,10 +145,26 @@ export class ListSessions {
     fetchPolicy: 'cache-and-network',
   });
 
+  private readonly _allCountRef = this._getQuizSessionsCountGQL.watch({ variables: {} });
+  private readonly _pendingCountRef = this._getQuizSessionsCountGQL.watch({
+    variables: { where: { status: { eq: QuizSessionStatus.Pending } } },
+  });
+  private readonly _inProgressCountRef = this._getQuizSessionsCountGQL.watch({
+    variables: { where: { status: { eq: QuizSessionStatus.InProgress } } },
+  });
+  private readonly _completedCountRef = this._getQuizSessionsCountGQL.watch({
+    variables: { where: { status: { eq: QuizSessionStatus.Completed } } },
+  });
+  private readonly _expiredCountRef = this._getQuizSessionsCountGQL.watch({
+    variables: { where: { status: { eq: QuizSessionStatus.Expired } } },
+  });
+
   protected readonly loading = toSignal(
     this._queryRef.valueChanges.pipe(map((result) => result.loading)),
     { initialValue: true }
   );
+
+  private readonly _queryResult = toSignal(this._queryRef.valueChanges);
 
   constructor() {
     // Debounced search effect
@@ -156,7 +174,27 @@ export class ListSessions {
         this.filter.update((f) => ({ ...f, searchTerm }));
       });
 
+    // React to query results
     effect(() => {
+      const result = this._queryResult();
+      if (result?.data?.quizSessions) {
+        const edges = result.data.quizSessions.edges ?? [];
+        const newSessions = edges
+          .filter(
+            (edge): edge is NonNullable<typeof edge> & { node: SessionNode } =>
+              !!edge && !!edge.node
+          )
+          .map((edge) => edge.node);
+
+        this.allLoadedSessions.set(newSessions);
+        this.hasNextPage.set(result.data.quizSessions.pageInfo?.hasNextPage ?? false);
+        this._endCursor.set(result.data.quizSessions.pageInfo?.endCursor ?? undefined);
+      }
+    });
+
+    // React to filter changes
+    effect(() => {
+      this.filter(); // Track the signal
       this.allLoadedSessions.set([]);
       this._queryRef.refetch({
         first: this._pageSize,
@@ -242,16 +280,19 @@ export class ListSessions {
     () => this._queryRef.getCurrentResult()?.data?.quizSessions?.totalCount ?? 0
   );
 
-  protected readonly statusCounts = computed(() => {
-    const allSessions = this.allSessions();
-    return {
-      all: allSessions.length,
-      pending: allSessions.filter((s) => s.status === QuizSessionStatus.Pending).length,
-      inProgress: allSessions.filter((s) => s.status === QuizSessionStatus.InProgress).length,
-      completed: allSessions.filter((s) => s.status === QuizSessionStatus.Completed).length,
-      expired: allSessions.filter((s) => s.status === QuizSessionStatus.Expired).length,
-    };
-  });
+  private readonly _allCountResult = toSignal(this._allCountRef.valueChanges);
+  private readonly _pendingCountResult = toSignal(this._pendingCountRef.valueChanges);
+  private readonly _inProgressCountResult = toSignal(this._inProgressCountRef.valueChanges);
+  private readonly _completedCountResult = toSignal(this._completedCountRef.valueChanges);
+  private readonly _expiredCountResult = toSignal(this._expiredCountRef.valueChanges);
+
+  protected readonly statusCounts = computed(() => ({
+    all: this._allCountResult()?.data?.quizSessions?.totalCount ?? 0,
+    pending: this._pendingCountResult()?.data?.quizSessions?.totalCount ?? 0,
+    inProgress: this._inProgressCountResult()?.data?.quizSessions?.totalCount ?? 0,
+    completed: this._completedCountResult()?.data?.quizSessions?.totalCount ?? 0,
+    expired: this._expiredCountResult()?.data?.quizSessions?.totalCount ?? 0,
+  }));
 
   private buildWhereFilter() {
     const currentFilter = this.filter();

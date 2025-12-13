@@ -328,7 +328,7 @@ public static class QuizMutations
                     throw new QuizSessionNotFoundException(id.ToString());
                 
                 context.QuizSessions.Remove(session);
-                result.SuccessfullySent++;
+                result.SuccessfullyDeleted++;
                 result.DeletedSessions.Add(session);
             }
             catch (Exception e)

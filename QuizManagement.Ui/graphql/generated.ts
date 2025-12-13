@@ -122,7 +122,7 @@ export type DeleteQuizSessionsResult = {
   deletedSessions: Array<QuizSession>;
   errors: Array<DeleteQuizSessionError>;
   failed: Scalars['Int']['output'];
-  successfullySent: Scalars['Int']['output'];
+  successfullyDeleted: Scalars['Int']['output'];
   totalRequested: Scalars['Int']['output'];
 };
 
@@ -305,6 +305,10 @@ export type QuizSession = Node & {
   startedAt?: Maybe<Scalars['DateTime']['output']>;
   /** Status of the quiz session (e.g., InProgress, Completed, Expired) */
   status: QuizSessionStatus;
+  /** List of answer IDs that were answered incorrectly */
+  wrongAnswerIds: Array<Scalars['String']['output']>;
+  /** List of question IDs that were answered incorrectly */
+  wrongQuestionIds: Array<Scalars['String']['output']>;
 };
 
 export type QuizSessionByTokenResult = InvalidQuizSessionStatusError | QuizSession | QuizSessionExpiredError | QuizSessionNotFoundError;
@@ -507,7 +511,7 @@ export type CompleteQuizSessionMutationVariables = Exact<{
 }>;
 
 
-export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, completedAt?: string | null, score?: number | null, percentage?: number | null, questions?: Array<{ __typename?: 'Question', id: string, number: string } | null> | null } | null } };
+export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, completedAt?: string | null, score?: number | null, percentage?: number | null, wrongQuestionIds: Array<string>, wrongAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, number: string } | null> | null } | null } };
 
 export type CreateBulkQuizSessionsMutationVariables = Exact<{
   input: CreateBulkQuizSessionsInput;
@@ -521,7 +525,7 @@ export type DeleteQuizSessionsMutationVariables = Exact<{
 }>;
 
 
-export type DeleteQuizSessionsMutation = { __typename?: 'Mutation', deleteQuizSessions: { __typename?: 'DeleteQuizSessionsPayload', deleteQuizSessionsResult?: { __typename?: 'DeleteQuizSessionsResult', totalRequested: number, successfullySent: number, failed: number, deletedSessions: Array<{ __typename?: 'QuizSession', id: string }>, errors: Array<{ __typename?: 'DeleteQuizSessionError', quizSessionId: string, errorMessage: string }> } | null } };
+export type DeleteQuizSessionsMutation = { __typename?: 'Mutation', deleteQuizSessions: { __typename?: 'DeleteQuizSessionsPayload', deleteQuizSessionsResult?: { __typename?: 'DeleteQuizSessionsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedSessions: Array<{ __typename?: 'QuizSession', id: string }>, errors: Array<{ __typename?: 'DeleteQuizSessionError', quizSessionId: string, errorMessage: string }> } | null } };
 
 export type GetQuizSessionByTokenQueryVariables = Exact<{
   token: Scalars['String']['input'];
@@ -534,6 +538,13 @@ export type GetQuizSessionByTokenQuery = { __typename?: 'Query', quizSessionByTo
     | { __typename?: 'QuizSessionExpiredError', message: string }
     | { __typename?: 'QuizSessionNotFoundError', message: string }
    };
+
+export type GetQuizSessionsCountQueryVariables = Exact<{
+  where?: InputMaybe<QuizSessionFilterInput>;
+}>;
+
+
+export type GetQuizSessionsCountQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number } | null };
 
 export type GetQuizSessionsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -582,6 +593,8 @@ export const CompleteQuizSessionDocument = gql`
         id
         number
       }
+      wrongQuestionIds
+      wrongAnswerIds
     }
   }
 }
@@ -638,7 +651,7 @@ export const DeleteQuizSessionsDocument = gql`
   deleteQuizSessions(input: $input) {
     deleteQuizSessionsResult {
       totalRequested
-      successfullySent
+      successfullyDeleted
       failed
       deletedSessions {
         id
@@ -690,6 +703,24 @@ export const GetQuizSessionByTokenDocument = gql`
   })
   export class GetQuizSessionByTokenGQL extends Apollo.Query<GetQuizSessionByTokenQuery, GetQuizSessionByTokenQueryVariables> {
     override document = GetQuizSessionByTokenDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetQuizSessionsCountDocument = gql`
+    query GetQuizSessionsCount($where: QuizSessionFilterInput) {
+  quizSessions(where: $where) {
+    totalCount
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetQuizSessionsCountGQL extends Apollo.Query<GetQuizSessionsCountQuery, GetQuizSessionsCountQueryVariables> {
+    override document = GetQuizSessionsCountDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

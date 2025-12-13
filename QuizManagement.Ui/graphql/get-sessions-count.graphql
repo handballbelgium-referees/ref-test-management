@@ -1,0 +1,5 @@
+query GetQuizSessionsCount($where: QuizSessionFilterInput) {
+  quizSessions(where: $where) {
+    totalCount
+  }
+}

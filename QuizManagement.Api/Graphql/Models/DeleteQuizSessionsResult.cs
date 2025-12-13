@@ -5,7 +5,7 @@ namespace QuizManagement.Api.Graphql.Models;
 public class DeleteQuizSessionsResult
 {
     public int TotalRequested { get; set; }
-    public int SuccessfullySent { get; set; }
+    public int SuccessfullyDeleted { get; set; }
     public int Failed { get; set; }
     public List<QuizSession> DeletedSessions { get; set; } = [];
     public List<DeleteQuizSessionError> Errors { get; set; } = [];

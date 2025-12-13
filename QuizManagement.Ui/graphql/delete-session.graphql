@@ -2,7 +2,7 @@ mutation DeleteQuizSessions($input: DeleteQuizSessionsInput!) {
   deleteQuizSessions(input: $input) {
     deleteQuizSessionsResult {
       totalRequested
-      successfullySent
+      successfullyDeleted
       failed
       deletedSessions {
         id

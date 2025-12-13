@@ -35,7 +35,11 @@ export const appConfig: ApplicationConfig = {
           }),
           cache: new InMemoryCache({
             typePolicies: {
-              quizSessions: relayStylePagination(['where', 'order']),
+              Query: {
+                fields: {
+                  quizSessions: relayStylePagination(['where', 'order']),
+                },
+              },
             },
           }),
         };
