@@ -216,6 +216,7 @@ public static class QuizMutations
             try
             {
                 await emailService.SendQuizInvitationAsync(
+                    session.FullName,
                     session.Email,
                     session.Token,
                     session.NumberOfQuestions,
@@ -282,6 +283,7 @@ public static class QuizMutations
                     throw new InvalidQuizSessionStatusException(session.Status, QuizSessionStatus.Pending);
 
                 await emailService.SendQuizInvitationAsync(
+                    session.FullName,
                     session.Email,
                     session.Token,
                     session.NumberOfQuestions,

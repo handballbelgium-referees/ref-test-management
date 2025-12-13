@@ -1,4 +1,6 @@
-﻿namespace Handball.Belgium.Rules.Quiz.Domain;
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Handball.Belgium.Rules.Quiz.Domain;
 
 public class QuizSession
 {
@@ -24,11 +26,14 @@ public class QuizSession
     }
 
     public Guid Id { get; private set; } = Guid.NewGuid();
-    
+
     public Guid TitleId { get; private set; }
     public QuizTitle? Title { get; init; }
     public string FirstName { get; private set; }
     public string LastName { get; private set; }
+
+    [NotMapped] public string FullName => $"{FirstName} {LastName}";
+
     public string Email { get; private set; }
     public string Token { get; private set; }
     public bool InvitationSent { get; private set; }

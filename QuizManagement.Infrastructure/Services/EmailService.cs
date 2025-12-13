@@ -9,7 +9,7 @@ public partial class EmailService(
     EmailConfiguration configuration)
     : IEmailService
 {
-    public async Task SendQuizInvitationAsync(string email, string token, int numberOfQuestions, int maxTimeInMinutes)
+    public async Task SendQuizInvitationAsync(string name, string email, string token, int numberOfQuestions, int maxTimeInMinutes)
     {
         var quizUrlEn = $"{configuration.BaseUrl}/quiz/{token}?lang=en";
         var quizUrlNl = $"{configuration.BaseUrl}/quiz/{token}?lang=nl";
@@ -49,7 +49,7 @@ public partial class EmailService(
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ This quiz is valid for 7 days</em></p>
                 </div>
 
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hello,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hello {name},</p>
                 <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:</p>
                 
                 <div style='text-align: center; margin: 20px 0;'>
@@ -72,7 +72,7 @@ public partial class EmailService(
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Deze quiz is 7 dagen geldig</em></p>
                 </div>
 
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo {name},</p>
                 <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:</p>
                 
                 <div style='text-align: center; margin: 20px 0;'>
@@ -95,7 +95,7 @@ public partial class EmailService(
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Ce quiz est valide pendant 7 jours</em></p>
                 </div>
 
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Bonjour,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Bonjour {name},</p>
                 <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:</p>
                 
                 <div style='text-align: center; margin: 20px 0;'>
@@ -118,7 +118,7 @@ public partial class EmailService(
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Dieses Quiz ist 7 Tage lang gültig</em></p>
                 </div>
 
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo,</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo {name},</p>
                 <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:</p>
                 
                 <div style='text-align: center; margin: 20px 0;'>
