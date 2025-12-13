@@ -12,7 +12,10 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, map, of, tap } from 'rxjs';
 import { CompleteQuizSessionGQL, StartQuizSessionGQL } from '../../../../graphql/generated';
-import { TranslationPipe } from '../../pipes/translation-pipe';
+import { QuestionCardComponent } from './components/question-card/question-card';
+import { QuizHeaderComponent } from './components/quiz-header/quiz-header';
+import { QuizNavigationComponent } from './components/quiz-navigation/quiz-navigation';
+import { QuizResultsComponent } from './components/quiz-results/quiz-results';
 
 interface Answer {
   id: string;
@@ -29,7 +32,13 @@ interface Question {
   selector: 'app-take-quiz',
   templateUrl: './take-quiz.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, TranslationPipe],
+  imports: [
+    TranslatePipe,
+    QuizHeaderComponent,
+    QuestionCardComponent,
+    QuizNavigationComponent,
+    QuizResultsComponent,
+  ],
 })
 export class TakeQuizComponent {
   private readonly _route = inject(ActivatedRoute);

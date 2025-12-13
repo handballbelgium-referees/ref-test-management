@@ -1,0 +1,163 @@
+<div class="max-w-3xl mx-auto">
+  <div class="bg-white rounded-xl shadow-lg p-8">
+    <div class="text-center mb-8">
+      <div
+        class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
+        [class]="
+          percentage() >= 80 ? 'bg-green-100' : percentage() >= 60 ? 'bg-yellow-100' : 'bg-red-100'
+        "
+      >
+        <svg
+          class="w-10 h-10"
+          [class]="
+            percentage() >= 80
+              ? 'text-green-600'
+              : percentage() >= 60
+              ? 'text-yellow-600'
+              : 'text-red-600'
+          "
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          @if (percentage() >= 80) {
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+          } @else {
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+          }
+        </svg>
+      </div>
+      <h1 class="text-3xl font-bold text-neutral-900 mb-2">
+        {{ 'quiz.results.title' | translate }}
+      </h1>
+      <p class="text-neutral-600">{{ 'quiz.results.subtitle' | translate }}</p>
+    </div>
+
+    <!-- Score Display -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+      <div class="bg-neutral-50 rounded-lg p-6 text-center">
+        <div class="text-4xl font-bold text-primary-600 mb-2">{{ score() }}</div>
+        <div class="text-sm text-neutral-600">{{ 'quiz.results.score' | translate }}</div>
+      </div>
+      <div class="bg-neutral-50 rounded-lg p-6 text-center">
+        <div class="text-4xl font-bold text-primary-600 mb-2">{{ percentage() }}%</div>
+        <div class="text-sm text-neutral-600">{{ 'quiz.results.percentage' | translate }}</div>
+      </div>
+      <div class="bg-neutral-50 rounded-lg p-6 text-center">
+        <div class="text-4xl font-bold text-primary-600 mb-2">{{ questions().length }}</div>
+        <div class="text-sm text-neutral-600">{{ 'quiz.results.total' | translate }}</div>
+      </div>
+    </div>
+
+    <!-- Review Answers -->
+    <div class="space-y-4">
+      <h2 class="text-xl font-bold text-neutral-900 mb-4">
+        {{ 'quiz.results.review' | translate }}
+      </h2>
+      @for (question of questions(); track question.id; let i = $index) {
+      <div
+        class="border rounded-lg p-4"
+        [class]="
+          wrongQuestionIds().includes(question.id)
+            ? 'border-red-200 bg-red-50'
+            : 'border-green-200 bg-green-50'
+        "
+      >
+        <div class="flex items-start gap-3">
+          <div class="shrink-0">
+            @if (wrongQuestionIds().includes(question.id)) {
+            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+            } @else {
+            <svg
+              class="w-6 h-6 text-green-600"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+            }
+          </div>
+          <div class="flex-1">
+            <div class="font-medium text-neutral-900 mb-2">
+              {{ 'quiz.question' | translate }} {{ i + 1 }}:
+              {{ question.phrase | appTranslation : currentLanguage() }}
+            </div>
+            <div class="space-y-2">
+              @for (answer of question.answers; track answer.id) {
+              <div
+                class="flex items-center gap-2 text-sm"
+                [class]="selectedAnswers()[question.id].includes(answer.id) ? 'font-semibold' : ''"
+              >
+                @if (selectedAnswers()[question.id].includes(answer.id)) { @if
+                (wrongAnswerIds().includes(answer.id)) {
+                <svg
+                  class="w-4 h-4 text-red-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+                <span class="text-red-700">{{
+                  answer.phrase | appTranslation : currentLanguage()
+                }}</span>
+                } @else {
+                <svg
+                  class="w-4 h-4 text-green-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span class="text-green-700">{{
+                  answer.phrase | appTranslation : currentLanguage()
+                }}</span>
+                } } @else {
+                <span class="text-neutral-600">{{
+                  answer.phrase | appTranslation : currentLanguage()
+                }}</span>
+                }
+              </div>
+              }
+            </div>
+          </div>
+        </div>
+      </div>
+      }
+    </div>
+  </div>
+</div>

@@ -1,0 +1,57 @@
+<div class="space-y-3">
+  <!-- Question progress and navigation -->
+  <div class="flex items-center justify-center gap-2">
+    <span class="text-sm text-neutral-600">
+      {{ 'quiz.question' | translate }}
+    </span>
+    <select
+      [value]="currentQuestionIndex()"
+      (change)="questionSelected.emit(+$any($event.target).value)"
+      class="px-2 py-1 border border-neutral-300 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
+    >
+      @for (question of questions(); track question.id; let i = $index) {
+      <option [value]="i" [disabled]="!isQuestionVisited()(i)">
+        {{ i + 1 }} @if (isQuestionAnswered()(question.id)) { ✓ }
+      </option>
+      }
+    </select>
+    <span class="text-sm text-neutral-600">
+      {{ 'quiz.of' | translate }} {{ questions().length }}
+    </span>
+    <span class="text-sm text-green-600 font-medium ml-2">
+      ({{ answeredCount() }} {{ 'quiz.answered' | translate }})
+    </span>
+  </div>
+
+  <!-- Previous/Next buttons -->
+  <div class="flex items-center justify-between gap-4">
+    <button
+      type="button"
+      (click)="previousClick.emit()"
+      [disabled]="!canPrevious()"
+      class="px-6 py-3 border-2 border-neutral-300 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50"
+    >
+      {{ 'quiz.previous' | translate }}
+    </button>
+
+    @if (isLastQuestion()) {
+    <button
+      type="button"
+      (click)="submitClick.emit()"
+      [disabled]="!canSubmit()"
+      class="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {{ 'quiz.submit' | translate }}
+    </button>
+    } @else {
+    <button
+      type="button"
+      (click)="nextClick.emit()"
+      [disabled]="!canNext()"
+      class="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+    >
+      {{ 'quiz.next' | translate }}
+    </button>
+    }
+  </div>
+</div>
