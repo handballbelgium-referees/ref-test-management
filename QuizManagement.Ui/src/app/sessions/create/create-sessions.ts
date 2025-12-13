@@ -328,10 +328,9 @@ export class CreateSessions {
         variables: {
           input: {
             users: formData.users,
-            title: {
-              id: formData.title?.id,
-              name: formData.title?.name,
-            },
+            title: formData.title?.id
+              ? { id: formData.title.id }
+              : { name: formData.title?.name ?? '' },
             numberOfQuestions: formData.numberOfQuestions,
             maxTimeInMinutes: formData.maxTimeInMinutes,
             specificQuestionNumbers: specificQuestions.length > 0 ? specificQuestions : undefined,
