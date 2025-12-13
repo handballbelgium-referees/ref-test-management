@@ -7,7 +7,8 @@ namespace QuizManagement.Infrastructure.Services;
 
 public partial class EmailService(
     ILogger<EmailService> logger,
-    EmailConfiguration configuration)
+    EmailConfiguration configuration,
+    IQuizResultsPdfService pdfService)
     : IEmailService
 {
     public async Task SendQuizInvitationAsync(string name, string email, string token, int numberOfQuestions, int maxTimeInMinutes)
@@ -25,7 +26,7 @@ public partial class EmailService(
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }}
+        body {{ font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }}
     </style>
 </head>
 <body style='margin: 0; padding: 0;'>
@@ -144,7 +145,7 @@ public partial class EmailService(
         LogQuizInvitationEmailSentToEmail(logger, email);
     }
 
-    public async Task SendQuizResultsAsync(string email, int score, int totalQuestions, double percentage, List<string> selectedAnswerIds, List<Question> questionsWithCorrectAnswers)
+    public async Task SendQuizResultsAsync(string name, string email, int score, int totalQuestions, double percentage, List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds, List<Question> questionsWithCorrectAnswers)
     {
         const string subject = "IHF Rules Quiz - Your Results";
         var passed = percentage >= 80;
@@ -159,120 +160,130 @@ public partial class EmailService(
     <meta charset='utf-8'>
     <meta name='viewport' content='width=device-width, initial-scale=1.0'>
     <style>
-        body {{ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif; }}
+        body {{ font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }}
     </style>
 </head>
-<body style='margin: 0; padding: 0; background-color: #f5f5f5;'>
-    <!-- Header with Belgian Handball Colors -->
-    <div style='background: linear-gradient(135deg, #e30613 0%, #b30510 100%); padding: 40px 20px; text-align: center;'>
-        <div style='max-width: 600px; margin: 0 auto;'>
-            <div style='background-color: rgba(255, 255, 255, 0.1); backdrop-filter: blur(10px); width: 64px; height: 64px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; margin-bottom: 16px;'>
-                <svg width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='#ffffff' stroke-width='2'>
-                    <path d='M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z'/>
-                </svg>
-            </div>
+<body style='margin: 0; padding: 0;'>
+    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
+        <!-- Header with Belgian Handball Colors -->
+        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
             <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules Quiz</h1>
             <p style='color: #fecaca; font-size: 18px; margin: 0;'>Your Results</p>
         </div>
-    </div>
 
-    <!-- Main Content -->
-    <div style='max-width: 600px; margin: 0 auto; padding: 20px;'>
-        <!-- English Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>English</h2>
-            
-            <!-- Score Display -->
-            <div style='background-color: #ffffff; border-radius: 8px; padding: 25px; margin-bottom: 20px; text-align: center; border: 2px solid {resultColor};'>
-                <h3 style='color: #000000; margin: 0 0 16px 0; font-size: 18px; font-weight: bold;'>Your Score</h3>
-                <div style='font-size: 56px; font-weight: bold; color: {resultColor}; margin: 15px 0; line-height: 1;'>{percentage:F1}%</div>
-                <div style='font-size: 20px; color: #737373; margin: 10px 0;'>{score} out of {totalQuestions} correct</div>
+        <!-- Main Content -->
+        <div style='padding: 20px;'>
+            <!-- Greeting -->
+            <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Dear {name},</p>
+
+            <!-- English Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>English</h2>
+                
+                <!-- Score Display -->
+                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "PASSED" : "NOT PASSED")}</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Your Score:</strong> {score} / {totalQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Percentage:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Congratulations! You passed the quiz!" : "📚 Keep studying and good luck next time!")}</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
+                    {(passed 
+                        ? "Congratulations! You have successfully passed the IHF Rules Quiz! Your knowledge of handball regulations is excellent." 
+                        : "Thank you for taking the IHF Rules Quiz. A passing score is 80% or higher. Please review the rules and try again.")}
+                </p>
+
+                <!-- PDF Reference -->
+                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
+                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Detailed results are available in the attached PDF documents</strong> (English, Nederlands, Français, Deutsch).</p>
+                </div>
             </div>
 
-            <!-- Result Status -->
-            <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 16px; margin-bottom: 20px; border-radius: 4px; text-align: center;'>
-                <p style='margin: 0; font-size: 18px; color: {resultColor}; font-weight: bold;'>{resultIcon} {(passed ? "PASSED" : "NOT PASSED")}</p>
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
+
+            <!-- Dutch Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Nederlands</h2>
+                
+                <!-- Score Display -->
+                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "GESLAAGD" : "NIET GESLAAGD")}</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Jouw Score:</strong> {score} / {totalQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Percentage:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Gefeliciteerd! Je bent geslaagd!" : "📚 Blijf studeren en veel succes de volgende keer!")}</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
+                    {(passed 
+                        ? "Gefeliciteerd! Je bent geslaagd voor de IHF Regels Quiz! Je kennis van de handbalreglementen is uitstekend." 
+                        : "Bedankt voor het maken van de IHF Regels Quiz. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.")}
+                </p>
+
+                <!-- PDF Reference -->
+                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
+                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Gedetailleerde resultaten zijn beschikbaar in de bijgevoegde PDF-documenten</strong> (English, Nederlands, Français, Deutsch).</p>
+                </div>
             </div>
 
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                {(passed 
-                    ? "Congratulations! You have successfully passed the IHF Rules Quiz! Your knowledge of handball regulations is excellent." 
-                    : "Thank you for taking the IHF Rules Quiz. A passing score is 80% or higher. Please review the rules and try again.")}
-            </p>
-        </div>
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
 
-        <!-- Dutch Section -->
-        <div style='background-color: #ffffff; border-radius: 8px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Nederlands</h2>
-            
-            <!-- Score Display -->
-            <div style='background-color: #ffffff; border-radius: 8px; padding: 25px; margin-bottom: 20px; text-align: center; border: 2px solid {resultColor};'>
-                <h3 style='color: #000000; margin: 0 0 16px 0; font-size: 18px; font-weight: bold;'>Jouw Score</h3>
-                <div style='font-size: 56px; font-weight: bold; color: {resultColor}; margin: 15px 0; line-height: 1;'>{percentage:F1}%</div>
-                <div style='font-size: 20px; color: #737373; margin: 10px 0;'>{score} van de {totalQuestions} correct</div>
+            <!-- French Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Français</h2>
+                
+                <!-- Score Display -->
+                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "RÉUSSI" : "NON RÉUSSI")}</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Votre Score:</strong> {score} / {totalQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Pourcentage:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Félicitations! Vous avez réussi!" : "📚 Continuez à étudier et bonne chance la prochaine fois!")}</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
+                    {(passed 
+                        ? "Félicitations! Vous avez réussi le Quiz des Règles IHF! Votre connaissance des règles de handball est excellente." 
+                        : "Merci d'avoir participé au Quiz des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.")}
+                </p>
+
+                <!-- PDF Reference -->
+                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
+                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Les résultats détaillés sont disponibles dans les documents PDF joints</strong> (English, Nederlands, Français, Deutsch).</p>
+                </div>
             </div>
 
-            <!-- Result Status -->
-            <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 16px; margin-bottom: 20px; border-radius: 4px; text-align: center;'>
-                <p style='margin: 0; font-size: 18px; color: {resultColor}; font-weight: bold;'>{resultIcon} {(passed ? "GESLAAGD" : "NIET GESLAAGD")}</p>
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
+
+            <!-- German Section -->
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Deutsch</h2>
+                
+                <!-- Score Display -->
+                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "BESTANDEN" : "NICHT BESTANDEN")}</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Ihre Punktzahl:</strong> {score} / {totalQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Prozentsatz:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Herzlichen Glückwunsch! Sie haben bestanden!" : "📚 Lernen Sie weiter und viel Glück beim nächsten Mal!")}</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
+                    {(passed 
+                        ? "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-Quiz bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet." 
+                        : "Vielen Dank, dass Sie am IHF-Regeln-Quiz teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.")}
+                </p>
+
+                <!-- PDF Reference -->
+                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
+                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Detaillierte Ergebnisse sind in den beigefügten PDF-Dokumenten verfügbar</strong> (English, Nederlands, Français, Deutsch).</p>
+                </div>
             </div>
-
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                {(passed 
-                    ? "Gefeliciteerd! Je bent geslaagd voor de IHF Regels Quiz! Je kennis van de handbalreglementen is uitstekend." 
-                    : "Bedankt voor het maken van de IHF Regels Quiz. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.")}
-            </p>
-        </div>
-
-        <!-- French Section -->
-        <div style='background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px; overflow: hidden;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Français</h2>
-            
-            <!-- Score Display -->
-            <div style='background-color: #ffffff; border-radius: 8px; padding: 25px; margin-bottom: 20px; text-align: center; border: 2px solid {resultColor};'>
-                <h3 style='color: #000000; margin: 0 0 16px 0; font-size: 18px; font-weight: bold;'>Votre Score</h3>
-                <div style='font-size: 56px; font-weight: bold; color: {resultColor}; margin: 15px 0; line-height: 1;'>{percentage:F1}%</div>
-                <div style='font-size: 20px; color: #737373; margin: 10px 0;'>{score} sur {totalQuestions} correct</div>
-            </div>
-
-            <!-- Result Status -->
-            <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 16px; margin-bottom: 20px; border-radius: 4px; text-align: center;'>
-                <p style='margin: 0; font-size: 18px; color: {resultColor}; font-weight: bold;'>{resultIcon} {(passed ? "RÉUSSI" : "NON RÉUSSI")}</p>
-            </div>
-
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                {(passed 
-                    ? "Félicitations! Vous avez réussi le Quiz des Règles IHF! Votre connaissance des règles de handball est excellente." 
-                    : "Merci d'avoir participé au Quiz des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.")}
-            </p>
-        </div>
-
-        <!-- German Section -->
-        <div style='background-color: #ffffff; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 30px; margin-bottom: 20px; overflow: hidden;'>
-            <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Deutsch</h2>
-            
-            <!-- Score Display -->
-            <div style='background-color: #ffffff; border-radius: 8px; padding: 25px; margin-bottom: 20px; text-align: center; border: 2px solid {resultColor};'>
-                <h3 style='color: #000000; margin: 0 0 16px 0; font-size: 18px; font-weight: bold;'>Ihre Punktzahl</h3>
-                <div style='font-size: 56px; font-weight: bold; color: {resultColor}; margin: 15px 0; line-height: 1;'>{percentage:F1}%</div>
-                <div style='font-size: 20px; color: #737373; margin: 10px 0;'>{score} von {totalQuestions} richtig</div>
-            </div>
-
-            <!-- Result Status -->
-            <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 16px; margin-bottom: 20px; border-radius: 4px; text-align: center;'>
-                <p style='margin: 0; font-size: 18px; color: {resultColor}; font-weight: bold;'>{resultIcon} {(passed ? "BESTANDEN" : "NICHT BESTANDEN")}</p>
-            </div>
-
-            <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                {(passed 
-                    ? "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-Quiz bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet." 
-                    : "Vielen Dank, dass Sie am IHF-Regeln-Quiz teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.")}
-            </p>
-        </div>
 
             <!-- Footer -->
             <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
-                <p style='margin: 0; font-weight: bold; color: #000000;'>IHF Rules Quiz Team</p>
+                <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
             </div>
         </div>
     </div>
@@ -280,14 +291,24 @@ public partial class EmailService(
 </html>";
 
 
+        // Generate PDF attachments for all languages
+        var attachments = new List<EmailAttachment>
+        {
+            new("IHF_Rules_Quiz_Results_EN.pdf", pdfService.GenerateQuizResultsPdf(name, "en", totalQuestions, selectedAnswerIds, wrongQuestionIds, wrongAnswerIds, questionsWithCorrectAnswers)),
+            new("IHF_Rules_Quiz_Results_NL.pdf", pdfService.GenerateQuizResultsPdf(name, "nl", totalQuestions, selectedAnswerIds, wrongQuestionIds, wrongAnswerIds, questionsWithCorrectAnswers)),
+            new("IHF_Rules_Quiz_Results_FR.pdf", pdfService.GenerateQuizResultsPdf(name, "fr", totalQuestions, selectedAnswerIds, wrongQuestionIds, wrongAnswerIds, questionsWithCorrectAnswers)),
+            new("IHF_Rules_Quiz_Results_DE.pdf", pdfService.GenerateQuizResultsPdf(name, "de", totalQuestions, selectedAnswerIds, wrongQuestionIds, wrongAnswerIds, questionsWithCorrectAnswers))
+        };
+
         LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, score, totalQuestions, percentage);
 
-        await SendEmailAsync(email, subject, emailBody);
+        await SendEmailAsync(email, subject, emailBody, attachments);
 
         LogQuizResultsEmailSentToEmail(logger, email);
     }
 
-    private async Task SendEmailAsync(string toEmail, string subject, string body)
+
+    private async Task SendEmailAsync(string toEmail, string subject, string body, List<EmailAttachment>? attachments = null)
     {
         LogSendingEmailToEmailWithSubjectAndBody(logger, toEmail, subject, body);
 
@@ -309,14 +330,19 @@ public partial class EmailService(
             var plainTextBody = System.Text.RegularExpressions.Regex.Replace(body, "<[^>]*>", "");
             plainTextBody = System.Text.RegularExpressions.Regex.Replace(plainTextBody, @"\s+", " ").Trim();
             
-            // Prepare JSON payload for Brevo API
+            // Prepare JSON payload for Brevo API with attachments
             var emailData = new
             {
                 sender = new { name = configuration.FromName, email = configuration.FromEmail },
                 to = new[] { new { email = toEmail } },
-                subject = subject,
+                subject,
                 htmlContent = body,
-                textContent = plainTextBody
+                textContent = plainTextBody,
+                attachment = attachments?.Select(a => new
+                {
+                    name = a.FileName,
+                    content = Convert.ToBase64String(a.Content)
+                }).ToArray()
             };
             
             var jsonContent = JsonSerializer.Serialize(emailData);
@@ -371,3 +397,5 @@ public partial class EmailService(
 }
 
 public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");
+
+public record EmailAttachment(string FileName, byte[] Content);

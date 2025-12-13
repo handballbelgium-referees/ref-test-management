@@ -134,7 +134,7 @@
                 <button
                   type="button"
                   (click)="toggleBulkQuestionImport()"
-                  tabindex="2104"
+                  tabindex="2105"
                   class="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors"
                 >
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -271,41 +271,78 @@
             </div>
           </div>
 
-          <!-- Send Invitations Card -->
+          <!-- Email Options Card -->
           <div
             class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-4 lg:order-0"
           >
-            <div class="flex items-start gap-3">
-              <input
-                id="sendInvitations"
-                type="checkbox"
-                tabindex="2103"
-                [field]="sessionForm.sendInvitations"
-                [title]="'sessions.create.form.sendInvitations.label' | translate"
-                [attr.aria-label]="'sessions.create.form.sendInvitations.label' | translate"
-                class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
-              />
-              <label for="sendInvitations" class="text-sm text-neutral-700 flex-1">
-                <div class="flex items-center gap-2 font-medium mb-0.5">
-                  <svg
-                    class="w-4 h-4 text-primary-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                    />
-                  </svg>
-                  {{ 'sessions.create.form.sendInvitations.label' | translate }}
-                </div>
-                <p class="text-xs text-neutral-500">
-                  {{ 'sessions.create.form.sendInvitations.description' | translate }}
-                </p>
-              </label>
+            <div class="space-y-6">
+              <!-- Send Invitations -->
+              <div class="flex items-start gap-3">
+                <input
+                  id="sendInvitations"
+                  type="checkbox"
+                  tabindex="2103"
+                  [field]="sessionForm.sendInvitations"
+                  [title]="'sessions.create.form.sendInvitations.label' | translate"
+                  [attr.aria-label]="'sessions.create.form.sendInvitations.label' | translate"
+                  class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+                />
+                <label for="sendInvitations" class="text-sm text-neutral-700 flex-1">
+                  <div class="flex items-center gap-2 font-medium mb-0.5">
+                    <svg
+                      class="w-4 h-4 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                      />
+                    </svg>
+                    {{ 'sessions.create.form.sendInvitations.label' | translate }}
+                  </div>
+                  <p class="text-xs text-neutral-500">
+                    {{ 'sessions.create.form.sendInvitations.description' | translate }}
+                  </p>
+                </label>
+              </div>
+
+              <!-- Send Results -->
+              <div class="flex items-start gap-3">
+                <input
+                  id="sendResults"
+                  type="checkbox"
+                  tabindex="2104"
+                  [field]="sessionForm.sendResults"
+                  [title]="'sessions.create.form.sendResults.label' | translate"
+                  [attr.aria-label]="'sessions.create.form.sendResults.label' | translate"
+                  class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+                />
+                <label for="sendResults" class="text-sm text-neutral-700 flex-1">
+                  <div class="flex items-center gap-2 font-medium mb-0.5">
+                    <svg
+                      class="w-4 h-4 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                    {{ 'sessions.create.form.sendResults.label' | translate }}
+                  </div>
+                  <p class="text-xs text-neutral-500">
+                    {{ 'sessions.create.form.sendResults.description' | translate }}
+                  </p>
+                </label>
+              </div>
             </div>
           </div>
 

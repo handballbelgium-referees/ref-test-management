@@ -68,6 +68,10 @@
         "invitationAll": "Toutes",
         "invitationSent": "Envoyée",
         "invitationNotSent": "Non Envoyée",
+        "resultsLabel": "Statut des Résultats",
+        "resultsAll": "Toutes",
+        "resultsSent": "Envoyée",
+        "resultsNotSent": "Non Envoyée",
         "scoreRange": "Plage de Score",
         "minScore": "Score Min",
         "maxScore": "Score Max",
@@ -91,6 +95,7 @@
         "numberOfQuestions": "Questions",
         "score": "Score",
         "invitationSent": "Invitation",
+        "resultsSent": "Résultats",
         "startedAt": "Date de Début",
         "completedAt": "Date de Fin",
         "percentage": "Pourcentage",
@@ -110,6 +115,19 @@
         "questions": "Questions",
         "score": "Score",
         "invitation": "Invitation",
+        "results": "Résultats",
+        "started": "Démarré",
+        "completed": "Terminé"
+      },
+      "columns": {
+        "toggle": "Afficher/Masquer les colonnes",
+        "title": "Titre",
+        "participant": "Participant",
+        "status": "Statut",
+        "questions": "Questions",
+        "score": "Score",
+        "invitation": "Invitation",
+        "results": "Résultats",
         "started": "Démarré",
         "completed": "Terminé"
       },
@@ -122,10 +140,12 @@
         "sessionSelected": "session sélectionnée",
         "sessionsSelected": "sessions sélectionnées",
         "sendInvitations": "Envoyer les Invitations",
+        "sendResults": "Envoyer les Résultats",
         "delete": "Supprimer"
       },
       "actions": {
         "sendInvitation": "Envoyer l'Invitation",
+        "sendResults": "Envoyer les Résultats",
         "delete": "Supprimer"
       },
       "dialogs": {
@@ -135,6 +155,14 @@
           "newInvitations": "Nouvelles invitations ({{count}})",
           "resendInvitations": "Renvoyer les invitations ({{count}})",
           "confirm": "Envoyer les Invitations",
+          "cancel": "Annuler"
+        },
+        "sendResults": {
+          "title": "Envoyer les Résultats",
+          "message": "Êtes-vous sûr de vouloir envoyer les résultats?",
+          "newResults": "Nouveaux résultats ({{count}})",
+          "resendResults": "Renvoyer les résultats ({{count}})",
+          "confirm": "Envoyer les Résultats",
           "cancel": "Annuler"
         },
         "delete": {
@@ -226,6 +254,11 @@
           "label": "Envoyer les invitations par e-mail automatiquement",
           "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des sessions",
           "description": "Les invitations par e-mail seront envoyées automatiquement"
+        },
+        "sendResults": {
+          "label": "Envoyer les résultats du quiz automatiquement",
+          "hint": "Cochez pour envoyer les e-mails de résultats immédiatement après la création des sessions",
+          "description": "Les résultats du quiz seront envoyés automatiquement"
         },
         "submit": "Créer les Sessions",
         "submitting": "Création...",

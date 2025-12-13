@@ -2,6 +2,6 @@
 
 public class LanguageConfiguration
 {
-    public string DefaultPhraseLanguage { get; set; } = "en";
+    public string DefaultPhraseLanguage { get; init; } = "en";
 }
 

@@ -50,6 +50,7 @@ public class QuizSession
     public List<string> SelectedAnswerIds { get; private set; } = [];
     public List<string> WrongQuestionIds { get; private set; } = [];
     public List<string> WrongAnswerIds { get; private set; } = [];
+    public bool ResultsSent { get; private set; }
 
     public static QuizSession Create(
         Guid titleId,
@@ -106,6 +107,11 @@ public class QuizSession
         SelectedAnswerIds = selectedAnswerIds;
         WrongQuestionIds = wrongQuestionIds;
         WrongAnswerIds = wrongAnswerIds;
+    }
+    
+    public void SendResults()
+    {
+        ResultsSent = true;
     }
 
     public void ExpireSession()

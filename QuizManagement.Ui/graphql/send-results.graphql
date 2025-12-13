@@ -1,12 +1,12 @@
-mutation SendQuizInvitations($input: SendInvitationsInput!) {
-  sendInvitations(input: $input) {
-    sendInvitationsResult {
+mutation SendQuizResults($input: SendResultsInput!) {
+  sendResults(input: $input) {
+    sendResultsResult {
       totalRequested
       successfullySent
       failed
       sentSessions {
         id
-        invitationSent
+        resultsSent
       }
       errors {
         quizSessionId

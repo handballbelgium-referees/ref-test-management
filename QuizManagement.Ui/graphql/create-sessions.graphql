@@ -4,12 +4,6 @@ mutation CreateBulkQuizSessions($input: CreateBulkQuizSessionsInput!) {
       totalRequested
       successfullyCreated
       failed
-      createdSessions {
-        id
-        email
-        status
-        createdAt
-      }
       errors {
         user {
           firstName

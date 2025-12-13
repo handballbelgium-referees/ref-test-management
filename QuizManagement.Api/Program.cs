@@ -2,11 +2,15 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
 using QuizManagement.Api;
 using QuizManagement.Application.Services;
 using QuizManagement.Infrastructure;
 using QuizManagement.Infrastructure.Services;
 using StrawberryShake;
+
+// Configure QuestPDF license
+QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +39,7 @@ var languageConfig = configuration.GetSection("LanguageConfiguration").Get<Langu
                      ?? new LanguageConfiguration();
 services.AddSingleton(languageConfig);
 services.AddScoped<IEmailService, EmailService>();
+services.AddScoped<IQuizResultsPdfService, QuizResultsPdfService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 
 // Add IHF Rules Questions GraphQL client

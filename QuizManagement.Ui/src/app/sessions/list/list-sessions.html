@@ -18,14 +18,25 @@
       {{ 'sessions.list.createNew' | translate }}
     </button>
 
-    <!-- Search Bar -->
-    <div class="w-full sm:w-96">
-      <input
-        type="search"
-        [placeholder]="'sessions.list.searchPlaceholder' | translate"
-        (input)="onSearchInput($event)"
-        class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+    <!-- Search Bar and Column Toggle -->
+    <div class="flex gap-2 w-full sm:w-auto">
+      <!-- Column Visibility Menu -->
+      <app-column-visibility-menu
+        [visibleColumns]="visibleColumns()"
+        [showMenu]="showColumnMenu()"
+        (toggleMenu)="toggleColumnMenu()"
+        (toggleColumn)="toggleColumn($event)"
       />
+
+      <!-- Search Bar -->
+      <div class="flex-1 sm:w-96">
+        <input
+          type="search"
+          [placeholder]="'sessions.list.searchPlaceholder' | translate"
+          (input)="onSearchInput($event)"
+          class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+        />
+      </div>
     </div>
   </div>
 
@@ -37,6 +48,7 @@
       (statusFilterChange)="setStatusFilter($event)"
       (titleFilterChange)="setTitleFilter($event)"
       (invitationFilterChange)="setInvitationFilter($event)"
+      (resultsFilterChange)="setResultsFilter($event)"
       (sortingChange)="setSorting($event.field, $event.direction)"
       (scoreRangeChange)="setScoreRange($event.min, $event.max)"
       (percentageRangeChange)="setPercentageRange($event)"
@@ -46,56 +58,14 @@
   </div>
 
   <!-- Bulk Actions Bar -->
-  @if (selectedCount() > 0) {
-  <div class="mb-6 bg-primary-50 border border-primary-200 rounded-lg p-4">
-    <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
-      <div class="text-sm font-medium text-primary-900">
-        {{ selectedCount() }}
-        {{
-          selectedCount() === 1
-            ? ('sessions.list.bulk.sessionSelected' | translate)
-            : ('sessions.list.bulk.sessionsSelected' | translate)
-        }}
-      </div>
-      <div class="flex gap-2 w-full sm:w-auto">
-        <button
-          type="button"
-          (click)="sendInvitationsToSelected(); $event.stopPropagation()"
-          class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-        >
-          <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-            />
-          </svg>
-          {{
-            selectedCount() === 1
-              ? ('sessions.list.actions.sendInvitation' | translate)
-              : ('sessions.list.bulk.sendInvitations' | translate)
-          }}
-        </button>
-        <button
-          type="button"
-          (click)="deleteSelectedSessions(); $event.stopPropagation()"
-          class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-        >
-          <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-            />
-          </svg>
-          {{ 'sessions.list.bulk.delete' | translate }}
-        </button>
-      </div>
-    </div>
-  </div>
-  }
+  <app-session-bulk-actions
+    [selectedCount]="selectedCount()"
+    [hasCompletedSessionsSelected]="hasCompletedSessionsSelected()"
+    [hasPendingSessionsSelected]="hasPendingSessionsSelected()"
+    (sendInvitations)="sendInvitationsToSelected()"
+    (sendResults)="sendResultsToSelected()"
+    (deleteSelected)="deleteSelectedSessions()"
+  />
 
   <!-- Loading State -->
   @if (loading()) {
@@ -141,7 +111,7 @@
   @else {
   <!-- Desktop Table View -->
   <div
-    class="hidden md:block bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden"
+    class="hidden md:block bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden overflow-x-auto"
   >
     <table class="min-w-full divide-y divide-neutral-200">
       <thead class="bg-neutral-50">
@@ -155,11 +125,14 @@
               class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
             />
           </th>
+          @if (isColumnVisible('title')) {
           <th
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"
           >
             {{ 'sessions.list.table.title' | translate }}
           </th>
+          }
+          @if (isColumnVisible('participant')) {
           <th
             (click)="sortByColumn('email')"
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
@@ -182,6 +155,8 @@
               } }
             </div>
           </th>
+          }
+          @if (isColumnVisible('status')) {
           <th
             (click)="sortByColumn('status')"
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
@@ -204,6 +179,8 @@
               } }
             </div>
           </th>
+          }
+          @if (isColumnVisible('questions')) {
           <th
             (click)="sortByColumn('numberOfQuestions')"
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
@@ -226,6 +203,8 @@
               } }
             </div>
           </th>
+          }
+          @if (isColumnVisible('score')) {
           <th
             (click)="sortByColumn('score')"
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
@@ -248,6 +227,8 @@
               } }
             </div>
           </th>
+          }
+          @if (isColumnVisible('invitation')) {
           <th
             (click)="sortByColumn('invitationSent')"
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
@@ -270,6 +251,32 @@
               } }
             </div>
           </th>
+          }
+          @if (isColumnVisible('results')) {
+          <th
+            (click)="sortByColumn('resultsSent')"
+            class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'sessions.list.table.results' | translate }}
+              @if (filter().sortField === 'resultsSent') { @if (filter().sortDirection ===
+              SortEnumType.Asc) {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                />
+              </svg>
+              } @else {
+              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                />
+              </svg>
+              } }
+            </div>
+          </th>
+          }
+          @if (isColumnVisible('started')) {
           <th
             (click)="sortByColumn('startedAt')"
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
@@ -292,6 +299,8 @@
               } }
             </div>
           </th>
+          }
+          @if (isColumnVisible('completed')) {
           <th
             (click)="sortByColumn('completedAt')"
             class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider cursor-pointer hover:bg-neutral-100 transition-colors"
@@ -314,83 +323,18 @@
               } }
             </div>
           </th>
+          }
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-neutral-200">
         @for (session of sessions(); track session.id) {
-        <tr class="hover:bg-neutral-50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap">
-            <input
-              type="checkbox"
-              [checked]="isSelected(session.id)"
-              (change)="toggleSessionSelection(session.id)"
-              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
-            />
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="text-sm text-neutral-900">{{ session.title?.value || '-' }}</div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex flex-col">
-              <div class="text-sm font-medium text-neutral-900">{{ session.name }}</div>
-              <div class="text-sm text-neutral-500">{{ session.email }}</div>
-            </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span
-              [class]="getStatusClass(session.status)"
-              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
-            >
-              {{ 'sessions.list.status.' + session.status | translate }}
-            </span>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-            {{ session.numberOfQuestions }}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
-            @if (session.score !== null) {
-            <div class="flex flex-col">
-              <span class="font-medium">{{ session.score }} / {{ session.numberOfQuestions }}</span>
-              <span class="text-xs text-neutral-500">{{ session.percentage }} %</span>
-            </div>
-            } @else {
-            <span class="text-neutral-400">-</span>
-            }
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-            @if (session.invitationSent) {
-            <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            } @else {
-            <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            }
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-            @if (session.startedAt) {
-            {{ session.startedAt | localizedDate : 'short' }}
-            } @else {
-            <span class="text-neutral-400">-</span>
-            }
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
-            @if (session.completedAt) {
-            {{ session.completedAt | localizedDate : 'short' }}
-            } @else {
-            <span class="text-neutral-400">-</span>
-            }
-          </td>
-        </tr>
+        <tr
+          app-session-table-row
+          [session]="session"
+          [selected]="isSelected(session.id)"
+          [visibleColumns]="visibleColumns()"
+          (toggleSelection)="toggleSessionSelection($event)"
+        ></tr>
         }
       </tbody>
     </table>
@@ -399,81 +343,12 @@
   <!-- Mobile Card View -->
   <div class="md:hidden space-y-4">
     @for (session of sessions(); track session.id) {
-    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
-      <!-- Header -->
-      <div class="flex gap-3 items-start mb-3">
-        <input
-          type="checkbox"
-          [checked]="isSelected(session.id)"
-          (change)="toggleSessionSelection(session.id)"
-          class="h-5 w-5 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
-        />
-        <div class="flex-1">
-          <h3 class="text-sm font-medium text-neutral-900">{{ session.name }}</h3>
-          <p class="text-sm text-neutral-500">{{ session.email }}</p>
-          @if (session.title) {
-          <p class="text-xs text-neutral-400 mt-1">{{ session.title.value }}</p>
-          }
-        </div>
-        <span
-          [class]="getStatusClass(session.status)"
-          class="px-2 py-1 text-xs font-semibold rounded-full"
-        >
-          {{ 'sessions.list.status.' + session.status | translate }}
-        </span>
-      </div>
-
-      <!-- Details Grid -->
-      <div class="grid grid-cols-2 gap-3 text-sm">
-        <div>
-          <span class="text-neutral-500">{{ 'sessions.list.table.questions' | translate }}:</span>
-          <span class="ml-1 font-medium text-neutral-900">{{ session.numberOfQuestions }}</span>
-        </div>
-        <div>
-          <span class="text-neutral-500">{{ 'sessions.list.table.invitation' | translate }}:</span>
-          @if (session.invitationSent) {
-          <svg class="inline h-4 w-4 ml-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          } @else {
-          <svg class="inline h-4 w-4 ml-1 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fill-rule="evenodd"
-              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          }
-        </div>
-        @if (session.score !== null) {
-        <div>
-          <span class="text-neutral-500">{{ 'sessions.list.table.score' | translate }}:</span>
-          <span class="ml-1 font-medium text-neutral-900"
-            >{{ session.score }} / {{ session.numberOfQuestions }}</span
-          >
-          <span class="ml-1 text-xs text-neutral-500">({{ session.percentage }} %)</span>
-        </div>
-        } @if (session.startedAt) {
-        <div>
-          <span class="text-neutral-500">{{ 'sessions.list.table.started' | translate }}:</span>
-          <span class="ml-1 text-neutral-900">{{
-            session.startedAt | localizedDate : 'short'
-          }}</span>
-        </div>
-        } @if (session.completedAt) {
-        <div>
-          <span class="text-neutral-500">{{ 'sessions.list.table.completed' | translate }}:</span>
-          <span class="ml-1 text-neutral-900">{{
-            session.completedAt | localizedDate : 'short'
-          }}</span>
-        </div>
-        }
-      </div>
-    </div>
+    <app-session-mobile-card
+      [session]="session"
+      [selected]="isSelected(session.id)"
+      [visibleColumns]="visibleColumns()"
+      (toggleSelection)="toggleSessionSelection($event)"
+    />
     }
   </div>
 
@@ -502,6 +377,15 @@
   (cancel)="cancelSendInvitations()"
 >
 </app-send-invitations-dialog>
+
+<!-- Send Results Dialog -->
+<app-send-results-dialog
+  [show]="showSendResultsDialog()"
+  [summary]="resultsSummary()"
+  (confirm)="confirmSendResults()"
+  (cancel)="cancelSendResults()"
+>
+</app-send-results-dialog>
 
 <!-- Delete Sessions Dialog -->
 <app-delete-sessions-dialog

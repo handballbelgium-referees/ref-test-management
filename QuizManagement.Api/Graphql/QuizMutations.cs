@@ -103,16 +103,22 @@ public static class QuizMutations
         );
 
         await context.SaveChangesAsync(cancellationToken);
-        
+
+        if (!session.ResultsSent) 
+            return session;
+
         var questionsWithCorrectAnswers = await ihfRulesQuestionsService.GetQuestionsByIdAsync(input.QuestionIds, true, true, cancellationToken);
 
         // Send results email
         await emailService.SendQuizResultsAsync(
+            session.FullName,
             session.Email,
             scoreResult.Score,
             scoreResult.Total,
             scoreResult.Percentage,
             input.SelectedAnswerIds,
+            scoreResult.WrongQuestionsIds,
+            scoreResult.WrongAnswerIds,
             questionsWithCorrectAnswers
         );
 
@@ -299,6 +305,89 @@ public static class QuizMutations
                 result.SuccessfullySent++;
                 
                 session.SendInvitation();
+            }
+            catch (Exception e)
+            {
+                result.Failed++;
+
+                // Email failed, or session was not found, or session is not pending
+                // Log the error but don't fail the entire operation
+                result.Errors.Add(new SendInvitationError
+                {
+                    QuizSessionId = id,
+                    User = session is null ? null : new User(session.FirstName, session.LastName, session.Email),
+                    ErrorMessage = e.Message
+                });
+            }
+        }
+
+        context.QuizSessions.UpdateRange(sessions);
+        await context.SaveChangesAsync(cancellationToken);
+
+        return result;
+    }
+
+    /// <summary>
+    /// Send quiz results emails to quiz sessions.
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="context"></param>
+    /// <param name="emailService"></param>
+    /// <param name="ihfRulesQuestionsService"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="QuizSessionNotFoundException"></exception>
+    /// <exception cref="InvalidQuizSessionStatusException"></exception>
+    [Authorize]
+    public static async Task<SendResultsResult> SendResultsAsync(
+        SendResultsInput input,
+        QuizManagementContext context,
+        [Service] IEmailService emailService,
+        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
+        CancellationToken cancellationToken)
+    {
+        var sessions = await context.QuizSessions
+            .Where(s => input.Ids.Contains(s.Id))
+            .ToListAsync(cancellationToken);
+
+        var result = new SendResultsResult
+        {
+            TotalRequested = input.Ids.Count,
+            SentSessions = [],
+            Errors = []
+        };
+
+        foreach (var id in input.Ids)
+        {
+            var session = sessions.FirstOrDefault(x => x.Id == id);
+
+            try
+            {
+                if (session is null)
+                    throw new QuizSessionNotFoundException(id.ToString());
+
+                if (session.Status != QuizSessionStatus.Completed)
+                    throw new InvalidQuizSessionStatusException(session.Status, QuizSessionStatus.Completed);
+
+                var questionsWithCorrectAnswers = await ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, true, true, cancellationToken);
+
+                // Send results email
+                await emailService.SendQuizResultsAsync(
+                    session.FullName,
+                    session.Email,
+                    session.Score ?? 0,
+                    session.TotalQuestions ?? 0,
+                    session.Percentage ?? 0,
+                    session.SelectedAnswerIds,
+                    session.WrongQuestionIds,
+                    session.WrongAnswerIds,
+                    questionsWithCorrectAnswers
+                );
+
+                result.SentSessions.Add(session);
+                result.SuccessfullySent++;
+                
+                session.SendResults();
             }
             catch (Exception e)
             {

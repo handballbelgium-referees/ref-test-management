@@ -76,6 +76,10 @@
         "invitationAll": "Alle",
         "invitationSent": "Verzonden",
         "invitationNotSent": "Niet Verzonden",
+        "resultsLabel": "Resultaatstatus",
+        "resultsAll": "Alle",
+        "resultsSent": "Verzonden",
+        "resultsNotSent": "Niet Verzonden",
         "scoreRange": "Score Bereik",
         "minScore": "Min Score",
         "maxScore": "Max Score",
@@ -99,6 +103,7 @@
         "numberOfQuestions": "Vragen",
         "score": "Score",
         "invitationSent": "Uitnodiging",
+        "resultsSent": "Resultaten",
         "startedAt": "Startdatum",
         "completedAt": "Voltooiingsdatum",
         "percentage": "Percentage",
@@ -118,6 +123,19 @@
         "questions": "Vragen",
         "score": "Score",
         "invitation": "Uitnodiging",
+        "results": "Resultaten",
+        "started": "Gestart",
+        "completed": "Voltooid"
+      },
+      "columns": {
+        "toggle": "Kolommen tonen/verbergen",
+        "title": "Titel",
+        "participant": "Deelnemer",
+        "status": "Status",
+        "questions": "Vragen",
+        "score": "Score",
+        "invitation": "Uitnodiging",
+        "results": "Resultaten",
         "started": "Gestart",
         "completed": "Voltooid"
       },
@@ -130,10 +148,12 @@
         "sessionSelected": "sessie geselecteerd",
         "sessionsSelected": "sessies geselecteerd",
         "sendInvitations": "Uitnodigingen Versturen",
+        "sendResults": "Resultaten Versturen",
         "delete": "Verwijderen"
       },
       "actions": {
         "sendInvitation": "Uitnodiging Versturen",
+        "sendResults": "Resultaten Versturen",
         "delete": "Verwijderen"
       },
       "dialogs": {
@@ -143,6 +163,14 @@
           "newInvitations": "Nieuwe uitnodigingen ({{count}})",
           "resendInvitations": "Opnieuw versturen ({{count}})",
           "confirm": "Uitnodigingen Versturen",
+          "cancel": "Annuleren"
+        },
+        "sendResults": {
+          "title": "Resultaten Versturen",
+          "message": "Weet u zeker dat u resultaten wilt versturen?",
+          "newResults": "Nieuwe resultaten ({{count}})",
+          "resendResults": "Opnieuw versturen ({{count}})",
+          "confirm": "Resultaten Versturen",
           "cancel": "Annuleren"
         },
         "delete": {
@@ -234,6 +262,11 @@
           "label": "E-mail uitnodigingen automatisch versturen",
           "hint": "Vink aan om uitnodigingsmails direct na aanmaken van sessies te versturen",
           "description": "E-mailuitnodigingen worden automatisch verzonden"
+        },
+        "sendResults": {
+          "label": "Quiz resultaten automatisch versturen",
+          "hint": "Vink aan om resultaatmails direct na aanmaken van sessies te versturen",
+          "description": "Quizresultaten worden automatisch verzonden"
         },
         "submit": "Sessies Aanmaken",
         "submitting": "Aanmaken...",

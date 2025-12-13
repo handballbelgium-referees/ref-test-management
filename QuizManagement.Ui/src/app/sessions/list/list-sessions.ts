@@ -24,14 +24,19 @@ import {
   QuizSessionFilterInput,
   QuizSessionStatus,
   QuizSessionStatusOperationFilterInput,
-  SendInvitationsGQL,
+  SendQuizInvitationsGQL,
+  SendQuizResultsGQL,
   SortEnumType,
   UuidOperationFilterInput,
 } from '../../../../graphql/generated';
-import { LocalizedDatePipe } from '../../shared/pipes/localized-date.pipe';
+import { ColumnVisibilityMenu } from './components/column-visibility-menu/column-visibility-menu';
 import { DeleteSessionsDialog } from './components/delete-sessions-dialog/delete-sessions-dialog';
 import { SendInvitationsDialog } from './components/send-invitations-dialog/send-invitations-dialog';
+import { SendResultsDialog } from './components/send-results-dialog/send-results-dialog';
+import { SessionBulkActions } from './components/session-bulk-actions/session-bulk-actions';
 import { SessionFiltersCard } from './components/session-filters-card/session-filters-card';
+import { SessionMobileCard } from './components/session-mobile-card/session-mobile-card';
+import { SessionTableRow } from './components/session-table-row/session-table-row';
 
 type SortField =
   | 'title'
@@ -42,11 +47,13 @@ type SortField =
   | 'percentage'
   | 'status'
   | 'numberOfQuestions'
-  | 'invitationSent';
+  | 'invitationSent'
+  | 'resultsSent';
 
 interface SessionFilter {
   status?: QuizSessionStatus;
   invitationSent?: boolean;
+  resultsSent?: boolean;
   titleId?: string;
   searchTerm: string;
   sortField: SortField;
@@ -70,9 +77,13 @@ type SessionNode = NonNullable<
   selector: 'app-list-sessions',
   imports: [
     TranslatePipe,
-    LocalizedDatePipe,
     SessionFiltersCard,
+    SessionBulkActions,
+    SessionTableRow,
+    SessionMobileCard,
+    ColumnVisibilityMenu,
     SendInvitationsDialog,
+    SendResultsDialog,
     DeleteSessionsDialog,
   ],
   templateUrl: './list-sessions.html',
@@ -82,11 +93,27 @@ export class ListSessions {
   private readonly _getQuizSessionsGQL = inject(GetQuizSessionsGQL);
   private readonly _getQuizSessionsCountGQL = inject(GetQuizSessionsCountGQL);
   private readonly _deleteQuizSessionsGQL = inject(DeleteQuizSessionsGQL);
-  private readonly _sendInvitationsGQL = inject(SendInvitationsGQL);
+  private readonly _sendInvitationsGQL = inject(SendQuizInvitationsGQL);
+  private readonly _sendResultsGQL = inject(SendQuizResultsGQL);
   private readonly _router = inject(Router);
   private readonly _destroyRef = inject(DestroyRef);
 
   private readonly _searchSubject = new Subject<string>();
+
+  protected readonly visibleColumns = signal(
+    new Set<string>([
+      'title',
+      'participant',
+      'status',
+      'questions',
+      'score',
+      'invitation',
+      'results',
+      'started',
+      'completed',
+    ])
+  );
+  protected readonly showColumnMenu = signal(false);
 
   protected readonly filter = signal<SessionFilter>({
     searchTerm: '',
@@ -104,8 +131,10 @@ export class ListSessions {
   protected readonly hasNextPage = signal(false);
   protected readonly deletingSessionIds = signal<Set<string>>(new Set());
   protected readonly sendingInvitationIds = signal<Set<string>>(new Set());
+  protected readonly sendingResultsIds = signal<Set<string>>(new Set());
   protected readonly selectedSessionIds = signal<Set<string>>(new Set());
   protected readonly showSendInvitationsDialog = signal(false);
+  protected readonly showSendResultsDialog = signal(false);
   protected readonly showDeleteDialog = signal(false);
 
   protected readonly invitationSummary = computed(() => {
@@ -123,12 +152,43 @@ export class ListSessions {
     };
   });
 
+  protected readonly resultsSummary = computed(() => {
+    const selectedIds = this.selectedSessionIds();
+    const allSessions = this.allLoadedSessions();
+    const selected = allSessions.filter(
+      (s) => selectedIds.has(s.id) && s.status === QuizSessionStatus.Completed
+    );
+
+    return {
+      newResults: selected
+        .filter((s) => !s.resultsSent)
+        .map((s) => ({ name: s.name || '', email: s.email || '' })),
+      resendResults: selected
+        .filter((s) => s.resultsSent)
+        .map((s) => ({ name: s.name || '', email: s.email || '' })),
+    };
+  });
+
   protected readonly sessionsToDelete = computed(() => {
     const selectedIds = this.selectedSessionIds();
     const allSessions = this.allLoadedSessions();
     return allSessions
       .filter((s) => selectedIds.has(s.id))
       .map((s) => ({ name: s.name || '', email: s.email || '' }));
+  });
+
+  protected readonly hasCompletedSessionsSelected = computed(() => {
+    const selectedIds = this.selectedSessionIds();
+    const allSessions = this.allLoadedSessions();
+    return allSessions.some(
+      (s) => selectedIds.has(s.id) && s.status === QuizSessionStatus.Completed
+    );
+  });
+
+  protected readonly hasPendingSessionsSelected = computed(() => {
+    const selectedIds = this.selectedSessionIds();
+    const allSessions = this.allLoadedSessions();
+    return allSessions.some((s) => selectedIds.has(s.id) && s.status === QuizSessionStatus.Pending);
   });
 
   protected readonly allSelected = computed(() => {
@@ -319,6 +379,10 @@ export class ListSessions {
       filters.invitationSent = { eq: currentFilter.invitationSent } as BooleanOperationFilterInput;
     }
 
+    if (currentFilter.resultsSent !== undefined) {
+      filters.resultsSent = { eq: currentFilter.resultsSent } as BooleanOperationFilterInput;
+    }
+
     if (currentFilter.minScore !== undefined || currentFilter.maxScore !== undefined) {
       const scoreFilter: IntOperationFilterInput = {};
       if (currentFilter.minScore !== undefined) {
@@ -403,6 +467,10 @@ export class ListSessions {
 
   protected setInvitationFilter(invitationSent?: boolean): void {
     this.filter.update((f) => ({ ...f, invitationSent }));
+  }
+
+  protected setResultsFilter(resultsSent?: boolean): void {
+    this.filter.update((f) => ({ ...f, resultsSent }));
   }
 
   protected setSorting(sortField: SortField, sortDirection: SortEnumType): void {
@@ -517,6 +585,58 @@ export class ListSessions {
     this.showDeleteDialog.set(false);
   }
 
+  protected sendResultsToSelected(): void {
+    const selectedIds = Array.from(this.selectedSessionIds());
+    if (selectedIds.length === 0) {
+      return;
+    }
+
+    this.showSendResultsDialog.set(true);
+  }
+
+  protected confirmSendResults(): void {
+    this.showSendResultsDialog.set(false);
+
+    const sessionIds = Array.from(this.selectedSessionIds());
+
+    sessionIds.forEach((id) => {
+      this.sendingResultsIds.update((ids) => new Set(ids).add(id));
+    });
+
+    this._sendResultsGQL
+      .mutate({ variables: { input: { ids: sessionIds } } })
+      .pipe(
+        tap((result) => {
+          const sendResult = result.data?.sendResults?.sendResultsResult;
+          if (sendResult) {
+            const sentIds = new Set(sendResult.sentSessions.map((s) => s.id));
+            this.allLoadedSessions.update((sessions) =>
+              sessions.map((s) => (sentIds.has(s.id) ? { ...s, resultsSent: true } : s))
+            );
+            this.selectedSessionIds.set(new Set());
+          }
+        }),
+        catchError(() => {
+          return of(null);
+        }),
+        finalize(() => {
+          sessionIds.forEach((id) => {
+            this.sendingResultsIds.update((ids) => {
+              const newIds = new Set(ids);
+              newIds.delete(id);
+              return newIds;
+            });
+          });
+        }),
+        takeUntilDestroyed(this._destroyRef)
+      )
+      .subscribe();
+  }
+
+  protected cancelSendResults(): void {
+    this.showSendResultsDialog.set(false);
+  }
+
   protected sendInvitationsToSelected(): void {
     const sessionIds = Array.from(this.selectedSessionIds());
     if (sessionIds.length === 0) {
@@ -583,6 +703,26 @@ export class ListSessions {
       const allIds = this.sessions().map((s) => s.id);
       this.selectedSessionIds.set(new Set(allIds));
     }
+  }
+
+  protected isColumnVisible(column: string): boolean {
+    return this.visibleColumns().has(column);
+  }
+
+  protected toggleColumn(column: string): void {
+    this.visibleColumns.update((cols) => {
+      const newCols = new Set(cols);
+      if (newCols.has(column)) {
+        newCols.delete(column);
+      } else {
+        newCols.add(column);
+      }
+      return newCols;
+    });
+  }
+
+  protected toggleColumnMenu(): void {
+    this.showColumnMenu.update((show) => !show);
   }
 
   protected toggleSessionSelection(sessionId: string): void {

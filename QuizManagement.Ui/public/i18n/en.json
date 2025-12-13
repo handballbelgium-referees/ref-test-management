@@ -68,6 +68,10 @@
         "invitationAll": "All",
         "invitationSent": "Sent",
         "invitationNotSent": "Not Sent",
+        "resultsLabel": "Results Status",
+        "resultsAll": "All",
+        "resultsSent": "Sent",
+        "resultsNotSent": "Not Sent",
         "scoreRange": "Score Range",
         "minScore": "Min Score",
         "maxScore": "Max Score",
@@ -91,6 +95,7 @@
         "numberOfQuestions": "Questions",
         "score": "Score",
         "invitationSent": "Invitation",
+        "resultsSent": "Results",
         "startedAt": "Start Date",
         "completedAt": "Completion Date",
         "percentage": "Percentage",
@@ -110,6 +115,19 @@
         "questions": "Questions",
         "score": "Score",
         "invitation": "Invitation",
+        "results": "Results",
+        "started": "Started",
+        "completed": "Completed"
+      },
+      "columns": {
+        "toggle": "Show/Hide Columns",
+        "title": "Title",
+        "participant": "Participant",
+        "status": "Status",
+        "questions": "Questions",
+        "score": "Score",
+        "invitation": "Invitation",
+        "results": "Results",
         "started": "Started",
         "completed": "Completed"
       },
@@ -122,10 +140,12 @@
         "sessionSelected": "session selected",
         "sessionsSelected": "sessions selected",
         "sendInvitations": "Send Invitations",
+        "sendResults": "Send Results",
         "delete": "Delete"
       },
       "actions": {
         "sendInvitation": "Send Invitation",
+        "sendResults": "Send Results",
         "delete": "Delete"
       },
       "dialogs": {
@@ -135,6 +155,14 @@
           "newInvitations": "New invitations ({{count}})",
           "resendInvitations": "Resend invitations ({{count}})",
           "confirm": "Send Invitations",
+          "cancel": "Cancel"
+        },
+        "sendResults": {
+          "title": "Send Results",
+          "message": "Are you sure you want to send results?",
+          "newResults": "New results ({{count}})",
+          "resendResults": "Resend results ({{count}})",
+          "confirm": "Send Results",
           "cancel": "Cancel"
         },
         "delete": {
@@ -226,6 +254,11 @@
           "label": "Send email invitations automatically",
           "hint": "Check to send invitation emails immediately after creating sessions",
           "description": "Email invitations will be sent automatically"
+        },
+        "sendResults": {
+          "label": "Send quiz results automatically",
+          "hint": "Check to send result emails immediately after creating sessions",
+          "description": "Quiz results will be sent automatically"
         },
         "submit": "Create Sessions",
         "submitting": "Creating...",

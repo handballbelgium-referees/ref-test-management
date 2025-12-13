@@ -12,7 +12,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { applyEach, disabled, email, Field, form, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, delay, map, of, switchMap, tap } from 'rxjs';
+import { catchError, delay, forkJoin, map, of, tap } from 'rxjs';
 import {
   CreateBulkQuizSessionsGQL,
   SearchQuestionsByNumberGQL,
@@ -36,6 +36,7 @@ interface SessionFormData {
   maxTimeInMinutes: number;
   specificQuestionNumbers: string;
   sendInvitations: boolean;
+  sendResults: boolean;
 }
 
 @Component({
@@ -69,6 +70,7 @@ export class CreateSessions {
     maxTimeInMinutes: 60,
     specificQuestionNumbers: '',
     sendInvitations: false,
+    sendResults: false,
   });
 
   // Form field tree with validation schema
@@ -240,26 +242,29 @@ export class CreateSessions {
       )
     );
 
-    of(validationRequests)
+    forkJoin(validationRequests)
       .pipe(
-        switchMap((requests) => Promise.all(requests.map((r) => r.toPromise()))),
+        map((results) =>
+          results
+            .filter(
+              (r): r is { number: string; phrase: Record<string, string>; isValid: boolean } =>
+                r !== null && (r?.isValid ?? false)
+            )
+            .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number))
+        ),
+        tap((validQuestions) => {
+          if (validQuestions.length > 0) {
+            this.selectedQuestions.update((current) => [...current, ...validQuestions]);
+            this.updateQuestionNumbersField();
+          }
+        }),
+        tap(() => {
+          this.showBulkQuestionImport.set(false);
+          this.resetQuestionCount();
+        }),
         takeUntilDestroyed(this._destroyRef)
       )
-      .subscribe((results) => {
-        const validQuestions = results
-          .filter(
-            (r): r is { number: string; phrase: Record<string, string>; isValid: boolean } =>
-              r !== null && (r?.isValid ?? false)
-          )
-          .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number));
-
-        if (validQuestions.length > 0) {
-          this.selectedQuestions.update((current) => [...current, ...validQuestions]);
-          this.updateQuestionNumbersField();
-        }
-
-        this.showBulkQuestionImport.set(false);
-      });
+      .subscribe();
   }
 
   protected onBulkUserImport(text: string): void {
@@ -352,6 +357,7 @@ export class CreateSessions {
             maxTimeInMinutes: formData.maxTimeInMinutes,
             specificQuestionNumbers: specificQuestions.length > 0 ? specificQuestions : undefined,
             sendInvitations: formData.sendInvitations,
+            sendResults: formData.sendResults,
           },
         },
       })
@@ -381,6 +387,7 @@ export class CreateSessions {
                 maxTimeInMinutes: 60,
                 specificQuestionNumbers: '',
                 sendInvitations: false,
+                sendResults: false,
               });
               // Reset form state
               this.sessionForm().reset();

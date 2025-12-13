@@ -80,6 +80,7 @@ export type CreateBulkQuizSessionsInput = {
   maxTimeInMinutes: Scalars['Int']['input'];
   numberOfQuestions: Scalars['Int']['input'];
   sendInvitations?: Scalars['Boolean']['input'];
+  sendResults?: Scalars['Boolean']['input'];
   specificQuestionNumbers?: InputMaybe<Array<Scalars['String']['input']>>;
   title: TitleInput;
   users: Array<UserInput>;
@@ -179,6 +180,7 @@ export type Mutation = {
   createBulkQuizSessions: CreateBulkQuizSessionsPayload;
   deleteQuizSessions: DeleteQuizSessionsPayload;
   sendInvitations: SendInvitationsPayload;
+  sendResults: SendResultsPayload;
   startQuizSession: StartQuizSessionPayload;
 };
 
@@ -200,6 +202,11 @@ export type MutationDeleteQuizSessionsArgs = {
 
 export type MutationSendInvitationsArgs = {
   input: SendInvitationsInput;
+};
+
+
+export type MutationSendResultsArgs = {
+  input: SendResultsInput;
 };
 
 
@@ -313,6 +320,8 @@ export type QuizSession = Node & {
   percentage?: Maybe<Scalars['Float']['output']>;
   /** Questions for this quiz session */
   questions?: Maybe<Array<Maybe<Question>>>;
+  /** Indication of results were sent */
+  resultsSent: Scalars['Boolean']['output'];
   /** Score of the quiz session */
   score?: Maybe<Scalars['Int']['output']>;
   /** Start date and time of the quiz session */
@@ -365,6 +374,8 @@ export type QuizSessionFilterInput = {
   or?: InputMaybe<Array<QuizSessionFilterInput>>;
   /** Filter on percentage of correct answers */
   percentage?: InputMaybe<FloatOperationFilterInput>;
+  /** Filter on results were sent */
+  resultsSent?: InputMaybe<BooleanOperationFilterInput>;
   /** Filter on score of the quiz session */
   score?: InputMaybe<IntOperationFilterInput>;
   /** Filter on start date of the quiz session */
@@ -402,6 +413,8 @@ export type QuizSessionSortInput = {
   numberOfQuestions?: InputMaybe<SortEnumType>;
   /** Sort on percentage of correct answers */
   percentage?: InputMaybe<SortEnumType>;
+  /** Sort on results were sent */
+  resultsSent?: InputMaybe<SortEnumType>;
   /** Sort on score of the quiz session */
   score?: InputMaybe<SortEnumType>;
   /** Sort on start date of the quiz session */
@@ -514,6 +527,24 @@ export type SendInvitationsResult = {
   totalRequested: Scalars['Int']['output'];
 };
 
+export type SendResultsInput = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+export type SendResultsPayload = {
+  __typename?: 'SendResultsPayload';
+  sendResultsResult?: Maybe<SendResultsResult>;
+};
+
+export type SendResultsResult = {
+  __typename?: 'SendResultsResult';
+  errors: Array<SendInvitationError>;
+  failed: Scalars['Int']['output'];
+  sentSessions: Array<QuizSession>;
+  successfullySent: Scalars['Int']['output'];
+  totalRequested: Scalars['Int']['output'];
+};
+
 export enum SortEnumType {
   Asc = 'ASC',
   Desc = 'DESC'
@@ -591,7 +622,7 @@ export type CreateBulkQuizSessionsMutationVariables = Exact<{
 }>;
 
 
-export type CreateBulkQuizSessionsMutation = { __typename?: 'Mutation', createBulkQuizSessions: { __typename?: 'CreateBulkQuizSessionsPayload', bulkQuizSessionResult?: { __typename?: 'BulkQuizSessionResult', totalRequested: number, successfullyCreated: number, failed: number, createdSessions: Array<{ __typename?: 'QuizSession', id: string, email: string, status: QuizSessionStatus, createdAt: string }>, errors: Array<{ __typename?: 'BulkCreationError', errorMessage: string, user: { __typename?: 'User', firstName: string, lastName: string, email: string } }> } | null } };
+export type CreateBulkQuizSessionsMutation = { __typename?: 'Mutation', createBulkQuizSessions: { __typename?: 'CreateBulkQuizSessionsPayload', bulkQuizSessionResult?: { __typename?: 'BulkQuizSessionResult', totalRequested: number, successfullyCreated: number, failed: number, errors: Array<{ __typename?: 'BulkCreationError', errorMessage: string, user: { __typename?: 'User', firstName: string, lastName: string, email: string } }> } | null } };
 
 export type DeleteQuizSessionsMutationVariables = Exact<{
   input: DeleteQuizSessionsInput;
@@ -627,7 +658,7 @@ export type GetQuizSessionsQueryVariables = Exact<{
 }>;
 
 
-export type GetQuizSessionsQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizSessionsEdge', cursor: string, node: { __typename?: 'QuizSession', id: string, name?: string | null, email: string, invitationSent: boolean, status: QuizSessionStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, score?: number | null, percentage?: number | null, title?: { __typename?: 'QuizTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
+export type GetQuizSessionsQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizSessionsEdge', cursor: string, node: { __typename?: 'QuizSession', id: string, name?: string | null, email: string, invitationSent: boolean, resultsSent: boolean, status: QuizSessionStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, score?: number | null, percentage?: number | null, title?: { __typename?: 'QuizTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
 
 export type GetQuizTitlesQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -646,12 +677,19 @@ export type SearchQuestionsByNumberQueryVariables = Exact<{
 
 export type SearchQuestionsByNumberQuery = { __typename?: 'Query', searchQuestionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null }> };
 
-export type SendInvitationsMutationVariables = Exact<{
+export type SendQuizInvitationsMutationVariables = Exact<{
   input: SendInvitationsInput;
 }>;
 
 
-export type SendInvitationsMutation = { __typename?: 'Mutation', sendInvitations: { __typename?: 'SendInvitationsPayload', sendInvitationsResult?: { __typename?: 'SendInvitationsResult', totalRequested: number, successfullySent: number, failed: number, sentSessions: Array<{ __typename?: 'QuizSession', id: string, invitationSent: boolean }>, errors: Array<{ __typename?: 'SendInvitationError', quizSessionId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
+export type SendQuizInvitationsMutation = { __typename?: 'Mutation', sendInvitations: { __typename?: 'SendInvitationsPayload', sendInvitationsResult?: { __typename?: 'SendInvitationsResult', totalRequested: number, successfullySent: number, failed: number, sentSessions: Array<{ __typename?: 'QuizSession', id: string, invitationSent: boolean }>, errors: Array<{ __typename?: 'SendInvitationError', quizSessionId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
+
+export type SendQuizResultsMutationVariables = Exact<{
+  input: SendResultsInput;
+}>;
+
+
+export type SendQuizResultsMutation = { __typename?: 'Mutation', sendResults: { __typename?: 'SendResultsPayload', sendResultsResult?: { __typename?: 'SendResultsResult', totalRequested: number, successfullySent: number, failed: number, sentSessions: Array<{ __typename?: 'QuizSession', id: string, resultsSent: boolean }>, errors: Array<{ __typename?: 'SendInvitationError', quizSessionId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
 
 export type StartQuizSessionMutationVariables = Exact<{
   input: StartQuizSessionInput;
@@ -704,12 +742,6 @@ export const CreateBulkQuizSessionsDocument = gql`
       totalRequested
       successfullyCreated
       failed
-      createdSessions {
-        id
-        email
-        status
-        createdAt
-      }
       errors {
         user {
           firstName
@@ -827,6 +859,7 @@ export const GetQuizSessionsDocument = gql`
         name
         email
         invitationSent
+        resultsSent
         status
         numberOfQuestions
         maxTimeInMinutes
@@ -904,8 +937,8 @@ export const SearchQuestionsByNumberDocument = gql`
       super(apollo);
     }
   }
-export const SendInvitationsDocument = gql`
-    mutation SendInvitations($input: SendInvitationsInput!) {
+export const SendQuizInvitationsDocument = gql`
+    mutation SendQuizInvitations($input: SendInvitationsInput!) {
   sendInvitations(input: $input) {
     sendInvitationsResult {
       totalRequested
@@ -932,8 +965,43 @@ export const SendInvitationsDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class SendInvitationsGQL extends Apollo.Mutation<SendInvitationsMutation, SendInvitationsMutationVariables> {
-    override document = SendInvitationsDocument;
+  export class SendQuizInvitationsGQL extends Apollo.Mutation<SendQuizInvitationsMutation, SendQuizInvitationsMutationVariables> {
+    override document = SendQuizInvitationsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const SendQuizResultsDocument = gql`
+    mutation SendQuizResults($input: SendResultsInput!) {
+  sendResults(input: $input) {
+    sendResultsResult {
+      totalRequested
+      successfullySent
+      failed
+      sentSessions {
+        id
+        resultsSent
+      }
+      errors {
+        quizSessionId
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SendQuizResultsGQL extends Apollo.Mutation<SendQuizResultsMutation, SendQuizResultsMutationVariables> {
+    override document = SendQuizResultsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

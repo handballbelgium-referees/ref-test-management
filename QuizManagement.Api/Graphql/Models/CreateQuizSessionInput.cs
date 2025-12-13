@@ -8,7 +8,8 @@ public record CreateBulkQuizSessionsInput(
     int NumberOfQuestions,
     int MaxTimeInMinutes,
     List<string>? SpecificQuestionNumbers = null,
-    bool SendInvitations = false
+    bool SendInvitations = false,
+    bool SendResults = false
 );
 
 public record User(string FirstName, string LastName, string Email);

@@ -23,5 +23,6 @@ public class QuizSessionFilterType : FilterInputType<QuizSession>
         descriptor.Field(x => x.Score).Description("Filter on score of the quiz session");
         descriptor.Field(x => x.NumberOfQuestions).Description("Filter on number of questions in the quiz");
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Filter on maximum time in minutes for the quiz");
+        descriptor.Field(x => x.ResultsSent).Description("Filter on results were sent");
     }
 }

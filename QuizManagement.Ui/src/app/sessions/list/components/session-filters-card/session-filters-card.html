@@ -179,6 +179,27 @@
             </select>
           </div>
 
+          <!-- Results Filter -->
+          <div class="bg-white rounded-lg p-4 border border-neutral-200">
+            <div class="flex items-center gap-2 mb-3">
+              <svg class="w-5 h-5 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <label class="text-sm font-semibold text-neutral-900">
+                {{ 'sessions.list.filters.resultsLabel' | translate }}
+              </label>
+            </div>
+            <select
+              [value]="filter().resultsSent === undefined ? '' : filter().resultsSent"
+              (change)="onResultsChange($any($event.target).value)"
+              class="w-full pl-3 pr-8 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm appearance-none"
+            >
+              <option value="">{{ 'sessions.list.filters.resultsAll' | translate }}</option>
+              <option value="true">{{ 'sessions.list.filters.resultsSent' | translate }}</option>
+              <option value="false">{{ 'sessions.list.filters.resultsNotSent' | translate }}</option>
+            </select>
+          </div>
+
           <!-- Performance Filters -->
           <div class="bg-white rounded-lg p-4 border border-neutral-200">
             <div class="flex items-center gap-2 mb-3">
@@ -384,6 +405,9 @@
             <option value="score">{{ 'sessions.list.sorting.score' | translate }}</option>
             <option value="invitationSent">
               {{ 'sessions.list.sorting.invitationSent' | translate }}
+            </option>
+            <option value="resultsSent">
+              {{ 'sessions.list.sorting.resultsSent' | translate }}
             </option>
             <option value="startedAt">{{ 'sessions.list.sorting.startedAt' | translate }}</option>
             <option value="completedAt">

@@ -16,6 +16,7 @@ query GetQuizSessions(
         name
         email
         invitationSent
+        resultsSent
         status
         numberOfQuestions
         maxTimeInMinutes

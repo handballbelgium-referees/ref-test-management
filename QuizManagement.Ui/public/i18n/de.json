@@ -68,6 +68,10 @@
         "invitationAll": "Alle",
         "invitationSent": "Gesendet",
         "invitationNotSent": "Nicht Gesendet",
+        "resultsLabel": "Ergebnisstatus",
+        "resultsAll": "Alle",
+        "resultsSent": "Gesendet",
+        "resultsNotSent": "Nicht Gesendet",
         "scoreRange": "Punktebereich",
         "minScore": "Min Punkte",
         "maxScore": "Max Punkte",
@@ -91,6 +95,7 @@
         "numberOfQuestions": "Fragen",
         "score": "Ergebnis",
         "invitationSent": "Einladung",
+        "resultsSent": "Ergebnisse",
         "startedAt": "Startdatum",
         "completedAt": "Abschlussdatum",
         "percentage": "Prozentsatz",
@@ -110,10 +115,21 @@
         "questions": "Fragen",
         "score": "Ergebnis",
         "invitation": "Einladung",
+        "results": "Ergebnisse",
         "started": "Gestartet",
         "completed": "Abgeschlossen"
-      },
-      "empty": {
+      },      "columns": {
+        "toggle": "Spalten ein-/ausblenden",
+        "title": "Titel",
+        "participant": "Teilnehmer",
+        "status": "Status",
+        "questions": "Fragen",
+        "score": "Punktzahl",
+        "invitation": "Einladung",
+        "results": "Ergebnisse",
+        "started": "Gestartet",
+        "completed": "Abgeschlossen"
+      }      "empty": {
         "title": "Keine Sitzungen gefunden",
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten Quiz-Sitzungen",
         "action": "Sitzungen Erstellen"
@@ -122,10 +138,12 @@
         "sessionSelected": "Sitzung ausgewählt",
         "sessionsSelected": "Sitzungen ausgewählt",
         "sendInvitations": "Einladungen Senden",
+        "sendResults": "Ergebnisse Senden",
         "delete": "Löschen"
       },
       "actions": {
         "sendInvitation": "Einladung Senden",
+        "sendResults": "Ergebnisse Senden",
         "delete": "Löschen"
       },
       "dialogs": {
@@ -135,6 +153,14 @@
           "newInvitations": "Neue Einladungen ({{count}})",
           "resendInvitations": "Erneut senden ({{count}})",
           "confirm": "Einladungen Senden",
+          "cancel": "Abbrechen"
+        },
+        "sendResults": {
+          "title": "Ergebnisse Senden",
+          "message": "Sind Sie sicher, dass Sie Ergebnisse senden möchten?",
+          "newResults": "Neue Ergebnisse ({{count}})",
+          "resendResults": "Erneut senden ({{count}})",
+          "confirm": "Ergebnisse Senden",
           "cancel": "Abbrechen"
         },
         "delete": {
@@ -226,6 +252,11 @@
           "label": "E-Mail-Einladungen automatisch senden",
           "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der Sitzungen zu senden",
           "description": "E-Mail-Einladungen werden automatisch versendet"
+        },
+        "sendResults": {
+          "label": "Quiz-Ergebnisse automatisch senden",
+          "hint": "Aktivieren, um Ergebnis-E-Mails sofort nach Erstellung der Sitzungen zu senden",
+          "description": "Quiz-Ergebnisse werden automatisch versendet"
         },
         "submit": "Sitzungen Erstellen",
         "submitting": "Erstellen...",

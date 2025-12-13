@@ -28,7 +28,8 @@ type SortField =
   | 'percentage'
   | 'status'
   | 'numberOfQuestions'
-  | 'invitationSent';
+  | 'invitationSent'
+  | 'resultsSent';
 
 interface Title {
   id: string;
@@ -45,6 +46,7 @@ interface TitleSearchResult {
 interface SessionFilter {
   status?: QuizSessionStatus;
   invitationSent?: boolean;
+  resultsSent?: boolean;
   titleId?: string;
   searchTerm: string;
   sortField: SortField;
@@ -91,6 +93,7 @@ export class SessionFiltersCard {
   readonly statusFilterChange = output<QuizSessionStatus | undefined>();
   readonly titleFilterChange = output<string | undefined>();
   readonly invitationFilterChange = output<boolean | undefined>();
+  readonly resultsFilterChange = output<boolean | undefined>();
 
   protected readonly titleSearchTerm = signal('');
   protected readonly titleSuggestions = signal<Title[]>([]);
@@ -257,6 +260,10 @@ export class SessionFiltersCard {
 
   protected onInvitationChange(value: string): void {
     this.invitationFilterChange.emit(value === '' ? undefined : value === 'true');
+  }
+
+  protected onResultsChange(value: string): void {
+    this.resultsFilterChange.emit(value === '' ? undefined : value === 'true');
   }
 
   protected onSortFieldChange(field: string): void {

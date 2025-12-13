@@ -1,0 +1,100 @@
+<td class="px-6 py-4 whitespace-nowrap">
+  <input
+    type="checkbox"
+    [checked]="selected()"
+    (change)="onToggleSelection()"
+    class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+  />
+</td>
+@if (isColumnVisible('title')) {
+<td class="px-6 py-4 whitespace-nowrap">
+  <div class="text-sm text-neutral-900">{{ session().title?.value || '-' }}</div>
+</td>
+} @if (isColumnVisible('participant')) {
+<td class="px-6 py-4 whitespace-nowrap">
+  <div class="flex flex-col">
+    <div class="text-sm font-medium text-neutral-900">{{ session().name }}</div>
+    <div class="text-sm text-neutral-500">{{ session().email }}</div>
+  </div>
+</td>
+} @if (isColumnVisible('status')) {
+<td class="px-6 py-4 whitespace-nowrap">
+  <span
+    [class]="getStatusClass(session().status)"
+    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full"
+  >
+    {{ 'sessions.list.status.' + session().status | translate }}
+  </span>
+</td>
+} @if (isColumnVisible('questions')) {
+<td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+  {{ session().numberOfQuestions }}
+</td>
+} @if (isColumnVisible('score')) {
+<td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900">
+  @if (session().score !== null) {
+  <div class="flex flex-col">
+    <span class="font-medium">{{ session().score }} / {{ session().numberOfQuestions }}</span>
+    <span class="text-xs text-neutral-500">{{ session().percentage }} %</span>
+  </div>
+  } @else {
+  <span class="text-neutral-400">-</span>
+  }
+</td>
+} @if (isColumnVisible('invitation')) {
+<td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+  @if (session().invitationSent) {
+  <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+    <path
+      fill-rule="evenodd"
+      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+      clip-rule="evenodd"
+    />
+  </svg>
+  } @else {
+  <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+    <path
+      fill-rule="evenodd"
+      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+      clip-rule="evenodd"
+    />
+  </svg>
+  }
+</td>
+} @if (isColumnVisible('results')) {
+<td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+  @if (session().resultsSent) {
+  <svg class="h-5 w-5 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+    <path
+      fill-rule="evenodd"
+      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+      clip-rule="evenodd"
+    />
+  </svg>
+  } @else {
+  <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+    <path
+      fill-rule="evenodd"
+      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+      clip-rule="evenodd"
+    />
+  </svg>
+  }
+</td>
+} @if (isColumnVisible('started')) {
+<td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+  @if (session().startedAt) {
+  {{ session().startedAt | localizedDate : 'short' }}
+  } @else {
+  <span class="text-neutral-400">-</span>
+  }
+</td>
+} @if (isColumnVisible('completed')) {
+<td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+  @if (session().completedAt) {
+  {{ session().completedAt | localizedDate : 'short' }}
+  } @else {
+  <span class="text-neutral-400">-</span>
+  }
+</td>
+}
