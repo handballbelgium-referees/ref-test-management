@@ -258,7 +258,10 @@
   "quiz": {
     "page_title": "Handbalregels Quiz",
     "loading": "Quiz laden...",
-    "error_title": "Kan quiz niet laden",
+    "error": {
+      "title": "Kan quiz niet laden"
+    },
+    "backToWelcome": "Terug naar Welkom",
     "welcome_title": "Welkom bij je quiz",
     "welcome_subtitle": "Bekijk de informatie hieronder voordat je begint",
     "participant_name": "Naam",
@@ -272,7 +275,23 @@
     "instruction_2": "Sommige vragen kunnen meerdere juiste antwoorden hebben",
     "instruction_3": "Je kunt heen en weer navigeren tussen vragen",
     "instruction_4": "Voltooi de quiz binnen de tijdslimiet",
-    "start_button": "Start Quiz"
+    "start_button": "Start Quiz",
+    "timeRemaining": "Resterende Tijd",
+    "progress": "Voortgang",
+    "question": "Vraag",
+    "of": "van",
+    "answered": "beantwoord",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "submit": "Quiz Indienen",
+    "results": {
+      "title": "Quiz Voltooid!",
+      "subtitle": "Hier zijn je resultaten",
+      "score": "Score",
+      "percentage": "Percentage",
+      "total": "Totaal Aantal Vragen",
+      "review": "Bekijk Je Antwoorden"
+    }
   },
   "footer": {
     "copyright": "© {{year}} Handbal Quiz Beheer. Alle rechten voorbehouden.",

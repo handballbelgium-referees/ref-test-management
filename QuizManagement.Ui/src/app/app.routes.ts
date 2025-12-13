@@ -21,6 +21,10 @@ export const routes: Routes = [
     loadComponent: () => import('./quiz/welcome/quiz-welcome').then((m) => m.QuizWelcomeComponent),
   },
   {
+    path: 'quiz/:token/take',
+    loadComponent: () => import('./quiz/take/take-quiz').then((m) => m.TakeQuizComponent),
+  },
+  {
     path: '**',
     redirectTo: '',
   },

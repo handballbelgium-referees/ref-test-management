@@ -250,21 +250,40 @@
   "quiz": {
     "page_title": "Quiz sur les règles de handball",
     "loading": "Chargement du quiz...",
-    "error_title": "Impossible de charger le quiz",
+    "error": {
+      "title": "Impossible de charger le quiz"
+    },
+    "backToWelcome": "Retour à l'accueil",
     "welcome_title": "Bienvenue à votre quiz",
     "welcome_subtitle": "Veuillez consulter les informations ci-dessous avant de commencer",
     "participant_name": "Nom",
-    "participant_email": "Email",
+    "participant_email": "E-mail",
     "number_of_questions": "Questions",
     "time_limit": "Limite de temps",
     "minutes": "min",
-    "no_limit": "Sans limite",
+    "no_limit": "Pas de limite",
     "instructions_title": "Instructions",
     "instruction_1": "Lisez attentivement chaque question avant de sélectionner vos réponses",
     "instruction_2": "Certaines questions peuvent avoir plusieurs réponses correctes",
-    "instruction_3": "Vous pouvez naviguer entre les questions",
-    "instruction_4": "Terminez le quiz dans le délai imparti",
-    "start_button": "Commencer le quiz"
+    "instruction_3": "Vous pouvez naviguer en avant et en arrière entre les questions",
+    "instruction_4": "Complétez le quiz dans le délai imparti",
+    "start_button": "Commencer le Quiz",
+    "timeRemaining": "Temps Restant",
+    "progress": "Progrès",
+    "question": "Question",
+    "of": "sur",
+    "answered": "répondu",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "submit": "Soumettre le Quiz",
+    "results": {
+      "title": "Quiz Terminé!",
+      "subtitle": "Voici vos résultats",
+      "score": "Score",
+      "percentage": "Pourcentage",
+      "total": "Total des Questions",
+      "review": "Revoir Vos Réponses"
+    }
   },
   "footer": {
     "copyright": "© {{year}} Gestion des Quiz Handball. Tous droits réservés.",

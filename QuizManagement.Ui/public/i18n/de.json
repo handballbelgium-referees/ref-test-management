@@ -250,21 +250,40 @@
   "quiz": {
     "page_title": "Handballregeln-Quiz",
     "loading": "Quiz wird geladen...",
-    "error_title": "Quiz konnte nicht geladen werden",
+    "error": {
+      "title": "Quiz konnte nicht geladen werden"
+    },
+    "backToWelcome": "Zurück zur Begrüßung",
     "welcome_title": "Willkommen zu Ihrem Quiz",
-    "welcome_subtitle": "Bitte überprüfen Sie die Informationen unten, bevor Sie beginnen",
+    "welcome_subtitle": "Bitte überprüfen Sie die folgenden Informationen, bevor Sie beginnen",
     "participant_name": "Name",
     "participant_email": "E-Mail",
     "number_of_questions": "Fragen",
     "time_limit": "Zeitlimit",
-    "minutes": "min",
+    "minutes": "Min",
     "no_limit": "Kein Limit",
     "instructions_title": "Anweisungen",
-    "instruction_1": "Lesen Sie jede Frage sorgfältig durch, bevor Sie Ihre Antworten auswählen",
+    "instruction_1": "Lesen Sie jede Frage sorgfältig, bevor Sie Ihre Antworten auswählen",
     "instruction_2": "Einige Fragen können mehrere richtige Antworten haben",
-    "instruction_3": "Sie können zwischen den Fragen vor und zurück navigieren",
-    "instruction_4": "Beenden Sie das Quiz innerhalb des Zeitlimits",
-    "start_button": "Quiz starten"
+    "instruction_3": "Sie können zwischen den Fragen hin und her navigieren",
+    "instruction_4": "Schließen Sie das Quiz innerhalb des Zeitlimits ab",
+    "start_button": "Quiz starten",
+    "timeRemaining": "Verbleibende Zeit",
+    "progress": "Fortschritt",
+    "question": "Frage",
+    "of": "von",
+    "answered": "beantwortet",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "submit": "Quiz Einreichen",
+    "results": {
+      "title": "Quiz Abgeschlossen!",
+      "subtitle": "Hier sind Ihre Ergebnisse",
+      "score": "Punktzahl",
+      "percentage": "Prozentsatz",
+      "total": "Gesamtzahl der Fragen",
+      "review": "Überprüfen Sie Ihre Antworten"
+    }
   },
   "footer": {
     "copyright": "© {{year}} Handball-Quiz-Verwaltung. Alle Rechte vorbehalten.",

@@ -250,7 +250,10 @@
   "quiz": {
     "page_title": "Handball Rules Quiz",
     "loading": "Loading quiz...",
-    "error_title": "Unable to Load Quiz",
+    "error": {
+      "title": "Unable to Load Quiz"
+    },
+    "backToWelcome": "Back to Welcome",
     "welcome_title": "Welcome to Your Quiz",
     "welcome_subtitle": "Please review the information below before starting",
     "participant_name": "Name",
@@ -264,7 +267,23 @@
     "instruction_2": "Some questions may have multiple correct answers",
     "instruction_3": "You can navigate back and forth between questions",
     "instruction_4": "Complete the quiz within the time limit",
-    "start_button": "Start Quiz"
+    "start_button": "Start Quiz",
+    "timeRemaining": "Time Remaining",
+    "progress": "Progress",
+    "question": "Question",
+    "of": "of",
+    "answered": "answered",
+    "previous": "Previous",
+    "next": "Next",
+    "submit": "Submit Quiz",
+    "results": {
+      "title": "Quiz Completed!",
+      "subtitle": "Here are your results",
+      "score": "Score",
+      "percentage": "Percentage",
+      "total": "Total Questions",
+      "review": "Review Your Answers"
+    }
   },
   "footer": {
     "copyright": "© {{year}} Handball Quiz Management System. All rights reserved.",

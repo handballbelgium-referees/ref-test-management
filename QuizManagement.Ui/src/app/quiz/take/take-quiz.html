@@ -1,0 +1,375 @@
+<div class="min-h-screen bg-neutral-50 py-8 px-4">
+  @if (loading()) {
+  <div class="flex items-center justify-center min-h-[60vh]">
+    <div class="text-center">
+      <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto"></div>
+      <p class="mt-4 text-neutral-600">{{ 'quiz.loading' | translate }}</p>
+    </div>
+  </div>
+  } @else if (error()) {
+  <div class="max-w-2xl mx-auto">
+    <div class="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+      <svg
+        class="w-16 h-16 text-red-500 mx-auto mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <h2 class="text-xl font-bold text-red-900 mb-2">{{ 'quiz.error.title' | translate }}</h2>
+      <p class="text-red-700">{{ error() }}</p>
+      <button
+        type="button"
+        (click)="backToWelcome()"
+        class="mt-6 px-6 py-3 bg-red-600 text-white rounded-lg font-semibold hover:bg-red-700 transition-colors"
+      >
+        {{ 'quiz.backToWelcome' | translate }}
+      </button>
+    </div>
+  </div>
+  } @else if (quizCompleted()) {
+  <!-- Results Screen -->
+  <div class="max-w-3xl mx-auto">
+    <div class="bg-white rounded-xl shadow-lg p-8">
+      <div class="text-center mb-8">
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
+          [class]="
+            percentage()! >= 80
+              ? 'bg-green-100'
+              : percentage()! >= 60
+              ? 'bg-yellow-100'
+              : 'bg-red-100'
+          "
+        >
+          <svg
+            class="w-10 h-10"
+            [class]="
+              percentage()! >= 80
+                ? 'text-green-600'
+                : percentage()! >= 60
+                ? 'text-yellow-600'
+                : 'text-red-600'
+            "
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            @if (percentage()! >= 80) {
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+            } @else {
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+            }
+          </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-neutral-900 mb-2">
+          {{ 'quiz.results.title' | translate }}
+        </h1>
+        <p class="text-neutral-600">{{ 'quiz.results.subtitle' | translate }}</p>
+      </div>
+
+      <!-- Score Display -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+        <div class="bg-neutral-50 rounded-lg p-6 text-center">
+          <div class="text-4xl font-bold text-primary-600 mb-2">{{ score() }}</div>
+          <div class="text-sm text-neutral-600">{{ 'quiz.results.score' | translate }}</div>
+        </div>
+        <div class="bg-neutral-50 rounded-lg p-6 text-center">
+          <div class="text-4xl font-bold text-primary-600 mb-2">{{ percentage() }}%</div>
+          <div class="text-sm text-neutral-600">{{ 'quiz.results.percentage' | translate }}</div>
+        </div>
+        <div class="bg-neutral-50 rounded-lg p-6 text-center">
+          <div class="text-4xl font-bold text-primary-600 mb-2">{{ questions().length }}</div>
+          <div class="text-sm text-neutral-600">{{ 'quiz.results.total' | translate }}</div>
+        </div>
+      </div>
+
+      <!-- Review Answers -->
+      <div class="space-y-4">
+        <h2 class="text-xl font-bold text-neutral-900 mb-4">
+          {{ 'quiz.results.review' | translate }}
+        </h2>
+        @for (question of questions(); track question.id; let i = $index) {
+        <div
+          class="border rounded-lg p-4"
+          [class]="
+            wrongQuestionIds().includes(question.id)
+              ? 'border-red-200 bg-red-50'
+              : 'border-green-200 bg-green-50'
+          "
+        >
+          <div class="flex items-start gap-3">
+            <div class="shrink-0">
+              @if (wrongQuestionIds().includes(question.id)) {
+              <svg
+                class="w-6 h-6 text-red-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+              } @else {
+              <svg
+                class="w-6 h-6 text-green-600"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+              }
+            </div>
+            <div class="flex-1">
+              <div class="font-medium text-neutral-900 mb-2">
+                {{ 'quiz.question' | translate }} {{ i + 1 }}:
+                {{ question.phrase | appTranslation : currentLanguage()! }}
+              </div>
+              <div class="space-y-2">
+                @for (answer of question.answers; track answer.id) {
+                <div
+                  class="flex items-center gap-2 text-sm"
+                  [class]="
+                    selectedAnswers()[question.id].includes(answer.id) ? 'font-semibold' : ''
+                  "
+                >
+                  @if (selectedAnswers()[question.id].includes(answer.id)) { @if
+                  (wrongAnswerIds().includes(answer.id)) {
+                  <svg
+                    class="w-4 h-4 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  <span class="text-red-700">{{
+                    answer.phrase | appTranslation : currentLanguage()!
+                  }}</span>
+                  } @else {
+                  <svg
+                    class="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  <span class="text-green-700">{{
+                    answer.phrase | appTranslation : currentLanguage()!
+                  }}</span>
+                  } } @else {
+                  <span class="text-neutral-600">{{
+                    answer.phrase | appTranslation : currentLanguage()!
+                  }}</span>
+                  }
+                </div>
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+  </div>
+  } @else {
+  <!-- Quiz Taking Screen -->
+  <div class="max-w-4xl mx-auto">
+    <!-- Header with Timer and Progress -->
+    <div class="bg-white rounded-xl shadow-sm p-4 mb-6">
+      <div class="flex items-center justify-between flex-wrap gap-4">
+        <div class="flex items-center gap-3">
+          <svg
+            class="w-6 h-6 text-primary-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div>
+            <div class="text-sm text-neutral-600">{{ 'quiz.timeRemaining' | translate }}</div>
+            <div
+              class="text-xl font-bold"
+              [class]="timeRemaining() <= 5 ? 'text-red-600' : 'text-neutral-900'"
+            >
+              {{ timeRemaining() }} {{ 'quiz.minutes' | translate }}
+            </div>
+          </div>
+        </div>
+        <div class="flex-1 min-w-[200px]">
+          <div class="flex items-center justify-between text-sm text-neutral-600 mb-1">
+            <span>{{ 'quiz.progress' | translate }}</span>
+            <span>{{ answeredCount() }} / {{ questions().length }}</span>
+          </div>
+          <div class="w-full bg-neutral-200 rounded-full h-2">
+            <div
+              class="bg-primary-600 h-2 rounded-full transition-all duration-300"
+              [style.width.%]="progress()"
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Question Card -->
+    @if (currentQuestion(); as question) {
+    <div class="bg-white rounded-xl shadow-lg p-6 md:p-8 mb-6">
+      <div class="mb-6">
+        <div class="text-sm text-neutral-500 mb-2">
+          {{ 'quiz.question' | translate }} {{ currentQuestionIndex() + 1 }} /
+          {{ questions().length }}
+        </div>
+        <h2 class="text-xl md:text-2xl font-bold text-neutral-900">
+          {{ question.phrase | appTranslation : currentLanguage()! }}
+        </h2>
+      </div>
+
+      <!-- Answers -->
+      <div class="space-y-3">
+        @for (answer of question.answers; track answer.id) {
+        <button
+          type="button"
+          (click)="selectAnswer(question.id, answer.id)"
+          class="w-full text-left p-4 rounded-lg border-2 transition-all"
+          [class]="
+            isAnswerSelected(question.id, answer.id)
+              ? 'border-primary-600 bg-primary-50'
+              : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50'
+          "
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center"
+              [class]="
+                isAnswerSelected(question.id, answer.id)
+                  ? 'border-primary-600 bg-primary-600'
+                  : 'border-neutral-300'
+              "
+            >
+              @if (isAnswerSelected(question.id, answer.id)) {
+              <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+              }
+            </div>
+            <span
+              class="text-neutral-900"
+              [class]="isAnswerSelected(question.id, answer.id) ? 'font-semibold' : ''"
+            >
+              {{ answer.phrase | appTranslation : currentLanguage()! }}
+            </span>
+          </div>
+        </button>
+        }
+      </div>
+    </div>
+    }
+
+    <!-- Navigation -->
+    <div class="space-y-3">
+      <!-- Question progress and navigation -->
+      <div class="flex items-center justify-center gap-2">
+        <span class="text-sm text-neutral-600">
+          {{ 'quiz.question' | translate }}
+        </span>
+        <select
+          [value]="currentQuestionIndex()"
+          (change)="goToQuestion(+$any($event.target).value)"
+          class="px-2 py-1 border border-neutral-300 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
+        >
+          @for (question of questions(); track question.id; let i = $index) {
+          <option [value]="i" [disabled]="!isQuestionVisited(i)">
+            {{ i + 1 }} @if (isQuestionAnswered(question.id)) { ✓ }
+          </option>
+          }
+        </select>
+        <span class="text-sm text-neutral-600">
+          {{ 'quiz.of' | translate }} {{ questions().length }}
+        </span>
+        <span class="text-sm text-green-600 font-medium ml-2">
+          ({{ answeredCount() }} {{ 'quiz.answered' | translate }})
+        </span>
+      </div>
+
+      <!-- Previous/Next buttons -->
+      <div class="flex items-center justify-between gap-4">
+        <button
+          type="button"
+          (click)="previousQuestion()"
+          [disabled]="!canPrevious()"
+          class="px-6 py-3 border-2 border-neutral-300 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed hover:bg-neutral-50"
+        >
+          {{ 'quiz.previous' | translate }}
+        </button>
+
+        @if (isLastQuestion()) {
+        <button
+          type="button"
+          (click)="submitQuiz()"
+          [disabled]="!canSubmit()"
+          class="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ 'quiz.submit' | translate }}
+        </button>
+        } @else {
+        <button
+          type="button"
+          (click)="nextQuestion()"
+          [disabled]="!canNext()"
+          class="px-6 py-3 bg-primary-600 text-white rounded-lg font-semibold transition-colors hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ 'quiz.next' | translate }}
+        </button>
+        }
+      </div>
+    </div>
+  </div>
+  }
+</div>
