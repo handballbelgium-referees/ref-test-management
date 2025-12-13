@@ -69,6 +69,11 @@ namespace QuizManagement.Infrastructure.Migrations
                     b.Property<int?>("Score")
                         .HasColumnType("int");
 
+                    b.Property<string>("SelectedAnswerIds")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
 
@@ -87,15 +92,13 @@ namespace QuizManagement.Infrastructure.Migrations
                     b.Property<int?>("TotalQuestions")
                         .HasColumnType("int");
 
-                    b.Property<string>("WrongAnswerIds")
+                    b.PrimitiveCollection<string>("WrongAnswerIds")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("WrongQuestionIds")
+                    b.PrimitiveCollection<string>("WrongQuestionIds")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

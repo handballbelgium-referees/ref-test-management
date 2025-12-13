@@ -44,8 +44,9 @@ namespace QuizManagement.Infrastructure.Migrations
                     Score = table.Column<int>(type: "int", nullable: true),
                     TotalQuestions = table.Column<int>(type: "int", nullable: true),
                     Percentage = table.Column<double>(type: "float", nullable: true),
-                    WrongQuestionIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
-                    WrongAnswerIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false)
+                    SelectedAnswerIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    WrongQuestionIds = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    WrongAnswerIds = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {

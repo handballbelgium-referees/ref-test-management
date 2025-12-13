@@ -1,13 +1,16 @@
-query getQuestionsById($ids: [ID!]!) {
+query getQuestionsById($ids: [ID!]!, $includeNumber: Boolean!, $includeIsCorrect: Boolean!) {
     questionsById(ids: $ids) {
         id
+        number @include(if: $includeNumber)
         phrase
         translations
-        answers {
+        answers(random: true) {
             nodes {
                 id
+                number @include(if: $includeNumber)
                 phrase
                 translations
+                isCorrect @include(if: $includeIsCorrect)
             }
         }
     }

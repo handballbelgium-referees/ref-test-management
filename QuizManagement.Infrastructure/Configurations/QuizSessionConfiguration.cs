@@ -60,19 +60,8 @@ public class QuizSessionConfiguration : IEntityTypeConfiguration<QuizSession>
             .IsRequired();
 
         builder.Property(x => x.Percentage);
-
-        builder.Property(x => x.WrongQuestionIds)
-            .HasConversion(
-                v => string.Join(',', v.Select(g => g.ToString())),
-                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .ToList())
-            .HasMaxLength(4000)
-            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
-                (c1, c2) => c1!.SequenceEqual(c2!),
-                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                c => c.ToList()));
-
-        builder.Property(x => x.WrongAnswerIds)
+        
+        builder.Property(x => x.SelectedAnswerIds)
             .HasConversion(
                 v => string.Join(',', v.Select(g => g.ToString())),
                 v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)

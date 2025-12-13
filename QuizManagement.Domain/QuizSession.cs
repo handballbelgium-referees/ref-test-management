@@ -47,6 +47,7 @@ public class QuizSession
     public int? Score { get; private set; }
     public int? TotalQuestions { get; private set; }
     public double? Percentage { get; private set; }
+    public List<string> SelectedAnswerIds { get; private set; } = [];
     public List<string> WrongQuestionIds { get; private set; } = [];
     public List<string> WrongAnswerIds { get; private set; } = [];
 
@@ -92,8 +93,7 @@ public class QuizSession
         StartedAt = DateTime.UtcNow;
     }
 
-    public void CompleteSession(int score, int totalQuestions, double percentage, List<string> wrongQuestionIds,
-        List<string> wrongAnswerIds)
+    public void CompleteSession(int score, int totalQuestions, double percentage, List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds)
     {
         if (Status != QuizSessionStatus.InProgress)
             throw new InvalidQuizSessionStatusException("Can only complete in-progress quiz sessions");
@@ -103,6 +103,7 @@ public class QuizSession
         Score = score;
         TotalQuestions = totalQuestions;
         Percentage = percentage;
+        SelectedAnswerIds = selectedAnswerIds;
         WrongQuestionIds = wrongQuestionIds;
         WrongAnswerIds = wrongAnswerIds;
     }

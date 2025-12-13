@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -29,6 +28,7 @@ import {
   SortEnumType,
   UuidOperationFilterInput,
 } from '../../../../graphql/generated';
+import { LocalizedDatePipe } from '../../shared/pipes/localized-date.pipe';
 import { DeleteSessionsDialog } from './components/delete-sessions-dialog/delete-sessions-dialog';
 import { SendInvitationsDialog } from './components/send-invitations-dialog/send-invitations-dialog';
 import { SessionFiltersCard } from './components/session-filters-card/session-filters-card';
@@ -70,7 +70,7 @@ type SessionNode = NonNullable<
   selector: 'app-list-sessions',
   imports: [
     TranslatePipe,
-    DatePipe,
+    LocalizedDatePipe,
     SessionFiltersCard,
     SendInvitationsDialog,
     DeleteSessionsDialog,

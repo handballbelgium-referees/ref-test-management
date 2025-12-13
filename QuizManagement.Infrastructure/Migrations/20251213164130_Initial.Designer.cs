@@ -12,7 +12,7 @@ using QuizManagement.Infrastructure;
 namespace QuizManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(QuizManagementContext))]
-    [Migration("20251213094229_Initial")]
+    [Migration("20251213164130_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -72,6 +72,11 @@ namespace QuizManagement.Infrastructure.Migrations
                     b.Property<int?>("Score")
                         .HasColumnType("int");
 
+                    b.Property<string>("SelectedAnswerIds")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("nvarchar(4000)");
+
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
 
@@ -90,15 +95,13 @@ namespace QuizManagement.Infrastructure.Migrations
                     b.Property<int?>("TotalQuestions")
                         .HasColumnType("int");
 
-                    b.Property<string>("WrongAnswerIds")
+                    b.PrimitiveCollection<string>("WrongAnswerIds")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("WrongQuestionIds")
+                    b.PrimitiveCollection<string>("WrongQuestionIds")
                         .IsRequired()
-                        .HasMaxLength(4000)
-                        .HasColumnType("nvarchar(4000)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("Id");
 

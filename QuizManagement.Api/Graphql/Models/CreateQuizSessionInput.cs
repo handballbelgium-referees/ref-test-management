@@ -1,4 +1,6 @@
-﻿namespace QuizManagement.Api.Graphql.Models;
+﻿using Handball.Belgium.Rules.Quiz.Domain;
+
+namespace QuizManagement.Api.Graphql.Models;
 
 public record CreateBulkQuizSessionsInput(
     Title Title,
@@ -12,4 +14,4 @@ public record CreateBulkQuizSessionsInput(
 public record User(string FirstName, string LastName, string Email);
 
 [OneOf]
-public record Title(Guid? Id, string? Name);
+public record Title([property: ID<QuizTitle>]Guid? Id, string? Name);

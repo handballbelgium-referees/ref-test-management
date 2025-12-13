@@ -1,4 +1,3 @@
-import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -10,6 +9,7 @@ import {
   GetQuizTitlesQueryVariables,
   SortEnumType,
 } from '../../../../../../graphql/generated';
+import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
 
 interface Title {
   id: string;
@@ -25,7 +25,7 @@ interface SearchResult {
 
 @Component({
   selector: 'app-title-autocomplete',
-  imports: [TranslatePipe, DatePipe],
+  imports: [TranslatePipe, LocalizedDatePipe],
   templateUrl: './title-autocomplete.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

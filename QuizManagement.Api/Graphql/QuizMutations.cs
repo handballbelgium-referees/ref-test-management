@@ -79,7 +79,7 @@ public static class QuizMutations
         var session = await context.QuizSessions
             .FirstOrDefaultAsync(s => s.Token == input.Token, cancellationToken);
 
-        if (session == null)
+        if (session is null)
             throw new QuizSessionNotFoundException(input.Token);
 
         if (session.Status != QuizSessionStatus.InProgress)
@@ -97,18 +97,23 @@ public static class QuizMutations
             scoreResult.Score,
             scoreResult.Total,
             scoreResult.Percentage,
-            scoreResult.WrongQuestionsIds.ToList(),
-            scoreResult.WrongAnswerIds.ToList()
+            input.SelectedAnswerIds,
+            scoreResult.WrongQuestionsIds,
+            scoreResult.WrongAnswerIds
         );
 
         await context.SaveChangesAsync(cancellationToken);
+        
+        var questionsWithCorrectAnswers = await ihfRulesQuestionsService.GetQuestionsByIdAsync(input.QuestionIds, true, true, cancellationToken);
 
         // Send results email
         await emailService.SendQuizResultsAsync(
             session.Email,
             scoreResult.Score,
             scoreResult.Total,
-            scoreResult.Percentage
+            scoreResult.Percentage,
+            input.SelectedAnswerIds,
+            questionsWithCorrectAnswers
         );
 
         return session;

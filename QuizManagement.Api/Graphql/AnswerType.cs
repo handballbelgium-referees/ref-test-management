@@ -13,6 +13,7 @@ public class AnswerType : ObjectType<Answer>
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(x => x.Id).Description("Answer id");
+        descriptor.Field(x => x.Number).Description("Answer number");
         descriptor.Field(x => x.Phrase)
             .Type<JsonType>()
             .Description("Translations of the answer phrase")

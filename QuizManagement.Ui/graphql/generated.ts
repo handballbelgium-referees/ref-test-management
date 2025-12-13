@@ -26,6 +26,8 @@ export type Answer = {
   __typename?: 'Answer';
   /** Answer id */
   id: Scalars['String']['output'];
+  /** Answer number */
+  number?: Maybe<Scalars['String']['output']>;
   /** Translations of the answer phrase */
   phrase?: Maybe<Scalars['JSON']['output']>;
 };
@@ -325,6 +327,13 @@ export type QuizSession = Node & {
   wrongQuestionIds: Array<Scalars['String']['output']>;
 };
 
+
+/** IHF quiz session */
+export type QuizSessionQuestionsArgs = {
+  includeIsCorrect?: InputMaybe<Scalars['Boolean']['input']>;
+  includeNumber?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
 export type QuizSessionByTokenResult = InvalidQuizSessionStatusError | QuizSession | QuizSessionExpiredError | QuizSessionNotFoundError;
 
 export type QuizSessionExpiredError = Error & {
@@ -437,9 +446,12 @@ export type QuizSessionsEdge = {
   node: QuizSession;
 };
 
-export type QuizTitle = {
+/** The title of the quiz session */
+export type QuizTitle = Node & {
   __typename?: 'QuizTitle';
-  id: Scalars['UUID']['output'];
+  /** The quiz title id */
+  id: Scalars['ID']['output'];
+  /** Quiz title value */
   value: Scalars['String']['output'];
 };
 
@@ -535,7 +547,7 @@ export type StringOperationFilterInput = {
 };
 
 export type TitleInput = {
-  id?: InputMaybe<Scalars['UUID']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -572,7 +584,7 @@ export type CompleteQuizSessionMutationVariables = Exact<{
 }>;
 
 
-export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, completedAt?: string | null, score?: number | null, percentage?: number | null, wrongQuestionIds: Array<string>, wrongAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, number: string } | null> | null } | null } };
+export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, completedAt?: string | null, score?: number | null, percentage?: number | null, wrongQuestionIds: Array<string>, wrongAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, number: string, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null }> } | null> | null } | null } };
 
 export type CreateBulkQuizSessionsMutationVariables = Exact<{
   input: CreateBulkQuizSessionsInput;
@@ -660,9 +672,13 @@ export const CompleteQuizSessionDocument = gql`
       completedAt
       score
       percentage
-      questions {
+      questions(includeNumber: true) {
         id
         number
+        answers {
+          id
+          number
+        }
       }
       wrongQuestionIds
       wrongAnswerIds

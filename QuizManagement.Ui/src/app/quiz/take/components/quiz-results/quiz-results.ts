@@ -4,6 +4,7 @@ import { TranslationPipe } from '../../../../pipes/translation-pipe';
 
 interface Answer {
   id: string;
+  number?: string;
   phrase: Record<string, string>;
 }
 

@@ -1,0 +1,16 @@
+﻿query getQuestionsByIdWithIsCorrectAnswers($ids: [ID!]!) {
+    questionsById(ids: $ids) {
+        id
+        number
+        phrase
+        translations
+        answers {
+            nodes {
+                id
+                phrase
+                translations
+                isCorrect
+            }
+        }
+    }
+}

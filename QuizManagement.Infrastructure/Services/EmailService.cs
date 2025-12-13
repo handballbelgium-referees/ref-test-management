@@ -1,6 +1,7 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using QuizManagement.Application.Models;
 
 namespace QuizManagement.Infrastructure.Services;
 
@@ -143,7 +144,7 @@ public partial class EmailService(
         LogQuizInvitationEmailSentToEmail(logger, email);
     }
 
-    public async Task SendQuizResultsAsync(string email, int score, int totalQuestions, double percentage)
+    public async Task SendQuizResultsAsync(string email, int score, int totalQuestions, double percentage, List<string> selectedAnswerIds, List<Question> questionsWithCorrectAnswers)
     {
         const string subject = "IHF Rules Quiz - Your Results";
         var passed = percentage >= 80;

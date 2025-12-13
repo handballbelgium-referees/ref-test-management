@@ -5,9 +5,13 @@ mutation CompleteQuizSession($input: CompleteQuizInput!) {
       completedAt
       score
       percentage
-      questions {
+      questions(includeNumber: true) {
         id
         number
+        answers {
+          id
+          number
+        }
       }
       wrongQuestionIds
       wrongAnswerIds

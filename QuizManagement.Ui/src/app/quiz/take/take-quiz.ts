@@ -23,6 +23,7 @@ import { SubmitQuizDialog } from './components/submit-quiz-dialog/submit-quiz-di
 
 interface Answer {
   id: string;
+  number?: string;
   phrase: Record<string, string>;
 }
 
@@ -335,7 +336,24 @@ export class TakeQuizComponent {
               const currentQuestions = this.questions();
               const updatedQuestions = currentQuestions.map((q) => {
                 const responseQuestion = session.questions?.find((rq) => rq?.id === q.id);
-                return responseQuestion ? { ...q, number: responseQuestion.number } : q;
+                if (responseQuestion) {
+                  // Update question number and answer numbers
+                  const updatedAnswers = q.answers
+                    .map((a) => {
+                      const responseAnswer = responseQuestion.answers?.find(
+                        (ra) => ra?.id === a.id
+                      );
+                      return responseAnswer
+                        ? { ...a, number: responseAnswer.number ?? undefined }
+                        : a;
+                    })
+                    .sort((a, b) => {
+                      if (!a.number || !b.number) return 0;
+                      return a.number.localeCompare(b.number);
+                    });
+                  return { ...q, number: responseQuestion.number, answers: updatedAnswers };
+                }
+                return q;
               });
               this.questions.set(updatedQuestions);
             }

@@ -1,6 +1,5 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
 using Microsoft.EntityFrameworkCore;
-using QuizManagement.Application;
 using QuizManagement.Application.Models;
 using QuizManagement.Application.Services;
 using QuizManagement.Infrastructure;
@@ -60,8 +59,11 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
             .Authorize();
         descriptor.Field("questions")
             .Description("Questions for this quiz session")
+            .Argument("includeNumber", x => x.Type<BooleanType>().DefaultValue(false))
+            .Argument("includeIsCorrect", x => x.Type<BooleanType>().DefaultValue(false))
             .Resolve((ctx, ct) =>
-                GetQuestions(ctx.Parent<QuizSession>(), ctx.Service<IIhfRulesQuestionsService>(), ct));
+                GetQuestions(ctx.Parent<QuizSession>(), ctx.Service<IIhfRulesQuestionsService>(),
+                    ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"), ct));
     }
 
     /// <summary>
@@ -70,6 +72,9 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
     private static Task<List<Question>> GetQuestions(
         [Parent] QuizSession session,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
+        [Argument] bool includeNumber,
+        [Argument] bool includeIsCorrect,
         CancellationToken cancellationToken)
-        => ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, cancellationToken);
+        => ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, includeNumber, includeIsCorrect,
+            cancellationToken);
 }

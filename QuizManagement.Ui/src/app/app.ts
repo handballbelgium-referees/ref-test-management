@@ -76,7 +76,7 @@ export class App {
       }
     });
 
-    // Update page title when language changes or route changes
+    // Update page title when language changes
     this._translate.onLangChange.pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => {
       this.updateTitle();
     });

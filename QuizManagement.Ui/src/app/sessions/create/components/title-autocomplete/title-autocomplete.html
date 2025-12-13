@@ -4,7 +4,7 @@
     <span class="text-xs font-normal text-neutral-500">
       ({{
         'sessions.create.form.title.tooltip'
-          | translate : { date: (currentDate | date : 'dd/MM/yyyy') }
+          | translate : { date: (currentDate | localizedDate : 'shortDate') }
       }})
     </span>
   </label>

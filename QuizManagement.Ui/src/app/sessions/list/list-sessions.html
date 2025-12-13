@@ -50,7 +50,12 @@
   <div class="mb-6 bg-primary-50 border border-primary-200 rounded-lg p-4">
     <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
       <div class="text-sm font-medium text-primary-900">
-        {{ selectedCount() }} {{ selectedCount() === 1 ? ('sessions.list.bulk.sessionSelected' | translate) : ('sessions.list.bulk.sessionsSelected' | translate) }}
+        {{ selectedCount() }}
+        {{
+          selectedCount() === 1
+            ? ('sessions.list.bulk.sessionSelected' | translate)
+            : ('sessions.list.bulk.sessionsSelected' | translate)
+        }}
       </div>
       <div class="flex gap-2 w-full sm:w-auto">
         <button
@@ -66,7 +71,11 @@
               d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
             />
           </svg>
-          {{ selectedCount() === 1 ? ('sessions.list.actions.sendInvitation' | translate) : ('sessions.list.bulk.sendInvitations' | translate) }}
+          {{
+            selectedCount() === 1
+              ? ('sessions.list.actions.sendInvitation' | translate)
+              : ('sessions.list.bulk.sendInvitations' | translate)
+          }}
         </button>
         <button
           type="button"
@@ -342,7 +351,7 @@
             @if (session.score !== null) {
             <div class="flex flex-col">
               <span class="font-medium">{{ session.score }} / {{ session.numberOfQuestions }}</span>
-              <span class="text-xs text-neutral-500">{{ session.percentage }}%</span>
+              <span class="text-xs text-neutral-500">{{ session.percentage }} %</span>
             </div>
             } @else {
             <span class="text-neutral-400">-</span>
@@ -369,14 +378,14 @@
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
             @if (session.startedAt) {
-            {{ session.startedAt | date : 'short' }}
+            {{ session.startedAt | localizedDate : 'short' }}
             } @else {
             <span class="text-neutral-400">-</span>
             }
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
             @if (session.completedAt) {
-            {{ session.completedAt | date : 'short' }}
+            {{ session.completedAt | localizedDate : 'short' }}
             } @else {
             <span class="text-neutral-400">-</span>
             }
@@ -446,17 +455,21 @@
           <span class="ml-1 font-medium text-neutral-900"
             >{{ session.score }} / {{ session.numberOfQuestions }}</span
           >
-          <span class="ml-1 text-xs text-neutral-500">({{ session.percentage }}%)</span>
+          <span class="ml-1 text-xs text-neutral-500">({{ session.percentage }} %)</span>
         </div>
         } @if (session.startedAt) {
         <div>
           <span class="text-neutral-500">{{ 'sessions.list.table.started' | translate }}:</span>
-          <span class="ml-1 text-neutral-900">{{ session.startedAt | date : 'short' }}</span>
+          <span class="ml-1 text-neutral-900">{{
+            session.startedAt | localizedDate : 'short'
+          }}</span>
         </div>
         } @if (session.completedAt) {
         <div>
           <span class="text-neutral-500">{{ 'sessions.list.table.completed' | translate }}:</span>
-          <span class="ml-1 text-neutral-900">{{ session.completedAt | date : 'short' }}</span>
+          <span class="ml-1 text-neutral-900">{{
+            session.completedAt | localizedDate : 'short'
+          }}</span>
         </div>
         }
       </div>
@@ -486,7 +499,8 @@
   [show]="showSendInvitationsDialog()"
   [summary]="invitationSummary()"
   (confirm)="confirmSendInvitations()"
-  (cancel)="cancelSendInvitations()">
+  (cancel)="cancelSendInvitations()"
+>
 </app-send-invitations-dialog>
 
 <!-- Delete Sessions Dialog -->
@@ -494,5 +508,6 @@
   [show]="showDeleteDialog()"
   [sessions]="sessionsToDelete()"
   (confirm)="confirmDelete()"
-  (cancel)="cancelDelete()">
+  (cancel)="cancelDelete()"
+>
 </app-delete-sessions-dialog>
