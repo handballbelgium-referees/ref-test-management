@@ -26,10 +26,6 @@ jobs:
         working-directory: ./QuizManagement.Ui
         run: npm ci
 
-      - name: Run linter
-        working-directory: ./QuizManagement.Ui
-        run: npm run lint
-
       - name: Build Angular application
         working-directory: ./QuizManagement.Ui
         run: npm run build

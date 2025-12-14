@@ -60,7 +60,7 @@ jobs:
 
       - name: Build Angular application
         working-directory: ./QuizManagement.Ui
-        run: npm run build -- --configuration production
+        run: npm run build
 
       - name: Create wwwroot directory
         run: mkdir -p QuizManagement.Api/wwwroot
