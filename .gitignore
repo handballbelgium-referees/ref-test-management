@@ -420,4 +420,3 @@ FodyWeavers.xsd
 .idea/
 # Root dependencies
 /node_modules
-/package-lock.json
