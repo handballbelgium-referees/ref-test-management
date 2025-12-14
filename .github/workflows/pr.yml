@@ -20,7 +20,9 @@ jobs:
         uses: actions/setup-node@v6
         with:
           node-version: '${{ env.NODE_VERSION }}'
-          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
 
       - name: Install UI dependencies
         working-directory: ./QuizManagement.Ui
@@ -28,7 +30,7 @@ jobs:
 
       - name: Build Angular application
         working-directory: ./QuizManagement.Ui
-        run: npm run build
+        run: npm run build -- --configuration production
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v5
