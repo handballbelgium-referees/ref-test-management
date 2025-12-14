@@ -1,22 +1,22 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { GetQuizSessionsQuery, QuizSessionStatus } from '../../../../../../graphql/generated';
-import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
+import { GetQuizSessionsQuery, QuizSessionStatus } from '../../../../../../../graphql/generated';
+import { LocalizedDatePipe } from '../../../../../shared/pipes/localized-date.pipe';
 
 type SessionNode = NonNullable<
   NonNullable<NonNullable<GetQuizSessionsQuery['quizSessions']>['edges']>[number]
 >['node'];
 
 @Component({
-  selector: 'tr[app-session-table-row]',
+  selector: 'app-session-mobile-card',
   imports: [TranslatePipe, LocalizedDatePipe],
-  templateUrl: './session-table-row.html',
+  templateUrl: './session-mobile-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'hover:bg-neutral-50 transition-colors',
+    class: 'block',
   },
 })
-export class SessionTableRow {
+export class SessionMobileCard {
   readonly session = input.required<SessionNode>();
   readonly selected = input.required<boolean>();
   readonly visibleColumns = input.required<Set<string>>();

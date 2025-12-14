@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
-interface Question {
+interface IQuestion {
   id: string;
   phrase: Record<string, string>;
   answers: Array<{ id: string; phrase: Record<string, string> }>;
@@ -14,7 +14,7 @@ interface Question {
   imports: [TranslatePipe],
 })
 export class QuizNavigationComponent {
-  readonly questions = input.required<Question[]>();
+  readonly questions = input.required<IQuestion[]>();
   readonly currentQuestionIndex = input.required<number>();
   readonly answeredCount = input.required<number>();
   readonly canPrevious = input.required<boolean>();

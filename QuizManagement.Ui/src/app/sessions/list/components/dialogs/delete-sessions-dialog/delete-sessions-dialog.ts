@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
-interface SessionInfo {
+interface ISessionInfo {
   name: string;
   email: string;
 }
@@ -14,7 +14,7 @@ interface SessionInfo {
 })
 export class DeleteSessionsDialog {
   readonly show = input.required<boolean>();
-  readonly sessions = input.required<SessionInfo[]>();
+  readonly sessions = input.required<ISessionInfo[]>();
 
   readonly confirm = output<void>();
   readonly cancel = output<void>();

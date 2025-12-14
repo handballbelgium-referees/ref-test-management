@@ -11,13 +11,13 @@ import {
 } from '../../../../../../graphql/generated';
 import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
 
-interface Title {
+interface ITitle {
   id: string;
   value: string;
 }
 
-interface SearchResult {
-  titles: Title[];
+interface ISearchResult {
+  titles: ITitle[];
   isSearching: boolean;
   hasNextPage: boolean;
   endCursor?: string;
@@ -37,7 +37,7 @@ export class TitleAutocomplete {
   protected readonly currentDate = new Date();
 
   protected readonly searchTerm = signal('');
-  protected readonly suggestions = signal<Title[]>([]);
+  protected readonly suggestions = signal<ITitle[]>([]);
   protected readonly searching = signal(false);
   protected readonly showDropdown = signal(false);
   protected readonly highlightedIndex = signal(-1);
@@ -52,7 +52,7 @@ export class TitleAutocomplete {
   private readonly _searchResult = toSignal(
     this._searchSubject.pipe(
       debounceTime(300),
-      switchMap((searchTerm: string): Observable<SearchResult> => {
+      switchMap((searchTerm: string): Observable<ISearchResult> => {
         const trimmedTerm = searchTerm.trim();
         const where = trimmedTerm.length > 0 ? { value: { contains: trimmedTerm } } : undefined;
 
@@ -66,7 +66,7 @@ export class TitleAutocomplete {
         });
 
         return this._queryRef.valueChanges.pipe(
-          map((result): SearchResult => {
+          map((result): ISearchResult => {
             const edges = result.data?.quizTitles?.edges ?? [];
             const pageInfo = result.data?.quizTitles?.pageInfo;
             return {
@@ -81,7 +81,9 @@ export class TitleAutocomplete {
               endCursor: pageInfo?.endCursor ?? undefined,
             };
           }),
-          catchError(() => of<SearchResult>({ titles: [], isSearching: false, hasNextPage: false }))
+          catchError(() =>
+            of<ISearchResult>({ titles: [], isSearching: false, hasNextPage: false })
+          )
         );
       })
     ),
@@ -175,7 +177,7 @@ export class TitleAutocomplete {
     }
   }
 
-  protected onSelectTitle(title: Title): void {
+  protected onSelectTitle(title: ITitle): void {
     const selected = { id: title.id, name: title.value };
     this.selectedTitle.set(selected);
     this.searchTerm.set(title.value);

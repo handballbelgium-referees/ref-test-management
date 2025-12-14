@@ -2,17 +2,17 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { TranslationPipe } from '../../../../pipes/translation-pipe';
 
-interface Answer {
+interface IAnswer {
   id: string;
   number?: string;
   phrase: Record<string, string>;
 }
 
-interface Question {
+interface IQuestion {
   id: string;
   number?: string;
   phrase: Record<string, string>;
-  answers: Answer[];
+  answers: IAnswer[];
 }
 
 @Component({
@@ -22,7 +22,7 @@ interface Question {
   imports: [TranslatePipe, TranslationPipe],
 })
 export class QuizResultsComponent {
-  readonly questions = input.required<Question[]>();
+  readonly questions = input.required<IQuestion[]>();
   readonly score = input.required<number>();
   readonly percentage = input.required<number>();
   readonly wrongQuestionIds = input.required<string[]>();

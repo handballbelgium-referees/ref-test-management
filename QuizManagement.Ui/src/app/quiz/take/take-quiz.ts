@@ -21,17 +21,17 @@ import { QuizNavigationComponent } from './components/quiz-navigation/quiz-navig
 import { QuizResultsComponent } from './components/quiz-results/quiz-results';
 import { SubmitQuizDialog } from './components/submit-quiz-dialog/submit-quiz-dialog';
 
-interface Answer {
+interface IAnswer {
   id: string;
   number?: string;
   phrase: Record<string, string>;
 }
 
-interface Question {
+interface IQuestion {
   id: string;
   number?: string;
   phrase: Record<string, string>;
-  answers: Answer[];
+  answers: IAnswer[];
 }
 
 @Component({
@@ -63,7 +63,7 @@ export class TakeQuizComponent {
 
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
-  protected readonly questions = signal<Question[]>([]);
+  protected readonly questions = signal<IQuestion[]>([]);
   protected readonly currentQuestionIndex = signal(0);
   protected readonly visitedQuestions = signal<Set<number>>(new Set([0]));
   protected readonly selectedAnswers = signal<Record<string, string[]>>({});

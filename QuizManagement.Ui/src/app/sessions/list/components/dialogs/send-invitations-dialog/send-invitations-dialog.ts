@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
-interface InvitationSummary {
+interface IInvitationSummary {
   newInvitations: Array<{ name: string; email: string }>;
   resendInvitations: Array<{ name: string; email: string }>;
 }
@@ -14,7 +14,7 @@ interface InvitationSummary {
 })
 export class SendInvitationsDialog {
   readonly show = input.required<boolean>();
-  readonly summary = input.required<InvitationSummary>();
+  readonly summary = input.required<IInvitationSummary>();
 
   readonly confirm = output<void>();
   readonly cancel = output<void>();

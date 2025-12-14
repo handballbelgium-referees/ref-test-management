@@ -9,7 +9,7 @@ import { Auth } from './auth/services/auth';
 
 type Language = 'en' | 'nl' | 'fr' | 'de';
 
-interface LanguageInfo {
+interface ILanguageInfo {
   code: Language;
   name: string;
 }
@@ -46,7 +46,7 @@ export class App {
   protected readonly showLanguageMenu = signal(false);
   protected readonly version = VERSION;
   protected readonly currentYear = computed(() => new Date().getFullYear());
-  protected readonly availableLanguages: LanguageInfo[] = [
+  protected readonly availableLanguages: ILanguageInfo[] = [
     { code: 'en', name: 'English' },
     { code: 'nl', name: 'Nederlands' },
     { code: 'fr', name: 'Français' },

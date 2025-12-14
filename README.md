@@ -8,7 +8,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 ## 📋 Table of Contents
 
 - [Features](#-features)
-- [Architecture](#-architecture)  
+- [Architecture](#-architecture)
 - [Prerequisites](#-prerequisites)
 - [Getting Started](#-getting-started)
 - [Project Structure](#-project-structure)
@@ -23,14 +23,16 @@ A comprehensive web application for managing and taking IHF (International Handb
 ## 🎯 Features
 
 ### 📝 Quiz Management
+
 - **Bulk Session Creation**: Create multiple quiz sessions simultaneously with customizable settings
 - **Question Bank Integration**: Search and bulk import questions from the central question database
-- **Randomization**: Optional random answer order per session to prevent pattern memorization  
+- **Randomization**: Optional random answer order per session to prevent pattern memorization
 - **Time Management**: Configurable time limits with auto-submit functionality
 - **Instant Scoring**: Automatic score calculation with detailed answer feedback
 - **PDF Generation**: Professional PDF reports with QuestPDF for quiz results
 
-### 🗂️ Session Management  
+### 🗂️ Session Management
+
 - **Advanced Filtering**: Filter sessions by status, score range, percentage, and date ranges
 - **Bulk Operations**: Send invitations, results, and delete multiple sessions efficiently
 - **Real-time Status**: Monitor session completion and participant progress
@@ -38,6 +40,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Loading Indicators**: Visual feedback for all asynchronous operations (send, delete)
 
 ### 📧 Email Automation
+
 - **Automated Invitations**: Optionally send quiz invitations automatically upon session creation
 - **Result Notifications**: Automatically email results upon quiz completion
 - **Multilingual Templates**: Email templates in English, Dutch, French, and German
@@ -45,12 +48,14 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Brevo Integration**: Reliable email delivery via Brevo API (formerly SendGrid)
 
 ### 🔐 Authentication & Security
+
 - **Auth0 Integration**: Secure OAuth2/OpenID Connect authentication
 - **JWT Authorization**: Token-based API access control
 - **Protected Routes**: Angular guards for authenticated-only pages
 - **User Management**: Profile display with user initials
 
 ### 🌍 Internationalization
+
 - **4 Languages**: Full support for English, Dutch, French, and German
 - **Persistent Preferences**: Language selection saved per user in local storage
 - **Complete Localization**: All UI elements, emails, and PDF reports translated
@@ -90,36 +95,40 @@ This application follows a clean architecture pattern with clear separation of c
 ### Tech Stack
 
 #### Backend (.NET 10)
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **.NET** | 10.0 | Latest .NET framework for high-performance APIs |
-| **Hot Chocolate** | 15.1.11 | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.0 | ORM for database access with migrations |
-| **SQL Server** | - | Primary data store (Azure SQL or local) |
-| **QuestPDF** | 2025.12.0 | PDF generation for quiz results |
-| **Auth0** | - | OAuth2/OpenID Connect authentication |
-| **Brevo API** | - | Email delivery service |
+
+| Technology                | Version   | Purpose                                                        |
+| ------------------------- | --------- | -------------------------------------------------------------- |
+| **.NET**                  | 10.0      | Latest .NET framework for high-performance APIs                |
+| **Hot Chocolate**         | 15.1.11   | GraphQL server with authorization, data loaders, and filtering |
+| **Entity Framework Core** | 10.0.0    | ORM for database access with migrations                        |
+| **SQL Server**            | -         | Primary data store (Azure SQL or local)                        |
+| **QuestPDF**              | 2025.12.0 | PDF generation for quiz results                                |
+| **Auth0**                 | -         | OAuth2/OpenID Connect authentication                           |
+| **Brevo API**             | -         | Email delivery service                                         |
 
 **Project Structure:**
+
 - `QuizManagement.Api` - Web API, GraphQL schema, controllers
 - `QuizManagement.Application` - Business logic, services
 - `QuizManagement.Domain` - Domain entities, value objects
 - `QuizManagement.Infrastructure` - Data access, external services (PDF, Email)
 
 #### Frontend (Angular 21)
-| Technology | Version | Purpose |
-|------------|---------|---------|
-| **Angular** | 21.0.0 | Modern SPA framework with standalone components |
-| **TypeScript** | 5.9.2 | Strict type-checking for reliability |
-| **Signals** | Built-in | Reactive state management |
-| **TailwindCSS** | 4.1.12 | Utility-first CSS framework |
-| **Apollo Client** | 4.0.1 | GraphQL client with caching |
-| **GraphQL Code Generator** | 6.1.0 | Auto-generate TypeScript types from GraphQL |
-| **ngx-translate** | 17.0.0 | i18n and localization |
-| **Vitest** | 4.0.8 | Fast unit testing framework |
-| **RxJS** | 7.8.0 | Reactive programming |
+
+| Technology                 | Version  | Purpose                                         |
+| -------------------------- | -------- | ----------------------------------------------- |
+| **Angular**                | 21.0.0   | Modern SPA framework with standalone components |
+| **TypeScript**             | 5.9.2    | Strict type-checking for reliability            |
+| **Signals**                | Built-in | Reactive state management                       |
+| **TailwindCSS**            | 4.1.12   | Utility-first CSS framework                     |
+| **Apollo Client**          | 4.0.1    | GraphQL client with caching                     |
+| **GraphQL Code Generator** | 6.1.0    | Auto-generate TypeScript types from GraphQL     |
+| **ngx-translate**          | 17.0.0   | i18n and localization                           |
+| **Vitest**                 | 4.0.8    | Fast unit testing framework                     |
+| **RxJS**                   | 7.8.0    | Reactive programming                            |
 
 **Key Patterns:**
+
 - Standalone components (no NgModules)
 - Signal-based state management
 - OnPush change detection strategy
@@ -127,28 +136,30 @@ This application follows a clean architecture pattern with clear separation of c
 - GraphQL operations in separate `.graphql` files
 
 #### DevOps & Tooling
-| Tool | Purpose |
-|------|---------|
-| **GitHub Actions** | CI/CD pipelines (PR validation, deployment) |
-| **Semantic Release** | Automated versioning from conventional commits |
-| **Commitlint** | Enforce conventional commit format |
-| **Husky** | Git hooks (commit-msg, pre-commit) |
-| **Azure App Service** | Production hosting platform |
-| **EF Core Migrations** | Database schema versioning |
+
+| Tool                   | Purpose                                        |
+| ---------------------- | ---------------------------------------------- |
+| **GitHub Actions**     | CI/CD pipelines (PR validation, deployment)    |
+| **Semantic Release**   | Automated versioning from conventional commits |
+| **Commitlint**         | Enforce conventional commit format             |
+| **Husky**              | Git hooks (commit-msg, pre-commit)             |
+| **Azure App Service**  | Production hosting platform                    |
+| **EF Core Migrations** | Database schema versioning                     |
 
 ## 📋 Prerequisites
 
 Before you begin, ensure you have the following installed:
 
-| Requirement | Version | Download |
-|-------------|---------|----------|
-| **.NET SDK** | 10.0 or later | [Download](https://dotnet.microsoft.com/download/dotnet/10.0) |
-| **Node.js** | 22.x or later | [Download](https://nodejs.org/) |
-| **npm** | 11.7.0 or later | Included with Node.js |
-| **SQL Server** | 2019+ or Azure SQL | [Download](https://www.microsoft.com/sql-server) |
-| **Git** | Latest | [Download](https://git-scm.com/) |
+| Requirement    | Version            | Download                                                      |
+| -------------- | ------------------ | ------------------------------------------------------------- |
+| **.NET SDK**   | 10.0 or later      | [Download](https://dotnet.microsoft.com/download/dotnet/10.0) |
+| **Node.js**    | 22.x or later      | [Download](https://nodejs.org/)                               |
+| **npm**        | 11.7.0 or later    | Included with Node.js                                         |
+| **SQL Server** | 2019+ or Azure SQL | [Download](https://www.microsoft.com/sql-server)              |
+| **Git**        | Latest             | [Download](https://git-scm.com/)                              |
 
 **Additional Accounts Required:**
+
 - **Auth0 Account**: For authentication ([Sign up](https://auth0.com/))
 - **Brevo Account** (optional): For email delivery ([Sign up](https://www.brevo.com/))
 - **Azure Account** (optional): For deployment ([Sign up](https://azure.microsoft.com/))
@@ -185,6 +196,7 @@ Update `QuizManagement.Api/appsettings.json`:
 ```
 
 **For Azure SQL:**
+
 ```json
 {
   "ConnectionStrings": {
@@ -260,6 +272,7 @@ In `QuizManagement.Api/appsettings.json`:
 ```
 
 **Using User Secrets:**
+
 ```bash
 dotnet user-secrets set "EmailConfiguration:BrevoApiKey" "your-api-key"
 dotnet user-secrets set "EmailConfiguration:FromEmail" "your-email@domain.com"
@@ -287,6 +300,7 @@ dotnet run
 The API will start at `https://localhost:7039`
 
 **Verify the API:**
+
 - GraphQL Playground: `https://localhost:7039/graphql/`
 - Health Check: `https://localhost:7039/Account/IsAuthenticated`
 
@@ -428,7 +442,23 @@ handball-belgium-rules-quiz/
 │   │   │   │   │   └── components/       # Question search, user import, etc.
 │   │   │   │   └── list/                 # Sessions list page
 │   │   │   │       ├── list-sessions.ts
-│   │   │   │       └── components/       # Filters, bulk actions, column visibility
+│   │   │   │       └── components/
+│   │   │   │           ├── filters/                     # 🔍 Filter Components
+│   │   │   │           │   ├── date-range-filter/       # Reusable date range picker
+│   │   │   │           │   ├── performance-filters/     # Score, percentage, questions
+│   │   │   │           │   ├── session-filters-card/    # Main filter orchestration
+│   │   │   │           │   ├── sorting-panel/           # Collapsible sort controls
+│   │   │   │           │   ├── status-filter-tabs/      # Status tabs with scroll
+│   │   │   │           │   └── title-filter/            # Autocomplete title search
+│   │   │   │           ├── session-display/             # 📱 Display Components
+│   │   │   │           │   ├── session-mobile-card/     # Mobile card view
+│   │   │   │           │   └── session-table-row/       # Desktop table row
+│   │   │   │           ├── dialogs/                     # 💬 Modal Dialogs
+│   │   │   │           │   ├── delete-sessions-dialog/
+│   │   │   │           │   ├── send-invitations-dialog/
+│   │   │   │           │   └── send-results-dialog/
+│   │   │   │           ├── column-visibility-menu/      # Table column toggles
+│   │   │   │           └── session-bulk-actions/        # Bulk operations toolbar
 │   │   │   │
 │   │   │   ├── quiz/                     # 🎯 Quiz Taking
 │   │   │   │   ├── welcome/              # Quiz start page
@@ -496,14 +526,14 @@ handball-belgium-rules-quiz/
 
 ### Key Directories Explained
 
-| Directory | Purpose |
-|-----------|---------|
-| `QuizManagement.Api/Graphql` | GraphQL schema, queries, mutations, and type definitions |
-| `QuizManagement.Infrastructure/Services` | PDF generation (QuestPDF) and email delivery (Brevo) |
-| `QuizManagement.Ui/src/app/sessions` | Session creation and management UI |
-| `QuizManagement.Ui/src/app/quiz` | Quiz-taking experience (welcome, take, results) |
-| `QuizManagement.Ui/graphql` | GraphQL operation files and auto-generated types |
-| `.github/workflows` | CI/CD pipelines for automated testing and deployment |
+| Directory                                | Purpose                                                  |
+| ---------------------------------------- | -------------------------------------------------------- |
+| `QuizManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
+| `QuizManagement.Infrastructure/Services` | PDF generation (QuestPDF) and email delivery (Brevo)     |
+| `QuizManagement.Ui/src/app/sessions`     | Session creation and management UI                       |
+| `QuizManagement.Ui/src/app/quiz`         | Quiz-taking experience (welcome, take, results)          |
+| `QuizManagement.Ui/graphql`              | GraphQL operation files and auto-generated types         |
+| `.github/workflows`                      | CI/CD pipelines for automated testing and deployment     |
 
 ## ⚙️ Configuration
 
@@ -520,18 +550,18 @@ Complete configuration file structure:
     }
   },
   "AllowedHosts": "*",
-  
+
   "ConnectionStrings": {
     "QuizManagement": "Server=localhost;Database=QuizManagement;Trusted_Connection=True;TrustServerCertificate=True;"
   },
-  
+
   "Auth0": {
     "Domain": "your-tenant.auth0.com",
     "ClientId": "your-client-id",
     "ClientSecret": "your-client-secret",
     "Audience": "your-api-identifier"
   },
-  
+
   "EmailConfiguration": {
     "BaseUrl": "https://localhost:7039",
     "BrevoApiKey": "your-brevo-api-key",
@@ -539,11 +569,11 @@ Complete configuration file structure:
     "FromEmail": "noreply@yourdomain.com",
     "FromName": "IHF Rules Quiz"
   },
-  
+
   "RulesQuestions": {
     "Url": "https://your-question-bank-api.com/graphql"
   },
-  
+
   "LanguageConfiguration": {
     "DefaultPhraseLanguage": "en"
   }
@@ -552,20 +582,20 @@ Complete configuration file structure:
 
 ### Configuration Options Explained
 
-| Section | Key | Description | Required |
-|---------|-----|-------------|----------|
-| **ConnectionStrings** | `QuizManagement` | SQL Server or Azure SQL connection string | ✅ Yes |
-| **Auth0** | `Domain` | Auth0 tenant domain | ✅ Yes |
-| | `ClientId` | Auth0 application client ID | ✅ Yes |
-| | `ClientSecret` | Auth0 application client secret | ✅ Yes |
-| | `Audience` | Auth0 API identifier | ✅ Yes |
-| **EmailConfiguration** | `BaseUrl` | Base URL for email links | ✅ Yes |
-| | `BrevoApiKey` | Brevo (SendGrid) API key | ✅ Yes |
-| | `BrevoApiUrl` | Brevo API endpoint | ✅ Yes |
-| | `FromEmail` | Sender email address | ✅ Yes |
-| | `FromName` | Sender display name | ✅ Yes |
-| **RulesQuestions** | `Url` | External question bank GraphQL endpoint | ✅ Yes |
-| **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions | ✅ Yes |
+| Section                   | Key                     | Description                               | Required |
+| ------------------------- | ----------------------- | ----------------------------------------- | -------- |
+| **ConnectionStrings**     | `QuizManagement`        | SQL Server or Azure SQL connection string | ✅ Yes   |
+| **Auth0**                 | `Domain`                | Auth0 tenant domain                       | ✅ Yes   |
+|                           | `ClientId`              | Auth0 application client ID               | ✅ Yes   |
+|                           | `ClientSecret`          | Auth0 application client secret           | ✅ Yes   |
+|                           | `Audience`              | Auth0 API identifier                      | ✅ Yes   |
+| **EmailConfiguration**    | `BaseUrl`               | Base URL for email links                  | ✅ Yes   |
+|                           | `BrevoApiKey`           | Brevo (SendGrid) API key                  | ✅ Yes   |
+|                           | `BrevoApiUrl`           | Brevo API endpoint                        | ✅ Yes   |
+|                           | `FromEmail`             | Sender email address                      | ✅ Yes   |
+|                           | `FromName`              | Sender display name                       | ✅ Yes   |
+| **RulesQuestions**        | `Url`                   | External question bank GraphQL endpoint   | ✅ Yes   |
+| **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions            | ✅ Yes   |
 
 ### User Secrets (Development)
 
@@ -601,6 +631,7 @@ The frontend uses auto-generated version files. Configuration is primarily throu
 #### Translation Files
 
 Located in `src/assets/i18n/` and `public/i18n/`:
+
 - `en.json` - English
 - `nl.json` - Dutch (Nederlands)
 - `fr.json` - French (Français)
@@ -610,44 +641,46 @@ Located in `src/assets/i18n/` and `public/i18n/`:
 
 Configure these secrets in **Settings > Secrets and variables > Actions**:
 
-| Secret Name | Description | How to Get |
-|-------------|-------------|------------|
-| `AZURE_CLIENT_ID` | Azure service principal client ID | From service principal creation |
-| `AZURE_TENANT_ID` | Azure AD tenant ID | From service principal creation |
-| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID | From Azure Portal or `az account show` |
-| `AZURE_WEBAPP_NAME` | Azure App Service name | From Azure Portal |
+| Secret Name             | Description                       | How to Get                             |
+| ----------------------- | --------------------------------- | -------------------------------------- |
+| `AZURE_CLIENT_ID`       | Azure service principal client ID | From service principal creation        |
+| `AZURE_TENANT_ID`       | Azure AD tenant ID                | From service principal creation        |
+| `AZURE_SUBSCRIPTION_ID` | Azure subscription ID             | From Azure Portal or `az account show` |
+| `AZURE_WEBAPP_NAME`     | Azure App Service name            | From Azure Portal                      |
 
 **Setup Azure OIDC Authentication (Recommended):**
 
 1. **Create Service Principal:**
-```bash
-az ad sp create-for-rbac --name "handball-quiz-deploy" \
-  --role contributor \
-  --scopes /subscriptions/{subscription-id}/resourceGroups/{resource-group}
-```
+   ```bash
+   az ad sp create-for-rbac --name "handball-quiz-deploy" \\
+   --role contributor \\
+   --scopes /subscriptions/{subscription-id}/resourceGroups/{resource-group}
+   ```
 
 Note the `appId` (client ID), `tenant` (tenant ID) from output.
 
 2. **Configure Federated Credentials:**
-```bash
-az ad app federated-credential create \
-  --id {app-id} \
-  --parameters '{
-    "name": "github-deploy",
-    "issuer": "https://token.actions.githubusercontent.com",
-    "subject": "repo:KristofGilis/handball-belgium-rules-quiz:ref:refs/heads/main",
-    "audiences": ["api://AzureADTokenExchange"]
-  }'
-```
+
+   ```bash
+   az ad app federated-credential create \\
+   --id {app-id} \\
+   --parameters '{
+   "name": "github-deploy",
+   "issuer": "https://token.actions.githubusercontent.com",
+   "subject": "repo:KristofGilis/handball-belgium-rules-quiz:ref:refs/heads/main",
+   "audiences": ["api://AzureADTokenExchange"]
+   }'
+   ```
 
 3. **Get Subscription ID:**
-```bash
-az account show --query id -o tsv
-```
+
+   ```bash
+   az account show --query id -o tsv
+   ```
 
 4. **Add to GitHub Secrets:**
    - `AZURE_CLIENT_ID`: The `appId` from step 1
-   - `AZURE_TENANT_ID`: The `tenant` from step 1  
+   - `AZURE_TENANT_ID`: The `tenant` from step 1
    - `AZURE_SUBSCRIPTION_ID`: Output from step 3
    - `AZURE_WEBAPP_NAME`: Your Azure App Service name
 
@@ -673,6 +706,7 @@ footer
 ```
 
 **Types:**
+
 - `feat`: New feature (minor version bump)
 - `fix`: Bug fix (patch version bump)
 - `perf`: Performance improvement (patch version bump)
@@ -717,15 +751,19 @@ The application deploys automatically when changes are merged to `main`:
 #### Build for Production
 
 ```bash
+
 # Build Angular
+
 cd QuizManagement.Ui
 npm run build
 
 # Copy to API wwwroot
+
 mkdir -p ../QuizManagement.Api/wwwroot
 cp -r dist/quiz-management.ui/browser/* ../QuizManagement.Api/wwwroot/
 
 # Publish .NET
+
 cd ../QuizManagement.Api
 dotnet publish -c Release -o ./publish
 ```
@@ -733,10 +771,10 @@ dotnet publish -c Release -o ./publish
 #### Deploy to Azure
 
 ```bash
-az webapp deployment source config-zip \
-  --resource-group YourResourceGroup \
-  --name YourAppName \
-  --src publish.zip
+az webapp deployment source config-zip \\
+--resource-group YourResourceGroup \\
+--name YourAppName \\
+--src publish.zip
 ```
 
 ### GraphQL Code Generation
@@ -770,7 +808,7 @@ This regenerates TypeScript types in `graphql/generated.ts` based on your GraphQ
 ### Code Style
 
 - **Backend**: Follow [C# Coding Conventions](https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
-- **Frontend**: 
+- **Frontend**:
   - Use Prettier for formatting (configured in `package.json`)
   - Follow Angular style guide
   - Use standalone components
@@ -785,15 +823,15 @@ This regenerates TypeScript types in `graphql/generated.ts` based on your GraphQ
 - Ensure CI passes before requesting review
 - Use conventional commit format in PR title
 
-## 📜 Versioning
+## 🔢 Versioning
 
 This project uses [Semantic Versioning](https://semver.org/) with automated releases:
 
-| Version Component | Trigger | Example |
-|-------------------|---------|---------|
-| **MAJOR** (breaking) | `feat!:` or `BREAKING CHANGE:` in footer | 1.0.0 → 2.0.0 |
-| **MINOR** (feature) | `feat:` commit | 1.0.0 → 1.1.0 |
-| **PATCH** (fix) | `fix:`, `perf:`, `refactor:`, `style:`, `test:`, `build:`, `chore:` | 1.0.0 → 1.0.1 |
+| Version Component    | Trigger                                                             | Example       |
+| -------------------- | ------------------------------------------------------------------- | ------------- |
+| **MAJOR** (breaking) | `feat!` or `BREAKING CHANGE:` in footer                             | 1.0.0 → 2.0.0 |
+| **MINOR** (feature)  | `feat:` commit                                                      | 1.0.0 → 1.1.0 |
+| **PATCH** (fix)      | `fix:`, `perf:`, `refactor:`, `style:`, `test:`, `build:`, `chore:` | 1.0.0 → 1.0.1 |
 
 Versions are automatically determined by [semantic-release](https://github.com/semantic-release/semantic-release) based on conventional commits.
 
@@ -813,13 +851,13 @@ Versions are automatically determined by [semantic-release](https://github.com/s
 5. Creates Git tag and GitHub release
 6. Triggers build and deployment pipeline
 
-## 📝 License
+## 📄 License
 
 This project is licensed under the ISC License - see the LICENSE file for details.
 
-## 👥 Authors
+## 👨‍💻 Authors
 
-- **Kristof Gilis** - *Initial work and maintenance*
+- **Kristof Gilis** - _Initial work and maintenance_
 
 ## 🙏 Acknowledgments
 
@@ -827,12 +865,11 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 - IHF (International Handball Federation) for the rules content
 - The open-source community for the amazing tools and libraries
 
-## 📞 Support
+## 💬 Support
 
 For issues, questions, or contributions:
 
 - **Issues**: [GitHub Issues](https://github.com/KristofGilis/handball-belgium-rules-quiz/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/KristofGilis/handball-belgium-rules-quiz/discussions)
-
 
 **Made with ❤️ for Handball Belgium**

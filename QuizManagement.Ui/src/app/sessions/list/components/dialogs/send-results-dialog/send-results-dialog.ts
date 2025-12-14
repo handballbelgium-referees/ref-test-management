@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
-interface ResultsSummary {
+interface IResultsSummary {
   newResults: Array<{ name: string; email: string }>;
   resendResults: Array<{ name: string; email: string }>;
 }
@@ -14,7 +14,7 @@ interface ResultsSummary {
 })
 export class SendResultsDialog {
   readonly show = input.required<boolean>();
-  readonly summary = input.required<ResultsSummary>();
+  readonly summary = input.required<IResultsSummary>();
 
   readonly confirm = output<void>();
   readonly cancel = output<void>();

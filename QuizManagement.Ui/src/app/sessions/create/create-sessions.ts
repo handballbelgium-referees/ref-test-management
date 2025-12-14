@@ -23,14 +23,14 @@ import { QuestionSearchAutocomplete } from './components/question-search-autocom
 import { SessionUserListItem } from './components/session-user-list-item/session-user-list-item';
 import { TitleAutocomplete } from './components/title-autocomplete/title-autocomplete';
 
-interface UserData {
+interface IUserData {
   firstName: string;
   lastName: string;
   email: string;
 }
 
-interface SessionFormData {
-  users: UserData[];
+interface ISessionFormData {
+  users: IUserData[];
   title: { id?: string; name: string } | null;
   numberOfQuestions: number;
   maxTimeInMinutes: number;
@@ -63,7 +63,7 @@ export class CreateSessions {
   protected readonly messagesContainer = viewChild<ElementRef>('messagesContainer');
 
   // Angular v21 Signal Forms - model signal
-  protected readonly sessionModel = signal<SessionFormData>({
+  protected readonly sessionModel = signal<ISessionFormData>({
     users: [{ firstName: '', lastName: '', email: '' }],
     title: null,
     numberOfQuestions: 30,
@@ -281,7 +281,7 @@ export class CreateSessions {
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
 
-    const users: UserData[] = [];
+    const users: IUserData[] = [];
 
     lines.forEach((line) => {
       const parts = line.split(/\s+/);

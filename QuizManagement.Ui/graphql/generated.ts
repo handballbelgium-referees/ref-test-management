@@ -341,6 +341,7 @@ export type QuizSession = Node & {
 export type QuizSessionQuestionsArgs = {
   includeIsCorrect?: InputMaybe<Scalars['Boolean']['input']>;
   includeNumber?: InputMaybe<Scalars['Boolean']['input']>;
+  randomAnswerOrder?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
 export type QuizSessionByTokenResult = InvalidQuizSessionStatusError | QuizSession | QuizSessionExpiredError | QuizSessionNotFoundError;
@@ -382,8 +383,8 @@ export type QuizSessionFilterInput = {
   startedAt?: InputMaybe<DateTimeOperationFilterInput>;
   /** Filter on status of the quiz session */
   status?: InputMaybe<QuizSessionStatusOperationFilterInput>;
-  /** Filter on title id */
-  titleId?: InputMaybe<UuidOperationFilterInput>;
+  /** Filter on quiz title */
+  title?: InputMaybe<QuizTitleFilterInput>;
 };
 
 export type QuizSessionNotFoundError = Error & {

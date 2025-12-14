@@ -3,15 +3,15 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { TranslationPipe } from '../../../../pipes/translation-pipe';
 import { AnswerOptionComponent } from '../answer-option/answer-option';
 
-interface Answer {
+interface IAnswer {
   id: string;
   phrase: Record<string, string>;
 }
 
-interface Question {
+interface IQuestion {
   id: string;
   phrase: Record<string, string>;
-  answers: Answer[];
+  answers: IAnswer[];
 }
 
 @Component({
@@ -21,7 +21,7 @@ interface Question {
   imports: [TranslatePipe, TranslationPipe, AnswerOptionComponent],
 })
 export class QuestionCardComponent {
-  readonly question = input.required<Question>();
+  readonly question = input.required<IQuestion>();
   readonly currentIndex = input.required<number>();
   readonly totalQuestions = input.required<number>();
   readonly currentLanguage = input.required<string>();

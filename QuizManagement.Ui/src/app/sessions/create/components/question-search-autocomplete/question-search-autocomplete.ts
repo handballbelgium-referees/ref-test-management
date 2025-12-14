@@ -13,13 +13,13 @@ import { catchError, debounceTime, distinctUntilChanged, map, of, Subject, switc
 import { SearchQuestionsByNumberGQL } from '../../../../../../graphql/generated';
 import { TranslationPipe } from '../../../../pipes/translation-pipe';
 
-interface Question {
+interface IQuestion {
   number: string;
   phrase: Record<string, string>;
 }
 
-interface SearchResult {
-  questions: Array<Question & { id: string }>;
+interface ISearchResult {
+  questions: Array<IQuestion & { id: string }>;
   isSearching: boolean;
 }
 
@@ -33,14 +33,14 @@ export class QuestionSearchAutocomplete {
   private readonly _searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
 
   readonly currentLanguage = input.required<string>();
-  readonly selectedQuestions = input.required<Question[]>();
+  readonly selectedQuestions = input.required<IQuestion[]>();
 
-  readonly selectQuestion = output<Question>();
+  readonly selectQuestion = output<IQuestion>();
   readonly removeQuestion = output<string>();
   readonly bulkImport = output<void>();
 
   protected readonly searchTerm = signal('');
-  protected readonly suggestions = signal<Array<Question & { id: string }>>([]);
+  protected readonly suggestions = signal<Array<IQuestion & { id: string }>>([]);
   protected readonly searching = signal(false);
   protected readonly showDropdown = signal(false);
   protected readonly highlightedIndex = signal(-1);
@@ -53,7 +53,7 @@ export class QuestionSearchAutocomplete {
       distinctUntilChanged(),
       switchMap((searchTerm) => {
         if (!searchTerm || searchTerm.trim().length === 0) {
-          return of({ questions: [], isSearching: false } as SearchResult);
+          return of({ questions: [], isSearching: false } as ISearchResult);
         }
 
         return this._searchQuestionsByNumberGQL
@@ -70,9 +70,9 @@ export class QuestionSearchAutocomplete {
                     phrase: q!.phrase as Record<string, string>,
                   })),
                 isSearching: result.loading,
-              } as SearchResult;
+              } as ISearchResult;
             }),
-            catchError(() => of({ questions: [], isSearching: false } as SearchResult))
+            catchError(() => of({ questions: [], isSearching: false } as ISearchResult))
           );
       })
     ),
@@ -132,7 +132,7 @@ export class QuestionSearchAutocomplete {
     }
   }
 
-  protected onSelectQuestion(question: Question): void {
+  protected onSelectQuestion(question: IQuestion): void {
     this.selectQuestion.emit(question);
     this.searchTerm.set('');
     this.suggestions.set([]);

@@ -24,19 +24,19 @@ import {
   QuizSessionFilterInput,
   QuizSessionStatus,
   QuizSessionStatusOperationFilterInput,
+  QuizTitleFilterInput,
   SendQuizInvitationsGQL,
   SendQuizResultsGQL,
   SortEnumType,
-  UuidOperationFilterInput,
 } from '../../../../graphql/generated';
 import { ColumnVisibilityMenu } from './components/column-visibility-menu/column-visibility-menu';
-import { DeleteSessionsDialog } from './components/delete-sessions-dialog/delete-sessions-dialog';
-import { SendInvitationsDialog } from './components/send-invitations-dialog/send-invitations-dialog';
-import { SendResultsDialog } from './components/send-results-dialog/send-results-dialog';
+import { DeleteSessionsDialog } from './components/dialogs/delete-sessions-dialog/delete-sessions-dialog';
+import { SendInvitationsDialog } from './components/dialogs/send-invitations-dialog/send-invitations-dialog';
+import { SendResultsDialog } from './components/dialogs/send-results-dialog/send-results-dialog';
+import { SessionFiltersCard } from './components/filters/session-filters-card/session-filters-card';
 import { SessionBulkActions } from './components/session-bulk-actions/session-bulk-actions';
-import { SessionFiltersCard } from './components/session-filters-card/session-filters-card';
-import { SessionMobileCard } from './components/session-mobile-card/session-mobile-card';
-import { SessionTableRow } from './components/session-table-row/session-table-row';
+import { SessionMobileCard } from './components/session-display/session-mobile-card/session-mobile-card';
+import { SessionTableRow } from './components/session-display/session-table-row/session-table-row';
 
 type SortField =
   | 'title'
@@ -50,11 +50,11 @@ type SortField =
   | 'invitationSent'
   | 'resultsSent';
 
-interface SessionFilter {
+interface ISessionFilter {
   status?: QuizSessionStatus;
   invitationSent?: boolean;
   resultsSent?: boolean;
-  titleId?: string;
+  titleValue?: string;
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
@@ -115,7 +115,7 @@ export class ListSessions {
   );
   protected readonly showColumnMenu = signal(false);
 
-  protected readonly filter = signal<SessionFilter>({
+  protected readonly filter = signal<ISessionFilter>({
     searchTerm: '',
     sortField: 'completedAt',
     sortDirection: SortEnumType.Desc,
@@ -376,8 +376,8 @@ export class ListSessions {
       filters.status = { eq: currentFilter.status } as QuizSessionStatusOperationFilterInput;
     }
 
-    if (currentFilter.titleId) {
-      filters.titleId = { eq: currentFilter.titleId } as UuidOperationFilterInput;
+    if (currentFilter.titleValue) {
+      filters.title = { value: { eq: currentFilter.titleValue } } as QuizTitleFilterInput;
     }
 
     if (currentFilter.invitationSent !== undefined) {
@@ -467,7 +467,7 @@ export class ListSessions {
   }
 
   protected setTitleFilter(titleId?: string): void {
-    this.filter.update((f) => ({ ...f, titleId }));
+    this.filter.update((f) => ({ ...f, titleValue: titleId }));
   }
 
   protected setInvitationFilter(invitationSent?: boolean): void {
@@ -482,16 +482,14 @@ export class ListSessions {
     this.filter.update((f) => ({ ...f, sortField, sortDirection }));
   }
 
-  protected setScoreRange(min?: number, max?: number): void {
-    this.filter.update((f) => ({ ...f, minScore: min, maxScore: max }));
-  }
-
-  protected setPercentageRange(range?: 'low' | 'medium' | 'high'): void {
-    this.filter.update((f) => ({ ...f, percentageRange: range }));
-  }
-
-  protected setQuestionsRange(min?: number, max?: number): void {
-    this.filter.update((f) => ({ ...f, minQuestions: min, maxQuestions: max }));
+  protected setPerformanceFilters(performance: {
+    minScore?: number;
+    maxScore?: number;
+    percentageRange?: 'low' | 'medium' | 'high';
+    minQuestions?: number;
+    maxQuestions?: number;
+  }): void {
+    this.filter.update((f) => ({ ...f, ...performance }));
   }
 
   protected setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
