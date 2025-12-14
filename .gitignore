@@ -418,3 +418,6 @@ FodyWeavers.xsd
 *.msp
 
 .idea/
+# Root dependencies
+/node_modules
+/package-lock.json

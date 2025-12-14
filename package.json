@@ -1,0 +1,31 @@
+{
+  "name": "handball-belgium-rules-quiz",
+  "version": "0.0.0",
+  "description": "IHF Rules quiz for the referees of Handball Belgium",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "prepare": "husky",
+    "semantic-release": "semantic-release"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/KristofGilis/handball-belgium-rules-quiz.git"
+  },
+  "author": "Kristof Gilis <kristof.gilis@outlook.be>",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/KristofGilis/handball-belgium-rules-quiz/issues"
+  },
+  "homepage": "https://github.com/KristofGilis/handball-belgium-rules-quiz#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "husky": "^9.1.7",
+    "semantic-release": "^25.0.2"
+  }
+}

@@ -11,7 +11,6 @@ import { Auth } from '../auth/services/auth';
 export class Home {
   private readonly _auth = inject(Auth);
 
-  protected readonly currentYear = computed(() => new Date().getFullYear());
   protected readonly isLoggedIn = computed(() => !!this._auth.isAuthenticated());
 
   protected login(): void {
