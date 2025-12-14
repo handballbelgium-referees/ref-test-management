@@ -1,95 +1,104 @@
-<div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
+<div class="bg-white rounded-lg border border-neutral-200 hover:border-neutral-300 hover:shadow-md transition-all p-4">
   <!-- Header -->
-  <div class="flex gap-3 items-start mb-3">
+  <div class="flex gap-3 items-start mb-3 pb-3 border-b border-neutral-100">
     <input
       type="checkbox"
       [checked]="selected()"
       (change)="onToggleSelection()"
-      class="h-5 w-5 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+      class="h-4 w-4 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
     />
-    <div class="flex-1">
-      <h3 class="text-sm font-medium text-neutral-900">{{ session().name }}</h3>
-      <p class="text-sm text-neutral-500">{{ session().email }}</p>
+    <div class="flex-1 min-w-0">
+      <h3 class="text-sm font-semibold text-neutral-900 truncate">{{ session().name }}</h3>
+      <p class="text-xs text-neutral-600 truncate">{{ session().email }}</p>
       @if (session().title && isColumnVisible('title')) {
-      <p class="text-xs text-neutral-400 mt-1">{{ session().title?.value }}</p>
+      <p class="text-xs text-neutral-500 mt-1 truncate">{{ session().title?.value }}</p>
       }
     </div>
     <span
       [class]="getStatusClass(session().status)"
-      class="px-2 py-1 text-xs font-semibold rounded-full"
+      class="px-2 py-1 text-xs font-medium rounded-md whitespace-nowrap"
     >
       {{ 'sessions.list.status.' + session().status | translate }}
     </span>
   </div>
 
   <!-- Details Grid -->
-  <div class="grid grid-cols-2 gap-3 text-sm">
+  <div class="space-y-2 text-xs">
     @if (isColumnVisible('questions')) {
-    <div>
-      <span class="text-neutral-500">{{ 'sessions.list.table.questions' | translate }}:</span>
-      <span class="ml-1 font-medium text-neutral-900">{{ session().numberOfQuestions }}</span>
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded">
+      <span class="text-neutral-600 font-medium">{{ 'sessions.list.table.questions' | translate }}</span>
+      <span class="font-semibold text-neutral-900">{{ session().numberOfQuestions }}</span>
     </div>
-    } @if (isColumnVisible('invitation')) {
-    <div>
-      <span class="text-neutral-500">{{ 'sessions.list.table.invitation' | translate }}:</span>
-      @if (session().invitationSent) {
-      <svg class="inline h-4 w-4 ml-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fill-rule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-          clip-rule="evenodd"
-        />
-      </svg>
-      } @else {
-      <svg class="inline h-4 w-4 ml-1 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fill-rule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-          clip-rule="evenodd"
-        />
-      </svg>
+    }
+
+    <div class="grid grid-cols-2 gap-2">
+      @if (isColumnVisible('invitation')) {
+      <div class="flex items-center gap-1.5 py-1.5 px-2 bg-neutral-50 rounded">
+        <span class="text-neutral-600 text-[11px]">{{ 'sessions.list.table.invitation' | translate }}</span>
+        @if (session().invitationSent) {
+        <svg class="h-3.5 w-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        } @else {
+        <svg class="h-3.5 w-3.5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        }
+      </div>
+      }
+      @if (isColumnVisible('results')) {
+      <div class="flex items-center gap-1.5 py-1.5 px-2 bg-neutral-50 rounded">
+        <span class="text-neutral-600 text-[11px]">{{ 'sessions.list.table.results' | translate }}</span>
+        @if (session().resultsSent) {
+        <svg class="h-3.5 w-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        } @else {
+        <svg class="h-3.5 w-3.5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        }
+      </div>
       }
     </div>
-    } @if (isColumnVisible('results')) {
-    <div>
-      <span class="text-neutral-500">{{ 'sessions.list.table.results' | translate }}:</span>
-      @if (session().resultsSent) {
-      <svg class="inline h-4 w-4 ml-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fill-rule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-          clip-rule="evenodd"
-        />
-      </svg>
-      } @else {
-      <svg class="inline h-4 w-4 ml-1 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
-        <path
-          fill-rule="evenodd"
-          d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-          clip-rule="evenodd"
-        />
-      </svg>
-      }
+
+    @if (session().score !== null && isColumnVisible('score')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-primary-50 rounded border border-primary-100">
+      <span class="text-primary-700 font-medium">{{ 'sessions.list.table.score' | translate }}</span>
+      <div class="flex items-baseline gap-1.5">
+        <span class="font-bold text-primary-900 text-base">{{ session().percentage }}%</span>
+        <span class="text-[10px] text-primary-600">({{ session().score }}/{{ session().numberOfQuestions }})</span>
+      </div>
     </div>
-    } @if (session().score !== null && isColumnVisible('score')) {
-    <div>
-      <span class="text-neutral-500">{{ 'sessions.list.table.score' | translate }}:</span>
-      <span class="ml-1 font-medium text-neutral-900"
-        >{{ session().score }} / {{ session().numberOfQuestions }}</span
-      >
-      <span class="ml-1 text-xs text-neutral-500">({{ session().percentage }} %)</span>
+    }
+
+    @if (session().startedAt && isColumnVisible('started')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded text-[11px]">
+      <span class="text-neutral-600">{{ 'sessions.list.table.started' | translate }}</span>
+      <span class="text-neutral-900 font-medium">{{ session().startedAt | localizedDate : 'short' }}</span>
     </div>
-    } @if (session().startedAt && isColumnVisible('started')) {
-    <div>
-      <span class="text-neutral-500">{{ 'sessions.list.table.started' | translate }}:</span>
-      <span class="ml-1 text-neutral-900">{{ session().startedAt | localizedDate : 'short' }}</span>
-    </div>
-    } @if (session().completedAt && isColumnVisible('completed')) {
-    <div>
-      <span class="text-neutral-500">{{ 'sessions.list.table.completed' | translate }}:</span>
-      <span class="ml-1 text-neutral-900">{{
-        session().completedAt | localizedDate : 'short'
-      }}</span>
+    }
+
+    @if (session().completedAt && isColumnVisible('completed')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded text-[11px]">
+      <span class="text-neutral-600">{{ 'sessions.list.table.completed' | translate }}</span>
+      <span class="text-neutral-900 font-medium">{{ session().completedAt | localizedDate : 'short' }}</span>
     </div>
     }
   </div>

@@ -141,11 +141,19 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-neutral-900 text-neutral-400 py-8 px-4">
-    <div class="max-w-6xl mx-auto text-center space-y-2">
-      <p>{{ 'footer.copyright' | translate : { year: currentYear() } }}</p>
-      <p class="text-sm text-neutral-500">{{ 'footer.creator' | translate }}</p>
-      <p class="text-xs text-neutral-600 mt-2">v{{ version }}</p>
+  <footer class="mt-auto bg-neutral-800 text-neutral-300">
+    <div class="max-w-7xl mx-auto px-4 py-3">
+      <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-center">
+        <span class="text-neutral-300">
+          {{ 'footer.copyright' | translate : { year: currentYear() } }}
+        </span>
+        <span class="text-neutral-600 hidden sm:inline">•</span>
+        <span class="text-neutral-400">{{ 'footer.creator' | translate }}</span>
+        <span class="text-neutral-600 hidden sm:inline">•</span>
+        <span class="font-mono text-neutral-400 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]">
+          v{{ version }}
+        </span>
+      </div>
     </div>
   </footer>
 </div>

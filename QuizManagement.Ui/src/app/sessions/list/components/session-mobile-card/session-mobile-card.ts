@@ -12,6 +12,9 @@ type SessionNode = NonNullable<
   imports: [TranslatePipe, LocalizedDatePipe],
   templateUrl: './session-mobile-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class SessionMobileCard {
   readonly session = input.required<SessionNode>();
