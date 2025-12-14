@@ -15,17 +15,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
-        
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v6
-        with:
-          dotnet-version: '${{ env.DOTNET_VERSION }}'
-
-      - name: Restore .NET dependencies
-        run: dotnet restore handball-belgium-rules-quiz-management.sln
-
-      - name: Build .NET application
-        run: dotnet build handball-belgium-rules-quiz-management.sln --configuration Release --no-restore
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -48,3 +37,14 @@ jobs:
       - name: Build Angular application
         working-directory: ./QuizManagement.Ui
         run: npm run build
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '${{ env.DOTNET_VERSION }}'
+
+      - name: Restore .NET dependencies
+        run: dotnet restore handball-belgium-rules-quiz-management.sln
+
+      - name: Build .NET application
+        run: dotnet build handball-belgium-rules-quiz-management.sln --configuration Release --no-restore

@@ -70,7 +70,7 @@ jobs:
         run: cp -r QuizManagement.Ui/dist/quiz-management.ui/browser/* QuizManagement.Api/wwwroot/
 
       - name: Setup .NET
-        uses: actions/setup-dotnet@v6
+        uses: actions/setup-dotnet@v5
         with:
           dotnet-version: '${{ env.DOTNET_VERSION }}'
 
