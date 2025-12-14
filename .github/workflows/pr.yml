@@ -1,0 +1,46 @@
+name: PR CI
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Restore .NET dependencies
+        run: dotnet restore handball-belgium-rules-quiz-management.sln
+
+      - name: Build .NET application
+        run: dotnet build handball-belgium-rules-quiz-management.sln --configuration Release --no-restore
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: QuizManagement.Ui/package-lock.json
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Install UI dependencies
+        working-directory: ./QuizManagement.Ui
+        run: npm ci
+
+      - name: Run linter
+        working-directory: ./QuizManagement.Ui
+        run: npm run lint
+
+      - name: Build Angular application
+        working-directory: ./QuizManagement.Ui
+        run: npm run build
