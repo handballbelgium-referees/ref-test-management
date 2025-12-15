@@ -2,12 +2,13 @@
 
 @import 'tailwindcss';
 
-/* Hide scrollbar for horizontal scroll containers */
+/* Hide scrollbar utility */
 .scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox - fallback to -webkit-scrollbar for older browsers */
 }
 
+/* Safari and Chrome - this covers the browsers where scrollbar-width isn't supported */
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
