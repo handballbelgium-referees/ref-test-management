@@ -1,7 +1,7 @@
 # PR Title
 
 ```
-feat!: initial release - IHF Rules Quiz Management Platform v1.0.0
+feat!: initial release - ihf rules quiz management platform - handball belgium v1.0.0
 ```
 
 ## PR Description
