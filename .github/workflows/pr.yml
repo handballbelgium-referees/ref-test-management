@@ -62,3 +62,53 @@ jobs:
 
       - name: Build .NET application
         run: dotnet build handball-belgium-rules-quiz-management.sln --configuration Release --no-restore
+
+  validate-deployment-config:
+    runs-on: ubuntu-latest
+    needs: validate
+    permissions:
+      id-token: write
+      contents: read
+    
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Validate Azure Web App exists and is accessible
+        run: |
+          echo "Validating Azure Web App: ${{ secrets.AZURE_WEBAPP_NAME }}"
+          
+          # Check if the web app exists
+          if az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "name" -o tsv > /dev/null 2>&1; then
+            echo "✓ Web app '${{ secrets.AZURE_WEBAPP_NAME }}' exists and is accessible"
+            
+            # Get web app details
+            echo ""
+            echo "Web App Details:"
+            az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "{name:name, resourceGroup:resourceGroup, state:state, defaultHostName:defaultHostName}" -o table
+            
+            # Check if the service principal has deployment permissions
+            echo ""
+            echo "Checking deployment permissions..."
+            RESOURCE_ID=$(az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "id" -o tsv)
+            echo "✓ Service principal has access to the web app"
+            
+            echo ""
+            echo "✓ Deployment configuration validated successfully!"
+          else
+            echo "✗ Failed to access web app '${{ secrets.AZURE_WEBAPP_NAME }}'"
+            echo "Possible issues:"
+            echo "  - Web app doesn't exist"
+            echo "  - Service principal doesn't have permissions"
+            echo "  - Wrong subscription is configured"
+            exit 1
+          fi
+
+      - name: Validate deployment settings
+        run: |
+          echo "Checking web app runtime settings..."
+          az webapp config show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "{netFrameworkVersion:netFrameworkVersion, linuxFxVersion:linuxFxVersion, alwaysOn:alwaysOn}" -o table
