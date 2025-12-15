@@ -96,42 +96,67 @@ jobs:
           echo "Validating Azure Web App: ${{ secrets.AZURE_WEBAPP_NAME }}"
           echo ""
           
-          # Try to find the web app by directly querying with the name
-          echo "Attempting direct access to web app..."
-          if az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "name" -o tsv 2>/dev/null; then
-            echo "✓ Web app '${{ secrets.AZURE_WEBAPP_NAME }}' exists and is accessible"
+          # List all web apps to check visibility
+          echo "Searching for web app in subscription..."
+          WEB_APP_INFO=$(az webapp list --query "[?name=='${{ secrets.AZURE_WEBAPP_NAME }}'] | [0].{name:name, resourceGroup:resourceGroup, state:state, location:location}" -o json 2>/dev/null)
+          
+          if [ "$WEB_APP_INFO" = "null" ] || [ -z "$WEB_APP_INFO" ]; then
+            echo "✗ Web app '${{ secrets.AZURE_WEBAPP_NAME }}' not found in subscription"
+            echo ""
+            echo "Available web apps:"
+            az webapp list --query "[].{name:name, resourceGroup:resourceGroup}" -o table
+            exit 1
+          fi
+          
+          RESOURCE_GROUP=$(echo "$WEB_APP_INFO" | jq -r '.resourceGroup')
+          echo "✓ Found web app '${{ secrets.AZURE_WEBAPP_NAME }}' in resource group: $RESOURCE_GROUP"
+          echo ""
+          
+          # Check current role assignments
+          echo "Checking role assignments..."
+          CLIENT_ID="${{ secrets.AZURE_CLIENT_ID }}"
+          RG_SCOPE="/subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/$RESOURCE_GROUP"
+          
+          ROLES=$(az role assignment list --assignee "$CLIENT_ID" --scope "$RG_SCOPE" --query "[].roleDefinitionName" -o tsv 2>/dev/null || echo "")
+          
+          if [ -n "$ROLES" ]; then
+            echo "Assigned roles on resource group:"
+            echo "$ROLES"
+            echo ""
+          fi
+          
+          # Try to access the web app directly (requires deployment permissions)
+          echo "Testing web app access..."
+          if az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group "$RESOURCE_GROUP" --query "name" -o tsv 2>/dev/null; then
+            echo "✓ Service principal has deployment permissions"
             echo ""
             
             # Get web app details
             echo "Web App Details:"
-            az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "{name:name, resourceGroup:resourceGroup, state:state, defaultHostName:defaultHostName, kind:kind}" -o table
+            az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group "$RESOURCE_GROUP" --query "{name:name, resourceGroup:resourceGroup, state:state, defaultHostName:defaultHostName, kind:kind}" -o table
             echo ""
             
-            echo "✓ Deployment configuration validated successfully!"
+            # Test deployment credentials
+            echo "Verifying deployment configuration..."
+            PUBLISH_PROFILE=$(az webapp deployment list-publishing-profiles --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group "$RESOURCE_GROUP" --query "[0].publishUrl" -o tsv 2>/dev/null || echo "")
+            
+            if [ -n "$PUBLISH_PROFILE" ]; then
+              echo "✓ Can access deployment settings"
+            else
+              echo "⚠️  Cannot access deployment settings (may not affect OIDC-based deployment)"
+            fi
+            echo ""
+            
+            echo "✅ Deployment configuration validated successfully!"
           else
-            echo "✗ Cannot access web app '${{ secrets.AZURE_WEBAPP_NAME }}'"
+            echo "⚠️  Cannot access web app with current permissions"
             echo ""
-            
-            # Try to find it by listing all web apps
-            echo "Searching for web app in accessible resources..."
-            WEB_APPS=$(az webapp list --query "[].{name:name, resourceGroup:resourceGroup, state:state, location:location}" -o json 2>/dev/null || echo "[]")
-            
-            echo "Web apps visible to the service principal:"
-            echo "$WEB_APPS" | jq -r '.[] | "\(.name) (RG: \(.resourceGroup))"' || echo "None found"
+            echo "Current roles: ${ROLES:-None found}"
             echo ""
-            
-            echo "ISSUE IDENTIFIED:"
-            echo "The service principal cannot see the web app '${{ secrets.AZURE_WEBAPP_NAME }}'."
+            echo "REQUIRED: Contributor or Website Contributor role"
             echo ""
-            echo "To fix this, you need to grant the service principal access:"
-            echo "1. Find the resource group containing 'referees-quiz-handballbelgium' in Azure Portal"
-            echo "2. Go to that resource group → Access control (IAM)"
-            echo "3. Click 'Add role assignment'"
-            echo "4. Select role: 'Website Contributor' or 'Contributor'"
-            echo "5. Assign access to the service principal used by this workflow"
-            echo ""
-            echo "Or run this Azure CLI command (replace <RESOURCE_GROUP> and <SERVICE_PRINCIPAL_ID>):"
-            echo "az role assignment create --assignee <SERVICE_PRINCIPAL_ID> --role 'Website Contributor' --scope /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.Web/sites/${{ secrets.AZURE_WEBAPP_NAME }}"
+            echo "To grant access, run:"
+            echo "az role assignment create --assignee \"$CLIENT_ID\" --role 'Contributor' --scope \"$RG_SCOPE\""
             exit 1
           fi
 
