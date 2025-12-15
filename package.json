@@ -1,6 +1,6 @@
 {
   "name": "handball-belgium-rules-quiz",
-  "version": "0.0.0",
+  "version": "1.0.0-beta.1",
   "description": "IHF Rules quiz for the referees of Handball Belgium",
   "main": "index.js",
   "scripts": {
