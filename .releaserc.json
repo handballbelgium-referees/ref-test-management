@@ -55,9 +55,9 @@
     [
       "@semantic-release/changelog",
       {
-        "changelogTitle": "# Changelog\n\nAll notable changes to this project will be documented in this file."
-      },
-      ["main"]
+        "changelogTitle": "# Changelog Handball Belgium Quiz Management",
+        "filename": "CHANGELOG.md"
+      }
     ],
     [
       "@semantic-release/exec",
