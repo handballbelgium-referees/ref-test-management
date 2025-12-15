@@ -163,4 +163,15 @@ jobs:
       - name: Validate deployment settings
         run: |
           echo "Checking web app runtime settings..."
-          az webapp config show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "{netFrameworkVersion:netFrameworkVersion, linuxFxVersion:linuxFxVersion, alwaysOn:alwaysOn}" -o table
+          
+          # Get resource group from web app list
+          RESOURCE_GROUP=$(az webapp list --query "[?name=='${{ secrets.AZURE_WEBAPP_NAME }}'].resourceGroup | [0]" -o tsv)
+          
+          if [ -n "$RESOURCE_GROUP" ]; then
+            az webapp config show --name ${{ secrets.AZURE_WEBAPP_NAME }} --resource-group "$RESOURCE_GROUP" --query "{netFrameworkVersion:netFrameworkVersion, linuxFxVersion:linuxFxVersion, alwaysOn:alwaysOn}" -o table
+            echo ""
+            echo "✅ Configuration check complete"
+          else
+            echo "Could not determine resource group"
+            exit 1
+          fi
