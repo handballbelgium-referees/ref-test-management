@@ -1,5 +1,11 @@
 {
-  "branches": ["main"],
+  "branches": [
+    "main",
+    {
+      "name": "beta",
+      "prerelease": true
+    }
+  ],
   "plugins": [
     [
       "@semantic-release/commit-analyzer",
@@ -14,9 +20,10 @@
           { "type": "ci", "release": false },
           { "type": "style", "release": "patch" },
           { "type": "refactor", "release": "patch" },
-          { "type": "test", "release": "patch" },
+          { "type": "test", "release": false },
           { "type": "build", "release": "patch" },
-          { "type": "chore", "release": "patch" }
+          { "type": "chore", "release": "patch" },
+          { "breaking": true, "release": "major" }
         ]
       }
     ],
@@ -40,7 +47,8 @@
           ]
         },
         "writerOpts": {
-          "commitsSort": ["subject", "scope"]
+          "commitsSort": ["subject", "scope"],
+          "commitPartial": "* {{subject}}{{#if scope}} **{{scope}}:**{{/if}}{{#if hash}} ([{{hash}}]({{repository}}/commit/{{hash}})){{/if}}\n\n{{#if body}}{{body}}\n\n{{/if}}"
         }
       }
     ],
@@ -48,7 +56,8 @@
       "@semantic-release/changelog",
       {
         "changelogTitle": "# Changelog\n\nAll notable changes to this project will be documented in this file."
-      }
+      },
+      ["main"]
     ],
     [
       "@semantic-release/exec",
