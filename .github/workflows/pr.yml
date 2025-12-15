@@ -80,31 +80,53 @@ jobs:
 
       - name: Validate Azure Web App exists and is accessible
         run: |
-          echo "Validating Azure Web App: ${{ secrets.AZURE_WEBAPP_NAME }}"
+          echo "=== Azure Configuration Diagnostics ==="
+          echo ""
           
-          # Check if the web app exists
+          # Show current subscription
+          echo "Current Subscription:"
+          az account show --query "{name:name, id:id, state:state}" -o table
+          echo ""
+          
+          # Show all subscriptions the service principal has access to
+          echo "Available Subscriptions:"
+          az account list --query "[].{name:name, id:id, state:state}" -o table
+          echo ""
+          
+          echo "Validating Azure Web App: ${{ secrets.AZURE_WEBAPP_NAME }}"
+          echo ""
+          
+          # Try to find the web app
+          echo "Searching for web app in current subscription..."
+          WEB_APP_FOUND=$(az webapp list --query "[?name=='${{ secrets.AZURE_WEBAPP_NAME }}'].{name:name, resourceGroup:resourceGroup, state:state}" -o table)
+          
+          if [ -z "$WEB_APP_FOUND" ] || [ "$WEB_APP_FOUND" = "[]" ]; then
+            echo "✗ Web app '${{ secrets.AZURE_WEBAPP_NAME }}' not found in current subscription"
+            echo ""
+            echo "Available web apps in this subscription:"
+            az webapp list --query "[].{name:name, resourceGroup:resourceGroup, state:state, location:location}" -o table
+            echo ""
+            echo "Possible issues:"
+            echo "  1. Web app name is incorrect (check AZURE_WEBAPP_NAME secret)"
+            echo "  2. Web app is in a different subscription (check AZURE_SUBSCRIPTION_ID secret)"
+            echo "  3. Service principal doesn't have 'Reader' or 'Contributor' role on the resource group"
+            exit 1
+          fi
+          
+          # Check if we can access the web app details
           if az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "name" -o tsv > /dev/null 2>&1; then
             echo "✓ Web app '${{ secrets.AZURE_WEBAPP_NAME }}' exists and is accessible"
+            echo ""
             
             # Get web app details
-            echo ""
             echo "Web App Details:"
-            az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "{name:name, resourceGroup:resourceGroup, state:state, defaultHostName:defaultHostName}" -o table
-            
-            # Check if the service principal has deployment permissions
+            az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "{name:name, resourceGroup:resourceGroup, state:state, defaultHostName:defaultHostName, kind:kind}" -o table
             echo ""
-            echo "Checking deployment permissions..."
-            RESOURCE_ID=$(az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "id" -o tsv)
-            echo "✓ Service principal has access to the web app"
             
-            echo ""
             echo "✓ Deployment configuration validated successfully!"
           else
-            echo "✗ Failed to access web app '${{ secrets.AZURE_WEBAPP_NAME }}'"
-            echo "Possible issues:"
-            echo "  - Web app doesn't exist"
-            echo "  - Service principal doesn't have permissions"
-            echo "  - Wrong subscription is configured"
+            echo "✗ Found web app but cannot access full details"
+            echo "Service principal may need additional permissions"
             exit 1
           fi
 
