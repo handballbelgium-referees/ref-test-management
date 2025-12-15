@@ -3,7 +3,7 @@ name: PR CI
 on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
-    branches: [main]
+    branches: [main, beta]
 
 env:
     DOTNET_VERSION: 10.0.x

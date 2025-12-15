@@ -2,7 +2,7 @@ name: Main CI/CD
 
 on:
   push:
-    branches: [main]
+    branches: [main, beta]
 
 env:
     DOTNET_VERSION: 10.0.x
@@ -46,7 +46,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
         with:
-          ref: main
+          ref: ${{ github.ref }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
