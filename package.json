@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/KristofGilis/handball-belgium-rules-quiz.git"
+    "url": "git+https://github.com/handballbelgium/ruletests-quiz-management.git"
   },
   "author": "Kristof Gilis <kristof.gilis@outlook.be>",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/KristofGilis/handball-belgium-rules-quiz/issues"
+    "url": "https://github.com/handballbelgium/ruletests-quiz-management/issues"
   },
-  "homepage": "https://github.com/KristofGilis/handball-belgium-rules-quiz#readme",
+  "homepage": "https://github.com/handballbelgium/ruletests-quiz-management#readme",
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",
