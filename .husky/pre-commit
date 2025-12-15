@@ -1,1 +1,9 @@
-cd QuizManagement.Ui && npm run build
+#!/usr/bin/env sh
+
+# Skip hooks during CI or when message contains [skip ci]
+if [ -n "$CI" ] || git log -1 --pretty=%B | grep -q "\[skip ci\]"; then
+  exit 0
+fi
+
+cd QuizManagement.Ui
+npm run build
