@@ -1,0 +1,348 @@
+{
+  "app": {
+    "title": "Handball-Quiz-Verwaltung",
+    "pageTitle": "Handball-Quiz-Verwaltung"
+  },
+  "common": {
+    "cancel": "Abbrechen"
+  },
+  "nav": {
+    "language": "Sprache",
+    "logout": "Abmelden"
+  },
+  "home": {
+    "hero": {
+      "title": "Handball-Regelquiz-Verwaltungssystem",
+      "subtitle": "Erstellen und verwalten Sie Handball-Regelquizze für Schiedsrichter und Delegierte des Belgischen Handballverbands",
+      "login": "Zum Dashboard"
+    },
+    "actions": {
+      "title": "Schnellaktionen",
+      "create": {
+        "title": "Sitzungen Erstellen",
+        "description": "Quiz-Sitzungen in großen Mengen erstellen"
+      },
+      "manage": {
+        "title": "Sitzungen Verwalten",
+        "description": "Quiz-Sitzungen verfolgen und verwalten"
+      }
+    },
+    "about": {
+      "title": "Quiz-Sitzungsverwaltungssystem",
+      "description": "Diese Anwendung verwaltet Handball-Regeln Quiz-Sitzungen. Administratoren können Quiz-Sitzungen in großen Mengen für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Sitzungsfortschritt und Abschlussstatus verfolgen, Sitzungen nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. Quiz unterstützen 4 Sprachen (Englisch, Niederländisch, Französisch, Deutsch).",
+      "bulk": {
+        "title": "Massen-Sitzungserstellung",
+        "description": "Erstellen Sie Quiz-Sitzungen für mehrere Benutzer auf einmal. Jede Sitzung wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
+      },
+      "management": {
+        "title": "Sitzungsverwaltung",
+        "description": "Verfolgen Sie Quiz-Sitzungen während ihres gesamten Lebenszyklus: ausstehend, in Bearbeitung, abgeschlossen oder abgelaufen. Filtern und sortieren Sie nach Status, Datum, Punktzahl oder Benutzer-E-Mail. Senden Sie Einladungen und verwalten Sie alle Sitzungsaktionen."
+      }
+    }
+  },
+  "sessions": {
+    "list": {
+      "title": "Quiz-Sitzungen Verwalten",
+      "subtitle": "Alle Quiz-Sitzungen anzeigen, filtern und verfolgen",
+      "createNew": "Neue Sitzungen Erstellen",
+      "searchPlaceholder": "Nach Name oder E-Mail suchen...",
+      "loading": "Sitzungen werden geladen...",
+      "loadMore": "Weitere Sitzungen Laden",
+      "loadingMore": "Lädt...",
+      "showing": "{{count}} von {{total}} Sitzungen werden angezeigt",
+      "filters": {
+        "advancedFilters": "Erweiterte Filter",
+        "performanceTitle": "Leistungsmetriken",
+        "from": "Von",
+        "to": "Bis",
+        "all": "Alle",
+        "pending": "Ausstehend",
+        "inProgress": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "expired": "Abgelaufen",
+        "titleLabel": "Quiz Titel",
+        "titleAll": "Alle Titel",
+        "titleSearchPlaceholder": "Titel suchen...",
+        "noTitlesFound": "Keine Titel gefunden",
+        "invitationLabel": "Einladungsstatus",
+        "invitationAll": "Alle",
+        "invitationSent": "Gesendet",
+        "invitationNotSent": "Nicht Gesendet",
+        "resultsLabel": "Ergebnisstatus",
+        "resultsAll": "Alle",
+        "resultsSent": "Gesendet",
+        "resultsNotSent": "Nicht Gesendet",
+        "scoreRange": "Punktebereich",
+        "minScore": "Min Punkte",
+        "maxScore": "Max Punkte",
+        "percentageRange": "Prozentbereich",
+        "percentageAll": "Alle",
+        "percentageLow": "0-50%",
+        "percentageMedium": "50-75%",
+        "percentageHigh": "75-100%",
+        "questionsRange": "Fragen",
+        "min": "Min",
+        "max": "Max",
+        "startedDateRange": "Startdatum",
+        "completedDateRange": "Abschlussdatum"
+      },
+      "sorting": {
+        "title": "Sortieroptionen",
+        "sortBy": "Sortieren Nach",
+        "direction": "Richtung",
+        "email": "Teilnehmer",
+        "status": "Status",
+        "numberOfQuestions": "Fragen",
+        "score": "Ergebnis",
+        "invitationSent": "Einladung",
+        "resultsSent": "Ergebnisse",
+        "startedAt": "Startdatum",
+        "completedAt": "Abschlussdatum",
+        "percentage": "Prozentsatz",
+        "asc": "Aufsteigend",
+        "desc": "Absteigend"
+      },
+      "status": {
+        "PENDING": "Ausstehend",
+        "IN_PROGRESS": "In Bearbeitung",
+        "COMPLETED": "Abgeschlossen",
+        "EXPIRED": "Abgelaufen"
+      },
+      "table": {
+        "title": "Titel",
+        "participant": "Teilnehmer",
+        "status": "Status",
+        "questions": "Fragen",
+        "score": "Ergebnis",
+        "invitation": "Einladung",
+        "results": "Ergebnisse",
+        "started": "Gestartet",
+        "completed": "Abgeschlossen"
+      },
+      "columns": {
+        "toggle": "Spalten ein-/ausblenden",
+        "title": "Titel",
+        "participant": "Teilnehmer",
+        "status": "Status",
+        "questions": "Fragen",
+        "score": "Punktzahl",
+        "invitation": "Einladung",
+        "results": "Ergebnisse",
+        "started": "Gestartet",
+        "completed": "Abgeschlossen"
+      },
+      "empty": {
+        "title": "Keine Sitzungen gefunden",
+        "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten Quiz-Sitzungen",
+        "action": "Sitzungen Erstellen"
+      },
+      "bulk": {
+        "sessionSelected": "Sitzung ausgewählt",
+        "sessionsSelected": "Sitzungen ausgewählt",
+        "sendInvitations": "Einladungen Senden",
+        "sendResults": "Ergebnisse Senden",
+        "delete": "Löschen"
+      },
+      "actions": {
+        "sendInvitation": "Einladung Senden",
+        "sendResults": "Ergebnisse Senden",
+        "delete": "Löschen"
+      },
+      "dialogs": {
+        "sendInvitations": {
+          "title": "Einladungen Senden",
+          "message": "Sind Sie sicher, dass Sie Einladungen senden möchten?",
+          "newInvitations": "Neue Einladungen ({{count}})",
+          "resendInvitations": "Erneut senden ({{count}})",
+          "confirm": "Einladungen Senden",
+          "cancel": "Abbrechen"
+        },
+        "sendResults": {
+          "title": "Ergebnisse Senden",
+          "message": "Sind Sie sicher, dass Sie Ergebnisse senden möchten?",
+          "newResults": "Neue Ergebnisse ({{count}})",
+          "resendResults": "Erneut senden ({{count}})",
+          "confirm": "Ergebnisse Senden",
+          "cancel": "Abbrechen"
+        },
+        "delete": {
+          "title": "Sitzungen Löschen",
+          "message": "Sind Sie sicher, dass Sie {{count}} Sitzung(en) löschen möchten?",
+          "warning": "Diese Aktion kann nicht rückgängig gemacht werden.",
+          "sessions": "Zu löschende Sitzungen:",
+          "confirm": "Löschen",
+          "cancel": "Abbrechen"
+        }
+      }
+    },
+    "create": {
+      "back": "Zurück zur Startseite",
+      "title": "Quiz-Sitzungen Erstellen",
+      "subtitle": "Teilnehmer hinzufügen und Quiz-Einstellungen konfigurieren, um neue Sitzungen zu erstellen",
+      "description": "Erstellen Sie Quiz-Sitzungen in großen Mengen für mehrere Benutzer. Geben Sie E-Mail-Adressen ein und konfigurieren Sie Sitzungseinstellungen.",
+      "form": {
+        "config": {
+          "label": "Quiz-Konfiguration"
+        },
+        "title": {
+          "label": "Quiz Titel",
+          "placeholder": "Suchen Sie nach einem vorhandenen Titel oder geben Sie einen neuen ein...",
+          "required": "Titel ist erforderlich",
+          "tooltip": "Beispiel: Schulung {{date}}",
+          "noResults": "Keine vorhandenen Titel gefunden",
+          "createNew": "Drücken Sie Enter, um einen neuen Titel mit diesem Namen zu erstellen",
+          "existingTitle": "Vorhandenen Titel verwenden",
+          "newTitle": "Wird neuen Titel erstellen",
+          "clear": "Titel löschen"
+        },
+        "users": {
+          "label": "Benutzer",
+          "placeholder": "Hans Müller hans.mueller@example.com\nMaria Schmidt maria.schmidt@example.com\nbenutzer@example.com",
+          "hint": "Geben Sie einen Benutzer pro Zeile ein. Format: \"Vorname Nachname email@example.com\" oder \"email@example.com\"",
+          "error": "Bitte geben Sie mindestens einen Benutzer ein",
+          "firstNameRequired": "Vorname ist erforderlich",
+          "lastNameRequired": "Nachname ist erforderlich",
+          "emailRequired": "E-Mail ist erforderlich",
+          "emailInvalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+          "count": "{{count}} Teilnehmer",
+          "count_other": "{{count}} Teilnehmer",
+          "bulkImport": "Massenimport",
+          "bulkImportLabel": "Teilnehmerdaten einfügen (eine pro Zeile)",
+          "bulkImportHint": "Format: \"Vorname Nachname E-Mail\" (alle Felder erforderlich)",
+          "bulkImportButton": "Importieren",
+          "firstName": "Vorname",
+          "firstNamePlaceholder": "Hans",
+          "lastName": "Nachname",
+          "lastNamePlaceholder": "Müller",
+          "email": "E-Mail",
+          "emailPlaceholder": "hans.mueller@example.com",
+          "removeParticipant": "Teilnehmer entfernen",
+          "addParticipant": "Teilnehmer Hinzufügen"
+        },
+        "numberOfQuestions": {
+          "label": "Anzahl der Fragen",
+          "hint": "Gesamtzahl der Fragen im Quiz",
+          "error": "Die Anzahl der Fragen muss mindestens 1 sein",
+          "required": "Anzahl der Fragen ist erforderlich",
+          "min": "Muss mindestens 1 Frage haben"
+        },
+        "maxTimeInMinutes": {
+          "label": "Maximale Zeit (Minuten)",
+          "hint": "Maximale Zeit zum Abschließen des Quiz",
+          "error": "Die maximale Zeit muss mindestens 1 Minute betragen",
+          "required": "Zeitlimit ist erforderlich",
+          "min": "Muss mindestens 1 Minute betragen"
+        },
+        "specificQuestionNumbers": {
+          "label": "Spezifische Fragennummern (Optional)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Kommagetrennte Liste spezifischer Fragennummern, die einbezogen werden sollen. Leer lassen für zufällige Fragen.",
+          "bulkImport": "Massenimport",
+          "count": "{{count}} Frage ausgewählt",
+          "count_other": "{{count}} Fragen ausgewählt",
+          "searchPlaceholder": "Fragen nach Nummer suchen und hinzufügen...",
+          "bulkImportLabel": "Fragennummern einfügen (eine pro Zeile oder durch Kommas getrennt)",
+          "bulkImportHint": "Format: Eine Fragennummer pro Zeile oder durch Kommas getrennt",
+          "bulkImportButton": "Importieren",
+          "bulkImportImporting": "Importiert...",
+          "noResults": "Keine Fragen gefunden",
+          "tableNumber": "Nummer",
+          "tableQuestion": "Frage",
+          "removeQuestion": "Frage entfernen"
+        },
+        "emailOptions": {
+          "title": "E-Mail-Automatisierung"
+        },
+        "sendInvitations": {
+          "label": "Einladungs-E-Mails senden",
+          "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der Sitzungen zu senden",
+          "description": "Teilnehmer erhalten eine E-Mail mit ihrem Quiz-Link"
+        },
+        "sendResults": {
+          "label": "Ergebnis-E-Mails senden",
+          "hint": "Aktivieren, um Ergebnis-E-Mails sofort nach Erstellung der Sitzungen zu senden",
+          "description": "Teilnehmer erhalten eine E-Mail mit ihren Quiz-Ergebnissen"
+        },
+        "submit": "Sitzungen Erstellen",
+        "submitting": "Erstellen...",
+        "cancel": "Abbrechen",
+        "validationError": "Bitte beheben Sie die Validierungsfehler vor dem Absenden",
+        "noParticipants": "Bitte fügen Sie mindestens einen Teilnehmer hinzu",
+        "submitError": "Beim Erstellen der Sitzungen ist ein Fehler aufgetreten"
+      },
+      "success": {
+        "title": "Sitzungen Erfolgreich Erstellt",
+        "message": "Quiz-Sitzungen wurden erstellt. Weiterleitung zur Sitzungsliste...",
+        "created": "Erfolgreich {{count}} Sitzung erstellt!",
+        "created_other": "Erfolgreich {{count}} Sitzungen erstellt!",
+        "failedInfo": "{{count}} fehlgeschlagen. Siehe Fehler unten.",
+        "failedTitle": "Fehlgeschlagene Sitzungen:"
+      },
+      "error": {
+        "title": "Fehler beim Erstellen von Sitzungen"
+      }
+    }
+  },
+  "quiz": {
+    "page_title": "Handballregeln-Quiz",
+    "loading": "Quiz wird geladen...",
+    "error": {
+      "title": "Quiz kann nicht geladen werden",
+      "QuizSessionNotFoundError": "Diese Quiz-Sitzung wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
+      "QuizSessionExpiredError": "Diese Quiz-Sitzung ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
+      "InvalidQuizSessionStatusError": "Diese Quiz-Sitzung ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
+    },
+    "backToWelcome": "Zurück zur Begrüßung",
+    "welcome_title": "Willkommen zu Ihrem Quiz",
+    "welcome_subtitle": "Bitte überprüfen Sie die folgenden Informationen, bevor Sie beginnen",
+    "participant_name": "Name",
+    "participant_email": "E-Mail",
+    "number_of_questions": "Fragen",
+    "time_limit": "Zeitlimit",
+    "minutes": "Min",
+    "no_limit": "Kein Limit",
+    "instructions_title": "Anweisungen",
+    "instruction_1": "Lesen Sie jede Frage sorgfältig, bevor Sie Ihre Antworten auswählen",
+    "instruction_2": "Einige Fragen können mehrere richtige Antworten haben",
+    "instruction_3": "Sie können zwischen den Fragen hin und her navigieren",
+    "instruction_4": "Schließen Sie das Quiz innerhalb des Zeitlimits ab",
+    "start_button": "Quiz starten",
+    "timeRemaining": "Verbleibende Zeit",
+    "progress": "Fortschritt",
+    "question": "Frage",
+    "of": "von",
+    "answered": "beantwortet",
+    "previous": "Zurück",
+    "next": "Weiter",
+    "submit": "Quiz Einreichen",
+    "results": {
+      "title": "Quiz Abgeschlossen!",
+      "subtitle": "Hier sind Ihre Ergebnisse",
+      "score": "Punktzahl",
+      "percentage": "Prozentsatz",
+      "total": "Gesamtzahl der Fragen",
+      "review": "Überprüfen Sie Ihre Antworten"
+    },
+    "dialog": {
+      "submit": {
+        "title": "Quiz Einreichen?",
+        "message": "Sind Sie sicher, dass Sie Ihr Quiz einreichen möchten? Nach dem Einreichen können Sie Ihre Antworten nicht mehr ändern.",
+        "answered": "Beantwortete Fragen",
+        "unanswered": "Unbeantwortete Fragen",
+        "warning": "Sie haben unbeantwortete Fragen. Diese werden als falsch markiert.",
+        "confirm": "Quiz Einreichen",
+        "cancel": "Quiz Fortsetzen"
+      },
+      "leave": {
+        "title": "Quiz Verlassen?",
+        "message": "Sind Sie sicher, dass Sie gehen möchten? Ihr Fortschritt geht verloren, wenn Sie das Quiz nicht eingereicht haben.",
+        "confirm": "Quiz Verlassen",
+        "cancel": "Beim Quiz Bleiben"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} Handball-Quiz-Verwaltung. Alle Rechte vorbehalten.",
+    "creator": "Erstellt von Kristof Gilis"
+  }
+}

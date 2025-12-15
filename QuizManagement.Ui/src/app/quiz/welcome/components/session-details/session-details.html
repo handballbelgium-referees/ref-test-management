@@ -1,0 +1,43 @@
+<div class="mb-8 space-y-4">
+  <div class="rounded-lg bg-neutral-50 p-3 border border-neutral-200">
+    <p class="mb-1 text-xs font-medium text-neutral-500">
+      {{ 'quiz.participant_name' | translate }}
+    </p>
+    <p class="text-base font-semibold text-neutral-900">
+      {{ session().name }}
+    </p>
+  </div>
+
+  <div class="rounded-lg bg-neutral-50 p-3 border border-neutral-200">
+    <p class="mb-1 text-xs font-medium text-neutral-500">
+      {{ 'quiz.participant_email' | translate }}
+    </p>
+    <p class="text-base font-semibold text-neutral-900">
+      {{ session().email }}
+    </p>
+  </div>
+
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="rounded-lg bg-neutral-50 p-3 border border-neutral-200">
+      <p class="mb-1 text-xs font-medium text-neutral-500">
+        {{ 'quiz.number_of_questions' | translate }}
+      </p>
+      <p class="text-2xl font-bold text-primary-600">
+        {{ session().numberOfQuestions }}
+      </p>
+    </div>
+
+    <div class="rounded-lg bg-neutral-50 p-3 border border-neutral-200">
+      <p class="mb-1 text-xs font-medium text-neutral-500">
+        {{ 'quiz.time_limit' | translate }}
+      </p>
+      <p class="text-2xl font-bold text-primary-600">
+        @if (session().maxTimeInMinutes) {
+        {{ session().maxTimeInMinutes }} {{ 'quiz.minutes' | translate }}
+        } @else {
+        {{ 'quiz.no_limit' | translate }}
+        }
+      </p>
+    </div>
+  </div>
+</div>

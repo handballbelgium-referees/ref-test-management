@@ -1,0 +1,348 @@
+{
+  "app": {
+    "title": "Gestion du Quiz de Handball",
+    "pageTitle": "Gestion du Quiz de Handball"
+  },
+  "common": {
+    "cancel": "Annuler"
+  },
+  "nav": {
+    "language": "Langue",
+    "logout": "Déconnexion"
+  },
+  "home": {
+    "hero": {
+      "title": "Système de Gestion de Quiz de Règles de Handball",
+      "subtitle": "Créer et gérer des quiz de règles de handball pour les arbitres et observateurs de la Fédération Belge de Handball",
+      "login": "Accéder au Tableau de Bord"
+    },
+    "actions": {
+      "title": "Actions Rapides",
+      "create": {
+        "title": "Créer des Sessions",
+        "description": "Créer des sessions de quiz en masse"
+      },
+      "manage": {
+        "title": "Gérer les Sessions",
+        "description": "Suivre et gérer les sessions de quiz"
+      }
+    },
+    "about": {
+      "title": "Système de Gestion des Sessions de Quiz",
+      "description": "Cette application gère les sessions de quiz sur les règles du handball. Les administrateurs peuvent créer des sessions de quiz en masse pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des sessions, filtrer et trier les sessions selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les quiz prennent en charge 4 langues (anglais, néerlandais, français, allemand).",
+      "bulk": {
+        "title": "Création de Sessions en Masse",
+        "description": "Créez des sessions de quiz pour plusieurs utilisateurs à la fois. Chaque session est attribuée à un utilisateur spécifique avec des capacités de suivi uniques."
+      },
+      "management": {
+        "title": "Gestion des Sessions",
+        "description": "Suivez les sessions de quiz tout au long de leur cycle de vie : en attente, en cours, terminées ou expirées. Filtrez et triez par statut, date, score ou e-mail de l'utilisateur. Envoyez des invitations et gérez toutes les actions de session."
+      }
+    }
+  },
+  "sessions": {
+    "list": {
+      "title": "Gérer les Sessions de Quiz",
+      "subtitle": "Afficher, filtrer et suivre toutes les sessions de quiz",
+      "createNew": "Créer de Nouvelles Sessions",
+      "searchPlaceholder": "Rechercher par nom ou e-mail...",
+      "loading": "Chargement des sessions...",
+      "loadMore": "Charger Plus de Sessions",
+      "loadingMore": "Chargement...",
+      "showing": "Affichage de {{count}} sur {{total}} sessions",
+      "filters": {
+        "advancedFilters": "Filtres Avancés",
+        "performanceTitle": "Métriques de Performance",
+        "from": "Du",
+        "to": "Au",
+        "all": "Toutes",
+        "pending": "En Attente",
+        "inProgress": "En Cours",
+        "completed": "Terminées",
+        "expired": "Expirées",
+        "titleLabel": "Titre du Quiz",
+        "titleAll": "Tous les Titres",
+        "titleSearchPlaceholder": "Rechercher des titres...",
+        "noTitlesFound": "Aucun titre trouvé",
+        "invitationLabel": "Statut d'Invitation",
+        "invitationAll": "Toutes",
+        "invitationSent": "Envoyée",
+        "invitationNotSent": "Non Envoyée",
+        "resultsLabel": "Statut des Résultats",
+        "resultsAll": "Toutes",
+        "resultsSent": "Envoyée",
+        "resultsNotSent": "Non Envoyée",
+        "scoreRange": "Plage de Score",
+        "minScore": "Score Min",
+        "maxScore": "Score Max",
+        "percentageRange": "Plage de Pourcentage",
+        "percentageAll": "Toutes",
+        "percentageLow": "0-50%",
+        "percentageMedium": "50-75%",
+        "percentageHigh": "75-100%",
+        "questionsRange": "Questions",
+        "min": "Min",
+        "max": "Max",
+        "startedDateRange": "Date de Début",
+        "completedDateRange": "Date de Fin"
+      },
+      "sorting": {
+        "title": "Options de Tri",
+        "sortBy": "Trier Par",
+        "direction": "Direction",
+        "email": "Participant",
+        "status": "Statut",
+        "numberOfQuestions": "Questions",
+        "score": "Score",
+        "invitationSent": "Invitation",
+        "resultsSent": "Résultats",
+        "startedAt": "Date de Début",
+        "completedAt": "Date de Fin",
+        "percentage": "Pourcentage",
+        "asc": "Croissant",
+        "desc": "Décroissant"
+      },
+      "status": {
+        "PENDING": "En Attente",
+        "IN_PROGRESS": "En Cours",
+        "COMPLETED": "Terminée",
+        "EXPIRED": "Expirée"
+      },
+      "table": {
+        "title": "Titre",
+        "participant": "Participant",
+        "status": "Statut",
+        "questions": "Questions",
+        "score": "Score",
+        "invitation": "Invitation",
+        "results": "Résultats",
+        "started": "Démarré",
+        "completed": "Terminé"
+      },
+      "columns": {
+        "toggle": "Afficher/Masquer les colonnes",
+        "title": "Titre",
+        "participant": "Participant",
+        "status": "Statut",
+        "questions": "Questions",
+        "score": "Score",
+        "invitation": "Invitation",
+        "results": "Résultats",
+        "started": "Démarré",
+        "completed": "Terminé"
+      },
+      "empty": {
+        "title": "Aucune session trouvée",
+        "subtitle": "Commencez par créer vos premières sessions de quiz",
+        "action": "Créer des Sessions"
+      },
+      "bulk": {
+        "sessionSelected": "session sélectionnée",
+        "sessionsSelected": "sessions sélectionnées",
+        "sendInvitations": "Envoyer les Invitations",
+        "sendResults": "Envoyer les Résultats",
+        "delete": "Supprimer"
+      },
+      "actions": {
+        "sendInvitation": "Envoyer l'Invitation",
+        "sendResults": "Envoyer les Résultats",
+        "delete": "Supprimer"
+      },
+      "dialogs": {
+        "sendInvitations": {
+          "title": "Envoyer les Invitations",
+          "message": "Êtes-vous sûr de vouloir envoyer les invitations?",
+          "newInvitations": "Nouvelles invitations ({{count}})",
+          "resendInvitations": "Renvoyer les invitations ({{count}})",
+          "confirm": "Envoyer les Invitations",
+          "cancel": "Annuler"
+        },
+        "sendResults": {
+          "title": "Envoyer les Résultats",
+          "message": "Êtes-vous sûr de vouloir envoyer les résultats?",
+          "newResults": "Nouveaux résultats ({{count}})",
+          "resendResults": "Renvoyer les résultats ({{count}})",
+          "confirm": "Envoyer les Résultats",
+          "cancel": "Annuler"
+        },
+        "delete": {
+          "title": "Supprimer les Sessions",
+          "message": "Êtes-vous sûr de vouloir supprimer {{count}} session(s)?",
+          "warning": "Cette action ne peut pas être annulée.",
+          "sessions": "Sessions à supprimer:",
+          "confirm": "Supprimer",
+          "cancel": "Annuler"
+        }
+      }
+    },
+    "create": {
+      "back": "Retour à l'accueil",
+      "title": "Créer des Sessions de Quiz",
+      "subtitle": "Ajoutez des participants et configurez les paramètres du quiz pour créer de nouvelles sessions",
+      "description": "Créez des sessions de quiz en masse pour plusieurs utilisateurs. Entrez les adresses e-mail et configurez les paramètres de session.",
+      "form": {
+        "config": {
+          "label": "Configuration du Quiz"
+        },
+        "title": {
+          "label": "Titre du Quiz",
+          "placeholder": "Rechercher un titre existant ou entrer un nouveau...",
+          "required": "Le titre est requis",
+          "tooltip": "Exemple : Recyclage {{date}}",
+          "noResults": "Aucun titre existant trouvé",
+          "createNew": "Appuyez sur Entrée pour créer un nouveau titre avec ce nom",
+          "existingTitle": "Utilisation du titre existant",
+          "newTitle": "Créera un nouveau titre",
+          "clear": "Effacer le titre"
+        },
+        "users": {
+          "label": "Utilisateurs",
+          "placeholder": "Jean Dupont jean.dupont@example.com\nMarie Martin marie.martin@example.com\nutilisateur@example.com",
+          "hint": "Entrez un utilisateur par ligne. Format : \"Prénom Nom email@example.com\" ou \"email@example.com\"",
+          "error": "Veuillez entrer au moins un utilisateur",
+          "firstNameRequired": "Le prénom est requis",
+          "lastNameRequired": "Le nom de famille est requis",
+          "emailRequired": "L'e-mail est requis",
+          "emailInvalid": "Veuillez entrer une adresse e-mail valide",
+          "count": "{{count}} participant",
+          "count_other": "{{count}} participants",
+          "bulkImport": "Import en Masse",
+          "bulkImportLabel": "Collez les données des participants (un par ligne)",
+          "bulkImportHint": "Format : \"Prénom Nom email\" (tous les champs obligatoires)",
+          "bulkImportButton": "Importer",
+          "firstName": "Prénom",
+          "firstNamePlaceholder": "Jean",
+          "lastName": "Nom",
+          "lastNamePlaceholder": "Dupont",
+          "email": "E-mail",
+          "emailPlaceholder": "jean.dupont@example.com",
+          "removeParticipant": "Supprimer le participant",
+          "addParticipant": "Ajouter un Participant"
+        },
+        "numberOfQuestions": {
+          "label": "Nombre de Questions",
+          "hint": "Nombre total de questions dans le quiz",
+          "error": "Le nombre de questions doit être au moins 1",
+          "required": "Le nombre de questions est requis",
+          "min": "Doit avoir au moins 1 question"
+        },
+        "maxTimeInMinutes": {
+          "label": "Temps Maximum (minutes)",
+          "hint": "Temps maximum autorisé pour compléter le quiz",
+          "error": "Le temps maximum doit être au moins 1 minute",
+          "required": "La limite de temps est requise",
+          "min": "Doit avoir au moins 1 minute"
+        },
+        "specificQuestionNumbers": {
+          "label": "Numéros de Questions Spécifiques (Optionnel)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Liste séparée par des virgules de numéros de questions spécifiques à inclure. Laisser vide pour des questions aléatoires.",
+          "bulkImport": "Import en Masse",
+          "count": "{{count}} question sélectionnée",
+          "count_other": "{{count}} questions sélectionnées",
+          "searchPlaceholder": "Rechercher et ajouter des questions par numéro...",
+          "bulkImportLabel": "Collez les numéros de questions (un par ligne ou séparés par des virgules)",
+          "bulkImportHint": "Format : Un numéro de question par ligne, ou séparés par des virgules",
+          "bulkImportButton": "Importer",
+          "bulkImportImporting": "Importation...",
+          "noResults": "Aucune question trouvée",
+          "tableNumber": "Numéro",
+          "tableQuestion": "Question",
+          "removeQuestion": "Supprimer la question"
+        },
+        "emailOptions": {
+          "title": "Automatisation des e-mails"
+        },
+        "sendInvitations": {
+          "label": "Envoyer les e-mails d'invitation",
+          "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des sessions",
+          "description": "Les participants recevront un e-mail avec leur lien de quiz"
+        },
+        "sendResults": {
+          "label": "Envoyer les e-mails de résultats",
+          "hint": "Cochez pour envoyer les e-mails de résultats immédiatement après la création des sessions",
+          "description": "Les participants recevront un e-mail avec leurs résultats de quiz"
+        },
+        "submit": "Créer les Sessions",
+        "submitting": "Création...",
+        "cancel": "Annuler",
+        "validationError": "Veuillez corriger les erreurs de validation avant de soumettre",
+        "noParticipants": "Veuillez ajouter au moins un participant",
+        "submitError": "Une erreur s'est produite lors de la création des sessions"
+      },
+      "success": {
+        "title": "Sessions Créées avec Succès",
+        "message": "Les sessions de quiz ont été créées. Redirection vers la liste des sessions...",
+        "created": "Créé avec succès {{count}} session !",
+        "created_other": "Créé avec succès {{count}} sessions !",
+        "failedInfo": "{{count}} échoué. Voir les erreurs ci-dessous.",
+        "failedTitle": "Sessions échouées :"
+      },
+      "error": {
+        "title": "Erreur lors de la Création des Sessions"
+      }
+    }
+  },
+  "quiz": {
+    "page_title": "Quiz sur les règles de handball",
+    "loading": "Chargement du quiz...",
+    "error": {
+      "title": "Impossible de charger le quiz",
+      "QuizSessionNotFoundError": "Cette session de quiz est introuvable. Veuillez vérifier votre lien.",
+      "QuizSessionExpiredError": "Cette session de quiz a expiré. Veuillez contacter l'administrateur.",
+      "InvalidQuizSessionStatusError": "Cette session de quiz n'est plus disponible ou a déjà été complétée."
+    },
+    "backToWelcome": "Retour à l'accueil",
+    "welcome_title": "Bienvenue à votre quiz",
+    "welcome_subtitle": "Veuillez consulter les informations ci-dessous avant de commencer",
+    "participant_name": "Nom",
+    "participant_email": "E-mail",
+    "number_of_questions": "Questions",
+    "time_limit": "Limite de temps",
+    "minutes": "min",
+    "no_limit": "Pas de limite",
+    "instructions_title": "Instructions",
+    "instruction_1": "Lisez attentivement chaque question avant de sélectionner vos réponses",
+    "instruction_2": "Certaines questions peuvent avoir plusieurs réponses correctes",
+    "instruction_3": "Vous pouvez naviguer en avant et en arrière entre les questions",
+    "instruction_4": "Complétez le quiz dans le délai imparti",
+    "start_button": "Commencer le Quiz",
+    "timeRemaining": "Temps Restant",
+    "progress": "Progrès",
+    "question": "Question",
+    "of": "sur",
+    "answered": "répondu",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "submit": "Soumettre le Quiz",
+    "results": {
+      "title": "Quiz Terminé!",
+      "subtitle": "Voici vos résultats",
+      "score": "Score",
+      "percentage": "Pourcentage",
+      "total": "Total des Questions",
+      "review": "Revoir Vos Réponses"
+    },
+    "dialog": {
+      "submit": {
+        "title": "Soumettre le Quiz?",
+        "message": "Êtes-vous sûr de vouloir soumettre votre quiz? Une fois soumis, vous ne pourrez plus modifier vos réponses.",
+        "answered": "Questions Répondues",
+        "unanswered": "Questions Non Répondues",
+        "warning": "Vous avez des questions non répondues. Elles seront marquées comme incorrectes.",
+        "confirm": "Soumettre le Quiz",
+        "cancel": "Continuer le Quiz"
+      },
+      "leave": {
+        "title": "Quitter le Quiz?",
+        "message": "Êtes-vous sûr de vouloir partir? Votre progression sera perdue si vous n'avez pas soumis le quiz.",
+        "confirm": "Quitter le Quiz",
+        "cancel": "Rester sur le Quiz"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} Gestion des Quiz Handball. Tous droits réservés.",
+    "creator": "Créé par Kristof Gilis"
+  }
+}

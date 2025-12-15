@@ -1,0 +1,17 @@
+query getQuestionsById($ids: [ID!]!, $includeNumber: Boolean!, $includeIsCorrect: Boolean!, $answerOrder: [AnswerSortInput!]) {
+    questionsById(ids: $ids) {
+        id
+        number @include(if: $includeNumber)
+        phrase
+        translations
+        answers(order: $answerOrder) {
+            nodes {
+                id
+                number @include(if: $includeNumber)
+                phrase
+                translations
+                isCorrect @include(if: $includeIsCorrect)
+            }
+        }
+    }
+}

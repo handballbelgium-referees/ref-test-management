@@ -1,0 +1,35 @@
+<div class="bg-white rounded-xl border border-neutral-200 shadow-sm p-4 mb-6">
+  <div class="flex items-center justify-between flex-wrap gap-8 md:gap-10">
+    <div class="flex items-center gap-3">
+      <svg class="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      <div>
+        <div class="text-sm text-neutral-600">{{ 'quiz.timeRemaining' | translate }}</div>
+        <div
+          class="text-xl font-bold font-mono"
+          [class]="timeRemainingSeconds() <= 300 ? 'text-red-600' : 'text-neutral-900'"
+        >
+          {{ timeRemaining() }}
+        </div>
+      </div>
+    </div>
+    <div class="flex-1 min-w-[200px]">
+      <div class="flex items-center justify-between text-sm text-neutral-600 mb-1">
+        <span>{{ 'quiz.progress' | translate }}</span>
+        <span>{{ answeredCount() }} / {{ totalQuestions() }}</span>
+      </div>
+      <div class="w-full bg-neutral-200 rounded-full h-2">
+        <div
+          class="bg-primary-600 h-2 rounded-full transition-all duration-300"
+          [style.width.%]="progress()"
+        ></div>
+      </div>
+    </div>
+  </div>
+</div>

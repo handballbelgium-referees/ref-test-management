@@ -1,0 +1,116 @@
+name: Main CI/CD
+
+on:
+  push:
+    branches: [main, beta]
+
+env:
+    DOTNET_VERSION: 10.0.x
+    NODE_VERSION: 22
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: read
+      issues: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run semantic-release
+        id: semantic
+        env:
+          GITHUB_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}
+        run: npx semantic-release
+
+  build:
+    runs-on: ubuntu-latest
+    needs: release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+
+      - name: Install UI dependencies
+        working-directory: ./QuizManagement.Ui
+        run: npm ci
+
+      - name: Build Angular application
+        working-directory: ./QuizManagement.Ui
+        run: npm run build -- --configuration production
+
+      - name: Create wwwroot directory
+        run: mkdir -p QuizManagement.Api/wwwroot
+
+      - name: Copy Angular build to wwwroot
+        run: cp -r QuizManagement.Ui/dist/QuizManagement.Ui/browser/* QuizManagement.Api/wwwroot/
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '${{ env.DOTNET_VERSION }}'
+
+      - name: Restore .NET dependencies
+        run: dotnet restore handball-belgium-rules-quiz-management.sln
+
+      - name: Build .NET application
+        run: dotnet build handball-belgium-rules-quiz-management.sln --configuration Release --no-restore
+
+      - name: Publish .NET application
+        run: dotnet publish QuizManagement.Api/QuizManagement.Api.csproj --configuration Release --no-build --output ./publish
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v6
+        with:
+          name: dist
+          path: ./publish
+          retention-days: 1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      id-token: write
+      contents: read
+      actions: read    
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v7
+        with:
+          name: dist
+          path: ${{ github.workspace }}/publish
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Deploy to Azure Web App
+        uses: azure/webapps-deploy@v3
+        with:
+          app-name: ${{ github.ref == 'refs/heads/main' && secrets.AZURE_WEBAPP_NAME || secrets.AZURE_WEBAPP_BETA_NAME }}
+          package: ${{ github.workspace }}/publish
+          clean: true

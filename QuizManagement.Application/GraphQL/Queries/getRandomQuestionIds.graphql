@@ -1,0 +1,7 @@
+query getRandomQuestionIds($first: Int!) {
+    questions(first: $first, random: true) {
+        nodes {
+            id
+        }
+    }    
+}

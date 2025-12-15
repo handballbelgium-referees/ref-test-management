@@ -1,0 +1,7 @@
+query calculateScore($questionIds: [ID], $selectedAnswerIds: [ID]) {
+    calculateScore(questionIds: $questionIds, selectedAnswerIds: $selectedAnswerIds) {
+        percentage
+        wrongQuestionsIds
+        wrongAnswerIds
+    }
+}
