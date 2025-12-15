@@ -88,33 +88,17 @@ jobs:
           az account show --query "{name:name, id:id, state:state}" -o table
           echo ""
           
-          # Show all subscriptions the service principal has access to
-          echo "Available Subscriptions:"
-          az account list --query "[].{name:name, id:id, state:state}" -o table
+          # List all resource groups to see permissions
+          echo "Resource Groups (service principal has access to):"
+          az group list --query "[].{name:name, location:location}" -o table
           echo ""
           
           echo "Validating Azure Web App: ${{ secrets.AZURE_WEBAPP_NAME }}"
           echo ""
           
-          # Try to find the web app
-          echo "Searching for web app in current subscription..."
-          WEB_APP_FOUND=$(az webapp list --query "[?name=='${{ secrets.AZURE_WEBAPP_NAME }}'].{name:name, resourceGroup:resourceGroup, state:state}" -o table)
-          
-          if [ -z "$WEB_APP_FOUND" ] || [ "$WEB_APP_FOUND" = "[]" ]; then
-            echo "✗ Web app '${{ secrets.AZURE_WEBAPP_NAME }}' not found in current subscription"
-            echo ""
-            echo "Available web apps in this subscription:"
-            az webapp list --query "[].{name:name, resourceGroup:resourceGroup, state:state, location:location}" -o table
-            echo ""
-            echo "Possible issues:"
-            echo "  1. Web app name is incorrect (check AZURE_WEBAPP_NAME secret)"
-            echo "  2. Web app is in a different subscription (check AZURE_SUBSCRIPTION_ID secret)"
-            echo "  3. Service principal doesn't have 'Reader' or 'Contributor' role on the resource group"
-            exit 1
-          fi
-          
-          # Check if we can access the web app details
-          if az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "name" -o tsv > /dev/null 2>&1; then
+          # Try to find the web app by directly querying with the name
+          echo "Attempting direct access to web app..."
+          if az webapp show --name ${{ secrets.AZURE_WEBAPP_NAME }} --query "name" -o tsv 2>/dev/null; then
             echo "✓ Web app '${{ secrets.AZURE_WEBAPP_NAME }}' exists and is accessible"
             echo ""
             
@@ -125,8 +109,29 @@ jobs:
             
             echo "✓ Deployment configuration validated successfully!"
           else
-            echo "✗ Found web app but cannot access full details"
-            echo "Service principal may need additional permissions"
+            echo "✗ Cannot access web app '${{ secrets.AZURE_WEBAPP_NAME }}'"
+            echo ""
+            
+            # Try to find it by listing all web apps
+            echo "Searching for web app in accessible resources..."
+            WEB_APPS=$(az webapp list --query "[].{name:name, resourceGroup:resourceGroup, state:state, location:location}" -o json 2>/dev/null || echo "[]")
+            
+            echo "Web apps visible to the service principal:"
+            echo "$WEB_APPS" | jq -r '.[] | "\(.name) (RG: \(.resourceGroup))"' || echo "None found"
+            echo ""
+            
+            echo "ISSUE IDENTIFIED:"
+            echo "The service principal cannot see the web app '${{ secrets.AZURE_WEBAPP_NAME }}'."
+            echo ""
+            echo "To fix this, you need to grant the service principal access:"
+            echo "1. Find the resource group containing 'referees-quiz-handballbelgium' in Azure Portal"
+            echo "2. Go to that resource group → Access control (IAM)"
+            echo "3. Click 'Add role assignment'"
+            echo "4. Select role: 'Website Contributor' or 'Contributor'"
+            echo "5. Assign access to the service principal used by this workflow"
+            echo ""
+            echo "Or run this Azure CLI command (replace <RESOURCE_GROUP> and <SERVICE_PRINCIPAL_ID>):"
+            echo "az role assignment create --assignee <SERVICE_PRINCIPAL_ID> --role 'Website Contributor' --scope /subscriptions/${{ secrets.AZURE_SUBSCRIPTION_ID }}/resourceGroups/<RESOURCE_GROUP>/providers/Microsoft.Web/sites/${{ secrets.AZURE_WEBAPP_NAME }}"
             exit 1
           fi
 
