@@ -28,6 +28,7 @@ public class QuizSessionConfiguration : IEntityTypeConfiguration<QuizSession>
             .IsRequired()
             .HasMaxLength(256);
 
+        builder.Property(x => x.SendInvitationsAutomatically);
         builder.Property(x => x.InvitationSent);
 
         builder.Property(x => x.Token)
@@ -98,6 +99,7 @@ public class QuizSessionConfiguration : IEntityTypeConfiguration<QuizSession>
                 c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                 c => c.ToList()));
 
+        builder.Property(x => x.SendResultsAutomatically);
         builder.Property(x => x.ResultsSent);
         
         builder.HasIndex(x => x.Email);

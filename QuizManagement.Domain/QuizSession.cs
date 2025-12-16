@@ -11,18 +11,22 @@ public class QuizSession
         string email,
         int numberOfQuestions,
         int maxTimeInMinutes,
-        List<string> questionIds)
+        List<string> questionIds,
+        bool sendInvitationsAutomatically,
+        bool sendResultsAutomatically)
     {
         TitleId = titleId;
         FirstName = firstName;
         LastName = lastName;
         Email = email;
+        SendInvitationsAutomatically = sendInvitationsAutomatically;
         NumberOfQuestions = numberOfQuestions;
         MaxTimeInMinutes = maxTimeInMinutes;
         QuestionIds = questionIds ?? [];
         Token = Guid.NewGuid().ToString("N");
         CreatedAt = DateTime.UtcNow;
         Status = QuizSessionStatus.Pending;
+        SendResultsAutomatically = sendResultsAutomatically;
     }
 
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -36,6 +40,7 @@ public class QuizSession
 
     public string Email { get; private set; }
     public string Token { get; private set; }
+    public bool SendInvitationsAutomatically { get; private set; }
     public bool InvitationSent { get; private set; }
     public int NumberOfQuestions { get; private set; }
     public int MaxTimeInMinutes { get; private set; }
@@ -49,6 +54,7 @@ public class QuizSession
     public List<string> SelectedAnswerIds { get; private set; } = [];
     public List<string> WrongQuestionIds { get; private set; } = [];
     public List<string> WrongAnswerIds { get; private set; } = [];
+    public bool SendResultsAutomatically { get; private set; }
     public bool ResultsSent { get; private set; }
 
     public static QuizSession Create(
@@ -58,7 +64,9 @@ public class QuizSession
         string email,
         int numberOfQuestions,
         int maxTimeInMinutes,
-        List<string> questionIds)
+        List<string> questionIds,
+        bool sendInvitationAutomatically,
+        bool sendResultsAutomatically)
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name is required", nameof(firstName));
@@ -76,7 +84,7 @@ public class QuizSession
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
         return new QuizSession(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
-            questionIds);
+            questionIds, sendInvitationAutomatically, sendResultsAutomatically);
     }
 
     public void SendInvitation()

@@ -103,7 +103,7 @@ public static class QuizMutations
 
         await context.SaveChangesAsync(cancellationToken);
 
-        if (!session.ResultsSent)
+        if (!session.SendResultsAutomatically)
             return session;
 
         var questionsWithCorrectAnswers =
@@ -193,7 +193,9 @@ public static class QuizMutations
                     user.Email,
                     input.NumberOfQuestions,
                     input.MaxTimeInMinutes,
-                    questionIds
+                    questionIds,
+                    input.SendAutomatedInvitations,
+                    input.SendAutomatedResults
                 );
 
                 createdSessions.Add(session);
@@ -214,7 +216,7 @@ public static class QuizMutations
         if (createdSessions.Count == 0)
             return result;
 
-        if (!input.SendInvitations)
+        if (!input.SendAutomatedInvitations)
         {
             context.QuizSessions.AddRange(createdSessions);
             await context.SaveChangesAsync(cancellationToken);
