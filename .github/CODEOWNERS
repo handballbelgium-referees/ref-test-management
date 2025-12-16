@@ -1,0 +1,19 @@
+# CODEOWNERS file
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @KristofGilis
+
+# .NET API and infrastructure
+/QuizManagement.Api/ @KristofGilis
+/QuizManagement.Application/ @KristofGilis
+/QuizManagement.Domain/ @KristofGilis
+/QuizManagement.Infrastructure/ @KristofGilis
+
+# Angular frontend
+/QuizManagement.Ui/ @KristofGilis
+
+# CI/CD and configuration
+/.github/ @KristofGilis
+/.releaserc.json @KristofGilis
+/commitlint.config.mjs @KristofGilis
