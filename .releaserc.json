@@ -3,7 +3,7 @@
     "main",
     {
       "name": "beta",
-      "prerelease": true
+      "prerelease": "beta"
     }
   ],
   "plugins": [
@@ -12,18 +12,18 @@
       {
         "preset": "conventionalcommits",
         "releaseRules": [
+          { "breaking": true, "release": "major" },
           { "type": "feat", "release": "minor" },
           { "type": "fix", "release": "patch" },
           { "type": "perf", "release": "patch" },
           { "type": "revert", "release": "patch" },
-          { "type": "docs", "release": false },
-          { "type": "ci", "release": false },
           { "type": "style", "release": "patch" },
           { "type": "refactor", "release": "patch" },
-          { "type": "test", "release": false },
           { "type": "build", "release": "patch" },
           { "type": "chore", "release": "patch" },
-          { "breaking": true, "release": "major" }
+          { "type": "test", "release": false },
+          { "type": "docs", "release": false },
+          { "type": "ci", "release": false }
         ]
       }
     ],
@@ -39,49 +39,23 @@
             { "type": "revert", "section": "⏪ Reverts" },
             { "type": "style", "section": "💄 Styles" },
             { "type": "refactor", "section": "♻️ Code Refactoring" },
-            { "type": "test", "section": "✅ Tests" },
             { "type": "build", "section": "🔧 Build System" },
             { "type": "chore", "section": "🔨 Chores" },
+            { "type": "test", "hidden": true },
             { "type": "docs", "hidden": true },
             { "type": "ci", "hidden": true }
           ]
         },
         "writerOpts": {
-          "commitsSort": ["subject", "scope"],
+          "commitsSort": ["type", "scope", "subject"],
           "commitPartial": "* {{subject}}{{#if scope}} **{{scope}}:**{{/if}}{{#if hash}} ([{{hash}}]({{repository}}/commit/{{hash}})){{/if}}\n\n{{#if body}}{{body}}\n\n{{/if}}"
         }
-      }
-    ],
-    [
-      "@semantic-release/changelog",
-      {
-        "changelogTitle": "# Changelog Handball Belgium Quiz Management",
-        "filename": "CHANGELOG.md"
-      }
-    ],
-    [
-      "@semantic-release/exec",
-      {
-        "prepareCmd": "cd QuizManagement.Ui && npm version ${nextRelease.version} --no-git-tag-version"
       }
     ],
     [
       "@semantic-release/npm",
       {
         "npmPublish": false
-      }
-    ],
-    [
-      "@semantic-release/git",
-      {
-        "assets": [
-          "package.json",
-          "package-lock.json",
-          "CHANGELOG.md",
-          "QuizManagement.Ui/package.json",
-          "QuizManagement.Ui/package-lock.json"
-        ],
-        "message": "chore(release): ${nextRelease.version} [skip ci]\n\n${nextRelease.notes}"
       }
     ],
     "@semantic-release/github"
