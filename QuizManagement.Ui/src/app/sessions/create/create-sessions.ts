@@ -364,8 +364,8 @@ export class CreateSessions {
             numberOfQuestions: formData.numberOfQuestions,
             maxTimeInMinutes: formData.maxTimeInMinutes,
             specificQuestionNumbers: specificQuestions.length > 0 ? specificQuestions : undefined,
-            sendInvitations: formData.sendInvitations,
-            sendResults: formData.sendResults,
+            sendAutomatedInvitations: formData.sendInvitations,
+            sendAutomatedResults: formData.sendResults,
           },
         },
       })
