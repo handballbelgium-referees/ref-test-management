@@ -134,14 +134,17 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                             // Question header with icon
                             questionColumn.Item().Row(row =>
                                 {
-                                    row.ConstantItem(20).Text(text =>
-                                    {
-                                        text.Span(isQuestionCorrect ? "✓" : "✗")
-                                            .FontSize(14)
-                                            .FontColor(isQuestionCorrect ? "#16a34a" : "#dc2626");
-                                    });
+                                    row.ConstantItem(20).AlignMiddle().Width(14).Height(14).Svg(_ => isQuestionCorrect ?
+                                        // Checkmark SVG
+                                        @"<svg width=""14"" height=""14"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                <path d=""M20 6L9 17L4 12"" stroke=""#16a34a"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
+                                            </svg>" :
+                                        // X/Cross SVG
+                                        @"<svg width=""14"" height=""14"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                <path d=""M18 6L6 18M6 6L18 18"" stroke=""#dc2626"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
+                                            </svg>");
 
-                                    row.RelativeItem().Text(text =>
+                                    row.RelativeItem().AlignMiddle().Text(text =>
                                     {
                                         text.Span($"{translations["question"]} {question.Number}: ")
                                             .Bold()
@@ -207,14 +210,22 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                                     {
                                         if (!string.IsNullOrEmpty(icon))
                                         {
-                                            row.ConstantItem(15).Text(icon).FontSize(10).FontColor(textColor);
+                                            row.ConstantItem(15).AlignMiddle().Width(10).Height(10).Svg(_ => icon == "✓" ?
+                                                // Checkmark SVG
+                                                $@"<svg width=""10"" height=""10"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                        <path d=""M20 6L9 17L4 12"" stroke=""{textColor}"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
+                                                    </svg>" :
+                                                // X/Cross SVG
+                                                $@"<svg width=""10"" height=""10"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                        <path d=""M18 6L6 18M6 6L18 18"" stroke=""{textColor}"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
+                                                    </svg>");
                                         }
                                         else
                                         {
                                             row.ConstantItem(15);
                                         }
 
-                                        row.RelativeItem().Text(text =>
+                                        row.RelativeItem().AlignMiddle().Text(text =>
                                         {
                                             var span = text.Span($"{answer.Number}: {answerText}")
                                                 .FontSize(9)
