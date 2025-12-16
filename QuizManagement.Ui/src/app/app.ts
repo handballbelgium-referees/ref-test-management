@@ -4,7 +4,7 @@ import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { filter, map } from 'rxjs';
-import { VERSION } from '../environments/version';
+import { APP_VERSION } from '../version';
 import { Auth } from './auth/services/auth';
 
 type Language = 'en' | 'nl' | 'fr' | 'de';
@@ -44,7 +44,7 @@ export class App {
   protected readonly showAuthUI = computed(() => !this._isQuizRoute());
 
   protected readonly showLanguageMenu = signal(false);
-  protected readonly version = VERSION;
+  protected readonly version = APP_VERSION;
   protected readonly currentYear = computed(() => new Date().getFullYear());
   protected readonly availableLanguages: ILanguageInfo[] = [
     { code: 'en', name: 'English' },
