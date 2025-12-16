@@ -77,6 +77,12 @@ namespace QuizManagement.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<bool>("SendInvitationsAutomatically")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SendResultsAutomatically")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("StartedAt")
                         .HasColumnType("datetime2");
 

@@ -33,6 +33,7 @@ namespace QuizManagement.Infrastructure.Migrations
                     LastName = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Email = table.Column<string>(type: "nvarchar(256)", maxLength: 256, nullable: false),
                     Token = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    SendInvitationsAutomatically = table.Column<bool>(type: "bit", nullable: false),
                     InvitationSent = table.Column<bool>(type: "bit", nullable: false),
                     NumberOfQuestions = table.Column<int>(type: "int", nullable: false),
                     MaxTimeInMinutes = table.Column<int>(type: "int", nullable: false),
@@ -46,6 +47,7 @@ namespace QuizManagement.Infrastructure.Migrations
                     SelectedAnswerIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     WrongQuestionIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     WrongAnswerIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
+                    SendResultsAutomatically = table.Column<bool>(type: "bit", nullable: false),
                     ResultsSent = table.Column<bool>(type: "bit", nullable: false)
                 },
                 constraints: table =>
