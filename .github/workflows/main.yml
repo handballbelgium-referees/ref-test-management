@@ -12,6 +12,8 @@ jobs:
   release:
     name: 🚀 Release Job
     runs-on: ubuntu-latest
+    outputs:
+      new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
     permissions:
       contents: write
       issues: write
@@ -32,14 +34,24 @@ jobs:
         run: npm ci
 
       - name: 🏷 Run semantic-release
+        id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Required for GitHub releases
-        run: npx semantic-release
+        run: |
+          LATEST_TAG_BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          npx semantic-release
+          LATEST_TAG_AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ "$LATEST_TAG_BEFORE" != "$LATEST_TAG_AFTER" ] && [ -n "$LATEST_TAG_AFTER" ]; then
+            echo "new_release_published=true" >> $GITHUB_OUTPUT
+          else
+            echo "new_release_published=false" >> $GITHUB_OUTPUT
+          fi
 
   build:
     name: 🛠 Build Job
     runs-on: ubuntu-latest
     needs: release
+    if: needs.release.outputs.new-release-published == 'true'
     permissions:
       contents: read
 
