@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { GetQuizSessionsQuery, QuizSessionStatus } from '../../../../../../../graphql/generated';
-import { LocalizedDatePipe } from '../../../../../shared/pipes/localized-date.pipe';
+import { LocalizedDate } from '../../../../../shared/pipes/localized-date';
 
 type SessionNode = NonNullable<
   NonNullable<NonNullable<GetQuizSessionsQuery['quizSessions']>['edges']>[number]
@@ -9,7 +9,7 @@ type SessionNode = NonNullable<
 
 @Component({
   selector: 'app-session-mobile-card',
-  imports: [TranslatePipe, LocalizedDatePipe],
+  imports: [TranslatePipe, LocalizedDate],
   templateUrl: './session-mobile-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

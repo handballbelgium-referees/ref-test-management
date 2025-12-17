@@ -35,13 +35,16 @@ services.AddDbContextFactory<QuizManagementContext>(options =>
 var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>()
                   ?? new EmailConfiguration();
 services.AddSingleton(emailConfig);
-services.Configure<LanguageConfiguration>(configuration.GetSection("LanguageConfiguration"));
-services.PostConfigure<LanguageConfiguration>(options =>
-{
-    // Fallback to all languages if none specified
-    if (options.EnabledLanguages.Length == 0)
-        options.EnabledLanguages = ["en", "nl", "fr", "de"];
-});
+var languageConfig = configuration.GetSection("LanguageConfiguration").Get<LanguageConfiguration>() ??
+                     LanguageConfiguration.CreateDefault();
+if (languageConfig.EnabledLanguages.Length == 0)
+    languageConfig = LanguageConfiguration.CreateDefault();
+
+if (string.IsNullOrEmpty(languageConfig.DefaultPhraseLanguage) ||
+    !languageConfig.EnabledLanguages.Contains(languageConfig.DefaultPhraseLanguage))
+    languageConfig.SetDefaultPhraseLanguage(languageConfig.EnabledLanguages[0]);
+
+services.AddSingleton(languageConfig);
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IQuizResultsPdfService, QuizResultsPdfService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();

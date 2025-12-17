@@ -9,7 +9,7 @@ import {
   GetQuizTitlesQueryVariables,
   SortEnumType,
 } from '../../../../../../graphql/generated';
-import { LocalizedDatePipe } from '../../../../shared/pipes/localized-date.pipe';
+import { LocalizedDate } from '../../../../shared/pipes/localized-date';
 
 interface ITitle {
   id: string;
@@ -25,7 +25,7 @@ interface ISearchResult {
 
 @Component({
   selector: 'app-title-autocomplete',
-  imports: [TranslatePipe, LocalizedDatePipe],
+  imports: [TranslatePipe, LocalizedDate],
   templateUrl: './title-autocomplete.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

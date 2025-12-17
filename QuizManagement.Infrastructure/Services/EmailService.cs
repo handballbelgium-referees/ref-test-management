@@ -1,7 +1,6 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using QuizManagement.Application.Models;
 using QuizManagement.Application.Services;
 
@@ -10,7 +9,7 @@ namespace QuizManagement.Infrastructure.Services;
 public partial class EmailService(
     ILogger<EmailService> logger,
     EmailConfiguration configuration,
-    IOptionsMonitor<LanguageConfiguration> languageConfiguration,
+    LanguageConfiguration languageConfiguration,
     IQuizResultsPdfService pdfService)
     : IEmailService
 {
@@ -120,7 +119,7 @@ public partial class EmailService(
 
 
         // Generate PDF attachments for enabled languages only
-        var attachments = languageConfiguration.CurrentValue.EnabledLanguages.Select(lang =>
+        var attachments = languageConfiguration.EnabledLanguages.Select(lang =>
         {
             var langUpper = lang.ToUpperInvariant();
             return new EmailAttachment($"IHF_Rules_Quiz_Results_{langUpper}.pdf",
@@ -345,7 +344,7 @@ public partial class EmailService(
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
     {
         var translations = GetInvitationTranslations();
-        return [.. languageConfiguration.CurrentValue.EnabledLanguages
+        return [.. languageConfiguration.EnabledLanguages
             .Where(lang => translations.ContainsKey(lang))
             .Select(lang => new LanguageContent(
                 $"{configuration.BaseUrl}/quiz/{token}?lang={lang}",
@@ -356,7 +355,7 @@ public partial class EmailService(
     private List<LanguageContent> GetEnabledLanguagesForResults()
     {
         var translations = GetResultsTranslations();
-        return [.. languageConfiguration.CurrentValue.EnabledLanguages
+        return [.. languageConfiguration.EnabledLanguages
             .Where(lang => translations.ContainsKey(lang))
             .Select(lang => new LanguageContent(
                 string.Empty,
@@ -420,7 +419,7 @@ public partial class EmailService(
 
                 <!-- PDF Reference -->
                 <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
-                    <p style='margin: 0; color: #404040; font-size: 14px;'>{t["pdfNote"]} ({string.Join(", ", languageConfiguration.CurrentValue.EnabledLanguages.Select(l => GetInvitationTranslations()[l]["displayName"]))}).</p>
+                    <p style='margin: 0; color: #404040; font-size: 14px;'>{t["pdfNote"]} ({string.Join(", ", languageConfiguration.EnabledLanguages.Select(l => GetInvitationTranslations()[l]["displayName"]))}).</p>
                 </div>
             </div>{separator}";
     }

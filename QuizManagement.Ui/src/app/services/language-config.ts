@@ -28,7 +28,7 @@ const LANGUAGE_NAMES: Record<Language, string> = {
 @Injectable({
   providedIn: 'root',
 })
-export class LanguageConfigService {
+export class LanguageConfig {
   private readonly _getEnabledLanguagesGQL = inject(GetEnabledLanguagesGQL);
   private readonly _translate = inject(TranslateService);
   private _availableLanguages$: Observable<ILanguageInfo[]> | undefined;
