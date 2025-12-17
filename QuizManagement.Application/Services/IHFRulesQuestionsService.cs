@@ -159,7 +159,7 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
         }
 
         return new ScoreCalculation(
-            questionIds.Count - result.Data.CalculateScore.WrongQuestionsIds.Count,
+            questionIds.Count(id => !result.Data.CalculateScore.WrongQuestionsIds.Contains(id)),
             questionIds.Count,
             percentage,
             result.Data.CalculateScore.WrongQuestionsIds.ToList() ?? [],
