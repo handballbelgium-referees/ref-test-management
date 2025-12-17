@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { DatepickerDirective } from '../../../../../shared/directives/datepicker.directive';
 
 export interface IDateRange {
   after?: string;
@@ -8,7 +9,7 @@ export interface IDateRange {
 
 @Component({
   selector: 'app-date-range-filter',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, DatepickerDirective],
   templateUrl: './date-range-filter.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
