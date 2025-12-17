@@ -89,7 +89,7 @@ public static class QuizMutations
 
         // Use existing score calculation logic
         var scoreResult = await ihfRulesQuestionsService.CalculateScoreAsync(
-            input.QuestionIds,
+            session.QuestionIds,
             input.SelectedAnswerIds,
             cancellationToken
         );
@@ -110,7 +110,7 @@ public static class QuizMutations
             return session;
 
         var questionsWithCorrectAnswers =
-            await ihfRulesQuestionsService.GetQuestionsByIdAsync(input.QuestionIds, true, true, false,
+            await ihfRulesQuestionsService.GetQuestionsByIdAsync(session.QuestionIds, true, true, false,
                 cancellationToken);
 
         // Send results email

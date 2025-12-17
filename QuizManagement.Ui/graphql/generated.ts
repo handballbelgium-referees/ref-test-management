@@ -65,7 +65,6 @@ export type BulkQuizSessionResult = {
 export type CompleteQuizError = EmailError | InvalidQuizSessionStatusError | QuizSessionNotFoundError;
 
 export type CompleteQuizInput = {
-  questionIds: Array<Scalars['String']['input']>;
   selectedAnswerIds: Array<Scalars['String']['input']>;
   token: Scalars['String']['input'];
 };
