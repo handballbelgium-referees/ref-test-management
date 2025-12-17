@@ -1,6 +1,7 @@
 ﻿using QuizManagement.Application.Models;
 using System.Globalization;
 using System.Text.Json;
+using Microsoft.Extensions.Options;
 
 namespace QuizManagement.Application.Services;
 
@@ -22,7 +23,9 @@ public interface IIhfRulesQuestionsService
         CancellationToken cancellationToken = default);
 }
 
-public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageConfiguration languageConfiguration)
+public class IhfRulesQuestionsService(
+    IIHFRulesQuestionsClient client,
+    IOptionsMonitor<LanguageConfiguration> languageConfiguration)
     : IIhfRulesQuestionsService
 {
     public async Task<List<string>> GetRandomQuestionIdsAsync(int count,
@@ -80,14 +83,14 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
             var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??
                                   new Dictionary<string, string>();
             if (!string.IsNullOrEmpty(x.Phrase))
-                questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
+                questionPhrases[languageConfiguration.CurrentValue.DefaultPhraseLanguage] = x.Phrase;
 
             var answers = x.Answers?.Nodes?.OfType<IGetQuestionsById_QuestionsById_Answers_Nodes>().Select(a =>
             {
                 var answerTranslations = a.Translations?.Deserialize<Dictionary<string, string>>() ??
                                          new Dictionary<string, string>();
                 if (!string.IsNullOrEmpty(a.Phrase))
-                    answerTranslations[languageConfiguration.DefaultPhraseLanguage] = a.Phrase;
+                    answerTranslations[languageConfiguration.CurrentValue.DefaultPhraseLanguage] = a.Phrase;
                 return new Answer(a.Id, answerTranslations)
                 {
                     Number = a.Number,
@@ -119,7 +122,7 @@ public class IhfRulesQuestionsService(IIHFRulesQuestionsClient client, LanguageC
             var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??
                                   new Dictionary<string, string>();
             if (!string.IsNullOrEmpty(x.Phrase))
-                questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
+                questionPhrases[languageConfiguration.CurrentValue.DefaultPhraseLanguage] = x.Phrase;
 
             return new Question(x.Id, questionPhrases, [])
             {

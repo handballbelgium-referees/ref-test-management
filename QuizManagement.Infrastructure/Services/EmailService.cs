@@ -1,23 +1,31 @@
 ﻿using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using QuizManagement.Application.Models;
+using QuizManagement.Application.Services;
 
 namespace QuizManagement.Infrastructure.Services;
 
 public partial class EmailService(
     ILogger<EmailService> logger,
     EmailConfiguration configuration,
+    IOptionsMonitor<LanguageConfiguration> languageConfiguration,
     IQuizResultsPdfService pdfService)
     : IEmailService
 {
     public async Task SendQuizInvitationAsync(string name, string email, string token, int numberOfQuestions,
         int maxTimeInMinutes)
     {
-        var quizUrlEn = $"{configuration.BaseUrl}/quiz/{token}?lang=en";
-        var quizUrlNl = $"{configuration.BaseUrl}/quiz/{token}?lang=nl";
-        var quizUrlFr = $"{configuration.BaseUrl}/quiz/{token}?lang=fr";
-        var quizUrlDe = $"{configuration.BaseUrl}/quiz/{token}?lang=de";
+        var enabledLanguages = GetEnabledLanguagesForInvitation(token);
+        var languageSections = new StringBuilder();
+        
+        for (var i = 0; i < enabledLanguages.Count; i++)
+        {
+            var langContent = enabledLanguages[i];
+            var isLast = i == enabledLanguages.Count - 1;
+            languageSections.Append(BuildInvitationLanguageSection(langContent, name, numberOfQuestions, maxTimeInMinutes, isLast));
+        }
 
         const string subject = "Referees Handball Belgium Quiz Invitation";
         var emailBody = $@"
@@ -40,95 +48,7 @@ public partial class EmailService(
 
         <!-- Main Content -->
         <div style='padding: 20px;'>
-            <!-- English Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>English</h2>
-                
-                <!-- Quiz Details -->
-                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Questions:</strong> {numberOfQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Time Limit:</strong> {maxTimeInMinutes} minutes</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ This quiz is valid for 7 days</em></p>
-                </div>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hello {name},</p>
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:</p>
-                
-                <div style='text-align: center; margin: 20px 0;'>
-                    <a href='{quizUrlEn}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Start Quiz</a>
-                </div>
-            </div>
-
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
-
-            <!-- Dutch Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Nederlands</h2>
-                
-                <!-- Quiz Details -->
-                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Vragen:</strong> {numberOfQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Tijdslimiet:</strong> {maxTimeInMinutes} minuten</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Deze quiz is 7 dagen geldig</em></p>
-                </div>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo {name},</p>
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:</p>
-                
-                <div style='text-align: center; margin: 20px 0;'>
-                    <a href='{quizUrlNl}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Start Quiz</a>
-                </div>
-            </div>
-
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
-
-            <!-- French Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Français</h2>
-                
-                <!-- Quiz Details -->
-                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Détails du Quiz</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Questions:</strong> {numberOfQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Limite de Temps:</strong> {maxTimeInMinutes} minutes</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Ce quiz est valide pendant 7 jours</em></p>
-                </div>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Bonjour {name},</p>
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:</p>
-                
-                <div style='text-align: center; margin: 20px 0;'>
-                    <a href='{quizUrlFr}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Démarrer le Quiz</a>
-                </div>
-            </div>
-
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
-
-            <!-- German Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Deutsch</h2>
-                
-                <!-- Quiz Details -->
-                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz-Details</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Fragen:</strong> {numberOfQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Zeitlimit:</strong> {maxTimeInMinutes} Minuten</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>⏰ Dieses Quiz ist 7 Tage lang gültig</em></p>
-                </div>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>Hallo {name},</p>
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:</p>
-                
-                <div style='text-align: center; margin: 20px 0;'>
-                    <a href='{quizUrlDe}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>Quiz starten</a>
-                </div>
-            </div>
-
+{languageSections}
             <!-- Footer -->
             <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
                 <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
@@ -139,8 +59,9 @@ public partial class EmailService(
 </html>";
 
 
+        var firstQuizUrl = enabledLanguages.FirstOrDefault()?.QuizUrl ?? $"{configuration.BaseUrl}/quiz/{token}";
         LogSendingQuizInvitationToEmailTokenTokenQuestionsQuestionsTimeTimeMinutes(logger, email, token,
-            numberOfQuestions, maxTimeInMinutes, quizUrlEn);
+            numberOfQuestions, maxTimeInMinutes, firstQuizUrl);
 
         await SendEmailAsync(email, subject, emailBody);
 
@@ -156,6 +77,16 @@ public partial class EmailService(
         var resultColor = passed ? "#22c55e" : "#ef4444";
         var resultBgColor = passed ? "#dcfce7" : "#fee2e2";
         var resultIcon = passed ? "✓" : "✗";
+
+        var enabledLanguages = GetEnabledLanguagesForResults();
+        var languageSections = new StringBuilder();
+        
+        for (var i = 0; i < enabledLanguages.Count; i++)
+        {
+            var langContent = enabledLanguages[i];
+            var isLast = i == enabledLanguages.Count - 1;
+            languageSections.Append(BuildResultsLanguageSection(langContent, name, score, totalQuestions, percentage, passed, resultColor, resultBgColor, resultIcon, isLast));
+        }
 
         var emailBody = $@"
 <!DOCTYPE html>
@@ -177,123 +108,7 @@ public partial class EmailService(
 
         <!-- Main Content -->
         <div style='padding: 20px;'>
-            <!-- English Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>English</h2>
-                
-                <!-- Score Display -->
-                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "PASSED" : "NOT PASSED")}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Your Score:</strong> {score} / {totalQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Percentage:</strong> {percentage:F1}%</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Congratulations! You passed the quiz!" : "📚 Keep studying and good luck next time!")}</em></p>
-                </div>
-
-                <!-- Greeting -->
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Dear {name},</p>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                    {(passed
-                        ? "Congratulations! You have successfully passed the IHF Rules Quiz! Your knowledge of handball regulations is excellent."
-                        : "Thank you for taking the IHF Rules Quiz. A passing score is 80% or higher. Please review the rules and try again.")}
-                </p>
-
-                <!-- PDF Reference -->
-                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
-                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Detailed results are available in the attached PDF documents</strong> (English, Nederlands, Français, Deutsch).</p>
-                </div>
-            </div>
-
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
-
-            <!-- Dutch Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Nederlands</h2>
-                
-                <!-- Score Display -->
-                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "GESLAAGD" : "NIET GESLAAGD")}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Jouw Score:</strong> {score} / {totalQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Percentage:</strong> {percentage:F1}%</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Gefeliciteerd! Je bent geslaagd!" : "📚 Blijf studeren en veel succes de volgende keer!")}</em></p>
-                </div>
-
-                <!-- Greeting -->
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Hallo {name},</p>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                    {(passed
-                        ? "Gefeliciteerd! Je bent geslaagd voor de IHF Regels Quiz! Je kennis van de handbalreglementen is uitstekend."
-                        : "Bedankt voor het maken van de IHF Regels Quiz. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.")}
-                </p>
-
-                <!-- PDF Reference -->
-                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
-                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Gedetailleerde resultaten zijn beschikbaar in de bijgevoegde PDF-documenten</strong> (English, Nederlands, Français, Deutsch).</p>
-                </div>
-            </div>
-
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
-
-            <!-- French Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Français</h2>
-                
-                <!-- Score Display -->
-                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "RÉUSSI" : "NON RÉUSSI")}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Votre Score:</strong> {score} / {totalQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Pourcentage:</strong> {percentage:F1}%</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Félicitations! Vous avez réussi!" : "📚 Continuez à étudier et bonne chance la prochaine fois!")}</em></p>
-                </div>
-
-                <!-- Greeting -->
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Bonjour {name},</p>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                    {(passed
-                        ? "Félicitations! Vous avez réussi le Quiz des Règles IHF! Votre connaissance des règles de handball est excellente."
-                        : "Merci d'avoir participé au Quiz des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.")}
-                </p>
-
-                <!-- PDF Reference -->
-                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
-                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Les résultats détaillés sont disponibles dans les documents PDF joints</strong> (English, Nederlands, Français, Deutsch).</p>
-                </div>
-            </div>
-
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />
-
-            <!-- German Section -->
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>Deutsch</h2>
-                
-                <!-- Score Display -->
-                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? "BESTANDEN" : "NICHT BESTANDEN")}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Ihre Punktzahl:</strong> {score} / {totalQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>Prozentsatz:</strong> {percentage:F1}%</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? "🎉 Herzlichen Glückwunsch! Sie haben bestanden!" : "📚 Lernen Sie weiter und viel Glück beim nächsten Mal!")}</em></p>
-                </div>
-
-                <!-- Greeting -->
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>Hallo {name},</p>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                    {(passed
-                        ? "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-Quiz bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet."
-                        : "Vielen Dank, dass Sie am IHF-Regeln-Quiz teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.")}
-                </p>
-
-                <!-- PDF Reference -->
-                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
-                    <p style='margin: 0; color: #404040; font-size: 14px;'>📎 <strong>Detaillierte Ergebnisse sind in den beigefügten PDF-Dokumenten verfügbar</strong> (English, Nederlands, Français, Deutsch).</p>
-                </div>
-            </div>
-
+{languageSections}
             <!-- Footer -->
             <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
                 <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
@@ -304,22 +119,14 @@ public partial class EmailService(
 </html>";
 
 
-        // Generate PDF attachments for all languages
-        var attachments = new List<EmailAttachment>
+        // Generate PDF attachments for enabled languages only
+        var attachments = languageConfiguration.CurrentValue.EnabledLanguages.Select(lang =>
         {
-            new("IHF_Rules_Quiz_Results_EN.pdf",
-                pdfService.GenerateQuizResultsPdf(name, "en", totalQuestions, selectedAnswerIds, wrongQuestionIds,
-                    wrongAnswerIds, questionsWithCorrectAnswers)),
-            new("IHF_Rules_Quiz_Results_NL.pdf",
-                pdfService.GenerateQuizResultsPdf(name, "nl", totalQuestions, selectedAnswerIds, wrongQuestionIds,
-                    wrongAnswerIds, questionsWithCorrectAnswers)),
-            new("IHF_Rules_Quiz_Results_FR.pdf",
-                pdfService.GenerateQuizResultsPdf(name, "fr", totalQuestions, selectedAnswerIds, wrongQuestionIds,
-                    wrongAnswerIds, questionsWithCorrectAnswers)),
-            new("IHF_Rules_Quiz_Results_DE.pdf",
-                pdfService.GenerateQuizResultsPdf(name, "de", totalQuestions, selectedAnswerIds, wrongQuestionIds,
-                    wrongAnswerIds, questionsWithCorrectAnswers))
-        };
+            var langUpper = lang.ToUpperInvariant();
+            return new EmailAttachment($"IHF_Rules_Quiz_Results_{langUpper}.pdf",
+                pdfService.GenerateQuizResultsPdf(name, lang, totalQuestions, selectedAnswerIds, wrongQuestionIds,
+                    wrongAnswerIds, questionsWithCorrectAnswers));
+        }).ToList();
 
         LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, score, totalQuestions, percentage);
 
@@ -421,6 +228,202 @@ public partial class EmailService(
 
     [LoggerMessage(LogLevel.Error, "Error sending email to {email}")]
     static partial void LogErrorSendingEmailToEmail(ILogger<EmailService> logger, Exception ex, string email);
+
+    private record LanguageContent(
+        string QuizUrl,
+        Dictionary<string, string> Translations
+    );
+
+    private static Dictionary<string, Dictionary<string, string>> GetInvitationTranslations() => new()
+    {
+        ["en"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "English",
+            ["questions"] = "Questions",
+            ["timeLimit"] = "Time Limit",
+            ["minutes"] = "minutes",
+            ["validDays"] = "⏰ This quiz is valid for 7 days",
+            ["greeting"] = "Hello",
+            ["inviteText"] = "You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:",
+            ["startButton"] = "Start Quiz"
+        },
+        ["nl"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Nederlands",
+            ["questions"] = "Vragen",
+            ["timeLimit"] = "Tijdslimiet",
+            ["minutes"] = "minuten",
+            ["validDays"] = "⏰ Deze quiz is 7 dagen geldig",
+            ["greeting"] = "Hallo",
+            ["inviteText"] = "Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:",
+            ["startButton"] = "Start Quiz"
+        },
+        ["fr"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Français",
+            ["questions"] = "Questions",
+            ["timeLimit"] = "Limite de Temps",
+            ["minutes"] = "minutes",
+            ["validDays"] = "⏰ Ce quiz est valide pendant 7 jours",
+            ["greeting"] = "Bonjour",
+            ["inviteText"] = "Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:",
+            ["startButton"] = "Démarrer le Quiz"
+        },
+        ["de"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Deutsch",
+            ["questions"] = "Fragen",
+            ["timeLimit"] = "Zeitlimit",
+            ["minutes"] = "Minuten",
+            ["validDays"] = "⏰ Dieses Quiz ist 7 Tage lang gültig",
+            ["greeting"] = "Hallo",
+            ["inviteText"] = "Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:",
+            ["startButton"] = "Quiz starten"
+        }
+    };
+
+    private static Dictionary<string, Dictionary<string, string>> GetResultsTranslations() => new()
+    {
+        ["en"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "English",
+            ["passed"] = "PASSED",
+            ["notPassed"] = "NOT PASSED",
+            ["yourScore"] = "Your Score",
+            ["percentage"] = "Percentage",
+            ["passedMessage"] = "🎉 Congratulations! You passed the quiz!",
+            ["failedMessage"] = "📚 Keep studying and good luck next time!",
+            ["greeting"] = "Dear",
+            ["passedText"] = "Congratulations! You have successfully passed the IHF Rules Quiz! Your knowledge of handball regulations is excellent.",
+            ["failedText"] = "Thank you for taking the IHF Rules Quiz. A passing score is 80% or higher. Please review the rules and try again.",
+            ["pdfNote"] = "📎 <strong>Detailed results are available in the attached PDF documents</strong>"
+        },
+        ["nl"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Nederlands",
+            ["passed"] = "GESLAAGD",
+            ["notPassed"] = "NIET GESLAAGD",
+            ["yourScore"] = "Jouw Score",
+            ["percentage"] = "Percentage",
+            ["passedMessage"] = "🎉 Gefeliciteerd! Je bent geslaagd!",
+            ["failedMessage"] = "📚 Blijf studeren en veel succes de volgende keer!",
+            ["greeting"] = "Hallo",
+            ["passedText"] = "Gefeliciteerd! Je bent geslaagd voor de IHF Regels Quiz! Je kennis van de handbalreglementen is uitstekend.",
+            ["failedText"] = "Bedankt voor het maken van de IHF Regels Quiz. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.",
+            ["pdfNote"] = "📎 <strong>Gedetailleerde resultaten zijn beschikbaar in de bijgevoegde PDF-documenten</strong>"
+        },
+        ["fr"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Français",
+            ["passed"] = "RÉUSSI",
+            ["notPassed"] = "NON RÉUSSI",
+            ["yourScore"] = "Votre Score",
+            ["percentage"] = "Pourcentage",
+            ["passedMessage"] = "🎉 Félicitations! Vous avez réussi!",
+            ["failedMessage"] = "📚 Continuez à étudier et bonne chance la prochaine fois!",
+            ["greeting"] = "Bonjour",
+            ["passedText"] = "Félicitations! Vous avez réussi le Quiz des Règles IHF! Votre connaissance des règles de handball est excellente.",
+            ["failedText"] = "Merci d'avoir participé au Quiz des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.",
+            ["pdfNote"] = "📎 <strong>Les résultats détaillés sont disponibles dans les documents PDF joints</strong>"
+        },
+        ["de"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Deutsch",
+            ["passed"] = "BESTANDEN",
+            ["notPassed"] = "NICHT BESTANDEN",
+            ["yourScore"] = "Ihre Punktzahl",
+            ["percentage"] = "Prozentsatz",
+            ["passedMessage"] = "🎉 Herzlichen Glückwunsch! Sie haben bestanden!",
+            ["failedMessage"] = "📚 Lernen Sie weiter und viel Glück beim nächsten Mal!",
+            ["greeting"] = "Hallo",
+            ["passedText"] = "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-Quiz bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet.",
+            ["failedText"] = "Vielen Dank, dass Sie am IHF-Regeln-Quiz teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.",
+            ["pdfNote"] = "📎 <strong>Detaillierte Ergebnisse sind in den beigefügten PDF-Dokumenten verfügbar</strong>"
+        }
+    };
+
+    private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
+    {
+        var translations = GetInvitationTranslations();
+        return [.. languageConfiguration.CurrentValue.EnabledLanguages
+            .Where(lang => translations.ContainsKey(lang))
+            .Select(lang => new LanguageContent(
+                $"{configuration.BaseUrl}/quiz/{token}?lang={lang}",
+                translations[lang]
+            ))];
+    }
+
+    private List<LanguageContent> GetEnabledLanguagesForResults()
+    {
+        var translations = GetResultsTranslations();
+        return [.. languageConfiguration.CurrentValue.EnabledLanguages
+            .Where(lang => translations.ContainsKey(lang))
+            .Select(lang => new LanguageContent(
+                string.Empty,
+                translations[lang]
+            ))];
+    }
+
+    private static string BuildInvitationLanguageSection(LanguageContent langContent, string name, int numberOfQuestions, int maxTimeInMinutes, bool isLast)
+    {
+        var t = langContent.Translations;
+        var separator = isLast ? "" : @"
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
+
+        return $@"
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
+                
+                <!-- Quiz Details -->
+                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["questions"]}:</strong> {numberOfQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["timeLimit"]}:</strong> {maxTimeInMinutes} {t["minutes"]}</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{t["validDays"]}</em></p>
+                </div>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>{t["greeting"]} {name},</p>
+                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>{t["inviteText"]}</p>
+                
+                <div style='text-align: center; margin: 20px 0;'>
+                    <a href='{langContent.QuizUrl}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>{t["startButton"]}</a>
+                </div>
+            </div>{separator}";
+    }
+
+    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int score, int totalQuestions, double percentage, bool passed, string resultColor, string resultBgColor, string resultIcon, bool isLast)
+    {
+        var t = langContent.Translations;
+        var separator = isLast ? "" : @"
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
+
+        return $@"
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
+                
+                <!-- Score Display -->
+                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
+                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? t["passed"] : t["notPassed"])}</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["yourScore"]}:</strong> {score} / {totalQuestions}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["percentage"]}:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? t["passedMessage"] : t["failedMessage"])}</em></p>
+                </div>
+
+                <!-- Greeting -->
+                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>{t["greeting"]} {name},</p>
+
+                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
+                    {(passed ? t["passedText"] : t["failedText"])}
+                </p>
+
+                <!-- PDF Reference -->
+                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
+                    <p style='margin: 0; color: #404040; font-size: 14px;'>{t["pdfNote"]} ({string.Join(", ", languageConfiguration.CurrentValue.EnabledLanguages.Select(l => GetInvitationTranslations()[l]["displayName"]))}).</p>
+                </div>
+            </div>{separator}";
+    }
 }
 
 public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");

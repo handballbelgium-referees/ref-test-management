@@ -1,6 +1,7 @@
 ﻿using Handball.Belgium.Rules.Quiz.Domain;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using QuizManagement.Application.Models;
 using QuizManagement.Application.Services;
 using QuizManagement.Infrastructure;
@@ -72,4 +73,12 @@ public static class QuizQueries
     public static Task<List<Question>> SearchQuestionsByNumber(string? number,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService)
         => ihfRulesQuestionsService.SearchQuestionsByNumberAsync(number);
+
+    /// <summary>
+    /// Get enabled languages from configuration
+    /// </summary>
+    /// <param name="languageConfiguration"></param>
+    /// <returns></returns>
+    public static string[] GetEnabledLanguages([Service] IOptionsMonitor<LanguageConfiguration> languageConfiguration)
+        => languageConfiguration.CurrentValue.EnabledLanguages;
 }

@@ -290,7 +290,24 @@ If using an external question repository:
 }
 ```
 
-### 6. Start the Backend
+### 6. Configure Enabled Languages (Optional)
+
+By default, all 4 languages (English, Dutch, French, German) are enabled. To limit available languages:
+
+```json
+{
+  "LanguageConfiguration": {
+    "DefaultPhraseLanguage": "en",
+    "EnabledLanguages": ["en", "nl"]
+  }
+}
+```
+
+**Supported languages:** `en` (English), `nl` (Dutch), `fr` (French), `de` (German)
+
+The frontend will dynamically load only the enabled languages from the backend configuration, allowing you to control which languages are available in the UI without code changes.
+
+### 7. Start the Backend
 
 ```bash
 cd QuizManagement.Api
@@ -304,7 +321,7 @@ The API will start at `https://localhost:7039`
 - GraphQL Playground: `https://localhost:7039/graphql/`
 - Health Check: `https://localhost:7039/Account/IsAuthenticated`
 
-### 7. Start the Frontend
+### 8. Start the Frontend
 
 #### Install Dependencies
 
@@ -355,7 +372,7 @@ npm start
 
 The application will be available at `http://localhost:4200`
 
-### 8. Access the Application
+### 9. Access the Application
 
 1. Open browser to `http://localhost:4200`
 2. Click **"Sign In"** in the top-right corner
@@ -363,7 +380,7 @@ The application will be available at `http://localhost:4200`
 4. You'll be redirected back to the application
 5. Navigate to **Sessions** to create your first quiz session
 
-### 9. Generate GraphQL Types (If Modifying Queries)
+### 10. Generate GraphQL Types (If Modifying Queries)
 
 After modifying any `.graphql` files:
 
@@ -575,7 +592,8 @@ Complete configuration file structure:
   },
 
   "LanguageConfiguration": {
-    "DefaultPhraseLanguage": "en"
+    "DefaultPhraseLanguage": "en",
+    "EnabledLanguages": ["en", "nl", "fr", "de"]
   }
 }
 ```
@@ -596,6 +614,9 @@ Complete configuration file structure:
 |                           | `FromName`              | Sender display name                       | ✅ Yes   |
 | **RulesQuestions**        | `Url`                   | External question bank GraphQL endpoint   | ✅ Yes   |
 | **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions            | ✅ Yes   |
+|                           | `EnabledLanguages`      | Array of enabled UI languages (en/nl/fr/de) | ⚠️ Optional (defaults to all 4) |
+
+> **Note:** Language configuration supports hot-reload. Changes to `EnabledLanguages` in `appsettings.json` are detected automatically without requiring an application restart.
 
 ### User Secrets (Development)
 

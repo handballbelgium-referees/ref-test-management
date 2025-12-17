@@ -233,6 +233,7 @@ export type PageInfo = {
 
 export type Query = {
   __typename?: 'Query';
+  enabledLanguages: Array<Scalars['String']['output']>;
   /** Fetches an object given its ID. */
   node?: Maybe<Node>;
   /** Lookup nodes by a list of IDs. */
@@ -631,6 +632,11 @@ export type DeleteQuizSessionsMutationVariables = Exact<{
 
 export type DeleteQuizSessionsMutation = { __typename?: 'Mutation', deleteQuizSessions: { __typename?: 'DeleteQuizSessionsPayload', deleteQuizSessionsResult?: { __typename?: 'DeleteQuizSessionsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedSessions: Array<{ __typename?: 'QuizSession', id: string }>, errors: Array<{ __typename?: 'DeleteQuizSessionError', quizSessionId: string, errorMessage: string }> } | null } };
 
+export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetEnabledLanguagesQuery = { __typename?: 'Query', enabledLanguages: Array<string> };
+
 export type GetQuizSessionByTokenQueryVariables = Exact<{
   token: Scalars['String']['input'];
 }>;
@@ -789,6 +795,22 @@ export const DeleteQuizSessionsDocument = gql`
   })
   export class DeleteQuizSessionsGQL extends Apollo.Mutation<DeleteQuizSessionsMutation, DeleteQuizSessionsMutationVariables> {
     override document = DeleteQuizSessionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetEnabledLanguagesDocument = gql`
+    query GetEnabledLanguages {
+  enabledLanguages
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
+    override document = GetEnabledLanguagesDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
