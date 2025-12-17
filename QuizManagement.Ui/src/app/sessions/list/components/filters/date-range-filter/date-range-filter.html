@@ -1,7 +1,7 @@
-<div class="bg-white rounded-lg p-4 border border-neutral-200">
+<div class="bg-white rounded-lg p-4 border border-neutral-200 overflow-hidden">
   <div class="flex items-center gap-2 mb-3">
     <svg
-      class="w-5 h-5 text-primary-600"
+      class="w-5 h-5 shrink-0 text-primary-600"
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -11,35 +11,41 @@
         stroke-linecap="round"
         stroke-linejoin="round"
         stroke-width="2"
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       />
     </svg>
-    <label class="text-sm font-semibold text-neutral-900">
+    <label class="text-sm font-semibold text-neutral-900 truncate">
       {{ label() | translate }}
     </label>
   </div>
   <div class="space-y-3">
-    <div>
+    <div class="min-w-0">
       <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
         {{ 'sessions.list.filters.from' | translate }}
       </label>
-      <input
-        type="date"
-        [value]="afterDate() || ''"
-        (input)="onAfterChange($any($event.target).value)"
-        class="w-full max-w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-      />
+      <div class="relative">
+        <input
+          type="date"
+          [value]="afterDate() || ''"
+          (input)="onAfterChange($any($event.target).value)"
+          placeholder="dd/mm/yyyy"
+          class="w-full min-w-0 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+        />
+      </div>
     </div>
-    <div>
+    <div class="min-w-0">
       <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
         {{ 'sessions.list.filters.to' | translate }}
       </label>
-      <input
-        type="date"
-        [value]="beforeDate() || ''"
-        (input)="onBeforeChange($any($event.target).value)"
-        class="w-full max-w-full px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
-      />
+      <div class="relative">
+        <input
+          type="date"
+          [value]="beforeDate() || ''"
+          (input)="onBeforeChange($any($event.target).value)"
+          placeholder="dd/mm/yyyy"
+          class="w-full min-w-0 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm [&::-webkit-calendar-picker-indicator]:opacity-100 [&::-webkit-calendar-picker-indicator]:cursor-pointer"
+        />
+      </div>
     </div>
   </div>
 </div>

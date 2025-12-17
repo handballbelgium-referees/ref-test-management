@@ -11,6 +11,9 @@ export interface IDateRange {
   imports: [TranslatePipe],
   templateUrl: './date-range-filter.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class DateRangeFilter {
   readonly label = input.required<string>();
