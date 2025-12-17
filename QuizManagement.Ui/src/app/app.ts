@@ -6,13 +6,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { filter, map } from 'rxjs';
 import { APP_VERSION } from '../version';
 import { Auth } from './auth/services/auth';
-
-type Language = 'en' | 'nl' | 'fr' | 'de';
-
-interface ILanguageInfo {
-  code: Language;
-  name: string;
-}
+import { Language, LanguageConfigService } from './services/language-config.service';
 
 @Component({
   selector: 'app-root',
@@ -29,6 +23,7 @@ export class App {
   private readonly _route = inject(ActivatedRoute);
   private readonly _router = inject(Router);
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _languageConfigService = inject(LanguageConfigService);
 
   private readonly _isQuizRoute = toSignal(
     this._router.events.pipe(
@@ -46,34 +41,17 @@ export class App {
   protected readonly showLanguageMenu = signal(false);
   protected readonly version = APP_VERSION;
   protected readonly currentYear = computed(() => new Date().getFullYear());
-  protected readonly availableLanguages: ILanguageInfo[] = [
-    { code: 'en', name: 'English' },
-    { code: 'nl', name: 'Nederlands' },
-    { code: 'fr', name: 'Français' },
-    { code: 'de', name: 'Deutsch' },
-  ];
+  protected readonly availableLanguages = toSignal(
+    this._languageConfigService.getAvailableLanguages(),
+    { initialValue: [] }
+  );
 
   constructor() {
-    this._translate.addLangs(['en', 'nl', 'fr', 'de']);
-
-    // Set initial language from localStorage or browser
-    const savedLang = localStorage.getItem('app-language') as Language | null;
-    let defaultLang: string;
-
-    if (savedLang && ['en', 'nl', 'fr', 'de'].includes(savedLang)) {
-      defaultLang = savedLang;
-    } else {
-      const browserLang = this._translate.getBrowserLang();
-      defaultLang =
-        browserLang && ['en', 'nl', 'fr', 'de'].includes(browserLang) ? browserLang : 'en';
-    }
-
-    this._translate.use(defaultLang);
-
     // Subscribe to query params for language changes
     this._route.queryParams.pipe(takeUntilDestroyed(this._destroyRef)).subscribe((params) => {
       const queryLang = params['lang'] as Language | undefined;
-      if (queryLang && ['en', 'nl', 'fr', 'de'].includes(queryLang)) {
+      const langCodes = this._translate.getLangs();
+      if (queryLang && langCodes.includes(queryLang)) {
         this._translate.use(queryLang);
         localStorage.setItem('app-language', queryLang);
       }
@@ -96,9 +74,12 @@ export class App {
 
   private updateTitle(): void {
     const titleKey = this._isQuizRoute() ? 'quiz.page_title' : 'app.pageTitle';
-    this._translate.get(titleKey).subscribe((title: string) => {
-      this._titleService.setTitle(title);
-    });
+    this._translate
+      .get(titleKey)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe((title: string) => {
+        this._titleService.setTitle(title);
+      });
   }
 
   protected get currentLocale(): Language {

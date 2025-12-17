@@ -9,6 +9,7 @@ import {
   inject,
   Injector,
   LOCALE_ID,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
@@ -19,7 +20,9 @@ import { InMemoryCache } from '@apollo/client';
 import { relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
+import { first } from 'rxjs';
 import { routes } from './app.routes';
+import { LanguageConfigService } from './services/language-config.service';
 
 // Register locale data for date formatting
 registerLocaleData(localeEn, 'en-BE');
@@ -32,6 +35,10 @@ export const appConfig: ApplicationConfig = {
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(),
+    provideAppInitializer(() => {
+      const languageConfigService = inject(LanguageConfigService);
+      languageConfigService.initializeLanguages().pipe(first()).subscribe();
+    }),
     {
       provide: LOCALE_ID,
       useFactory: () => {
