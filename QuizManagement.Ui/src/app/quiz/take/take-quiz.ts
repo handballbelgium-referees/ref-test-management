@@ -309,7 +309,6 @@ export class TakeQuizComponent {
         variables: {
           input: {
             token,
-            questionIds,
             selectedAnswerIds,
           },
         },
