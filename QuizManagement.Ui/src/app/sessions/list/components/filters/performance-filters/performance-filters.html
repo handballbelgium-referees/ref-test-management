@@ -25,7 +25,7 @@
       <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
         {{ 'sessions.list.filters.scoreRange' | translate }}
       </label>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2">
         <input
           type="number"
           [value]="minScore() || ''"
@@ -34,7 +34,7 @@
           min="0"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
-        <span class="text-neutral-400">—</span>
+        <span class="text-neutral-400 hidden sm:inline">—</span>
         <input
           type="number"
           [value]="maxScore() || ''"
@@ -68,7 +68,7 @@
       <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
         {{ 'sessions.list.filters.questionsRange' | translate }}
       </label>
-      <div class="flex items-center gap-2">
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2">
         <input
           type="number"
           [value]="minQuestions() || ''"
@@ -77,7 +77,7 @@
           min="1"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
-        <span class="text-neutral-400">—</span>
+        <span class="text-neutral-400 hidden sm:inline">—</span>
         <input
           type="number"
           [value]="maxQuestions() || ''"
