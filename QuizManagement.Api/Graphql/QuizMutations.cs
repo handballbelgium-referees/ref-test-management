@@ -41,6 +41,7 @@ public static class QuizMutations
         if (session.IsExpired())
         {
             session.ExpireSession();
+            context.QuizSessions.Update(session);
             await context.SaveChangesAsync(cancellationToken);
             throw new QuizSessionExpiredException(token);
         }
@@ -49,6 +50,7 @@ public static class QuizMutations
             return session;
 
         session.StartSession();
+        context.QuizSessions.Update(session);
         await context.SaveChangesAsync(cancellationToken);
 
         return session;
@@ -101,6 +103,7 @@ public static class QuizMutations
             scoreResult.WrongAnswerIds
         );
 
+        context.QuizSessions.Update(session);
         await context.SaveChangesAsync(cancellationToken);
 
         if (!session.SendResultsAutomatically)
@@ -122,6 +125,10 @@ public static class QuizMutations
             session.WrongAnswerIds,
             questionsWithCorrectAnswers
         );
+        
+        session.SendResults();
+        context.QuizSessions.Update(session);
+        await context.SaveChangesAsync(cancellationToken);
 
         return session;
     }

@@ -107,55 +107,65 @@
               {{ 'quiz.question' | translate }} {{ question.number }}:
               {{ question.phrase | appTranslation : currentLanguage() }}
             </div>
-            <div class="space-y-2">
+            <div class="space-y-2 -ml-9">
               @for (answer of question.answers; track answer.id) {
-              <div
-                class="flex items-center gap-2 text-sm"
-                [class]="selectedAnswers()[question.id].includes(answer.id) ? 'font-semibold' : ''"
-              >
-                @if (selectedAnswers()[question.id].includes(answer.id)) { @if
-                (wrongAnswerIds().includes(answer.id)) {
-                <span class="text-red-700">{{ answer.number }}:</span>
-                <svg
-                  class="w-4 h-4 text-red-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+              <div class="flex items-start gap-3">
+                <div class="shrink-0">
+                  @if (selectedAnswers()[question.id].includes(answer.id)) { @if
+                  (wrongAnswerIds().includes(answer.id)) {
+                  <svg
+                    class="w-4 h-4 text-red-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                  } @else {
+                  <svg
+                    class="w-4 h-4 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  } } @else {
+                  <div class="w-4 h-4"></div>
+                  }
+                </div>
+                <div
+                  class="flex-1 min-w-0 text-sm"
+                  [class]="selectedAnswers()[question.id].includes(answer.id) ? 'font-semibold' : ''"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
-                <span class="text-red-700 wrap-break-word">{{
-                  answer.phrase | appTranslation : currentLanguage()
-                }}</span>
-                } @else {
-                <span class="text-green-700">{{ answer.number }}:</span>
-                <svg
-                  class="w-4 h-4 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M5 13l4 4L19 7"
-                  />
-                </svg>
-                <span class="text-green-700 wrap-break-word">{{
-                  answer.phrase | appTranslation : currentLanguage()
-                }}</span>
-                } } @else {
-                <span class="text-neutral-600">{{ answer.number }}:</span>
-                <span class="text-neutral-600 wrap-break-word">{{
-                  answer.phrase | appTranslation : currentLanguage()
-                }}</span>
-                }
+                  @if (selectedAnswers()[question.id].includes(answer.id)) { @if
+                  (wrongAnswerIds().includes(answer.id)) {
+                  <span class="text-red-700 me-1">{{ answer.number }})</span>
+                  <span class="text-red-700 wrap-break-word">{{
+                    answer.phrase | appTranslation : currentLanguage()
+                  }}</span>
+                  } @else {
+                  <span class="text-green-700 me-1">{{ answer.number }})</span>
+                  <span class="text-green-700 wrap-break-word">{{
+                    answer.phrase | appTranslation : currentLanguage()
+                  }}</span>
+                  } } @else {
+                  <span class="text-neutral-600 me-1">{{ answer.number }})</span>
+                  <span class="text-neutral-600 wrap-break-word">{{
+                    answer.phrase | appTranslation : currentLanguage()
+                  }}</span>
+                  }
+                </div>
               </div>
               }
             </div>

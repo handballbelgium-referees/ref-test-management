@@ -161,9 +161,8 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                                 // Answers
                                 foreach (var answer in question.Answers)
                                 {
-                                    var answerText = answer.Phrase.ContainsKey(language)
-                                        ? answer.Phrase[language]
-                                        : string.Empty;
+                                    var answerText = answer.Phrase.TryGetValue(language, out var answerValue)
+                                        ? answerValue : string.Empty;
                                     var isUserSelected = selectedAnswerIds.Contains(answer.Id);
                                     var isWrongAnswer = wrongAnswerIds.Contains(answer.Id);
                                     var isCorrectAnswer = answer.IsCorrect;
@@ -227,7 +226,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
 
                                         row.RelativeItem().AlignMiddle().Text(text =>
                                         {
-                                            var span = text.Span($"{answer.Number}: {answerText}")
+                                            var span = text.Span($"{answer.Number}) {answerText}")
                                                 .FontSize(9)
                                                 .FontColor(textColor);
 
