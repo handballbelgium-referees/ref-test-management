@@ -125,12 +125,6 @@ export class TakeQuizComponent {
     return index === questions.length - 1;
   });
 
-  protected readonly canSubmit = computed(() => {
-    const answeredCount = this.answeredCount();
-    const totalQuestions = this.questions().length;
-    return answeredCount === totalQuestions;
-  });
-
   @HostListener('window:beforeunload', ['$event'])
   beforeUnloadHandler(event: BeforeUnloadEvent): void {
     // Check if quiz is in progress (has questions loaded but not completed)
