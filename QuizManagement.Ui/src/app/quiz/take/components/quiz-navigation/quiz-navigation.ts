@@ -19,7 +19,6 @@ export class QuizNavigationComponent {
   readonly answeredCount = input.required<number>();
   readonly canPrevious = input.required<boolean>();
   readonly canNext = input.required<boolean>();
-  readonly canSubmit = input.required<boolean>();
   readonly isLastQuestion = input.required<boolean>();
   readonly isQuestionAnswered = input.required<(questionId: string) => boolean>();
   readonly isQuestionVisited = input.required<(index: number) => boolean>();
