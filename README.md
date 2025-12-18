@@ -617,8 +617,6 @@ Complete configuration file structure:
 | **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions            | ✅ Yes   |
 |                           | `EnabledLanguages`      | Array of enabled UI languages (en/nl/fr/de) | ⚠️ Optional (defaults to all 4) |
 
-> **Note:** Language configuration supports hot-reload. Changes to `EnabledLanguages` in `appsettings.json` are detected automatically without requiring an application restart.
-
 ### User Secrets (Development)
 
 For sensitive data, use .NET User Secrets instead of `appsettings.json`:
