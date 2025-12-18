@@ -236,6 +236,20 @@ export class Datepicker {
       }
       window.removeEventListener('resize', resizeListener);
     });
+
+    const viewport = window.visualViewport;
+
+    const viewportResizeListener = () => {
+      if (this.isOpen()) {
+        requestAnimationFrame(() => this.positionCalendar());
+      }
+    };
+
+    viewport?.addEventListener('resize', viewportResizeListener);
+
+    this._destroyRef.onDestroy(() => {
+      viewport?.removeEventListener('resize', viewportResizeListener);
+    });
   }
 
   protected onEscape(): void {
@@ -246,14 +260,14 @@ export class Datepicker {
   protected onInputFocus(): void {
     if (!this.isOpen()) {
       this.isOpen.set(true);
-      this.positionCalendar();
+      requestAnimationFrame(() => this.positionCalendar());
     }
   }
 
   protected onInputClick(): void {
     if (!this.isOpen()) {
       this.isOpen.set(true);
-      this.positionCalendar();
+      requestAnimationFrame(() => this.positionCalendar());
     }
   }
 
@@ -285,29 +299,52 @@ export class Datepicker {
   }
 
   private positionCalendar(): void {
-    // Position the calendar below the input
-    setTimeout(() => {
-      const inputElement = this.inputElement();
-      const calendarElement = this.calendar();
+    const inputRef = this.inputElement();
+    const calendarRef = this.calendar();
 
-      if (inputElement && calendarElement) {
-        const inputRect = inputElement.nativeElement.getBoundingClientRect();
-        const calendarEl = calendarElement.nativeElement as HTMLElement;
-        const isSmallTouchDevice = this.isSmallTouchDevice();
+    if (!inputRef || !calendarRef) return;
 
-        calendarEl.style.top = `${inputRect.bottom + 4}px`;
+    const inputEl = inputRef.nativeElement;
+    const calendarEl = calendarRef.nativeElement;
 
-        if (isSmallTouchDevice) {
-          // Center the calendar on small touch devices (phones/small tablets)
-          calendarEl.style.left = '1rem';
-          calendarEl.style.right = '1rem';
-        } else {
-          // Position relative to input on desktop and touch laptops
-          calendarEl.style.left = `${inputRect.left}px`;
-          calendarEl.style.right = 'auto';
-        }
-      }
-    });
+    const inputRect = inputEl.getBoundingClientRect();
+
+    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
+    const viewportWidth = window.innerWidth;
+
+    const calendarRect = calendarEl.getBoundingClientRect();
+
+    const margin = 8;
+
+    // --- Vertical positioning ---
+    let top = inputRect.bottom + margin;
+
+    // Flip above if overflowing
+    if (top + calendarRect.height > viewportHeight) {
+      top = inputRect.top - calendarRect.height - margin;
+    }
+
+    // Clamp
+    top = Math.max(margin, Math.min(top, viewportHeight - calendarRect.height - margin));
+
+    // --- Horizontal positioning ---
+    let left: number;
+
+    if (this.isSmallTouchDevice()) {
+      // Centered on mobile
+      left = (viewportWidth - calendarRect.width) / 2;
+    } else {
+      // Aligned to input on desktop
+      left = inputRect.left;
+    }
+
+    // Clamp horizontally
+    left = Math.max(margin, Math.min(left, viewportWidth - calendarRect.width - margin));
+
+    // Apply styles (IMPORTANT: clear right!)
+    calendarEl.style.top = `${top}px`;
+    calendarEl.style.left = `${left}px`;
+    calendarEl.style.right = 'auto';
   }
 
   protected onInputBlur(event: Event): void {
