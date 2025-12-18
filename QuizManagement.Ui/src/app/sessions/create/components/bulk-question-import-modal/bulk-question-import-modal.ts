@@ -6,6 +6,9 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [TranslatePipe],
   templateUrl: './bulk-question-import-modal.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
 })
 export class BulkQuestionImportModal {
   readonly show = input<boolean>(false);

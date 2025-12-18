@@ -13,6 +13,7 @@ import { Language, LanguageConfig } from './services/language-config';
   imports: [RouterOutlet, TranslatePipe],
   templateUrl: './app.html',
   host: {
+    class: 'block',
     '(document:click)': 'onDocumentClick()',
   },
 })

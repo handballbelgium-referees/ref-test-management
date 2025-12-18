@@ -17,9 +17,12 @@ interface IQuestion {
 
 @Component({
   selector: 'app-quiz-results',
+  imports: [TranslatePipe, TranslationPipe],
   templateUrl: './quiz-results.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, TranslationPipe],
+  host: {
+    class: 'block',
+  },
 })
 export class QuizResultsComponent {
   readonly questions = input.required<IQuestion[]>();

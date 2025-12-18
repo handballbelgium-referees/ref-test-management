@@ -7,6 +7,9 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [TranslatePipe, Field],
   templateUrl: './session-user-list-item.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class SessionUserListItem {
   readonly userFormControl = input.required<any>();

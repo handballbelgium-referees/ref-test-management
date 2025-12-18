@@ -28,6 +28,9 @@ interface ISearchResult {
   imports: [TranslatePipe, LocalizedDate],
   templateUrl: './title-autocomplete.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
 })
 export class TitleAutocomplete {
   private readonly _getQuizTitlesGQL = inject(GetQuizTitlesGQL);

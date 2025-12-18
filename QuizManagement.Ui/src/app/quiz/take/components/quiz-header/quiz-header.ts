@@ -3,9 +3,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-quiz-header',
+  imports: [TranslatePipe],
   templateUrl: './quiz-header.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  host: {
+    class: 'block',
+  },
 })
 export class QuizHeaderComponent {
   readonly timeRemaining = input.required<string>();

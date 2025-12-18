@@ -3,9 +3,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-quiz-instructions',
+  imports: [TranslatePipe],
   templateUrl: './quiz-instructions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  host: {
+    class: 'block',
+  },
 })
 export class QuizInstructionsComponent {
   readonly hasTimeLimit = input.required<boolean>();

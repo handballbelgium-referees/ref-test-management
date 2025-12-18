@@ -3,9 +3,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-quiz-error',
+  imports: [TranslatePipe],
   templateUrl: './quiz-error.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  host: {
+    class: 'block',
+  },
 })
 export class QuizErrorComponent {
   readonly errorType = input.required<string>();

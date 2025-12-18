@@ -11,6 +11,9 @@ interface IInvitationSummary {
   imports: [TranslatePipe],
   templateUrl: './send-invitations-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
 })
 export class SendInvitationsDialog {
   readonly show = input.required<boolean>();

@@ -9,9 +9,12 @@ type QuizSession = DeepPartial<
 
 @Component({
   selector: 'app-session-details',
+  imports: [TranslatePipe],
   templateUrl: './session-details.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  host: {
+    class: 'block',
+  },
 })
 export class SessionDetailsComponent {
   readonly session = input.required<QuizSession>();

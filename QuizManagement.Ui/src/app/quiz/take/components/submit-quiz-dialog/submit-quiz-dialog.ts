@@ -3,9 +3,12 @@ import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-submit-quiz-dialog',
+  imports: [TranslatePipe],
   templateUrl: './submit-quiz-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  host: {
+    class: 'block',
+  },
 })
 export class SubmitQuizDialog {
   readonly show = input.required<boolean>();

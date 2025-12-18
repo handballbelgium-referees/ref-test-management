@@ -7,6 +7,9 @@ import { Auth } from '../auth/services/auth';
   imports: [TranslatePipe],
   templateUrl: './home.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class Home {
   private readonly _auth = inject(Auth);

@@ -11,8 +11,6 @@ import { SessionDetailsComponent } from './components/session-details/session-de
 
 @Component({
   selector: 'app-quiz-welcome',
-  templateUrl: './quiz-welcome.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TranslatePipe,
     QuizHeroComponent,
@@ -20,6 +18,11 @@ import { SessionDetailsComponent } from './components/session-details/session-de
     SessionDetailsComponent,
     QuizInstructionsComponent,
   ],
+  templateUrl: './quiz-welcome.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class QuizWelcomeComponent {
   private readonly _route = inject(ActivatedRoute);

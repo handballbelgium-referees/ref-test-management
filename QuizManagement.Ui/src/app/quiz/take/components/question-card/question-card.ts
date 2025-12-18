@@ -16,9 +16,12 @@ interface IQuestion {
 
 @Component({
   selector: 'app-question-card',
+  imports: [TranslatePipe, TranslationPipe, AnswerOptionComponent],
   templateUrl: './question-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe, TranslationPipe, AnswerOptionComponent],
+  host: {
+    class: 'block',
+  },
 })
 export class QuestionCardComponent {
   readonly question = input.required<IQuestion>();

@@ -97,7 +97,7 @@
     [attr.tabindex]="index() * 4 + 8"
     title="{{ 'sessions.create.form.users.removeParticipant' | translate }}"
     (click)="remove.emit()"
-    class="mt-6 p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+    class="mt-6 p-1.5 text-neutral-400 focus:text-red-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100 focus:opacity-100"
     [attr.aria-label]="
       ('sessions.create.form.users.removeParticipant' | translate) + ' ' + (index() + 1)
     "
