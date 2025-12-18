@@ -11,6 +11,9 @@ interface ISessionInfo {
   imports: [TranslatePipe],
   templateUrl: './delete-sessions-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
 })
 export class DeleteSessionsDialog {
   readonly show = input.required<boolean>();

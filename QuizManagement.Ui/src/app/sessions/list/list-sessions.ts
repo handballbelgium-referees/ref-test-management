@@ -88,6 +88,9 @@ type SessionNode = NonNullable<
   ],
   templateUrl: './list-sessions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class ListSessions {
   private readonly _getQuizSessionsGQL = inject(GetQuizSessionsGQL);

@@ -14,6 +14,9 @@ interface IPerformanceFilters {
   imports: [TranslatePipe],
   templateUrl: './performance-filters.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class PerformanceFilters {
   readonly minScore = input<number | undefined>();

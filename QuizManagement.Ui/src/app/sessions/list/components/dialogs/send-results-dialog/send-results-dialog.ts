@@ -11,6 +11,9 @@ interface IResultsSummary {
   imports: [TranslatePipe],
   templateUrl: './send-results-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
 })
 export class SendResultsDialog {
   readonly show = input.required<boolean>();

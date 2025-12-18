@@ -6,6 +6,9 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [TranslatePipe],
   templateUrl: './column-visibility-menu.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class ColumnVisibilityMenu {
   readonly visibleColumns = input.required<Set<string>>();

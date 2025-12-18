@@ -1,50 +1,52 @@
 <div class="bg-neutral-50 min-h-screen flex flex-col">
   <!-- Header with Navigation -->
   <header class="bg-white shadow-sm">
-    <nav class="container mx-auto flex items-center justify-between px-4 py-4">
+    <nav class="mx-auto flex items-center justify-between px-4 py-4">
       <!-- Logo and Title -->
       @if (showAuthUI()) {
-        <a href="/" class="flex items-center gap-6 md:gap-10">
-          <img src="/URBH-KBHB-logo.svg" alt="Handball Belgium Logo" class="h-8 md:h-12 w-auto" />
-          <img src="/IHF-logo.svg" alt="IHF Logo" class="h-8 md:h-12 w-auto" />
-          <img src="/EHF-logo.svg" alt="EHF Logo" class="h-8 md:h-12 w-auto" />
-          <span class="text-base md:text-xl font-bold text-neutral-900 hidden sm:block">
-            {{ 'app.title' | translate }}
-          </span>
-        </a>
+      <a href="/" class="flex items-center gap-6 md:gap-10">
+        <img src="/URBH-KBHB-logo.svg" alt="Handball Belgium Logo" class="h-8 md:h-12 w-auto" />
+        <img src="/IHF-logo.svg" alt="IHF Logo" class="h-8 md:h-12 w-auto" />
+        <img src="/EHF-logo.svg" alt="EHF Logo" class="h-8 md:h-12 w-auto" />
+        <span class="text-base lg:text-xl font-bold text-neutral-900 hidden sm:block">
+          {{ 'app.title' | translate }}
+        </span>
+      </a>
       } @else {
-        <div class="flex items-center gap-6 md:gap-10">
-          <img src="/URBH-KBHB-logo.svg" alt="Handball Belgium Logo" class="h-8 md:h-12 w-auto" />
-          <img src="/IHF-logo.svg" alt="IHF Logo" class="h-8 md:h-12 w-auto" />
-          <img src="/EHF-logo.svg" alt="EHF Logo" class="h-8 md:h-12 w-auto" />
-          <span class="text-base md:text-xl font-bold text-neutral-900 hidden sm:block">
-            {{ 'app.title' | translate }}
-          </span>
-        </div>
+      <div class="flex items-center gap-6 md:gap-10">
+        <img src="/URBH-KBHB-logo.svg" alt="Handball Belgium Logo" class="h-8 md:h-12 w-auto" />
+        <img src="/IHF-logo.svg" alt="IHF Logo" class="h-8 md:h-12 w-auto" />
+        <img src="/EHF-logo.svg" alt="EHF Logo" class="h-8 md:h-12 w-auto" />
+        <span class="text-base lg:text-xl font-bold text-neutral-900 hidden sm:block">
+          {{ 'app.title' | translate }}
+        </span>
+      </div>
       }
 
       <!-- Navigation Links -->
       <div class="flex items-center gap-3 md:gap-6">
         @if (showAuthUI() && isLoggedIn() && user(); as user) {
-          <!-- User Profile & Logout -->
-          <div class="flex items-center gap-2 md:gap-4">
-            <div class="flex items-center gap-2">
-              <div
-                class="h-8 w-8 rounded-full bg-linear-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center text-xs font-semibold shadow-sm"
-                [title]="user.name"
-              >
-                {{ getInitials(user.name) }}
-              </div>
-              <span class="text-xs md:text-sm font-medium text-neutral-700 hidden sm:inline">{{ user.name }}</span>
-            </div>
-            <button
-              type="button"
-              (click)="logout()"
-              class="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-3 md:px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+        <!-- User Profile & Logout -->
+        <div class="flex items-center gap-2 md:gap-4">
+          <div class="flex items-center gap-2">
+            <div
+              class="h-8 w-8 rounded-full bg-linear-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center text-xs font-semibold shadow-sm"
+              [title]="user.name"
             >
-              {{ 'nav.logout' | translate }}
-            </button>
+              {{ getInitials(user.name) }}
+            </div>
+            <span class="text-xs md:text-sm font-medium text-neutral-700 hidden lg:inline">{{
+              user.name
+            }}</span>
           </div>
+          <button
+            type="button"
+            (click)="logout()"
+            class="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-3 md:px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+          >
+            {{ 'nav.logout' | translate }}
+          </button>
+        </div>
         }
 
         <!-- Language Switcher -->
@@ -150,7 +152,9 @@
         <span class="text-neutral-600 hidden sm:inline">•</span>
         <span class="text-neutral-400">{{ 'footer.creator' | translate }}</span>
         <span class="text-neutral-600 hidden sm:inline">•</span>
-        <span class="font-mono text-neutral-400 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]">
+        <span
+          class="font-mono text-neutral-400 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]"
+        >
           v{{ version }}
         </span>
       </div>

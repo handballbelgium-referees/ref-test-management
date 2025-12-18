@@ -9,9 +9,12 @@ interface IQuestion {
 
 @Component({
   selector: 'app-quiz-navigation',
+  imports: [TranslatePipe],
   templateUrl: './quiz-navigation.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslatePipe],
+  host: {
+    class: 'block',
+  },
 })
 export class QuizNavigationComponent {
   readonly questions = input.required<IQuestion[]>();

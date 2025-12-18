@@ -52,6 +52,9 @@ interface ISessionFormData {
   ],
   templateUrl: './create-sessions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
 })
 export class CreateSessions {
   private readonly _destroyRef = inject(DestroyRef);

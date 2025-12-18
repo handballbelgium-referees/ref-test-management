@@ -36,8 +36,6 @@ interface IQuestion {
 
 @Component({
   selector: 'app-take-quiz',
-  templateUrl: './take-quiz.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     TranslatePipe,
     QuizHeaderComponent,
@@ -48,6 +46,11 @@ interface IQuestion {
     LeaveQuizDialogComponent,
     QuizErrorComponent,
   ],
+  templateUrl: './take-quiz.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class TakeQuizComponent {
   private readonly _route = inject(ActivatedRoute);

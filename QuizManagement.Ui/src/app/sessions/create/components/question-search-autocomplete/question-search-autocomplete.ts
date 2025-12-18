@@ -28,6 +28,9 @@ interface ISearchResult {
   imports: [TranslatePipe, TranslationPipe],
   templateUrl: './question-search-autocomplete.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
 })
 export class QuestionSearchAutocomplete {
   private readonly _searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);

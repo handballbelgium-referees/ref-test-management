@@ -6,6 +6,9 @@ import { TranslateModule } from '@ngx-translate/core';
   templateUrl: './leave-quiz-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslateModule],
+  host: {
+    class: 'block',
+  },
 })
 export class LeaveQuizDialogComponent {
   readonly show = input.required<boolean>();
