@@ -1,0 +1,11 @@
+@if (viewMode() === 'days') {
+<app-days-grid
+  [currentDate]="currentDate()"
+  [selectedDate]="selectedDate()"
+  (dateSelect)="dateSelect.emit($event)"
+/>
+} @else if (viewMode() === 'months') {
+<app-months-grid [currentDate]="currentDate()" (monthSelect)="monthSelect.emit($event)" />
+} @else {
+<app-years-grid [currentDate]="currentDate()" (yearSelect)="yearSelect.emit($event)" />
+}

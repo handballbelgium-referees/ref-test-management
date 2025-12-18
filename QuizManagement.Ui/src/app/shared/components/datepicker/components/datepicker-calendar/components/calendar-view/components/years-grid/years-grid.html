@@ -1,0 +1,16 @@
+<div class="grid grid-cols-3 gap-2">
+  @for (yearItem of years(); track yearItem.year) {
+  <button
+    type="button"
+    class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600 text-xs h-8 md:text-sm md:h-10"
+    [class.!bg-primary-600]="yearItem.isSelected"
+    [class.!text-white]="yearItem.isSelected"
+    [class.font-semibold]="yearItem.isSelected"
+    [class.text-neutral-400]="yearItem.isOutOfRange"
+    (click)="selectYear(yearItem.year)"
+    tabindex="-1"
+  >
+    {{ yearItem.year }}
+  </button>
+  }
+</div>

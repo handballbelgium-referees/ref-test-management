@@ -1,181 +1,43 @@
 import {
+  ChangeDetectionStrategy,
   Component,
   DestroyRef,
-  ElementRef,
-  computed,
   effect,
   inject,
   input,
   output,
   signal,
-  viewChild,
 } from '@angular/core';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-
-interface CalendarDay {
-  date: Date;
-  day: number;
-  isCurrentMonth: boolean;
-  isToday: boolean;
-  isSelected: boolean;
-  isDisabled: boolean;
-}
-
-type ViewMode = 'days' | 'months' | 'years';
+import { DatepickerCalendar } from './components/datepicker-calendar/datepicker-calendar';
+import { DatepickerInput } from './components/datepicker-input/datepicker-input';
+import { Datepicker as DatePickerService } from './services/datepicker';
 
 @Component({
   selector: 'app-datepicker',
-  imports: [TranslatePipe],
+  imports: [DatepickerInput, DatepickerCalendar],
   templateUrl: './datepicker.html',
-  styleUrl: './datepicker.css',
+  providers: [DatePickerService],
   host: {
     '[attr.tabindex]': '"-1"',
     '(document:keydown.escape)': 'onEscape()',
   },
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Datepicker {
-  private readonly _translate = inject(TranslateService);
-  private readonly _elRef = inject(ElementRef);
+  private readonly _dateService = inject(DatePickerService);
   private readonly _destroyRef = inject(DestroyRef);
-  private _clickListener?: (event: MouseEvent) => void;
   private _scrollListener?: () => void;
+  private _resizeListener?: () => void;
 
   readonly value = input<string>('');
-  readonly dateChange = output<string>();
   readonly placeholder = input<string>('dd/mm/yyyy');
+  readonly dateChange = output<string>();
 
-  readonly calendar = viewChild<ElementRef>('calendar');
-  readonly inputElement = viewChild<ElementRef>('input');
-
-  readonly currentDate = signal<Date>(new Date());
-  protected readonly viewMode = signal<ViewMode>('days');
-  protected readonly today = new Date();
-  protected readonly isOpen = signal<boolean>(false);
-  protected readonly displayValue = signal<string>('');
-  protected readonly isSmallTouchDevice = signal<boolean>(this.detectSmallTouchDevice());
-
-  private readonly _selectedDate = signal<Date | null>(null);
-
-  protected readonly calendarDays = computed(() => {
-    const date = this.currentDate();
-    const year = date.getFullYear();
-    const month = date.getMonth();
-    const selectedDate = this._selectedDate();
-
-    const firstDay = new Date(year, month, 1);
-    const lastDay = new Date(year, month + 1, 0);
-    const prevLastDay = new Date(year, month, 0);
-
-    const firstDayOfWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
-    const lastDate = lastDay.getDate();
-    const prevLastDate = prevLastDay.getDate();
-
-    const days: CalendarDay[] = [];
-
-    // Previous month days
-    for (let i = firstDayOfWeek; i > 0; i--) {
-      const date = new Date(year, month - 1, prevLastDate - i + 1);
-      days.push({
-        date,
-        day: date.getDate(),
-        isCurrentMonth: false,
-        isToday: this.isSameDay(date, this.today),
-        isSelected: selectedDate ? this.isSameDay(date, selectedDate) : false,
-        isDisabled: false,
-      });
-    }
-
-    // Current month days
-    for (let day = 1; day <= lastDate; day++) {
-      const date = new Date(year, month, day);
-      days.push({
-        date,
-        day,
-        isCurrentMonth: true,
-        isToday: this.isSameDay(date, this.today),
-        isSelected: selectedDate ? this.isSameDay(date, selectedDate) : false,
-        isDisabled: false,
-      });
-    }
-
-    // Next month days to complete the last week only
-    const totalDays = days.length;
-    const weeksNeeded = Math.ceil(totalDays / 7);
-    const remainingDays = weeksNeeded * 7 - totalDays;
-
-    for (let day = 1; day <= remainingDays; day++) {
-      const date = new Date(year, month + 1, day);
-      days.push({
-        date,
-        day,
-        isCurrentMonth: false,
-        isToday: this.isSameDay(date, this.today),
-        isSelected: selectedDate ? this.isSameDay(date, selectedDate) : false,
-        isDisabled: false,
-      });
-    }
-
-    return days;
-  });
-
-  protected readonly months = computed(() => {
-    const monthNames = [];
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(2000, i, 1);
-      monthNames.push({
-        index: i,
-        name: date.toLocaleDateString(this._translate.getCurrentLang(), { month: 'short' }),
-        isSelected: i === this.currentDate().getMonth(),
-      });
-    }
-    return monthNames;
-  });
-
-  protected readonly years = computed(() => {
-    const currentYear = this.currentDate().getFullYear();
-    const startYear = Math.floor(currentYear / 10) * 10;
-    const years = [];
-
-    for (let i = startYear - 1; i < startYear + 11; i++) {
-      years.push({
-        year: i,
-        isSelected: i === currentYear,
-        isOutOfRange: i < startYear || i >= startYear + 10,
-      });
-    }
-
-    return years;
-  });
-
-  protected readonly viewTitle = computed(() => {
-    const date = this.currentDate();
-    const mode = this.viewMode();
-
-    if (mode === 'days') {
-      return date.toLocaleDateString(this._translate.getCurrentLang(), {
-        month: 'long',
-        year: 'numeric',
-      });
-    } else if (mode === 'months') {
-      return date.getFullYear().toString();
-    } else {
-      const startYear = Math.floor(date.getFullYear() / 10) * 10;
-      return `${startYear} - ${startYear + 9}`;
-    }
-  });
-
-  protected readonly weekDays = computed(() => {
-    const days = [];
-    const baseDate = new Date(2024, 0, 1); // Monday, January 1, 2024
-
-    for (let i = 0; i < 7; i++) {
-      const date = new Date(baseDate);
-      date.setDate(baseDate.getDate() + i);
-      days.push(date.toLocaleDateString(this._translate.getCurrentLang(), { weekday: 'short' }));
-    }
-
-    return days;
-  });
+  protected readonly isOpen = signal(false);
+  protected readonly displayValue = signal('');
+  protected readonly currentDate = signal(new Date());
+  protected readonly selectedDate = signal<Date | null>(null);
+  protected readonly isSmallTouchDevice = signal(this._dateService.detectSmallTouchDevice());
 
   constructor() {
     // Initialize from input value
@@ -184,39 +46,14 @@ export class Datepicker {
       if (initialValue) {
         const date = new Date(initialValue);
         if (!isNaN(date.getTime())) {
-          this._selectedDate.set(date);
-          this.displayValue.set(this.formatDate(date));
+          this.selectedDate.set(date);
+          this.displayValue.set(this._dateService.formatDate(date));
           this.currentDate.set(new Date(date));
         }
       }
     });
 
-    // Add click listener after a delay to prevent immediate closure
-    setTimeout(() => {
-      this._clickListener = (event: MouseEvent) => {
-        const target = event.target as Node;
-        const calendar = this.calendar();
-
-        // Don't close if clicking inside the component or calendar
-        if (
-          this._elRef.nativeElement.contains(target) ||
-          (calendar && calendar.nativeElement.contains(target))
-        ) {
-          return;
-        }
-
-        this.isOpen.set(false);
-      };
-      document.addEventListener('click', this._clickListener);
-
-      this._destroyRef.onDestroy(() => {
-        if (this._clickListener) {
-          document.removeEventListener('click', this._clickListener);
-        }
-      });
-    }, 300);
-
-    // Add scroll listener to close calendar when scrolling
+    // Scroll listener to close calendar
     this._scrollListener = () => {
       if (this.isOpen()) {
         this.isOpen.set(false);
@@ -224,271 +61,91 @@ export class Datepicker {
     };
     window.addEventListener('scroll', this._scrollListener, true);
 
-    // Add resize listener to update small touch device detection
-    const resizeListener = () => {
-      this.isSmallTouchDevice.set(this.detectSmallTouchDevice());
+    // Resize listener for device detection
+    this._resizeListener = () => {
+      this.isSmallTouchDevice.set(this._dateService.detectSmallTouchDevice());
     };
-    window.addEventListener('resize', resizeListener);
+    window.addEventListener('resize', this._resizeListener);
 
     this._destroyRef.onDestroy(() => {
       if (this._scrollListener) {
         window.removeEventListener('scroll', this._scrollListener, true);
       }
-      window.removeEventListener('resize', resizeListener);
+      if (this._resizeListener) {
+        window.removeEventListener('resize', this._resizeListener);
+      }
     });
   }
 
   protected onEscape(): void {
     this.isOpen.set(false);
-    this.viewMode.set('days');
   }
 
   protected onInputFocus(): void {
-    if (!this.isOpen()) {
-      this.isOpen.set(true);
-      this.positionCalendar();
-    }
+    this.isOpen.set(true);
   }
 
-  protected onInputClick(): void {
-    if (!this.isOpen()) {
-      this.isOpen.set(true);
-      this.positionCalendar();
-    }
+  protected onInputChange(value: string): void {
+    this.displayValue.set(value);
   }
 
-  protected onInputKeydown(event: KeyboardEvent): void {
-    // Allow: backspace, delete, tab, escape, enter
-    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter'].includes(event.key)) {
-      return;
-    }
-
-    // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-    if (event.ctrlKey && ['a', 'c', 'v', 'x'].includes(event.key.toLowerCase())) {
-      return;
-    }
-
-    // Allow: home, end, left, right arrows
-    if (['Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-      return;
-    }
-
-    // Ensure that it is a number (0-9) or slash
-    if (!/^[0-9/]$/.test(event.key)) {
-      event.preventDefault();
-    }
-  }
-
-  protected onInputChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    this.displayValue.set(input.value);
-  }
-
-  private positionCalendar(): void {
-    // Position the calendar below the input
-    setTimeout(() => {
-      const inputElement = this.inputElement();
-      const calendarElement = this.calendar();
-
-      if (inputElement && calendarElement) {
-        const inputRect = inputElement.nativeElement.getBoundingClientRect();
-        const calendarEl = calendarElement.nativeElement as HTMLElement;
-        const isSmallTouchDevice = this.isSmallTouchDevice();
-
-        calendarEl.style.top = `${inputRect.bottom + 4}px`;
-
-        if (isSmallTouchDevice) {
-          // Center the calendar on small touch devices (phones/small tablets)
-          calendarEl.style.left = '1rem';
-          calendarEl.style.right = '1rem';
-        } else {
-          // Position relative to input on desktop and touch laptops
-          calendarEl.style.left = `${inputRect.left}px`;
-          calendarEl.style.right = 'auto';
-        }
-      }
-    });
-  }
-
-  protected onInputBlur(event: Event): void {
-    // Close calendar when input loses focus
-    // Small timeout to allow click events on calendar to fire first
-    setTimeout(() => {
-      this.isOpen.set(false);
-      this.viewMode.set('days');
-    }, 200);
-
-    const input = event.target as HTMLInputElement;
-    const value = input.value;
-
+  protected onInputBlur(value: string): void {
     if (!value) {
-      const currentSelected = this._selectedDate();
+      const currentSelected = this.selectedDate();
       if (currentSelected !== null) {
-        this._selectedDate.set(null);
+        this.selectedDate.set(null);
         this.displayValue.set('');
         this.dateChange.emit('');
       }
       return;
     }
 
-    // Parse dd/mm/yyyy format
-    const parts = value.split('/');
-    if (parts.length === 3) {
-      const day = parseInt(parts[0], 10);
-      const month = parseInt(parts[1], 10) - 1;
-      const year = parseInt(parts[2], 10);
+    const date = this._dateService.parseDate(value);
+    if (date) {
+      const currentSelected = this.selectedDate();
+      const isDifferent = !currentSelected || !this._dateService.isSameDay(date, currentSelected);
 
-      const date = new Date(year, month, day);
-      if (!isNaN(date.getTime()) && date.getDate() === day && date.getMonth() === month) {
-        date.setHours(0, 0, 0, 0);
-
-        // Only emit if date changed
-        const currentSelected = this._selectedDate();
-        const isDifferent = !currentSelected || !this.isSameDay(date, currentSelected);
-
-        this._selectedDate.set(date);
-        this.currentDate.set(new Date(date));
-        this.displayValue.set(this.formatDate(date));
-
-        if (isDifferent) {
-          this.dateChange.emit(date.toISOString());
-        }
-      } else {
-        // Invalid date, revert to last valid date
-        const selected = this._selectedDate();
-        this.displayValue.set(selected ? this.formatDate(selected) : '');
-      }
-    } else if (value) {
-      // Incomplete or malformed input, revert to last valid date
-      const selected = this._selectedDate();
-      this.displayValue.set(selected ? this.formatDate(selected) : '');
-    }
-  }
-
-  protected selectDay(day: CalendarDay): void {
-    if (!day.isDisabled) {
-      const date = new Date(day.date);
-      date.setHours(0, 0, 0, 0);
-
-      // Only emit if the date actually changed
-      const currentSelected = this._selectedDate();
-      const isDifferent = !currentSelected || !this.isSameDay(date, currentSelected);
-
-      this._selectedDate.set(date);
-      this.displayValue.set(this.formatDate(date));
+      this.selectedDate.set(date);
+      this.currentDate.set(new Date(date));
+      this.displayValue.set(this._dateService.formatDate(date));
 
       if (isDifferent) {
         this.dateChange.emit(date.toISOString());
       }
-
-      this.isOpen.set(false);
-      this.viewMode.set('days');
+    } else {
+      // Invalid date, revert to last valid date
+      const selected = this.selectedDate();
+      this.displayValue.set(selected ? this._dateService.formatDate(selected) : '');
     }
   }
 
-  protected selectMonth(monthIndex: number): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setMonth(monthIndex);
-    this.currentDate.set(newDate);
-    this.viewMode.set('days');
-  }
+  protected onDateSelect(date: Date): void {
+    const currentSelected = this.selectedDate();
+    const isDifferent = !currentSelected || !this._dateService.isSameDay(date, currentSelected);
 
-  protected selectYear(year: number): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setFullYear(year);
-    this.currentDate.set(newDate);
-    this.viewMode.set('months');
-  }
+    this.selectedDate.set(date);
+    this.currentDate.set(new Date(date));
+    this.displayValue.set(this._dateService.formatDate(date));
 
-  protected previousMonth(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setMonth(newDate.getMonth() - 1);
-    this.currentDate.set(newDate);
-  }
-
-  protected nextMonth(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setMonth(newDate.getMonth() + 1);
-    this.currentDate.set(newDate);
-  }
-
-  protected previousYear(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setFullYear(newDate.getFullYear() - 1);
-    this.currentDate.set(newDate);
-  }
-
-  protected nextYear(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setFullYear(newDate.getFullYear() + 1);
-    this.currentDate.set(newDate);
-  }
-
-  protected previousDecade(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setFullYear(newDate.getFullYear() - 10);
-    this.currentDate.set(newDate);
-  }
-
-  protected nextDecade(): void {
-    const newDate = new Date(this.currentDate());
-    newDate.setFullYear(newDate.getFullYear() + 10);
-    this.currentDate.set(newDate);
-  }
-
-  protected toggleView(): void {
-    const mode = this.viewMode();
-    if (mode === 'days') {
-      this.viewMode.set('months');
-    } else if (mode === 'months') {
-      this.viewMode.set('years');
+    if (isDifferent) {
+      this.dateChange.emit(date.toISOString());
     }
-  }
 
-  protected selectToday(): void {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    this._selectedDate.set(today);
-    this.currentDate.set(today);
-    this.viewMode.set('days');
-    this.displayValue.set(this.formatDate(today));
-    this.dateChange.emit(today.toISOString());
     this.isOpen.set(false);
   }
 
-  protected clear(): void {
-    this._selectedDate.set(null);
+  protected onClear(): void {
+    this.selectedDate.set(null);
     this.displayValue.set('');
     this.dateChange.emit('');
     this.isOpen.set(false);
   }
 
-  private formatDate(date: Date): string {
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = date.getFullYear();
-    return `${day}/${month}/${year}`;
+  protected onClose(): void {
+    this.isOpen.set(false);
   }
 
-  private isSameDay(date1: Date, date2: Date): boolean {
-    return (
-      date1.getFullYear() === date2.getFullYear() &&
-      date1.getMonth() === date2.getMonth() &&
-      date1.getDate() === date2.getDate()
-    );
-  }
-
-  private detectSmallTouchDevice(): boolean {
-    // Check if device has touch capability AND small/medium screen (< 1024px)
-    // This excludes touch-enabled laptops which typically have screens >= 1024px
-    // Includes phones and tablets (including iPad Pro)
-    const hasTouch =
-      'ontouchstart' in window ||
-      navigator.maxTouchPoints > 0 ||
-      (navigator as any).msMaxTouchPoints > 0;
-
-    const isSmallScreen = window.innerWidth < 1024;
-
-    return hasTouch && isSmallScreen;
+  protected onCurrentDateChange(date: Date): void {
+    this.currentDate.set(date);
   }
 }

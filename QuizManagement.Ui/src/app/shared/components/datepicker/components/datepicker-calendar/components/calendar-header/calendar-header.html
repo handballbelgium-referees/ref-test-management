@@ -1,0 +1,95 @@
+<div
+  class="bg-neutral-100 border-b border-neutral-200 flex justify-between items-center gap-2 px-3 py-2 mb-2 md:px-4 md:py-3 md:mb-3"
+  [class.rounded-t-xl]="!isSmallTouchDevice()"
+>
+  @if (viewMode() === 'days') {
+  <button
+    type="button"
+    class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white w-8 h-8 md:w-10 md:h-10"
+    (click)="previous.emit()"
+    [attr.aria-label]="'common.previous' | translate"
+    title="{{ 'common.previous' | translate }}"
+    tabindex="-1"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+  } @else if (viewMode() === 'months') {
+  <button
+    type="button"
+    class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white w-8 h-8 md:w-10 md:h-10"
+    (click)="previous.emit()"
+    [attr.aria-label]="'common.previous' | translate"
+    title="{{ 'common.previous' | translate }}"
+    tabindex="-1"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+  } @else {
+  <button
+    type="button"
+    class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white w-8 h-8 md:w-10 md:h-10"
+    (click)="previous.emit()"
+    [attr.aria-label]="'common.previous' | translate"
+    title="{{ 'common.previous' | translate }}"
+    tabindex="-1"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+    </svg>
+  </button>
+  }
+
+  <button
+    type="button"
+    class="flex-1 text-neutral-900 font-semibold text-center transition-all rounded-lg border-none bg-transparent cursor-pointer hover:bg-white hover:text-primary-600 text-xs p-1.5 md:text-sm md:p-2"
+    (click)="toggleView.emit()"
+    tabindex="-1"
+  >
+    {{ viewTitle() }}
+  </button>
+
+  @if (viewMode() === 'days') {
+  <button
+    type="button"
+    class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white w-8 h-8 md:w-10 md:h-10"
+    (click)="next.emit()"
+    [attr.aria-label]="'common.next' | translate"
+    title="{{ 'common.next' | translate }}"
+    tabindex="-1"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+  } @else if (viewMode() === 'months') {
+  <button
+    type="button"
+    class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white w-8 h-8 md:w-10 md:h-10"
+    (click)="next.emit()"
+    [attr.aria-label]="'common.next' | translate"
+    title="{{ 'common.next' | translate }}"
+    tabindex="-1"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+  } @else {
+  <button
+    type="button"
+    class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white w-8 h-8 md:w-10 md:h-10"
+    (click)="next.emit()"
+    [attr.aria-label]="'common.next' | translate"
+    title="{{ 'common.next' | translate }}"
+    tabindex="-1"
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+    </svg>
+  </button>
+  }
+</div>
