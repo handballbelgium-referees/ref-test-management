@@ -6,6 +6,7 @@
     [readonly]="isSmallTouchDevice()"
     [isOpen]="isOpen()"
     (focus)="onInputFocus()"
+    (click)="onInputFocus()"
     (inputChange)="onInputChange($event)"
     (blur)="onInputBlur($event)"
   />
