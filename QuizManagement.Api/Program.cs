@@ -54,8 +54,8 @@ services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
     .ConfigureHttpClient((sp, c) =>
     {
         c.BaseAddress = new Uri(configuration["RulesQuestions:Url"]!);
-        var langConfig = sp.GetRequiredService<Microsoft.Extensions.Options.IOptionsMonitor<LanguageConfiguration>>();
-        c.DefaultRequestHeaders.Add("Accept-Language", langConfig.CurrentValue.DefaultPhraseLanguage);
+        var langConfig = sp.GetRequiredService<LanguageConfiguration>();
+        c.DefaultRequestHeaders.Add("Accept-Language", langConfig.DefaultPhraseLanguage);
     });
 
 services.AddGraphQLServer()
