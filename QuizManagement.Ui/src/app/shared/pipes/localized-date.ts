@@ -6,7 +6,7 @@ import { TranslateService } from '@ngx-translate/core';
   name: 'localizedDate',
   pure: false, // Makes pipe impure so it updates when language changes
 })
-export class LocalizedDatePipe implements PipeTransform {
+export class LocalizedDate implements PipeTransform {
   private readonly _translate = inject(TranslateService);
 
   transform(value: Date | string | number | null | undefined, format?: string): string | null {

@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { Datepicker } from '../../../../../shared/components/datepicker/datepicker';
 
 export interface IDateRange {
   after?: string;
@@ -8,7 +9,7 @@ export interface IDateRange {
 
 @Component({
   selector: 'app-date-range-filter',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, Datepicker],
   templateUrl: './date-range-filter.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -23,10 +24,16 @@ export class DateRangeFilter {
   readonly dateChange = output<IDateRange>();
 
   protected onAfterChange(value: string): void {
-    this.dateChange.emit({ after: value || undefined });
+    this.dateChange.emit({
+      after: value || undefined,
+      before: this.beforeDate(),
+    });
   }
 
   protected onBeforeChange(value: string): void {
-    this.dateChange.emit({ before: value || undefined });
+    this.dateChange.emit({
+      after: this.afterDate(),
+      before: value || undefined,
+    });
   }
 }

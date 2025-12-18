@@ -6,7 +6,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { filter, map } from 'rxjs';
 import { APP_VERSION } from '../version';
 import { Auth } from './auth/services/auth';
-import { Language, LanguageConfigService } from './services/language-config.service';
+import { Language, LanguageConfig } from './services/language-config';
 
 @Component({
   selector: 'app-root',
@@ -23,7 +23,7 @@ export class App {
   private readonly _route = inject(ActivatedRoute);
   private readonly _router = inject(Router);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _languageConfigService = inject(LanguageConfigService);
+  private readonly _languageConfigService = inject(LanguageConfig);
 
   private readonly _isQuizRoute = toSignal(
     this._router.events.pipe(

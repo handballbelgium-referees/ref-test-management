@@ -1,13 +1,8 @@
 import { registerLocaleData } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
-import localeDe from '@angular/common/locales/de';
-import localeEn from '@angular/common/locales/en';
-import localeFr from '@angular/common/locales/fr';
-import localeNl from '@angular/common/locales/nl';
 import {
   ApplicationConfig,
   inject,
-  Injector,
   LOCALE_ID,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
@@ -20,15 +15,38 @@ import { InMemoryCache } from '@apollo/client';
 import { relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
-import { first } from 'rxjs';
+import { forkJoin, from, of, switchMap, tap } from 'rxjs';
 import { routes } from './app.routes';
-import { LanguageConfigService } from './services/language-config.service';
+import { LanguageConfig } from './services/language-config';
 
-// Register locale data for date formatting
-registerLocaleData(localeEn, 'en-BE');
-registerLocaleData(localeNl, 'nl-BE');
-registerLocaleData(localeFr, 'fr-BE');
-registerLocaleData(localeDe, 'de-BE');
+// Dynamic locale registration helper
+function registerDynamicLocales() {
+  const languageConfigService = inject(LanguageConfig);
+
+  return languageConfigService.getAvailableLanguages().pipe(
+    switchMap((enabledLanguages) => {
+      const localeMap = {
+        en: () => from(import('@angular/common/locales/en')),
+        nl: () => from(import('@angular/common/locales/nl')),
+        fr: () => from(import('@angular/common/locales/fr')),
+        de: () => from(import('@angular/common/locales/de')),
+      };
+
+      const imports = enabledLanguages
+        .map((langInfo) => {
+          const langCode = langInfo.code;
+          return localeMap[langCode as keyof typeof localeMap]
+            ? localeMap[langCode as keyof typeof localeMap]().pipe(
+                tap((localeModule) => registerLocaleData(localeModule.default, `${langCode}-BE`))
+              )
+            : null;
+        })
+        .filter((obs) => obs !== null);
+
+      return imports.length > 0 ? forkJoin(imports) : of([]);
+    })
+  );
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -36,19 +54,17 @@ export const appConfig: ApplicationConfig = {
     provideRouter(routes),
     provideHttpClient(),
     provideAppInitializer(() => {
-      const languageConfigService = inject(LanguageConfigService);
-      languageConfigService.initializeLanguages().pipe(first()).subscribe();
+      const languageConfigService = inject(LanguageConfig);
+      return registerDynamicLocales().pipe(
+        switchMap(() => languageConfigService.initializeLanguages())
+      );
     }),
     {
       provide: LOCALE_ID,
       useFactory: () => {
-        const injector = inject(Injector);
-        const translate = injector.get(TranslateService);
-        return (
-          `${translate.getCurrentLang()}-BE` ||
-          `${localStorage.getItem('app-language')}-BE` ||
-          'en-BE'
-        );
+        const translate = inject(TranslateService);
+        const currentLang = translate.currentLang || localStorage.getItem('app-language') || 'en';
+        return `${currentLang}-BE`;
       },
     },
     provideTranslateService({

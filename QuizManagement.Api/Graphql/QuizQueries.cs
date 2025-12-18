@@ -79,6 +79,6 @@ public static class QuizQueries
     /// </summary>
     /// <param name="languageConfiguration"></param>
     /// <returns></returns>
-    public static string[] GetEnabledLanguages([Service] IOptionsMonitor<LanguageConfiguration> languageConfiguration)
-        => languageConfiguration.CurrentValue.EnabledLanguages;
+    public static string[] GetEnabledLanguages([Service] LanguageConfiguration languageConfiguration)
+        => languageConfiguration.EnabledLanguages;
 }
