@@ -4,7 +4,11 @@
     "pageTitle": "Handball Quiz Management"
   },
   "common": {
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "today": "Today",
+    "clear": "Clear",
+    "previous": "Previous",
+    "next": "Next"
   },
   "nav": {
     "language": "Language",

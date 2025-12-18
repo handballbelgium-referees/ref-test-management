@@ -4,7 +4,11 @@
     "pageTitle": "Gestion du Quiz de Handball"
   },
   "common": {
-    "cancel": "Annuler"
+    "cancel": "Annuler",
+    "today": "Aujourd'hui",
+    "clear": "Effacer",
+    "previous": "Précédent",
+    "next": "Suivant"
   },
   "nav": {
     "language": "Langue",

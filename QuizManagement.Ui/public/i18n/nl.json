@@ -4,7 +4,11 @@
     "pageTitle": "Handbal Quiz Beheer"
   },
   "common": {
-    "cancel": "Annuleren"
+    "cancel": "Annuleren",
+    "today": "Vandaag",
+    "clear": "Wissen",
+    "previous": "Vorige",
+    "next": "Volgende"
   },
   "nav": {
     "language": "Taal",

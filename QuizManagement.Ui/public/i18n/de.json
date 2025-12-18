@@ -4,7 +4,11 @@
     "pageTitle": "Handball-Quiz-Verwaltung"
   },
   "common": {
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "today": "Heute",
+    "clear": "Löschen",
+    "previous": "Zurück",
+    "next": "Weiter"
   },
   "nav": {
     "language": "Sprache",
