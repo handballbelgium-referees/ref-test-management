@@ -38,6 +38,7 @@ export class Datepicker {
   protected readonly currentDate = signal(new Date());
   protected readonly selectedDate = signal<Date | null>(null);
   protected readonly isSmallTouchDevice = signal(this._dateService.detectSmallTouchDevice());
+  protected readonly openMode = signal<'mobile' | 'desktop'>('desktop');
 
   constructor() {
     // Initialize from input value
@@ -55,11 +56,16 @@ export class Datepicker {
 
     // Scroll listener to close calendar
     this._scrollListener = () => {
+      if (this.isSmallTouchDevice()) return;
+
       if (this.isOpen()) {
         this.isOpen.set(false);
       }
     };
-    window.addEventListener('scroll', this._scrollListener, true);
+
+    if (this.openMode() === 'desktop') {
+      window.addEventListener('scroll', this._scrollListener, true);
+    }
 
     // Resize listener for device detection
     this._resizeListener = () => {
@@ -82,6 +88,8 @@ export class Datepicker {
   }
 
   protected onInputFocus(): void {
+    this.openMode.set(this._dateService.detectSmallTouchDevice() ? 'mobile' : 'desktop');
+
     this.isOpen.set(true);
   }
 

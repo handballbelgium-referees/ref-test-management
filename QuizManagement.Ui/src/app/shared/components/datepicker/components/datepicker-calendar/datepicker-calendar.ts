@@ -35,8 +35,8 @@ export class DatepickerCalendar {
 
   readonly selectedDate = input<Date | null>(null);
   readonly currentDate = input.required<Date>();
-  readonly isSmallTouchDevice = input<boolean>(false);
   readonly inputElement = input<ElementRef | undefined>(undefined);
+  readonly openMode = input<'mobile' | 'desktop'>();
 
   readonly dateSelect = output<Date>();
   readonly close = output<void>();
@@ -50,17 +50,24 @@ export class DatepickerCalendar {
     return this._dateService.getViewTitle(this.currentDate(), this.viewMode());
   });
 
+  protected readonly isPositioned = signal(false);
+
   constructor() {
     // Position calendar when opened
     effect(() => {
-      if (!this.isSmallTouchDevice()) {
-        requestAnimationFrame(() => this.positionCalendar());
+      if (this.openMode() === 'desktop') {
+        this.isPositioned.set(false);
+
+        requestAnimationFrame(() => {
+          this.positionCalendar();
+          this.isPositioned.set(true);
+        });
       }
     });
 
     // Click listener for desktop
     setTimeout(() => {
-      if (!this.isSmallTouchDevice()) {
+      if (this.openMode() === 'desktop') {
         this._clickListener = (event: MouseEvent) => {
           const target = event.target as Node;
           const calendar = this.calendar();
@@ -75,7 +82,9 @@ export class DatepickerCalendar {
           }
           this.close.emit();
         };
-        document.addEventListener('click', this._clickListener);
+        if (this.openMode() === 'desktop') {
+          document.addEventListener('click', this._clickListener);
+        }
       }
 
       this._destroyRef.onDestroy(() => {
@@ -170,37 +179,50 @@ export class DatepickerCalendar {
   }
 
   private positionCalendar(): void {
-    if (this.isSmallTouchDevice()) {
-      return;
-    }
+    if (this.openMode() !== 'desktop') return;
 
-    const inputRef = this.inputElement();
-    const calendarRef = this.calendar();
+    const inputEl = this.inputElement()?.nativeElement;
+    const calendarEl = this.calendar()?.nativeElement;
+    if (!inputEl || !calendarEl) return;
 
-    if (!inputRef || !calendarRef) return;
+    // temporarily hide for accurate measurement
+    calendarEl.style.visibility = 'hidden';
+    calendarEl.style.display = 'block';
 
-    const inputEl = inputRef.nativeElement;
-    const calendarEl = calendarRef.nativeElement;
+    requestAnimationFrame(() => {
+      const inputRect = inputEl.getBoundingClientRect();
+      const calendarRect = calendarEl.getBoundingClientRect();
+      const vv = window.visualViewport;
+      const offsetTop = vv?.offsetTop ?? 0;
+      const offsetLeft = vv?.offsetLeft ?? 0;
+      const viewportHeight = vv?.height ?? window.innerHeight;
+      const viewportWidth = vv?.width ?? window.innerWidth;
+      const margin = 8;
 
-    const inputRect = inputEl.getBoundingClientRect();
-    const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
-    const viewportWidth = window.innerWidth;
-    const calendarRect = calendarEl.getBoundingClientRect();
-    const margin = 8;
+      const spaceBelow = viewportHeight + offsetTop - inputRect.bottom - margin;
+      const spaceAbove = inputRect.top + offsetTop - margin;
 
-    // Vertical positioning
-    let top = inputRect.bottom + margin;
-    if (top + calendarRect.height > viewportHeight) {
-      top = inputRect.top - calendarRect.height - margin;
-    }
-    top = Math.max(margin, Math.min(top, viewportHeight - calendarRect.height - margin));
+      let top: number;
+      if (calendarRect.height <= spaceBelow) {
+        top = inputRect.bottom + offsetTop + margin;
+      } else if (calendarRect.height <= spaceAbove) {
+        top = inputRect.top + offsetTop - calendarRect.height - margin;
+      } else {
+        top = Math.max(margin, offsetTop + margin);
+        calendarEl.style.maxHeight = `${viewportHeight - 2 * margin}px`;
+        calendarEl.style.overflowY = 'auto';
+      }
 
-    // Horizontal positioning
-    let left = inputRect.left;
-    left = Math.max(margin, Math.min(left, viewportWidth - calendarRect.width - margin));
+      let left = inputRect.left + offsetLeft;
+      left = Math.max(
+        margin,
+        Math.min(left, viewportWidth + offsetLeft - calendarRect.width - margin)
+      );
 
-    calendarEl.style.top = `${top}px`;
-    calendarEl.style.left = `${left}px`;
-    calendarEl.style.right = 'auto';
+      calendarEl.style.top = `${top}px`;
+      calendarEl.style.left = `${left}px`;
+      calendarEl.style.right = 'auto';
+      calendarEl.style.visibility = 'visible';
+    });
   }
 }

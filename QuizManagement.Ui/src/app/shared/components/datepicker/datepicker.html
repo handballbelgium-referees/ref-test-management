@@ -15,8 +15,8 @@
     <app-datepicker-calendar
       [selectedDate]="selectedDate()"
       [currentDate]="currentDate()"
-      [isSmallTouchDevice]="isSmallTouchDevice()"
       [inputElement]="input.inputElement()"
+      [openMode]="openMode()"
       (dateSelect)="onDateSelect($event)"
       (close)="onClose()"
       (currentDateChange)="onCurrentDateChange($event)"
