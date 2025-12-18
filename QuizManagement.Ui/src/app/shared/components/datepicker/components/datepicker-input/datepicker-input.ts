@@ -20,6 +20,7 @@ export class DatepickerInput {
   readonly value = input<string>('');
   readonly placeholder = input<string>('dd/mm/yyyy');
   readonly isOpen = input<boolean>(false);
+  readonly readonly = input<boolean>(false);
 
   readonly focus = output<void>();
   readonly inputChange = output<string>();

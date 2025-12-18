@@ -3,6 +3,7 @@
     #input
     [value]="displayValue()"
     [placeholder]="placeholder()"
+    [readonly]="isSmallTouchDevice()"
     [isOpen]="isOpen()"
     (focus)="onInputFocus()"
     (inputChange)="onInputChange($event)"

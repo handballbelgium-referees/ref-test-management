@@ -13,7 +13,7 @@ type SessionNode = NonNullable<
   templateUrl: './session-table-row.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'block hover:bg-neutral-50 transition-colors',
+    class: 'hover:bg-neutral-50 transition-colors',
   },
 })
 export class SessionTableRow {
