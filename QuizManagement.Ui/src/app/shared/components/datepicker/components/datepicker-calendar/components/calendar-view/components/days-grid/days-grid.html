@@ -1,0 +1,33 @@
+<div class="grid grid-cols-7 gap-1">
+  @for (day of weekDays(); track day) {
+  <div
+    class="text-neutral-600 font-semibold uppercase tracking-wider text-center text-[0.65rem] py-1.5 md:text-xs md:py-2"
+  >
+    {{ day }}
+  </div>
+  } @for (day of calendarDays(); track day.date.getTime()) {
+  <button
+    type="button"
+    class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center text-xs h-8 md:text-sm md:h-10"
+    [class.!text-neutral-400]="!day.isCurrentMonth"
+    [class.border-2]="day.isToday && !day.isSelected"
+    [class.!border-primary-600]="day.isToday && !day.isSelected"
+    [class.!bg-white]="day.isToday && !day.isSelected"
+    [class.!text-primary-600]="day.isToday && !day.isSelected"
+    [class.font-semibold]="day.isToday || day.isSelected"
+    [class.!bg-primary-600]="day.isSelected"
+    [class.!text-white]="day.isSelected"
+    [class.!text-neutral-300]="day.isDisabled"
+    [class.!cursor-not-allowed]="day.isDisabled"
+    [class.opacity-50]="day.isDisabled"
+    [class.hover:bg-neutral-100]="!day.isDisabled && !day.isSelected"
+    [class.hover:border-neutral-300]="!day.isDisabled && !day.isSelected"
+    [class.hover:text-primary-600]="!day.isDisabled && !day.isSelected"
+    [disabled]="day.isDisabled"
+    (click)="selectDay(day)"
+    tabindex="-1"
+  >
+    {{ day.day }}
+  </button>
+  }
+</div>
