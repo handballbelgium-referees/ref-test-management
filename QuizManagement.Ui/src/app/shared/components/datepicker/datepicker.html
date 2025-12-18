@@ -3,6 +3,7 @@
   <input
     #input
     type="text"
+    [readonly]="isSmallTouchDevice()"
     [value]="displayValue()"
     (focus)="onInputFocus()"
     (click)="onInputClick()"
@@ -16,7 +17,10 @@
   <!-- Calendar Dropdown -->
   @if (isOpen()) {
   <div
-    class="fixed z-9999 bg-white border border-neutral-200 rounded-lg shadow-lg p-4 w-80 md:w-70 md:p-3 select-none"
+    class="fixed z-9999 bg-white border border-neutral-200 rounded-lg shadow-lg select-none
+           w-full max-w-md left-0 right-0 mx-auto p-3
+           sm:w-[90vw] sm:max-w-lg
+           md:w-80 md:max-w-none md:left-auto md:right-auto md:mx-0 md:p-4"
     #calendar
     (click)="$event.stopPropagation()"
     (mousedown)="$event.preventDefault()"
@@ -24,12 +28,16 @@
   >
     <!-- Header Controls -->
     <div
-      class="bg-neutral-100 p-3 -m-4 mb-3 md:-m-3 md:mb-2 md:p-2 rounded-t-lg border-b border-neutral-200 flex justify-between items-center gap-2"
+      class="bg-neutral-100 rounded-t-lg border-b border-neutral-200 flex justify-between items-center gap-2
+             p-2 -m-3 mb-2
+             md:p-3 md:-m-4 md:mb-3"
     >
       @if (viewMode() === 'days') {
       <button
         type="button"
-        class="w-10 h-10 md:w-8 md:h-8 shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white"
+        class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white
+               w-8 h-8
+               md:w-10 md:h-10"
         (click)="previousMonth()"
         [attr.aria-label]="'common.previous' | translate"
         title="{{ 'common.previous' | translate }}"
@@ -47,7 +55,9 @@
       } @else if (viewMode() === 'months') {
       <button
         type="button"
-        class="w-10 h-10 md:w-8 md:h-8 shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white"
+        class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white
+               w-8 h-8
+               md:w-10 md:h-10"
         (click)="previousYear()"
         [attr.aria-label]="'common.previous' | translate"
         title="{{ 'common.previous' | translate }}"
@@ -65,7 +75,9 @@
       } @else {
       <button
         type="button"
-        class="w-10 h-10 md:w-8 md:h-8 shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white"
+        class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white
+               w-8 h-8
+               md:w-10 md:h-10"
         (click)="previousDecade()"
         [attr.aria-label]="'common.previous' | translate"
         title="{{ 'common.previous' | translate }}"
@@ -84,7 +96,9 @@
 
       <button
         type="button"
-        class="flex-1 text-neutral-900 font-semibold text-sm text-center transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer hover:bg-white hover:text-primary-600"
+        class="flex-1 text-neutral-900 font-semibold text-center transition-all rounded-lg border-none bg-transparent cursor-pointer hover:bg-white hover:text-primary-600
+               text-xs p-1.5
+               md:text-sm md:p-2"
         (click)="toggleView()"
         tabindex="-1"
       >
@@ -94,7 +108,9 @@
       @if (viewMode() === 'days') {
       <button
         type="button"
-        class="w-10 h-10 md:w-8 md:h-8 shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white"
+        class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white
+               w-8 h-8
+               md:w-10 md:h-10"
         (click)="nextMonth()"
         [attr.aria-label]="'common.next' | translate"
         title="{{ 'common.next' | translate }}"
@@ -107,7 +123,9 @@
       } @else if (viewMode() === 'months') {
       <button
         type="button"
-        class="w-10 h-10 md:w-8 md:h-8 shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white"
+        class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white
+               w-8 h-8
+               md:w-10 md:h-10"
         (click)="nextYear()"
         [attr.aria-label]="'common.next' | translate"
         title="{{ 'common.next' | translate }}"
@@ -120,7 +138,9 @@
       } @else {
       <button
         type="button"
-        class="w-10 h-10 md:w-8 md:h-8 shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white"
+        class="shrink-0 text-neutral-600 transition-all rounded-lg p-2 border-none bg-transparent cursor-pointer flex items-center justify-center hover:bg-primary-600 hover:text-white
+               w-8 h-8
+               md:w-10 md:h-10"
         (click)="nextDecade()"
         [attr.aria-label]="'common.next' | translate"
         title="{{ 'common.next' | translate }}"
@@ -141,7 +161,9 @@
         <!-- Week day headers -->
         @for (day of weekDays(); track day) {
         <div
-          class="text-neutral-600 font-semibold text-xs uppercase tracking-wider py-2 md:py-1.5 text-center"
+          class="text-neutral-600 font-semibold uppercase tracking-wider text-center
+                 text-[0.65rem] py-1.5
+                 md:text-xs md:py-2"
         >
           {{ day }}
         </div>
@@ -151,7 +173,9 @@
         @for (day of calendarDays(); track day.date.getTime()) {
         <button
           type="button"
-          class="text-neutral-900 rounded-lg transition-all text-sm font-medium h-10 md:h-8 w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center"
+          class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center
+                 text-xs h-8
+                 md:text-sm md:h-10"
           [class.!text-neutral-400]="!day.isCurrentMonth"
           [class.border-2]="day.isToday && !day.isSelected"
           [class.!border-primary-600]="day.isToday && !day.isSelected"
@@ -180,7 +204,9 @@
         @for (month of months(); track month.index) {
         <button
           type="button"
-          class="text-neutral-900 rounded-lg transition-all text-sm font-medium h-10 md:h-8 w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600"
+          class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600
+                 text-xs h-8
+                 md:text-sm md:h-10"
           [class.!bg-primary-600]="month.isSelected"
           [class.!text-white]="month.isSelected"
           [class.font-semibold]="month.isSelected"
@@ -197,7 +223,9 @@
         @for (yearItem of years(); track yearItem.year) {
         <button
           type="button"
-          class="text-neutral-900 rounded-lg transition-all text-sm font-medium h-10 md:h-8 w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600"
+          class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600
+                 text-xs h-8
+                 md:text-sm md:h-10"
           [class.!bg-primary-600]="yearItem.isSelected"
           [class.!text-white]="yearItem.isSelected"
           [class.font-semibold]="yearItem.isSelected"
@@ -214,11 +242,15 @@
 
     <!-- Footer -->
     <div
-      class="bg-neutral-100 p-3 -mx-4 -mb-4 md:py-2 md:px-3 md:-mx-3 md:-mb-3 rounded-b-lg border-t border-neutral-200 gap-2 flex"
+      class="bg-neutral-100 rounded-b-lg border-t border-neutral-200 gap-2 flex
+             p-2 -mx-3 -mb-3
+             md:p-3 md:-mx-4 md:-mb-4"
     >
       <button
         type="button"
-        class="text-sm font-medium py-2 px-4 md:py-1.5 md:px-3.5 rounded-lg transition-all flex-1 border-none cursor-pointer bg-primary-600 text-white hover:bg-primary-700"
+        class="font-medium rounded-lg transition-all flex-1 border-none cursor-pointer bg-primary-600 text-white hover:bg-primary-700
+               text-xs py-1.5 px-3
+               md:text-sm md:py-2 md:px-4"
         (click)="selectToday()"
         tabindex="-1"
       >
@@ -226,7 +258,9 @@
       </button>
       <button
         type="button"
-        class="text-sm font-medium py-2 px-4 md:py-1.5 md:px-3.5 rounded-lg transition-all flex-1 border border-neutral-200 cursor-pointer bg-white text-neutral-600 hover:bg-neutral-100 hover:border-neutral-300 hover:text-neutral-900"
+        class="font-medium rounded-lg transition-all flex-1 border border-neutral-200 cursor-pointer bg-white text-neutral-600 hover:bg-neutral-100 hover:border-neutral-300 hover:text-neutral-900
+               text-xs py-1.5 px-3
+               md:text-sm md:py-2 md:px-4"
         (click)="clear()"
         tabindex="-1"
       >

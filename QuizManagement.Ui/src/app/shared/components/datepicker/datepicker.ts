@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
   Component,
   DestroyRef,
@@ -11,7 +10,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 
 interface CalendarDay {
   date: Date;
@@ -26,7 +25,7 @@ type ViewMode = 'days' | 'months' | 'years';
 
 @Component({
   selector: 'app-datepicker',
-  imports: [CommonModule, TranslateModule],
+  imports: [TranslatePipe],
   templateUrl: './datepicker.html',
   styleUrl: './datepicker.css',
   host: {
@@ -53,6 +52,7 @@ export class Datepicker {
   protected readonly today = new Date();
   protected readonly isOpen = signal<boolean>(false);
   protected readonly displayValue = signal<string>('');
+  protected readonly isSmallTouchDevice = signal<boolean>(this.detectSmallTouchDevice());
 
   private readonly _selectedDate = signal<Date | null>(null);
 
@@ -224,15 +224,23 @@ export class Datepicker {
     };
     window.addEventListener('scroll', this._scrollListener, true);
 
+    // Add resize listener to update small touch device detection
+    const resizeListener = () => {
+      this.isSmallTouchDevice.set(this.detectSmallTouchDevice());
+    };
+    window.addEventListener('resize', resizeListener);
+
     this._destroyRef.onDestroy(() => {
       if (this._scrollListener) {
         window.removeEventListener('scroll', this._scrollListener, true);
       }
+      window.removeEventListener('resize', resizeListener);
     });
   }
 
   protected onEscape(): void {
     this.isOpen.set(false);
+    this.viewMode.set('days');
   }
 
   protected onInputFocus(): void {
@@ -249,42 +257,24 @@ export class Datepicker {
     }
   }
 
-  private positionCalendar(): void {
-    // Position the calendar below the input
-    setTimeout(() => {
-      const inputElement = this.inputElement();
-      const calendarElement = this.calendar();
-
-      if (inputElement && calendarElement) {
-        const inputRect = inputElement.nativeElement.getBoundingClientRect();
-        const calendarEl = calendarElement.nativeElement as HTMLElement;
-
-        calendarEl.style.top = `${inputRect.bottom + 4}px`;
-        calendarEl.style.left = `${inputRect.left}px`;
-      }
-    });
-  }
-
   protected onInputKeydown(event: KeyboardEvent): void {
-    const key = event.key;
-
     // Allow: backspace, delete, tab, escape, enter
-    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter'].includes(key)) {
+    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter'].includes(event.key)) {
       return;
     }
 
     // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
-    if (event.ctrlKey && ['a', 'c', 'v', 'x'].includes(key.toLowerCase())) {
+    if (event.ctrlKey && ['a', 'c', 'v', 'x'].includes(event.key.toLowerCase())) {
       return;
     }
 
     // Allow: home, end, left, right arrows
-    if (['Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(key)) {
+    if (['Home', 'End', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
       return;
     }
 
     // Ensure that it is a number (0-9) or slash
-    if (!/^[0-9/]$/.test(key)) {
+    if (!/^[0-9/]$/.test(event.key)) {
       event.preventDefault();
     }
   }
@@ -294,9 +284,39 @@ export class Datepicker {
     this.displayValue.set(input.value);
   }
 
+  private positionCalendar(): void {
+    // Position the calendar below the input
+    setTimeout(() => {
+      const inputElement = this.inputElement();
+      const calendarElement = this.calendar();
+
+      if (inputElement && calendarElement) {
+        const inputRect = inputElement.nativeElement.getBoundingClientRect();
+        const calendarEl = calendarElement.nativeElement as HTMLElement;
+        const isSmallTouchDevice = this.isSmallTouchDevice();
+
+        calendarEl.style.top = `${inputRect.bottom + 4}px`;
+
+        if (isSmallTouchDevice) {
+          // Center the calendar on small touch devices (phones/small tablets)
+          calendarEl.style.left = '1rem';
+          calendarEl.style.right = '1rem';
+        } else {
+          // Position relative to input on desktop and touch laptops
+          calendarEl.style.left = `${inputRect.left}px`;
+          calendarEl.style.right = 'auto';
+        }
+      }
+    });
+  }
+
   protected onInputBlur(event: Event): void {
     // Close calendar when input loses focus
-    this.isOpen.set(false);
+    // Small timeout to allow click events on calendar to fire first
+    setTimeout(() => {
+      this.isOpen.set(false);
+      this.viewMode.set('days');
+    }, 200);
 
     const input = event.target as HTMLInputElement;
     const value = input.value;
@@ -362,6 +382,7 @@ export class Datepicker {
       }
 
       this.isOpen.set(false);
+      this.viewMode.set('days');
     }
   }
 
@@ -455,5 +476,19 @@ export class Datepicker {
       date1.getMonth() === date2.getMonth() &&
       date1.getDate() === date2.getDate()
     );
+  }
+
+  private detectSmallTouchDevice(): boolean {
+    // Check if device has touch capability AND small/medium screen (< 1024px)
+    // This excludes touch-enabled laptops which typically have screens >= 1024px
+    // Includes phones and tablets (including iPad Pro)
+    const hasTouch =
+      'ontouchstart' in window ||
+      navigator.maxTouchPoints > 0 ||
+      (navigator as any).msMaxTouchPoints > 0;
+
+    const isSmallScreen = window.innerWidth < 1024;
+
+    return hasTouch && isSmallScreen;
   }
 }
