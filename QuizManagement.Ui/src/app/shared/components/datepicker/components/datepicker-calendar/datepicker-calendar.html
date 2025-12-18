@@ -1,4 +1,4 @@
-@if (isSmallTouchDevice()) {
+@if (openMode() === 'mobile') {
 <!-- Mobile Modal -->
 <div class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center" (click)="close.emit()">
   <div
@@ -31,7 +31,9 @@
 <!-- Desktop Dropdown -->
 <div
   #calendar
-  class="fixed z-9999 bg-white border border-neutral-200 shadow-lg select-none w-[96vw] min-w-80 max-w-105 max-h-[85vh] rounded-xl flex flex-col"
+  class="fixed z-9999 bg-white border border-neutral-200 shadow-lg select-none w-[96vw] min-w-80 max-w-105 max-h-[85vh] rounded-xl flex flex-col transition-opacity duration-100"
+  [class.invisible]="!isPositioned()"
+  [class.pointer-events-none]="!isPositioned()"
   (click)="$event.stopPropagation()"
   (mousedown)="$event.preventDefault()"
   tabindex="-1"
