@@ -38,7 +38,7 @@ export class DatepickerCalendar {
   readonly inputElement = input<ElementRef | undefined>(undefined);
   readonly openMode = input<'mobile' | 'desktop'>();
 
-  readonly dateSelect = output<Date>();
+  readonly dateSelect = output<Date | null>();
   readonly close = output<void>();
   readonly currentDateChange = output<Date>();
 
@@ -175,6 +175,7 @@ export class DatepickerCalendar {
   }
 
   protected onClear(): void {
+    this.dateSelect.emit(null);
     this.close.emit();
   }
 

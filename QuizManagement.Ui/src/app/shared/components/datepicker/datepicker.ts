@@ -127,16 +127,16 @@ export class Datepicker {
     }
   }
 
-  protected onDateSelect(date: Date): void {
+  protected onDateSelect(date: Date | null): void {
     const currentSelected = this.selectedDate();
-    const isDifferent = !currentSelected || !this._dateService.isSameDay(date, currentSelected);
+    const isDifferent =
+      !currentSelected || (date && !this._dateService.isSameDay(date, currentSelected));
 
     this.selectedDate.set(date);
-    this.currentDate.set(new Date(date));
-    this.displayValue.set(this._dateService.formatDate(date));
+    this.displayValue.set(date ? this._dateService.formatDate(date) : '');
 
     if (isDifferent) {
-      this.dateChange.emit(date.toISOString());
+      this.dateChange.emit(date ? date.toISOString() : '');
     }
 
     this.isOpen.set(false);
