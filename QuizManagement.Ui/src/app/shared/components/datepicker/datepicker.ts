@@ -53,6 +53,7 @@ export class Datepicker {
   protected readonly isOpen = signal<boolean>(false);
   protected readonly displayValue = signal<string>('');
   protected readonly isSmallTouchDevice = signal<boolean>(this.detectSmallTouchDevice());
+  protected readonly ignoreBlur = signal<boolean>(false);
 
   private readonly _selectedDate = signal<Date | null>(null);
 
@@ -193,21 +194,20 @@ export class Datepicker {
 
     // Add click listener after a delay to prevent immediate closure
     setTimeout(() => {
-      this._clickListener = (event: MouseEvent) => {
-        const target = event.target as Node;
-        const calendar = this.calendar();
-
-        // Don't close if clicking inside the component or calendar
-        if (
-          this._elRef.nativeElement.contains(target) ||
-          (calendar && calendar.nativeElement.contains(target))
-        ) {
-          return;
-        }
-
-        this.isOpen.set(false);
-      };
-      document.addEventListener('click', this._clickListener);
+      if (!this.isSmallTouchDevice()) {
+        this._clickListener = (event: MouseEvent) => {
+          const target = event.target as Node;
+          const calendar = this.calendar();
+          if (
+            this._elRef.nativeElement.contains(target) ||
+            (calendar && calendar.nativeElement.contains(target))
+          ) {
+            return;
+          }
+          this.isOpen.set(false);
+        };
+        document.addEventListener('click', this._clickListener);
+      }
 
       this._destroyRef.onDestroy(() => {
         if (this._clickListener) {
@@ -299,6 +299,11 @@ export class Datepicker {
   }
 
   private positionCalendar(): void {
+    if (this.isSmallTouchDevice()) {
+      // Mobile uses centered modal; no manual positioning required
+      return;
+    }
+
     const inputRef = this.inputElement();
     const calendarRef = this.calendar();
 
@@ -308,40 +313,22 @@ export class Datepicker {
     const calendarEl = calendarRef.nativeElement;
 
     const inputRect = inputEl.getBoundingClientRect();
-
     const viewportHeight = window.visualViewport?.height ?? window.innerHeight;
     const viewportWidth = window.innerWidth;
-
     const calendarRect = calendarEl.getBoundingClientRect();
-
     const margin = 8;
 
-    // --- Vertical positioning ---
+    // Vertical positioning
     let top = inputRect.bottom + margin;
-
-    // Flip above if overflowing
     if (top + calendarRect.height > viewportHeight) {
       top = inputRect.top - calendarRect.height - margin;
     }
-
-    // Clamp
     top = Math.max(margin, Math.min(top, viewportHeight - calendarRect.height - margin));
 
-    // --- Horizontal positioning ---
-    let left: number;
-
-    if (this.isSmallTouchDevice()) {
-      // Centered on mobile
-      left = (viewportWidth - calendarRect.width) / 2;
-    } else {
-      // Aligned to input on desktop
-      left = inputRect.left;
-    }
-
-    // Clamp horizontally
+    // Horizontal positioning
+    let left = inputRect.left;
     left = Math.max(margin, Math.min(left, viewportWidth - calendarRect.width - margin));
 
-    // Apply styles (IMPORTANT: clear right!)
     calendarEl.style.top = `${top}px`;
     calendarEl.style.left = `${left}px`;
     calendarEl.style.right = 'auto';
@@ -351,6 +338,10 @@ export class Datepicker {
     // Close calendar when input loses focus
     // Small timeout to allow click events on calendar to fire first
     setTimeout(() => {
+      if (this.ignoreBlur()) {
+        this.ignoreBlur.set(false); // reset
+        return; // don’t close
+      }
       this.isOpen.set(false);
       this.viewMode.set('days');
     }, 200);
