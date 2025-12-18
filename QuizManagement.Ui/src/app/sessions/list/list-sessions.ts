@@ -569,6 +569,13 @@ export class ListSessions {
               sessions.filter((s) => !deletedIds.has(s.id))
             );
             this.selectedSessionIds.set(new Set());
+
+            // Refetch counts
+            this._allCountRef.refetch();
+            this._pendingCountRef.refetch();
+            this._inProgressCountRef.refetch();
+            this._completedCountRef.refetch();
+            this._expiredCountRef.refetch();
           }
         }),
         catchError(() => of(null)),
