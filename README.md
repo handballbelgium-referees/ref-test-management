@@ -1,6 +1,6 @@
-# IHF Rules Quiz Management Platform
+# RefTest Management Platform
 
-A comprehensive web application for managing and taking IHF (International Handball Federation) rules quizzes for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create quiz sessions, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed quizzes.
+A comprehensive web application for managing and taking IHF (International Handball Federation) reftests for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create quiz sessions, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed reftests.
 
 [![Latest Release](https://img.shields.io/github/v/release/handballbelgium/ruletests-quiz-management?label=release)](https://github.com/handballbelgium/ruletests-quiz-management/releases)
 [![Latest Pre-Release](https://img.shields.io/github/v/release/handballbelgium/ruletests-quiz-management?include_prereleases&label=pre-release)](https://github.com/handballbelgium/ruletests-quiz-management/releases)
@@ -23,14 +23,14 @@ A comprehensive web application for managing and taking IHF (International Handb
 
 ## 🎯 Features
 
-### 📝 Quiz Management
+### 📝 RefTest Management
 
-- **Bulk Session Creation**: Create multiple quiz sessions simultaneously with customizable settings
+- **Bulk Session Creation**: Create multiple reftests simultaneously with customizable settings
 - **Question Bank Integration**: Search and bulk import questions from the central question database
 - **Randomization**: Optional random answer order per session to prevent pattern memorization
 - **Time Management**: Configurable time limits with auto-submit functionality
 - **Instant Scoring**: Automatic score calculation with detailed answer feedback
-- **PDF Generation**: Professional PDF reports with QuestPDF for quiz results
+- **PDF Generation**: Professional PDF reports with QuestPDF for reftest results
 
 ### 🗂️ Session Management
 
@@ -42,8 +42,8 @@ A comprehensive web application for managing and taking IHF (International Handb
 
 ### 📧 Email Automation
 
-- **Automated Invitations**: Optionally send quiz invitations automatically upon session creation
-- **Result Notifications**: Automatically email results upon quiz completion
+- **Automated Invitations**: Optionally send reftest invitations automatically upon session creation
+- **Result Notifications**: Automatically email results upon reftest completion
 - **Multilingual Templates**: Email templates in English, Dutch, French, and German
 - **Personalization**: Emails include participant names and session-specific details
 - **Brevo Integration**: Reliable email delivery via Brevo API (formerly SendGrid)
@@ -103,7 +103,7 @@ This application follows a clean architecture pattern with clear separation of c
 | **Hot Chocolate**         | 15.1.11   | GraphQL server with authorization, data loaders, and filtering |
 | **Entity Framework Core** | 10.0.0    | ORM for database access with migrations                        |
 | **SQL Server**            | -         | Primary data store (Azure SQL or local)                        |
-| **QuestPDF**              | 2025.12.0 | PDF generation for quiz results                                |
+| **QuestPDF**              | 2025.12.0 | PDF generation for reftest results                             |
 | **Auth0**                 | -         | OAuth2/OpenID Connect authentication                           |
 | **Brevo API**             | -         | Email delivery service                                         |
 
@@ -267,7 +267,7 @@ In `QuizManagement.Api/appsettings.json`:
     "BrevoApiKey": "your-brevo-api-key",
     "BrevoApiUrl": "https://api.brevo.com/v3",
     "FromEmail": "noreply@yourdomain.com",
-    "FromName": "IHF Rules Quiz"
+    "FromName": "IHF RefTest"
   }
 }
 ```
@@ -478,10 +478,10 @@ handball-belgium-rules-quiz/
 │   │   │   │           ├── column-visibility-menu/      # Table column toggles
 │   │   │   │           └── session-bulk-actions/        # Bulk operations toolbar
 │   │   │   │
-│   │   │   ├── quiz/                     # 🎯 Quiz Taking
-│   │   │   │   ├── welcome/              # Quiz start page
+│   │   │   ├── quiz/                     # 🎯 RefTest Taking
+│   │   │   │   ├── welcome/              # RefTest start page
 │   │   │   │   │   └── components/       # Instructions, session details, hero
-│   │   │   │   ├── take/                 # Quiz taking page
+│   │   │   │   ├── take/                 # RefTest taking page
 │   │   │   │   │   ├── take-quiz.ts
 │   │   │   │   │   ├── guards/           # Can deactivate guard
 │   │   │   │   │   └── components/       # Question card, navigation, results, etc.
@@ -509,16 +509,16 @@ handball-belgium-rules-quiz/
 │   │   └── styles.css                    # Global TailwindCSS styles
 │   │
 │   ├── graphql/                          # 📡 GraphQL Operations
-│   │   ├── complete-session.graphql      # Complete quiz mutation
+│   │   ├── complete-session.graphql      # Complete RefTest mutation
 │   │   ├── create-sessions.graphql       # Create sessions mutation
 │   │   ├── delete-session.graphql        # Delete sessions mutation
 │   │   ├── get-sessions.graphql          # List sessions query
-│   │   ├── get-session-by-token.graphql  # Get session for quiz taker
+│   │   ├── get-session-by-token.graphql  # Get RefTest for reftest taker
 │   │   ├── send-invitations.graphql      # Send email invitations mutation
 │   │   ├── send-results.graphql          # Send results mutation
 │   │   ├── search-questions-by-number.graphql
-│   │   ├── get-titles.graphql            # Get quiz titles
-│   │   ├── start-session.graphql         # Start quiz mutation
+│   │   ├── get-titles.graphql            # Get RefTest titles
+│   │   ├── start-session.graphql         # Start RefTest mutation
 │   │   └── generated.ts                  # 🤖 Auto-generated TypeScript types
 │   │
 │   ├── scripts/
@@ -549,7 +549,7 @@ handball-belgium-rules-quiz/
 | `QuizManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
 | `QuizManagement.Infrastructure/Services` | PDF generation (QuestPDF) and email delivery (Brevo)     |
 | `QuizManagement.Ui/src/app/sessions`     | Session creation and management UI                       |
-| `QuizManagement.Ui/src/app/quiz`         | Quiz-taking experience (welcome, take, results)          |
+| `QuizManagement.Ui/src/app/quiz`         | RefTest-taking experience (welcome, take, results)       |
 | `QuizManagement.Ui/graphql`              | GraphQL operation files and auto-generated types         |
 | `.github/workflows`                      | CI/CD pipelines for automated testing and deployment     |
 
@@ -585,7 +585,7 @@ Complete configuration file structure:
     "BrevoApiKey": "your-brevo-api-key",
     "BrevoApiUrl": "https://api.brevo.com/v3",
     "FromEmail": "noreply@yourdomain.com",
-    "FromName": "IHF Rules Quiz"
+    "FromName": "IHF RefTest"
   },
 
   "RulesQuestions": {
@@ -813,7 +813,7 @@ This regenerates TypeScript types in `graphql/generated.ts` based on your GraphQ
 1. **GraphQL Playground**: `https://localhost:7039/graphql/`
 2. **Test Authentication**: Click "Sign In" and verify Auth0 redirect
 3. **Create Session**: Navigate to Sessions > Create and test bulk creation
-4. **Take Quiz**: Use the generated token URL to take a quiz
+4. **Take RefTest**: Use the generated token URL to take a reftest
 5. **Check Emails**: Verify invitation and result emails (if configured)
 
 ## 🤝 Contributing
