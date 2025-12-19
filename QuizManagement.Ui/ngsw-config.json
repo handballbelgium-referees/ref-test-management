@@ -27,5 +27,13 @@
         ]
       }
     }
+  ],
+  "navigationUrls": [
+    "/**",
+    "!/Account/**",
+    "!/graphql**",
+    "!/callback**",
+    "!/Account/Login**",
+    "!/Account/Logout**"
   ]
 }
