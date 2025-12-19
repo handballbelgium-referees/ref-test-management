@@ -101,7 +101,7 @@
       {{ 'home.about.title' | translate }}
     </h2>
     <p class="text-center text-neutral-600 mb-12 max-w-5xl mx-auto text-xl leading-relaxed">
-      {{ 'home.about.description' | translate }}
+      {{ 'home.about.description' | translate: { count: languageCount(), languages: languageList() } }}
     </p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
       <!-- Bulk Session Creation -->

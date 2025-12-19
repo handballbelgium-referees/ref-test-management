@@ -18,7 +18,7 @@ const DEFAULT_LANGUAGES: ILanguageInfo[] = [
   { code: 'de', name: 'Deutsch' },
 ];
 
-const LANGUAGE_NAMES: Record<Language, string> = {
+export const LANGUAGE_NAMES: Record<Language, string> = {
   en: 'English',
   nl: 'Nederlands',
   fr: 'Français',

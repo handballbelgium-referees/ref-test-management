@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "Handball Quiz Management",
-    "pageTitle": "Handball Quiz Management"
+    "title": "Handball RefTest Management",
+    "pageTitle": "Handball RefTest Management"
   },
   "common": {
     "cancel": "Cancel",
@@ -16,38 +16,38 @@
   },
   "home": {
     "hero": {
-      "title": "Handball Quiz Management System",
-      "subtitle": "Create and manage handball rule quizzes for referees and delegates of the Belgian Handball Federation",
+      "title": "Handball RefTest Management System",
+      "subtitle": "Create and manage handball rule reftests for referees and delegates of the Belgian Handball Federation",
       "login": "Login to Dashboard"
     },
     "actions": {
       "title": "Quick Actions",
       "create": {
         "title": "Create Sessions",
-        "description": "Create quiz sessions in bulk"
+        "description": "Create reftest sessions in bulk"
       },
       "manage": {
         "title": "Manage Sessions",
-        "description": "Track and manage quiz sessions"
+        "description": "Track and manage reftest sessions"
       }
     },
     "about": {
-      "title": "Quiz Session Management System",
-      "description": "This application manages handball rules quiz sessions. Administrators can create quiz sessions in bulk for multiple users, send email invitations, track session progress and completion status, filter and sort sessions by various criteria, and view performance analytics including scores and completion rates. Quizzes support 4 languages (English, Dutch, French, German).",
+      "title": "RefTest Session Management System",
+      "description": "This application manages handball rules reftest sessions. Administrators can create reftest sessions in bulk for multiple users, send email invitations, track session progress and completion status, filter and sort sessions by various criteria, and view performance analytics including scores and completion rates. Reftests support {{count}} languages ({{languages}}).",
       "bulk": {
         "title": "Bulk Session Creation",
-        "description": "Create quiz sessions for multiple users at once. Each session is assigned to a specific user with unique tracking capabilities."
+        "description": "Create reftest sessions for multiple users at once. Each session is assigned to a specific user with unique tracking capabilities."
       },
       "management": {
         "title": "Session Management",
-        "description": "Track quiz sessions through their lifecycle: pending, in progress, completed, or expired. Filter and sort by status, date, score, or user email. Send invitations and manage all session actions."
+        "description": "Track reftest sessions through their lifecycle: pending, in progress, completed, or expired. Filter and sort by status, date, score, or user email. Send invitations and manage all session actions."
       }
     }
   },
   "sessions": {
     "list": {
-      "title": "Manage Quiz Sessions",
-      "subtitle": "View, filter, and track all quiz sessions",
+      "title": "Manage RefTest Sessions",
+      "subtitle": "View, filter, and track all reftest sessions",
       "createNew": "Create New Sessions",
       "searchPlaceholder": "Search by name or email...",
       "loading": "Loading sessions...",
@@ -64,7 +64,7 @@
         "inProgress": "In Progress",
         "completed": "Completed",
         "expired": "Expired",
-        "titleLabel": "Quiz Title",
+        "titleLabel": "RefTest Title",
         "titleAll": "All Titles",
         "titleSearchPlaceholder": "Search titles...",
         "noTitlesFound": "No titles found",
@@ -137,7 +137,7 @@
       },
       "empty": {
         "title": "No sessions found",
-        "subtitle": "Get started by creating your first quiz sessions",
+        "subtitle": "Get started by creating your first reftest sessions",
         "action": "Create Sessions"
       },
       "bulk": {
@@ -181,15 +181,15 @@
     },
     "create": {
       "back": "Back to Home",
-      "title": "Create Quiz Sessions",
-      "subtitle": "Add participants and configure quiz settings to create new sessions",
-      "description": "Create quiz sessions in bulk for multiple users. Enter email addresses and configure session settings.",
+      "title": "Create RefTest Sessions",
+      "subtitle": "Add participants and configure reftest settings to create new sessions",
+      "description": "Create reftest sessions in bulk for multiple users. Enter email addresses and configure session settings.",
       "form": {
         "config": {
-          "label": "Quiz Configuration"
+          "label": "RefTest Configuration"
         },
         "title": {
-          "label": "Quiz Title",
+          "label": "RefTest Title",
           "placeholder": "Search for an existing title or enter a new one...",
           "required": "Title is required",
           "tooltip": "Example: Training {{date}}",
@@ -225,14 +225,14 @@
         },
         "numberOfQuestions": {
           "label": "Number of Questions",
-          "hint": "Total number of questions in the quiz",
+          "hint": "Total number of questions in the reftest",
           "error": "Number of questions must be at least 1",
           "required": "Number of questions is required",
           "min": "Must have at least 1 question"
         },
         "maxTimeInMinutes": {
           "label": "Maximum Time (minutes)",
-          "hint": "Maximum time allowed to complete the quiz",
+          "hint": "Maximum time allowed to complete the reftest",
           "error": "Maximum time must be at least 1 minute",
           "required": "Time limit is required",
           "min": "Must have at least 1 minute"
@@ -260,12 +260,12 @@
         "sendInvitations": {
           "label": "Send invitation emails",
           "hint": "Check to send invitation emails immediately after creating sessions",
-          "description": "Participants will receive an email with their quiz link"
+          "description": "Participants will receive an email with their reftest link"
         },
         "sendResults": {
           "label": "Send result emails",
           "hint": "Check to send result emails immediately after creating sessions",
-          "description": "Participants will receive an email with their quiz results"
+          "description": "Participants will receive an email with their reftest results"
         },
         "submit": "Create Sessions",
         "submitting": "Creating...",
@@ -276,7 +276,7 @@
       },
       "success": {
         "title": "Sessions Created Successfully",
-        "message": "Quiz sessions have been created. Redirecting to sessions list...",
+        "message": "RefTest sessions have been created. Redirecting to sessions list...",
         "created": "Successfully created {{count}} session!",
         "created_other": "Successfully created {{count}} sessions!",
         "failedInfo": "{{count}} failed. See errors below.",
@@ -288,16 +288,16 @@
     }
   },
   "quiz": {
-    "page_title": "Handball Rules Quiz",
-    "loading": "Loading quiz...",
+    "page_title": "Handball Rules RefTest",
+    "loading": "Loading reftest...",
     "error": {
-      "title": "Unable to Load Quiz",
-      "QuizSessionNotFoundError": "This quiz session could not be found. Please check your link.",
-      "QuizSessionExpiredError": "This quiz session has expired. Please contact the administrator.",
-      "InvalidQuizSessionStatusError": "This quiz session is no longer available or has already been completed."
+      "title": "Unable to Load RefTest",
+      "QuizSessionNotFoundError": "This reftest could not be found. Please check your link.",
+      "QuizSessionExpiredError": "This reftest has expired. Please contact the administrator.",
+      "InvalidQuizSessionStatusError": "This reftest is no longer available or has already been completed."
     },
     "backToWelcome": "Back to Welcome",
-    "welcome_title": "Welcome to Your Quiz",
+    "welcome_title": "Welcome to Your RefTest",
     "welcome_subtitle": "Please review the information below before starting",
     "participant_name": "Name",
     "participant_email": "Email",
@@ -309,8 +309,8 @@
     "instruction_1": "Read each question carefully before selecting your answers",
     "instruction_2": "Some questions may have multiple correct answers",
     "instruction_3": "You can navigate back and forth between questions",
-    "instruction_4": "Complete the quiz within the time limit",
-    "start_button": "Start Quiz",
+    "instruction_4": "Complete the reftest within the time limit",
+    "start_button": "Start RefTest",
     "timeRemaining": "Time Remaining",
     "progress": "Progress",
     "question": "Question",
@@ -318,9 +318,9 @@
     "answered": "answered",
     "previous": "Previous",
     "next": "Next",
-    "submit": "Submit Quiz",
+    "submit": "Submit RefTest",
     "results": {
-      "title": "Quiz Completed!",
+      "title": "RefTest Completed!",
       "subtitle": "Here are your results",
       "score": "Score",
       "percentage": "Percentage",
@@ -329,24 +329,24 @@
     },
     "dialog": {
       "submit": {
-        "title": "Submit Quiz?",
-        "message": "Are you sure you want to submit your quiz? Once submitted, you cannot change your answers.",
+        "title": "Submit RefTest?",
+        "message": "Are you sure you want to submit your reftest? Once submitted, you cannot change your answers.",
         "answered": "Answered Questions",
         "unanswered": "Unanswered Questions",
         "warning": "You have unanswered questions. They will be marked as incorrect.",
-        "confirm": "Submit Quiz",
-        "cancel": "Continue Quiz"
+        "confirm": "Submit RefTest",
+        "cancel": "Continue RefTest"
       },
       "leave": {
-        "title": "Leave Quiz?",
-        "message": "Are you sure you want to leave? Your progress will be lost if you haven't submitted the quiz.",
-        "confirm": "Leave Quiz",
-        "cancel": "Stay on Quiz"
+        "title": "Leave RefTest?",
+        "message": "Are you sure you want to leave? Your progress will be lost if you haven't submitted the reftest.",
+        "confirm": "Leave RefTest",
+        "cancel": "Stay on RefTest"
       }
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handball Quiz Management System. All rights reserved.",
+    "copyright": "© {{year}} Handball RefTest Management System. All rights reserved.",
     "creator": "Created by Kristof Gilis"
   }
 }
