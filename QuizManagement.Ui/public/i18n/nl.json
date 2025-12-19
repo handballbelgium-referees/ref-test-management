@@ -3,6 +3,10 @@
     "title": "Handbal RefTest Beheer",
     "pageTitle": "Handbal RefTest Beheer"
   },
+  "pwa": {
+    "update_available": "Er is een nieuwe versie beschikbaar.",
+    "update_now": "Bijwerken"
+  },
   "common": {
     "cancel": "Annuleren",
     "today": "Vandaag",

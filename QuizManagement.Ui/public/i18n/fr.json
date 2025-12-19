@@ -3,6 +3,10 @@
     "title": "Gestion du RefTest de Handball",
     "pageTitle": "Gestion du RefTest de Handball"
   },
+  "pwa": {
+    "update_available": "Une nouvelle version est disponible.",
+    "update_now": "Mettre à jour"
+  },
   "common": {
     "cancel": "Annuler",
     "today": "Aujourd'hui",
