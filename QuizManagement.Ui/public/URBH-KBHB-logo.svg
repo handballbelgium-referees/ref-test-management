@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" version="1.1"
-  viewBox="165 320 505 605">
+  viewBox="170 320 500 500">
   <defs>
     <style>
       .cls-1 {
@@ -310,9 +310,6 @@
   </defs>
   <g class="cls-36">
     <g id="Laag_1" data-name="Laag 1">
-      <text class="cls-33" transform="translate(186.83 904.88)"><tspan x="0" y="0">URBH - KBHB</tspan></text>
-      <line class="cls-32" x1="185.48" y1="916.85" x2="659.33" y2="916.85"/>
-      <line class="cls-32" x1="185.48" y1="836.43" x2="659.33" y2="836.43"/>
       <path class="cls-20" d="M635.49,465.83c51.54,116.09-.79,251.98-116.88,303.52-116.09,51.54-251.98-.8-303.53-116.89-51.53-116.1.81-251.98,116.89-303.52,116.1-51.53,251.98.79,303.51,116.89Z"/>
       <g class="cls-1">
         <g class="cls-34">
