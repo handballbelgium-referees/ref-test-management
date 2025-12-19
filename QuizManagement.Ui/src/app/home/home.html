@@ -1,6 +1,6 @@
 <!-- Hero Section -->
 <section
-  class="relative bg-linear-to-br from-primary-600 to-primary-800 text-white py-12 md:py-20 px-4 pb-16 md:pb-26 overflow-visible"
+  class="relative bg-linear-to-br from-primary-600 to-primary-800  text-white py-12 md:py-20 px-4 pb-18 md:pb-30 overflow-visible"
 >
   <div class="max-w-6xl mx-auto relative z-10">
     <div class="text-center space-y-4 md:space-y-6">
@@ -25,13 +25,9 @@
   </div>
 
   <!-- Decorative wave -->
-  <div class="absolute bottom-0 left-0 right-0 translate-y-2.5 md:translate-y-px">
-    <svg
-      viewBox="0 0 1440 120"
-      class="w-full h-auto text-neutral-50 block"
-      preserveAspectRatio="none"
-    >
-      <path fill="currentColor" d="M0,64 Q360,120 720,64 T1440,64 L1440,120 L0,120 Z"></path>
+  <div class="absolute bottom-0 left-0 right-0 translate-y-0 md:translate-y-1">
+    <svg viewBox="0 0 1440 120" class="w-full h-10 md:h-40 block" preserveAspectRatio="none">
+      <path fill="#fafafa" d="M0,64 Q360,120 720,64 T1440,64 L1440,120 L0,120 Z"></path>
     </svg>
   </div>
 </section>
@@ -101,7 +97,9 @@
       {{ 'home.about.title' | translate }}
     </h2>
     <p class="text-center text-neutral-600 mb-12 max-w-5xl mx-auto text-xl leading-relaxed">
-      {{ 'home.about.description' | translate: { count: languageCount(), languages: languageList() } }}
+      {{
+        'home.about.description' | translate : { count: languageCount(), languages: languageList() }
+      }}
     </p>
     <div class="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
       <!-- Bulk Session Creation -->
