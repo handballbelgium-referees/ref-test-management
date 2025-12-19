@@ -7,6 +7,7 @@ import { filter, map } from 'rxjs';
 import { APP_VERSION } from '../version';
 import { Auth } from './auth/services/auth';
 import { Language, LanguageConfig } from './services/language-config';
+import { PwaUpdate } from './services/pwa-update';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +26,7 @@ export class App {
   private readonly _router = inject(Router);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _languageConfigService = inject(LanguageConfig);
+  private readonly _pwaUpdateService = inject(PwaUpdate);
 
   private readonly _isQuizRoute = toSignal(
     this._router.events.pipe(
@@ -71,6 +73,9 @@ export class App {
       this._isQuizRoute();
       this.updateTitle();
     });
+
+    // Initialize PWA update checking with proper subscription cleanup
+    this._pwaUpdateService.initializeUpdateCheck(this._destroyRef);
   }
 
   private updateTitle(): void {
