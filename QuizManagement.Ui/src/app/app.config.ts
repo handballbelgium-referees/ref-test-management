@@ -3,6 +3,7 @@ import { provideHttpClient } from '@angular/common/http';
 import {
   ApplicationConfig,
   inject,
+  isDevMode,
   LOCALE_ID,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
@@ -11,6 +12,7 @@ import { provideRouter } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
+import { provideServiceWorker } from '@angular/service-worker';
 import { InMemoryCache } from '@apollo/client';
 import { relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
@@ -100,5 +102,9 @@ export const appConfig: ApplicationConfig = {
         useMutationLoading: true,
       }
     ),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
   ],
 };

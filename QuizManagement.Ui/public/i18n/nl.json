@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "Handbal Quiz Beheer",
-    "pageTitle": "Handbal Quiz Beheer"
+    "title": "Handbal RefTest Beheer",
+    "pageTitle": "Handbal RefTest Beheer"
   },
   "common": {
     "cancel": "Annuleren",
@@ -16,15 +16,15 @@
   },
   "home": {
     "hero": {
-      "title": "Handbal Regelquiz Beheersysteem",
-      "subtitle": "Creëer en beheer handbalregelquizzen voor scheidsrechters en waarnemers van de Belgische Handbalbond",
+      "title": "Handbal RefTest Beheersysteem",
+      "subtitle": "Creëer en beheer reftests voor scheidsrechters en waarnemers van de Belgische Handbalbond",
       "login": "Inloggen op Dashboard"
     },
     "actions": {
       "title": "Snelle Acties",
       "create": {
         "title": "Sessies Aanmaken",
-        "description": "Maak quiz sessies bulksgewijs aan"
+        "description": "Maak reftest sessies bulksgewijs aan"
       },
       "invite": {
         "title": "Uitnodigingen Versturen",
@@ -32,7 +32,7 @@
       },
       "manage": {
         "title": "Sessies Beheren",
-        "description": "Volg en beheer quiz sessies"
+        "description": "Volg en beheer reftest sessies"
       },
       "analytics": {
         "title": "Analyses Bekijken",
@@ -40,22 +40,22 @@
       }
     },
     "about": {
-      "title": "Quiz Sessie Beheersysteem",
-      "description": "Deze applicatie beheert handbalregels quiz sessies. Beheerders kunnen quiz sessies bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, sessie voortgang en voltooiingsstatus volgen, sessies filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. Quizzen ondersteunen 4 talen (Engels, Nederlands, Frans, Duits).",
+      "title": "RefTest Sessie Beheersysteem",
+      "description": "Deze applicatie beheert handbalregels reftest sessies. Beheerders kunnen reftest sessies bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, sessie voortgang en voltooiingsstatus volgen, sessies filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. Reftests ondersteunen {{count}} talen ({{languages}}).",
       "bulk": {
         "title": "Bulk Sessie Aanmaak",
-        "description": "Maak quiz sessies aan voor meerdere gebruikers tegelijk. Elke sessie wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
+        "description": "Maak reftest sessies aan voor meerdere gebruikers tegelijk. Elke sessie wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
       },
       "management": {
         "title": "Sessie Beheer",
-        "description": "Volg quiz sessies gedurende hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail. Verstuur uitnodigingen en beheer alle sessie acties."
+        "description": "Volg reftest sessies gedurende hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail. Verstuur uitnodigingen en beheer alle sessie acties."
       }
     }
   },
   "sessions": {
     "list": {
-      "title": "Beheer Quiz Sessies",
-      "subtitle": "Bekijk, filter en volg alle quiz sessies",
+      "title": "Beheer RefTest Sessies",
+      "subtitle": "Bekijk, filter en volg alle reftest sessies",
       "createNew": "Nieuwe Sessies Aanmaken",
       "searchPlaceholder": "Zoeken op naam of e-mail...",
       "loading": "Sessies laden...",
@@ -72,7 +72,7 @@
         "inProgress": "Bezig",
         "completed": "Voltooid",
         "expired": "Verlopen",
-        "titleLabel": "Quiz Titel",
+        "titleLabel": "RefTest Titel",
         "titleAll": "Alle Titels",
         "titleSearchPlaceholder": "Titels zoeken...",
         "noTitlesFound": "Geen titels gevonden",
@@ -145,7 +145,7 @@
       },
       "empty": {
         "title": "Geen sessies gevonden",
-        "subtitle": "Begin met het aanmaken van uw eerste quiz sessies",
+        "subtitle": "Begin met het aanmaken van uw eerste reftest sessies",
         "action": "Sessies Aanmaken"
       },
       "bulk": {
@@ -189,15 +189,15 @@
     },
     "create": {
       "back": "Terug naar Home",
-      "title": "Quiz Sessies Aanmaken",
-      "subtitle": "Voeg deelnemers toe en configureer quiz instellingen om nieuwe sessies aan te maken",
-      "description": "Maak quiz sessies bulksgewijs aan voor meerdere gebruikers. Voer e-mailadressen in en configureer sessie-instellingen.",
+      "title": "RefTest Sessies Aanmaken",
+      "subtitle": "Voeg deelnemers toe en configureer reftest instellingen om nieuwe sessies aan te maken",
+      "description": "Maak reftest sessies bulksgewijs aan voor meerdere gebruikers. Voer e-mailadressen in en configureer sessie-instellingen.",
       "form": {
         "config": {
-          "label": "Quiz Configuratie"
+          "label": "RefTest Configuratie"
         },
         "title": {
-          "label": "Quiz Titel",
+          "label": "RefTest Titel",
           "placeholder": "Zoek naar een bestaande titel of voer een nieuwe in...",
           "required": "Titel is verplicht",
           "tooltip": "Voorbeeld: Bijscholing {{date}}",
@@ -233,14 +233,14 @@
         },
         "numberOfQuestions": {
           "label": "Aantal Vragen",
-          "hint": "Totaal aantal vragen in de quiz",
+          "hint": "Totaal aantal vragen in de reftest",
           "error": "Aantal vragen moet minimaal 1 zijn",
           "required": "Aantal vragen is verplicht",
           "min": "Moet minimaal 1 vraag zijn"
         },
         "maxTimeInMinutes": {
           "label": "Maximale Tijd (minuten)",
-          "hint": "Maximale tijd om de quiz te voltooien",
+          "hint": "Maximale tijd om de reftest te voltooien",
           "error": "Maximale tijd moet minimaal 1 minuut zijn",
           "required": "Tijdslimiet is verplicht",
           "min": "Moet minimaal 1 minuut zijn"
@@ -268,12 +268,12 @@
         "sendInvitations": {
           "label": "Uitnodigingsmails versturen",
           "hint": "Vink aan om uitnodigingsmails direct na aanmaken van sessies te versturen",
-          "description": "Deelnemers ontvangen een e-mail met hun quizlink"
+          "description": "Deelnemers ontvangen een e-mail met hun reftest link"
         },
         "sendResults": {
           "label": "Resultatenmails versturen",
           "hint": "Vink aan om resultaatmails direct na aanmaken van sessies te versturen",
-          "description": "Deelnemers ontvangen een e-mail met hun quizresultaten"
+          "description": "Deelnemers ontvangen een e-mail met hun reftest resultaten"
         },
         "submit": "Sessies Aanmaken",
         "submitting": "Aanmaken...",
@@ -284,7 +284,7 @@
       },
       "success": {
         "title": "Sessies Succesvol Aangemaakt",
-        "message": "Quiz-sessies zijn aangemaakt. Doorverwijzen naar sessielijst...",
+        "message": "RefTest-sessies zijn aangemaakt. Doorverwijzen naar sessielijst...",
         "created": "Succesvol {{count}} sessie aangemaakt!",
         "created_other": "Succesvol {{count}} sessies aangemaakt!",
         "failedInfo": "{{count}} mislukt. Zie onderstaande fouten.",
@@ -296,16 +296,16 @@
     }
   },
   "quiz": {
-    "page_title": "Handbalregels Quiz",
-    "loading": "Quiz laden...",
+    "page_title": "Handbalregels RefTest",
+    "loading": "RefTest laden...",
     "error": {
-      "title": "Kan quiz niet laden",
-      "QuizSessionNotFoundError": "Deze quizsessie kon niet worden gevonden. Controleer de link.",
-      "QuizSessionExpiredError": "Deze quizsessie is verlopen. Neem contact op met de beheerder.",
-      "InvalidQuizSessionStatusError": "Deze quizsessie is niet meer beschikbaar of is al voltooid."
+      "title": "Kan reftest niet laden",
+      "QuizSessionNotFoundError": "Deze reftest kon niet worden gevonden. Controleer de link.",
+      "QuizSessionExpiredError": "Deze reftest is verlopen. Neem contact op met de beheerder.",
+      "InvalidQuizSessionStatusError": "Deze reftest is niet meer beschikbaar of is al voltooid."
     },
     "backToWelcome": "Terug naar Welkom",
-    "welcome_title": "Welkom bij je quiz",
+    "welcome_title": "Welkom bij je reftest",
     "welcome_subtitle": "Bekijk de informatie hieronder voordat je begint",
     "participant_name": "Naam",
     "participant_email": "E-mail",
@@ -317,8 +317,8 @@
     "instruction_1": "Lees elke vraag zorgvuldig voordat je je antwoorden selecteert",
     "instruction_2": "Sommige vragen kunnen meerdere juiste antwoorden hebben",
     "instruction_3": "Je kunt heen en weer navigeren tussen vragen",
-    "instruction_4": "Voltooi de quiz binnen de tijdslimiet",
-    "start_button": "Start Quiz",
+    "instruction_4": "Voltooi de reftest binnen de tijdslimiet",
+    "start_button": "Start RefTest",
     "timeRemaining": "Resterende Tijd",
     "progress": "Voortgang",
     "question": "Vraag",
@@ -326,9 +326,9 @@
     "answered": "beantwoord",
     "previous": "Vorige",
     "next": "Volgende",
-    "submit": "Quiz Indienen",
+    "submit": "RefTest Indienen",
     "results": {
-      "title": "Quiz Voltooid!",
+      "title": "RefTest Voltooid!",
       "subtitle": "Hier zijn je resultaten",
       "score": "Score",
       "percentage": "Percentage",
@@ -337,24 +337,24 @@
     },
     "dialog": {
       "submit": {
-        "title": "Quiz Indienen?",
-        "message": "Weet je zeker dat je de quiz wilt indienen? Na het indienen kun je je antwoorden niet meer wijzigen.",
+        "title": "RefTest Indienen?",
+        "message": "Weet je zeker dat je de reftest wilt indienen? Na het indienen kun je je antwoorden niet meer wijzigen.",
         "answered": "Beantwoorde Vragen",
         "unanswered": "Onbeantwoorde Vragen",
         "warning": "Je hebt onbeantwoorde vragen. Deze worden als fout gemarkeerd.",
-        "confirm": "Quiz Indienen",
-        "cancel": "Quiz Voortzetten"
+        "confirm": "RefTest Indienen",
+        "cancel": "RefTest Voortzetten"
       },
       "leave": {
-        "title": "Quiz Verlaten?",
-        "message": "Weet je zeker dat je wilt vertrekken? Je voortgang gaat verloren als je de quiz niet hebt ingediend.",
-        "confirm": "Quiz Verlaten",
-        "cancel": "Blijf bij Quiz"
+        "title": "RefTest Verlaten?",
+        "message": "Weet je zeker dat je wilt vertrekken? Je voortgang gaat verloren als je de reftest niet hebt ingediend.",
+        "confirm": "RefTest Verlaten",
+        "cancel": "Blijf bij RefTest"
       }
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handbal Quiz Beheer. Alle rechten voorbehouden.",
+    "copyright": "© {{year}} Handbal RefTest Beheer. Alle rechten voorbehouden.",
     "creator": "Gemaakt door Kristof Gilis"
   }
 }

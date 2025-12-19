@@ -1,7 +1,7 @@
 {
   "app": {
-    "title": "Handball-Quiz-Verwaltung",
-    "pageTitle": "Handball-Quiz-Verwaltung"
+    "title": "Handball-RefTest-Verwaltung",
+    "pageTitle": "Handball-RefTest-Verwaltung"
   },
   "common": {
     "cancel": "Abbrechen",
@@ -24,30 +24,30 @@
       "title": "Schnellaktionen",
       "create": {
         "title": "Sitzungen Erstellen",
-        "description": "Quiz-Sitzungen in großen Mengen erstellen"
+        "description": "RefTest-Sitzungen in großen Mengen erstellen"
       },
       "manage": {
         "title": "Sitzungen Verwalten",
-        "description": "Quiz-Sitzungen verfolgen und verwalten"
+        "description": "RefTest-Sitzungen verfolgen und verwalten"
       }
     },
     "about": {
-      "title": "Quiz-Sitzungsverwaltungssystem",
-      "description": "Diese Anwendung verwaltet Handball-Regeln Quiz-Sitzungen. Administratoren können Quiz-Sitzungen in großen Mengen für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Sitzungsfortschritt und Abschlussstatus verfolgen, Sitzungen nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. Quiz unterstützen 4 Sprachen (Englisch, Niederländisch, Französisch, Deutsch).",
+      "title": "RefTest-Sitzungsverwaltungssystem",
+      "description": "Diese Anwendung verwaltet Handball-Regeln RefTest-Sitzungen. Administratoren können RefTest-Sitzungen in großen Mengen für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Sitzungsfortschritt und Abschlussstatus verfolgen, Sitzungen nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. RefTests unterstützen {{count}} Sprachen ({{languages}}).",
       "bulk": {
         "title": "Massen-Sitzungserstellung",
-        "description": "Erstellen Sie Quiz-Sitzungen für mehrere Benutzer auf einmal. Jede Sitzung wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
+        "description": "Erstellen Sie RefTest-Sitzungen für mehrere Benutzer auf einmal. Jede Sitzung wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
       },
       "management": {
         "title": "Sitzungsverwaltung",
-        "description": "Verfolgen Sie Quiz-Sitzungen während ihres gesamten Lebenszyklus: ausstehend, in Bearbeitung, abgeschlossen oder abgelaufen. Filtern und sortieren Sie nach Status, Datum, Punktzahl oder Benutzer-E-Mail. Senden Sie Einladungen und verwalten Sie alle Sitzungsaktionen."
+        "description": "Verfolgen Sie RefTest-Sitzungen während ihres gesamten Lebenszyklus: ausstehend, in Bearbeitung, abgeschlossen oder abgelaufen. Filtern und sortieren Sie nach Status, Datum, Punktzahl oder Benutzer-E-Mail. Senden Sie Einladungen und verwalten Sie alle Sitzungsaktionen."
       }
     }
   },
   "sessions": {
     "list": {
-      "title": "Quiz-Sitzungen Verwalten",
-      "subtitle": "Alle Quiz-Sitzungen anzeigen, filtern und verfolgen",
+      "title": "RefTest-Sitzungen Verwalten",
+      "subtitle": "Alle RefTest-Sitzungen anzeigen, filtern und verfolgen",
       "createNew": "Neue Sitzungen Erstellen",
       "searchPlaceholder": "Nach Name oder E-Mail suchen...",
       "loading": "Sitzungen werden geladen...",
@@ -64,7 +64,7 @@
         "inProgress": "In Bearbeitung",
         "completed": "Abgeschlossen",
         "expired": "Abgelaufen",
-        "titleLabel": "Quiz Titel",
+        "titleLabel": "RefTest Titel",
         "titleAll": "Alle Titel",
         "titleSearchPlaceholder": "Titel suchen...",
         "noTitlesFound": "Keine Titel gefunden",
@@ -137,7 +137,7 @@
       },
       "empty": {
         "title": "Keine Sitzungen gefunden",
-        "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten Quiz-Sitzungen",
+        "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten RefTest-Sitzungen",
         "action": "Sitzungen Erstellen"
       },
       "bulk": {
@@ -181,15 +181,15 @@
     },
     "create": {
       "back": "Zurück zur Startseite",
-      "title": "Quiz-Sitzungen Erstellen",
-      "subtitle": "Teilnehmer hinzufügen und Quiz-Einstellungen konfigurieren, um neue Sitzungen zu erstellen",
-      "description": "Erstellen Sie Quiz-Sitzungen in großen Mengen für mehrere Benutzer. Geben Sie E-Mail-Adressen ein und konfigurieren Sie Sitzungseinstellungen.",
+      "title": "RefTest-Sitzungen Erstellen",
+      "subtitle": "Teilnehmer hinzufügen und RefTest-Einstellungen konfigurieren, um neue Sitzungen zu erstellen",
+      "description": "Erstellen Sie RefTest-Sitzungen in großen Mengen für mehrere Benutzer. Geben Sie E-Mail-Adressen ein und konfigurieren Sie Sitzungseinstellungen.",
       "form": {
         "config": {
-          "label": "Quiz-Konfiguration"
+          "label": "RefTest-Konfiguration"
         },
         "title": {
-          "label": "Quiz Titel",
+          "label": "RefTest Titel",
           "placeholder": "Suchen Sie nach einem vorhandenen Titel oder geben Sie einen neuen ein...",
           "required": "Titel ist erforderlich",
           "tooltip": "Beispiel: Schulung {{date}}",
@@ -225,14 +225,14 @@
         },
         "numberOfQuestions": {
           "label": "Anzahl der Fragen",
-          "hint": "Gesamtzahl der Fragen im Quiz",
+          "hint": "Gesamtzahl der Fragen im RefTest",
           "error": "Die Anzahl der Fragen muss mindestens 1 sein",
           "required": "Anzahl der Fragen ist erforderlich",
           "min": "Muss mindestens 1 Frage haben"
         },
         "maxTimeInMinutes": {
           "label": "Maximale Zeit (Minuten)",
-          "hint": "Maximale Zeit zum Abschließen des Quiz",
+          "hint": "Maximale Zeit zum Abschließen des RefTest",
           "error": "Die maximale Zeit muss mindestens 1 Minute betragen",
           "required": "Zeitlimit ist erforderlich",
           "min": "Muss mindestens 1 Minute betragen"
@@ -260,12 +260,12 @@
         "sendInvitations": {
           "label": "Einladungs-E-Mails senden",
           "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der Sitzungen zu senden",
-          "description": "Teilnehmer erhalten eine E-Mail mit ihrem Quiz-Link"
+          "description": "Teilnehmer erhalten eine E-Mail mit ihrem RefTest-Link"
         },
         "sendResults": {
           "label": "Ergebnis-E-Mails senden",
           "hint": "Aktivieren, um Ergebnis-E-Mails sofort nach Erstellung der Sitzungen zu senden",
-          "description": "Teilnehmer erhalten eine E-Mail mit ihren Quiz-Ergebnissen"
+          "description": "Teilnehmer erhalten eine E-Mail mit ihren RefTest-Ergebnissen"
         },
         "submit": "Sitzungen Erstellen",
         "submitting": "Erstellen...",
@@ -276,7 +276,7 @@
       },
       "success": {
         "title": "Sitzungen Erfolgreich Erstellt",
-        "message": "Quiz-Sitzungen wurden erstellt. Weiterleitung zur Sitzungsliste...",
+        "message": "RefTest-Sitzungen wurden erstellt. Weiterleitung zur Sitzungsliste...",
         "created": "Erfolgreich {{count}} Sitzung erstellt!",
         "created_other": "Erfolgreich {{count}} Sitzungen erstellt!",
         "failedInfo": "{{count}} fehlgeschlagen. Siehe Fehler unten.",
@@ -288,16 +288,16 @@
     }
   },
   "quiz": {
-    "page_title": "Handballregeln-Quiz",
-    "loading": "Quiz wird geladen...",
+    "page_title": "Handballregeln-RefTest",
+    "loading": "RefTest wird geladen...",
     "error": {
-      "title": "Quiz kann nicht geladen werden",
-      "QuizSessionNotFoundError": "Diese Quiz-Sitzung wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
-      "QuizSessionExpiredError": "Diese Quiz-Sitzung ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
-      "InvalidQuizSessionStatusError": "Diese Quiz-Sitzung ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
+      "title": "RefTest kann nicht geladen werden",
+      "QuizSessionNotFoundError": "Diese RefTest wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
+      "QuizSessionExpiredError": "Diese RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
+      "InvalidQuizSessionStatusError": "Diese RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
     },
     "backToWelcome": "Zurück zur Begrüßung",
-    "welcome_title": "Willkommen zu Ihrem Quiz",
+    "welcome_title": "Willkommen zu Ihrem RefTest",
     "welcome_subtitle": "Bitte überprüfen Sie die folgenden Informationen, bevor Sie beginnen",
     "participant_name": "Name",
     "participant_email": "E-Mail",
@@ -309,8 +309,8 @@
     "instruction_1": "Lesen Sie jede Frage sorgfältig, bevor Sie Ihre Antworten auswählen",
     "instruction_2": "Einige Fragen können mehrere richtige Antworten haben",
     "instruction_3": "Sie können zwischen den Fragen hin und her navigieren",
-    "instruction_4": "Schließen Sie das Quiz innerhalb des Zeitlimits ab",
-    "start_button": "Quiz starten",
+    "instruction_4": "Schließen Sie das RefTest innerhalb des Zeitlimits ab",
+    "start_button": "RefTest starten",
     "timeRemaining": "Verbleibende Zeit",
     "progress": "Fortschritt",
     "question": "Frage",
@@ -318,9 +318,9 @@
     "answered": "beantwortet",
     "previous": "Zurück",
     "next": "Weiter",
-    "submit": "Quiz Einreichen",
+    "submit": "RefTest Einreichen",
     "results": {
-      "title": "Quiz Abgeschlossen!",
+      "title": "RefTest Abgeschlossen!",
       "subtitle": "Hier sind Ihre Ergebnisse",
       "score": "Punktzahl",
       "percentage": "Prozentsatz",
@@ -329,24 +329,24 @@
     },
     "dialog": {
       "submit": {
-        "title": "Quiz Einreichen?",
-        "message": "Sind Sie sicher, dass Sie Ihr Quiz einreichen möchten? Nach dem Einreichen können Sie Ihre Antworten nicht mehr ändern.",
+        "title": "RefTest Einreichen?",
+        "message": "Sind Sie sicher, dass Sie Ihr RefTest einreichen möchten? Nach dem Einreichen können Sie Ihre Antworten nicht mehr ändern.",
         "answered": "Beantwortete Fragen",
         "unanswered": "Unbeantwortete Fragen",
         "warning": "Sie haben unbeantwortete Fragen. Diese werden als falsch markiert.",
-        "confirm": "Quiz Einreichen",
-        "cancel": "Quiz Fortsetzen"
+        "confirm": "RefTest Einreichen",
+        "cancel": "RefTest Fortsetzen"
       },
       "leave": {
-        "title": "Quiz Verlassen?",
-        "message": "Sind Sie sicher, dass Sie gehen möchten? Ihr Fortschritt geht verloren, wenn Sie das Quiz nicht eingereicht haben.",
-        "confirm": "Quiz Verlassen",
-        "cancel": "Beim Quiz Bleiben"
+        "title": "RefTest Verlassen?",
+        "message": "Sind Sie sicher, dass Sie gehen möchten? Ihr Fortschritt geht verloren, wenn Sie das RefTest nicht eingereicht haben.",
+        "confirm": "RefTest Verlassen",
+        "cancel": "Beim RefTest Bleiben"
       }
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handball-Quiz-Verwaltung. Alle Rechte vorbehalten.",
+    "copyright": "© {{year}} Handball-RefTest-Verwaltung. Alle Rechte vorbehalten.",
     "creator": "Erstellt von Kristof Gilis"
   }
 }
