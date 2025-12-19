@@ -3,6 +3,10 @@
     "title": "Handball RefTest Management",
     "pageTitle": "Handball RefTest Management"
   },
+  "pwa": {
+    "update_available": "A new version is available.",
+    "update_now": "Update"
+  },
   "common": {
     "cancel": "Cancel",
     "today": "Today",
