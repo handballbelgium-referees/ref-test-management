@@ -18,12 +18,13 @@ public partial class EmailService(
     {
         var enabledLanguages = GetEnabledLanguagesForInvitation(token);
         var languageSections = new StringBuilder();
-        
+
         for (var i = 0; i < enabledLanguages.Count; i++)
         {
             var langContent = enabledLanguages[i];
             var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildInvitationLanguageSection(langContent, name, numberOfQuestions, maxTimeInMinutes, isLast));
+            languageSections.Append(BuildInvitationLanguageSection(langContent, name, numberOfQuestions,
+                maxTimeInMinutes, isLast));
         }
 
         const string subject = "Referees Handball Belgium Quiz Invitation";
@@ -79,12 +80,13 @@ public partial class EmailService(
 
         var enabledLanguages = GetEnabledLanguagesForResults();
         var languageSections = new StringBuilder();
-        
+
         for (var i = 0; i < enabledLanguages.Count; i++)
         {
             var langContent = enabledLanguages[i];
             var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildResultsLanguageSection(langContent, name, score, totalQuestions, percentage, passed, resultColor, resultBgColor, resultIcon, isLast));
+            languageSections.Append(BuildResultsLanguageSection(langContent, name, score, totalQuestions, percentage,
+                passed, resultColor, resultBgColor, resultIcon, isLast));
         }
 
         var emailBody = $@"
@@ -129,14 +131,14 @@ public partial class EmailService(
 
         LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, score, totalQuestions, percentage);
 
-        await SendEmailAsync(email, subject, emailBody, attachments);
+        await SendEmailAsync(email, subject, emailBody, attachments, true);
 
         LogQuizResultsEmailSentToEmail(logger, email);
     }
 
 
     private async Task SendEmailAsync(string toEmail, string subject, string body,
-        List<EmailAttachment>? attachments = null)
+        List<EmailAttachment>? attachments = null, bool scheduleEmail = false)
     {
         LogSendingEmailToEmailWithSubjectAndBody(logger, toEmail, subject, body);
 
@@ -158,6 +160,12 @@ public partial class EmailService(
             var plainTextBody = System.Text.RegularExpressions.Regex.Replace(body, "<[^>]*>", "");
             plainTextBody = System.Text.RegularExpressions.Regex.Replace(plainTextBody, @"\s+", " ").Trim();
 
+            var scheduledAt = scheduleEmail && configuration.ScheduledDelayMinutes > 0
+                ? DateTimeOffset.UtcNow
+                    .AddMinutes(configuration.ScheduledDelayMinutes)
+                    .ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
+                : null;
+
             // Prepare JSON payload for Brevo API with attachments
             var emailData = new
             {
@@ -166,6 +174,10 @@ public partial class EmailService(
                 subject,
                 htmlContent = body,
                 textContent = plainTextBody,
+                
+                // 👇 Brevo scheduling (only used if not null)
+                scheduledAt,
+                
                 attachment = attachments?.Select(a => new
                 {
                     name = a.FileName,
@@ -243,7 +255,8 @@ public partial class EmailService(
             ["minutes"] = "minutes",
             ["validDays"] = "⏰ This quiz is valid for 7 days",
             ["greeting"] = "Hello",
-            ["inviteText"] = "You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:",
+            ["inviteText"] =
+                "You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:",
             ["startButton"] = "Start Quiz"
         },
         ["nl"] = new Dictionary<string, string>
@@ -254,7 +267,8 @@ public partial class EmailService(
             ["minutes"] = "minuten",
             ["validDays"] = "⏰ Deze quiz is 7 dagen geldig",
             ["greeting"] = "Hallo",
-            ["inviteText"] = "Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:",
+            ["inviteText"] =
+                "Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:",
             ["startButton"] = "Start Quiz"
         },
         ["fr"] = new Dictionary<string, string>
@@ -265,7 +279,8 @@ public partial class EmailService(
             ["minutes"] = "minutes",
             ["validDays"] = "⏰ Ce quiz est valide pendant 7 jours",
             ["greeting"] = "Bonjour",
-            ["inviteText"] = "Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:",
+            ["inviteText"] =
+                "Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:",
             ["startButton"] = "Démarrer le Quiz"
         },
         ["de"] = new Dictionary<string, string>
@@ -276,7 +291,8 @@ public partial class EmailService(
             ["minutes"] = "Minuten",
             ["validDays"] = "⏰ Dieses Quiz ist 7 Tage lang gültig",
             ["greeting"] = "Hallo",
-            ["inviteText"] = "Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:",
+            ["inviteText"] =
+                "Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:",
             ["startButton"] = "Quiz starten"
         }
     };
@@ -293,8 +309,10 @@ public partial class EmailService(
             ["passedMessage"] = "🎉 Congratulations! You passed the quiz!",
             ["failedMessage"] = "📚 Keep studying and good luck next time!",
             ["greeting"] = "Dear",
-            ["passedText"] = "Congratulations! You have successfully passed the IHF Rules Quiz! Your knowledge of handball regulations is excellent.",
-            ["failedText"] = "Thank you for taking the IHF Rules Quiz. A passing score is 80% or higher. Please review the rules and try again.",
+            ["passedText"] =
+                "Congratulations! You have successfully passed the IHF Rules Quiz! Your knowledge of handball regulations is excellent.",
+            ["failedText"] =
+                "Thank you for taking the IHF Rules Quiz. A passing score is 80% or higher. Please review the rules and try again.",
             ["pdfNote"] = "📎 <strong>Detailed results are available in the attached PDF documents</strong>"
         },
         ["nl"] = new Dictionary<string, string>
@@ -307,9 +325,12 @@ public partial class EmailService(
             ["passedMessage"] = "🎉 Gefeliciteerd! Je bent geslaagd!",
             ["failedMessage"] = "📚 Blijf studeren en veel succes de volgende keer!",
             ["greeting"] = "Hallo",
-            ["passedText"] = "Gefeliciteerd! Je bent geslaagd voor de IHF Regels Quiz! Je kennis van de handbalreglementen is uitstekend.",
-            ["failedText"] = "Bedankt voor het maken van de IHF Regels Quiz. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.",
-            ["pdfNote"] = "📎 <strong>Gedetailleerde resultaten zijn beschikbaar in de bijgevoegde PDF-documenten</strong>"
+            ["passedText"] =
+                "Gefeliciteerd! Je bent geslaagd voor de IHF Regels Quiz! Je kennis van de handbalreglementen is uitstekend.",
+            ["failedText"] =
+                "Bedankt voor het maken van de IHF Regels Quiz. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.",
+            ["pdfNote"] =
+                "📎 <strong>Gedetailleerde resultaten zijn beschikbaar in de bijgevoegde PDF-documenten</strong>"
         },
         ["fr"] = new Dictionary<string, string>
         {
@@ -321,8 +342,10 @@ public partial class EmailService(
             ["passedMessage"] = "🎉 Félicitations! Vous avez réussi!",
             ["failedMessage"] = "📚 Continuez à étudier et bonne chance la prochaine fois!",
             ["greeting"] = "Bonjour",
-            ["passedText"] = "Félicitations! Vous avez réussi le Quiz des Règles IHF! Votre connaissance des règles de handball est excellente.",
-            ["failedText"] = "Merci d'avoir participé au Quiz des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.",
+            ["passedText"] =
+                "Félicitations! Vous avez réussi le Quiz des Règles IHF! Votre connaissance des règles de handball est excellente.",
+            ["failedText"] =
+                "Merci d'avoir participé au Quiz des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.",
             ["pdfNote"] = "📎 <strong>Les résultats détaillés sont disponibles dans les documents PDF joints</strong>"
         },
         ["de"] = new Dictionary<string, string>
@@ -335,8 +358,10 @@ public partial class EmailService(
             ["passedMessage"] = "🎉 Herzlichen Glückwunsch! Sie haben bestanden!",
             ["failedMessage"] = "📚 Lernen Sie weiter und viel Glück beim nächsten Mal!",
             ["greeting"] = "Hallo",
-            ["passedText"] = "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-Quiz bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet.",
-            ["failedText"] = "Vielen Dank, dass Sie am IHF-Regeln-Quiz teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.",
+            ["passedText"] =
+                "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-Quiz bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet.",
+            ["failedText"] =
+                "Vielen Dank, dass Sie am IHF-Regeln-Quiz teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.",
             ["pdfNote"] = "📎 <strong>Detaillierte Ergebnisse sind in den beigefügten PDF-Dokumenten verfügbar</strong>"
         }
     };
@@ -344,29 +369,38 @@ public partial class EmailService(
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
     {
         var translations = GetInvitationTranslations();
-        return [.. languageConfiguration.EnabledLanguages
-            .Where(lang => translations.ContainsKey(lang))
-            .Select(lang => new LanguageContent(
-                $"{configuration.BaseUrl}/quiz/{token}?lang={lang}",
-                translations[lang]
-            ))];
+        return
+        [
+            .. languageConfiguration.EnabledLanguages
+                .Where(lang => translations.ContainsKey(lang))
+                .Select(lang => new LanguageContent(
+                    $"{configuration.BaseUrl}/quiz/{token}?lang={lang}",
+                    translations[lang]
+                ))
+        ];
     }
 
     private List<LanguageContent> GetEnabledLanguagesForResults()
     {
         var translations = GetResultsTranslations();
-        return [.. languageConfiguration.EnabledLanguages
-            .Where(lang => translations.ContainsKey(lang))
-            .Select(lang => new LanguageContent(
-                string.Empty,
-                translations[lang]
-            ))];
+        return
+        [
+            .. languageConfiguration.EnabledLanguages
+                .Where(lang => translations.ContainsKey(lang))
+                .Select(lang => new LanguageContent(
+                    string.Empty,
+                    translations[lang]
+                ))
+        ];
     }
 
-    private static string BuildInvitationLanguageSection(LanguageContent langContent, string name, int numberOfQuestions, int maxTimeInMinutes, bool isLast)
+    private static string BuildInvitationLanguageSection(LanguageContent langContent, string name,
+        int numberOfQuestions, int maxTimeInMinutes, bool isLast)
     {
         var t = langContent.Translations;
-        var separator = isLast ? "" : @"
+        var separator = isLast
+            ? ""
+            : @"
             <!-- Separator -->
             <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
 
@@ -391,10 +425,13 @@ public partial class EmailService(
             </div>{separator}";
     }
 
-    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int score, int totalQuestions, double percentage, bool passed, string resultColor, string resultBgColor, string resultIcon, bool isLast)
+    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int score, int totalQuestions,
+        double percentage, bool passed, string resultColor, string resultBgColor, string resultIcon, bool isLast)
     {
         var t = langContent.Translations;
-        var separator = isLast ? "" : @"
+        var separator = isLast
+            ? ""
+            : @"
             <!-- Separator -->
             <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
 

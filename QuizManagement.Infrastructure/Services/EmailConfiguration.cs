@@ -7,5 +7,6 @@ public class EmailConfiguration
     public string BrevoApiUrl { get; init; } = "https://api.brevo.com/v3";
     public string FromEmail { get; init; } = string.Empty;
     public string FromName { get; init; } = string.Empty;
+    public int ScheduledDelayMinutes { get; init; } = 0;
 }
 
