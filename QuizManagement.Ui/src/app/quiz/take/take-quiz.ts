@@ -11,7 +11,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, map, of, tap } from 'rxjs';
+import { catchError, EMPTY, map, of, tap } from 'rxjs';
 import { CompleteQuizSessionGQL, StartQuizSessionGQL } from '../../../../graphql/generated';
 import { QuizErrorComponent } from '../components/quiz-error/quiz-error';
 import { LeaveQuizDialogComponent } from './components/leave-quiz-dialog/leave-quiz-dialog';
@@ -177,8 +177,6 @@ export class TakeQuizComponent {
         variables: {
           input: { token },
         },
-        fetchPolicy: 'no-cache',
-        errorPolicy: 'all',
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
@@ -237,23 +235,10 @@ export class TakeQuizComponent {
         }),
         catchError((err) => {
           this.loading.set(false);
+          // this.error.set('general');
+          this.error.set(err);
 
-          // Distinguish common error cases
-          if (err && err.networkError) {
-            this.error.set('network');
-          } else if (err && err.graphQLErrors && err.graphQLErrors.length > 0) {
-            // If server returned GraphQL errors without data, map to first typename if present
-            const gqlErr = err.graphQLErrors[0];
-            if (gqlErr && gqlErr.extensions?.code) {
-              this.error.set(gqlErr.extensions.code as string);
-            } else {
-              this.error.set('general');
-            }
-          } else {
-            this.error.set('general');
-          }
-
-          return of(null);
+          return of(EMPTY);
         }),
         takeUntilDestroyed(this._destroyRef)
       )
@@ -332,8 +317,6 @@ export class TakeQuizComponent {
             selectedAnswerIds,
           },
         },
-        fetchPolicy: 'no-cache',
-        errorPolicy: 'all',
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
@@ -374,16 +357,11 @@ export class TakeQuizComponent {
             }
           }
         }),
-        catchError((err) => {
-          // eslint-disable-next-line no-console
-          console.error('CompleteQuiz error', err);
+        catchError(() => {
           this.loading.set(false);
-          if (err && err.networkError) {
-            this.error.set('network');
-          } else {
-            this.error.set('submitFailed');
-          }
-          return of(null);
+          this.error.set('submitFailed');
+
+          return of(EMPTY);
         }),
         takeUntilDestroyed(this._destroyRef)
       )
