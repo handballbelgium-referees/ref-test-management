@@ -177,6 +177,8 @@ export class TakeQuizComponent {
         variables: {
           input: { token },
         },
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
@@ -233,9 +235,24 @@ export class TakeQuizComponent {
             }
           }
         }),
-        catchError(() => {
+        catchError((err) => {
           this.loading.set(false);
-          this.error.set('general');
+
+          // Distinguish common error cases
+          if (err && err.networkError) {
+            this.error.set('network');
+          } else if (err && err.graphQLErrors && err.graphQLErrors.length > 0) {
+            // If server returned GraphQL errors without data, map to first typename if present
+            const gqlErr = err.graphQLErrors[0];
+            if (gqlErr && gqlErr.extensions?.code) {
+              this.error.set(gqlErr.extensions.code as string);
+            } else {
+              this.error.set('general');
+            }
+          } else {
+            this.error.set('general');
+          }
+
           return of(null);
         }),
         takeUntilDestroyed(this._destroyRef)
@@ -315,6 +332,8 @@ export class TakeQuizComponent {
             selectedAnswerIds,
           },
         },
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all',
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
@@ -355,9 +374,15 @@ export class TakeQuizComponent {
             }
           }
         }),
-        catchError(() => {
+        catchError((err) => {
+          // eslint-disable-next-line no-console
+          console.error('CompleteQuiz error', err);
           this.loading.set(false);
-          this.error.set('submitFailed');
+          if (err && err.networkError) {
+            this.error.set('network');
+          } else {
+            this.error.set('submitFailed');
+          }
           return of(null);
         }),
         takeUntilDestroyed(this._destroyRef)

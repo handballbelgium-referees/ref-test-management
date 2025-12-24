@@ -301,6 +301,9 @@
     "loading": "RefTest wird geladen...",
     "error": {
       "title": "RefTest kann nicht geladen werden",
+      "general": "Ein unerwarteter Fehler ist beim Laden des RefTests aufgetreten. Bitte versuchen Sie es später erneut.",
+      "network": "Ein Netzwerkfehler ist aufgetreten. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+      "submitFailed": "Das Absenden des RefTests ist fehlgeschlagen. Bitte versuchen Sie es später erneut.",
       "QuizSessionNotFoundError": "Diese RefTest wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
       "QuizSessionExpiredError": "Diese RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
       "InvalidQuizSessionStatusError": "Diese RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
