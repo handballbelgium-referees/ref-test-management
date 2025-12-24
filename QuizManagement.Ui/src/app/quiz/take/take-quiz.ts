@@ -233,10 +233,9 @@ export class TakeQuizComponent {
             }
           }
         }),
-        catchError((err) => {
+        catchError(() => {
           this.loading.set(false);
-          // this.error.set('general');
-          this.error.set(JSON.stringify(err));
+          this.error.set('general');
 
           return of(EMPTY);
         }),
