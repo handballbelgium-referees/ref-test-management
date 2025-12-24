@@ -36,7 +36,7 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Maximum time in minutes for the quiz");
         descriptor.Field(x => x.NumberOfQuestions).Description("Number of questions in the quiz");
         descriptor.Field(x => x.CreatedAt).Description("Creation date and time of the quiz session").Authorize();
-        descriptor.Field(x => x.StartedAt).Description("Start date and time of the quiz session").Authorize();
+        descriptor.Field(x => x.StartedAt).Description("Start date and time of the quiz session");
         descriptor.Field(x => x.CompletedAt).Description("Completion date and time of the quiz session").Authorize();
         descriptor.Field(x => x.Percentage).Description("Percentage of correct answers");
         descriptor.Field(x => x.Score).Description("Score of the quiz session");
