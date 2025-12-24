@@ -301,6 +301,9 @@
     "loading": "Loading reftest...",
     "error": {
       "title": "Unable to Load RefTest",
+      "general": "An unexpected error occurred while loading the reftest. Please try again later.",
+      "network": "A network error occurred. Please check your connection and try again.",
+      "submitFailed": "Submitting the reftest failed. Please try again later.",
       "QuizSessionNotFoundError": "This reftest could not be found. Please check your link.",
       "QuizSessionExpiredError": "This reftest has expired. Please contact the administrator.",
       "InvalidQuizSessionStatusError": "This reftest is no longer available or has already been completed."

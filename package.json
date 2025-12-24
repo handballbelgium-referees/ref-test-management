@@ -1,10 +1,9 @@
 {
   "name": "handball-belgium-rules-quiz",
   "version": "0.0.0",
-  "description": "IHF Rules quiz for the referees of Handball Belgium",
+  "description": "IHF Reftests for the referees of Handball Belgium",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "prepare": "husky",
     "semantic-release": "semantic-release"
   },

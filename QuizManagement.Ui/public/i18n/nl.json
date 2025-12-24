@@ -309,6 +309,9 @@
     "loading": "RefTest laden...",
     "error": {
       "title": "Kan reftest niet laden",
+      "general": "Er is een onverwachte fout opgetreden bij het laden van de reftest. Probeer het later opnieuw.",
+      "network": "Er is een netwerkfout opgetreden. Controleer uw verbinding en probeer het opnieuw.",
+      "submitFailed": "Het indienen van de reftest is mislukt. Probeer het later opnieuw.",
       "QuizSessionNotFoundError": "Deze reftest kon niet worden gevonden. Controleer de link.",
       "QuizSessionExpiredError": "Deze reftest is verlopen. Neem contact op met de beheerder.",
       "InvalidQuizSessionStatusError": "Deze reftest is niet meer beschikbaar of is al voltooid."
