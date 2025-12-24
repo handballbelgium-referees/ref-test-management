@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, inject, output, signal } fr
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
 import { QueryRef } from 'apollo-angular';
-import { catchError, debounceTime, map, Observable, of, Subject, switchMap } from 'rxjs';
+import { catchError, debounceTime, finalize, map, Observable, of, Subject, switchMap } from 'rxjs';
 import {
   GetQuizTitlesGQL,
   GetQuizTitlesQuery,
@@ -88,7 +88,8 @@ export class TitleAutocomplete {
             of<ISearchResult>({ titles: [], isSearching: false, hasNextPage: false })
           )
         );
-      })
+      }),
+      finalize(() => this.searching.set(false))
     ),
     { initialValue: { titles: [], isSearching: false, hasNextPage: false } }
   );
@@ -210,11 +211,13 @@ export class TitleAutocomplete {
 
   protected closeDropdown(): void {
     this.showDropdown.set(false);
+    this.searching.set(false);
     this.highlightedIndex.set(-1);
   }
 
   protected onClear(): void {
     this.searchTerm.set('');
+    this.searching.set(false);
     this.selectedTitle.set(null);
     this.suggestions.set([]);
     this.selectTitle.emit({ name: '' });

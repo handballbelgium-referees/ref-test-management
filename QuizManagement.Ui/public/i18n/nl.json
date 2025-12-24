@@ -242,6 +242,11 @@
           "required": "Aantal vragen is verplicht",
           "min": "Moet minimaal 1 vraag zijn"
         },
+        "randomQuestionsForEachUser": {
+          "label": "Willekeurige Vragen voor Elke Deelnemer",
+          "hint": "Vink aan om verschillende willekeurige vragen aan elke deelnemer toe te wijzen. Vink uit om dezelfde vragen voor iedereen te gebruiken.",
+          "description": "Wanneer ingeschakeld, ontvangt elke deelnemer een unieke set willekeurige vragen uit de vraagpool. Wanneer uitgeschakeld, ontvangen alle deelnemers dezelfde set vragen."
+        },
         "maxTimeInMinutes": {
           "label": "Maximale Tijd (minuten)",
           "hint": "Maximale tijd om de reftest te voltooien",

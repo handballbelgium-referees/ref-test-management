@@ -234,6 +234,11 @@
           "required": "Le nombre de questions est requis",
           "min": "Doit avoir au moins 1 question"
         },
+        "randomQuestionsForEachUser": {
+          "label": "Questions Aléatoires pour Chaque Utilisateur",
+          "hint": "Cochez pour attribuer des questions aléatoires différentes à chaque participant. Décochez pour utiliser les mêmes questions pour tous.",
+          "description": "Lorsqu'activé, chaque participant recevra un ensemble unique de questions aléatoires provenant de la banque de questions. Lorsqu'il est désactivé, tous les participants recevront le même ensemble de questions."
+        },
         "maxTimeInMinutes": {
           "label": "Temps Maximum (minutes)",
           "hint": "Temps maximum autorisé pour compléter le reftest",

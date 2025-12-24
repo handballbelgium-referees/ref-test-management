@@ -234,6 +234,11 @@
           "required": "Anzahl der Fragen ist erforderlich",
           "min": "Muss mindestens 1 Frage haben"
         },
+        "randomQuestionsForEachUser": {
+          "label": "Zufällige Fragen für jeden Teilnehmer",
+          "hint": "Aktivieren, um jedem Teilnehmer unterschiedliche zufällige Fragen zuzuweisen. Deaktivieren, um für alle dieselben Fragen zu verwenden.",
+          "description": "Wenn aktiviert, erhält jeder Teilnehmer einen einzigartigen Satz zufälliger Fragen aus dem Fragenpool. Wenn deaktiviert, erhalten alle Teilnehmer denselben Satz von Fragen."
+        },
         "maxTimeInMinutes": {
           "label": "Maximale Zeit (Minuten)",
           "hint": "Maximale Zeit zum Abschließen des RefTest",
