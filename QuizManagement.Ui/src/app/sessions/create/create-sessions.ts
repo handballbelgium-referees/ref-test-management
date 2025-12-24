@@ -33,6 +33,7 @@ interface ISessionFormData {
   users: IUserData[];
   title: { id?: string; name: string } | null;
   numberOfQuestions: number;
+  randomQuestionsForEachUser: boolean;
   maxTimeInMinutes: number;
   specificQuestionNumbers: string;
   sendInvitations: boolean;
@@ -70,6 +71,7 @@ export class CreateSessions {
     users: [{ firstName: '', lastName: '', email: '' }],
     title: null,
     numberOfQuestions: 30,
+    randomQuestionsForEachUser: false,
     maxTimeInMinutes: 60,
     specificQuestionNumbers: '',
     sendInvitations: false,
@@ -107,6 +109,9 @@ export class CreateSessions {
       },
     });
     disabled(schemaPath.numberOfQuestions, () => {
+      return this.selectedQuestions().length > 0;
+    });
+    disabled(schemaPath.randomQuestionsForEachUser, () => {
       return this.selectedQuestions().length > 0;
     });
     min(schemaPath.numberOfQuestions, 1, {
@@ -187,6 +192,7 @@ export class CreateSessions {
     if (!current.some((q) => q.number === question.number)) {
       this.selectedQuestions.set([...current, question]);
       this.updateQuestionNumbersField();
+      this.updateRandomQuestionsForEachUserField();
       this.resetQuestionCount();
     }
   }
@@ -205,6 +211,14 @@ export class CreateSessions {
     this.sessionModel.set({
       ...current,
       specificQuestionNumbers: numbers,
+    });
+  }
+
+  private updateRandomQuestionsForEachUserField(): void {
+    const current = this.sessionModel();
+    this.sessionModel.set({
+      ...current,
+      randomQuestionsForEachUser: false,
     });
   }
 
@@ -365,6 +379,7 @@ export class CreateSessions {
               ? { id: formData.title.id }
               : { name: formData.title?.name ?? '' },
             numberOfQuestions: formData.numberOfQuestions,
+            randomQuestionsForEachUser: formData.randomQuestionsForEachUser,
             maxTimeInMinutes: formData.maxTimeInMinutes,
             specificQuestionNumbers: specificQuestions.length > 0 ? specificQuestions : undefined,
             sendAutomatedInvitations: formData.sendInvitations,
@@ -395,6 +410,7 @@ export class CreateSessions {
                 users: [{ firstName: '', lastName: '', email: '' }],
                 title: null,
                 numberOfQuestions: 30,
+                randomQuestionsForEachUser: false,
                 maxTimeInMinutes: 60,
                 specificQuestionNumbers: '',
                 sendInvitations: false,

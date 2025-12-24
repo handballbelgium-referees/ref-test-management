@@ -234,6 +234,11 @@
           "required": "Number of questions is required",
           "min": "Must have at least 1 question"
         },
+        "randomQuestionsForEachUser": {
+          "label": "Random Questions for Each User",
+          "hint": "Check to assign different random questions to each participant. Uncheck to use the same questions for all.",
+          "description": "When enabled, each participant will receive a unique set of random questions from the question pool. When disabled, all participants will receive the same set of questions."
+        },
         "maxTimeInMinutes": {
           "label": "Maximum Time (minutes)",
           "hint": "Maximum time allowed to complete the reftest",

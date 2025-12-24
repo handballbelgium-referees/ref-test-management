@@ -78,6 +78,7 @@ export type CompleteQuizPayload = {
 export type CreateBulkQuizSessionsInput = {
   maxTimeInMinutes: Scalars['Int']['input'];
   numberOfQuestions: Scalars['Int']['input'];
+  randomQuestionsForEachUser: Scalars['Boolean']['input'];
   sendAutomatedInvitations?: Scalars['Boolean']['input'];
   sendAutomatedResults?: Scalars['Boolean']['input'];
   specificQuestionNumbers?: InputMaybe<Array<Scalars['String']['input']>>;

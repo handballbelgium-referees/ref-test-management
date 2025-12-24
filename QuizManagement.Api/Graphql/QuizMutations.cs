@@ -125,7 +125,7 @@ public static class QuizMutations
             session.WrongAnswerIds,
             questionsWithCorrectAnswers
         );
-        
+
         session.SendResults();
         context.QuizSessions.Update(session);
         await context.SaveChangesAsync(cancellationToken);
@@ -158,10 +158,18 @@ public static class QuizMutations
         var createdSessions = new List<QuizSession>();
 
         // Get questionIds from question numbers if specified
-        var specifiedQuestionIds = input.SpecificQuestionNumbers is null
-            ? []
-            : await ihfRulesQuestionsService.GetQuestionIdsByNumberAsync(input.SpecificQuestionNumbers,
+        List<string> specifiedQuestionIds = [];
+        if (input.SpecificQuestionNumbers is not null)
+        {
+            specifiedQuestionIds = await ihfRulesQuestionsService.GetQuestionIdsByNumberAsync(
+                input.SpecificQuestionNumbers,
                 cancellationToken);
+        }
+        else if (input.SpecificQuestionNumbers is null && !input.RandomQuestionsForEachUser)
+        {
+            specifiedQuestionIds =
+                await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions, cancellationToken);
+        }
 
         Guid titleId;
 
@@ -188,10 +196,13 @@ public static class QuizMutations
             try
             {
                 // If no specific question numbers were specified, get random questions
-                var questionIds = specifiedQuestionIds.Count == 0
-                    ? await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions,
-                        cancellationToken)
-                    : specifiedQuestionIds;
+                var questionIds = specifiedQuestionIds;
+
+                if (input.RandomQuestionsForEachUser)
+                {
+                    questionIds = await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions,
+                        cancellationToken);
+                }
 
                 var session = QuizSession.Create(
                     titleId,

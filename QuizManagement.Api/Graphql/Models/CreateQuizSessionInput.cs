@@ -6,6 +6,7 @@ public record CreateBulkQuizSessionsInput(
     Title Title,
     List<User> Users,
     int NumberOfQuestions,
+    bool RandomQuestionsForEachUser,
     int MaxTimeInMinutes,
     List<string>? SpecificQuestionNumbers = null,
     bool SendAutomatedInvitations = false,
