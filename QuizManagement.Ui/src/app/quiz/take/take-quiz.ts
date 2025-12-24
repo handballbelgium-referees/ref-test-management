@@ -236,7 +236,7 @@ export class TakeQuizComponent {
         catchError((err) => {
           this.loading.set(false);
           // this.error.set('general');
-          this.error.set(err);
+          this.error.set(JSON.stringify(err));
 
           return of(EMPTY);
         }),
