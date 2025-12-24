@@ -51,8 +51,12 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
                 var contextFactory = ctx.Services.GetRequiredService<IDbContextFactory<QuizManagementContext>>();
                 await using var context = await contextFactory.CreateDbContextAsync(ctx.RequestAborted);
 
-                if (session.IsExpired())
-                    session.ExpireSession();
+                if (!session.IsExpired()) 
+                    return session.Status;
+                
+                session.ExpireSession();
+
+                context.QuizSessions.Update(session);
                 await context.SaveChangesAsync(ctx.RequestAborted);
 
                 return session.Status;
