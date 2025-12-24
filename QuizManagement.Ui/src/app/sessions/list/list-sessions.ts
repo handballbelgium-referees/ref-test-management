@@ -222,18 +222,24 @@ export class ListSessions {
     fetchPolicy: 'cache-and-network',
   });
 
-  private readonly _allCountRef = this._getQuizSessionsCountGQL.watch({ variables: {} });
+  private readonly _allCountRef = this._getQuizSessionsCountGQL.watch({
+    fetchPolicy: 'cache-and-network',
+  });
   private readonly _pendingCountRef = this._getQuizSessionsCountGQL.watch({
     variables: { where: { status: { eq: QuizSessionStatus.Pending } } },
+    fetchPolicy: 'cache-and-network',
   });
   private readonly _inProgressCountRef = this._getQuizSessionsCountGQL.watch({
     variables: { where: { status: { eq: QuizSessionStatus.InProgress } } },
+    fetchPolicy: 'cache-and-network',
   });
   private readonly _completedCountRef = this._getQuizSessionsCountGQL.watch({
     variables: { where: { status: { eq: QuizSessionStatus.Completed } } },
+    fetchPolicy: 'cache-and-network',
   });
   private readonly _expiredCountRef = this._getQuizSessionsCountGQL.watch({
     variables: { where: { status: { eq: QuizSessionStatus.Expired } } },
+    fetchPolicy: 'cache-and-network',
   });
 
   protected readonly loading = toSignal(
