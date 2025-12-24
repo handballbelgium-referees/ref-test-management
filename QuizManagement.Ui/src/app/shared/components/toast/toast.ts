@@ -28,7 +28,6 @@ export interface IToast {
   selector: 'app-toast',
   imports: [FaIconComponent],
   templateUrl: './toast.html',
-  styleUrls: ['./toast.css'],
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Toast {
@@ -49,7 +48,7 @@ export class Toast {
    * Add a new toast notification
    */
   add(toast: Omit<IToast, 'id'>): number {
-    const id = Date.now();
+    const id = Date.now() + Math.floor(Math.random() * 1000);
     this.toasts.update((toasts) => [...toasts, { ...toast, id }]);
     return id;
   }
@@ -79,10 +78,13 @@ export class Toast {
    */
   getToastClasses(type: IToast['type']): string {
     const classes = {
-      error: 'toast--error',
-      warning: 'toast--warning',
-      success: 'toast--success',
-      info: 'toast--info',
+      error:
+        'bg-[linear-gradient(135deg,var(--color-error-500),var(--color-error-700))] text-white',
+      warning:
+        'bg-[linear-gradient(135deg,var(--color-warning-400),var(--color-warning-700))] text-black',
+      success:
+        'bg-[linear-gradient(135deg,var(--color-success-500),var(--color-success-700))] text-white',
+      info: 'bg-[linear-gradient(135deg,var(--color-info-400),var(--color-info-700))] text-white',
     };
     return classes[type];
   }
