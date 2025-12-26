@@ -36,7 +36,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 
                 page.Footer().AlignCenter().Text(text =>
                 {
-                    text.Span("Referees Handball Belgium - IHF Rules Quiz Results").FontSize(9)
+                    text.Span("Referees Handball Belgium - IHF Rules RefTest Results").FontSize(9)
                         .FontColor(Colors.Grey.Darken2);
                 });
             });
@@ -61,7 +61,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 
                 layers.PrimaryLayer().Padding(20).Column(titleColumn =>
                 {
-                    titleColumn.Item().AlignCenter().Text("IHF Rules Quiz").FontSize(24).Bold().FontColor(Colors.White);
+                    titleColumn.Item().AlignCenter().Text("IHF Rules RefTest").FontSize(24).Bold().FontColor(Colors.White);
                     titleColumn.Item().AlignCenter().Text(translations["resultsTitle"]).FontSize(14).FontColor("#fecaca");
                 });
             });

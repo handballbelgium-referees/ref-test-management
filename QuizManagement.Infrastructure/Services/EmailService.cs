@@ -209,18 +209,18 @@ public partial class EmailService(
     }
 
     [LoggerMessage(LogLevel.Information,
-        "Sending quiz invitation to {email}. Token: {token}, Questions: {questions}, Time: {time} minutes. URL: {url}")]
+        "Sending RefTest invitation to {email}. Token: {token}, Questions: {questions}, Time: {time} minutes. URL: {url}")]
     static partial void LogSendingQuizInvitationToEmailTokenTokenQuestionsQuestionsTimeTimeMinutes(
         ILogger<EmailService> logger, string email, string token, int questions, int time, string url);
 
-    [LoggerMessage(LogLevel.Information, "Quiz invitation email sent to {email}")]
+    [LoggerMessage(LogLevel.Information, "RefTest invitation email sent to {email}")]
     static partial void LogQuizInvitationEmailSentToEmail(ILogger<EmailService> logger, string email);
 
-    [LoggerMessage(LogLevel.Information, "Sending quiz results to {email}. Score: {score}/{total} ({percentage:F1}%)")]
+    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. Score: {score}/{total} ({percentage:F1}%)")]
     static partial void LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(ILogger<EmailService> logger,
         string email, int score, int total, double percentage);
 
-    [LoggerMessage(LogLevel.Information, "Quiz results email sent to {email}")]
+    [LoggerMessage(LogLevel.Information, "RefTest results email sent to {email}")]
     static partial void LogQuizResultsEmailSentToEmail(ILogger<EmailService> logger, string email);
 
     [LoggerMessage(LogLevel.Information, "Sending email to {email} with {subject} and {body}")]
@@ -408,7 +408,7 @@ public partial class EmailService(
             <div style='padding: 0; margin-bottom: 20px;'>
                 <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
                 
-                <!-- Quiz Details -->
+                <!-- RefTest Details -->
                 <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
                     <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 RefTest Details</h3>
                     <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["questions"]}:</strong> {numberOfQuestions}</p>
