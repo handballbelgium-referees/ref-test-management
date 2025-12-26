@@ -617,7 +617,7 @@ export type CompleteQuizSessionMutationVariables = Exact<{
 }>;
 
 
-export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, completedAt?: string | null, score?: number | null, percentage?: number | null, wrongQuestionIds: Array<string>, wrongAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, number: string, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null }> } | null> | null } | null } };
+export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, score?: number | null, percentage?: number | null, wrongQuestionIds: Array<string>, wrongAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, number: string, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null }> } | null> | null } | null } };
 
 export type CreateBulkQuizSessionsMutationVariables = Exact<{
   input: CreateBulkQuizSessionsInput;
@@ -714,7 +714,6 @@ export const CompleteQuizSessionDocument = gql`
   completeQuiz(input: $input) {
     quizSession {
       id
-      completedAt
       score
       percentage
       questions(includeNumber: true) {

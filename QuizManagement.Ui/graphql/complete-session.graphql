@@ -2,7 +2,6 @@ mutation CompleteQuizSession($input: CompleteQuizInput!) {
   completeQuiz(input: $input) {
     quizSession {
       id
-      completedAt
       score
       percentage
       questions(includeNumber: true) {
