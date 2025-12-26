@@ -42,7 +42,7 @@ public partial class EmailService(
     <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
-            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules Quiz</h1>
+            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules RefTest</h1>
             <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest Invitation</p>
         </div>
 
