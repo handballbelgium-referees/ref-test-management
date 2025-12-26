@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using QuizManagement.Application.Models;
@@ -27,7 +27,7 @@ public partial class EmailService(
                 maxTimeInMinutes, isLast));
         }
 
-        const string subject = "Referees Handball Belgium Quiz Invitation";
+        const string subject = "Referees Handball Belgium RefTest Invitation";
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -42,8 +42,8 @@ public partial class EmailService(
     <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
-            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules Quiz</h1>
-            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium Quiz Invitation</p>
+            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules RefTest</h1>
+            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest Invitation</p>
         </div>
 
         <!-- Main Content -->
@@ -72,7 +72,7 @@ public partial class EmailService(
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
         List<Question> questionsWithCorrectAnswers)
     {
-        const string subject = "IHF Rules Quiz - Your Results";
+        const string subject = "IHF Rules RefTest - Your Results";
         var passed = percentage >= 80;
         var resultColor = passed ? "#22c55e" : "#ef4444";
         var resultBgColor = passed ? "#dcfce7" : "#fee2e2";
@@ -103,7 +103,7 @@ public partial class EmailService(
     <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
-            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules Quiz</h1>
+            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules RefTest</h1>
             <p style='color: #fecaca; font-size: 18px; margin: 0;'>Your Results</p>
         </div>
 
@@ -124,7 +124,7 @@ public partial class EmailService(
         var attachments = languageConfiguration.EnabledLanguages.Select(lang =>
         {
             var langUpper = lang.ToUpperInvariant();
-            return new EmailAttachment($"IHF_Rules_Quiz_Results_{langUpper}.pdf",
+            return new EmailAttachment($"IHF_Rules_RefTest_Results_{langUpper}.pdf",
                 pdfService.GenerateQuizResultsPdf(name, lang, totalQuestions, selectedAnswerIds, wrongQuestionIds,
                     wrongAnswerIds, questionsWithCorrectAnswers));
         }).ToList();
@@ -253,11 +253,11 @@ public partial class EmailService(
             ["questions"] = "Questions",
             ["timeLimit"] = "Time Limit",
             ["minutes"] = "minutes",
-            ["validDays"] = "⏰ This quiz is valid for 7 days",
+            ["validDays"] = "⏰ This reftest is valid for 7 days",
             ["greeting"] = "Hello",
             ["inviteText"] =
-                "You have been invited to take the IHF Rules Quiz. Click the button below to start your quiz:",
-            ["startButton"] = "Start Quiz"
+                "You have been invited to take the IHF Rules RefTest. Click the button below to start your reftest:",
+            ["startButton"] = "Start RefTest"
         },
         ["nl"] = new Dictionary<string, string>
         {
@@ -265,11 +265,11 @@ public partial class EmailService(
             ["questions"] = "Vragen",
             ["timeLimit"] = "Tijdslimiet",
             ["minutes"] = "minuten",
-            ["validDays"] = "⏰ Deze quiz is 7 dagen geldig",
+            ["validDays"] = "⏰ Deze reftest is 7 dagen geldig",
             ["greeting"] = "Hallo",
             ["inviteText"] =
-                "Je bent uitgenodigd om deel te nemen aan de IHF Regels Quiz. Klik op de knop hieronder om je quiz te starten:",
-            ["startButton"] = "Start Quiz"
+                "Je bent uitgenodigd om deel te nemen aan de IHF Regels RefTest. Klik op de knop hieronder om je reftest te starten:",
+            ["startButton"] = "Start RefTest"
         },
         ["fr"] = new Dictionary<string, string>
         {
@@ -277,11 +277,11 @@ public partial class EmailService(
             ["questions"] = "Questions",
             ["timeLimit"] = "Limite de Temps",
             ["minutes"] = "minutes",
-            ["validDays"] = "⏰ Ce quiz est valide pendant 7 jours",
+            ["validDays"] = "⏰ Ce reftest est valide pendant 7 jours",
             ["greeting"] = "Bonjour",
             ["inviteText"] =
-                "Vous êtes invité à participer au Quiz des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre quiz:",
-            ["startButton"] = "Démarrer le Quiz"
+                "Vous êtes invité à participer au RefTest des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre reftest:",
+            ["startButton"] = "Démarrer le RefTest"
         },
         ["de"] = new Dictionary<string, string>
         {
@@ -289,11 +289,11 @@ public partial class EmailService(
             ["questions"] = "Fragen",
             ["timeLimit"] = "Zeitlimit",
             ["minutes"] = "Minuten",
-            ["validDays"] = "⏰ Dieses Quiz ist 7 Tage lang gültig",
+            ["validDays"] = "⏰ Dieses Reftest ist 7 Tage lang gültig",
             ["greeting"] = "Hallo",
             ["inviteText"] =
-                "Sie wurden eingeladen, am IHF-Regeln-Quiz teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Quiz zu starten:",
-            ["startButton"] = "Quiz starten"
+                "Sie wurden eingeladen, am IHF-Regeln-RefTest teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Reftest zu starten:",
+            ["startButton"] = "RefTest starten"
         }
     };
 
@@ -306,13 +306,13 @@ public partial class EmailService(
             ["notPassed"] = "NOT PASSED",
             ["yourScore"] = "Your Score",
             ["percentage"] = "Percentage",
-            ["passedMessage"] = "🎉 Congratulations! You passed the quiz!",
+            ["passedMessage"] = "🎉 Congratulations! You passed the reftest!",
             ["failedMessage"] = "📚 Keep studying and good luck next time!",
             ["greeting"] = "Dear",
             ["passedText"] =
-                "Congratulations! You have successfully passed the IHF Rules Quiz! Your knowledge of handball regulations is excellent.",
+                "Congratulations! You have successfully passed the IHF Rules RefTest! Your knowledge of handball regulations is excellent.",
             ["failedText"] =
-                "Thank you for taking the IHF Rules Quiz. A passing score is 80% or higher. Please review the rules and try again.",
+                "Thank you for taking the IHF Rules RefTest. A passing score is 80% or higher. Please review the rules and try again.",
             ["pdfNote"] = "📎 <strong>Detailed results are available in the attached PDF documents</strong>"
         },
         ["nl"] = new Dictionary<string, string>
@@ -326,9 +326,9 @@ public partial class EmailService(
             ["failedMessage"] = "📚 Blijf studeren en veel succes de volgende keer!",
             ["greeting"] = "Hallo",
             ["passedText"] =
-                "Gefeliciteerd! Je bent geslaagd voor de IHF Regels Quiz! Je kennis van de handbalreglementen is uitstekend.",
+                "Gefeliciteerd! Je bent geslaagd voor de IHF Regels RefTest! Je kennis van de handbalreglementen is uitstekend.",
             ["failedText"] =
-                "Bedankt voor het maken van de IHF Regels Quiz. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.",
+                "Bedankt voor het maken van de IHF Regels RefTest. Een slaagpercentage is 80% of hoger. Bekijk de regels en probeer het opnieuw.",
             ["pdfNote"] =
                 "📎 <strong>Gedetailleerde resultaten zijn beschikbaar in de bijgevoegde PDF-documenten</strong>"
         },
@@ -343,9 +343,9 @@ public partial class EmailService(
             ["failedMessage"] = "📚 Continuez à étudier et bonne chance la prochaine fois!",
             ["greeting"] = "Bonjour",
             ["passedText"] =
-                "Félicitations! Vous avez réussi le Quiz des Règles IHF! Votre connaissance des règles de handball est excellente.",
+                "Félicitations! Vous avez réussi le RefTest des Règles IHF! Votre connaissance des règles de handball est excellente.",
             ["failedText"] =
-                "Merci d'avoir participé au Quiz des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.",
+                "Merci d'avoir participé au RefTest des Règles IHF. Un score de 80% ou plus est requis pour réussir. Veuillez réviser les règles et réessayer.",
             ["pdfNote"] = "📎 <strong>Les résultats détaillés sont disponibles dans les documents PDF joints</strong>"
         },
         ["de"] = new Dictionary<string, string>
@@ -359,9 +359,9 @@ public partial class EmailService(
             ["failedMessage"] = "📚 Lernen Sie weiter und viel Glück beim nächsten Mal!",
             ["greeting"] = "Hallo",
             ["passedText"] =
-                "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-Quiz bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet.",
+                "Herzlichen Glückwunsch! Sie haben das IHF-Regeln-RefTest bestanden! Ihre Kenntnisse der Handballregeln sind ausgezeichnet.",
             ["failedText"] =
-                "Vielen Dank, dass Sie am IHF-Regeln-Quiz teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.",
+                "Vielen Dank, dass Sie am IHF-Regeln-RefTest teilgenommen haben. Eine Punktzahl von 80% oder höher ist erforderlich zum Bestehen. Bitte überprüfen Sie die Regeln und versuchen Sie es erneut.",
             ["pdfNote"] = "📎 <strong>Detaillierte Ergebnisse sind in den beigefügten PDF-Dokumenten verfügbar</strong>"
         }
     };
@@ -410,7 +410,7 @@ public partial class EmailService(
                 
                 <!-- Quiz Details -->
                 <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 Quiz Details</h3>
+                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 RefTest Details</h3>
                     <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["questions"]}:</strong> {numberOfQuestions}</p>
                     <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["timeLimit"]}:</strong> {maxTimeInMinutes} {t["minutes"]}</p>
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{t["validDays"]}</em></p>
