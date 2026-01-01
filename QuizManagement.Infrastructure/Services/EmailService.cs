@@ -216,7 +216,7 @@ public partial class EmailService(
     [LoggerMessage(LogLevel.Information, "RefTest invitation email sent to {email}")]
     static partial void LogQuizInvitationEmailSentToEmail(ILogger<EmailService> logger, string email);
 
-    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. Score: {score}/{total} ({percentage:F1}%)")]
+    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. QuestionScore: {score}/{total} ({percentage:F1}%)")]
     static partial void LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(ILogger<EmailService> logger,
         string email, int score, int total, double percentage);
 
@@ -304,7 +304,7 @@ public partial class EmailService(
             ["displayName"] = "English",
             ["passed"] = "PASSED",
             ["notPassed"] = "NOT PASSED",
-            ["yourScore"] = "Your Score",
+            ["yourScore"] = "Your QuestionScore",
             ["percentage"] = "Percentage",
             ["passedMessage"] = "🎉 Congratulations! You passed the reftest!",
             ["failedMessage"] = "📚 Keep studying and good luck next time!",
@@ -320,7 +320,7 @@ public partial class EmailService(
             ["displayName"] = "Nederlands",
             ["passed"] = "GESLAAGD",
             ["notPassed"] = "NIET GESLAAGD",
-            ["yourScore"] = "Jouw Score",
+            ["yourScore"] = "Jouw QuestionScore",
             ["percentage"] = "Percentage",
             ["passedMessage"] = "🎉 Gefeliciteerd! Je bent geslaagd!",
             ["failedMessage"] = "📚 Blijf studeren en veel succes de volgende keer!",
@@ -337,7 +337,7 @@ public partial class EmailService(
             ["displayName"] = "Français",
             ["passed"] = "RÉUSSI",
             ["notPassed"] = "NON RÉUSSI",
-            ["yourScore"] = "Votre Score",
+            ["yourScore"] = "Votre QuestionScore",
             ["percentage"] = "Pourcentage",
             ["passedMessage"] = "🎉 Félicitations! Vous avez réussi!",
             ["failedMessage"] = "📚 Continuez à étudier et bonne chance la prochaine fois!",
@@ -439,7 +439,7 @@ public partial class EmailService(
             <div style='padding: 0; margin-bottom: 20px;'>
                 <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
                 
-                <!-- Score Display -->
+                <!-- QuestionScore Display -->
                 <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
                     <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? t["passed"] : t["notPassed"])}</h3>
                     <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["yourScore"]}:</strong> {score} / {totalQuestions}</p>

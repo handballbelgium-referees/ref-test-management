@@ -20,26 +20,52 @@
   </div>
 
   <div class="space-y-4">
-    <!-- Score Range -->
+    <!-- Question Score Range -->
     <div>
       <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
-        {{ 'sessions.list.filters.scoreRange' | translate }}
+        {{ 'sessions.list.filters.questionScoreRange' | translate }}
       </label>
       <div class="flex flex-col sm:flex-row sm:items-center gap-2">
         <input
           type="number"
-          [value]="minScore() || ''"
-          (input)="onMinScoreChange($any($event.target).value)"
-          [placeholder]="'sessions.list.filters.minScore' | translate"
+          [value]="minQuestionScore() || ''"
+          (input)="onMinQuestionScoreChange($any($event.target).value)"
+          [placeholder]="'sessions.list.filters.min' | translate"
           min="0"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
         <span class="text-neutral-400 hidden sm:inline">—</span>
         <input
           type="number"
-          [value]="maxScore() || ''"
-          (input)="onMaxScoreChange($any($event.target).value)"
-          [placeholder]="'sessions.list.filters.maxScore' | translate"
+          [value]="maxQuestionScore() || ''"
+          (input)="onMaxQuestionScoreChange($any($event.target).value)"
+          [placeholder]="'sessions.list.filters.max' | translate"
+          min="0"
+          class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+        />
+      </div>
+    </div>
+
+    <!-- Answer Score Range -->
+    <div>
+      <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+        {{ 'sessions.list.filters.answerScoreRange' | translate }}
+      </label>
+      <div class="flex flex-col sm:flex-row sm:items-center gap-2">
+        <input
+          type="number"
+          [value]="minAnswerScore() || ''"
+          (input)="onMinAnswerScoreChange($any($event.target).value)"
+          [placeholder]="'sessions.list.filters.min' | translate"
+          min="0"
+          class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
+        />
+        <span class="text-neutral-400 hidden sm:inline">—</span>
+        <input
+          type="number"
+          [value]="maxAnswerScore() || ''"
+          (input)="onMaxAnswerScoreChange($any($event.target).value)"
+          [placeholder]="'sessions.list.filters.max' | translate"
           min="0"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />

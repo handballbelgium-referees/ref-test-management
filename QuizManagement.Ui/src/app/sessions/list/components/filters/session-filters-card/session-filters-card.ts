@@ -12,7 +12,8 @@ type SortField =
   | 'completedAt'
   | 'startedAt'
   | 'email'
-  | 'score'
+  | 'questionScore'
+  | 'answerScore'
   | 'percentage'
   | 'status'
   | 'numberOfQuestions'
@@ -27,8 +28,10 @@ interface ISessionFilter {
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
-  minScore?: number;
-  maxScore?: number;
+  minQuestionScore?: number;
+  maxQuestionScore?: number;
+  minAnswerScore?: number;
+  maxAnswerScore?: number;
   percentageRange?: 'low' | 'medium' | 'high';
   minQuestions?: number;
   maxQuestions?: number;
@@ -81,8 +84,10 @@ export class SessionFiltersCard {
 
   readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
   readonly performanceFilterChange = output<{
-    minScore?: number;
-    maxScore?: number;
+    minQuestionScore?: number;
+    maxQuestionScore?: number;
+    minAnswerScore?: number;
+    maxAnswerScore?: number;
     percentageRange?: 'low' | 'medium' | 'high';
     minQuestions?: number;
     maxQuestions?: number;

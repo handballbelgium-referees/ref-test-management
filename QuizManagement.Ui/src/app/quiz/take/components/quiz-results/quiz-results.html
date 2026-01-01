@@ -44,135 +44,31 @@
     </div>
 
     <!-- Score Display -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <div class="bg-neutral-50 rounded-lg p-6 text-center">
-        <div class="text-4xl font-bold text-primary-600 mb-2">
-          {{ score() }} / {{ questions().length }}
+    <div class="max-w-4xl mx-auto mb-8">
+      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-10 text-center">
+        <div
+          class="text-5xl font-bold mb-3"
+          [class]="percentage() >= 80 ? 'text-green-600' : percentage() >= 60 ? 'text-yellow-600' : 'text-red-500'"
+        >
+          {{ percentage() }}%
         </div>
-        <div class="text-sm text-neutral-600">{{ 'quiz.results.score' | translate }}</div>
-      </div>
-      <div class="bg-neutral-50 rounded-lg p-6 text-center">
-        <div class="text-4xl font-bold text-primary-600 mb-2">{{ percentage() }} %</div>
-        <div class="text-sm text-neutral-600">{{ 'quiz.results.percentage' | translate }}</div>
-      </div>
-      <div class="bg-neutral-50 rounded-lg p-6 text-center">
-        <div class="text-4xl font-bold text-primary-600 mb-2">{{ questions().length }}</div>
-        <div class="text-sm text-neutral-600">{{ 'quiz.results.total' | translate }}</div>
-      </div>
-    </div>
+        <div class="text-sm text-neutral-500 mb-8">{{ 'quiz.results.percentage' | translate }}</div>
 
-    <!-- Review Answers -->
-    <div class="space-y-4">
-      <h2 class="text-xl font-bold text-neutral-900 mb-4">
-        {{ 'quiz.results.review' | translate }}
-      </h2>
-      @for (question of questions(); track question.id; let i = $index) {
-      <div
-        class="border rounded-lg p-4"
-        [class]="
-          wrongQuestionIds().includes(question.id)
-            ? 'border-red-200 bg-red-50'
-            : 'border-green-200 bg-green-50'
-        "
-      >
-        <div class="flex items-start gap-3">
-          <div class="shrink-0">
-            @if (wrongQuestionIds().includes(question.id)) {
-            <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M6 18L18 6M6 6l12 12"
-              />
-            </svg>
-            } @else {
-            <svg
-              class="w-6 h-6 text-green-600"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M5 13l4 4L19 7"
-              />
-            </svg>
-            }
-          </div>
-          <div class="flex-1 min-w-0">
-            <div class="font-medium text-neutral-900 mb-2 wrap-break-word">
-              {{ 'quiz.question' | translate }} {{ question.number }}:
-              {{ question.phrase | appTranslation : currentLanguage() }}
+        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-neutral-200">
+          <div class="text-center">
+            <div class="text-xs text-neutral-500 mb-2">{{ 'quiz.results.questionScore' | translate }}</div>
+            <div class="text-2xl font-semibold text-neutral-900">
+              {{ questionScore() }}<span class="text-lg text-neutral-400">/{{ questionTotal() }}</span>
             </div>
-            <div class="space-y-2 -ml-9">
-              @for (answer of question.answers; track answer.id) {
-              <div class="flex items-start gap-3">
-                <div class="shrink-0">
-                  @if (selectedAnswers()[question.id].includes(answer.id)) { @if
-                  (wrongAnswerIds().includes(answer.id)) {
-                  <svg
-                    class="w-4 h-4 text-red-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M6 18L18 6M6 6l12 12"
-                    />
-                  </svg>
-                  } @else {
-                  <svg
-                    class="w-4 h-4 text-green-600"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M5 13l4 4L19 7"
-                    />
-                  </svg>
-                  } } @else {
-                  <div class="w-4 h-4"></div>
-                  }
-                </div>
-                <div
-                  class="flex-1 min-w-0 text-sm"
-                  [class]="selectedAnswers()[question.id].includes(answer.id) ? 'font-semibold' : ''"
-                >
-                  @if (selectedAnswers()[question.id].includes(answer.id)) { @if
-                  (wrongAnswerIds().includes(answer.id)) {
-                  <span class="text-red-700 me-1">{{ answer.number }})</span>
-                  <span class="text-red-700 wrap-break-word">{{
-                    answer.phrase | appTranslation : currentLanguage()
-                  }}</span>
-                  } @else {
-                  <span class="text-green-700 me-1">{{ answer.number }})</span>
-                  <span class="text-green-700 wrap-break-word">{{
-                    answer.phrase | appTranslation : currentLanguage()
-                  }}</span>
-                  } } @else {
-                  <span class="text-neutral-600 me-1">{{ answer.number }})</span>
-                  <span class="text-neutral-600 wrap-break-word">{{
-                    answer.phrase | appTranslation : currentLanguage()
-                  }}</span>
-                  }
-                </div>
-              </div>
-              }
+          </div>
+          <div class="text-center">
+            <div class="text-xs text-neutral-500 mb-2">{{ 'quiz.results.answerScore' | translate }}</div>
+            <div class="text-2xl font-semibold text-neutral-900">
+              {{ answerScore() }}<span class="text-lg text-neutral-400">/{{ answerTotal() }}</span>
             </div>
           </div>
         </div>
       </div>
-      }
     </div>
   </div>
 </div>

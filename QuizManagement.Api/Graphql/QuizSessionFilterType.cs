@@ -20,7 +20,10 @@ public class QuizSessionFilterType : FilterInputType<QuizSession>
         descriptor.Field(x => x.StartedAt).Description("Filter on start date of the quiz session");
         descriptor.Field(x => x.CompletedAt).Description("Filter on completion date of the quiz session");
         descriptor.Field(x => x.Percentage).Description("Filter on percentage of correct answers");
-        descriptor.Field(x => x.Score).Description("Filter on score of the quiz session");
+        descriptor.Field(x => x.QuestionScore).Description("Filter on question score of the quiz session");
+        descriptor.Field(x => x.AnswerScore).Description("Filter on answer score of the quiz session");
+        descriptor.Field(x => x.QuestionTotal).Description("Filter on total possible question score");
+        descriptor.Field(x => x.AnswerTotal).Description("Filter on total possible answer score");
         descriptor.Field(x => x.NumberOfQuestions).Description("Filter on number of questions in the quiz");
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Filter on maximum time in minutes for the quiz");
         descriptor.Field(x => x.ResultsSent).Description("Filter on results were sent");

@@ -2,18 +2,11 @@ mutation CompleteQuizSession($input: CompleteQuizInput!) {
   completeQuiz(input: $input) {
     quizSession {
       id
-      score
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
       percentage
-      questions(includeNumber: true) {
-        id
-        number
-        answers {
-          id
-          number
-        }
-      }
-      wrongQuestionIds
-      wrongAnswerIds
     }
   }
 }

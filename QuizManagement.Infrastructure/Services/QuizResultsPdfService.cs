@@ -260,7 +260,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
             {
                 ["resultsTitle"] = "Vos Résultats",
                 ["name"] = "Nom",
-                ["totalQuestions"] = "Total des questions",
+                ["totalQuestions"] = "AnswerTotal des questions",
                 ["reviewAnswers"] = "Réviser les Réponses",
                 ["question"] = "Question"
             },
@@ -276,7 +276,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
             {
                 ["resultsTitle"] = "Your Results",
                 ["name"] = "Name",
-                ["totalQuestions"] = "Total Questions",
+                ["totalQuestions"] = "AnswerTotal Questions",
                 ["reviewAnswers"] = "Review Answers",
                 ["question"] = "Question"
             }

@@ -96,7 +96,9 @@ public static class QuizMutations
 
         // Complete session with calculated results
         session.CompleteSession(
-            scoreResult.Score,
+            scoreResult.QuestionScore,
+            scoreResult.AnswerScore,
+            scoreResult.AnswerTotal,
             scoreResult.Percentage,
             input.SelectedAnswerIds,
             scoreResult.WrongQuestionIds,
@@ -117,7 +119,7 @@ public static class QuizMutations
         await emailService.SendQuizResultsAsync(
             session.FullName,
             session.Email,
-            session.Score ?? 0,
+            session.QuestionScore ?? 0,
             session.QuestionIds.Count,
             session.Percentage ?? 0,
             session.SelectedAnswerIds,
@@ -398,7 +400,7 @@ public static class QuizMutations
                 await emailService.SendQuizResultsAsync(
                     session.FullName,
                     session.Email,
-                    session.Score ?? 0,
+                    session.QuestionScore ?? 0,
                     session.QuestionIds.Count,
                     session.Percentage ?? 0,
                     session.SelectedAnswerIds,

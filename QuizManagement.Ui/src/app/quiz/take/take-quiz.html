@@ -13,12 +13,11 @@
   } @else if (quizCompleted()) {
   <app-quiz-results
     [questions]="questions()"
-    [score]="score()!"
+    [questionScore]="questionScore()!"
+    [questionTotal]="questionTotal()!"
+    [answerScore]="answerScore()!"
+    [answerTotal]="answerTotal()!"
     [percentage]="percentage()!"
-    [wrongQuestionIds]="wrongQuestionIds()"
-    [wrongAnswerIds]="wrongAnswerIds()"
-    [selectedAnswers]="selectedAnswers()"
-    [currentLanguage]="currentLanguage()!"
   />
   } @else {
   <!-- Quiz Taking Screen -->

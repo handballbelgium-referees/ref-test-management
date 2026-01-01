@@ -43,7 +43,8 @@ type SortField =
   | 'completedAt'
   | 'startedAt'
   | 'email'
-  | 'score'
+  | 'questionScore'
+  | 'answerScore'
   | 'percentage'
   | 'status'
   | 'numberOfQuestions'
@@ -58,8 +59,10 @@ interface ISessionFilter {
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
-  minScore?: number;
-  maxScore?: number;
+  minQuestionScore?: number;
+  maxQuestionScore?: number;
+  minAnswerScore?: number;
+  maxAnswerScore?: number;
   percentageRange?: 'low' | 'medium' | 'high';
   minQuestions?: number;
   maxQuestions?: number;
@@ -397,15 +400,29 @@ export class ListSessions {
       filters.resultsSent = { eq: currentFilter.resultsSent } as BooleanOperationFilterInput;
     }
 
-    if (currentFilter.minScore !== undefined || currentFilter.maxScore !== undefined) {
+    if (
+      currentFilter.minQuestionScore !== undefined ||
+      currentFilter.maxQuestionScore !== undefined
+    ) {
       const scoreFilter: IntOperationFilterInput = {};
-      if (currentFilter.minScore !== undefined) {
-        scoreFilter.gte = currentFilter.minScore;
+      if (currentFilter.minQuestionScore !== undefined) {
+        scoreFilter.gte = currentFilter.minQuestionScore;
       }
-      if (currentFilter.maxScore !== undefined) {
-        scoreFilter.lte = currentFilter.maxScore;
+      if (currentFilter.maxQuestionScore !== undefined) {
+        scoreFilter.lte = currentFilter.maxQuestionScore;
       }
-      filters.score = scoreFilter;
+      filters.questionScore = scoreFilter;
+    }
+
+    if (currentFilter.minAnswerScore !== undefined || currentFilter.maxAnswerScore !== undefined) {
+      const answerScoreFilter: IntOperationFilterInput = {};
+      if (currentFilter.minAnswerScore !== undefined) {
+        answerScoreFilter.gte = currentFilter.minAnswerScore;
+      }
+      if (currentFilter.maxAnswerScore !== undefined) {
+        answerScoreFilter.lte = currentFilter.maxAnswerScore;
+      }
+      filters.answerScore = answerScoreFilter;
     }
 
     if (currentFilter.percentageRange) {

@@ -22,7 +22,10 @@ query GetQuizSessions(
         maxTimeInMinutes
         startedAt
         completedAt
-        score
+        questionScore
+        answerScore
+        questionTotal
+        answerTotal
         percentage
       }
     }

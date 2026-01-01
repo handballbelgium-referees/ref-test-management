@@ -74,10 +74,11 @@ export class TakeQuizComponent {
   protected readonly maxTimeInMinutes = signal<number>(60);
   protected readonly timeRemainingSeconds = signal<number>(0);
   protected readonly quizCompleted = signal(false);
-  protected readonly score = signal<number | null>(null);
+  protected readonly questionScore = signal<number | null>(null);
+  protected readonly questionTotal = signal<number | null>(null);
+  protected readonly answerScore = signal<number | null>(null);
+  protected readonly answerTotal = signal<number | null>(null);
   protected readonly percentage = signal<number | null>(null);
-  protected readonly wrongQuestionIds = signal<string[]>([]);
-  protected readonly wrongAnswerIds = signal<string[]>([]);
   protected readonly showSubmitDialog = signal(false);
   protected readonly showLeaveDialog = signal(false);
   private _leaveConfirmed = false;
@@ -323,37 +324,11 @@ export class TakeQuizComponent {
         tap((session) => {
           if (session) {
             this.quizCompleted.set(true);
-            this.score.set(session.score ?? null);
+            this.questionScore.set(session.questionScore ?? null);
+            this.questionTotal.set(session.questionTotal ?? null);
+            this.answerScore.set(session.answerScore ?? null);
+            this.answerTotal.set(session.answerTotal ?? null);
             this.percentage.set(session.percentage ?? null);
-            this.wrongQuestionIds.set(session.wrongQuestionIds ?? []);
-            this.wrongAnswerIds.set(session.wrongAnswerIds ?? []);
-
-            // Update questions with numbers from the response
-            if (session.questions) {
-              const currentQuestions = this.questions();
-              const updatedQuestions = currentQuestions.map((q) => {
-                const responseQuestion = session.questions?.find((rq) => rq?.id === q.id);
-                if (responseQuestion) {
-                  // Update question number and answer numbers
-                  const updatedAnswers = q.answers
-                    .map((a) => {
-                      const responseAnswer = responseQuestion.answers?.find(
-                        (ra) => ra?.id === a.id
-                      );
-                      return responseAnswer
-                        ? { ...a, number: responseAnswer.number ?? undefined }
-                        : a;
-                    })
-                    .sort((a, b) => {
-                      if (!a.number || !b.number) return 0;
-                      return a.number.localeCompare(b.number);
-                    });
-                  return { ...q, number: responseQuestion.number, answers: updatedAnswers };
-                }
-                return q;
-              });
-              this.questions.set(updatedQuestions);
-            }
           }
         }),
         catchError(() => {
