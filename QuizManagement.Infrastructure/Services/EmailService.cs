@@ -68,7 +68,7 @@ public partial class EmailService(
         LogQuizInvitationEmailSentToEmail(logger, email);
     }
 
-    public async Task SendQuizResultsAsync(string name, string email, int score, int totalQuestions, double percentage,
+    public async Task SendQuizResultsAsync(string name, string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
         List<Question> questionsWithCorrectAnswers)
     {
@@ -85,7 +85,7 @@ public partial class EmailService(
         {
             var langContent = enabledLanguages[i];
             var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildResultsLanguageSection(langContent, name, score, totalQuestions, percentage,
+            languageSections.Append(BuildResultsLanguageSection(langContent, name, questionScore, answerScore, totalQuestions, answerTotal, percentage,
                 passed, resultColor, resultBgColor, resultIcon, isLast));
         }
 
@@ -125,11 +125,11 @@ public partial class EmailService(
         {
             var langUpper = lang.ToUpperInvariant();
             return new EmailAttachment($"IHF_Rules_RefTest_Results_{langUpper}.pdf",
-                pdfService.GenerateQuizResultsPdf(name, lang, totalQuestions, selectedAnswerIds, wrongQuestionIds,
+                pdfService.GenerateQuizResultsPdf(name, lang, questionScore, answerScore, totalQuestions, answerTotal, percentage, selectedAnswerIds, wrongQuestionIds,
                     wrongAnswerIds, questionsWithCorrectAnswers));
         }).ToList();
 
-        LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, score, totalQuestions, percentage);
+        LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, questionScore, answerScore, totalQuestions, answerTotal, percentage);
 
         await SendEmailAsync(email, subject, emailBody, attachments, true);
 
@@ -216,9 +216,9 @@ public partial class EmailService(
     [LoggerMessage(LogLevel.Information, "RefTest invitation email sent to {email}")]
     static partial void LogQuizInvitationEmailSentToEmail(ILogger<EmailService> logger, string email);
 
-    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. QuestionScore: {score}/{total} ({percentage:F1}%)")]
+    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
     static partial void LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(ILogger<EmailService> logger,
-        string email, int score, int total, double percentage);
+        string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage);
 
     [LoggerMessage(LogLevel.Information, "RefTest results email sent to {email}")]
     static partial void LogQuizResultsEmailSentToEmail(ILogger<EmailService> logger, string email);
@@ -304,7 +304,9 @@ public partial class EmailService(
             ["displayName"] = "English",
             ["passed"] = "PASSED",
             ["notPassed"] = "NOT PASSED",
-            ["yourScore"] = "Your QuestionScore",
+            ["score"] = "Your Score",
+            ["questions"] = "Q",
+            ["answers"] = "A",
             ["percentage"] = "Percentage",
             ["passedMessage"] = "🎉 Congratulations! You passed the reftest!",
             ["failedMessage"] = "📚 Keep studying and good luck next time!",
@@ -320,7 +322,9 @@ public partial class EmailService(
             ["displayName"] = "Nederlands",
             ["passed"] = "GESLAAGD",
             ["notPassed"] = "NIET GESLAAGD",
-            ["yourScore"] = "Jouw QuestionScore",
+            ["score"] = "Jouw Score",
+            ["questions"] = "V",
+            ["answers"] = "A",
             ["percentage"] = "Percentage",
             ["passedMessage"] = "🎉 Gefeliciteerd! Je bent geslaagd!",
             ["failedMessage"] = "📚 Blijf studeren en veel succes de volgende keer!",
@@ -337,7 +341,9 @@ public partial class EmailService(
             ["displayName"] = "Français",
             ["passed"] = "RÉUSSI",
             ["notPassed"] = "NON RÉUSSI",
-            ["yourScore"] = "Votre QuestionScore",
+            ["score"] = "Votre Score",
+            ["questions"] = "Q",
+            ["answers"] = "R",
             ["percentage"] = "Pourcentage",
             ["passedMessage"] = "🎉 Félicitations! Vous avez réussi!",
             ["failedMessage"] = "📚 Continuez à étudier et bonne chance la prochaine fois!",
@@ -353,7 +359,9 @@ public partial class EmailService(
             ["displayName"] = "Deutsch",
             ["passed"] = "BESTANDEN",
             ["notPassed"] = "NICHT BESTANDEN",
-            ["yourScore"] = "Ihre Punktzahl",
+            ["score"] = "Ihre Punktzahl",
+            ["questions"] = "F",
+            ["answers"] = "A",
             ["percentage"] = "Prozentsatz",
             ["passedMessage"] = "🎉 Herzlichen Glückwunsch! Sie haben bestanden!",
             ["failedMessage"] = "📚 Lernen Sie weiter und viel Glück beim nächsten Mal!",
@@ -425,7 +433,7 @@ public partial class EmailService(
             </div>{separator}";
     }
 
-    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int score, int totalQuestions,
+    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int questionScore, int answerScore, int totalQuestions, int answerTotal,
         double percentage, bool passed, string resultColor, string resultBgColor, string resultIcon, bool isLast)
     {
         var t = langContent.Translations;
@@ -439,11 +447,11 @@ public partial class EmailService(
             <div style='padding: 0; margin-bottom: 20px;'>
                 <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
                 
-                <!-- QuestionScore Display -->
+                <!-- Score Display -->
                 <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
                     <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? t["passed"] : t["notPassed"])}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["yourScore"]}:</strong> {score} / {totalQuestions}</p>
                     <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["percentage"]}:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["score"]}:</strong> {t["questions"]}: {questionScore} / {totalQuestions} &nbsp; &nbsp; &nbsp;  {t["answers"]}: {answerScore} / {answerTotal}</p>
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? t["passedMessage"] : t["failedMessage"])}</em></p>
                 </div>
 
@@ -465,3 +473,4 @@ public partial class EmailService(
 public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");
 
 public record EmailAttachment(string FileName, byte[] Content);
+

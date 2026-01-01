@@ -336,6 +336,8 @@
       "subtitle": "Hier sind Ihre Ergebnisse",
       "questionScore": "Fragen Punktzahl",
       "answerScore": "Antworten Punktzahl",
+      "questionScoreShort": "F",
+      "answerScoreShort": "A",
       "score": "Punktzahl",
       "percentage": "Prozentsatz",
       "totalQuestions": "Gesamtfragen",

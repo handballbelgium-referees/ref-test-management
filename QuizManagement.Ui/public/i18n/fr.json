@@ -338,6 +338,8 @@
       "subtitle": "Voici vos résultats",
       "questionScore": "Score Questions",
       "answerScore": "Score Réponses",
+      "questionScoreShort": "Q",
+      "answerScoreShort": "R",
       "score": "Score",
       "percentage": "Pourcentage",
       "totalQuestions": "Total Questions",

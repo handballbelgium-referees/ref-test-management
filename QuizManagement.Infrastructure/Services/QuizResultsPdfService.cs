@@ -10,7 +10,11 @@ public class QuizResultsPdfService : IQuizResultsPdfService
     public byte[] GenerateQuizResultsPdf(
         string name,
         string language,
+        int questionScore,
+        int answerScore,
         int totalQuestions,
+        int answerTotal,
+        double percentage,
         List<string> selectedAnswerIds,
         List<string> wrongQuestionIds,
         List<string> wrongAnswerIds,
@@ -27,7 +31,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 page.Content().Column(column =>
                 {
                     // Header only on the first page
-                    column.Item().Element(c => ComposeHeader(c, name, language, totalQuestions));
+                    column.Item().Element(c => ComposeHeader(c, name, language, questionScore, answerScore, totalQuestions, answerTotal, percentage));
                     
                     // Content
                     column.Item().Element(c => ComposeContent(c, language, questionsWithCorrectAnswers, selectedAnswerIds,
@@ -45,7 +49,8 @@ public class QuizResultsPdfService : IQuizResultsPdfService
         return document.GeneratePdf();
     }
 
-    private static void ComposeHeader(IContainer container, string name, string language, int totalQuestions)
+    private static void ComposeHeader(IContainer container, string name, string language, int questionScore,
+        int answerScore, int totalQuestions, int answerTotal, double percentage)
     {
         var translations = GetTranslations(language);
 
@@ -86,8 +91,16 @@ public class QuizResultsPdfService : IQuizResultsPdfService
 
                     infoColumn.Item().PaddingTop(4).Text(text =>
                     {
-                        text.Span(translations["totalQuestions"] + ": ").Bold().FontSize(11);
-                        text.Span($"{totalQuestions}").FontSize(11);
+                        text.Span(translations["percentage"] + ": ").Bold().FontSize(11);
+                        text.Span(percentage.ToString("F1")).FontSize(11);
+                    });
+
+                    infoColumn.Item().PaddingTop(4).Text(text =>
+                    {
+
+                        text.Span(translations["score"] + ": ").Bold().FontSize(11);
+                        text.Span($"{translations["questions"]}: {questionScore} / {totalQuestions} \t\t\t");
+                        text.Span($"{translations["answers"]}: {answerScore} / {answerTotal}");
                     });
                 });
             });
@@ -252,7 +265,10 @@ public class QuizResultsPdfService : IQuizResultsPdfService
             {
                 ["resultsTitle"] = "Jouw Resultaten",
                 ["name"] = "Naam",
-                ["totalQuestions"] = "Totaal aantal vragen",
+                ["percentage"] = "Percentage",
+                ["score"] = "Jouw score",
+                ["questions"] = "V",
+                ["answers"] = "A",
                 ["reviewAnswers"] = "Antwoorden Beoordelen",
                 ["question"] = "Vraag"
             },
@@ -260,7 +276,10 @@ public class QuizResultsPdfService : IQuizResultsPdfService
             {
                 ["resultsTitle"] = "Vos Résultats",
                 ["name"] = "Nom",
-                ["totalQuestions"] = "AnswerTotal des questions",
+                ["percentage"] = "Pourcentage",
+                ["score"] = "Votre score",
+                ["questions"] = "Q",
+                ["answers"] = "R",
                 ["reviewAnswers"] = "Réviser les Réponses",
                 ["question"] = "Question"
             },
@@ -268,7 +287,10 @@ public class QuizResultsPdfService : IQuizResultsPdfService
             {
                 ["resultsTitle"] = "Ihre Ergebnisse",
                 ["name"] = "Name",
-                ["totalQuestions"] = "Gesamtzahl der Fragen",
+                ["percentage"] = "Prozent",
+                ["score"] = "Ihre Punktzahl",
+                ["questions"] = "F",
+                ["answers"] = "A",
                 ["reviewAnswers"] = "Antworten Überprüfen",
                 ["question"] = "Frage"
             },
@@ -276,7 +298,10 @@ public class QuizResultsPdfService : IQuizResultsPdfService
             {
                 ["resultsTitle"] = "Your Results",
                 ["name"] = "Name",
-                ["totalQuestions"] = "AnswerTotal Questions",
+                ["percentage"] = "Percentage",
+                ["score"] = "Your score",
+                ["questions"] = "Q",
+                ["answers"] = "A",
                 ["reviewAnswers"] = "Review Answers",
                 ["question"] = "Question"
             }

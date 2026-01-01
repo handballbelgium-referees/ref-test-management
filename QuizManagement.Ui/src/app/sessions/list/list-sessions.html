@@ -117,7 +117,7 @@
     <table class="min-w-full">
       <thead class="bg-neutral-100 border-b border-neutral-200">
         <tr>
-          <th class="px-6 py-3 text-left">
+          <th class="px-4 py-3 text-left">
             <input
               type="checkbox"
               [checked]="allSelected()"
@@ -136,7 +136,7 @@
           @if (isColumnVisible('participant')) {
           <th
             (click)="sortByColumn('email')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-200 transition-colors"
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
           >
             <div class="flex items-center gap-1">
               {{ 'sessions.list.table.participant' | translate }}
@@ -160,7 +160,7 @@
           @if (isColumnVisible('status')) {
           <th
             (click)="sortByColumn('status')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-200 transition-colors"
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
           >
             <div class="flex items-center gap-1">
               {{ 'sessions.list.table.status' | translate }}
@@ -184,7 +184,7 @@
           @if (isColumnVisible('questions')) {
           <th
             (click)="sortByColumn('numberOfQuestions')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-200 transition-colors"
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
           >
             <div class="flex items-center gap-1">
               {{ 'sessions.list.table.questions' | translate }}
@@ -215,7 +215,7 @@
           @if (isColumnVisible('invitation')) {
           <th
             (click)="sortByColumn('invitationSent')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-200 transition-colors"
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
           >
             <div class="flex items-center gap-1">
               {{ 'sessions.list.table.invitation' | translate }}
@@ -239,7 +239,7 @@
           @if (isColumnVisible('results')) {
           <th
             (click)="sortByColumn('resultsSent')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-200 transition-colors"
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
           >
             <div class="flex items-center gap-1">
               {{ 'sessions.list.table.results' | translate }}
@@ -263,7 +263,7 @@
           @if (isColumnVisible('started')) {
           <th
             (click)="sortByColumn('startedAt')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-200 transition-colors"
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
           >
             <div class="flex items-center gap-1">
               {{ 'sessions.list.table.started' | translate }}
@@ -287,7 +287,7 @@
           @if (isColumnVisible('completed')) {
           <th
             (click)="sortByColumn('completedAt')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-200 transition-colors"
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
           >
             <div class="flex items-center gap-1">
               {{ 'sessions.list.table.completed' | translate }}

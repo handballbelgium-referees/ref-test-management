@@ -87,8 +87,8 @@
         </span>
       </div>
       <div class="flex items-center gap-4 text-xs text-neutral-500">
-        <span>Q: {{ session().questionScore }}/{{ session().questionTotal }}</span>
-        <span>A: {{ session().answerScore }}/{{ session().answerTotal }}</span>
+        <span>{{ 'quiz.results.questionScoreShort' | translate }}: {{ session().questionScore }}/{{ session().questionTotal }}</span>
+        <span>{{ 'quiz.results.answerScoreShort' | translate }}: {{ session().answerScore }}/{{ session().answerTotal }}</span>
       </div>
     </div>
     }

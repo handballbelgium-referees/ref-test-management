@@ -348,6 +348,8 @@
       "subtitle": "Hier zijn je resultaten",
       "questionScore": "Vragen Score",
       "answerScore": "Antwoorden Score",
+      "questionScoreShort": "V",
+      "answerScoreShort": "A",
       "score": "Score",
       "percentage": "Percentage",
       "totalQuestions": "Totaal Vragen",

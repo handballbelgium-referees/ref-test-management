@@ -340,6 +340,8 @@
       "subtitle": "Here are your results",
       "questionScore": "Question Score",
       "answerScore": "Answer Score",
+      "questionScoreShort": "Q",
+      "answerScoreShort": "A",
       "score": "Score",
       "percentage": "Percentage",
       "totalQuestions": "Total Questions",
