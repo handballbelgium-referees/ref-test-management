@@ -317,6 +317,7 @@
           [session]="session"
           [selected]="isSelected(session.id)"
           [visibleColumns]="visibleColumns()"
+          [passingPercentage]="passingPercentage()"
           (toggleSelection)="toggleSessionSelection($event)"
         ></tr>
         }
@@ -331,6 +332,7 @@
       [session]="session"
       [selected]="isSelected(session.id)"
       [visibleColumns]="visibleColumns()"
+      [passingPercentage]="passingPercentage()"
       (toggleSelection)="toggleSessionSelection($event)"
     />
     }

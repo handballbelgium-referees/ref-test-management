@@ -11,8 +11,13 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { onlyCompleteData } from 'apollo-angular';
 import { catchError, EMPTY, map, of, tap } from 'rxjs';
-import { CompleteQuizSessionGQL, StartQuizSessionGQL } from '../../../../graphql/generated';
+import {
+  CompleteQuizSessionGQL,
+  GetScoreConfigurationGQL,
+  StartQuizSessionGQL,
+} from '../../../../graphql/generated';
 import { QuizErrorComponent } from '../components/quiz-error/quiz-error';
 import { LeaveQuizDialogComponent } from './components/leave-quiz-dialog/leave-quiz-dialog';
 import { QuestionCardComponent } from './components/question-card/question-card';
@@ -128,6 +133,16 @@ export class TakeQuizComponent {
     const index = this.currentQuestionIndex();
     return index === questions.length - 1;
   });
+
+  protected readonly passingPercentage = toSignal(
+    inject(GetScoreConfigurationGQL)
+      .watch()
+      .valueChanges.pipe(
+        onlyCompleteData(),
+        map((result) => result.data.scoreConfiguration.passingPercentage)
+      ),
+    { initialValue: 0 }
+  );
 
   @HostListener('window:beforeunload', ['$event'])
   beforeUnloadHandler(event: BeforeUnloadEvent): void {

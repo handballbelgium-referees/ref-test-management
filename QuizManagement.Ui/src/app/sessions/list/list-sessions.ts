@@ -11,6 +11,7 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { onlyCompleteData } from 'apollo-angular';
 import { catchError, debounceTime, finalize, map, of, Subject, tap } from 'rxjs';
 import {
   BooleanOperationFilterInput,
@@ -20,6 +21,7 @@ import {
   GetQuizSessionsCountGQL,
   GetQuizSessionsGQL,
   GetQuizSessionsQuery,
+  GetScoreConfigurationGQL,
   IntOperationFilterInput,
   QuizSessionFilterInput,
   QuizSessionStatus,
@@ -215,6 +217,16 @@ export class ListSessions {
   });
 
   protected readonly selectedCount = computed(() => this.selectedSessionIds().size);
+
+  protected readonly passingPercentage = toSignal(
+    inject(GetScoreConfigurationGQL)
+      .watch()
+      .valueChanges.pipe(
+        onlyCompleteData(),
+        map((result) => result.data.scoreConfiguration.passingPercentage)
+      ),
+    { initialValue: 0 }
+  );
 
   private readonly _queryRef = this._getQuizSessionsGQL.watch({
     variables: {

@@ -10,10 +10,8 @@
         <svg
           class="w-10 h-10"
           [class]="
-            percentage() >= 80
+            percentage() >= passingPercentage()
               ? 'text-green-600'
-              : percentage() >= 60
-              ? 'text-yellow-600'
               : 'text-red-600'
           "
           fill="none"
@@ -48,7 +46,7 @@
       <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-10 text-center">
         <div
           class="text-5xl font-bold mb-3"
-          [class]="percentage() >= 80 ? 'text-green-600' : percentage() >= 60 ? 'text-yellow-600' : 'text-red-500'"
+          [class]="percentage() >= 80 ? 'text-green-600' : percentage() >= 60 ? 'text-yellow-600' : 'text-red-600'"
         >
           {{ percentage() }}%
         </div>

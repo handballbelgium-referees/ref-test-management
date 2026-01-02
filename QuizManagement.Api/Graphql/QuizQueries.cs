@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using QuizManagement.Application.Models;
 using QuizManagement.Application.Services;
 using QuizManagement.Infrastructure;
+using QuizManagement.Infrastructure.Services;
 
 namespace QuizManagement.Api.Graphql;
 
@@ -81,4 +82,12 @@ public static class QuizQueries
     /// <returns></returns>
     public static string[] GetEnabledLanguages([Service] LanguageConfiguration languageConfiguration)
         => languageConfiguration.EnabledLanguages;
+    
+    /// <summary>
+    /// Get score configuration
+    /// </summary>
+    /// <param name="scoreConfiguration"></param>
+    /// <returns></returns>
+    public static ScoreConfiguration GetScoreConfiguration([Service] ScoreConfiguration scoreConfiguration)
+        => scoreConfiguration;
 }

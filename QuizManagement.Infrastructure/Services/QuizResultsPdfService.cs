@@ -92,7 +92,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                     infoColumn.Item().PaddingTop(4).Text(text =>
                     {
                         text.Span(translations["percentage"] + ": ").Bold().FontSize(11);
-                        text.Span(percentage.ToString("F1")).FontSize(11);
+                        text.Span($"{percentage:F2} %").FontSize(11);
                     });
 
                     infoColumn.Item().PaddingTop(4).Text(text =>

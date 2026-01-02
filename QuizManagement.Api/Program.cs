@@ -45,6 +45,11 @@ if (string.IsNullOrEmpty(languageConfig.DefaultPhraseLanguage) ||
     languageConfig.SetDefaultPhraseLanguage(languageConfig.EnabledLanguages[0]);
 
 services.AddSingleton(languageConfig);
+
+var scoreConfig = configuration.GetSection("ScoreConfiguration").Get<ScoreConfiguration>()
+                  ?? new ScoreConfiguration();
+services.AddSingleton(scoreConfig);
+
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IQuizResultsPdfService, QuizResultsPdfService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();

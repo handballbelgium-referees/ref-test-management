@@ -104,28 +104,30 @@ export class QuestionSearchAutocomplete {
   }
 
   protected onKeyDown(event: KeyboardEvent): void {
-    if (!this.showDropdown() || this.suggestions().length === 0) {
-      return;
-    }
-
     switch (event.key) {
       case 'ArrowDown':
-        event.preventDefault();
-        this.highlightedIndex.update((current) =>
-          current < this.suggestions().length - 1 ? current + 1 : 0
-        );
+        if (this.showDropdown() && this.suggestions().length > 0) {
+          event.preventDefault();
+          this.highlightedIndex.update((current) =>
+            current < this.suggestions().length - 1 ? current + 1 : 0
+          );
+        }
         break;
       case 'ArrowUp':
-        event.preventDefault();
-        this.highlightedIndex.update((current) =>
-          current > 0 ? current - 1 : this.suggestions().length - 1
-        );
+        if (this.showDropdown() && this.suggestions().length > 0) {
+          event.preventDefault();
+          this.highlightedIndex.update((current) =>
+            current > 0 ? current - 1 : this.suggestions().length - 1
+          );
+        }
         break;
       case 'Enter':
         event.preventDefault();
-        const index = this.highlightedIndex();
-        if (index >= 0 && index < this.suggestions().length) {
-          this.onSelectQuestion(this.suggestions()[index]);
+        if (this.showDropdown() && this.suggestions().length > 0) {
+          const index = this.highlightedIndex();
+          if (index >= 0 && index < this.suggestions().length) {
+            this.onSelectQuestion(this.suggestions()[index]);
+          }
         }
         break;
       case 'Escape':

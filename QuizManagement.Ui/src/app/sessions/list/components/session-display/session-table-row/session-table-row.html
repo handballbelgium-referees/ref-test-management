@@ -34,7 +34,7 @@
 <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">
   @if (session().questionScore !== null) {
   <div class="space-y-1">
-    <div class="text-base font-semibold" [class]="(session().percentage ?? 0) >= 80 ? 'text-green-600' : (session().percentage ?? 0) >= 60 ? 'text-yellow-600' : 'text-red-500'">
+    <div class="text-base font-semibold" [class]="(session().percentage ?? 0) >= passingPercentage() ? 'text-green-600' : 'text-red-600'">
       {{ session().percentage }}%
     </div>
     <div class="flex items-center gap-3 text-xs text-neutral-500">

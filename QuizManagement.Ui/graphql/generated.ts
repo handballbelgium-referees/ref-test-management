@@ -242,6 +242,7 @@ export type Query = {
   quizSessionByToken: QuizSessionByTokenResult;
   quizSessions?: Maybe<QuizSessionsConnection>;
   quizTitles?: Maybe<QuizTitlesConnection>;
+  scoreConfiguration: ScoreConfiguration;
   searchQuestionsByNumber: Array<Question>;
 };
 
@@ -522,6 +523,11 @@ export type QuizTitlesEdge = {
   node: QuizTitle;
 };
 
+export type ScoreConfiguration = {
+  __typename?: 'ScoreConfiguration';
+  passingPercentage: Scalars['Int']['output'];
+};
+
 export type SendInvitationError = {
   __typename?: 'SendInvitationError';
   errorMessage: Scalars['String']['output'];
@@ -655,6 +661,11 @@ export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type GetEnabledLanguagesQuery = { __typename?: 'Query', enabledLanguages: Array<string> };
+
+export type GetScoreConfigurationQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetScoreConfigurationQuery = { __typename?: 'Query', scoreConfiguration: { __typename?: 'ScoreConfiguration', passingPercentage: number } };
 
 export type GetQuizSessionByTokenQueryVariables = Exact<{
   token: Scalars['String']['input'];
@@ -822,6 +833,24 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetScoreConfigurationDocument = gql`
+    query GetScoreConfiguration {
+  scoreConfiguration {
+    passingPercentage
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetScoreConfigurationGQL extends Apollo.Query<GetScoreConfigurationQuery, GetScoreConfigurationQueryVariables> {
+    override document = GetScoreConfigurationDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

@@ -82,7 +82,7 @@
     <div class="flex flex-col gap-2 py-3 px-3 bg-neutral-50 rounded">
       <div class="flex items-center justify-between">
         <span class="text-neutral-600 text-sm font-medium">{{ 'sessions.list.table.score' | translate }}</span>
-        <span class="font-semibold text-lg" [class]="(session().percentage ?? 0) >= 80 ? 'text-green-600' : (session().percentage ?? 0) >= 60 ? 'text-yellow-600' : 'text-red-500'">
+        <span class="font-semibold text-lg" [class]="(session().percentage ?? 0) >= passingPercentage() ? 'text-green-600' : 'text-red-600'">
           {{ session().percentage }}%
         </span>
       </div>

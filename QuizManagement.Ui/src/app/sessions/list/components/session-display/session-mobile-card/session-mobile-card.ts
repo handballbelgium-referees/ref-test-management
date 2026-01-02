@@ -20,6 +20,7 @@ export class SessionMobileCard {
   readonly session = input.required<SessionNode>();
   readonly selected = input.required<boolean>();
   readonly visibleColumns = input.required<Set<string>>();
+  readonly passingPercentage = input.required<number>();
 
   readonly toggleSelection = output<string>();
 

@@ -10,6 +10,7 @@ public partial class EmailService(
     ILogger<EmailService> logger,
     EmailConfiguration configuration,
     LanguageConfiguration languageConfiguration,
+    ScoreConfiguration scoreConfiguration,
     IQuizResultsPdfService pdfService)
     : IEmailService
 {
@@ -73,7 +74,7 @@ public partial class EmailService(
         List<Question> questionsWithCorrectAnswers)
     {
         const string subject = "IHF Rules RefTest - Your Results";
-        var passed = percentage >= 80;
+        var passed = percentage >= scoreConfiguration.PassingPercentage;
         var resultColor = passed ? "#22c55e" : "#ef4444";
         var resultBgColor = passed ? "#dcfce7" : "#fee2e2";
         var resultIcon = passed ? "✓" : "✗";
@@ -450,7 +451,7 @@ public partial class EmailService(
                 <!-- Score Display -->
                 <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
                     <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? t["passed"] : t["notPassed"])}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["percentage"]}:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["percentage"]}:</strong> {percentage:F2} %</p>
                     <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["score"]}:</strong> {t["questions"]}: {questionScore} / {totalQuestions} &nbsp; &nbsp; &nbsp;  {t["answers"]}: {answerScore} / {answerTotal}</p>
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? t["passedMessage"] : t["failedMessage"])}</em></p>
                 </div>
