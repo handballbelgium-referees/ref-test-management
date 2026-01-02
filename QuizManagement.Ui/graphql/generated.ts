@@ -154,6 +154,22 @@ export type FloatOperationFilterInput = {
   nlte?: InputMaybe<Scalars['Float']['input']>;
 };
 
+export type GenerateQuizSessionsReportInput = {
+  sessionIds: Array<Scalars['ID']['input']>;
+};
+
+export type GenerateQuizSessionsReportPayload = {
+  __typename?: 'GenerateQuizSessionsReportPayload';
+  generateReportResult?: Maybe<GenerateReportResult>;
+};
+
+export type GenerateReportResult = {
+  __typename?: 'GenerateReportResult';
+  message: Scalars['String']['output'];
+  sessionCount: Scalars['Int']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type IntOperationFilterInput = {
   eq?: InputMaybe<Scalars['Int']['input']>;
   gt?: InputMaybe<Scalars['Int']['input']>;
@@ -179,6 +195,7 @@ export type Mutation = {
   completeQuiz: CompleteQuizPayload;
   createBulkQuizSessions: CreateBulkQuizSessionsPayload;
   deleteQuizSessions: DeleteQuizSessionsPayload;
+  generateQuizSessionsReport: GenerateQuizSessionsReportPayload;
   sendInvitations: SendInvitationsPayload;
   sendResults: SendResultsPayload;
   startQuizSession: StartQuizSessionPayload;
@@ -197,6 +214,11 @@ export type MutationCreateBulkQuizSessionsArgs = {
 
 export type MutationDeleteQuizSessionsArgs = {
   input: DeleteQuizSessionsInput;
+};
+
+
+export type MutationGenerateQuizSessionsReportArgs = {
+  input: GenerateQuizSessionsReportInput;
 };
 
 
@@ -242,6 +264,7 @@ export type Query = {
   quizSessionByToken: QuizSessionByTokenResult;
   quizSessions?: Maybe<QuizSessionsConnection>;
   quizTitles?: Maybe<QuizTitlesConnection>;
+  scoreConfiguration: ScoreConfiguration;
   searchQuestionsByNumber: Array<Question>;
 };
 
@@ -301,6 +324,10 @@ export type Question = {
 /** IHF quiz session */
 export type QuizSession = Node & {
   __typename?: 'QuizSession';
+  /** Score based on individual answers */
+  answerScore?: Maybe<Scalars['Int']['output']>;
+  /** Total possible answer score */
+  answerTotal?: Maybe<Scalars['Int']['output']>;
   /** Completion date and time of the quiz session */
   completedAt?: Maybe<Scalars['DateTime']['output']>;
   /** Creation date and time of the quiz session */
@@ -319,12 +346,14 @@ export type QuizSession = Node & {
   numberOfQuestions: Scalars['Int']['output'];
   /** Percentage of correct answers */
   percentage?: Maybe<Scalars['Float']['output']>;
+  /** Score based on fully correct questions */
+  questionScore?: Maybe<Scalars['Int']['output']>;
+  /** Total possible question score */
+  questionTotal: Scalars['Int']['output'];
   /** Questions for this quiz session */
   questions?: Maybe<Array<Maybe<Question>>>;
   /** Indication of results were sent */
   resultsSent: Scalars['Boolean']['output'];
-  /** Score of the quiz session */
-  score?: Maybe<Scalars['Int']['output']>;
   /** Start date and time of the quiz session */
   startedAt?: Maybe<Scalars['DateTime']['output']>;
   /** Status of the quiz session (e.g., InProgress, Completed, Expired) */
@@ -355,6 +384,10 @@ export type QuizSessionExpiredError = Error & {
 /** Filter quiz sessions based on Id, Email or Status */
 export type QuizSessionFilterInput = {
   and?: InputMaybe<Array<QuizSessionFilterInput>>;
+  /** Filter on answer score of the quiz session */
+  answerScore?: InputMaybe<IntOperationFilterInput>;
+  /** Filter on total possible answer score */
+  answerTotal?: InputMaybe<IntOperationFilterInput>;
   /** Filter on completion date of the quiz session */
   completedAt?: InputMaybe<DateTimeOperationFilterInput>;
   /** Filter on creation date of the quiz session */
@@ -376,10 +409,12 @@ export type QuizSessionFilterInput = {
   or?: InputMaybe<Array<QuizSessionFilterInput>>;
   /** Filter on percentage of correct answers */
   percentage?: InputMaybe<FloatOperationFilterInput>;
+  /** Filter on question score of the quiz session */
+  questionScore?: InputMaybe<IntOperationFilterInput>;
+  /** Filter on total possible question score */
+  questionTotal?: InputMaybe<IntOperationFilterInput>;
   /** Filter on results were sent */
   resultsSent?: InputMaybe<BooleanOperationFilterInput>;
-  /** Filter on score of the quiz session */
-  score?: InputMaybe<IntOperationFilterInput>;
   /** Filter on start date of the quiz session */
   startedAt?: InputMaybe<DateTimeOperationFilterInput>;
   /** Filter on status of the quiz session */
@@ -393,8 +428,12 @@ export type QuizSessionNotFoundError = Error & {
   message: Scalars['String']['output'];
 };
 
-/** Sort quiz sessions by Id, Email, Status, Creation Date, Start Date, Completion Date, Percentage, Score, Number of Questions and Maximum Time */
+/** Sort quiz sessions by Id, Email, Status, Creation Date, Start Date, Completion Date, Percentage, QuestionScore, Number of Questions and Maximum Time */
 export type QuizSessionSortInput = {
+  /** Sort on answer score of the quiz session */
+  answerScore?: InputMaybe<SortEnumType>;
+  /** Sort on total possible answer score */
+  answerTotal?: InputMaybe<SortEnumType>;
   /** Sort on completion date of the quiz session */
   completedAt?: InputMaybe<SortEnumType>;
   /** Sort on creation date of the quiz session */
@@ -415,10 +454,12 @@ export type QuizSessionSortInput = {
   numberOfQuestions?: InputMaybe<SortEnumType>;
   /** Sort on percentage of correct answers */
   percentage?: InputMaybe<SortEnumType>;
+  /** Sort on question score of the quiz session */
+  questionScore?: InputMaybe<SortEnumType>;
+  /** Sort on total possible question score */
+  questionTotal?: InputMaybe<SortEnumType>;
   /** Sort on results were sent */
   resultsSent?: InputMaybe<SortEnumType>;
-  /** Sort on score of the quiz session */
-  score?: InputMaybe<SortEnumType>;
   /** Sort on start date of the quiz session */
   startedAt?: InputMaybe<SortEnumType>;
   /** Sort on status of the quiz session */
@@ -502,6 +543,11 @@ export type QuizTitlesEdge = {
   cursor: Scalars['String']['output'];
   /** The item at the end of the edge. */
   node: QuizTitle;
+};
+
+export type ScoreConfiguration = {
+  __typename?: 'ScoreConfiguration';
+  passingPercentage: Scalars['Int']['output'];
 };
 
 export type SendInvitationError = {
@@ -617,7 +663,7 @@ export type CompleteQuizSessionMutationVariables = Exact<{
 }>;
 
 
-export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, score?: number | null, percentage?: number | null, wrongQuestionIds: Array<string>, wrongAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, number: string, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null }> } | null> | null } | null } };
+export type CompleteQuizSessionMutation = { __typename?: 'Mutation', completeQuiz: { __typename?: 'CompleteQuizPayload', quizSession?: { __typename?: 'QuizSession', id: string, questionScore?: number | null, questionTotal: number, answerScore?: number | null, answerTotal?: number | null, percentage?: number | null } | null } };
 
 export type CreateBulkQuizSessionsMutationVariables = Exact<{
   input: CreateBulkQuizSessionsInput;
@@ -633,10 +679,22 @@ export type DeleteQuizSessionsMutationVariables = Exact<{
 
 export type DeleteQuizSessionsMutation = { __typename?: 'Mutation', deleteQuizSessions: { __typename?: 'DeleteQuizSessionsPayload', deleteQuizSessionsResult?: { __typename?: 'DeleteQuizSessionsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedSessions: Array<{ __typename?: 'QuizSession', id: string }>, errors: Array<{ __typename?: 'DeleteQuizSessionError', quizSessionId: string, errorMessage: string }> } | null } };
 
+export type GenerateReportMutationVariables = Exact<{
+  input: GenerateQuizSessionsReportInput;
+}>;
+
+
+export type GenerateReportMutation = { __typename?: 'Mutation', generateQuizSessionsReport: { __typename?: 'GenerateQuizSessionsReportPayload', generateReportResult?: { __typename?: 'GenerateReportResult', success: boolean, message: string, sessionCount: number } | null } };
+
 export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
 export type GetEnabledLanguagesQuery = { __typename?: 'Query', enabledLanguages: Array<string> };
+
+export type GetScoreConfigurationQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetScoreConfigurationQuery = { __typename?: 'Query', scoreConfiguration: { __typename?: 'ScoreConfiguration', passingPercentage: number } };
 
 export type GetQuizSessionByTokenQueryVariables = Exact<{
   token: Scalars['String']['input'];
@@ -665,7 +723,7 @@ export type GetQuizSessionsQueryVariables = Exact<{
 }>;
 
 
-export type GetQuizSessionsQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizSessionsEdge', cursor: string, node: { __typename?: 'QuizSession', id: string, name?: string | null, email: string, invitationSent: boolean, resultsSent: boolean, status: QuizSessionStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, score?: number | null, percentage?: number | null, title?: { __typename?: 'QuizTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
+export type GetQuizSessionsQuery = { __typename?: 'Query', quizSessions?: { __typename?: 'QuizSessionsConnection', totalCount: number, edges?: Array<{ __typename?: 'QuizSessionsEdge', cursor: string, node: { __typename?: 'QuizSession', id: string, name?: string | null, email: string, invitationSent: boolean, resultsSent: boolean, status: QuizSessionStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, title?: { __typename?: 'QuizTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
 
 export type GetQuizTitlesQueryVariables = Exact<{
   first: Scalars['Int']['input'];
@@ -714,18 +772,11 @@ export const CompleteQuizSessionDocument = gql`
   completeQuiz(input: $input) {
     quizSession {
       id
-      score
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
       percentage
-      questions(includeNumber: true) {
-        id
-        number
-        answers {
-          id
-          number
-        }
-      }
-      wrongQuestionIds
-      wrongAnswerIds
     }
   }
 }
@@ -800,6 +851,28 @@ export const DeleteQuizSessionsDocument = gql`
       super(apollo);
     }
   }
+export const GenerateReportDocument = gql`
+    mutation generateReport($input: GenerateQuizSessionsReportInput!) {
+  generateQuizSessionsReport(input: $input) {
+    generateReportResult {
+      success
+      message
+      sessionCount
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GenerateReportGQL extends Apollo.Mutation<GenerateReportMutation, GenerateReportMutationVariables> {
+    override document = GenerateReportDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const GetEnabledLanguagesDocument = gql`
     query GetEnabledLanguages {
   enabledLanguages
@@ -811,6 +884,24 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetScoreConfigurationDocument = gql`
+    query GetScoreConfiguration {
+  scoreConfiguration {
+    passingPercentage
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetScoreConfigurationGQL extends Apollo.Query<GetScoreConfigurationQuery, GetScoreConfigurationQueryVariables> {
+    override document = GetScoreConfigurationDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -887,7 +978,10 @@ export const GetQuizSessionsDocument = gql`
         maxTimeInMinutes
         startedAt
         completedAt
-        score
+        questionScore
+        answerScore
+        questionTotal
+        answerTotal
         percentage
       }
     }

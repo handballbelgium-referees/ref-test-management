@@ -17,10 +17,12 @@ export class SessionBulkActions {
   readonly sendingInvitations = input.required<boolean>();
   readonly sendingResults = input.required<boolean>();
   readonly deletingSessions = input.required<boolean>();
+  readonly generatingReport = input.required<boolean>();
 
   readonly sendInvitations = output<void>();
   readonly sendResults = output<void>();
   readonly deleteSelected = output<void>();
+  readonly generateReport = output<void>();
 
   protected onSendInvitations(event: Event): void {
     event.stopPropagation();
@@ -35,5 +37,10 @@ export class SessionBulkActions {
   protected onDeleteSelected(event: Event): void {
     event.stopPropagation();
     this.deleteSelected.emit();
+  }
+
+  protected onGenerateReport(event: Event): void {
+    event.stopPropagation();
+    this.generateReport.emit();
   }
 }

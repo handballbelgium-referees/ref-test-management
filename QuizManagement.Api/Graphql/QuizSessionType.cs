@@ -39,7 +39,10 @@ public class QuizSessionTypeExtension : ObjectType<QuizSession>
         descriptor.Field(x => x.StartedAt).Description("Start date and time of the quiz session");
         descriptor.Field(x => x.CompletedAt).Description("Completion date and time of the quiz session").Authorize();
         descriptor.Field(x => x.Percentage).Description("Percentage of correct answers");
-        descriptor.Field(x => x.Score).Description("Score of the quiz session");
+        descriptor.Field(x => x.QuestionScore).Description("Score based on fully correct questions");
+        descriptor.Field(x => x.AnswerScore).Description("Score based on individual answers");
+        descriptor.Field(x => x.QuestionTotal).Description("Total possible question score");
+        descriptor.Field(x => x.AnswerTotal).Description("Total possible answer score");
         descriptor.Field(x => x.WrongQuestionIds).Description("List of question IDs that were answered incorrectly");
         descriptor.Field(x => x.WrongAnswerIds).Description("List of answer IDs that were answered incorrectly");
         descriptor.Field(x => x.ResultsSent).Description("Indication of results were sent").Authorize();

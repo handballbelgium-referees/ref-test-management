@@ -80,6 +80,8 @@
         "resultsAll": "All",
         "resultsSent": "Sent",
         "resultsNotSent": "Not Sent",
+        "questionScoreRange": "Question Score Range",
+        "answerScoreRange": "Answer Score Range",
         "scoreRange": "Score Range",
         "minScore": "Min Score",
         "maxScore": "Max Score",
@@ -101,6 +103,8 @@
         "email": "Participant",
         "status": "Status",
         "numberOfQuestions": "Questions",
+        "questionScore": "Question Score",
+        "answerScore": "Answer Score",
         "score": "Score",
         "invitationSent": "Invitation",
         "resultsSent": "Results",
@@ -121,7 +125,7 @@
         "participant": "Participant",
         "status": "Status",
         "questions": "Questions",
-        "score": "Score",
+        "score": "Score (Q/A)",
         "invitation": "Invitation",
         "results": "Results",
         "started": "Started",
@@ -133,7 +137,7 @@
         "participant": "Participant",
         "status": "Status",
         "questions": "Questions",
-        "score": "Score",
+        "score": "Score (Q/A)",
         "invitation": "Invitation",
         "results": "Results",
         "started": "Started",
@@ -149,11 +153,13 @@
         "sessionsSelected": "sessions selected",
         "sendInvitations": "Send Invitations",
         "sendResults": "Send Results",
+        "generateReport": "Send Report",
         "delete": "Delete"
       },
       "actions": {
         "sendInvitation": "Send Invitation",
         "sendResults": "Send Results",
+        "generateReport": "Send Report",
         "delete": "Delete"
       },
       "dialogs": {
@@ -180,7 +186,24 @@
           "sessions": "Sessions to be deleted:",
           "confirm": "Delete",
           "cancel": "Cancel"
+        },
+        "generateReport": {
+          "title": "Generate and Send Report",
+          "message": "Are you sure you want to generate and send a report by email for the selected sessions?",
+          "sessionsIncluded": "Sessions to include ({{count}})",
+          "moreSessions": "+ {{count}} more session",
+          "moreSessions_other": "+ {{count}} more sessions",
+          "info": "A report will be generated and sent by email with the details of all selected sessions.",
+          "confirm": "Generate and Send Report",
+          "cancel": "Cancel"
         }
+      },
+      "report": {
+        "success": "Report successfully generated and sent",
+        "error": "Failed to generate or send report",
+        "sessionCount": "{{count}} session included",
+        "sessionCount_other": "{{count}} sessions included",
+        "dismiss": "Dismiss"
       }
     },
     "create": {
@@ -334,8 +357,14 @@
     "results": {
       "title": "RefTest Completed!",
       "subtitle": "Here are your results",
+      "questionScore": "Question Score",
+      "answerScore": "Answer Score",
+      "questionScoreShort": "Q",
+      "answerScoreShort": "A",
       "score": "Score",
       "percentage": "Percentage",
+      "totalQuestions": "Total Questions",
+      "totalAnswers": "Total Answers",
       "total": "Total Questions",
       "review": "Review Your Answers"
     },

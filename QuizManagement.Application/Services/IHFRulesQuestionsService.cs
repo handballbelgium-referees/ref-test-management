@@ -1,7 +1,6 @@
 ﻿using QuizManagement.Application.Models;
 using System.Globalization;
 using System.Text.Json;
-using Microsoft.Extensions.Options;
 
 namespace QuizManagement.Application.Services;
 
@@ -144,8 +143,10 @@ public class IhfRulesQuestionsService(
         if (result.Data?.CalculateScore is null)
             throw new Exception("Failed to calculate score");
 
+        var scoreData = result.Data.CalculateScore;
+        
         double percentage;
-        var percentageString = result.Data.CalculateScore.Percentage;
+        var percentageString = scoreData.Percentage;
 
         if (percentageString != null && percentageString.EndsWith('%'))
         {
@@ -161,12 +162,20 @@ public class IhfRulesQuestionsService(
             throw new Exception("Invalid percentage format");
         }
 
+        // Calculate a question-based score (number of fully correct questions)
+        var questionScore = questionIds.Count(id => !scoreData.WrongQuestionsIds.Contains(id));
+        
+        // Get an answer-based score from API (based on correct +1, incorrect -1, not answered 0)
+        var answerScore = scoreData.Score ?? 0;
+
         return new ScoreCalculation(
-            questionIds.Count(id => !result.Data.CalculateScore.WrongQuestionsIds.Contains(id)),
+            questionScore,
+            answerScore,
             questionIds.Count,
+            scoreData.Total ?? 0,
             percentage,
-            result.Data.CalculateScore.WrongQuestionsIds.ToList() ?? [],
-            result.Data.CalculateScore.WrongAnswerIds.ToList() ?? []
+            scoreData.WrongQuestionsIds.ToList() ?? [],
+            scoreData.WrongAnswerIds.ToList() ?? []
         );
     }
 }

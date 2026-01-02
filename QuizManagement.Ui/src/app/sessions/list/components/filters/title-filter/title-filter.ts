@@ -124,6 +124,11 @@ export class TitleFilter {
     const value = (event.target as HTMLInputElement).value;
     this.searchTerm.set(value);
     this._searchSubject.next(value);
+
+    // If the user manually clears the input and there's a selected title, clear the filter
+    if (value.trim() === '' && this.selectedTitleId()) {
+      this.titleChange.emit(undefined);
+    }
   }
 
   protected onFocus(): void {

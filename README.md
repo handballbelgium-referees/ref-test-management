@@ -585,7 +585,8 @@ Complete configuration file structure:
     "BrevoApiKey": "your-brevo-api-key",
     "BrevoApiUrl": "https://api.brevo.com/v3",
     "FromEmail": "noreply@yourdomain.com",
-    "FromName": "IHF RefTest"
+    "FromName": "IHF RefTest",
+    "ScheduledDelayMinutes": 0
   },
 
   "RulesQuestions": {
@@ -595,6 +596,14 @@ Complete configuration file structure:
   "LanguageConfiguration": {
     "DefaultPhraseLanguage": "en",
     "EnabledLanguages": ["en", "nl", "fr", "de"]
+  },
+
+  "ScoreConfiguration": {
+    "PassingPercentage": 80
+  },
+
+  "ReportConfiguration": {
+    "RecipientEmails": []
   }
 }
 ```
@@ -613,9 +622,12 @@ Complete configuration file structure:
 |                           | `BrevoApiUrl`           | Brevo API endpoint                        | ✅ Yes   |
 |                           | `FromEmail`             | Sender email address                      | ✅ Yes   |
 |                           | `FromName`              | Sender display name                       | ✅ Yes   |
+|                           | `ScheduledDelayMinutes` | Delay in minutes for scheduled emails     | ⚠️ Optional (defaults to 0) |
 | **RulesQuestions**        | `Url`                   | External question bank GraphQL endpoint   | ✅ Yes   |
 | **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions            | ✅ Yes   |
 |                           | `EnabledLanguages`      | Array of enabled UI languages (en/nl/fr/de) | ⚠️ Optional (defaults to all 4) |
+| **ScoreConfiguration**    | `PassingPercentage`     | Percentage required to pass a quiz        | ⚠️ Optional (defaults to 80) |
+| **ReportConfiguration**   | `RecipientEmails`       | Array of emails to receive system reports | ⚠️ Optional (defaults to empty) |
 
 ### User Secrets (Development)
 

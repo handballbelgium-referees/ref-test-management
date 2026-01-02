@@ -88,6 +88,8 @@
         "resultsAll": "Alle",
         "resultsSent": "Verzonden",
         "resultsNotSent": "Niet Verzonden",
+        "questionScoreRange": "Vragen Score Bereik",
+        "answerScoreRange": "Antwoorden Score Bereik",
         "scoreRange": "Score Bereik",
         "minScore": "Min Score",
         "maxScore": "Max Score",
@@ -109,6 +111,8 @@
         "email": "Deelnemer",
         "status": "Status",
         "numberOfQuestions": "Vragen",
+        "questionScore": "Vragen Score",
+        "answerScore": "Antwoorden Score",
         "score": "Score",
         "invitationSent": "Uitnodiging",
         "resultsSent": "Resultaten",
@@ -157,11 +161,13 @@
         "sessionsSelected": "sessies geselecteerd",
         "sendInvitations": "Uitnodigingen Versturen",
         "sendResults": "Resultaten Versturen",
+        "generateReport": "Rapport Versturen",
         "delete": "Verwijderen"
       },
       "actions": {
         "sendInvitation": "Uitnodiging Versturen",
         "sendResults": "Resultaten Versturen",
+        "generateReport": "Rapport Versturen",
         "delete": "Verwijderen"
       },
       "dialogs": {
@@ -188,7 +194,24 @@
           "sessions": "Sessies die verwijderd worden:",
           "confirm": "Verwijderen",
           "cancel": "Annuleren"
+        },
+        "generateReport": {
+          "title": "Rapport Genereren en Versturen",
+          "message": "Weet u zeker dat u een rapport wilt genereren en per e-mail versturen voor de geselecteerde sessies?",
+          "sessionsIncluded": "Sessies om op te nemen ({{count}})",
+          "moreSessions": "+ {{count}} sessie meer",
+          "moreSessions_other": "+ {{count}} sessies meer",
+          "info": "Er wordt een rapport gegenereerd en per e-mail verstuurd met de details van alle geselecteerde sessies.",
+          "confirm": "Rapport Genereren en Versturen",
+          "cancel": "Annuleren"
         }
+      },
+      "report": {
+        "success": "Rapport succesvol gegenereerd en verzonden",
+        "error": "Rapport genereren of verzenden mislukt",
+        "sessionCount": "{{count}} sessie opgenomen",
+        "sessionCount_other": "{{count}} sessies opgenomen",
+        "dismiss": "Sluiten"
       }
     },
     "create": {
@@ -342,8 +365,14 @@
     "results": {
       "title": "RefTest Voltooid!",
       "subtitle": "Hier zijn je resultaten",
+      "questionScore": "Vragen Score",
+      "answerScore": "Antwoorden Score",
+      "questionScoreShort": "V",
+      "answerScoreShort": "A",
       "score": "Score",
       "percentage": "Percentage",
+      "totalQuestions": "Totaal Vragen",
+      "totalAnswers": "Totaal Antwoorden",
       "total": "Totaal Aantal Vragen",
       "review": "Bekijk Je Antwoorden"
     },

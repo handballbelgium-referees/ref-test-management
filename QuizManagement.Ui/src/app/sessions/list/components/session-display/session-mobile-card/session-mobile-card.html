@@ -78,12 +78,17 @@
       }
     </div>
 
-    @if (session().score !== null && isColumnVisible('score')) {
-    <div class="flex items-center justify-between py-1.5 px-2 bg-primary-50 rounded border border-primary-100">
-      <span class="text-primary-700 font-medium">{{ 'sessions.list.table.score' | translate }}</span>
-      <div class="flex items-baseline gap-1.5">
-        <span class="font-bold text-primary-900 text-base">{{ session().percentage }}%</span>
-        <span class="text-[10px] text-primary-600">({{ session().score }}/{{ session().numberOfQuestions }})</span>
+    @if (session().questionScore !== null && isColumnVisible('score')) {
+    <div class="flex flex-col gap-2 py-3 px-3 bg-neutral-50 rounded">
+      <div class="flex items-center justify-between">
+        <span class="text-neutral-600 text-sm font-medium">{{ 'sessions.list.table.score' | translate }}</span>
+        <span class="font-semibold text-lg" [class]="(session().percentage ?? 0) >= passingPercentage() ? 'text-green-600' : 'text-red-600'">
+          {{ session().percentage }}%
+        </span>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-neutral-500">
+        <span>{{ 'quiz.results.questionScoreShort' | translate }}: {{ session().questionScore }}/{{ session().questionTotal }}</span>
+        <span>{{ 'quiz.results.answerScoreShort' | translate }}: {{ session().answerScore }}/{{ session().answerTotal }}</span>
       </div>
     </div>
     }

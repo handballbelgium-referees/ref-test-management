@@ -10,6 +10,7 @@ public partial class EmailService(
     ILogger<EmailService> logger,
     EmailConfiguration configuration,
     LanguageConfiguration languageConfiguration,
+    ScoreConfiguration scoreConfiguration,
     IQuizResultsPdfService pdfService)
     : IEmailService
 {
@@ -68,12 +69,12 @@ public partial class EmailService(
         LogQuizInvitationEmailSentToEmail(logger, email);
     }
 
-    public async Task SendQuizResultsAsync(string name, string email, int score, int totalQuestions, double percentage,
+    public async Task SendQuizResultsAsync(string name, string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
         List<Question> questionsWithCorrectAnswers)
     {
         const string subject = "IHF Rules RefTest - Your Results";
-        var passed = percentage >= 80;
+        var passed = percentage >= scoreConfiguration.PassingPercentage;
         var resultColor = passed ? "#22c55e" : "#ef4444";
         var resultBgColor = passed ? "#dcfce7" : "#fee2e2";
         var resultIcon = passed ? "✓" : "✗";
@@ -85,7 +86,7 @@ public partial class EmailService(
         {
             var langContent = enabledLanguages[i];
             var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildResultsLanguageSection(langContent, name, score, totalQuestions, percentage,
+            languageSections.Append(BuildResultsLanguageSection(langContent, name, questionScore, answerScore, totalQuestions, answerTotal, percentage,
                 passed, resultColor, resultBgColor, resultIcon, isLast));
         }
 
@@ -125,11 +126,11 @@ public partial class EmailService(
         {
             var langUpper = lang.ToUpperInvariant();
             return new EmailAttachment($"IHF_Rules_RefTest_Results_{langUpper}.pdf",
-                pdfService.GenerateQuizResultsPdf(name, lang, totalQuestions, selectedAnswerIds, wrongQuestionIds,
+                pdfService.GenerateQuizResultsPdf(name, lang, questionScore, answerScore, totalQuestions, answerTotal, percentage, selectedAnswerIds, wrongQuestionIds,
                     wrongAnswerIds, questionsWithCorrectAnswers));
         }).ToList();
 
-        LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, score, totalQuestions, percentage);
+        LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, questionScore, answerScore, totalQuestions, answerTotal, percentage);
 
         await SendEmailAsync(email, subject, emailBody, attachments, true);
 
@@ -208,6 +209,69 @@ public partial class EmailService(
         }
     }
 
+    public async Task SendReportEmailAsync(string recipientEmail, byte[] excelReport, byte[] pdfReport, string timestamp, int sessionCount)
+    {
+        var subject = $"RefTest Report - {DateTime.UtcNow:dd-MM-yyyy}";
+        
+        // Convert to Central European Time
+        var cetTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
+        var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cetTimeZone);
+        
+        var emailBody = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <style>
+        body {{ font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }}
+    </style>
+</head>
+<body style='margin: 0; padding: 0;'>
+    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
+        <!-- Header with Belgian Handball Colors -->
+        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
+            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest Report</h1>
+            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium</p>
+        </div>
+
+        <!-- Main Content -->
+        <div style='padding: 20px;'>
+            <p style='font-size: 16px; line-height: 1.6; color: #374151;'>
+                This is an automatically generated report containing reftest data.
+            </p>
+            
+            <div style='background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;'>
+                <p style='margin: 5px 0; color: #374151;'><strong>Report Date:</strong> {nowCet:dd-MM-yyyy HH:mm}</p>
+                <p style='margin: 5px 0; color: #374151;'><strong>Number of RefTests:</strong> {sessionCount}</p>
+            </div>
+
+            <p style='font-size: 14px; color: #374151;'>
+                The report is attached in both Excel (.xlsx) and PDF formats.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style='background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px;'>
+            <p style='color: #6b7280; font-size: 12px; margin: 0;'>
+                Referees Handball Belgium
+            </p>
+        </div>
+    </div>
+</body>
+</html>";
+
+        var attachments = new List<EmailAttachment>
+        {
+            new($"reftest_report_{timestamp}.xlsx", excelReport),
+            new($"reftest_report_{timestamp}.pdf", pdfReport)
+        };
+
+        await SendEmailAsync(recipientEmail, subject, emailBody, attachments);
+
+        LogReportEmailSentToEmail(logger, recipientEmail);
+    }
+
     [LoggerMessage(LogLevel.Information,
         "Sending RefTest invitation to {email}. Token: {token}, Questions: {questions}, Time: {time} minutes. URL: {url}")]
     static partial void LogSendingQuizInvitationToEmailTokenTokenQuestionsQuestionsTimeTimeMinutes(
@@ -216,9 +280,9 @@ public partial class EmailService(
     [LoggerMessage(LogLevel.Information, "RefTest invitation email sent to {email}")]
     static partial void LogQuizInvitationEmailSentToEmail(ILogger<EmailService> logger, string email);
 
-    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. Score: {score}/{total} ({percentage:F1}%)")]
+    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
     static partial void LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(ILogger<EmailService> logger,
-        string email, int score, int total, double percentage);
+        string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage);
 
     [LoggerMessage(LogLevel.Information, "RefTest results email sent to {email}")]
     static partial void LogQuizResultsEmailSentToEmail(ILogger<EmailService> logger, string email);
@@ -239,6 +303,10 @@ public partial class EmailService(
 
     [LoggerMessage(LogLevel.Error, "Error sending email to {email}")]
     static partial void LogErrorSendingEmailToEmail(ILogger<EmailService> logger, Exception ex, string email);
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Information,
+        Message = "Report email sent to {Email}")]
+    private static partial void LogReportEmailSentToEmail(ILogger logger, string email);
 
     private record LanguageContent(
         string QuizUrl,
@@ -304,7 +372,9 @@ public partial class EmailService(
             ["displayName"] = "English",
             ["passed"] = "PASSED",
             ["notPassed"] = "NOT PASSED",
-            ["yourScore"] = "Your Score",
+            ["score"] = "Your Score",
+            ["questions"] = "Q",
+            ["answers"] = "A",
             ["percentage"] = "Percentage",
             ["passedMessage"] = "🎉 Congratulations! You passed the reftest!",
             ["failedMessage"] = "📚 Keep studying and good luck next time!",
@@ -320,7 +390,9 @@ public partial class EmailService(
             ["displayName"] = "Nederlands",
             ["passed"] = "GESLAAGD",
             ["notPassed"] = "NIET GESLAAGD",
-            ["yourScore"] = "Jouw Score",
+            ["score"] = "Jouw Score",
+            ["questions"] = "V",
+            ["answers"] = "A",
             ["percentage"] = "Percentage",
             ["passedMessage"] = "🎉 Gefeliciteerd! Je bent geslaagd!",
             ["failedMessage"] = "📚 Blijf studeren en veel succes de volgende keer!",
@@ -337,7 +409,9 @@ public partial class EmailService(
             ["displayName"] = "Français",
             ["passed"] = "RÉUSSI",
             ["notPassed"] = "NON RÉUSSI",
-            ["yourScore"] = "Votre Score",
+            ["score"] = "Votre Score",
+            ["questions"] = "Q",
+            ["answers"] = "R",
             ["percentage"] = "Pourcentage",
             ["passedMessage"] = "🎉 Félicitations! Vous avez réussi!",
             ["failedMessage"] = "📚 Continuez à étudier et bonne chance la prochaine fois!",
@@ -353,7 +427,9 @@ public partial class EmailService(
             ["displayName"] = "Deutsch",
             ["passed"] = "BESTANDEN",
             ["notPassed"] = "NICHT BESTANDEN",
-            ["yourScore"] = "Ihre Punktzahl",
+            ["score"] = "Ihre Punktzahl",
+            ["questions"] = "F",
+            ["answers"] = "A",
             ["percentage"] = "Prozentsatz",
             ["passedMessage"] = "🎉 Herzlichen Glückwunsch! Sie haben bestanden!",
             ["failedMessage"] = "📚 Lernen Sie weiter und viel Glück beim nächsten Mal!",
@@ -425,7 +501,7 @@ public partial class EmailService(
             </div>{separator}";
     }
 
-    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int score, int totalQuestions,
+    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int questionScore, int answerScore, int totalQuestions, int answerTotal,
         double percentage, bool passed, string resultColor, string resultBgColor, string resultIcon, bool isLast)
     {
         var t = langContent.Translations;
@@ -442,8 +518,8 @@ public partial class EmailService(
                 <!-- Score Display -->
                 <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
                     <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? t["passed"] : t["notPassed"])}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["yourScore"]}:</strong> {score} / {totalQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["percentage"]}:</strong> {percentage:F1}%</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["percentage"]}:</strong> {percentage:F2} %</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["score"]}:</strong> {t["questions"]}: {questionScore} / {totalQuestions} &nbsp; &nbsp; &nbsp;  {t["answers"]}: {answerScore} / {answerTotal}</p>
                     <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? t["passedMessage"] : t["failedMessage"])}</em></p>
                 </div>
 
@@ -465,3 +541,4 @@ public partial class EmailService(
 public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");
 
 public record EmailAttachment(string FileName, byte[] Content);
+

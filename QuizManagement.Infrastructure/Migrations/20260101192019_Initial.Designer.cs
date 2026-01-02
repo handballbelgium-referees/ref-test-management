@@ -12,7 +12,7 @@ using QuizManagement.Infrastructure;
 namespace QuizManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(QuizManagementContext))]
-    [Migration("20251216105054_Initial")]
+    [Migration("20260101192019_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace QuizManagement.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.0")
+                .HasAnnotation("ProductVersion", "10.0.1")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -30,6 +30,12 @@ namespace QuizManagement.Infrastructure.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int?>("AnswerScore")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("AnswerTotal")
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("CompletedAt")
                         .HasColumnType("datetime2");
@@ -69,11 +75,11 @@ namespace QuizManagement.Infrastructure.Migrations
                         .HasMaxLength(4000)
                         .HasColumnType("nvarchar(4000)");
 
+                    b.Property<int?>("QuestionScore")
+                        .HasColumnType("int");
+
                     b.Property<bool>("ResultsSent")
                         .HasColumnType("bit");
-
-                    b.Property<int?>("Score")
-                        .HasColumnType("int");
 
                     b.Property<string>("SelectedAnswerIds")
                         .IsRequired()

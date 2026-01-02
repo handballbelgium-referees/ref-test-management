@@ -75,7 +75,7 @@ public class QuizSessionConfiguration : IEntityTypeConfiguration<QuizSession>
                 c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
                 c => c.ToList()));
 
-        builder.Property(x => x.Score);
+        builder.Property(x => x.QuestionScore);
         builder.Property(x => x.StartedAt);
         builder.Property(x => x.WrongQuestionIds)
             .HasConversion(

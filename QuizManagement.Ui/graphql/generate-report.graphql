@@ -1,0 +1,9 @@
+mutation generateReport($input: GenerateQuizSessionsReportInput!) {
+  generateQuizSessionsReport(input: $input) {
+    generateReportResult {
+      success
+      message
+      sessionCount
+    }
+  }
+}

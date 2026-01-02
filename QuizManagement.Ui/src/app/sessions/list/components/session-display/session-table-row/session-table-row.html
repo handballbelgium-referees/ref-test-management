@@ -32,10 +32,15 @@
 </td>
 } @if (isColumnVisible('score')) {
 <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">
-  @if (session().score !== null) {
-  <div class="flex items-baseline gap-1.5">
-    <span class="font-bold text-primary-700">{{ session().percentage }}%</span>
-    <span class="text-xs text-neutral-500">({{ session().score }}/{{ session().numberOfQuestions }})</span>
+  @if (session().questionScore !== null) {
+  <div class="space-y-1">
+    <div class="text-base font-semibold" [class]="(session().percentage ?? 0) >= passingPercentage() ? 'text-green-600' : 'text-red-600'">
+      {{ session().percentage }}%
+    </div>
+    <div class="flex items-center gap-3 text-xs text-neutral-500">
+      <span>{{ 'quiz.results.questionScoreShort' | translate }}: {{ session().questionScore }}/{{ session().questionTotal }}</span>
+      <span>{{ 'quiz.results.answerScoreShort' | translate }}: {{ session().answerScore }}/{{ session().answerTotal }}</span>
+    </div>
   </div>
   } @else {
   <span class="text-neutral-400">-</span>

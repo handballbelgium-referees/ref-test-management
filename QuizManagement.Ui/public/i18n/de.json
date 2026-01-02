@@ -121,7 +121,7 @@
         "participant": "Teilnehmer",
         "status": "Status",
         "questions": "Fragen",
-        "score": "Ergebnis",
+        "score": "Punktzahl (F/A)",
         "invitation": "Einladung",
         "results": "Ergebnisse",
         "started": "Gestartet",
@@ -133,7 +133,7 @@
         "participant": "Teilnehmer",
         "status": "Status",
         "questions": "Fragen",
-        "score": "Punktzahl",
+        "score": "Punktzahl (F/A)",
         "invitation": "Einladung",
         "results": "Ergebnisse",
         "started": "Gestartet",
@@ -149,11 +149,13 @@
         "sessionsSelected": "Sitzungen ausgewählt",
         "sendInvitations": "Einladungen Senden",
         "sendResults": "Ergebnisse Senden",
+        "generateReport": "Bericht Senden",
         "delete": "Löschen"
       },
       "actions": {
         "sendInvitation": "Einladung Senden",
         "sendResults": "Ergebnisse Senden",
+        "generateReport": "Bericht Senden",
         "delete": "Löschen"
       },
       "dialogs": {
@@ -180,7 +182,24 @@
           "sessions": "Zu löschende Sitzungen:",
           "confirm": "Löschen",
           "cancel": "Abbrechen"
+        },
+        "generateReport": {
+          "title": "Bericht Erstellen und Senden",
+          "message": "Sind Sie sicher, dass Sie einen Bericht für die ausgewählten Sitzungen erstellen und per E-Mail versenden möchten?",
+          "sessionsIncluded": "Einzuschließende Sitzungen ({{count}})",
+          "moreSessions": "+ {{count}} weitere Sitzung",
+          "moreSessions_other": "+ {{count}} weitere Sitzungen",
+          "info": "Ein Bericht wird erstellt und per E-Mail mit den Details aller ausgewählten Sitzungen versendet.",
+          "confirm": "Bericht Erstellen und Senden",
+          "cancel": "Abbrechen"
         }
+      },
+      "report": {
+        "success": "Bericht erfolgreich erstellt und gesendet",
+        "error": "Bericht konnte nicht erstellt oder gesendet werden",
+        "sessionCount": "{{count}} Sitzung enthalten",
+        "sessionCount_other": "{{count}} Sitzungen enthalten",
+        "dismiss": "Schließen"
       }
     },
     "create": {
@@ -334,8 +353,14 @@
     "results": {
       "title": "RefTest Abgeschlossen!",
       "subtitle": "Hier sind Ihre Ergebnisse",
+      "questionScore": "Fragen Punktzahl",
+      "answerScore": "Antworten Punktzahl",
+      "questionScoreShort": "F",
+      "answerScoreShort": "A",
       "score": "Punktzahl",
       "percentage": "Prozentsatz",
+      "totalQuestions": "Gesamtfragen",
+      "totalAnswers": "Gesamtantworten",
       "total": "Gesamtzahl der Fragen",
       "review": "Überprüfen Sie Ihre Antworten"
     },

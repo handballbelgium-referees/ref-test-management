@@ -12,7 +12,8 @@ type SortField =
   | 'completedAt'
   | 'startedAt'
   | 'email'
-  | 'score'
+  | 'questionScore'
+  | 'answerScore'
   | 'percentage'
   | 'status'
   | 'numberOfQuestions'
@@ -23,12 +24,14 @@ interface ISessionFilter {
   status?: QuizSessionStatus;
   invitationSent?: boolean;
   resultsSent?: boolean;
-  titleId?: string;
+  titleValue?: string;
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
-  minScore?: number;
-  maxScore?: number;
+  minQuestionScore?: number;
+  maxQuestionScore?: number;
+  minAnswerScore?: number;
+  maxAnswerScore?: number;
   percentageRange?: 'low' | 'medium' | 'high';
   minQuestions?: number;
   maxQuestions?: number;
@@ -81,8 +84,10 @@ export class SessionFiltersCard {
 
   readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
   readonly performanceFilterChange = output<{
-    minScore?: number;
-    maxScore?: number;
+    minQuestionScore?: number;
+    maxQuestionScore?: number;
+    minAnswerScore?: number;
+    maxAnswerScore?: number;
     percentageRange?: 'low' | 'medium' | 'high';
     minQuestions?: number;
     maxQuestions?: number;
@@ -110,8 +115,8 @@ export class SessionFiltersCard {
     this.sortingChange.emit(sorting);
   }
 
-  protected onTitleChange(titleId: string | undefined): void {
-    this.titleFilterChange.emit(titleId);
+  protected onTitleChange(titleValue: string | undefined): void {
+    this.titleFilterChange.emit(titleValue);
   }
 
   protected onInvitationChange(value: string): void {

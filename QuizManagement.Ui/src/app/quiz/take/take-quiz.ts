@@ -11,8 +11,13 @@ import {
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { onlyCompleteData } from 'apollo-angular';
 import { catchError, EMPTY, map, of, tap } from 'rxjs';
-import { CompleteQuizSessionGQL, StartQuizSessionGQL } from '../../../../graphql/generated';
+import {
+  CompleteQuizSessionGQL,
+  GetScoreConfigurationGQL,
+  StartQuizSessionGQL,
+} from '../../../../graphql/generated';
 import { QuizErrorComponent } from '../components/quiz-error/quiz-error';
 import { LeaveQuizDialogComponent } from './components/leave-quiz-dialog/leave-quiz-dialog';
 import { QuestionCardComponent } from './components/question-card/question-card';
@@ -74,10 +79,11 @@ export class TakeQuizComponent {
   protected readonly maxTimeInMinutes = signal<number>(60);
   protected readonly timeRemainingSeconds = signal<number>(0);
   protected readonly quizCompleted = signal(false);
-  protected readonly score = signal<number | null>(null);
+  protected readonly questionScore = signal<number | null>(null);
+  protected readonly questionTotal = signal<number | null>(null);
+  protected readonly answerScore = signal<number | null>(null);
+  protected readonly answerTotal = signal<number | null>(null);
   protected readonly percentage = signal<number | null>(null);
-  protected readonly wrongQuestionIds = signal<string[]>([]);
-  protected readonly wrongAnswerIds = signal<string[]>([]);
   protected readonly showSubmitDialog = signal(false);
   protected readonly showLeaveDialog = signal(false);
   private _leaveConfirmed = false;
@@ -127,6 +133,16 @@ export class TakeQuizComponent {
     const index = this.currentQuestionIndex();
     return index === questions.length - 1;
   });
+
+  protected readonly passingPercentage = toSignal(
+    inject(GetScoreConfigurationGQL)
+      .watch()
+      .valueChanges.pipe(
+        onlyCompleteData(),
+        map((result) => result.data.scoreConfiguration.passingPercentage)
+      ),
+    { initialValue: 0 }
+  );
 
   @HostListener('window:beforeunload', ['$event'])
   beforeUnloadHandler(event: BeforeUnloadEvent): void {
@@ -323,37 +339,11 @@ export class TakeQuizComponent {
         tap((session) => {
           if (session) {
             this.quizCompleted.set(true);
-            this.score.set(session.score ?? null);
+            this.questionScore.set(session.questionScore ?? null);
+            this.questionTotal.set(session.questionTotal ?? null);
+            this.answerScore.set(session.answerScore ?? null);
+            this.answerTotal.set(session.answerTotal ?? null);
             this.percentage.set(session.percentage ?? null);
-            this.wrongQuestionIds.set(session.wrongQuestionIds ?? []);
-            this.wrongAnswerIds.set(session.wrongAnswerIds ?? []);
-
-            // Update questions with numbers from the response
-            if (session.questions) {
-              const currentQuestions = this.questions();
-              const updatedQuestions = currentQuestions.map((q) => {
-                const responseQuestion = session.questions?.find((rq) => rq?.id === q.id);
-                if (responseQuestion) {
-                  // Update question number and answer numbers
-                  const updatedAnswers = q.answers
-                    .map((a) => {
-                      const responseAnswer = responseQuestion.answers?.find(
-                        (ra) => ra?.id === a.id
-                      );
-                      return responseAnswer
-                        ? { ...a, number: responseAnswer.number ?? undefined }
-                        : a;
-                    })
-                    .sort((a, b) => {
-                      if (!a.number || !b.number) return 0;
-                      return a.number.localeCompare(b.number);
-                    });
-                  return { ...q, number: responseQuestion.number, answers: updatedAnswers };
-                }
-                return q;
-              });
-              this.questions.set(updatedQuestions);
-            }
           }
         }),
         catchError(() => {

@@ -1,0 +1,82 @@
+@if (show()) {
+<div
+  class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+  (click)="cancel.emit()"
+>
+  <div
+    class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-neutral-200">
+      <h2 class="text-xl font-bold text-neutral-900">
+        {{ 'sessions.list.dialogs.generateReport.title' | translate }}
+      </h2>
+      <p class="text-sm text-neutral-600 mt-1">
+        {{ 'sessions.list.dialogs.generateReport.message' | translate }}
+      </p>
+    </div>
+
+    <!-- Content -->
+    <div class="px-6 py-4 overflow-y-auto flex-1 scrollbar-hide">
+      <div>
+        <h3 class="text-sm font-semibold text-neutral-900 mb-2">
+          {{
+            'sessions.list.dialogs.generateReport.sessionsIncluded'
+              | translate : { count: totalCount() }
+          }}
+        </h3>
+        <ul class="space-y-1">
+          @for (session of displayedSessions(); track session.email) {
+          <li class="text-sm text-neutral-700 flex items-center gap-2">
+            <svg class="w-4 h-4 text-primary-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <span class="font-medium">{{ session.name }}</span>
+            <span class="text-neutral-500">({{ session.email }})</span>
+          </li>
+          } @if (remainingCount() > 0) {
+          <li class="text-sm text-neutral-500 italic pl-6 pt-1">
+            {{
+              'sessions.list.dialogs.generateReport.moreSessions'
+                | translate : { count: remainingCount() }
+            }}
+          </li>
+          }
+        </ul>
+      </div>
+      <div class="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <p class="text-sm text-blue-800">
+          {{ 'sessions.list.dialogs.generateReport.info' | translate }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
+      <button
+        type="button"
+        (click)="cancel.emit()"
+        class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+      >
+        {{ 'sessions.list.dialogs.generateReport.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        (click)="confirm.emit()"
+        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+      >
+        {{
+          totalCount() === 1
+            ? ('sessions.list.actions.generateReport' | translate)
+            : ('sessions.list.dialogs.generateReport.confirm' | translate)
+        }}
+      </button>
+    </div>
+  </div>
+</div>
+}
