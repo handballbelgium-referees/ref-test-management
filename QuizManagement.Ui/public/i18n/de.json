@@ -149,11 +149,13 @@
         "sessionsSelected": "Sitzungen ausgewählt",
         "sendInvitations": "Einladungen Senden",
         "sendResults": "Ergebnisse Senden",
+        "generateReport": "Bericht Senden",
         "delete": "Löschen"
       },
       "actions": {
         "sendInvitation": "Einladung Senden",
         "sendResults": "Ergebnisse Senden",
+        "generateReport": "Bericht Senden",
         "delete": "Löschen"
       },
       "dialogs": {
@@ -180,7 +182,24 @@
           "sessions": "Zu löschende Sitzungen:",
           "confirm": "Löschen",
           "cancel": "Abbrechen"
+        },
+        "generateReport": {
+          "title": "Bericht Erstellen und Senden",
+          "message": "Sind Sie sicher, dass Sie einen Bericht für die ausgewählten Sitzungen erstellen und per E-Mail versenden möchten?",
+          "sessionsIncluded": "Einzuschließende Sitzungen ({{count}})",
+          "moreSessions": "+ {{count}} weitere Sitzung",
+          "moreSessions_other": "+ {{count}} weitere Sitzungen",
+          "info": "Ein Bericht wird erstellt und per E-Mail mit den Details aller ausgewählten Sitzungen versendet.",
+          "confirm": "Bericht Erstellen und Senden",
+          "cancel": "Abbrechen"
         }
+      },
+      "report": {
+        "success": "Bericht erfolgreich erstellt und gesendet",
+        "error": "Bericht konnte nicht erstellt oder gesendet werden",
+        "sessionCount": "{{count}} Sitzung enthalten",
+        "sessionCount_other": "{{count}} Sitzungen enthalten",
+        "dismiss": "Schließen"
       }
     },
     "create": {

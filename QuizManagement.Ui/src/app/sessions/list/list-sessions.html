@@ -55,6 +55,77 @@
     />
   </div>
 
+  <!-- Report Result Banner -->
+  @if (reportResult()) {
+  <div
+    [class]="reportResult()!.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'"
+    class="mb-4 rounded-lg border p-4 flex items-start gap-3"
+    role="alert"
+  >
+    @if (reportResult()!.success) {
+    <svg
+      class="w-5 h-5 text-green-600 shrink-0 mt-0.5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    } @else {
+    <svg
+      class="w-5 h-5 text-red-600 shrink-0 mt-0.5"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    }
+    <div class="flex-1 min-w-0">
+      <p
+        [class]="reportResult()!.success ? 'text-green-800' : 'text-red-800'"
+        class="text-sm font-medium"
+      >
+        {{ (reportResult()!.success ? 'sessions.list.report.success' : 'sessions.list.report.error') | translate }}
+      </p>
+      @if (reportResult()!.sessionCount > 0) {
+      <p
+        [class]="reportResult()!.success ? 'text-green-700' : 'text-red-700'"
+        class="text-xs mt-1"
+      >
+        {{ 'sessions.list.report.sessionCount' | translate: { count: reportResult()!.sessionCount } }}
+      </p>
+      }
+    </div>
+    <button
+      type="button"
+      (click)="dismissReportResult()"
+      [class]="reportResult()!.success ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'"
+      class="shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded"
+      [class.focus:ring-green-500]="reportResult()!.success"
+      [class.focus:ring-red-500]="!reportResult()!.success"
+      [attr.aria-label]="'sessions.list.report.dismiss' | translate"
+      title="{{'sessions.list.report.dismiss' | translate }}"
+    >
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+      </svg>
+    </button>
+  </div>
+  }
+
   <!-- Bulk Actions Bar -->
   <app-session-bulk-actions
     [selectedCount]="selectedCount()"
@@ -63,9 +134,11 @@
     [sendingInvitations]="sendingInvitations()"
     [sendingResults]="sendingResults()"
     [deletingSessions]="deletingSessions()"
+    [generatingReport]="generatingReport()"
     (sendInvitations)="sendInvitationsToSelected()"
     (sendResults)="sendResultsToSelected()"
     (deleteSelected)="deleteSelectedSessions()"
+    (generateReport)="generateReportForSelected()"
   />
 
   <!-- Loading State -->
@@ -381,3 +454,12 @@
   (cancel)="cancelDelete()"
 >
 </app-delete-sessions-dialog>
+
+<!-- Generate Report Dialog -->
+<app-generate-report-dialog
+  [show]="showGenerateReportDialog()"
+  [summary]="reportSummary()"
+  (confirm)="confirmGenerateReport()"
+  (cancel)="cancelGenerateReport()"
+>
+</app-generate-report-dialog>

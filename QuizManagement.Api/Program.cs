@@ -50,8 +50,13 @@ var scoreConfig = configuration.GetSection("ScoreConfiguration").Get<ScoreConfig
                   ?? new ScoreConfiguration();
 services.AddSingleton(scoreConfig);
 
+var reportConfig = configuration.GetSection("ReportConfiguration").Get<ReportConfiguration>()
+                   ?? new ReportConfiguration();
+services.AddSingleton(reportConfig);
+
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IQuizResultsPdfService, QuizResultsPdfService>();
+services.AddScoped<IQuizReportService, QuizReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 
 // Add IHF Rules Questions GraphQL client

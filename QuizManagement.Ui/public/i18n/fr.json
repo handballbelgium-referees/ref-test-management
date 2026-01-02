@@ -151,11 +151,13 @@
         "sessionsSelected": "sessions sélectionnées",
         "sendInvitations": "Envoyer les Invitations",
         "sendResults": "Envoyer les Résultats",
+        "generateReport": "Envoyer le Rapport",
         "delete": "Supprimer"
       },
       "actions": {
         "sendInvitation": "Envoyer l'Invitation",
         "sendResults": "Envoyer les Résultats",
+        "generateReport": "Envoyer le Rapport",
         "delete": "Supprimer"
       },
       "dialogs": {
@@ -182,7 +184,24 @@
           "sessions": "Sessions à supprimer:",
           "confirm": "Supprimer",
           "cancel": "Annuler"
+        },
+        "generateReport": {
+          "title": "Générer et Envoyer le Rapport",
+          "message": "Êtes-vous sûr de vouloir générer et envoyer par e-mail un rapport pour les sessions sélectionnées?",
+          "sessionsIncluded": "Sessions à inclure ({{count}})",
+          "moreSessions": "+ {{count}} session de plus",
+          "moreSessions_other": "+ {{count}} sessions de plus",
+          "info": "Un rapport sera généré et envoyé par e-mail avec les détails de toutes les sessions sélectionnées.",
+          "confirm": "Générer et Envoyer le Rapport",
+          "cancel": "Annuler"
         }
+      },
+      "report": {
+        "success": "Rapport généré et envoyé avec succès",
+        "error": "Échec de la génération ou de l'envoi du rapport",
+        "sessionCount": "{{count}} session incluse",
+        "sessionCount_other": "{{count}} sessions incluses",
+        "dismiss": "Fermer"
       }
     },
     "create": {

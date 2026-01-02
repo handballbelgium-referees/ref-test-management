@@ -153,11 +153,13 @@
         "sessionsSelected": "sessions selected",
         "sendInvitations": "Send Invitations",
         "sendResults": "Send Results",
+        "generateReport": "Send Report",
         "delete": "Delete"
       },
       "actions": {
         "sendInvitation": "Send Invitation",
         "sendResults": "Send Results",
+        "generateReport": "Send Report",
         "delete": "Delete"
       },
       "dialogs": {
@@ -184,7 +186,24 @@
           "sessions": "Sessions to be deleted:",
           "confirm": "Delete",
           "cancel": "Cancel"
+        },
+        "generateReport": {
+          "title": "Generate and Send Report",
+          "message": "Are you sure you want to generate and send a report by email for the selected sessions?",
+          "sessionsIncluded": "Sessions to include ({{count}})",
+          "moreSessions": "+ {{count}} more session",
+          "moreSessions_other": "+ {{count}} more sessions",
+          "info": "A report will be generated and sent by email with the details of all selected sessions.",
+          "confirm": "Generate and Send Report",
+          "cancel": "Cancel"
         }
+      },
+      "report": {
+        "success": "Report successfully generated and sent",
+        "error": "Failed to generate or send report",
+        "sessionCount": "{{count}} session included",
+        "sessionCount_other": "{{count}} sessions included",
+        "dismiss": "Dismiss"
       }
     },
     "create": {

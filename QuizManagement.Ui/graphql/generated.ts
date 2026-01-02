@@ -154,6 +154,22 @@ export type FloatOperationFilterInput = {
   nlte?: InputMaybe<Scalars['Float']['input']>;
 };
 
+export type GenerateQuizSessionsReportInput = {
+  sessionIds: Array<Scalars['ID']['input']>;
+};
+
+export type GenerateQuizSessionsReportPayload = {
+  __typename?: 'GenerateQuizSessionsReportPayload';
+  generateReportResult?: Maybe<GenerateReportResult>;
+};
+
+export type GenerateReportResult = {
+  __typename?: 'GenerateReportResult';
+  message: Scalars['String']['output'];
+  sessionCount: Scalars['Int']['output'];
+  success: Scalars['Boolean']['output'];
+};
+
 export type IntOperationFilterInput = {
   eq?: InputMaybe<Scalars['Int']['input']>;
   gt?: InputMaybe<Scalars['Int']['input']>;
@@ -179,6 +195,7 @@ export type Mutation = {
   completeQuiz: CompleteQuizPayload;
   createBulkQuizSessions: CreateBulkQuizSessionsPayload;
   deleteQuizSessions: DeleteQuizSessionsPayload;
+  generateQuizSessionsReport: GenerateQuizSessionsReportPayload;
   sendInvitations: SendInvitationsPayload;
   sendResults: SendResultsPayload;
   startQuizSession: StartQuizSessionPayload;
@@ -197,6 +214,11 @@ export type MutationCreateBulkQuizSessionsArgs = {
 
 export type MutationDeleteQuizSessionsArgs = {
   input: DeleteQuizSessionsInput;
+};
+
+
+export type MutationGenerateQuizSessionsReportArgs = {
+  input: GenerateQuizSessionsReportInput;
 };
 
 
@@ -657,6 +679,13 @@ export type DeleteQuizSessionsMutationVariables = Exact<{
 
 export type DeleteQuizSessionsMutation = { __typename?: 'Mutation', deleteQuizSessions: { __typename?: 'DeleteQuizSessionsPayload', deleteQuizSessionsResult?: { __typename?: 'DeleteQuizSessionsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedSessions: Array<{ __typename?: 'QuizSession', id: string }>, errors: Array<{ __typename?: 'DeleteQuizSessionError', quizSessionId: string, errorMessage: string }> } | null } };
 
+export type GenerateReportMutationVariables = Exact<{
+  input: GenerateQuizSessionsReportInput;
+}>;
+
+
+export type GenerateReportMutation = { __typename?: 'Mutation', generateQuizSessionsReport: { __typename?: 'GenerateQuizSessionsReportPayload', generateReportResult?: { __typename?: 'GenerateReportResult', success: boolean, message: string, sessionCount: number } | null } };
+
 export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -817,6 +846,28 @@ export const DeleteQuizSessionsDocument = gql`
   })
   export class DeleteQuizSessionsGQL extends Apollo.Mutation<DeleteQuizSessionsMutation, DeleteQuizSessionsMutationVariables> {
     override document = DeleteQuizSessionsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GenerateReportDocument = gql`
+    mutation generateReport($input: GenerateQuizSessionsReportInput!) {
+  generateQuizSessionsReport(input: $input) {
+    generateReportResult {
+      success
+      message
+      sessionCount
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GenerateReportGQL extends Apollo.Mutation<GenerateReportMutation, GenerateReportMutationVariables> {
+    override document = GenerateReportDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

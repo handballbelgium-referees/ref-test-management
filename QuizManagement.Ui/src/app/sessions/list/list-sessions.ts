@@ -18,6 +18,7 @@ import {
   DateTimeOperationFilterInput,
   DeleteQuizSessionsGQL,
   FloatOperationFilterInput,
+  GenerateReportGQL,
   GetQuizSessionsCountGQL,
   GetQuizSessionsGQL,
   GetQuizSessionsQuery,
@@ -33,6 +34,7 @@ import {
 } from '../../../../graphql/generated';
 import { ColumnVisibilityMenu } from './components/column-visibility-menu/column-visibility-menu';
 import { DeleteSessionsDialog } from './components/dialogs/delete-sessions-dialog/delete-sessions-dialog';
+import { GenerateReportDialog } from './components/dialogs/generate-report-dialog/generate-report-dialog';
 import { SendInvitationsDialog } from './components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from './components/dialogs/send-results-dialog/send-results-dialog';
 import { SessionFiltersCard } from './components/filters/session-filters-card/session-filters-card';
@@ -90,6 +92,7 @@ type SessionNode = NonNullable<
     SendInvitationsDialog,
     SendResultsDialog,
     DeleteSessionsDialog,
+    GenerateReportDialog,
   ],
   templateUrl: './list-sessions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -103,6 +106,7 @@ export class ListSessions {
   private readonly _deleteQuizSessionsGQL = inject(DeleteQuizSessionsGQL);
   private readonly _sendInvitationsGQL = inject(SendQuizInvitationsGQL);
   private readonly _sendResultsGQL = inject(SendQuizResultsGQL);
+  private readonly _generateReportGQL = inject(GenerateReportGQL);
   private readonly _router = inject(Router);
   private readonly _destroyRef = inject(DestroyRef);
 
@@ -144,9 +148,15 @@ export class ListSessions {
   protected readonly showSendInvitationsDialog = signal(false);
   protected readonly showSendResultsDialog = signal(false);
   protected readonly showDeleteDialog = signal(false);
+  protected readonly showGenerateReportDialog = signal(false);
   protected readonly sendingInvitations = signal(false);
   protected readonly sendingResults = signal(false);
   protected readonly deletingSessions = signal(false);
+  protected readonly generatingReport = signal(false);
+  protected readonly reportResult = signal<{
+    success: boolean;
+    sessionCount: number;
+  } | null>(null);
 
   protected readonly invitationSummary = computed(() => {
     const selectedIds = this.selectedSessionIds();
@@ -190,6 +200,16 @@ export class ListSessions {
       .map((s) => ({ name: s.name || '', email: s.email || '' }));
   });
 
+  protected readonly reportSummary = computed(() => {
+    const selectedIds = this.selectedSessionIds();
+    const allSessions = this.allLoadedSessions();
+    return {
+      sessions: allSessions
+        .filter((s) => selectedIds.has(s.id))
+        .map((s) => ({ name: s.name || '', email: s.email || '' })),
+    };
+  });
+
   protected readonly hasCompletedSessionsSelected = computed(() => {
     const selectedIds = this.selectedSessionIds();
     const allSessions = this.allLoadedSessions();
@@ -207,6 +227,14 @@ export class ListSessions {
   protected readonly allSelected = computed(() => {
     const sessions = this.sessions();
     const selected = this.selectedSessionIds();
+    const totalCount = this.totalCount();
+
+    // If we have selected sessions equal to total count, all are selected
+    if (selected.size > 0 && selected.size === totalCount) {
+      return true;
+    }
+
+    // Otherwise check if all currently visible sessions are selected
     return sessions.length > 0 && sessions.every((s) => selected.has(s.id));
   });
 
@@ -287,6 +315,11 @@ export class ListSessions {
         this.allLoadedSessions.set(newSessions);
         this.hasNextPage.set(result.data.quizSessions.pageInfo?.hasNextPage ?? false);
         this._endCursor.set(result.data.quizSessions.pageInfo?.endCursor ?? undefined);
+
+        // Automatically load all remaining pages
+        if (result.data.quizSessions.pageInfo?.hasNextPage && !this.loadingMore()) {
+          this.loadMore();
+        }
       }
     });
 
@@ -505,7 +538,15 @@ export class ListSessions {
   }
 
   protected setTitleFilter(titleId?: string): void {
-    this.filter.update((f) => ({ ...f, titleValue: titleId }));
+    this.filter.update((f) => {
+      const newFilter = { ...f };
+      if (titleId) {
+        newFilter.titleValue = titleId;
+      } else {
+        delete newFilter.titleValue;
+      }
+      return newFilter;
+    });
   }
 
   protected setInvitationFilter(invitationSent?: boolean): void {
@@ -634,7 +675,69 @@ export class ListSessions {
   protected cancelDelete(): void {
     this.showDeleteDialog.set(false);
   }
+  protected generateReportForSelected(): void {
+    const sessionIds = Array.from(this.selectedSessionIds());
+    if (sessionIds.length === 0) {
+      return;
+    }
 
+    this.showGenerateReportDialog.set(true);
+  }
+
+  protected confirmGenerateReport(): void {
+    this.showGenerateReportDialog.set(false);
+    const sessionIds = Array.from(this.selectedSessionIds());
+    this.reportResult.set(null); // Clear previous result
+
+    this._generateReportGQL
+      .mutate({
+        variables: { input: { sessionIds } },
+        fetchPolicy: 'no-cache',
+      })
+      .pipe(
+        tap((result) => this.generatingReport.set(result.loading ?? false)),
+        tap((result) => {
+          const generateResult = result.data?.generateQuizSessionsReport?.generateReportResult;
+          if (generateResult) {
+            this.reportResult.set({
+              success: generateResult.success,
+              sessionCount: generateResult.sessionCount || 0,
+            });
+            // Auto-hide banner after 10 seconds
+            setTimeout(() => {
+              this.dismissReportResult();
+            }, 10000);
+            if (generateResult.success) {
+              this.selectedSessionIds.set(new Set());
+            }
+          }
+        }),
+        catchError(() => {
+          this.reportResult.set({
+            success: false,
+            sessionCount: 0,
+          });
+          // Auto-hide banner after 10 seconds
+          setTimeout(() => {
+            this.dismissReportResult();
+          }, 10000);
+          return of(null);
+        }),
+        finalize(() => {
+          this.generatingReport.set(false);
+        }),
+        takeUntilDestroyed(this._destroyRef)
+      )
+      .subscribe();
+  }
+
+  protected cancelGenerateReport(): void {
+    this.showGenerateReportDialog.set(false);
+  }
+
+  protected dismissReportResult(): void {
+    this.reportResult.set(null);
+  }
   protected sendResultsToSelected(): void {
     const selectedIds = Array.from(this.selectedSessionIds());
     if (selectedIds.length === 0) {

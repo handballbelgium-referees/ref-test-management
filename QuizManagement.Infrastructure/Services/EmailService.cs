@@ -209,6 +209,69 @@ public partial class EmailService(
         }
     }
 
+    public async Task SendReportEmailAsync(string recipientEmail, byte[] excelReport, byte[] pdfReport, string timestamp, int sessionCount)
+    {
+        var subject = $"RefTest Report - {DateTime.UtcNow:dd-MM-yyyy}";
+        
+        // Convert to Central European Time
+        var cetTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
+        var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cetTimeZone);
+        
+        var emailBody = $@"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <style>
+        body {{ font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }}
+    </style>
+</head>
+<body style='margin: 0; padding: 0;'>
+    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
+        <!-- Header with Belgian Handball Colors -->
+        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
+            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest Report</h1>
+            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium</p>
+        </div>
+
+        <!-- Main Content -->
+        <div style='padding: 20px;'>
+            <p style='font-size: 16px; line-height: 1.6; color: #374151;'>
+                This is an automatically generated report containing reftest data.
+            </p>
+            
+            <div style='background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;'>
+                <p style='margin: 5px 0; color: #374151;'><strong>Report Date:</strong> {nowCet:dd-MM-yyyy HH:mm}</p>
+                <p style='margin: 5px 0; color: #374151;'><strong>Number of RefTests:</strong> {sessionCount}</p>
+            </div>
+
+            <p style='font-size: 14px; color: #374151;'>
+                The report is attached in both Excel (.xlsx) and PDF formats.
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div style='background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px;'>
+            <p style='color: #6b7280; font-size: 12px; margin: 0;'>
+                Referees Handball Belgium
+            </p>
+        </div>
+    </div>
+</body>
+</html>";
+
+        var attachments = new List<EmailAttachment>
+        {
+            new($"reftest_report_{timestamp}.xlsx", excelReport),
+            new($"reftest_report_{timestamp}.pdf", pdfReport)
+        };
+
+        await SendEmailAsync(recipientEmail, subject, emailBody, attachments);
+
+        LogReportEmailSentToEmail(logger, recipientEmail);
+    }
+
     [LoggerMessage(LogLevel.Information,
         "Sending RefTest invitation to {email}. Token: {token}, Questions: {questions}, Time: {time} minutes. URL: {url}")]
     static partial void LogSendingQuizInvitationToEmailTokenTokenQuestionsQuestionsTimeTimeMinutes(
@@ -240,6 +303,10 @@ public partial class EmailService(
 
     [LoggerMessage(LogLevel.Error, "Error sending email to {email}")]
     static partial void LogErrorSendingEmailToEmail(ILogger<EmailService> logger, Exception ex, string email);
+
+    [LoggerMessage(EventId = 8, Level = LogLevel.Information,
+        Message = "Report email sent to {Email}")]
+    private static partial void LogReportEmailSentToEmail(ILogger logger, string email);
 
     private record LanguageContent(
         string QuizUrl,

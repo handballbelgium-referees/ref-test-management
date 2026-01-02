@@ -492,4 +492,87 @@ public static class QuizMutations
 
         return result;
     }
+
+    /// <summary>
+    /// Generate and email a report of quiz sessions
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="context"></param>
+    /// <param name="reportService"></param>
+    /// <param name="reportConfig"></param>
+    /// <param name="scoreConfig"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [Authorize]
+    public static async Task<GenerateReportResult> GenerateQuizSessionsReportAsync(
+        GenerateQuizSessionsReportInput input,
+        QuizManagementContext context,
+        [Service] IQuizReportService reportService,
+        [Service] ReportConfiguration reportConfig,
+        [Service] ScoreConfiguration scoreConfig,
+        CancellationToken cancellationToken)
+    {
+        var sessions = await context.QuizSessions
+            .Include(s => s.Title)
+            .Where(s => input.SessionIds.Contains(s.Id))
+            .OrderBy(s => s.LastName)
+            .ToListAsync(cancellationToken);
+
+        if (sessions.Count == 0)
+        {
+            return new GenerateReportResult
+            {
+                Success = false,
+                Message = "No sessions found with the provided IDs",
+                SessionCount = 0
+            };
+        }
+
+        var reportData = sessions.Select(s => new QuizSessionReportData(
+            s.Title?.Value ?? "Unknown",
+            s.FirstName,
+            s.LastName,
+            s.StartedAt,
+            s.CompletedAt,
+            s.QuestionScore,
+            s.QuestionTotal,
+            s.AnswerScore,
+            s.AnswerTotal,
+            s.Percentage,
+            s.Percentage >= scoreConfig.PassingPercentage
+        )).ToList();
+
+        var recipients = reportConfig.RecipientEmails;
+
+        if (recipients.Length == 0)
+        {
+            return new GenerateReportResult
+            {
+                Success = false,
+                Message = "No recipient emails configured",
+                SessionCount = sessions.Count
+            };
+        }
+
+        try
+        {
+            await reportService.SendReportAsync(reportData, recipients, cancellationToken);
+
+            return new GenerateReportResult
+            {
+                Success = true,
+                Message = $"Report successfully generated and sent to {recipients.Length} recipient(s)",
+                SessionCount = sessions.Count
+            };
+        }
+        catch (Exception ex)
+        {
+            return new GenerateReportResult
+            {
+                Success = false,
+                Message = $"Failed to generate or send report: {ex.Message}",
+                SessionCount = sessions.Count
+            };
+        }
+    }
 }

@@ -24,7 +24,7 @@ interface ISessionFilter {
   status?: QuizSessionStatus;
   invitationSent?: boolean;
   resultsSent?: boolean;
-  titleId?: string;
+  titleValue?: string;
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
@@ -115,8 +115,8 @@ export class SessionFiltersCard {
     this.sortingChange.emit(sorting);
   }
 
-  protected onTitleChange(titleId: string | undefined): void {
-    this.titleFilterChange.emit(titleId);
+  protected onTitleChange(titleValue: string | undefined): void {
+    this.titleFilterChange.emit(titleValue);
   }
 
   protected onInvitationChange(value: string): void {
