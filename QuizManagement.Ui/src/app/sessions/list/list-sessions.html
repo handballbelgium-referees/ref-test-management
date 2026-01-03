@@ -1,465 +1,488 @@
-<!-- Hero Section -->
-<div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
-  <div class="max-w-7xl mx-auto">
-    <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ 'sessions.list.title' | translate }}</h1>
-    <p class="text-primary-100 text-lg">{{ 'sessions.list.subtitle' | translate }}</p>
+<app-pull-to-refresh [isRefreshing]="isRefreshing()" (onRefresh)="refresh()">
+  <!-- Hero Section -->
+  <div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-7xl mx-auto">
+      <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ 'sessions.list.title' | translate }}</h1>
+      <p class="text-primary-100 text-lg">{{ 'sessions.list.subtitle' | translate }}</p>
+    </div>
   </div>
-</div>
 
-<!-- Main Content -->
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  <!-- Top Actions Bar -->
-  <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-    <button
-      type="button"
-      (click)="navigateToCreate()"
-      class="w-full sm:w-auto px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
-    >
-      {{ 'sessions.list.createNew' | translate }}
-    </button>
+  <!-- Main Content with Pull-to-Refresh -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <!-- Top Actions Bar -->
+    <div class="mb-6 flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+      <button
+        type="button"
+        (click)="navigateToCreate()"
+        class="w-full sm:w-auto px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
+      >
+        {{ 'sessions.list.createNew' | translate }}
+      </button>
 
-    <!-- Search Bar and Column Toggle -->
-    <div class="flex gap-2 w-full sm:w-auto">
-      <!-- Column Visibility Menu -->
-      <app-column-visibility-menu
-        [visibleColumns]="visibleColumns()"
-        [showMenu]="showColumnMenu()"
-        (toggleMenu)="toggleColumnMenu()"
-        (toggleColumn)="toggleColumn($event)"
-      />
-
-      <!-- Search Bar -->
-      <div class="flex-1 sm:w-96">
-        <input
-          type="search"
-          [placeholder]="'sessions.list.searchPlaceholder' | translate"
-          (input)="onSearchInput($event)"
-          class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+      <!-- Search Bar and Column Toggle -->
+      <div class="flex gap-2 w-full sm:w-auto">
+        <!-- Column Visibility Menu -->
+        <app-column-visibility-menu
+          [visibleColumns]="visibleColumns()"
+          [showMenu]="showColumnMenu()"
+          (toggleMenu)="toggleColumnMenu()"
+          (toggleColumn)="toggleColumn($event)"
         />
+
+        <!-- Search Bar -->
+        <div class="flex-1 sm:w-96">
+          <input
+            type="search"
+            [placeholder]="'sessions.list.searchPlaceholder' | translate"
+            (input)="onSearchInput($event)"
+            class="w-full px-4 py-3 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+          />
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- Filters and Sorting -->
-  <div class="mb-6">
-    <app-session-filters-card
-      [filter]="filter()"
-      [statusCounts]="statusCounts()"
-      (statusFilterChange)="setStatusFilter($event)"
-      (titleFilterChange)="setTitleFilter($event)"
-      (invitationFilterChange)="setInvitationFilter($event)"
-      (resultsFilterChange)="setResultsFilter($event)"
-      (sortingChange)="setSorting($event.field, $event.direction)"
-      (performanceFilterChange)="setPerformanceFilters($event)"
-      (dateRangeChange)="setDateRange($event.type, $event.after, $event.before)"
-    />
-  </div>
+    <!-- Filters and Sorting -->
+    <div class="mb-6">
+      <app-session-filters-card
+        [filter]="filter()"
+        [statusCounts]="statusCounts()"
+        (statusFilterChange)="setStatusFilter($event)"
+        (titleFilterChange)="setTitleFilter($event)"
+        (invitationFilterChange)="setInvitationFilter($event)"
+        (resultsFilterChange)="setResultsFilter($event)"
+        (sortingChange)="setSorting($event.field, $event.direction)"
+        (performanceFilterChange)="setPerformanceFilters($event)"
+        (dateRangeChange)="setDateRange($event.type, $event.after, $event.before)"
+      />
+    </div>
 
-  <!-- Report Result Banner -->
-  @if (reportResult()) {
-  <div
-    [class]="reportResult()!.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'"
-    class="mb-4 rounded-lg border p-4 flex items-start gap-3"
-    role="alert"
-  >
-    @if (reportResult()!.success) {
-    <svg
-      class="w-5 h-5 text-green-600 shrink-0 mt-0.5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
+    <!-- Report Result Banner -->
+    @if (reportResult()) {
+    <div
+      [class]="
+        reportResult()!.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+      "
+      class="mb-4 rounded-lg border p-4 flex items-start gap-3"
+      role="alert"
     >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    } @else {
-    <svg
-      class="w-5 h-5 text-red-600 shrink-0 mt-0.5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
+      @if (reportResult()!.success) {
+      <svg
+        class="w-5 h-5 text-green-600 shrink-0 mt-0.5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      } @else {
+      <svg
+        class="w-5 h-5 text-red-600 shrink-0 mt-0.5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      }
+      <div class="flex-1 min-w-0">
+        <p
+          [class]="reportResult()!.success ? 'text-green-800' : 'text-red-800'"
+          class="text-sm font-medium"
+        >
+          {{
+            (reportResult()!.success
+              ? 'sessions.list.report.success'
+              : 'sessions.list.report.error'
+            ) | translate
+          }}
+        </p>
+        @if (reportResult()!.sessionCount > 0) {
+        <p
+          [class]="reportResult()!.success ? 'text-green-700' : 'text-red-700'"
+          class="text-xs mt-1"
+        >
+          {{
+            'sessions.list.report.sessionCount'
+              | translate : { count: reportResult()!.sessionCount }
+          }}
+        </p>
+        }
+      </div>
+      <button
+        type="button"
+        (click)="dismissReportResult()"
+        [class]="
+          reportResult()!.success
+            ? 'text-green-600 hover:text-green-800'
+            : 'text-red-600 hover:text-red-800'
+        "
+        class="shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded"
+        [class.focus:ring-green-500]="reportResult()!.success"
+        [class.focus:ring-red-500]="!reportResult()!.success"
+        [attr.aria-label]="'sessions.list.report.dismiss' | translate"
+        title="{{ 'sessions.list.report.dismiss' | translate }}"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 18L18 6M6 6l12 12"
+          />
+        </svg>
+      </button>
+    </div>
     }
-    <div class="flex-1 min-w-0">
-      <p
-        [class]="reportResult()!.success ? 'text-green-800' : 'text-red-800'"
-        class="text-sm font-medium"
+
+    <!-- Bulk Actions Bar -->
+    <app-session-bulk-actions
+      [selectedCount]="selectedCount()"
+      [hasCompletedSessionsSelected]="hasCompletedSessionsSelected()"
+      [hasPendingSessionsSelected]="hasPendingSessionsSelected()"
+      [sendingInvitations]="sendingInvitations()"
+      [sendingResults]="sendingResults()"
+      [deletingSessions]="deletingSessions()"
+      [generatingReport]="generatingReport()"
+      (sendInvitations)="sendInvitationsToSelected()"
+      (sendResults)="sendResultsToSelected()"
+      (deleteSelected)="deleteSelectedSessions()"
+      (generateReport)="generateReportForSelected()"
+    />
+
+    <!-- Loading State -->
+    @if (loading()) {
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto mb-4"
+      ></div>
+      <p class="text-neutral-600">{{ 'sessions.list.loading' | translate }}</p>
+    </div>
+    }
+
+    <!-- Empty State -->
+    @else if (sessions().length === 0) {
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+      <svg
+        class="mx-auto h-12 w-12 text-neutral-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
       >
-        {{ (reportResult()!.success ? 'sessions.list.report.success' : 'sessions.list.report.error') | translate }}
-      </p>
-      @if (reportResult()!.sessionCount > 0) {
-      <p
-        [class]="reportResult()!.success ? 'text-green-700' : 'text-red-700'"
-        class="text-xs mt-1"
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+      <h3 class="mt-4 text-lg font-medium text-neutral-900">
+        {{ 'sessions.list.empty.title' | translate }}
+      </h3>
+      <p class="mt-2 text-sm text-neutral-600">{{ 'sessions.list.empty.subtitle' | translate }}</p>
+      <button
+        type="button"
+        (click)="navigateToCreate()"
+        class="mt-6 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
       >
-        {{ 'sessions.list.report.sessionCount' | translate: { count: reportResult()!.sessionCount } }}
-      </p>
+        {{ 'sessions.list.empty.action' | translate }}
+      </button>
+    </div>
+    }
+
+    <!-- Sessions List -->
+    @else {
+    <!-- Desktop Table View -->
+    <div
+      class="hidden md:block bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto"
+    >
+      <table class="min-w-full">
+        <thead class="bg-neutral-100 border-b border-neutral-200">
+          <tr>
+            <th class="px-4 py-3 text-left">
+              <input
+                type="checkbox"
+                [checked]="allSelected()"
+                [indeterminate]="someSelected()"
+                (change)="toggleSelectAll()"
+                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+              />
+            </th>
+            @if (isColumnVisible('title')) {
+            <th
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            >
+              {{ 'sessions.list.table.title' | translate }}
+            </th>
+            } @if (isColumnVisible('participant')) {
+            <th
+              (click)="sortByColumn('email')"
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.participant' | translate }}
+                @if (filter().sortField === 'email') { @if (filter().sortDirection ===
+                SortEnumType.Asc) {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  />
+                </svg>
+                } @else {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  />
+                </svg>
+                } }
+              </div>
+            </th>
+            } @if (isColumnVisible('status')) {
+            <th
+              (click)="sortByColumn('status')"
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.status' | translate }}
+                @if (filter().sortField === 'status') { @if (filter().sortDirection ===
+                SortEnumType.Asc) {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  />
+                </svg>
+                } @else {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  />
+                </svg>
+                } }
+              </div>
+            </th>
+            } @if (isColumnVisible('questions')) {
+            <th
+              (click)="sortByColumn('numberOfQuestions')"
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.questions' | translate }}
+                @if (filter().sortField === 'numberOfQuestions') { @if (filter().sortDirection ===
+                SortEnumType.Asc) {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  />
+                </svg>
+                } @else {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  />
+                </svg>
+                } }
+              </div>
+            </th>
+            } @if (isColumnVisible('score')) {
+            <th
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.score' | translate }}
+              </div>
+            </th>
+            } @if (isColumnVisible('invitation')) {
+            <th
+              (click)="sortByColumn('invitationSent')"
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.invitation' | translate }}
+                @if (filter().sortField === 'invitationSent') { @if (filter().sortDirection ===
+                SortEnumType.Asc) {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  />
+                </svg>
+                } @else {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  />
+                </svg>
+                } }
+              </div>
+            </th>
+            } @if (isColumnVisible('results')) {
+            <th
+              (click)="sortByColumn('resultsSent')"
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.results' | translate }}
+                @if (filter().sortField === 'resultsSent') { @if (filter().sortDirection ===
+                SortEnumType.Asc) {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  />
+                </svg>
+                } @else {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  />
+                </svg>
+                } }
+              </div>
+            </th>
+            } @if (isColumnVisible('started')) {
+            <th
+              (click)="sortByColumn('startedAt')"
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.started' | translate }}
+                @if (filter().sortField === 'startedAt') { @if (filter().sortDirection ===
+                SortEnumType.Asc) {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  />
+                </svg>
+                } @else {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  />
+                </svg>
+                } }
+              </div>
+            </th>
+            } @if (isColumnVisible('completed')) {
+            <th
+              (click)="sortByColumn('completedAt')"
+              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+            >
+              <div class="flex items-center gap-1">
+                {{ 'sessions.list.table.completed' | translate }}
+                @if (filter().sortField === 'completedAt') { @if (filter().sortDirection ===
+                SortEnumType.Asc) {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                  />
+                </svg>
+                } @else {
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  />
+                </svg>
+                } }
+              </div>
+            </th>
+            }
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-neutral-100">
+          @for (session of sessions(); track session.id) {
+          <tr
+            app-session-table-row
+            [session]="session"
+            [selected]="isSelected(session.id)"
+            [visibleColumns]="visibleColumns()"
+            [passingPercentage]="passingPercentage()"
+            (toggleSelection)="toggleSessionSelection($event)"
+          ></tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card View -->
+    <div class="md:hidden space-y-4">
+      @for (session of sessions(); track session.id) {
+      <app-session-mobile-card
+        [session]="session"
+        [selected]="isSelected(session.id)"
+        [visibleColumns]="visibleColumns()"
+        [passingPercentage]="passingPercentage()"
+        (toggleSelection)="toggleSessionSelection($event)"
+      />
       }
     </div>
-    <button
-      type="button"
-      (click)="dismissReportResult()"
-      [class]="reportResult()!.success ? 'text-green-600 hover:text-green-800' : 'text-red-600 hover:text-red-800'"
-      class="shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded"
-      [class.focus:ring-green-500]="reportResult()!.success"
-      [class.focus:ring-red-500]="!reportResult()!.success"
-      [attr.aria-label]="'sessions.list.report.dismiss' | translate"
-      title="{{'sessions.list.report.dismiss' | translate }}"
-    >
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-      </svg>
-    </button>
+
+    <!-- Results Count -->
+    <div class="mt-6 text-center">
+      <div class="text-sm text-neutral-600 mb-4">
+        {{
+          'sessions.list.showing' | translate : { count: sessions().length, total: totalCount() }
+        }}
+      </div>
+
+      <!-- Loading More Indicator -->
+      @if (loadingMore()) {
+      <div class="flex items-center justify-center gap-2 text-primary-600">
+        <div class="animate-spin rounded-full h-6 w-6 border-b-4 border-primary-600"></div>
+        <span class="text-sm">{{ 'sessions.list.loadingMore' | translate }}</span>
+      </div>
+      }
+    </div>
+    }
   </div>
-  }
 
-  <!-- Bulk Actions Bar -->
-  <app-session-bulk-actions
-    [selectedCount]="selectedCount()"
-    [hasCompletedSessionsSelected]="hasCompletedSessionsSelected()"
-    [hasPendingSessionsSelected]="hasPendingSessionsSelected()"
-    [sendingInvitations]="sendingInvitations()"
-    [sendingResults]="sendingResults()"
-    [deletingSessions]="deletingSessions()"
-    [generatingReport]="generatingReport()"
-    (sendInvitations)="sendInvitationsToSelected()"
-    (sendResults)="sendResultsToSelected()"
-    (deleteSelected)="deleteSelectedSessions()"
-    (generateReport)="generateReportForSelected()"
-  />
-
-  <!-- Loading State -->
-  @if (loading()) {
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
-    <div
-      class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto mb-4"
-    ></div>
-    <p class="text-neutral-600">{{ 'sessions.list.loading' | translate }}</p>
-  </div>
-  }
-
-  <!-- Empty State -->
-  @else if (sessions().length === 0) {
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
-    <svg
-      class="mx-auto h-12 w-12 text-neutral-400"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-      />
-    </svg>
-    <h3 class="mt-4 text-lg font-medium text-neutral-900">
-      {{ 'sessions.list.empty.title' | translate }}
-    </h3>
-    <p class="mt-2 text-sm text-neutral-600">{{ 'sessions.list.empty.subtitle' | translate }}</p>
-    <button
-      type="button"
-      (click)="navigateToCreate()"
-      class="mt-6 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
-    >
-      {{ 'sessions.list.empty.action' | translate }}
-    </button>
-  </div>
-  }
-
-  <!-- Sessions List -->
-  @else {
-  <!-- Desktop Table View -->
-  <div
-    class="hidden md:block bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto"
+  <!-- Send Invitations Dialog -->
+  <app-send-invitations-dialog
+    [show]="showSendInvitationsDialog()"
+    [summary]="invitationSummary()"
+    (confirm)="confirmSendInvitations()"
+    (cancel)="cancelSendInvitations()"
   >
-    <table class="min-w-full">
-      <thead class="bg-neutral-100 border-b border-neutral-200">
-        <tr>
-          <th class="px-4 py-3 text-left">
-            <input
-              type="checkbox"
-              [checked]="allSelected()"
-              [indeterminate]="someSelected()"
-              (change)="toggleSelectAll()"
-              class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
-            />
-          </th>
-          @if (isColumnVisible('title')) {
-          <th
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
-          >
-            {{ 'sessions.list.table.title' | translate }}
-          </th>
-          }
-          @if (isColumnVisible('participant')) {
-          <th
-            (click)="sortByColumn('email')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-          >
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.participant' | translate }}
-              @if (filter().sortField === 'email') { @if (filter().sortDirection ===
-              SortEnumType.Asc) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                />
-              </svg>
-              } @else {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-              } }
-            </div>
-          </th>
-          }
-          @if (isColumnVisible('status')) {
-          <th
-            (click)="sortByColumn('status')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-          >
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.status' | translate }}
-              @if (filter().sortField === 'status') { @if (filter().sortDirection ===
-              SortEnumType.Asc) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                />
-              </svg>
-              } @else {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-              } }
-            </div>
-          </th>
-          }
-          @if (isColumnVisible('questions')) {
-          <th
-            (click)="sortByColumn('numberOfQuestions')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-          >
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.questions' | translate }}
-              @if (filter().sortField === 'numberOfQuestions') { @if (filter().sortDirection ===
-              SortEnumType.Asc) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                />
-              </svg>
-              } @else {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-              } }
-            </div>
-          </th>
-          }
-          @if (isColumnVisible('score')) {
-          <th class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide">
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.score' | translate }}
-            </div>
-          </th>
-          }
-          @if (isColumnVisible('invitation')) {
-          <th
-            (click)="sortByColumn('invitationSent')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-          >
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.invitation' | translate }}
-              @if (filter().sortField === 'invitationSent') { @if (filter().sortDirection ===
-              SortEnumType.Asc) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                />
-              </svg>
-              } @else {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-              } }
-            </div>
-          </th>
-          }
-          @if (isColumnVisible('results')) {
-          <th
-            (click)="sortByColumn('resultsSent')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-          >
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.results' | translate }}
-              @if (filter().sortField === 'resultsSent') { @if (filter().sortDirection ===
-              SortEnumType.Asc) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                />
-              </svg>
-              } @else {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-              } }
-            </div>
-          </th>
-          }
-          @if (isColumnVisible('started')) {
-          <th
-            (click)="sortByColumn('startedAt')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-          >
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.started' | translate }}
-              @if (filter().sortField === 'startedAt') { @if (filter().sortDirection ===
-              SortEnumType.Asc) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                />
-              </svg>
-              } @else {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-              } }
-            </div>
-          </th>
-          }
-          @if (isColumnVisible('completed')) {
-          <th
-            (click)="sortByColumn('completedAt')"
-            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-          >
-            <div class="flex items-center gap-1">
-              {{ 'sessions.list.table.completed' | translate }}
-              @if (filter().sortField === 'completedAt') { @if (filter().sortDirection ===
-              SortEnumType.Asc) {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                />
-              </svg>
-              } @else {
-              <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                />
-              </svg>
-              } }
-            </div>
-          </th>
-          }
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-neutral-100">
-        @for (session of sessions(); track session.id) {
-        <tr
-          app-session-table-row
-          [session]="session"
-          [selected]="isSelected(session.id)"
-          [visibleColumns]="visibleColumns()"
-          [passingPercentage]="passingPercentage()"
-          (toggleSelection)="toggleSessionSelection($event)"
-        ></tr>
-        }
-      </tbody>
-    </table>
-  </div>
+  </app-send-invitations-dialog>
 
-  <!-- Mobile Card View -->
-  <div class="md:hidden space-y-4">
-    @for (session of sessions(); track session.id) {
-    <app-session-mobile-card
-      [session]="session"
-      [selected]="isSelected(session.id)"
-      [visibleColumns]="visibleColumns()"
-      [passingPercentage]="passingPercentage()"
-      (toggleSelection)="toggleSessionSelection($event)"
-    />
-    }
-  </div>
+  <!-- Send Results Dialog -->
+  <app-send-results-dialog
+    [show]="showSendResultsDialog()"
+    [summary]="resultsSummary()"
+    (confirm)="confirmSendResults()"
+    (cancel)="cancelSendResults()"
+  >
+  </app-send-results-dialog>
 
-  <!-- Results Count -->
-  <div class="mt-6 text-center">
-    <div class="text-sm text-neutral-600 mb-4">
-      {{ 'sessions.list.showing' | translate : { count: sessions().length, total: totalCount() } }}
-    </div>
+  <!-- Delete Sessions Dialog -->
+  <app-delete-sessions-dialog
+    [show]="showDeleteDialog()"
+    [sessions]="sessionsToDelete()"
+    (confirm)="confirmDelete()"
+    (cancel)="cancelDelete()"
+  >
+  </app-delete-sessions-dialog>
 
-    <!-- Loading More Indicator -->
-    @if (loadingMore()) {
-    <div class="flex items-center justify-center gap-2 text-primary-600">
-      <div class="animate-spin rounded-full h-6 w-6 border-b-4 border-primary-600"></div>
-      <span class="text-sm">{{ 'sessions.list.loadingMore' | translate }}</span>
-    </div>
-    }
-  </div>
-  }
-</div>
-
-<!-- Send Invitations Dialog -->
-<app-send-invitations-dialog
-  [show]="showSendInvitationsDialog()"
-  [summary]="invitationSummary()"
-  (confirm)="confirmSendInvitations()"
-  (cancel)="cancelSendInvitations()"
->
-</app-send-invitations-dialog>
-
-<!-- Send Results Dialog -->
-<app-send-results-dialog
-  [show]="showSendResultsDialog()"
-  [summary]="resultsSummary()"
-  (confirm)="confirmSendResults()"
-  (cancel)="cancelSendResults()"
->
-</app-send-results-dialog>
-
-<!-- Delete Sessions Dialog -->
-<app-delete-sessions-dialog
-  [show]="showDeleteDialog()"
-  [sessions]="sessionsToDelete()"
-  (confirm)="confirmDelete()"
-  (cancel)="cancelDelete()"
->
-</app-delete-sessions-dialog>
-
-<!-- Generate Report Dialog -->
-<app-generate-report-dialog
-  [show]="showGenerateReportDialog()"
-  [summary]="reportSummary()"
-  (confirm)="confirmGenerateReport()"
-  (cancel)="cancelGenerateReport()"
->
-</app-generate-report-dialog>
+  <!-- Generate Report Dialog -->
+  <app-generate-report-dialog
+    [show]="showGenerateReportDialog()"
+    [summary]="reportSummary()"
+    (confirm)="confirmGenerateReport()"
+    (cancel)="cancelGenerateReport()"
+  >
+  </app-generate-report-dialog>
+</app-pull-to-refresh>

@@ -1,0 +1,23 @@
+<!-- Loading indicator between toolbar and content -->
+@if (isRefreshing()) {
+<div
+  class="bg-white py-3 flex flex-col items-center justify-center gap-2 border-b border-neutral-200"
+>
+  <div
+    class="animate-spin rounded-full h-8 w-8 border-b-4 border-primary-600"
+    role="status"
+    aria-live="polite"
+    [attr.aria-label]="'common.refreshing' | translate"
+  ></div>
+  <p class="text-sm text-neutral-600">{{ 'common.refreshing' | translate }}</p>
+</div>
+}
+
+<!-- Content wrapper -->
+<div
+  (touchstart)="onTouchStart($event)"
+  (touchmove)="onTouchMove($event)"
+  (touchend)="onTouchEnd()"
+>
+  <ng-content />
+</div>

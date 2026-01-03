@@ -12,7 +12,8 @@
     "today": "Vandaag",
     "clear": "Wissen",
     "previous": "Vorige",
-    "next": "Volgende"
+    "next": "Volgende",
+    "refreshing": "Vernieuwen..."
   },
   "nav": {
     "language": "Taal",

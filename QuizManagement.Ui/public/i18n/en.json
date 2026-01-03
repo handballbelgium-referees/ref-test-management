@@ -12,7 +12,8 @@
     "today": "Today",
     "clear": "Clear",
     "previous": "Previous",
-    "next": "Next"
+    "next": "Next",
+    "refreshing": "Refreshing..."
   },
   "nav": {
     "language": "Language",
