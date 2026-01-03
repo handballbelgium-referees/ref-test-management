@@ -32,6 +32,7 @@ import {
   SendQuizResultsGQL,
   SortEnumType,
 } from '../../../../graphql/generated';
+import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
 import { ColumnVisibilityMenu } from './components/column-visibility-menu/column-visibility-menu';
 import { DeleteSessionsDialog } from './components/dialogs/delete-sessions-dialog/delete-sessions-dialog';
 import { GenerateReportDialog } from './components/dialogs/generate-report-dialog/generate-report-dialog';
@@ -93,6 +94,7 @@ type SessionNode = NonNullable<
     SendResultsDialog,
     DeleteSessionsDialog,
     GenerateReportDialog,
+    PullToRefresh,
   ],
   templateUrl: './list-sessions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -299,6 +301,14 @@ export class ListSessions {
       .subscribe((searchTerm) => {
         this.filter.update((f) => ({ ...f, searchTerm }));
       });
+
+    // Sync isRefreshing with loading state
+    effect(() => {
+      const isLoading = this.loading();
+      if (!isLoading && this.isRefreshing()) {
+        this.isRefreshing.set(false);
+      }
+    });
 
     // React to query results
     effect(() => {
@@ -595,6 +605,28 @@ export class ListSessions {
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
     this._searchSubject.next(value);
+  }
+
+  protected readonly isRefreshing = signal(false);
+
+  protected refresh(): void {
+    if (this.isRefreshing()) {
+      return;
+    }
+
+    this.isRefreshing.set(true);
+
+    this._queryRef.refetch({
+      first: this._pageSize,
+      after: undefined,
+      where: this.buildWhereFilter(),
+      order: this.buildOrderClause(),
+    });
+    this._allCountRef.refetch();
+    this._pendingCountRef.refetch();
+    this._inProgressCountRef.refetch();
+    this._completedCountRef.refetch();
+    this._expiredCountRef.refetch();
   }
 
   protected navigateToCreate(): void {

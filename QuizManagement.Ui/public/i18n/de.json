@@ -12,7 +12,8 @@
     "today": "Heute",
     "clear": "Löschen",
     "previous": "Zurück",
-    "next": "Weiter"
+    "next": "Weiter",
+    "refreshing": "Aktualisierung..."
   },
   "nav": {
     "language": "Sprache",
