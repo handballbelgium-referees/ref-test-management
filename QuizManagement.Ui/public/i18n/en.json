@@ -36,7 +36,7 @@
       }
     },
     "about": {
-      "title": "RefTest Session Management System",
+      "title": "RefTest Management System",
       "description": "This application manages handball rules reftest sessions. Administrators can create reftest sessions in bulk for multiple users, send email invitations, track session progress and completion status, filter and sort sessions by various criteria, and view performance analytics including scores and completion rates. Reftests support {{count}} languages ({{languages}}).",
       "bulk": {
         "title": "Bulk Session Creation",

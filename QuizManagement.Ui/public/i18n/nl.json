@@ -44,7 +44,7 @@
       }
     },
     "about": {
-      "title": "RefTest Sessie Beheersysteem",
+      "title": "RefTest Beheersysteem",
       "description": "Deze applicatie beheert handbalregels reftest sessies. Beheerders kunnen reftest sessies bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, sessie voortgang en voltooiingsstatus volgen, sessies filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. Reftests ondersteunen {{count}} talen ({{languages}}).",
       "bulk": {
         "title": "Bulk Sessie Aanmaak",

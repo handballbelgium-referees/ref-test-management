@@ -36,7 +36,7 @@
       }
     },
     "about": {
-      "title": "Système de Gestion des Sessions de RefTest",
+      "title": "Système de Gestion des RefTest",
       "description": "Cette application gère les sessions de reftest sur les règles du handball. Les administrateurs peuvent créer des sessions de reftest en masse pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des sessions, filtrer et trier les sessions selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les reftests prennent en charge {{count}} langues ({{languages}}).",
       "bulk": {
         "title": "Création de Sessions en Masse",
