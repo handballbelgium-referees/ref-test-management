@@ -171,7 +171,7 @@ public class QuizResultsPdfService : IQuizResultsPdfService
 
                                 questionColumn.Item().PaddingTop(8);
 
-                                // Answers
+                                // Answers - Simple and clear approach
                                 foreach (var answer in question.Answers)
                                 {
                                     var answerText = answer.Phrase.TryGetValue(language, out var answerValue)
@@ -180,76 +180,75 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                                     var isWrongAnswer = wrongAnswerIds.Contains(answer.Id);
                                     var isCorrectAnswer = answer.IsCorrect;
 
-                                    string textColor;
-                                    var icon = "";
-                                    bool bold;
-
-                                    switch (isUserSelected)
+                                    questionColumn.Item().PaddingTop(4).Row(row =>
                                     {
-                                        case true when isWrongAnswer:
-                                            // User selected the wrong answer
-                                            textColor = "#dc2626"; // red-600
-                                            icon = "✗";
-                                            bold = true;
-                                            break;
-                                        case true when !isWrongAnswer:
-                                            // User selected the correct answer
-                                            textColor = "#16a34a"; // green-600
-                                            icon = "✓";
-                                            bold = true;
-                                            break;
-                                        default:
+                                        // Left margin
+                                        row.ConstantItem(10);
+
+                                        // Main content
+                                        row.RelativeItem().Column(col =>
                                         {
-                                            if (isCorrectAnswer)
+                                            col.Item().Row(answerRow =>
                                             {
-                                                // Correct answer (not selected by the user)
-                                                textColor = "#16a34a"; // green-600
-                                                icon = "✓";
-                                            }
-                                            else
+                                                // Emoji/Symbol (20px wide)
+                                                answerRow.ConstantItem(20).Text(text =>
+                                                {
+                                                    if (isUserSelected && isWrongAnswer)
+                                                        text.Span("❌").FontSize(10);
+                                                    else if (isUserSelected && !isWrongAnswer)
+                                                        text.Span("✅").FontSize(10);
+                                                    else if (isCorrectAnswer)
+                                                        text.Span("✓").FontSize(10).FontColor("#16a34a").Bold();
+                                                });
+
+                                                // Answer text
+                                                answerRow.RelativeItem().Text(text =>
+                                                {
+                                                    var mainSpan = text.Span($"{answer.Number}) {answerText}").FontSize(9);
+                                                    
+                                                    if (isUserSelected)
+                                                    {
+                                                        mainSpan.Bold();
+                                                        if (isWrongAnswer)
+                                                            mainSpan.FontColor("#dc2626");
+                                                        else
+                                                            mainSpan.FontColor("#16a34a");
+                                                    }
+                                                    else if (isCorrectAnswer)
+                                                    {
+                                                        mainSpan.FontColor("#16a34a");
+                                                    }
+                                                    else
+                                                    {
+                                                        mainSpan.FontColor("#737373");
+                                                    }
+                                                });
+                                            });
+                                            
+                                            // Label underneath
+                                            if (isUserSelected || isCorrectAnswer)
                                             {
-                                                // Other answers
-                                                textColor = "#737373"; // neutral-500
+                                                col.Item().PaddingLeft(20).PaddingTop(1).Text(text =>
+                                                {
+                                                    if (isUserSelected)
+                                                    {
+                                                        text.Span($"→ {translations["yourAnswer"]}")
+                                                            .FontSize(7)
+                                                            .Italic()
+                                                            .FontColor(isWrongAnswer ? "#dc2626" : "#16a34a");
+                                                    }
+                                                    else if (isCorrectAnswer)
+                                                    {
+                                                        text.Span($"→ {translations["correctAnswer"]}")
+                                                            .FontSize(7)
+                                                            .Italic()
+                                                            .FontColor("#16a34a");
+                                                    }
+                                                });
                                             }
-
-                                            bold = false;
-
-                                            break;
-                                        }
-                                    }
-
-                                    questionColumn.Item().PaddingTop(3).Row(row =>
-                                    {
-                                        if (!string.IsNullOrEmpty(icon))
-                                        {
-                                            row.ConstantItem(15).AlignMiddle().Width(10).Height(10).Svg(_ => icon == "✓" ?
-                                                // Checkmark SVG
-                                                $@"<svg width=""10"" height=""10"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
-                                                        <path d=""M20 6L9 17L4 12"" stroke=""{textColor}"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
-                                                    </svg>" :
-                                                // X/Cross SVG
-                                                $@"<svg width=""10"" height=""10"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
-                                                        <path d=""M18 6L6 18M6 6L18 18"" stroke=""{textColor}"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
-                                                    </svg>");
-                                        }
-                                        else
-                                        {
-                                            row.ConstantItem(15);
-                                        }
-
-                                        row.RelativeItem().AlignMiddle().Text(text =>
-                                        {
-                                            var span = text.Span($"{answer.Number}) {answerText}")
-                                                .FontSize(9)
-                                                .FontColor(textColor);
-
-                                            if (bold)
-                                            {
-                                                span.Bold();
-                                            }
+                                        });
                                     });
-                                });
-                            }
+                                }
                         });
                     });
                 });
@@ -270,7 +269,9 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 ["questions"] = "V",
                 ["answers"] = "A",
                 ["reviewAnswers"] = "Antwoorden Beoordelen",
-                ["question"] = "Vraag"
+                ["question"] = "Vraag",
+                ["yourAnswer"] = "Jouw antwoord",
+                ["correctAnswer"] = "Juist antwoord"
             },
             "fr" => new Dictionary<string, string>
             {
@@ -281,7 +282,9 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 ["questions"] = "Q",
                 ["answers"] = "R",
                 ["reviewAnswers"] = "Réviser les Réponses",
-                ["question"] = "Question"
+                ["question"] = "Question",
+                ["yourAnswer"] = "Votre réponse",
+                ["correctAnswer"] = "Réponse correcte"
             },
             "de" => new Dictionary<string, string>
             {
@@ -292,7 +295,9 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 ["questions"] = "F",
                 ["answers"] = "A",
                 ["reviewAnswers"] = "Antworten Überprüfen",
-                ["question"] = "Frage"
+                ["question"] = "Frage",
+                ["yourAnswer"] = "Ihre Antwort",
+                ["correctAnswer"] = "Richtige Antwort"
             },
             _ => new Dictionary<string, string> // "en" (default)
             {
@@ -303,7 +308,9 @@ public class QuizResultsPdfService : IQuizResultsPdfService
                 ["questions"] = "Q",
                 ["answers"] = "A",
                 ["reviewAnswers"] = "Review Answers",
-                ["question"] = "Question"
+                ["question"] = "Question",
+                ["yourAnswer"] = "Your answer",
+                ["correctAnswer"] = "Correct answer"
             }
         };
     }
