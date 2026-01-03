@@ -36,7 +36,7 @@
       }
     },
     "about": {
-      "title": "RefTest-Sitzungsverwaltungssystem",
+      "title": "RefTest-Verwaltungsanwendung",
       "description": "Diese Anwendung verwaltet Handball-Regeln RefTest-Sitzungen. Administratoren können RefTest-Sitzungen in großen Mengen für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Sitzungsfortschritt und Abschlussstatus verfolgen, Sitzungen nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. RefTests unterstützen {{count}} Sprachen ({{languages}}).",
       "bulk": {
         "title": "Massen-Sitzungserstellung",

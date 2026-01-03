@@ -71,9 +71,19 @@ This application follows a clean architecture pattern with clear separation of c
 ┌─────────────────────────────────────────┐
 │         Angular 21 SPA (Frontend)        │
 │  Standalone Components + Signals + i18n │
-└──────────────────┬──────────────────────┘
-                   │ GraphQL (Apollo Client)
-┌──────────────────▼──────────────────────┐
+└──────┬──────────────┬────────────────────┘
+       │              │ GraphQL (Apollo Client)
+       │              │
+       │ OAuth2/OIDC  │
+       │              │
+┌──────▼──────┐       │
+│   Auth0     │       │
+│  (External) │       │
+└──────┬──────┘       │
+       │              │
+       │ JWT Token    │
+       │              │
+┌──────┴──────────────▼──────────────────┐
 │     .NET 10 Web API (Backend)            │
 │     Hot Chocolate 15 GraphQL Server      │
 └──────────────────┬──────────────────────┘
@@ -83,14 +93,21 @@ This application follows a clean architecture pattern with clear separation of c
 ┌─────▼─────┐ ┌───▼───┐  ┌────▼─────┐
 │Application│ │Domain │  │Infrastructure│
 │  Layer    │ │ Models│  │   Layer      │
-└───────────┘ └───────┘  └────┬─────────┘
-                               │
-                    ┌──────────┼──────────┐
-                    │          │          │
-              ┌─────▼────┐ ┌──▼───┐ ┌───▼────┐
-              │Azure SQL │ │Brevo │ │QuestPDF│
-              │ Database │ │ API  │ │        │
-              └──────────┘ └──────┘ └────────┘
+└─────┬─────┘ └───────┘  └────┬─────────┘
+      │                        │
+      │           ┌────────────┼────────────────┐
+      │           │            │                │
+      │     ┌─────▼────┐ ┌────▼───┐ ┌─────────▼──────┐
+      │     │Azure SQL │ │Brevo   │ │ QuestPDF +     │
+      │     │ Database │ │ API    │ │ ClosedXML      │
+      │     └──────────┘ └────────┘ └────────────────┘
+      │
+      │ GraphQL (StrawberryShake Client)
+      │
+┌─────▼──────────────────┐
+│  IHF Rules Questions   │
+│   External GraphQL API │
+└────────────────────────┘
 ```
 
 ### Tech Stack
@@ -101,9 +118,8 @@ This application follows a clean architecture pattern with clear separation of c
 | ------------------------- | --------- | -------------------------------------------------------------- |
 | **.NET**                  | 10.0      | Latest .NET framework for high-performance APIs                |
 | **Hot Chocolate**         | 15.1.11   | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.0    | ORM for database access with migrations                        |
-| **SQL Server**            | -         | Primary data store (Azure SQL or local)                        |
-| **QuestPDF**              | 2025.12.0 | PDF generation for reftest results                             |
+| **Entity Framework Core** | 10.0.1    | ORM for database access with migrations                        |
+| **SQL Server**            | -         | Primary data store (Azure SQL or local)                        || **ClosedXML**             | 0.105.0   | Excel file generation and manipulation                         || **QuestPDF**              | 2025.12.1 | PDF generation for reftest results                             |
 | **Auth0**                 | -         | OAuth2/OpenID Connect authentication                           |
 | **Brevo API**             | -         | Email delivery service                                         |
 
@@ -170,7 +186,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/KristofGilis/handball-belgium-rules-quiz.git
+git clone https://github.com/handballbelgium/ruletests-quiz-management.git
 cd handball-belgium-rules-quiz
 ```
 
@@ -275,8 +291,11 @@ In `QuizManagement.Api/appsettings.json`:
 **Using User Secrets:**
 
 ```bash
+dotnet user-secrets set "EmailConfiguration:BaseUrl" "https://localhost:7039"
 dotnet user-secrets set "EmailConfiguration:BrevoApiKey" "your-api-key"
+dotnet user-secrets set "EmailConfiguration:BrevoApiUrl" "https://api.brevo.com/v3"
 dotnet user-secrets set "EmailConfiguration:FromEmail" "your-email@domain.com"
+dotnet user-secrets set "EmailConfiguration:FromName" "IHF RefTest"
 ```
 
 ### 5. Configure Question Bank URL
@@ -308,7 +327,31 @@ By default, all 4 languages (English, Dutch, French, German) are enabled. To lim
 
 The frontend will dynamically load only the enabled languages from the backend configuration, allowing you to control which languages are available in the UI without code changes.
 
-### 7. Start the Backend
+### 7. Configure Score Requirements (Optional)
+
+By default, the passing percentage is 80%. To change this:
+
+```json
+{
+  "ScoreConfiguration": {
+    "PassingPercentage": 80
+  }
+}
+```
+
+### 8. Configure Report Recipients (Optional)
+
+To receive automated reports of completed sessions:
+
+```json
+{
+  "ReportConfiguration": {
+    "RecipientEmails": ["admin1@domain.com", "admin2@domain.com"]
+  }
+}
+```
+
+### 9. Start the Backend
 
 ```bash
 cd QuizManagement.Api
@@ -322,7 +365,7 @@ The API will start at `https://localhost:7039`
 - GraphQL Playground: `https://localhost:7039/graphql/`
 - Health Check: `https://localhost:7039/Account/IsAuthenticated`
 
-### 8. Start the Frontend
+### 10. Start the Frontend
 
 #### Install Dependencies
 
@@ -373,7 +416,7 @@ npm start
 
 The application will be available at `http://localhost:4200`
 
-### 9. Access the Application
+### 11. Access the Application
 
 1. Open browser to `http://localhost:4200`
 2. Click **"Sign In"** in the top-right corner
@@ -381,7 +424,7 @@ The application will be available at `http://localhost:4200`
 4. You'll be redirected back to the application
 5. Navigate to **Sessions** to create your first quiz session
 
-### 10. Generate GraphQL Types (If Modifying Queries)
+### 12. Generate GraphQL Types (If Modifying Queries)
 
 After modifying any `.graphql` files:
 
@@ -420,24 +463,32 @@ handball-belgium-rules-quiz/
 │   └── wwwroot/                          # Angular production build (post-build)
 │
 ├── QuizManagement.Application/           # 🔷 Business Logic Layer (.NET 10)
-│   ├── Services/                         # Application services
-│   ├── GraphQL/                          # GraphQL client for external APIs
+│   ├── Services/                         # Application services (IHF questions client)
+│   ├── GraphQL/                          # GraphQL schemas and queries for external APIs
+│   │   ├── schema.graphql                # IHF Rules Questions schema
+│   │   └── Queries/                      # GraphQL query definitions
+│   ├── Models/                           # Application models (Question, Answer, etc.)
 │   └── QuizManagement.Application.csproj # Dependencies: StrawberryShake.Server
 │
 ├── QuizManagement.Domain/                # 🔷 Domain Layer (.NET 10)
-│   ├── Entities/                         # Domain entities (QuizSession, Question, etc.)
-│   ├── ValueObjects/                     # Value objects
+│   ├── QuizSession.cs                    # Quiz session aggregate root
+│   ├── QuizTitle.cs                      # Quiz title entity
+│   ├── QuizSessionStatus.cs              # Session status enum
+│   ├── QuizExceptions.cs                 # Domain exceptions
 │   └── QuizManagement.Domain.csproj      # No external dependencies (pure domain)
 │
 ├── QuizManagement.Infrastructure/        # 🔷 Infrastructure Layer (.NET 10)
-│   ├── Data/
-│   │   ├── QuizManagementDbContext.cs    # EF Core DbContext
-│   │   └── Migrations/                   # Database migrations
-│   ├── Services/
+│   ├── QuizManagementContext.cs          # EF Core DbContext
+│   ├── Migrations/                       # Database migrations
+│   ├── Configurations/                   # EF Core entity configurations
+│   │   ├── QuizSessionConfiguration.cs
+│   │   └── QuizTitleConfiguration.cs
+│   ├── Services/                         # External service implementations
 │   │   ├── EmailService.cs               # Brevo email integration
 │   │   ├── QuizResultsPdfService.cs      # QuestPDF report generation
-│   │   └── ...                           # Other external services
-│   └── QuizManagement.Infrastructure.csproj # Dependencies: EF Core, QuestPDF
+│   │   ├── QuizReportService.cs          # Combined Excel + PDF reports
+│   │   └── ...                           # Configuration classes
+│   └── QuizManagement.Infrastructure.csproj # Dependencies: EF Core, QuestPDF, ClosedXML
 │
 ├── QuizManagement.Ui/                    # 🅰️ Angular 21 Frontend
 │   ├── src/
@@ -536,7 +587,7 @@ handball-belgium-rules-quiz/
 │   └── vite.config.ts                    # Vite build configuration
 │
 ├── .releaserc.json                       # Semantic Release config (emojis, plugins)
-├── commitlint.config.js                  # Conventional commits validation
+├── commitlint.config.mjs                 # Conventional commits validation
 ├── package.json                          # Root dependencies (semantic-release, husky)
 ├── handball-belgium-rules-quiz-management.sln # .NET solution file
 └── README.md                             # This file
@@ -547,7 +598,8 @@ handball-belgium-rules-quiz/
 | Directory                                | Purpose                                                  |
 | ---------------------------------------- | -------------------------------------------------------- |
 | `QuizManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
-| `QuizManagement.Infrastructure/Services` | PDF generation (QuestPDF) and email delivery (Brevo)     |
+| `QuizManagement.Application/GraphQL`     | External GraphQL client schemas and queries (IHF Rules)  |
+| `QuizManagement.Infrastructure/Services` | PDF/Excel generation and email delivery (Brevo)          |
 | `QuizManagement.Ui/src/app/sessions`     | Session creation and management UI                       |
 | `QuizManagement.Ui/src/app/quiz`         | RefTest-taking experience (welcome, take, results)       |
 | `QuizManagement.Ui/graphql`              | GraphQL operation files and auto-generated types         |
@@ -637,7 +689,7 @@ For sensitive data, use .NET User Secrets instead of `appsettings.json`:
 cd QuizManagement.Api
 
 # Database
-dotnet user-secrets set "ConnectionStrings:QuizManagement" "Server=localhost;..."
+dotnet user-secrets set "ConnectionStrings:QuizManagement" "Server=localhost;Database=QuizManagement;Trusted_Connection=True;TrustServerCertificate=True;"
 
 # Auth0
 dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
@@ -645,9 +697,30 @@ dotnet user-secrets set "Auth0:ClientId" "your-client-id"
 dotnet user-secrets set "Auth0:ClientSecret" "your-client-secret"
 dotnet user-secrets set "Auth0:Audience" "your-api-identifier"
 
-# Email
+# Email Configuration
+dotnet user-secrets set "EmailConfiguration:BaseUrl" "https://localhost:7039"
 dotnet user-secrets set "EmailConfiguration:BrevoApiKey" "your-api-key"
+dotnet user-secrets set "EmailConfiguration:BrevoApiUrl" "https://api.brevo.com/v3"
 dotnet user-secrets set "EmailConfiguration:FromEmail" "noreply@domain.com"
+dotnet user-secrets set "EmailConfiguration:FromName" "IHF RefTest"
+dotnet user-secrets set "EmailConfiguration:ScheduledDelayMinutes" "0"
+
+# Question Bank
+dotnet user-secrets set "RulesQuestions:Url" "https://your-question-api.com/graphql"
+
+# Language Configuration
+dotnet user-secrets set "LanguageConfiguration:DefaultPhraseLanguage" "en"
+dotnet user-secrets set "LanguageConfiguration:EnabledLanguages:0" "en"
+dotnet user-secrets set "LanguageConfiguration:EnabledLanguages:1" "nl"
+dotnet user-secrets set "LanguageConfiguration:EnabledLanguages:2" "fr"
+dotnet user-secrets set "LanguageConfiguration:EnabledLanguages:3" "de"
+
+# Score Configuration
+dotnet user-secrets set "ScoreConfiguration:PassingPercentage" "80"
+
+# Report Configuration (for multiple recipients, use indexed keys)
+dotnet user-secrets set "ReportConfiguration:RecipientEmails:0" "admin1@domain.com"
+dotnet user-secrets set "ReportConfiguration:RecipientEmails:1" "admin2@domain.com"
 ```
 
 ### Frontend Configuration
@@ -699,7 +772,7 @@ Note the `appId` (client ID), `tenant` (tenant ID) from output.
    --parameters '{
    "name": "github-deploy",
    "issuer": "https://token.actions.githubusercontent.com",
-   "subject": "repo:KristofGilis/handball-belgium-rules-quiz:ref:refs/heads/main",
+   "subject": "repo:handballbelgium/ruletests-quiz-management:ref:refs/heads/main",
    "audiences": ["api://AzureADTokenExchange"]
    }'
    ```
@@ -901,7 +974,7 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 
 For issues, questions, or contributions:
 
-- **Issues**: [GitHub Issues](https://github.com/KristofGilis/handball-belgium-rules-quiz/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/KristofGilis/handball-belgium-rules-quiz/discussions)
+- **Issues**: [GitHub Issues](https://github.com/handballbelgium/ruletests-quiz-management/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/handballbelgium/ruletests-quiz-management/discussions)
 
 **Made with ❤️ for Handball Belgium**

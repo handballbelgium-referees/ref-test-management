@@ -58,6 +58,7 @@
             : ('sessions.list.bulk.sendResults' | translate)
         }}
       </button>
+      @if (selectedCount() > 1) {
       <button
         type="button"
         [disabled]="generatingReport()"
@@ -78,6 +79,7 @@
         }
         {{ 'sessions.list.bulk.generateReport' | translate }}
       </button>
+      }
       <button
         type="button"
         [disabled]="deletingSessions()"
