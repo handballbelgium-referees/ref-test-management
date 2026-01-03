@@ -71,7 +71,7 @@ public partial class EmailService(
 
     public async Task SendQuizResultsAsync(string name, string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
-        List<Question> questionsWithCorrectAnswers)
+        List<Question> questionsWithCorrectAnswers, bool scheduleEmail)
     {
         const string subject = "IHF Rules RefTest - Your Results";
         var passed = percentage >= scoreConfiguration.PassingPercentage;
@@ -132,7 +132,7 @@ public partial class EmailService(
 
         LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(logger, email, questionScore, answerScore, totalQuestions, answerTotal, percentage);
 
-        await SendEmailAsync(email, subject, emailBody, attachments, true);
+        await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail);
 
         LogQuizResultsEmailSentToEmail(logger, email);
     }

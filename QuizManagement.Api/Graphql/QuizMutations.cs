@@ -127,7 +127,8 @@ public static class QuizMutations
             session.SelectedAnswerIds,
             session.WrongQuestionIds,
             session.WrongAnswerIds,
-            questionsWithCorrectAnswers
+            questionsWithCorrectAnswers,
+            true
         );
 
         session.SendResults();
@@ -410,7 +411,8 @@ public static class QuizMutations
                     session.SelectedAnswerIds,
                     session.WrongQuestionIds,
                     session.WrongAnswerIds,
-                    questionsWithCorrectAnswers
+                    questionsWithCorrectAnswers,
+                    !session.ResultsSent
                 );
 
                 result.SentSessions.Add(session);
