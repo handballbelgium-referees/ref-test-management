@@ -358,6 +358,8 @@
     "results": {
       "title": "RefTest Completed!",
       "subtitle": "Here are your results",
+      "emailInfo": "You will receive an email with your detailed results and answers within {{minutes}} minutes.",
+      "emailInfoShortly": "You will receive an email with your detailed results and answers shortly.",
       "questionScore": "Question Score",
       "answerScore": "Answer Score",
       "questionScoreShort": "Q",

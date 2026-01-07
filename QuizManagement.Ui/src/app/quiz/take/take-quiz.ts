@@ -15,6 +15,7 @@ import { onlyCompleteData } from 'apollo-angular';
 import { catchError, EMPTY, map, of, tap } from 'rxjs';
 import {
   CompleteQuizSessionGQL,
+  GetResultsEmailDelayMinutesGQL,
   GetScoreConfigurationGQL,
   StartQuizSessionGQL,
 } from '../../../../graphql/generated';
@@ -140,6 +141,16 @@ export class TakeQuizComponent {
       .valueChanges.pipe(
         onlyCompleteData(),
         map((result) => result.data.scoreConfiguration.passingPercentage)
+      ),
+    { initialValue: 0 }
+  );
+
+  protected readonly emailDelayMinutes = toSignal(
+    inject(GetResultsEmailDelayMinutesGQL)
+      .watch()
+      .valueChanges.pipe(
+        onlyCompleteData(),
+        map((result) => result.data.resultsEmailDelayMinutes)
       ),
     { initialValue: 0 }
   );

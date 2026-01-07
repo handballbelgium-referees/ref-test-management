@@ -22,4 +22,5 @@ export class QuizResultsComponent {
   readonly answerTotal = input.required<number>();
   readonly percentage = input.required<number>();
   readonly passingPercentage = input.required<number>();
+  readonly emailDelayMinutes = input.required<number>();
 }
