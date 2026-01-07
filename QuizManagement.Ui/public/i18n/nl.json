@@ -366,6 +366,8 @@
     "results": {
       "title": "RefTest Voltooid!",
       "subtitle": "Hier zijn je resultaten",
+      "emailInfo": "Je ontvangt binnen {{minutes}} minuten een e-mail met je gedetailleerde resultaten en antwoorden.",
+      "emailInfoShortly": "Je ontvangt binnenkort een e-mail met je gedetailleerde resultaten en antwoorden.",
       "questionScore": "Vragen Score",
       "answerScore": "Antwoorden Score",
       "questionScoreShort": "V",

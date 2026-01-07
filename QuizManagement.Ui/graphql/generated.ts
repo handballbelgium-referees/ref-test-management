@@ -264,6 +264,7 @@ export type Query = {
   quizSessionByToken: QuizSessionByTokenResult;
   quizSessions?: Maybe<QuizSessionsConnection>;
   quizTitles?: Maybe<QuizTitlesConnection>;
+  resultsEmailDelayMinutes: Scalars['Int']['output'];
   scoreConfiguration: ScoreConfiguration;
   searchQuestionsByNumber: Array<Question>;
 };
@@ -691,6 +692,11 @@ export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>
 
 export type GetEnabledLanguagesQuery = { __typename?: 'Query', enabledLanguages: Array<string> };
 
+export type GetResultsEmailDelayMinutesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetResultsEmailDelayMinutesQuery = { __typename?: 'Query', resultsEmailDelayMinutes: number };
+
 export type GetScoreConfigurationQueryVariables = Exact<{ [key: string]: never; }>;
 
 
@@ -884,6 +890,22 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetResultsEmailDelayMinutesDocument = gql`
+    query getResultsEmailDelayMinutes {
+  resultsEmailDelayMinutes
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetResultsEmailDelayMinutesGQL extends Apollo.Query<GetResultsEmailDelayMinutesQuery, GetResultsEmailDelayMinutesQueryVariables> {
+    override document = GetResultsEmailDelayMinutesDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

@@ -90,4 +90,12 @@ public static class QuizQueries
     /// <returns></returns>
     public static ScoreConfiguration GetScoreConfiguration([Service] ScoreConfiguration scoreConfiguration)
         => scoreConfiguration;
+
+    /// <summary>
+    /// Get results mail scheduled delay minutes
+    /// </summary>
+    /// <param name="emailConfiguration"></param>
+    /// <returns></returns>
+    public static int GetResultsEmailDelayMinutes([Service] EmailConfiguration emailConfiguration)
+        => emailConfiguration.ScheduledDelayMinutes;
 }

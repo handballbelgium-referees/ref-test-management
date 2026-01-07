@@ -354,6 +354,8 @@
     "results": {
       "title": "RefTest Abgeschlossen!",
       "subtitle": "Hier sind Ihre Ergebnisse",
+      "emailInfo": "Sie erhalten innerhalb von {{minutes}} Minuten eine E-Mail mit Ihren detaillierten Ergebnissen und Antworten.",
+      "emailInfoShortly": "Sie erhalten in Kürze eine E-Mail mit Ihren detaillierten Ergebnissen und Antworten.",
       "questionScore": "Fragen Punktzahl",
       "answerScore": "Antworten Punktzahl",
       "questionScoreShort": "F",
