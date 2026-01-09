@@ -22,45 +22,37 @@
   "home": {
     "hero": {
       "title": "Handbal RefTest Beheersysteem",
-      "subtitle": "Creëer en beheer reftests voor scheidsrechters en waarnemers van de Belgische Handbalbond",
+      "subtitle": "Creëer en beheer RefTests voor scheidsrechters en waarnemers van de Belgische Handbalbond",
       "login": "Inloggen op Dashboard"
     },
     "actions": {
       "title": "Snelle Acties",
       "create": {
         "title": "Sessies Aanmaken",
-        "description": "Maak reftest sessies bulksgewijs aan"
-      },
-      "invite": {
-        "title": "Uitnodigingen Versturen",
-        "description": "Verstuur e-mail uitnodigingen naar gebruikers"
+        "description": "Maak RefTest-sessies bulksgewijs aan"
       },
       "manage": {
         "title": "Sessies Beheren",
-        "description": "Volg en beheer reftest sessies"
-      },
-      "analytics": {
-        "title": "Analyses Bekijken",
-        "description": "Bekijk sessie prestaties en statistieken"
+        "description": "Volg en beheer RefTest-sessies"
       }
     },
     "about": {
       "title": "RefTest Beheersysteem",
-      "description": "Deze applicatie beheert handbalregels reftest sessies. Beheerders kunnen reftest sessies bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, sessie voortgang en voltooiingsstatus volgen, sessies filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. Reftests ondersteunen {{count}} talen ({{languages}}).",
+      "description": "Deze applicatie beheert handbalregels RefTest-sessies. Beheerders kunnen RefTest-sessies bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, sessie voortgang en voltooiingsstatus volgen, sessies filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. RefTests ondersteunen {{count}} talen ({{languages}}).",
       "bulk": {
         "title": "Bulk Sessie Aanmaak",
-        "description": "Maak reftest sessies aan voor meerdere gebruikers tegelijk. Elke sessie wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
+        "description": "Maak RefTest-sessies aan voor meerdere gebruikers tegelijk. Elke sessie wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
       },
       "management": {
         "title": "Sessie Beheer",
-        "description": "Volg reftest sessies gedurende hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail. Verstuur uitnodigingen en beheer alle sessie acties."
+        "description": "Volg RefTest-sessies gedurende hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail. Verstuur uitnodigingen en beheer alle sessie acties."
       }
     }
   },
   "sessions": {
     "list": {
       "title": "Beheer RefTest Sessies",
-      "subtitle": "Bekijk, filter en volg alle reftest sessies",
+      "subtitle": "Bekijk, filter en volg alle RefTest-sessies",
       "createNew": "Nieuwe Sessies Aanmaken",
       "searchPlaceholder": "Zoeken op naam of e-mail...",
       "loading": "Sessies laden...",
@@ -135,7 +127,7 @@
         "participant": "Deelnemer",
         "status": "Status",
         "questions": "Vragen",
-        "score": "Score",
+        "score": "Score (V/A)",
         "invitation": "Uitnodiging",
         "results": "Resultaten",
         "started": "Gestart",
@@ -147,7 +139,7 @@
         "participant": "Deelnemer",
         "status": "Status",
         "questions": "Vragen",
-        "score": "Score",
+        "score": "Score (V/A)",
         "invitation": "Uitnodiging",
         "results": "Resultaten",
         "started": "Gestart",
@@ -155,7 +147,7 @@
       },
       "empty": {
         "title": "Geen sessies gevonden",
-        "subtitle": "Begin met het aanmaken van uw eerste reftest sessies",
+        "subtitle": "Begin met het aanmaken van uw eerste RefTest-sessies",
         "action": "Sessies Aanmaken"
       },
       "bulk": {
@@ -219,8 +211,8 @@
     "create": {
       "back": "Terug naar Home",
       "title": "RefTest Sessies Aanmaken",
-      "subtitle": "Voeg deelnemers toe en configureer reftest instellingen om nieuwe sessies aan te maken",
-      "description": "Maak reftest sessies bulksgewijs aan voor meerdere gebruikers. Voer e-mailadressen in en configureer sessie-instellingen.",
+      "subtitle": "Voeg deelnemers toe en configureer RefTest-instellingen om nieuwe sessies aan te maken",
+      "description": "Maak RefTest-sessies bulksgewijs aan voor meerdere gebruikers. Voer e-mailadressen in en configureer sessie-instellingen.",
       "form": {
         "config": {
           "label": "RefTest Configuratie"
@@ -262,7 +254,7 @@
         },
         "numberOfQuestions": {
           "label": "Aantal Vragen",
-          "hint": "Totaal aantal vragen in de reftest",
+          "hint": "Totaal aantal vragen in de RefTest",
           "error": "Aantal vragen moet minimaal 1 zijn",
           "required": "Aantal vragen is verplicht",
           "min": "Moet minimaal 1 vraag zijn"
@@ -274,7 +266,7 @@
         },
         "maxTimeInMinutes": {
           "label": "Maximale Tijd (minuten)",
-          "hint": "Maximale tijd om de reftest te voltooien",
+          "hint": "Maximale tijd om de RefTest te voltooien",
           "error": "Maximale tijd moet minimaal 1 minuut zijn",
           "required": "Tijdslimiet is verplicht",
           "min": "Moet minimaal 1 minuut zijn"
@@ -302,12 +294,12 @@
         "sendInvitations": {
           "label": "Uitnodigingsmails versturen",
           "hint": "Vink aan om uitnodigingsmails direct na aanmaken van sessies te versturen",
-          "description": "Deelnemers ontvangen een e-mail met hun reftest link"
+          "description": "Deelnemers ontvangen een e-mail met hun RefTest-link"
         },
         "sendResults": {
           "label": "Resultatenmails versturen",
           "hint": "Vink aan om resultaatmails direct na aanmaken van sessies te versturen",
-          "description": "Deelnemers ontvangen een e-mail met hun reftest resultaten"
+          "description": "Deelnemers ontvangen een e-mail met hun RefTest-resultaten"
         },
         "submit": "Sessies Aanmaken",
         "submitting": "Aanmaken...",
@@ -333,16 +325,16 @@
     "page_title": "Handbalregels RefTest",
     "loading": "RefTest laden...",
     "error": {
-      "title": "Kan reftest niet laden",
-      "general": "Er is een onverwachte fout opgetreden bij het laden van de reftest. Probeer het later opnieuw.",
+      "title": "Kan RefTest niet laden",
+      "general": "Er is een onverwachte fout opgetreden bij het laden van de RefTest. Probeer het later opnieuw.",
       "network": "Er is een netwerkfout opgetreden. Controleer uw verbinding en probeer het opnieuw.",
-      "submitFailed": "Het indienen van de reftest is mislukt. Probeer het later opnieuw.",
-      "QuizSessionNotFoundError": "Deze reftest kon niet worden gevonden. Controleer de link.",
-      "QuizSessionExpiredError": "Deze reftest is verlopen. Neem contact op met de beheerder.",
-      "InvalidQuizSessionStatusError": "Deze reftest is niet meer beschikbaar of is al voltooid."
+      "submitFailed": "Het indienen van de RefTest is mislukt. Probeer het later opnieuw.",
+      "QuizSessionNotFoundError": "Deze RefTest kon niet worden gevonden. Controleer de link.",
+      "QuizSessionExpiredError": "Deze RefTest is verlopen. Neem contact op met de beheerder.",
+      "InvalidQuizSessionStatusError": "Deze RefTest is niet meer beschikbaar of is al voltooid."
     },
     "backToWelcome": "Terug naar Welkom",
-    "welcome_title": "Welkom bij je reftest",
+    "welcome_title": "Welkom bij je RefTest",
     "welcome_subtitle": "Bekijk de informatie hieronder voordat je begint",
     "participant_name": "Naam",
     "participant_email": "E-mail",
@@ -354,7 +346,7 @@
     "instruction_1": "Lees elke vraag zorgvuldig voordat je je antwoorden selecteert",
     "instruction_2": "Sommige vragen kunnen meerdere juiste antwoorden hebben",
     "instruction_3": "Je kunt heen en weer navigeren tussen vragen",
-    "instruction_4": "Voltooi de reftest binnen de tijdslimiet",
+    "instruction_4": "Voltooi de RefTest binnen de tijdslimiet",
     "start_button": "Start RefTest",
     "timeRemaining": "Resterende Tijd",
     "progress": "Voortgang",
@@ -383,7 +375,7 @@
     "dialog": {
       "submit": {
         "title": "RefTest Indienen?",
-        "message": "Weet je zeker dat je de reftest wilt indienen? Na het indienen kun je je antwoorden niet meer wijzigen.",
+        "message": "Weet je zeker dat je de RefTest wilt indienen? Na het indienen kun je je antwoorden niet meer wijzigen.",
         "answered": "Beantwoorde Vragen",
         "unanswered": "Onbeantwoorde Vragen",
         "warning": "Je hebt onbeantwoorde vragen. Deze worden als fout gemarkeerd.",
@@ -392,7 +384,7 @@
       },
       "leave": {
         "title": "RefTest Verlaten?",
-        "message": "Weet je zeker dat je wilt vertrekken? Je voortgang gaat verloren als je de reftest niet hebt ingediend.",
+        "message": "Weet je zeker dat je wilt vertrekken? Je voortgang gaat verloren als je de RefTest niet hebt ingediend.",
         "confirm": "RefTest Verlaten",
         "cancel": "Blijf bij RefTest"
       }

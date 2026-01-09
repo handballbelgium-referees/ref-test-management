@@ -21,8 +21,8 @@
   },
   "home": {
     "hero": {
-      "title": "Système de Gestion de RefTest de Règles de Handball",
-      "subtitle": "Créer et gérer des reftests de règles de handball pour les arbitres et observateurs de la Fédération Belge de Handball",
+      "title": "Système de Gestion des RefTests sur les Règles de Handball",
+      "subtitle": "Créer et gérer des RefTests sur les règles de handball pour les arbitres et délégués de la Fédération Belge de Handball",
       "login": "Accéder au Tableau de Bord"
     },
     "actions": {
@@ -37,22 +37,22 @@
       }
     },
     "about": {
-      "title": "Système de Gestion des RefTest",
-      "description": "Cette application gère les sessions de reftest sur les règles du handball. Les administrateurs peuvent créer des sessions de reftest en masse pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des sessions, filtrer et trier les sessions selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les reftests prennent en charge {{count}} langues ({{languages}}).",
+      "title": "Système de Gestion des RefTests",
+      "description": "Cette application gère les sessions de RefTest sur les règles du handball. Les administrateurs peuvent créer des sessions de RefTest en masse pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des sessions, filtrer et trier les sessions selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les RefTests prennent en charge {{count}} langues ({{languages}}).",
       "bulk": {
         "title": "Création de Sessions en Masse",
-        "description": "Créez des sessions de reftest pour plusieurs utilisateurs à la fois. Chaque session est attribuée à un utilisateur spécifique avec des capacités de suivi uniques."
+        "description": "Créez des sessions de RefTest pour plusieurs utilisateurs à la fois. Chaque session est attribuée à un utilisateur spécifique avec des capacités de suivi uniques."
       },
       "management": {
         "title": "Gestion des Sessions",
-        "description": "Suivez les sessions de reftest tout au long de leur cycle de vie : en attente, en cours, terminées ou expirées. Filtrez et triez par statut, date, score ou e-mail de l'utilisateur. Envoyez des invitations et gérez toutes les actions de session."
+        "description": "Suivez les sessions de RefTest tout au long de leur cycle de vie : en attente, en cours, terminées ou expirées. Filtrez et triez par statut, date, score ou e-mail de l'utilisateur. Envoyez des invitations et gérez toutes les actions de session."
       }
     }
   },
   "sessions": {
     "list": {
       "title": "Gérer les Sessions de RefTest",
-      "subtitle": "Afficher, filtrer et suivre toutes les sessions de reftest",
+      "subtitle": "Afficher, filtrer et suivre toutes les sessions de RefTest",
       "createNew": "Créer de Nouvelles Sessions",
       "searchPlaceholder": "Rechercher par nom ou e-mail...",
       "loading": "Chargement des sessions...",
@@ -82,6 +82,8 @@
         "resultsAll": "Toutes",
         "resultsSent": "Envoyée",
         "resultsNotSent": "Non Envoyée",
+        "questionScoreRange": "Plage de Score des Questions",
+        "answerScoreRange": "Plage de Score des Réponses",
         "scoreRange": "Plage de Score",
         "minScore": "Score Min",
         "maxScore": "Score Max",
@@ -145,7 +147,7 @@
       },
       "empty": {
         "title": "Aucune session trouvée",
-        "subtitle": "Commencez par créer vos premières sessions de reftest",
+        "subtitle": "Commencez par créer vos premières sessions de RefTest",
         "action": "Créer des Sessions"
       },
       "bulk": {
@@ -209,8 +211,8 @@
     "create": {
       "back": "Retour à l'accueil",
       "title": "Créer des Sessions de RefTest",
-      "subtitle": "Ajoutez des participants et configurez les paramètres du reftest pour créer de nouvelles sessions",
-      "description": "Créez des sessions de reftest en masse pour plusieurs utilisateurs. Entrez les adresses e-mail et configurez les paramètres de session.",
+      "subtitle": "Ajoutez des participants et configurez les paramètres du RefTest pour créer de nouvelles sessions",
+      "description": "Créez des sessions de RefTest en masse pour plusieurs utilisateurs. Entrez les adresses e-mail et configurez les paramètres de session.",
       "form": {
         "config": {
           "label": "Configuration du RefTest"
@@ -252,7 +254,7 @@
         },
         "numberOfQuestions": {
           "label": "Nombre de Questions",
-          "hint": "Nombre total de questions dans le reftest",
+          "hint": "Nombre total de questions dans le RefTest",
           "error": "Le nombre de questions doit être au moins 1",
           "required": "Le nombre de questions est requis",
           "min": "Doit avoir au moins 1 question"
@@ -264,7 +266,7 @@
         },
         "maxTimeInMinutes": {
           "label": "Temps Maximum (minutes)",
-          "hint": "Temps maximum autorisé pour compléter le reftest",
+          "hint": "Temps maximum autorisé pour compléter le RefTest",
           "error": "Le temps maximum doit être au moins 1 minute",
           "required": "La limite de temps est requise",
           "min": "Doit avoir au moins 1 minute"
@@ -292,12 +294,12 @@
         "sendInvitations": {
           "label": "Envoyer les e-mails d'invitation",
           "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des sessions",
-          "description": "Les participants recevront un e-mail avec leur lien de reftest"
+          "description": "Les participants recevront un e-mail avec leur lien de RefTest"
         },
         "sendResults": {
           "label": "Envoyer les e-mails de résultats",
           "hint": "Cochez pour envoyer les e-mails de résultats immédiatement après la création des sessions",
-          "description": "Les participants recevront un e-mail avec leurs résultats de reftest"
+          "description": "Les participants recevront un e-mail avec leurs résultats de RefTest"
         },
         "submit": "Créer les Sessions",
         "submitting": "Création...",
@@ -308,7 +310,7 @@
       },
       "success": {
         "title": "Sessions Créées avec Succès",
-        "message": "Les sessions de reftest ont été créées. Redirection vers la liste des sessions...",
+        "message": "Les sessions de RefTest ont été créées. Redirection vers la liste des sessions...",
         "created": "Créé avec succès {{count}} session !",
         "created_other": "Créé avec succès {{count}} sessions !",
         "failedInfo": "{{count}} échoué. Voir les erreurs ci-dessous.",
@@ -320,19 +322,19 @@
     }
   },
   "quiz": {
-    "page_title": "RefTest sur les règles de handball",
-    "loading": "Chargement du reftest...",
+    "page_title": "RefTest sur les Règles de Handball",
+    "loading": "Chargement du RefTest...",
     "error": {
-      "title": "Impossible de charger le reftest",
-      "general": "Une erreur inattendue s'est produite lors du chargement du reftest. Veuillez réessayer plus tard.",
+      "title": "Impossible de charger le RefTest",
+      "general": "Une erreur inattendue s'est produite lors du chargement du RefTest. Veuillez réessayer plus tard.",
       "network": "Une erreur réseau est survenue. Vérifiez votre connexion et réessayez.",
-      "submitFailed": "L'envoi du reftest a échoué. Veuillez réessayer plus tard.",
-      "QuizSessionNotFoundError": "Cette reftest est introuvable. Veuillez vérifier votre lien.",
-      "QuizSessionExpiredError": "Cette reftest a expiré. Veuillez contacter l'administrateur.",
-      "InvalidQuizSessionStatusError": "Cette reftest n'est plus disponible ou a déjà été complété."
+      "submitFailed": "L'envoi du RefTest a échoué. Veuillez réessayer plus tard.",
+      "QuizSessionNotFoundError": "Ce RefTest est introuvable. Veuillez vérifier votre lien.",
+      "QuizSessionExpiredError": "Ce RefTest a expiré. Veuillez contacter l'administrateur.",
+      "InvalidQuizSessionStatusError": "Ce RefTest n'est plus disponible ou a déjà été complété."
     },
-    "backToWelcome": "Retour à l'accueil",
-    "welcome_title": "Bienvenue à votre reftest",
+    "backToWelcome": "Retour à l'Accueil",
+    "welcome_title": "Bienvenue à votre RefTest",
     "welcome_subtitle": "Veuillez consulter les informations ci-dessous avant de commencer",
     "participant_name": "Nom",
     "participant_email": "E-mail",
@@ -344,7 +346,7 @@
     "instruction_1": "Lisez attentivement chaque question avant de sélectionner vos réponses",
     "instruction_2": "Certaines questions peuvent avoir plusieurs réponses correctes",
     "instruction_3": "Vous pouvez naviguer en avant et en arrière entre les questions",
-    "instruction_4": "Complétez le reftest dans le délai imparti",
+    "instruction_4": "Complétez le RefTest dans le délai imparti",
     "start_button": "Commencer le RefTest",
     "timeRemaining": "Temps Restant",
     "progress": "Progrès",
@@ -372,8 +374,8 @@
     },
     "dialog": {
       "submit": {
-        "title": "Soumettre le RefTest?",
-        "message": "Êtes-vous sûr de vouloir soumettre votre reftest? Une fois soumis, vous ne pourrez plus modifier vos réponses.",
+        "title": "Soumettre le RefTest ?",
+        "message": "Êtes-vous sûr de vouloir soumettre votre RefTest ? Une fois soumis, vous ne pourrez plus modifier vos réponses.",
         "answered": "Questions Répondues",
         "unanswered": "Questions Non Répondues",
         "warning": "Vous avez des questions non répondues. Elles seront marquées comme incorrectes.",
@@ -381,8 +383,8 @@
         "cancel": "Continuer le RefTest"
       },
       "leave": {
-        "title": "Quitter le RefTest?",
-        "message": "Êtes-vous sûr de vouloir partir? Votre progression sera perdue si vous n'avez pas soumis le reftest.",
+        "title": "Quitter le RefTest ?",
+        "message": "Êtes-vous sûr de vouloir partir ? Votre progression sera perdue si vous n'avez pas soumis le RefTest.",
         "confirm": "Quitter le RefTest",
         "cancel": "Rester sur le RefTest"
       }

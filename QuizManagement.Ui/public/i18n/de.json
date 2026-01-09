@@ -21,8 +21,8 @@
   },
   "home": {
     "hero": {
-      "title": "Handball-Regelquiz-Verwaltungssystem",
-      "subtitle": "Erstellen und verwalten Sie Handball-Regelquizze für Schiedsrichter und Delegierte des Belgischen Handballverbands",
+      "title": "Handball-RefTest-Verwaltungssystem",
+      "subtitle": "Erstellen und verwalten Sie Handball-RefTests für Schiedsrichter und Delegierte des Belgischen Handballverbands",
       "login": "Zum Dashboard"
     },
     "actions": {
@@ -37,8 +37,8 @@
       }
     },
     "about": {
-      "title": "RefTest-Verwaltungsanwendung",
-      "description": "Diese Anwendung verwaltet Handball-Regeln RefTest-Sitzungen. Administratoren können RefTest-Sitzungen in großen Mengen für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Sitzungsfortschritt und Abschlussstatus verfolgen, Sitzungen nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. RefTests unterstützen {{count}} Sprachen ({{languages}}).",
+      "title": "RefTest-Verwaltungssystem",
+      "description": "Diese Anwendung verwaltet Handball-Regeln-RefTest-Sitzungen. Administratoren können RefTest-Sitzungen in großen Mengen für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Sitzungsfortschritt und Abschlussstatus verfolgen, Sitzungen nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. RefTests unterstützen {{count}} Sprachen ({{languages}}).",
       "bulk": {
         "title": "Massen-Sitzungserstellung",
         "description": "Erstellen Sie RefTest-Sitzungen für mehrere Benutzer auf einmal. Jede Sitzung wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
@@ -82,6 +82,8 @@
         "resultsAll": "Alle",
         "resultsSent": "Gesendet",
         "resultsNotSent": "Nicht Gesendet",
+        "questionScoreRange": "Fragen Punktebereich",
+        "answerScoreRange": "Antworten Punktebereich",
         "scoreRange": "Punktebereich",
         "minScore": "Min Punkte",
         "maxScore": "Max Punkte",
@@ -103,6 +105,8 @@
         "email": "Teilnehmer",
         "status": "Status",
         "numberOfQuestions": "Fragen",
+        "questionScore": "Fragen Punktzahl",
+        "answerScore": "Antworten Punktzahl",
         "score": "Ergebnis",
         "invitationSent": "Einladung",
         "resultsSent": "Ergebnisse",
@@ -250,7 +254,7 @@
         },
         "numberOfQuestions": {
           "label": "Anzahl der Fragen",
-          "hint": "Gesamtzahl der Fragen im RefTest",
+          "hint": "Gesamtanzahl der Fragen im RefTest",
           "error": "Die Anzahl der Fragen muss mindestens 1 sein",
           "required": "Anzahl der Fragen ist erforderlich",
           "min": "Muss mindestens 1 Frage haben"
@@ -262,7 +266,7 @@
         },
         "maxTimeInMinutes": {
           "label": "Maximale Zeit (Minuten)",
-          "hint": "Maximale Zeit zum Abschließen des RefTest",
+          "hint": "Maximale Zeit zum Abschließen des RefTests",
           "error": "Die maximale Zeit muss mindestens 1 Minute betragen",
           "required": "Zeitlimit ist erforderlich",
           "min": "Muss mindestens 1 Minute betragen"
@@ -325,9 +329,9 @@
       "general": "Ein unerwarteter Fehler ist beim Laden des RefTests aufgetreten. Bitte versuchen Sie es später erneut.",
       "network": "Ein Netzwerkfehler ist aufgetreten. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
       "submitFailed": "Das Absenden des RefTests ist fehlgeschlagen. Bitte versuchen Sie es später erneut.",
-      "QuizSessionNotFoundError": "Diese RefTest wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
-      "QuizSessionExpiredError": "Diese RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
-      "InvalidQuizSessionStatusError": "Diese RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
+      "QuizSessionNotFoundError": "Dieser RefTest wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
+      "QuizSessionExpiredError": "Dieser RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
+      "InvalidQuizSessionStatusError": "Dieser RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
     },
     "backToWelcome": "Zurück zur Begrüßung",
     "welcome_title": "Willkommen zu Ihrem RefTest",
@@ -342,7 +346,7 @@
     "instruction_1": "Lesen Sie jede Frage sorgfältig, bevor Sie Ihre Antworten auswählen",
     "instruction_2": "Einige Fragen können mehrere richtige Antworten haben",
     "instruction_3": "Sie können zwischen den Fragen hin und her navigieren",
-    "instruction_4": "Schließen Sie das RefTest innerhalb des Zeitlimits ab",
+    "instruction_4": "Schließen Sie den RefTest innerhalb des Zeitlimits ab",
     "start_button": "RefTest starten",
     "timeRemaining": "Verbleibende Zeit",
     "progress": "Fortschritt",
@@ -370,8 +374,8 @@
     },
     "dialog": {
       "submit": {
-        "title": "RefTest Einreichen?",
-        "message": "Sind Sie sicher, dass Sie Ihr RefTest einreichen möchten? Nach dem Einreichen können Sie Ihre Antworten nicht mehr ändern.",
+        "title": "RefTest einreichen?",
+        "message": "Sind Sie sicher, dass Sie Ihren RefTest einreichen möchten? Nach dem Einreichen können Sie Ihre Antworten nicht mehr ändern.",
         "answered": "Beantwortete Fragen",
         "unanswered": "Unbeantwortete Fragen",
         "warning": "Sie haben unbeantwortete Fragen. Diese werden als falsch markiert.",
@@ -379,8 +383,8 @@
         "cancel": "RefTest Fortsetzen"
       },
       "leave": {
-        "title": "RefTest Verlassen?",
-        "message": "Sind Sie sicher, dass Sie gehen möchten? Ihr Fortschritt geht verloren, wenn Sie das RefTest nicht eingereicht haben.",
+        "title": "RefTest verlassen?",
+        "message": "Sind Sie sicher, dass Sie gehen möchten? Ihr Fortschritt geht verloren, wenn Sie den RefTest nicht eingereicht haben.",
         "confirm": "RefTest Verlassen",
         "cancel": "Beim RefTest Bleiben"
       }

@@ -22,37 +22,37 @@
   "home": {
     "hero": {
       "title": "Handball RefTest Management System",
-      "subtitle": "Create and manage handball rule reftests for referees and delegates of the Belgian Handball Federation",
+      "subtitle": "Create and manage handball rules RefTests for referees and delegates of the Belgian Handball Federation",
       "login": "Login to Dashboard"
     },
     "actions": {
       "title": "Quick Actions",
       "create": {
         "title": "Create Sessions",
-        "description": "Create reftest sessions in bulk"
+        "description": "Create RefTest sessions in bulk"
       },
       "manage": {
         "title": "Manage Sessions",
-        "description": "Track and manage reftest sessions"
+        "description": "Track and manage RefTest sessions"
       }
     },
     "about": {
       "title": "RefTest Management System",
-      "description": "This application manages handball rules reftest sessions. Administrators can create reftest sessions in bulk for multiple users, send email invitations, track session progress and completion status, filter and sort sessions by various criteria, and view performance analytics including scores and completion rates. Reftests support {{count}} languages ({{languages}}).",
+      "description": "This application manages handball rules RefTest sessions. Administrators can create RefTest sessions in bulk for multiple users, send email invitations, track session progress and completion status, filter and sort sessions by various criteria, and view performance analytics including scores and completion rates. RefTests support {{count}} languages ({{languages}}).",
       "bulk": {
         "title": "Bulk Session Creation",
-        "description": "Create reftest sessions for multiple users at once. Each session is assigned to a specific user with unique tracking capabilities."
+        "description": "Create RefTest sessions for multiple users at once. Each session is assigned to a specific user with unique tracking capabilities."
       },
       "management": {
         "title": "Session Management",
-        "description": "Track reftest sessions through their lifecycle: pending, in progress, completed, or expired. Filter and sort by status, date, score, or user email. Send invitations and manage all session actions."
+        "description": "Track RefTest sessions through their lifecycle: pending, in progress, completed, or expired. Filter and sort by status, date, score, or user email. Send invitations and manage all session actions."
       }
     }
   },
   "sessions": {
     "list": {
       "title": "Manage RefTest Sessions",
-      "subtitle": "View, filter, and track all reftest sessions",
+      "subtitle": "View, filter, and track all RefTest sessions",
       "createNew": "Create New Sessions",
       "searchPlaceholder": "Search by name or email...",
       "loading": "Loading sessions...",
@@ -147,7 +147,7 @@
       },
       "empty": {
         "title": "No sessions found",
-        "subtitle": "Get started by creating your first reftest sessions",
+        "subtitle": "Get started by creating your first RefTest sessions",
         "action": "Create Sessions"
       },
       "bulk": {
@@ -211,8 +211,8 @@
     "create": {
       "back": "Back to Home",
       "title": "Create RefTest Sessions",
-      "subtitle": "Add participants and configure reftest settings to create new sessions",
-      "description": "Create reftest sessions in bulk for multiple users. Enter email addresses and configure session settings.",
+      "subtitle": "Add participants and configure RefTest settings to create new sessions",
+      "description": "Create RefTest sessions in bulk for multiple users. Enter email addresses and configure session settings.",
       "form": {
         "config": {
           "label": "RefTest Configuration"

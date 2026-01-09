@@ -276,7 +276,7 @@ public partial class EmailService(
     [LoggerMessage(LogLevel.Information, "RefTest invitation email sent to {email}")]
     static partial void LogQuizInvitationEmailSentToEmail(ILogger<EmailService> logger, string email);
 
-    [LoggerMessage(LogLevel.Information, "Sending reftest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
+    [LoggerMessage(LogLevel.Information, "Sending RefTest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
     static partial void LogSendingQuizResultsToEmailScoreScoreTotalPercentageF1(ILogger<EmailService> logger,
         string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage);
 
@@ -317,10 +317,10 @@ public partial class EmailService(
             ["questions"] = "Questions",
             ["timeLimit"] = "Time Limit",
             ["minutes"] = "minutes",
-            ["validDays"] = "⏰ This reftest is valid for 7 days",
+            ["validDays"] = "⏰ This RefTest is valid for 7 days",
             ["greeting"] = "Hello",
             ["inviteText"] =
-                "You have been invited to take the IHF Rules RefTest. Click the button below to start your reftest:",
+                "You have been invited to take the IHF Rules RefTest. Click the button below to start your RefTest:",
             ["startButton"] = "Start RefTest"
         },
         ["nl"] = new Dictionary<string, string>
@@ -329,11 +329,11 @@ public partial class EmailService(
             ["questions"] = "Vragen",
             ["timeLimit"] = "Tijdslimiet",
             ["minutes"] = "minuten",
-            ["validDays"] = "⏰ Deze reftest is 7 dagen geldig",
+            ["validDays"] = "⏰ Deze RefTest is 7 dagen geldig",
             ["greeting"] = "Hallo",
             ["inviteText"] =
-                "Je bent uitgenodigd om deel te nemen aan de IHF Regels RefTest. Klik op de knop hieronder om je reftest te starten:",
-            ["startButton"] = "Start RefTest"
+                "Je bent uitgenodigd om deel te nemen aan de IHF Regels RefTest. Klik op de knop hieronder om je RefTest te starten:",
+            ["startButton"] = "RefTest Starten"
         },
         ["fr"] = new Dictionary<string, string>
         {
@@ -341,10 +341,10 @@ public partial class EmailService(
             ["questions"] = "Questions",
             ["timeLimit"] = "Limite de Temps",
             ["minutes"] = "minutes",
-            ["validDays"] = "⏰ Ce reftest est valide pendant 7 jours",
+            ["validDays"] = "⏰ Ce RefTest est valide pendant 7 jours",
             ["greeting"] = "Bonjour",
             ["inviteText"] =
-                "Vous êtes invité à participer au RefTest des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre reftest:",
+                "Vous êtes invité à participer au RefTest des Règles IHF. Cliquez sur le bouton ci-dessous pour commencer votre RefTest:",
             ["startButton"] = "Démarrer le RefTest"
         },
         ["de"] = new Dictionary<string, string>
@@ -353,10 +353,10 @@ public partial class EmailService(
             ["questions"] = "Fragen",
             ["timeLimit"] = "Zeitlimit",
             ["minutes"] = "Minuten",
-            ["validDays"] = "⏰ Dieses Reftest ist 7 Tage lang gültig",
+            ["validDays"] = "⏰ Dieser RefTest ist 7 Tage lang gültig",
             ["greeting"] = "Hallo",
             ["inviteText"] =
-                "Sie wurden eingeladen, am IHF-Regeln-RefTest teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihr Reftest zu starten:",
+                "Sie wurden eingeladen, am IHF-Regeln-RefTest teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihren RefTest zu starten:",
             ["startButton"] = "RefTest starten"
         }
     };
@@ -372,7 +372,7 @@ public partial class EmailService(
             ["questions"] = "Q",
             ["answers"] = "A",
             ["percentage"] = "Percentage",
-            ["passedMessage"] = "🎉 Congratulations! You passed the reftest!",
+            ["passedMessage"] = "🎉 Congratulations! You passed the RefTest!",
             ["failedMessage"] = "📚 Keep studying and good luck next time!",
             ["greeting"] = "Dear",
             ["passedText"] =
@@ -443,7 +443,7 @@ public partial class EmailService(
         ["en"] = new Dictionary<string, string>
         {
             ["displayName"] = "English",
-            ["introText"] = "This is an automatically generated report containing reftest data.",
+            ["introText"] = "This is an automatically generated report containing RefTest data.",
             ["reportDate"] = "Report Date",
             ["numberOfRefTests"] = "Number of RefTests",
             ["attachmentText"] = "The report is attached in both Excel (.xlsx) and PDF formats.",
@@ -452,7 +452,7 @@ public partial class EmailService(
         ["nl"] = new Dictionary<string, string>
         {
             ["displayName"] = "Nederlands",
-            ["introText"] = "Dit is een automatisch gegenereerd rapport met reftest-gegevens.",
+            ["introText"] = "Dit is een automatisch gegenereerd rapport met RefTest-gegevens.",
             ["reportDate"] = "Rapportdatum",
             ["numberOfRefTests"] = "Aantal RefTests",
             ["attachmentText"] = "Het rapport is bijgevoegd in zowel Excel (.xlsx) als PDF-formaat.",
@@ -461,7 +461,7 @@ public partial class EmailService(
         ["fr"] = new Dictionary<string, string>
         {
             ["displayName"] = "Français",
-            ["introText"] = "Ceci est un rapport généré automatiquement contenant des données de reftest.",
+            ["introText"] = "Ceci est un rapport généré automatiquement contenant des données de RefTest.",
             ["reportDate"] = "Date du Rapport",
             ["numberOfRefTests"] = "Nombre de RefTests",
             ["attachmentText"] = "Le rapport est joint aux formats Excel (.xlsx) et PDF.",
@@ -470,7 +470,7 @@ public partial class EmailService(
         ["de"] = new Dictionary<string, string>
         {
             ["displayName"] = "Deutsch",
-            ["introText"] = "Dies ist ein automatisch generierter Bericht mit Reftest-Daten.",
+            ["introText"] = "Dies ist ein automatisch generierter Bericht mit RefTest-Daten.",
             ["reportDate"] = "Berichtsdatum",
             ["numberOfRefTests"] = "Anzahl der RefTests",
             ["attachmentText"] = "Der Bericht ist sowohl im Excel- (.xlsx) als auch im PDF-Format beigefügt.",
