@@ -341,6 +341,7 @@ export class TakeQuizComponent {
           input: {
             token,
             selectedAnswerIds,
+            language: this.currentLanguage(),
           },
         },
       })

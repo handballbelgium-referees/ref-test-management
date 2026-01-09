@@ -16,5 +16,7 @@ public record QuizSessionReportData(
     int? AnswerScore,
     int? AnswerTotal,
     double? Percentage,
-    bool Passed);
+    bool Passed,
+    string? Language,
+    TimeSpan? Duration);
 

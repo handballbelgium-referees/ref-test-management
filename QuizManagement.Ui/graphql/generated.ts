@@ -65,6 +65,7 @@ export type BulkQuizSessionResult = {
 export type CompleteQuizError = EmailError | InvalidQuizSessionStatusError | QuizSessionNotFoundError;
 
 export type CompleteQuizInput = {
+  language?: InputMaybe<Scalars['String']['input']>;
   selectedAnswerIds: Array<Scalars['String']['input']>;
   token: Scalars['String']['input'];
 };

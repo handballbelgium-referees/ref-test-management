@@ -217,6 +217,16 @@ public partial class EmailService(
         var cetTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
         var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cetTimeZone);
         
+        var enabledLanguages = GetEnabledLanguagesForReport();
+        var languageSections = new StringBuilder();
+
+        for (var i = 0; i < enabledLanguages.Count; i++)
+        {
+            var langContent = enabledLanguages[i];
+            var isLast = i == enabledLanguages.Count - 1;
+            languageSections.Append(BuildReportLanguageSection(langContent, nowCet, sessionCount, isLast));
+        }
+        
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -237,25 +247,11 @@ public partial class EmailService(
 
         <!-- Main Content -->
         <div style='padding: 20px;'>
-            <p style='font-size: 16px; line-height: 1.6; color: #374151;'>
-                This is an automatically generated report containing reftest data.
-            </p>
-            
-            <div style='background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;'>
-                <p style='margin: 5px 0; color: #374151;'><strong>Report Date:</strong> {nowCet:dd-MM-yyyy HH:mm}</p>
-                <p style='margin: 5px 0; color: #374151;'><strong>Number of RefTests:</strong> {sessionCount}</p>
+{languageSections}
+            <!-- Footer -->
+            <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
+                <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
             </div>
-
-            <p style='font-size: 14px; color: #374151;'>
-                The report is attached in both Excel (.xlsx) and PDF formats.
-            </p>
-        </div>
-
-        <!-- Footer -->
-        <div style='background-color: #f9fafb; padding: 20px; text-align: center; border-radius: 0 0 12px 12px;'>
-            <p style='color: #6b7280; font-size: 12px; margin: 0;'>
-                Referees Handball Belgium
-            </p>
         </div>
     </div>
 </body>
@@ -442,6 +438,46 @@ public partial class EmailService(
         }
     };
 
+    private static Dictionary<string, Dictionary<string, string>> GetReportTranslations() => new()
+    {
+        ["en"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "English",
+            ["introText"] = "This is an automatically generated report containing reftest data.",
+            ["reportDate"] = "Report Date",
+            ["numberOfRefTests"] = "Number of RefTests",
+            ["attachmentText"] = "The report is attached in both Excel (.xlsx) and PDF formats.",
+            ["reportDetails"] = "Report Details"
+        },
+        ["nl"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Nederlands",
+            ["introText"] = "Dit is een automatisch gegenereerd rapport met reftest-gegevens.",
+            ["reportDate"] = "Rapportdatum",
+            ["numberOfRefTests"] = "Aantal RefTests",
+            ["attachmentText"] = "Het rapport is bijgevoegd in zowel Excel (.xlsx) als PDF-formaat.",
+            ["reportDetails"] = "Rapportdetails"
+        },
+        ["fr"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Français",
+            ["introText"] = "Ceci est un rapport généré automatiquement contenant des données de reftest.",
+            ["reportDate"] = "Date du Rapport",
+            ["numberOfRefTests"] = "Nombre de RefTests",
+            ["attachmentText"] = "Le rapport est joint aux formats Excel (.xlsx) et PDF.",
+            ["reportDetails"] = "Détails du Rapport"
+        },
+        ["de"] = new Dictionary<string, string>
+        {
+            ["displayName"] = "Deutsch",
+            ["introText"] = "Dies ist ein automatisch generierter Bericht mit Reftest-Daten.",
+            ["reportDate"] = "Berichtsdatum",
+            ["numberOfRefTests"] = "Anzahl der RefTests",
+            ["attachmentText"] = "Der Bericht ist sowohl im Excel- (.xlsx) als auch im PDF-Format beigefügt.",
+            ["reportDetails"] = "Berichtsdetails"
+        }
+    };
+
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
     {
         var translations = GetInvitationTranslations();
@@ -459,6 +495,20 @@ public partial class EmailService(
     private List<LanguageContent> GetEnabledLanguagesForResults()
     {
         var translations = GetResultsTranslations();
+        return
+        [
+            .. languageConfiguration.EnabledLanguages
+                .Where(lang => translations.ContainsKey(lang))
+                .Select(lang => new LanguageContent(
+                    string.Empty,
+                    translations[lang]
+                ))
+        ];
+    }
+
+    private List<LanguageContent> GetEnabledLanguagesForReport()
+    {
+        var translations = GetReportTranslations();
         return
         [
             .. languageConfiguration.EnabledLanguages
@@ -534,6 +584,35 @@ public partial class EmailService(
                 <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
                     <p style='margin: 0; color: #404040; font-size: 14px;'>{t["pdfNote"]} ({string.Join(", ", languageConfiguration.EnabledLanguages.Select(l => GetInvitationTranslations()[l]["displayName"]))}).</p>
                 </div>
+            </div>{separator}";
+    }
+
+    private static string BuildReportLanguageSection(LanguageContent langContent, DateTime reportDate, int sessionCount, bool isLast)
+    {
+        var t = langContent.Translations;
+        var separator = isLast
+            ? ""
+            : @"
+            <!-- Separator -->
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
+
+        return $@"
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
+                
+                <p style='font-size: 16px; line-height: 1.6; color: #374151;'>
+                    {t["introText"]}
+                </p>
+                
+                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin: 20px 0; border-radius: 4px;'>
+                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📊 {t["reportDetails"]}</h3>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["reportDate"]}:</strong> {reportDate:dd-MM-yyyy HH:mm}</p>
+                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["numberOfRefTests"]}:</strong> {sessionCount}</p>
+                </div>
+
+                <p style='font-size: 14px; color: #374151;'>
+                    {t["attachmentText"]}
+                </p>
             </div>{separator}";
     }
 }

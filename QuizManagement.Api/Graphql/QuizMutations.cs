@@ -102,7 +102,8 @@ public static class QuizMutations
             scoreResult.Percentage,
             input.SelectedAnswerIds,
             scoreResult.WrongQuestionIds,
-            scoreResult.WrongAnswerIds
+            scoreResult.WrongAnswerIds,
+            input.Language
         );
 
         context.QuizSessions.Update(session);
@@ -541,7 +542,9 @@ public static class QuizMutations
             s.AnswerScore,
             s.AnswerTotal,
             s.Percentage,
-            s.Percentage >= scoreConfig.PassingPercentage
+            s.Percentage >= scoreConfig.PassingPercentage,
+            s.Language,
+            s.Duration
         )).ToList();
 
         var recipients = reportConfig.RecipientEmails;

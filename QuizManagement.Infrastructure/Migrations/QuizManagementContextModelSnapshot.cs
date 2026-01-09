@@ -53,6 +53,9 @@ namespace QuizManagement.Infrastructure.Migrations
                     b.Property<bool>("InvitationSent")
                         .HasColumnType("bit");
 
+                    b.Property<string>("Language")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(256)

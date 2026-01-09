@@ -59,6 +59,12 @@ public class QuizSession
     public List<string> WrongAnswerIds { get; private set; } = [];
     public bool SendResultsAutomatically { get; private set; }
     public bool ResultsSent { get; private set; }
+    public string? Language { get; private set; }
+    
+    [NotMapped]
+    public TimeSpan? Duration => CompletedAt.HasValue && StartedAt.HasValue 
+        ? CompletedAt.Value - StartedAt.Value 
+        : null;
 
     public static QuizSession Create(
         Guid titleId,
@@ -104,7 +110,7 @@ public class QuizSession
         StartedAt = DateTime.UtcNow;
     }
 
-    public void CompleteSession(int questionScore, int answerScore, int answerTotal, double percentage, List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds)
+    public void CompleteSession(int questionScore, int answerScore, int answerTotal, double percentage, List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds, string? language = null)
     {
         if (Status != QuizSessionStatus.InProgress)
             throw new InvalidQuizSessionStatusException("Can only complete in-progress quiz sessions");
@@ -118,6 +124,7 @@ public class QuizSession
         SelectedAnswerIds = selectedAnswerIds;
         WrongQuestionIds = wrongQuestionIds;
         WrongAnswerIds = wrongAnswerIds;
+        Language = language;
     }
     
     public void SendResults()

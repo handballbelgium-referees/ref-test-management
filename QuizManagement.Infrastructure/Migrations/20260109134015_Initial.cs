@@ -50,7 +50,8 @@ namespace QuizManagement.Infrastructure.Migrations
                     WrongQuestionIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     WrongAnswerIds = table.Column<string>(type: "nvarchar(4000)", maxLength: 4000, nullable: false),
                     SendResultsAutomatically = table.Column<bool>(type: "bit", nullable: false),
-                    ResultsSent = table.Column<bool>(type: "bit", nullable: false)
+                    ResultsSent = table.Column<bool>(type: "bit", nullable: false),
+                    Language = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {

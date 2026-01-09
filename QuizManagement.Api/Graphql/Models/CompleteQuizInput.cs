@@ -2,6 +2,7 @@
 
 public record CompleteQuizInput(
     string Token,
-    List<string> SelectedAnswerIds
+    List<string> SelectedAnswerIds,
+    string? Language = null
 );
 
