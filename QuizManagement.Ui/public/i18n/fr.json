@@ -328,7 +328,7 @@
       "submitFailed": "L'envoi du reftest a échoué. Veuillez réessayer plus tard.",
       "QuizSessionNotFoundError": "Cette reftest est introuvable. Veuillez vérifier votre lien.",
       "QuizSessionExpiredError": "Cette reftest a expiré. Veuillez contacter l'administrateur.",
-      "InvalidQuizSessionStatusError": "Cette reftest n'est plus disponible ou a déjà été complétée."
+      "InvalidQuizSessionStatusError": "Cette reftest n'est plus disponible ou a déjà été complété."
     },
     "backToWelcome": "Retour à l'accueil",
     "welcome_title": "Bienvenue à votre reftest",
