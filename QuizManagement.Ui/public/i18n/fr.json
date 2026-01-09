@@ -58,7 +58,8 @@
       "loading": "Chargement des sessions...",
       "loadMore": "Charger Plus de Sessions",
       "loadingMore": "Chargement...",
-      "showing": "Affichage de {{count}} sur {{total}} sessions",
+      "showing": "Affichage de {{displayed}} sur {{total}} session",
+      "showing_plural": "Affichage de {{displayed}} sur {{total}} sessions",
       "filters": {
         "advancedFilters": "Filtres Avancés",
         "performanceTitle": "Métriques de Performance",

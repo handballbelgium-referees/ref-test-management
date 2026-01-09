@@ -271,19 +271,15 @@ export class ListSessions {
     fetchPolicy: 'cache-and-network',
   });
   private readonly _pendingCountRef = this._getQuizSessionsCountGQL.watch({
-    variables: { where: { status: { eq: QuizSessionStatus.Pending } } },
     fetchPolicy: 'cache-and-network',
   });
   private readonly _inProgressCountRef = this._getQuizSessionsCountGQL.watch({
-    variables: { where: { status: { eq: QuizSessionStatus.InProgress } } },
     fetchPolicy: 'cache-and-network',
   });
   private readonly _completedCountRef = this._getQuizSessionsCountGQL.watch({
-    variables: { where: { status: { eq: QuizSessionStatus.Completed } } },
     fetchPolicy: 'cache-and-network',
   });
   private readonly _expiredCountRef = this._getQuizSessionsCountGQL.watch({
-    variables: { where: { status: { eq: QuizSessionStatus.Expired } } },
     fetchPolicy: 'cache-and-network',
   });
 
@@ -343,6 +339,8 @@ export class ListSessions {
         where: this.buildWhereFilter(),
         order: this.buildOrderClause(),
       });
+      // Update count queries with current filters
+      this.updateCountQueries();
     });
   }
 
@@ -418,7 +416,7 @@ export class ListSessions {
   });
 
   protected readonly totalCount = computed(
-    () => this._queryRef.getCurrentResult()?.data?.quizSessions?.totalCount ?? 0
+    () => this._queryResult()?.data?.quizSessions?.totalCount ?? 0
   );
 
   private readonly _allCountResult = toSignal(this._allCountRef.valueChanges);
@@ -543,6 +541,52 @@ export class ListSessions {
     return [{ [currentFilter.sortField]: currentFilter.sortDirection }];
   }
 
+  private updateCountQueries(): void {
+    const baseFilter = this.buildWhereFilter();
+
+    // All count (no additional status filter)
+    this._allCountRef.refetch({
+      where: baseFilter,
+    });
+
+    // Pending count (add pending status to existing filters)
+    this._pendingCountRef.refetch({
+      where: this.mergeFilters(baseFilter, { status: { eq: QuizSessionStatus.Pending } }),
+    });
+
+    // In-progress count (add in-progress status to existing filters)
+    this._inProgressCountRef.refetch({
+      where: this.mergeFilters(baseFilter, { status: { eq: QuizSessionStatus.InProgress } }),
+    });
+
+    // Completed count (add completed status to existing filters)
+    this._completedCountRef.refetch({
+      where: this.mergeFilters(baseFilter, { status: { eq: QuizSessionStatus.Completed } }),
+    });
+
+    // Expired count (add expired status to existing filters)
+    this._expiredCountRef.refetch({
+      where: this.mergeFilters(baseFilter, { status: { eq: QuizSessionStatus.Expired } }),
+    });
+  }
+
+  private mergeFilters(
+    baseFilter: QuizSessionFilterInput | undefined,
+    statusFilter: { status: QuizSessionStatusOperationFilterInput }
+  ): QuizSessionFilterInput {
+    // If no base filter, just return status filter
+    if (!baseFilter) {
+      return statusFilter;
+    }
+
+    // If base filter has a status, replace it with the new status filter
+    // Otherwise, add the status filter to the base filter
+    return {
+      ...baseFilter,
+      ...statusFilter,
+    };
+  }
+
   protected setStatusFilter(status?: QuizSessionStatus): void {
     this.filter.update((f) => ({ ...f, status }));
   }
@@ -622,11 +666,7 @@ export class ListSessions {
       where: this.buildWhereFilter(),
       order: this.buildOrderClause(),
     });
-    this._allCountRef.refetch();
-    this._pendingCountRef.refetch();
-    this._inProgressCountRef.refetch();
-    this._completedCountRef.refetch();
-    this._expiredCountRef.refetch();
+    this.updateCountQueries();
   }
 
   protected navigateToCreate(): void {
@@ -682,11 +722,7 @@ export class ListSessions {
             this.selectedSessionIds.set(new Set());
 
             // Refetch counts
-            this._allCountRef.refetch();
-            this._pendingCountRef.refetch();
-            this._inProgressCountRef.refetch();
-            this._completedCountRef.refetch();
-            this._expiredCountRef.refetch();
+            this.updateCountQueries();
           }
         }),
         catchError(() => of(null)),

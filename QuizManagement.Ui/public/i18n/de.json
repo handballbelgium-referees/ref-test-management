@@ -58,7 +58,8 @@
       "loading": "Sitzungen werden geladen...",
       "loadMore": "Weitere Sitzungen Laden",
       "loadingMore": "Lädt...",
-      "showing": "{{count}} von {{total}} Sitzungen werden angezeigt",
+      "showing": "{{displayed}} von {{total}} Sitzung wird angezeigt",
+      "showing_plural": "{{displayed}} von {{total}} Sitzungen werden angezeigt",
       "filters": {
         "advancedFilters": "Erweiterte Filter",
         "performanceTitle": "Leistungsmetriken",

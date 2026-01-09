@@ -434,9 +434,11 @@
     <!-- Results Count -->
     <div class="mt-6 text-center">
       <div class="text-sm text-neutral-600 mb-4">
-        {{
-          'sessions.list.showing' | translate : { count: sessions().length, total: totalCount() }
-        }}
+        @if (totalCount() === 1) {
+          {{ 'sessions.list.showing' | translate : { displayed: sessions().length, total: totalCount() } }}
+        } @else {
+          {{ 'sessions.list.showing_plural' | translate : { displayed: sessions().length, total: totalCount() } }}
+        }
       </div>
 
       <!-- Loading More Indicator -->
