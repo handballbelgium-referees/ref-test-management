@@ -97,10 +97,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore handball-belgium-rules-quiz-management.sln
+        run: dotnet restore RefTestManagement.sln
 
       - name: 🏗 Build .NET application
-        run: dotnet build handball-belgium-rules-quiz-management.sln --configuration Release --no-restore
+        run: dotnet build RefTestManagement.sln --configuration Release --no-restore
 
       - name: 📦 Publish .NET application
         run: |
