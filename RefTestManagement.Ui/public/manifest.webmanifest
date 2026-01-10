@@ -1,0 +1,70 @@
+{
+  "name": "URBH-KBHB Referees Ruletests",
+  "short_name": "RefTest",
+  "description": "Ruletests for URBH-KBHB referees/delegates.",
+  "icons": [
+    {
+      "src": "icons/android-chrome-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/android-chrome-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/android-chrome-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/maskable-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Create RefTests",
+      "short_name": "Create",
+      "description": "Create RefTests",
+      "url": "/ref-tests/create",
+      "icons": [{ "src": "icons/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Browse RefTests",
+      "short_name": "RefTests",
+      "description": "Browse RefTests",
+      "url": "/ref-tests",
+      "icons": [{ "src": "icons/android-chrome-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Start RefTest",
+      "short_name": "RefTest",
+      "description": "Take a RefTest",
+      "url": "/ref-test",
+      "icons": [{ "src": "icons/android-chrome-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "theme_color": "#e30613",
+  "background_color": "#ffffff",
+  "display": "standalone",
+  "start_url": "/",
+  "dir": "auto",
+  "scope": "/",
+  "lang": "en",
+  "orientation": "portrait",
+  "display_override": ["standalone", "minimal-ui"],
+  "categories": ["education", "sports", "utilities"]
+}

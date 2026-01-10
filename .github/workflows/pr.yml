@@ -48,11 +48,11 @@ jobs:
         run: npm ci
 
       - name: 📦 Install Angular dependencies
-        working-directory: ./QuizManagement.Ui
+        working-directory: ./RefTestManagement.Ui
         run: npm ci
 
       - name: 🏗 Build Angular application
-        working-directory: ./QuizManagement.Ui
+        working-directory: ./RefTestManagement.Ui
         run: npm run build -- --configuration production
         # Ensures that UI builds successfully in PR
 

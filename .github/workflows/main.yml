@@ -74,22 +74,22 @@ jobs:
 
       - name: 📝 Inject version into Angular
         run: |
-          sed -i "s/__APP_VERSION__/${APP_VERSION}/g" QuizManagement.Ui/src/version.ts
+          sed -i "s/__APP_VERSION__/${APP_VERSION}/g" RefTestManagement.Ui/src/version.ts
 
       - name: 📦 Install Angular dependencies
-        working-directory: ./QuizManagement.Ui
+        working-directory: ./RefTestManagement.Ui
         run: npm ci
 
       - name: 🏗 Build Angular application
-        working-directory: ./QuizManagement.Ui
+        working-directory: ./RefTestManagement.Ui
         run: npm run build -- --configuration production
 
       - name: 🗂 Prepare wwwroot folder
-        run: mkdir -p QuizManagement.Api/wwwroot
+        run: mkdir -p RefTestManagement.Api/wwwroot
 
       - name: 📤 Copy Angular build to .NET wwwroot
         run: |
-          cp -r QuizManagement.Ui/dist/QuizManagement.Ui/browser/* QuizManagement.Api/wwwroot/
+          cp -r RefTestManagement.Ui/dist/RefTestManagement.Ui/browser/* RefTestManagement.Api/wwwroot/
 
       - name: ⚡ Setup .NET
         uses: actions/setup-dotnet@v5
@@ -104,7 +104,7 @@ jobs:
 
       - name: 📦 Publish .NET application
         run: |
-          dotnet publish QuizManagement.Api/QuizManagement.Api.csproj \
+          dotnet publish RefTestManagement.Api/RefTestManagement.Api.csproj \
             --configuration Release \
             --no-build \
             --output ./publish

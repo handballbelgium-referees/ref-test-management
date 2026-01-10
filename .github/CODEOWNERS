@@ -5,13 +5,13 @@
 * @KristofGilis
 
 # .NET API and infrastructure
-/QuizManagement.Api/ @KristofGilis
-/QuizManagement.Application/ @KristofGilis
-/QuizManagement.Domain/ @KristofGilis
-/QuizManagement.Infrastructure/ @KristofGilis
+/RefTestManagement.Api/ @KristofGilis
+/RefTestManagement.Application/ @KristofGilis
+/RefTestManagement.Domain/ @KristofGilis
+/RefTestManagement.Infrastructure/ @KristofGilis
 
 # Angular frontend
-/QuizManagement.Ui/ @KristofGilis
+/RefTestManagement.Ui/ @KristofGilis
 
 # CI/CD and configuration
 /.github/ @KristofGilis

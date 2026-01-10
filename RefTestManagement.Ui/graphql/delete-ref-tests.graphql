@@ -1,0 +1,16 @@
+mutation DeleteRefTests($input: DeleteRefTestsInput!) {
+  deleteRefTests(input: $input) {
+    deleteRefTestsResult {
+      totalRequested
+      successfullyDeleted
+      failed
+      deletedRefTests {
+        id
+      }
+      errors {
+        refTestId
+        errorMessage
+      }
+    }
+  }
+}

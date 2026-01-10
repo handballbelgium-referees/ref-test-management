@@ -1,0 +1,20 @@
+﻿using Handball.Belgium.RefTestManagement.Domain;
+using Handball.Belgium.RefTestManagement.Infrastructure.Configurations;
+using Microsoft.EntityFrameworkCore;
+
+namespace Handball.Belgium.RefTestManagement.Infrastructure;
+
+public class RefTestManagementContext(DbContextOptions<RefTestManagementContext> options) : DbContext(options)
+{
+    public DbSet<RefTest> RefTests { get; set; } = null!;
+    public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfiguration(new RefTestTitleConfiguration());
+        modelBuilder.ApplyConfiguration(new RefTestConfiguration());
+        
+        base.OnModelCreating(modelBuilder);
+    }
+}
+

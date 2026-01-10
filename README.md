@@ -1,9 +1,9 @@
 # RefTest Management Platform
 
-A comprehensive web application for managing and taking IHF (International Handball Federation) reftests for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create quiz sessions, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed reftests.
+A comprehensive web application for managing and taking IHF (International Handball Federation) RefTests for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create RefTests, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed RefTests.
 
-[![Latest Release](https://img.shields.io/github/v/release/handballbelgium/ruletests-quiz-management?label=release)](https://github.com/handballbelgium/ruletests-quiz-management/releases)
-[![Latest Pre-Release](https://img.shields.io/github/v/release/handballbelgium/ruletests-quiz-management?include_prereleases&label=pre-release)](https://github.com/handballbelgium/ruletests-quiz-management/releases)
+[![Latest Release](https://img.shields.io/github/v/release/handballbelgium/RefTest-Management?label=release)](https://github.com/handballbelgium/RefTest-Management/releases)
+[![Latest Pre-Release](https://img.shields.io/github/v/release/handballbelgium/RefTest-Management?include_prereleases&label=pre-release)](https://github.com/handballbelgium/RefTest-Management/releases)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
 ## 📋 Table of Contents
@@ -25,27 +25,27 @@ A comprehensive web application for managing and taking IHF (International Handb
 
 ### 📝 RefTest Management
 
-- **Bulk Session Creation**: Create multiple reftests simultaneously with customizable settings
+- **Bulk RefTest Creation**: Create multiple RefTests simultaneously with customizable settings
 - **Question Bank Integration**: Search and bulk import questions from the central question database
-- **Randomization**: Optional random answer order per session to prevent pattern memorization
+- **Randomization**: Optional random answer order per RefTest to prevent pattern memorization
 - **Time Management**: Configurable time limits with auto-submit functionality
 - **Instant Scoring**: Automatic score calculation with detailed answer feedback
-- **PDF Generation**: Professional PDF reports with QuestPDF for reftest results
+- **PDF Generation**: Professional PDF reports with QuestPDF for RefTest results
 
-### 🗂️ Session Management
+### 🗂️ RefTest Management
 
-- **Advanced Filtering**: Filter sessions by status, score range, percentage, and date ranges
-- **Bulk Operations**: Send invitations, results, and delete multiple sessions efficiently
-- **Real-time Status**: Monitor session completion and participant progress
+- **Advanced Filtering**: Filter RefTests by status, score range, percentage, and date ranges
+- **Bulk Operations**: Send invitations, results, and delete multiple RefTests efficiently
+- **Real-time Status**: Monitor RefTest completion and participant progress
 - **Responsive Design**: Optimized mobile and desktop views with customizable column visibility
 - **Loading Indicators**: Visual feedback for all asynchronous operations (send, delete)
 
 ### 📧 Email Automation
 
-- **Automated Invitations**: Optionally send reftest invitations automatically upon session creation
-- **Result Notifications**: Automatically email results upon reftest completion
+- **Automated Invitations**: Optionally send RefTest invitations automatically upon RefTest creation
+- **Result Notifications**: Automatically email results upon RefTest completion
 - **Multilingual Templates**: Email templates in English, Dutch, French, and German
-- **Personalization**: Emails include participant names and session-specific details
+- **Personalization**: Emails include participant names and RefTest-specific details
 - **Brevo Integration**: Reliable email delivery via Brevo API (formerly SendGrid)
 
 ### 🔐 Authentication & Security
@@ -60,18 +60,18 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **4 Languages**: Full support for English, Dutch, French, and German
 - **Persistent Preferences**: Language selection saved per user in local storage
 - **Complete Localization**: All UI elements, emails, and PDF reports translated
-- **Dynamic Switching**: Change language instantly without page reload
+- **Dynamic Switching**: Change language instantly without a page reload
 - **Fallback Support**: Default to English if translation missing
 
 ## 🏗️ Architecture
 
-This application follows a clean architecture pattern with clear separation of concerns:
+This application follows a clean architecture pattern with a clear separation of concerns:
 
 ```
 ┌─────────────────────────────────────────┐
-│         Angular 21 SPA (Frontend)        │
+│         Angular 21 SPA (Frontend)       │
 │  Standalone Components + Signals + i18n │
-└──────┬──────────────┬────────────────────┘
+└──────┬──────────────┬───────────────────┘
        │              │ GraphQL (Apollo Client)
        │              │
        │ OAuth2/OIDC  │
@@ -84,19 +84,19 @@ This application follows a clean architecture pattern with clear separation of c
        │ JWT Token    │
        │              │
 ┌──────┴──────────────▼──────────────────┐
-│     .NET 10 Web API (Backend)            │
-│     Hot Chocolate 15 GraphQL Server      │
-└──────────────────┬──────────────────────┘
+│     .NET 10 Web API (Backend)          │
+│     Hot Chocolate 15 GraphQL Server    │
+└──────────────────┬─────────────────────┘
                    │
-      ┌────────────┼────────────┐
-      │            │            │
-┌─────▼─────┐ ┌───▼───┐  ┌────▼─────┐
-│Application│ │Domain │  │Infrastructure│
-│  Layer    │ │ Models│  │   Layer      │
-└─────┬─────┘ └───────┘  └────┬─────────┘
-      │                        │
-      │           ┌────────────┼────────────────┐
-      │           │            │                │
+      ┌────────────┼──────────┐
+      │            │          │
+┌─────▼─────┐ ┌───▼───┐  ┌────▼──────────┐
+│Application│ │Domain │  │Infrastructure │
+│  Layer    │ │ Models│  │   Layer       │
+└─────┬─────┘ └───────┘  └────┬──────────┘
+      │                       │
+      │           ┌───────────┼───────────────┐
+      │           │           │               │
       │     ┌─────▼────┐ ┌────▼───┐ ┌─────────▼──────┐
       │     │Azure SQL │ │Brevo   │ │ QuestPDF +     │
       │     │ Database │ │ API    │ │ ClosedXML      │
@@ -119,16 +119,16 @@ This application follows a clean architecture pattern with clear separation of c
 | **.NET**                  | 10.0      | Latest .NET framework for high-performance APIs                |
 | **Hot Chocolate**         | 15.1.11   | GraphQL server with authorization, data loaders, and filtering |
 | **Entity Framework Core** | 10.0.1    | ORM for database access with migrations                        |
-| **SQL Server**            | -         | Primary data store (Azure SQL or local)                        || **ClosedXML**             | 0.105.0   | Excel file generation and manipulation                         || **QuestPDF**              | 2025.12.1 | PDF generation for reftest results                             |
+| **SQL Server**            | -         | Primary data store (Azure SQL or local)                        || **ClosedXML**             | 0.105.0   | Excel file generation and manipulation                         || **QuestPDF**              | 2025.12.1 | PDF generation for RefTest results                             |
 | **Auth0**                 | -         | OAuth2/OpenID Connect authentication                           |
 | **Brevo API**             | -         | Email delivery service                                         |
 
 **Project Structure:**
 
-- `QuizManagement.Api` - Web API, GraphQL schema, controllers
-- `QuizManagement.Application` - Business logic, services
-- `QuizManagement.Domain` - Domain entities, value objects
-- `QuizManagement.Infrastructure` - Data access, external services (PDF, Email)
+- `RefTestManagement.Api` - Web API, GraphQL schema, controllers
+- `RefTestManagement.Application` - Business logic, services
+- `RefTestManagement.Domain` - Domain entities, value objects
+- `RefTestManagement.Infrastructure` - Data access, external services (PDF, Email)
 
 #### Frontend (Angular 21)
 
@@ -186,8 +186,8 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/handballbelgium/ruletests-quiz-management.git
-cd handball-belgium-rules-quiz
+git clone https://github.com/handballbelgium/RefTest-Management.git
+cd handball-belgium-RefTest-Management
 ```
 
 ### 2. Database Setup
@@ -197,17 +197,17 @@ cd handball-belgium-rules-quiz
 Create a new SQL Server database (local or Azure SQL):
 
 ```sql
-CREATE DATABASE QuizManagement;
+CREATE DATABASE RefTestManagement;
 ```
 
 #### Configure Connection String
 
-Update `QuizManagement.Api/appsettings.json`:
+Update `RefTestManagement.Api/appsettings.json`:
 
 ```json
 {
   "ConnectionStrings": {
-    "QuizManagement": "Server=localhost;Database=QuizManagement;Trusted_Connection=True;TrustServerCertificate=True;"
+    "RefTestManagement": "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
   }
 }
 ```
@@ -217,7 +217,7 @@ Update `QuizManagement.Api/appsettings.json`:
 ```json
 {
   "ConnectionStrings": {
-    "QuizManagement": "Server=tcp:yourserver.database.windows.net,1433;Initial Catalog=QuizManagement;Persist Security Info=False;User ID=yourusername;Password=yourpassword;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;"
+    "RefTestManagement": "Server=tcp:yourserver.database.windows.net,1433;Initial Catalog=RefTestManagement;Persist Security Info=False;User ID=yourusername;Password=yourpassword;MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;"
   }
 }
 ```
@@ -225,7 +225,7 @@ Update `QuizManagement.Api/appsettings.json`:
 #### Run Migrations
 
 ```bash
-cd QuizManagement.Api
+cd RefTestManagement.Api
 dotnet ef database update
 ```
 
@@ -243,7 +243,7 @@ This creates all necessary tables, indexes, and seed data.
 
 #### Update Configuration
 
-In `QuizManagement.Api/appsettings.json`:
+In `RefTestManagement.Api/appsettings.json`:
 
 ```json
 {
@@ -259,7 +259,7 @@ In `QuizManagement.Api/appsettings.json`:
 **Using User Secrets (Recommended for Development):**
 
 ```bash
-cd QuizManagement.Api
+cd RefTestManagement.Api
 dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
 dotnet user-secrets set "Auth0:ClientId" "your-client-id"
 dotnet user-secrets set "Auth0:ClientSecret" "your-client-secret"
@@ -274,7 +274,7 @@ dotnet user-secrets set "Auth0:Audience" "your-api-identifier"
 2. Generate API key from Settings > API Keys
 3. Configure sender email
 
-In `QuizManagement.Api/appsettings.json`:
+In `RefTestManagement.Api/appsettings.json`:
 
 ```json
 {
@@ -341,7 +341,7 @@ By default, the passing percentage is 80%. To change this:
 
 ### 8. Configure Report Recipients (Optional)
 
-To receive automated reports of completed sessions:
+To receive automated reports of completed RefTests:
 
 ```json
 {
@@ -354,7 +354,7 @@ To receive automated reports of completed sessions:
 ### 9. Start the Backend
 
 ```bash
-cd QuizManagement.Api
+cd RefTestManagement.Api
 dotnet run
 ```
 
@@ -370,7 +370,7 @@ The API will start at `https://localhost:7039`
 #### Install Dependencies
 
 ```bash
-cd QuizManagement.Ui
+cd RefTestManagement.Ui
 npm install
 ```
 
@@ -422,14 +422,14 @@ The application will be available at `http://localhost:4200`
 2. Click **"Sign In"** in the top-right corner
 3. Authenticate with Auth0
 4. You'll be redirected back to the application
-5. Navigate to **Sessions** to create your first quiz session
+5. Navigate to **RefTests** to create your first RefTest
 
 ### 12. Generate GraphQL Types (If Modifying Queries)
 
 After modifying any `.graphql` files:
 
 ```bash
-cd QuizManagement.Ui
+cd RefTestManagement.Ui
 npm run codegen
 ```
 
@@ -438,7 +438,7 @@ This regenerates TypeScript types in `graphql/generated.ts`.
 ## 📁 Project Structure
 
 ```
-handball-belgium-rules-quiz/
+RefTest-Management/
 ├── .github/workflows/                    # CI/CD Pipelines
 │   ├── pr.yml                            # PR validation (lint, test, build)
 │   └── main.yml                          # Main deployment (release, build, deploy)
@@ -447,50 +447,50 @@ handball-belgium-rules-quiz/
 │   ├── commit-msg                        # Validates commit format with commitlint
 │   └── pre-commit                        # Runs Angular build before commit
 │
-├── QuizManagement.Api/                   # 🔷 .NET Web API (.NET 10)
+├── RefTestManagement.Api/                   # 🔷 .NET Web API (.NET 10)
 │   ├── Controllers/
 │   │   └── AccountController.cs          # Authentication endpoints
 │   ├── Graphql/                          # Hot Chocolate GraphQL
-│   │   ├── QuizQueries.cs                # GraphQL queries (sessions, questions, titles)
-│   │   ├── QuizMutations.cs              # GraphQL mutations (create, delete, send)
-│   │   ├── QuizSessionType.cs            # GraphQL type definitions
+│   │   ├── RefTestQueries.cs             # GraphQL queries (RefTests, questions, titles)
+│   │   ├── RefTestMutations.cs           # GraphQL mutations (create, delete, send)
+│   │   ├── RefTestType.cs                # GraphQL type definitions
 │   │   ├── DataLoaders.cs                # N+1 query optimization
 │   │   └── Models/                       # Input/output models
 │   ├── Program.cs                        # Application entry point & DI setup
 │   ├── SecurityStartup.cs                # Auth0 JWT configuration
-│   ├── QuizManagementMigrationExtensions.cs # EF Core migration runner
+│   ├── RefTestManagementMigrationExtensions.cs # EF Core migration runner
 │   ├── appsettings.json                  # Configuration (DB, Auth0, Email, etc.)
 │   └── wwwroot/                          # Angular production build (post-build)
 │
-├── QuizManagement.Application/           # 🔷 Business Logic Layer (.NET 10)
+├── RefTestManagement.Application/           # 🔷 Business Logic Layer (.NET 10)
 │   ├── Services/                         # Application services (IHF questions client)
 │   ├── GraphQL/                          # GraphQL schemas and queries for external APIs
 │   │   ├── schema.graphql                # IHF Rules Questions schema
 │   │   └── Queries/                      # GraphQL query definitions
 │   ├── Models/                           # Application models (Question, Answer, etc.)
-│   └── QuizManagement.Application.csproj # Dependencies: StrawberryShake.Server
+│   └── RefTestManagement.Application.csproj # Dependencies: StrawberryShake.Server
 │
-├── QuizManagement.Domain/                # 🔷 Domain Layer (.NET 10)
-│   ├── QuizSession.cs                    # Quiz session aggregate root
-│   ├── QuizTitle.cs                      # Quiz title entity
-│   ├── QuizSessionStatus.cs              # Session status enum
-│   ├── QuizExceptions.cs                 # Domain exceptions
-│   └── QuizManagement.Domain.csproj      # No external dependencies (pure domain)
+├── RefTestManagement.Domain/                # 🔷 Domain Layer (.NET 10)
+│   ├── RefTest.cs                           # RefTest aggregate root
+│   ├── RefTestTitle.cs                      # RefTest title entity
+│   ├── RefTestStatus.cs                     # RefTest status enum
+│   ├── RefTestExceptions.cs                 # Domain exceptions
+│   └── RefTestManagement.Domain.csproj      # No external dependencies (pure domain)
 │
-├── QuizManagement.Infrastructure/        # 🔷 Infrastructure Layer (.NET 10)
-│   ├── QuizManagementContext.cs          # EF Core DbContext
+├── RefTestManagement.Infrastructure/        # 🔷 Infrastructure Layer (.NET 10)
+│   ├── RefTestManagementContext.cs          # EF Core DbContext
 │   ├── Migrations/                       # Database migrations
 │   ├── Configurations/                   # EF Core entity configurations
-│   │   ├── QuizSessionConfiguration.cs
-│   │   └── QuizTitleConfiguration.cs
+│   │   ├── RefTestConfiguration.cs
+│   │   └── RefTestTitleConfiguration.cs
 │   ├── Services/                         # External service implementations
 │   │   ├── EmailService.cs               # Brevo email integration
-│   │   ├── QuizResultsPdfService.cs      # QuestPDF report generation
-│   │   ├── QuizReportService.cs          # Combined Excel + PDF reports
+│   │   ├── RefTestResultsPdfService.cs   # QuestPDF report generation
+│   │   ├── RefTestReportService.cs       # Combined Excel + PDF reports
 │   │   └── ...                           # Configuration classes
-│   └── QuizManagement.Infrastructure.csproj # Dependencies: EF Core, QuestPDF, ClosedXML
+│   └── RefTestManagement.Infrastructure.csproj # Dependencies: EF Core, QuestPDF, ClosedXML
 │
-├── QuizManagement.Ui/                    # 🅰️ Angular 21 Frontend
+├── RefTestManagement.Ui/                    # 🅰️ Angular 21 Frontend
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── app.ts                    # Root component (header, router-outlet, footer)
@@ -505,39 +505,39 @@ handball-belgium-rules-quiz/
 │   │   │   ├── home/                     # 🏠 Home Page
 │   │   │   │   └── home.ts               # Landing page component
 │   │   │   │
-│   │   │   ├── sessions/                 # 📋 Session Management
-│   │   │   │   ├── create/               # Create sessions page
-│   │   │   │   │   ├── create-sessions.ts
+│   │   │   ├── ref-tests/                 # 📋 RefTest Management
+│   │   │   │   ├── create/               # Create RefTests page
+│   │   │   │   │   ├── create-ref-tests.ts
 │   │   │   │   │   └── components/       # Question search, user import, etc.
-│   │   │   │   └── list/                 # Sessions list page
-│   │   │   │       ├── list-sessions.ts
+│   │   │   │   └── list/                 # RefTests list page
+│   │   │   │       ├── list-ref-tests.ts
 │   │   │   │       └── components/
 │   │   │   │           ├── filters/                     # 🔍 Filter Components
 │   │   │   │           │   ├── date-range-filter/       # Reusable date range picker
 │   │   │   │           │   ├── performance-filters/     # Score, percentage, questions
-│   │   │   │           │   ├── session-filters-card/    # Main filter orchestration
+│   │   │   │           │   ├── ref-test-filters-card/    # Main filter orchestration
 │   │   │   │           │   ├── sorting-panel/           # Collapsible sort controls
 │   │   │   │           │   ├── status-filter-tabs/      # Status tabs with scroll
 │   │   │   │           │   └── title-filter/            # Autocomplete title search
-│   │   │   │           ├── session-display/             # 📱 Display Components
-│   │   │   │           │   ├── session-mobile-card/     # Mobile card view
-│   │   │   │           │   └── session-table-row/       # Desktop table row
+│   │   │   │           ├── ref-test-display/             # 📱 Display Components
+│   │   │   │           │   ├── ref-test-mobile-card/     # Mobile card view
+│   │   │   │           │   └── ref-test-table-row/       # Desktop table row
 │   │   │   │           ├── dialogs/                     # 💬 Modal Dialogs
-│   │   │   │           │   ├── delete-sessions-dialog/
+│   │   │   │           │   ├── delete-ref-tests-dialog/
 │   │   │   │           │   ├── send-invitations-dialog/
 │   │   │   │           │   └── send-results-dialog/
 │   │   │   │           ├── column-visibility-menu/      # Table column toggles
-│   │   │   │           └── session-bulk-actions/        # Bulk operations toolbar
+│   │   │   │           └── ref-test-bulk-actions/        # Bulk operations toolbar
 │   │   │   │
-│   │   │   ├── quiz/                     # 🎯 RefTest Taking
+│   │   │   ├── ref-test/                  # 🎯 RefTest Taking
 │   │   │   │   ├── welcome/              # RefTest start page
-│   │   │   │   │   └── components/       # Instructions, session details, hero
+│   │   │   │   │   └── components/       # Instructions, RefTest details, hero
 │   │   │   │   ├── take/                 # RefTest taking page
-│   │   │   │   │   ├── take-quiz.ts
+│   │   │   │   │   ├── take-ref-test.ts
 │   │   │   │   │   ├── guards/           # Can deactivate guard
 │   │   │   │   │   └── components/       # Question card, navigation, results, etc.
 │   │   │   │   └── components/
-│   │   │   │       └── quiz-error/       # Error display component
+│   │   │   │       └── ref-test-error/    # Error display component
 │   │   │   │
 │   │   │   ├── pipes/                    # 🔧 Custom Pipes
 │   │   │   │   └── translation-pipe.ts   # Translation utilities
@@ -560,16 +560,16 @@ handball-belgium-rules-quiz/
 │   │   └── styles.css                    # Global TailwindCSS styles
 │   │
 │   ├── graphql/                          # 📡 GraphQL Operations
-│   │   ├── complete-session.graphql      # Complete RefTest mutation
-│   │   ├── create-sessions.graphql       # Create sessions mutation
-│   │   ├── delete-session.graphql        # Delete sessions mutation
-│   │   ├── get-sessions.graphql          # List sessions query
-│   │   ├── get-session-by-token.graphql  # Get RefTest for reftest taker
+│   │   ├── complete-ref-test.graphql      # Complete RefTest mutation
+│   │   ├── create-ref-tests.graphql       # Create RefTests mutation
+│   │   ├── delete-ref-test.graphql        # Delete RefTests mutation
+│   │   ├── get-ref-tests.graphql          # List RefTests query
+│   │   ├── get-ref-test-by-token.graphql  # Get RefTest by token query
 │   │   ├── send-invitations.graphql      # Send email invitations mutation
 │   │   ├── send-results.graphql          # Send results mutation
 │   │   ├── search-questions-by-number.graphql
 │   │   ├── get-titles.graphql            # Get RefTest titles
-│   │   ├── start-session.graphql         # Start RefTest mutation
+│   │   ├── start-ref-test.graphql         # Start RefTest mutation
 │   │   └── generated.ts                  # 🤖 Auto-generated TypeScript types
 │   │
 │   ├── scripts/
@@ -589,21 +589,21 @@ handball-belgium-rules-quiz/
 ├── .releaserc.json                       # Semantic Release config (emojis, plugins)
 ├── commitlint.config.mjs                 # Conventional commits validation
 ├── package.json                          # Root dependencies (semantic-release, husky)
-├── handball-belgium-rules-quiz-management.sln # .NET solution file
+├── RefTestManagement.sln                 # .NET solution file
 └── README.md                             # This file
 ```
 
 ### Key Directories Explained
 
-| Directory                                | Purpose                                                  |
-| ---------------------------------------- | -------------------------------------------------------- |
-| `QuizManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
-| `QuizManagement.Application/GraphQL`     | External GraphQL client schemas and queries (IHF Rules)  |
-| `QuizManagement.Infrastructure/Services` | PDF/Excel generation and email delivery (Brevo)          |
-| `QuizManagement.Ui/src/app/sessions`     | Session creation and management UI                       |
-| `QuizManagement.Ui/src/app/quiz`         | RefTest-taking experience (welcome, take, results)       |
-| `QuizManagement.Ui/graphql`              | GraphQL operation files and auto-generated types         |
-| `.github/workflows`                      | CI/CD pipelines for automated testing and deployment     |
+| Directory                                   | Purpose                                                  |
+|---------------------------------------------|----------------------------------------------------------|
+| `RefTestManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
+| `RefTestManagement.Application/GraphQL`     | External GraphQL client schemas and queries (IHF Rules)  |
+| `RefTestManagement.Infrastructure/Services` | PDF/Excel generation and email delivery (Brevo)          |
+| `RefTestManagement.Ui/src/app/ref-tests`    | RefTest creation and management UI                       |
+| `RefTestManagement.Ui/src/app/ref-test`     | RefTest-taking experience (welcome, take, results)       |
+| `RefTestManagement.Ui/graphql`              | GraphQL operation files and auto-generated types         |
+| `.github/workflows`                         | CI/CD pipelines for automated testing and deployment     |
 
 ## ⚙️ Configuration
 
@@ -622,7 +622,7 @@ Complete configuration file structure:
   "AllowedHosts": "*",
 
   "ConnectionStrings": {
-    "QuizManagement": "Server=localhost;Database=QuizManagement;Trusted_Connection=True;TrustServerCertificate=True;"
+    "RefTestManagement": "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
   },
 
   "Auth0": {
@@ -662,34 +662,34 @@ Complete configuration file structure:
 
 ### Configuration Options Explained
 
-| Section                   | Key                     | Description                               | Required |
-| ------------------------- | ----------------------- | ----------------------------------------- | -------- |
-| **ConnectionStrings**     | `QuizManagement`        | SQL Server or Azure SQL connection string | ✅ Yes   |
-| **Auth0**                 | `Domain`                | Auth0 tenant domain                       | ✅ Yes   |
-|                           | `ClientId`              | Auth0 application client ID               | ✅ Yes   |
-|                           | `ClientSecret`          | Auth0 application client secret           | ✅ Yes   |
-|                           | `Audience`              | Auth0 API identifier                      | ✅ Yes   |
-| **EmailConfiguration**    | `BaseUrl`               | Base URL for email links                  | ✅ Yes   |
-|                           | `BrevoApiKey`           | Brevo (SendGrid) API key                  | ✅ Yes   |
-|                           | `BrevoApiUrl`           | Brevo API endpoint                        | ✅ Yes   |
-|                           | `FromEmail`             | Sender email address                      | ✅ Yes   |
-|                           | `FromName`              | Sender display name                       | ✅ Yes   |
-|                           | `ScheduledDelayMinutes` | Delay in minutes for scheduled emails     | ⚠️ Optional (defaults to 0) |
-| **RulesQuestions**        | `Url`                   | External question bank GraphQL endpoint   | ✅ Yes   |
-| **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions            | ✅ Yes   |
+| Section                   | Key                     | Description                                 | Required |
+| ------------------------- | ----------------------- |---------------------------------------------| -------- |
+| **ConnectionStrings**     | `RefTestManagement`     | SQL Server or Azure SQL connection string   | ✅ Yes   |
+| **Auth0**                 | `Domain`                | Auth0 tenant domain                         | ✅ Yes   |
+|                           | `ClientId`              | Auth0 application client ID                 | ✅ Yes   |
+|                           | `ClientSecret`          | Auth0 application client secret             | ✅ Yes   |
+|                           | `Audience`              | Auth0 API identifier                        | ✅ Yes   |
+| **EmailConfiguration**    | `BaseUrl`               | Base URL for email links                    | ✅ Yes   |
+|                           | `BrevoApiKey`           | Brevo (SendGrid) API key                    | ✅ Yes   |
+|                           | `BrevoApiUrl`           | Brevo API endpoint                          | ✅ Yes   |
+|                           | `FromEmail`             | Sender email address                        | ✅ Yes   |
+|                           | `FromName`              | Sender display name                         | ✅ Yes   |
+|                           | `ScheduledDelayMinutes` | Delay in minutes for scheduled emails       | ⚠️ Optional (defaults to 0) |
+| **RulesQuestions**        | `Url`                   | External question bank GraphQL endpoint     | ✅ Yes   |
+| **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions              | ✅ Yes   |
 |                           | `EnabledLanguages`      | Array of enabled UI languages (en/nl/fr/de) | ⚠️ Optional (defaults to all 4) |
-| **ScoreConfiguration**    | `PassingPercentage`     | Percentage required to pass a quiz        | ⚠️ Optional (defaults to 80) |
-| **ReportConfiguration**   | `RecipientEmails`       | Array of emails to receive system reports | ⚠️ Optional (defaults to empty) |
+| **ScoreConfiguration**    | `PassingPercentage`     | Percentage required to pass a RefTest       | ⚠️ Optional (defaults to 80) |
+| **ReportConfiguration**   | `RecipientEmails`       | Array of emails to receive system reports   | ⚠️ Optional (defaults to empty) |
 
 ### User Secrets (Development)
 
 For sensitive data, use .NET User Secrets instead of `appsettings.json`:
 
 ```bash
-cd QuizManagement.Api
+cd RefTestManagement.Api
 
 # Database
-dotnet user-secrets set "ConnectionStrings:QuizManagement" "Server=localhost;Database=QuizManagement;Trusted_Connection=True;TrustServerCertificate=True;"
+dotnet user-secrets set "ConnectionStrings:RefTestManagement" "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
 
 # Auth0
 dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
@@ -757,7 +757,7 @@ Configure these secrets in **Settings > Secrets and variables > Actions**:
 
 1. **Create Service Principal:**
    ```bash
-   az ad sp create-for-rbac --name "handball-quiz-deploy" \\
+   az ad sp create-for-rbac --name "handball-ref-test-deploy" \\
    --role contributor \\
    --scopes /subscriptions/{subscription-id}/resourceGroups/{resource-group}
    ```
@@ -772,7 +772,7 @@ Note the `appId` (client ID), `tenant` (tenant ID) from output.
    --parameters '{
    "name": "github-deploy",
    "issuer": "https://token.actions.githubusercontent.com",
-   "subject": "repo:handballbelgium/ruletests-quiz-management:ref:refs/heads/main",
+   "subject": "repo:handballbelgium/RefTest-Management:ref:refs/heads/main",
    "audiences": ["api://AzureADTokenExchange"]
    }'
    ```
@@ -847,7 +847,7 @@ The application deploys automatically when changes are merged to `main`:
 1. **Semantic Release**: Analyzes commits and creates a new version
 2. **Build**:
    - Builds Angular application
-   - Copies build to `QuizManagement.Api/wwwroot/`
+   - Copies build to `RefTestManagement.Api/wwwroot/`
    - Builds and publishes .NET application
 3. **Deploy**: Deploys to Azure App Service
 
@@ -859,17 +859,17 @@ The application deploys automatically when changes are merged to `main`:
 
 # Build Angular
 
-cd QuizManagement.Ui
+cd RefTestManagement.Ui
 npm run build
 
 # Copy to API wwwroot
 
-mkdir -p ../QuizManagement.Api/wwwroot
-cp -r dist/quiz-management.ui/browser/* ../QuizManagement.Api/wwwroot/
+mkdir -p ../RefTestManagement.Api/wwwroot
+cp -r dist/ReftestManagement.Ui/browser/* ../RefTestManagement.Api/wwwroot/
 
 # Publish .NET
 
-cd ../QuizManagement.Api
+cd ../RefTestManagement.Api
 dotnet publish -c Release -o ./publish
 ```
 
@@ -884,10 +884,10 @@ az webapp deployment source config-zip \\
 
 ### GraphQL Code Generation
 
-After modifying any `.graphql` files in `QuizManagement.Ui/graphql/`:
+After modifying any `.graphql` files in `RefTestManagement.Ui/graphql/`:
 
 ```bash
-cd QuizManagement.Ui
+cd RefTestManagement.Ui
 npm run codegen
 ```
 
@@ -897,8 +897,8 @@ This regenerates TypeScript types in `graphql/generated.ts` based on your GraphQ
 
 1. **GraphQL Playground**: `https://localhost:7039/graphql/`
 2. **Test Authentication**: Click "Sign In" and verify Auth0 redirect
-3. **Create Session**: Navigate to Sessions > Create and test bulk creation
-4. **Take RefTest**: Use the generated token URL to take a reftest
+3. **Create RefTest**: Navigate to RefTests > Create and test bulk creation
+4. **Take RefTest**: Use the generated token URL to take a RefTest
 5. **Check Emails**: Verify invitation and result emails (if configured)
 
 ## 🤝 Contributing
@@ -943,7 +943,7 @@ Versions are automatically determined by [semantic-release](https://github.com/s
 ### Version Synchronization
 
 - **Root `package.json`**: Master version managed by semantic-release
-- **`QuizManagement.Ui/package.json`**: Synced during release via `@semantic-release/exec`
+- **`RefTestManagement.Ui/package.json`**: Synced during release via `@semantic-release/exec`
 - **`src/environments/version.ts`**: Auto-generated on build via `generate-version.mjs`
 - **Footer Display**: Shows current version in app footer
 
@@ -974,7 +974,7 @@ This project is licensed under the ISC License - see the LICENSE file for detail
 
 For issues, questions, or contributions:
 
-- **Issues**: [GitHub Issues](https://github.com/handballbelgium/ruletests-quiz-management/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/handballbelgium/ruletests-quiz-management/discussions)
+- **Issues**: [GitHub Issues](https://github.com/handballbelgium/RefTest-Management/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/handballbelgium/RefTest-Management/discussions)
 
 **Made with ❤️ for Handball Belgium**
