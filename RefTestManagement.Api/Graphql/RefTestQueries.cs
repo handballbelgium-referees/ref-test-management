@@ -1,4 +1,4 @@
-﻿﻿using Handball.Belgium.RefTestManagement.Application.Models;
+﻿using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -44,7 +44,14 @@ public static class RefTestQueries
             throw new InvalidRefTestStatusException(refTest.Status,
                 [RefTestStatus.Pending, RefTestStatus.InProgress]);
 
-        return refTest.IsExpired(configuration.ExpirationIfNotStarted) ? throw new RefTestExpiredException(token) : refTest;
+        if (!refTest.IsExpired(configuration.ExpirationIfNotStarted)) 
+            return refTest;
+
+        refTest.Expire();
+        context.RefTests.Update(refTest);
+        await context.SaveChangesAsync(cancellationToken);
+
+        throw new RefTestExpiredException(token);
     }
     
     /// <summary>
