@@ -660,7 +660,8 @@ Complete configuration file structure:
 
   "BackgroundServiceConfiguration": {
     "ExpirationCheckIntervalMinutes": 5,
-    "StartupDelaySeconds": 30
+    "StartupDelaySeconds": 30,
+    "ExpirationIfNotStarted": "7.00:00:00"
   },
 
   "ReportConfiguration": {
@@ -690,6 +691,7 @@ Complete configuration file structure:
 | **ScoreConfiguration**    | `PassingPercentage`     | Percentage required to pass a RefTest       | ⚠️ Optional (defaults to 80) |
 | **BackgroundServiceConfiguration** | `ExpirationCheckIntervalMinutes` | How often to check for expired tests (minutes) | ⚠️ Optional (defaults to 5) |
 |                           | `StartupDelaySeconds`   | Delay before first expiration check (seconds) | ⚠️ Optional (defaults to 30) |
+|                           | `ExpirationIfNotStarted` | TimeSpan for how long a test is valid if not started (format: d.hh:mm:ss) | ⚠️ Optional (defaults to 7.00:00:00 - 7 days) |
 | **ReportConfiguration**   | `RecipientEmails`       | Array of emails to receive system reports   | ⚠️ Optional (defaults to empty) |
 
 ### User Secrets (Development)
@@ -732,6 +734,7 @@ dotnet user-secrets set "ScoreConfiguration:PassingPercentage" "80"
 # Background Service Configuration
 dotnet user-secrets set "BackgroundServiceConfiguration:ExpirationCheckIntervalMinutes" "5"
 dotnet user-secrets set "BackgroundServiceConfiguration:StartupDelaySeconds" "30"
+dotnet user-secrets set "BackgroundServiceConfiguration:ExpirationIfNotStarted" "7.00:00:00"
 
 # Report Configuration (for multiple recipients, use indexed keys)
 dotnet user-secrets set "ReportConfiguration:RecipientEmails:0" "admin1@domain.com"
@@ -816,7 +819,7 @@ The `RefTestExpirationService` runs every 5 minutes (configurable) and:
 
 1. **Checks for expired tests** based on:
    - **Started tests**: Expire after `MaxTimeInMinutes` from `StartedAt`
-   - **Unstarted tests**: Expire 7 days after creation
+   - **Unstarted tests**: Expire after the configured `ExpirationIfNotStarted` period (default: 7 days) from creation
 
 2. **Processes expired tests**:
    - **Pending tests** → Marked as `Expired`
@@ -832,7 +835,8 @@ Configure the background service in `appsettings.json`:
 {
   "BackgroundServiceConfiguration": {
     "ExpirationCheckIntervalMinutes": 5,
-    "StartupDelaySeconds": 30
+    "StartupDelaySeconds": 30,
+    "ExpirationIfNotStarted": "7.00:00:00"
   }
 }
 ```
@@ -841,6 +845,16 @@ Configure the background service in `appsettings.json`:
 |---------|-------------|---------|
 | `ExpirationCheckIntervalMinutes` | How often to check for expired tests | 5 minutes |
 | `StartupDelaySeconds` | Delay before first check (allows app to fully start) | 30 seconds |
+| `ExpirationIfNotStarted` | How long a test is valid if not started (TimeSpan format: d.hh:mm:ss) | 7.00:00:00 (7 days) |
+
+**TimeSpan Format Examples for `ExpirationIfNotStarted`:**
+- `1.00:00:00` = 1 day
+- `3.00:00:00` = 3 days
+- `7.00:00:00` = 7 days (default)
+- `0.12:00:00` = 12 hours
+- `14.00:00:00` = 14 days (2 weeks)
+
+> **Note:** This expiration period is displayed in the invitation emails sent to participants. The email automatically formats the duration appropriately (e.g., "valid for 1 day" vs "valid for 12 hours").
 
 #### Monitoring
 
