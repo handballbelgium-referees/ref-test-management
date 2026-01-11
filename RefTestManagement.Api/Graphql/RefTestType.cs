@@ -1,7 +1,9 @@
-﻿using Handball.Belgium.RefTestManagement.Application.Models;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
@@ -47,24 +49,10 @@ public class RefTestType : ObjectType<RefTest>
         descriptor.Field(x => x.WrongAnswerIds).Description("List of answer IDs that were answered incorrectly");
         descriptor.Field(x => x.ResultsSent).Description("Indication of results were sent").Authorize();
         descriptor.Field(x => x.Status)
-            .Description("Status of the RefTest (e.g., InProgress, Completed, Expired)")
-            .Resolve(async ctx =>
-            {
-                var refTest = ctx.Parent<RefTest>();
-                var contextFactory = ctx.Services.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
-                await using var context = await contextFactory.CreateDbContextAsync(ctx.RequestAborted);
-
-                if (!refTest.IsExpired()) 
-                    return refTest.Status;
-                
-                refTest.Expire();
-
-                context.RefTests.Update(refTest);
-                await context.SaveChangesAsync(ctx.RequestAborted);
-
-                return refTest.Status;
-            })
+            .Description("Status of the RefTest (e.g., InProgress, Completed, Expired). Expired tests are automatically processed by a background service.")
             .Authorize();
+        descriptor.Field(x => x.CurrentQuestionIndex).Description("Index of the current question");
+        descriptor.Field(x => x.SelectedAnswerIds).Description("List of selected answer IDs");
         descriptor.Field("questions")
             .Description("Questions for this RefTest")
             .Argument("includeNumber", x => x.Type<BooleanType>().DefaultValue(false))

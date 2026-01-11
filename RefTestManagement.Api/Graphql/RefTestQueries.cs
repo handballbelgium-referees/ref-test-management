@@ -1,4 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Application.Models;
+﻿﻿using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -19,6 +19,7 @@ public static class RefTestQueries
     /// </summary>
     /// <param name="token"></param>
     /// <param name="context"></param>
+    /// <param name="configuration"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -30,6 +31,7 @@ public static class RefTestQueries
     public static async Task<RefTest?> GetRefTestByTokenAsync(
         string token,
         RefTestManagementContext context,
+        BackgroundServiceConfiguration configuration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -42,7 +44,7 @@ public static class RefTestQueries
             throw new InvalidRefTestStatusException(refTest.Status,
                 [RefTestStatus.Pending, RefTestStatus.InProgress]);
 
-        return refTest.IsExpired() ? throw new RefTestExpiredException(token) : refTest;
+        return refTest.IsExpired(configuration.ExpirationIfNotStarted) ? throw new RefTestExpiredException(token) : refTest;
     }
     
     /// <summary>

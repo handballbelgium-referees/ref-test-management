@@ -11,6 +11,7 @@ public partial class EmailService(
     EmailConfiguration configuration,
     LanguageConfiguration languageConfiguration,
     ScoreConfiguration scoreConfiguration,
+    BackgroundServiceConfiguration backgroundServiceConfiguration,
     IRefTestResultsPdfService pdfService)
     : IEmailService
 {
@@ -28,7 +29,7 @@ public partial class EmailService(
                 maxTimeInMinutes, isLast));
         }
 
-        const string subject = "Referees Handball Belgium RefTest Invitation";
+        const string subject = "Referees Handball Belgium RefTest - Invitation";
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -44,7 +45,7 @@ public partial class EmailService(
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
             <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest</h1>
-            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest Invitation</p>
+            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Invitation</p>
         </div>
 
         <!-- Main Content -->
@@ -73,7 +74,7 @@ public partial class EmailService(
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
         List<Question> questionsWithCorrectAnswers, bool scheduleEmail)
     {
-        const string subject = "RefTest - Your Results";
+        const string subject = "Referees Handball Belgium RefTest - Results";
         var passed = percentage >= scoreConfiguration.PassingPercentage;
         var resultColor = passed ? "#22c55e" : "#ef4444";
         var resultBgColor = passed ? "#dcfce7" : "#fee2e2";
@@ -104,8 +105,8 @@ public partial class EmailService(
     <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
-            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>IHF Rules RefTest</h1>
-            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Your Results</p>
+            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest</h1>
+            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Results</p>
         </div>
 
         <!-- Main Content -->
@@ -309,61 +310,90 @@ public partial class EmailService(
         Dictionary<string, string> Translations
     );
 
-    private static Dictionary<string, Dictionary<string, string>> GetInvitationTranslations() => new()
+    private Dictionary<string, Dictionary<string, string>> GetInvitationTranslations()
     {
-        ["en"] = new Dictionary<string, string>
+        var expiration = backgroundServiceConfiguration.ExpirationIfNotStarted;
+
+        return new Dictionary<string, Dictionary<string, string>>
         {
-            ["displayName"] = "English",
-            ["refTestDetails"] = "RefTest Details",
-            ["questions"] = "Questions",
-            ["timeLimit"] = "Time Limit",
-            ["minutes"] = "minutes",
-            ["validDays"] = "⏰ This RefTest is valid for 7 days",
-            ["greeting"] = "Hello",
-            ["inviteText"] =
-                "You have been invited to take the RefTest. Click the button below to start your RefTest:",
-            ["startButton"] = "Start RefTest"
-        },
-        ["nl"] = new Dictionary<string, string>
+            ["en"] = new()
+            {
+                ["displayName"] = "English",
+                ["refTestDetails"] = "RefTest Details",
+                ["questions"] = "Questions",
+                ["timeLimit"] = "Time Limit",
+                ["minutes"] = "minutes",
+                ["validDays"] = GetValidityText("en"),
+                ["greeting"] = "Hello",
+                ["inviteText"] =
+                    "You have been invited to take the RefTest. Click the button below to start your RefTest:",
+                ["startButton"] = "Start RefTest"
+            },
+            ["nl"] = new()
+            {
+                ["displayName"] = "Nederlands",
+                ["refTestDetails"] = "RefTest Details",
+                ["questions"] = "Vragen",
+                ["timeLimit"] = "Tijdslimiet",
+                ["minutes"] = "minuten",
+                ["validDays"] = GetValidityText("nl"),
+                ["greeting"] = "Hallo",
+                ["inviteText"] =
+                    "Je bent uitgenodigd om deel te nemen aan de RefTest. Klik op de knop hieronder om je RefTest te starten:",
+                ["startButton"] = "RefTest Starten"
+            },
+            ["fr"] = new()
+            {
+                ["displayName"] = "Français",
+                ["refTestDetails"] = "Détails du RefTest",
+                ["questions"] = "Questions",
+                ["timeLimit"] = "Limite de Temps",
+                ["minutes"] = "minutes",
+                ["validDays"] = GetValidityText("fr"),
+                ["greeting"] = "Bonjour",
+                ["inviteText"] =
+                    "Vous êtes invité à participer au RefTest. Cliquez sur le bouton ci-dessous pour commencer votre RefTest:",
+                ["startButton"] = "Démarrer le RefTest"
+            },
+            ["de"] = new()
+            {
+                ["displayName"] = "Deutsch",
+                ["refTestDetails"] = "RefTest-Details",
+                ["questions"] = "Fragen",
+                ["timeLimit"] = "Zeitlimit",
+                ["minutes"] = "Minuten",
+                ["validDays"] = GetValidityText("de"),
+                ["greeting"] = "Hallo",
+                ["inviteText"] =
+                    "Sie wurden eingeladen, am RefTest teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihren RefTest zu starten:",
+                ["startButton"] = "RefTest starten"
+            }
+        };
+
+        // Format the expiration time in a human-readable way for each language
+        string GetValidityText(string lang)
         {
-            ["displayName"] = "Nederlands",
-            ["refTestDetails"] = "RefTest Details",
-            ["questions"] = "Vragen",
-            ["timeLimit"] = "Tijdslimiet",
-            ["minutes"] = "minuten",
-            ["validDays"] = "⏰ Deze RefTest is 7 dagen geldig",
-            ["greeting"] = "Hallo",
-            ["inviteText"] =
-                "Je bent uitgenodigd om deel te nemen aan de RefTest. Klik op de knop hieronder om je RefTest te starten:",
-            ["startButton"] = "RefTest Starten"
-        },
-        ["fr"] = new Dictionary<string, string>
-        {
-            ["displayName"] = "Français",
-            ["refTestDetails"] = "Détails du RefTest",
-            ["questions"] = "Questions",
-            ["timeLimit"] = "Limite de Temps",
-            ["minutes"] = "minutes",
-            ["validDays"] = "⏰ Ce RefTest est valide pendant 7 jours",
-            ["greeting"] = "Bonjour",
-            ["inviteText"] =
-                "Vous êtes invité à participer au RefTest. Cliquez sur le bouton ci-dessous pour commencer votre RefTest:",
-            ["startButton"] = "Démarrer le RefTest"
-        },
-        ["de"] = new Dictionary<string, string>
-        {
-            ["displayName"] = "Deutsch",
-            ["refTestDetails"] = "RefTest-Details",
-            ["questions"] = "Fragen",
-            ["timeLimit"] = "Zeitlimit",
-            ["minutes"] = "Minuten",
-            ["validDays"] = "⏰ Dieser RefTest ist 7 Tage lang gültig",
-            ["greeting"] = "Hallo",
-            ["inviteText"] =
-                "Sie wurden eingeladen, am RefTest teilzunehmen. Klicken Sie auf die Schaltfläche unten, um Ihren RefTest zu starten:",
-            ["startButton"] = "RefTest starten"
+            var totalHours = (int)expiration.TotalHours;
+            var totalDays = (int)expiration.TotalDays;
+            
+            return lang switch
+            {
+                "en" => totalHours < 24 
+                    ? $"⏰ This RefTest is valid for {totalHours} {(totalHours == 1 ? "hour" : "hours")}"
+                    : $"⏰ This RefTest is valid for {totalDays} {(totalDays == 1 ? "day" : "days")}",
+                "nl" => totalHours < 24 
+                    ? $"⏰ Deze RefTest is {totalHours} {(totalHours == 1 ? "uur" : "uren")} geldig"
+                    : $"⏰ Deze RefTest is {totalDays} {(totalDays == 1 ? "dag" : "dagen")} geldig",
+                "fr" => totalHours < 24 
+                    ? $"⏰ Ce RefTest est valide pendant {totalHours} {(totalHours <= 1 ? "heure" : "heures")}"
+                    : $"⏰ Ce RefTest est valide pendant {totalDays} {(totalDays <= 1 ? "jour" : "jours")}",
+                "de" => totalHours < 24 
+                    ? $"⏰ Dieser RefTest ist {totalHours} {(totalHours == 1 ? "Stunde" : "Stunden")} lang gültig"
+                    : $"⏰ Dieser RefTest ist {totalDays} {(totalDays == 1 ? "Tag" : "Tage")} lang gültig",
+                _ => $"⏰ Valid for {totalDays} days"
+            };
         }
-    };
+    }
 
     private static Dictionary<string, Dictionary<string, string>> GetResultsTranslations() => new()
     {

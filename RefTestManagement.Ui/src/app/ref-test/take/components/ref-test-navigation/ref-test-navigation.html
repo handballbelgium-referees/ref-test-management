@@ -10,7 +10,7 @@
       class="px-2 py-1 border border-neutral-300 rounded text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary-500"
     >
       @for (question of questions(); track question.id; let i = $index) {
-      <option [value]="i" [disabled]="!isQuestionVisited()(i)">
+      <option [value]="i" [disabled]="!isQuestionVisited()(i)" [selected]="i === currentQuestionIndex()">
         {{ i + 1 }} @if (isQuestionAnswered()(question.id)) { ✓ }
       </option>
       }

@@ -31,10 +31,10 @@ export class App {
   private readonly _isRefTestRoute = toSignal(
     this._router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
-      map(() => this._router.url.startsWith('/ref-test')),
+      map(() => this._router.url.startsWith('/ref-test/')),
       takeUntilDestroyed(this._destroyRef)
     ),
-    { initialValue: this._router.url.startsWith('/ref-test') }
+    { initialValue: this._router.url.startsWith('/ref-test/') }
   );
 
   protected readonly isLoggedIn = computed(() => !!this._auth.isAuthenticated());

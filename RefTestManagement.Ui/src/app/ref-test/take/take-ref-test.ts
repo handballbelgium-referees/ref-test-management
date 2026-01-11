@@ -4,7 +4,6 @@ import {
   computed,
   DestroyRef,
   effect,
-  HostListener,
   inject,
   signal,
 } from '@angular/core';
@@ -17,6 +16,7 @@ import {
   CompleteRefTestGQL,
   GetResultsEmailDelayMinutesGQL,
   GetScoreConfigurationGQL,
+  SaveRefTestProgressGQL,
   StartRefTestGQL,
 } from '../../../../graphql/generated';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
@@ -64,6 +64,7 @@ export class TakeRefTest {
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _startRefTestGQL = inject(StartRefTestGQL);
   private readonly _completeRefTestGQL = inject(CompleteRefTestGQL);
+  private readonly _saveRefTestProgressGQL = inject(SaveRefTestProgressGQL);
   private readonly _translate = inject(TranslateService);
 
   private readonly _token = toSignal(
@@ -72,6 +73,7 @@ export class TakeRefTest {
 
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly showProgressRestored = signal(false);
   protected readonly questions = signal<IQuestion[]>([]);
   protected readonly currentQuestionIndex = signal(0);
   protected readonly visitedQuestions = signal<Set<number>>(new Set([0]));
@@ -89,6 +91,7 @@ export class TakeRefTest {
   protected readonly showLeaveDialog = signal(false);
   private _leaveConfirmed = false;
   private _tempLeaveHandlers?: { handleConfirm: () => void; handleCancel: () => void };
+  private _refTestStarted = false;
 
   protected readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
@@ -155,19 +158,12 @@ export class TakeRefTest {
     { initialValue: 0 }
   );
 
-  @HostListener('window:beforeunload', ['$event'])
-  beforeUnloadHandler(event: BeforeUnloadEvent): void {
-    // Check if RefTest is in progress (has questions loaded but not completed)
-    if (this.questions().length > 0 && !this.refTestCompleted()) {
-      event.preventDefault();
-    }
-  }
-
   constructor() {
     // Start the RefTest when component initializes
     effect(() => {
       const token = this._token();
-      if (token) {
+      if (token && !this._refTestStarted) {
+        this._refTestStarted = true;
         this.startRefTest(token);
       }
     });
@@ -242,7 +238,41 @@ export class TakeRefTest {
             questions.forEach((q) => {
               initialAnswers[q.id] = [];
             });
+
+            // Restore saved progress if exists
+            const savedAnswerIds = data.refTest.selectedAnswerIds ?? [];
+            if (savedAnswerIds.length > 0) {
+              // Map saved answer IDs to questions
+              savedAnswerIds.forEach((answerId) => {
+                // Find which question this answer belongs to
+                const question = questions.find((q) => q.answers.some((a) => a.id === answerId));
+                if (question) {
+                  if (!initialAnswers[question.id]) {
+                    initialAnswers[question.id] = [];
+                  }
+                  initialAnswers[question.id].push(answerId);
+                }
+              });
+            }
+
             this.selectedAnswers.set(initialAnswers);
+
+            // Restore current question index if saved
+            const savedIndex = data.refTest.currentQuestionIndex ?? 0;
+            this.currentQuestionIndex.set(savedIndex);
+
+            // Mark all questions up to the saved index as visited
+            const visited = new Set<number>();
+            for (let i = 0; i <= savedIndex; i++) {
+              visited.add(i);
+            }
+            this.visitedQuestions.set(visited);
+
+            // Show restored progress message if we restored from a saved state
+            if (savedIndex > 0 || savedAnswerIds.length > 0) {
+              this.showProgressRestored.set(true);
+              setTimeout(() => this.showProgressRestored.set(false), 10000);
+            }
 
             // Set max time
             if (data.refTest.maxTimeInMinutes) {
@@ -297,6 +327,7 @@ export class TakeRefTest {
   protected previousQuestion(): void {
     if (this.canPrevious()) {
       this.currentQuestionIndex.update((i) => i - 1);
+      this.saveProgress();
     }
   }
 
@@ -305,6 +336,7 @@ export class TakeRefTest {
       const nextIndex = this.currentQuestionIndex() + 1;
       this.currentQuestionIndex.set(nextIndex);
       this.visitedQuestions.update((visited) => new Set([...visited, nextIndex]));
+      this.saveProgress();
     }
   }
 
@@ -376,7 +408,35 @@ export class TakeRefTest {
   protected goToQuestion(index: number): void {
     if (this.visitedQuestions().has(index)) {
       this.currentQuestionIndex.set(index);
+      this.saveProgress();
     }
+  }
+
+  private saveProgress(): void {
+    const token = this._token();
+    if (!token) return;
+
+    const selectedAnswers = this.selectedAnswers();
+    const selectedAnswerIds: string[] = [];
+
+    // Flatten all selected answers
+    Object.values(selectedAnswers).forEach((answerIds) => {
+      selectedAnswerIds.push(...answerIds);
+    });
+
+    this._saveRefTestProgressGQL
+      .mutate({
+        variables: {
+          input: {
+            token,
+            currentQuestionIndex: this.currentQuestionIndex(),
+            selectedAnswerIds,
+            language: this.currentLanguage(),
+          },
+        },
+      })
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe();
   }
 
   protected isQuestionVisited(index: number): boolean {

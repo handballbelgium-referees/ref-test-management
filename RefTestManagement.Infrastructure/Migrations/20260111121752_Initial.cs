@@ -42,6 +42,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     StartedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     CompletedAt = table.Column<DateTime>(type: "datetime2", nullable: true),
                     Status = table.Column<string>(type: "nvarchar(450)", nullable: false),
+                    CurrentQuestionIndex = table.Column<int>(type: "int", nullable: true),
                     QuestionScore = table.Column<int>(type: "int", nullable: true),
                     AnswerScore = table.Column<int>(type: "int", nullable: true),
                     AnswerTotal = table.Column<int>(type: "int", nullable: true),

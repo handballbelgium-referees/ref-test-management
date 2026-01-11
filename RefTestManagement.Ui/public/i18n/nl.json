@@ -317,7 +317,7 @@
     }
   },
   "ref_test": {
-    "page_title": "Handbalregels RefTest",
+    "page_title": "Handbal RefTest",
     "loading": "RefTest laden...",
     "error": {
       "title": "Kan RefTest niet laden",
@@ -340,6 +340,7 @@
     "instruction_1": "Lees elke vraag zorgvuldig voordat je je antwoorden selecteert",
     "instruction_2": "Sommige vragen kunnen meerdere juiste antwoorden hebben",
     "instruction_3": "Je kunt heen en weer navigeren tussen vragen",
+    "instruction_progress_saved": "Je voortgang wordt automatisch opgeslagen, maar de timer loopt door, zelfs als je de pagina sluit",
     "instruction_4": "Voltooi de RefTest binnen de tijdslimiet",
     "start_button": "Start RefTest",
     "time_remaining": "Resterende Tijd",
@@ -350,6 +351,8 @@
     "previous": "Vorige",
     "next": "Volgende",
     "submit": "RefTest Indienen",
+    "progress_restored": "Welkom terug!",
+    "continue_where_left": "Je voortgang is opgeslagen. Je kunt verdergaan waar je was gebleven.",
     "results": {
       "title": "RefTest Voltooid!",
       "subtitle": "Hier zijn je resultaten",

@@ -49,6 +49,7 @@ public class RefTest
     public DateTime? StartedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
     public RefTestStatus Status { get; private set; }
+    public int? CurrentQuestionIndex { get; private set; }
     public int? QuestionScore { get; private set; }
     public int? AnswerScore { get; private set; }
     public int QuestionTotal => QuestionIds.Count;
@@ -108,6 +109,17 @@ public class RefTest
 
         Status = RefTestStatus.InProgress;
         StartedAt = DateTime.UtcNow;
+        CurrentQuestionIndex = 0;
+    }
+
+    public void SaveProgress(int currentQuestionIndex, List<string> selectedAnswerIds, string? language = null)
+    {
+        if (Status != RefTestStatus.InProgress)
+            throw new InvalidRefTestStatusException("Can only save progress for in-progress RefTests");
+
+        CurrentQuestionIndex = currentQuestionIndex;
+        SelectedAnswerIds = selectedAnswerIds ?? [];
+        Language = language;
     }
 
     public void Complete(int questionScore, int answerScore, int answerTotal, double percentage, List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds, string? language = null)
@@ -140,7 +152,7 @@ public class RefTest
         Status = RefTestStatus.Expired;
     }
 
-    public bool IsExpired()
+    public bool IsExpired(TimeSpan expirationIfNotStarted)
     {
         if (Status == RefTestStatus.Completed)
             return false;
@@ -151,8 +163,8 @@ public class RefTest
             return elapsedTime.TotalMinutes > MaxTimeInMinutes;
         }
 
-        // RefTest expires 7 days after creation if not started
+        // RefTest expires after configured time if not started
         var timeSinceCreation = DateTime.UtcNow - CreatedAt;
-        return timeSinceCreation.TotalDays > 7;
+        return timeSinceCreation > expirationIfNotStarted;
     }
 }

@@ -321,7 +321,7 @@
     }
   },
   "ref_test": {
-    "page_title": "Handballregeln-RefTest",
+    "page_title": "Handball-RefTest",
     "loading": "RefTest wird geladen...",
     "error": {
       "title": "RefTest kann nicht geladen werden",
@@ -344,6 +344,7 @@
     "instruction_1": "Lesen Sie jede Frage sorgfältig, bevor Sie Ihre Antworten auswählen",
     "instruction_2": "Einige Fragen können mehrere richtige Antworten haben",
     "instruction_3": "Sie können zwischen den Fragen hin und her navigieren",
+    "instruction_progress_saved": "Ihr Fortschritt wird automatisch gespeichert, aber die Zeit läuft weiter, auch wenn Sie die Seite schließen",
     "instruction_4": "Schließen Sie den RefTest innerhalb des Zeitlimits ab",
     "start_button": "RefTest starten",
     "time_remaining": "Verbleibende Zeit",
@@ -354,6 +355,8 @@
     "previous": "Zurück",
     "next": "Weiter",
     "submit": "RefTest Einreichen",
+    "progress_restored": "Willkommen zurück!",
+    "continue_where_left": "Ihr Fortschritt wurde gespeichert. Sie können dort weitermachen, wo Sie aufgehört haben.",
     "results": {
       "title": "RefTest Abgeschlossen!",
       "subtitle": "Hier sind Ihre Ergebnisse",

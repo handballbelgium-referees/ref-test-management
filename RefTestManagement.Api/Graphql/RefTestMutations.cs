@@ -1,4 +1,5 @@
 ﻿using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -19,6 +20,7 @@ public static class RefTestMutations
     /// </summary>
     /// <param name="token"></param>
     /// <param name="context"></param>
+    /// <param name="configuration"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -30,6 +32,7 @@ public static class RefTestMutations
     public static async Task<RefTest> StartRefTestAsync(
         string token,
         RefTestManagementContext context,
+        BackgroundServiceConfiguration configuration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -38,7 +41,7 @@ public static class RefTestMutations
         if (refTest == null)
             throw new RefTestNotFoundException(token);
 
-        if (refTest.IsExpired())
+        if (refTest.IsExpired(configuration.ExpirationIfNotStarted))
         {
             refTest.Expire();
             context.RefTests.Update(refTest);
@@ -50,6 +53,38 @@ public static class RefTestMutations
             return refTest;
 
         refTest.Start();
+        context.RefTests.Update(refTest);
+        await context.SaveChangesAsync(cancellationToken);
+
+        return refTest;
+    }
+
+    /// <summary>
+    /// Save RefTest progress (current question and selected answers)
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="context"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    /// <exception cref="RefTestNotFoundException"></exception>
+    /// <exception cref="InvalidRefTestStatusException"></exception>
+    [Error<RefTestNotFoundException>]
+    [Error<InvalidRefTestStatusException>]
+    public static async Task<RefTest> SaveRefTestProgressAsync(
+        SaveRefTestProgressInput input,
+        RefTestManagementContext context,
+        CancellationToken cancellationToken)
+    {
+        var refTest = await context.RefTests
+            .FirstOrDefaultAsync(s => s.Token == input.Token, cancellationToken);
+
+        if (refTest == null)
+            throw new RefTestNotFoundException(input.Token);
+
+        if (refTest.Status != RefTestStatus.InProgress)
+            throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
+
+        refTest.SaveProgress(input.CurrentQuestionIndex, input.SelectedAnswerIds, input.Language);
         context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 

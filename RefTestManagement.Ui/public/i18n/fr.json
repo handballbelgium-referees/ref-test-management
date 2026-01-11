@@ -318,7 +318,7 @@
     }
   },
   "ref_test": {
-    "page_title": "RefTest sur les Règles de Handball",
+    "page_title": "RefTest de Handball",
     "loading": "Chargement du RefTest...",
     "error": {
       "title": "Impossible de charger le RefTest",
@@ -341,6 +341,7 @@
     "instruction_1": "Lisez attentivement chaque question avant de sélectionner vos réponses",
     "instruction_2": "Certaines questions peuvent avoir plusieurs réponses correctes",
     "instruction_3": "Vous pouvez naviguer en avant et en arrière entre les questions",
+    "instruction_progress_saved": "Votre progression est automatiquement sauvegardée, mais le chronomètre continue même si vous fermez la page",
     "instruction_4": "Complétez le RefTest dans le délai imparti",
     "start_button": "Commencer le RefTest",
     "time_remaining": "Temps Restant",
@@ -351,6 +352,8 @@
     "previous": "Précédent",
     "next": "Suivant",
     "submit": "Soumettre le RefTest",
+    "progress_restored": "Bon retour !",
+    "continue_where_left": "Votre progression a été sauvegardée. Vous pouvez continuer où vous vous étiez arrêté.",
     "results": {
       "title": "RefTest Terminé!",
       "subtitle": "Voici vos résultats",

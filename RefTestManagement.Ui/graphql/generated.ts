@@ -197,6 +197,7 @@ export type Mutation = {
   createBulkRefTests: CreateBulkRefTestsPayload;
   deleteRefTests: DeleteRefTestsPayload;
   generateRefTestsReport: GenerateRefTestsReportPayload;
+  saveRefTestProgress: SaveRefTestProgressPayload;
   sendInvitations: SendInvitationsPayload;
   sendResults: SendResultsPayload;
   startRefTest: StartRefTestPayload;
@@ -220,6 +221,11 @@ export type MutationDeleteRefTestsArgs = {
 
 export type MutationGenerateRefTestsReportArgs = {
   input: GenerateRefTestsReportInput;
+};
+
+
+export type MutationSaveRefTestProgressArgs = {
+  input: SaveRefTestProgressInput;
 };
 
 
@@ -334,6 +340,8 @@ export type RefTest = Node & {
   completedAt?: Maybe<Scalars['DateTime']['output']>;
   /** Creation date and time of the RefTest */
   createdAt: Scalars['DateTime']['output'];
+  /** Index of the current question */
+  currentQuestionIndex?: Maybe<Scalars['Int']['output']>;
   /** Email of the user who started the RefTest */
   email: Scalars['String']['output'];
   /** The RefTest id */
@@ -356,6 +364,8 @@ export type RefTest = Node & {
   questions?: Maybe<Array<Maybe<Question>>>;
   /** Indication of results were sent */
   resultsSent: Scalars['Boolean']['output'];
+  /** List of selected answer IDs */
+  selectedAnswerIds: Array<Scalars['String']['output']>;
   /** Start date and time of the RefTest */
   startedAt?: Maybe<Scalars['DateTime']['output']>;
   /** Status of the RefTest (e.g., InProgress, Completed, Expired) */
@@ -547,6 +557,21 @@ export type RefTestsEdge = {
   node: RefTest;
 };
 
+export type SaveRefTestProgressError = InvalidRefTestStatusError | RefTestNotFoundError;
+
+export type SaveRefTestProgressInput = {
+  currentQuestionIndex: Scalars['Int']['input'];
+  language: Scalars['String']['input'];
+  selectedAnswerIds: Array<Scalars['String']['input']>;
+  token: Scalars['String']['input'];
+};
+
+export type SaveRefTestProgressPayload = {
+  __typename?: 'SaveRefTestProgressPayload';
+  errors?: Maybe<Array<SaveRefTestProgressError>>;
+  refTest?: Maybe<RefTest>;
+};
+
 export type ScoreConfiguration = {
   __typename?: 'ScoreConfiguration';
   passingPercentage: Scalars['Int']['output'];
@@ -707,7 +732,7 @@ export type GetRefTestByTokenQueryVariables = Exact<{
 
 export type GetRefTestByTokenQuery = { __typename?: 'Query', refTestByToken:
     | { __typename?: 'InvalidRefTestStatusError', message: string }
-    | { __typename?: 'RefTest', id: string, name?: string | null, email: string, numberOfQuestions: number, maxTimeInMinutes: number }
+    | { __typename?: 'RefTest', id: string, name?: string | null, email: string, numberOfQuestions: number, maxTimeInMinutes: number, currentQuestionIndex?: number | null }
     | { __typename?: 'RefTestExpiredError', message: string }
     | { __typename?: 'RefTestNotFoundError', message: string }
    };
@@ -749,6 +774,13 @@ export type GetRefTestTitlesQueryVariables = Exact<{
 
 export type GetRefTestTitlesQuery = { __typename?: 'Query', refTestTitles?: { __typename?: 'RefTestTitlesConnection', totalCount: number, edges?: Array<{ __typename?: 'RefTestTitlesEdge', cursor: string, node: { __typename?: 'RefTestTitle', id: string, value: string } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
 
+export type SaveRefTestProgressMutationVariables = Exact<{
+  input: SaveRefTestProgressInput;
+}>;
+
+
+export type SaveRefTestProgressMutation = { __typename?: 'Mutation', saveRefTestProgress: { __typename?: 'SaveRefTestProgressPayload', refTest?: { __typename?: 'RefTest', id: string, currentQuestionIndex?: number | null, selectedAnswerIds: Array<string> } | null } };
+
 export type SearchQuestionsByNumberQueryVariables = Exact<{
   number?: InputMaybe<Scalars['String']['input']>;
 }>;
@@ -775,7 +807,7 @@ export type StartRefTestMutationVariables = Exact<{
 }>;
 
 
-export type StartRefTestMutation = { __typename?: 'Mutation', startRefTest: { __typename?: 'StartRefTestPayload', refTest?: { __typename?: 'RefTest', id: string, startedAt?: string | null, maxTimeInMinutes: number, questions?: Array<{ __typename?: 'Question', id: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, phrase?: Record<string, string> | null }> } | null> | null } | null, errors?: Array<
+export type StartRefTestMutation = { __typename?: 'Mutation', startRefTest: { __typename?: 'StartRefTestPayload', refTest?: { __typename?: 'RefTest', id: string, startedAt?: string | null, maxTimeInMinutes: number, currentQuestionIndex?: number | null, selectedAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, phrase?: Record<string, string> | null }> } | null> | null } | null, errors?: Array<
       | { __typename?: 'InvalidRefTestStatusError', message: string }
       | { __typename?: 'RefTestExpiredError', message: string }
       | { __typename?: 'RefTestNotFoundError', message: string }
@@ -912,6 +944,7 @@ export const GetRefTestByTokenDocument = gql`
       email
       numberOfQuestions
       maxTimeInMinutes
+      currentQuestionIndex
     }
     ... on RefTestNotFoundError {
       message
@@ -1063,6 +1096,28 @@ export const GetRefTestTitlesDocument = gql`
       super(apollo);
     }
   }
+export const SaveRefTestProgressDocument = gql`
+    mutation SaveRefTestProgress($input: SaveRefTestProgressInput!) {
+  saveRefTestProgress(input: $input) {
+    refTest {
+      id
+      currentQuestionIndex
+      selectedAnswerIds
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SaveRefTestProgressGQL extends Apollo.Mutation<SaveRefTestProgressMutation, SaveRefTestProgressMutationVariables> {
+    override document = SaveRefTestProgressDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const SearchQuestionsByNumberDocument = gql`
     query SearchQuestionsByNumber($number: String) {
   searchQuestionsByNumber(number: $number) {
@@ -1160,6 +1215,8 @@ export const StartRefTestDocument = gql`
       id
       startedAt
       maxTimeInMinutes
+      currentQuestionIndex
+      selectedAnswerIds
       questions {
         id
         phrase

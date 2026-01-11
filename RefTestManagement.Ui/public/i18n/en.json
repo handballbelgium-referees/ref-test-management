@@ -317,7 +317,7 @@
     }
   },
   "ref_test": {
-    "page_title": "Handball Rules RefTest",
+    "page_title": "Handball RefTest",
     "loading": "Loading RefTest...",
     "error": {
       "title": "Unable to Load RefTest",
@@ -340,6 +340,7 @@
     "instruction_1": "Read each question carefully before selecting your answers",
     "instruction_2": "Some questions may have multiple correct answers",
     "instruction_3": "You can navigate back and forth between questions",
+    "instruction_progress_saved": "Your progress is automatically saved, but the timer continues running even if you close the page",
     "instruction_4": "Complete the RefTests within the time limit",
     "start_button": "Start RefTest",
     "time_remaining": "Time Remaining",
@@ -350,6 +351,8 @@
     "previous": "Previous",
     "next": "Next",
     "submit": "Submit RefTest",
+    "progress_restored": "Welcome back!",
+    "continue_where_left": "Your progress has been saved. You can continue where you left off.",
     "results": {
       "title": "RefTest Completed!",
       "subtitle": "Here are your results",

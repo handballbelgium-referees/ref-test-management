@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(RefTestManagementContext))]
-    [Migration("20260109225925_Initial")]
+    [Migration("20260111121752_Initial")]
     partial class Initial
     {
         /// <inheritdoc />
@@ -42,6 +42,9 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<int?>("CurrentQuestionIndex")
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()

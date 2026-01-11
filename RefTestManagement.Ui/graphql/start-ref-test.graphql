@@ -4,6 +4,8 @@ mutation StartRefTest($input: StartRefTestInput!) {
       id
       startedAt
       maxTimeInMinutes
+      currentQuestionIndex
+      selectedAnswerIds
       questions {
         id
         phrase

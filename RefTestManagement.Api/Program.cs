@@ -1,6 +1,8 @@
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Api;
+using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -54,10 +56,18 @@ var reportConfig = configuration.GetSection("ReportConfiguration").Get<ReportCon
                    ?? new ReportConfiguration();
 services.AddSingleton(reportConfig);
 
+var backgroundServiceConfig = configuration.GetSection("BackgroundServiceConfiguration")
+                                  .Get<BackgroundServiceConfiguration>()
+                              ?? new BackgroundServiceConfiguration();
+services.AddSingleton(backgroundServiceConfig);
+
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
+
+// Add background services
+services.AddHostedService<RefTestExpirationService>();
 
 // Add IHF Rules Questions GraphQL client
 services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)

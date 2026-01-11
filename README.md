@@ -14,6 +14,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - [Getting Started](#-getting-started)
 - [Project Structure](#-project-structure)
 - [Configuration](#-configuration)
+- [Background Services](#️-background-services)
 - [Development Workflow](#-development-workflow)
 - [Deployment](#-deployment)
 - [Testing](#-testing)
@@ -29,6 +30,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Question Bank Integration**: Search and bulk import questions from the central question database
 - **Randomization**: Optional random answer order per RefTest to prevent pattern memorization
 - **Time Management**: Configurable time limits with auto-submit functionality
+- **Automatic Expiration**: Background service automatically expires and completes tests (no extra cost on Azure)
 - **Instant Scoring**: Automatic score calculation with detailed answer feedback
 - **PDF Generation**: Professional PDF reports with QuestPDF for RefTest results
 
@@ -450,6 +452,8 @@ ref-test-management/
 ├── RefTestManagement.Api/                   # 🔷 .NET Web API (.NET 10)
 │   ├── Controllers/
 │   │   └── AccountController.cs          # Authentication endpoints
+│   ├── BackgroundServices/               # Background services
+│   │   └── RefTestExpirationService.cs   # Automatic RefTest expiration (runs every 5 min)
 │   ├── Graphql/                          # Hot Chocolate GraphQL
 │   │   ├── RefTestQueries.cs             # GraphQL queries (RefTests, questions, titles)
 │   │   ├── RefTestMutations.cs           # GraphQL mutations (create, delete, send)
@@ -654,6 +658,11 @@ Complete configuration file structure:
     "PassingPercentage": 80
   },
 
+  "BackgroundServiceConfiguration": {
+    "ExpirationCheckIntervalMinutes": 5,
+    "StartupDelaySeconds": 30
+  },
+
   "ReportConfiguration": {
     "RecipientEmails": []
   }
@@ -679,6 +688,8 @@ Complete configuration file structure:
 | **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions              | ✅ Yes   |
 |                           | `EnabledLanguages`      | Array of enabled UI languages (en/nl/fr/de) | ⚠️ Optional (defaults to all 4) |
 | **ScoreConfiguration**    | `PassingPercentage`     | Percentage required to pass a RefTest       | ⚠️ Optional (defaults to 80) |
+| **BackgroundServiceConfiguration** | `ExpirationCheckIntervalMinutes` | How often to check for expired tests (minutes) | ⚠️ Optional (defaults to 5) |
+|                           | `StartupDelaySeconds`   | Delay before first expiration check (seconds) | ⚠️ Optional (defaults to 30) |
 | **ReportConfiguration**   | `RecipientEmails`       | Array of emails to receive system reports   | ⚠️ Optional (defaults to empty) |
 
 ### User Secrets (Development)
@@ -717,6 +728,10 @@ dotnet user-secrets set "LanguageConfiguration:EnabledLanguages:3" "de"
 
 # Score Configuration
 dotnet user-secrets set "ScoreConfiguration:PassingPercentage" "80"
+
+# Background Service Configuration
+dotnet user-secrets set "BackgroundServiceConfiguration:ExpirationCheckIntervalMinutes" "5"
+dotnet user-secrets set "BackgroundServiceConfiguration:StartupDelaySeconds" "30"
 
 # Report Configuration (for multiple recipients, use indexed keys)
 dotnet user-secrets set "ReportConfiguration:RecipientEmails:0" "admin1@domain.com"
@@ -788,6 +803,74 @@ Note the `appId` (client ID), `tenant` (tenant ID) from output.
    - `AZURE_TENANT_ID`: The `tenant` from step 1
    - `AZURE_SUBSCRIPTION_ID`: Output from step 3
    - `AZURE_WEBAPP_NAME`: Your Azure App Service name
+
+## ⏱️ Background Services
+
+### Automatic RefTest Expiration
+
+The application includes a **built-in background service** that automatically manages RefTest expiration. This service runs continuously within your application at **no additional cost** on Azure.
+
+#### How It Works
+
+The `RefTestExpirationService` runs every 5 minutes (configurable) and:
+
+1. **Checks for expired tests** based on:
+   - **Started tests**: Expire after `MaxTimeInMinutes` from `StartedAt`
+   - **Unstarted tests**: Expire 7 days after creation
+
+2. **Processes expired tests**:
+   - **Pending tests** → Marked as `Expired`
+   - **In-progress tests** → Automatically completed with current answers, then marked as `Completed`
+
+3. **Sends notifications**: If configured, emails results to participants when auto-completed
+
+#### Configuration
+
+Configure the background service in `appsettings.json`:
+
+```json
+{
+  "BackgroundServiceConfiguration": {
+    "ExpirationCheckIntervalMinutes": 5,
+    "StartupDelaySeconds": 30
+  }
+}
+```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `ExpirationCheckIntervalMinutes` | How often to check for expired tests | 5 minutes |
+| `StartupDelaySeconds` | Delay before first check (allows app to fully start) | 30 seconds |
+
+#### Monitoring
+
+The service logs all activities to help you monitor expiration processing:
+
+**Log Examples:**
+```
+[Information] RefTest Expiration Service is starting
+[Information] Checking 3 potentially expired RefTests
+[Information] Auto-completed expired RefTest {Id} for {Email}
+[Information] Expired RefTest {Id} in status Pending for {Email}
+[Information] Processed 2 expired RefTests: 1 expired, 1 auto-completed
+[Information] RefTest Expiration Service is stopping
+```
+
+**View logs in Azure:**
+- Azure Portal → App Service → Log Stream
+- Application Insights → Logs → traces table
+- Query: `traces | where message contains "RefTest Expiration"`
+
+#### Azure Deployment
+
+✅ **FREE** - Runs within your existing App Service, no additional resources required
+✅ **Reliable** - Starts automatically with your application
+✅ **Scalable** - Handles thousands of tests efficiently
+✅ **Zero Configuration** - Works out of the box with sensible defaults
+
+The background service uses **high-performance LoggerMessage source generators** for minimal overhead and optimal performance.
+
+For more technical details, see [`BACKGROUND_SERVICE_DOCUMENTATION.md`](./BACKGROUND_SERVICE_DOCUMENTATION.md).
 
 ## 🔄 Development Workflow
 

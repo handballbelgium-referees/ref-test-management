@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { map, switchMap } from 'rxjs';
+import { map, switchMap, tap } from 'rxjs';
 import { GetRefTestByTokenGQL } from '../../../../graphql/generated';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
 import { RefTestDetails } from './components/ref-test-details/ref-test-details';
@@ -26,12 +26,23 @@ export class RefTestWelcome {
   readonly refTestResult = toSignal(
     this._route.paramMap.pipe(
       map((params) => params.get('token') ?? ''),
-      switchMap(
-        (token) =>
-          this._getRefTestByTokenGQL.watch({
+      switchMap((token) =>
+        this._getRefTestByTokenGQL
+          .watch({
             variables: { token },
             fetchPolicy: 'cache-and-network',
-          }).valueChanges
+          })
+          .valueChanges.pipe(
+            tap((result) => {
+              if (
+                result.data?.refTestByToken?.__typename === 'RefTest' &&
+                result.data.refTestByToken.currentQuestionIndex !== null &&
+                result.data.refTestByToken.currentQuestionIndex !== undefined
+              ) {
+                this._router.navigate(['/ref-test', token, 'take']);
+              }
+            })
+          )
       )
     ),
     { initialValue: null }
@@ -54,7 +65,11 @@ export class RefTestWelcome {
 
     const data = result.data.refTestByToken;
     if (data.__typename !== 'RefTest') {
-      return data.__typename;
+      const snakeCaseValue = data.__typename
+        ?.replace(/([A-Z])/g, '_$1')
+        .toLowerCase()
+        .replace(/^_/, '');
+      return snakeCaseValue;
     }
     return null;
   });
