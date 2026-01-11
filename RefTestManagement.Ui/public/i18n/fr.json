@@ -60,6 +60,8 @@
       "loading_more": "Chargement...",
       "showing": "Affichage de {{displayed}} sur {{total}} RefTest",
       "showing_plural": "Affichage de {{displayed}} sur {{total}} RefTests",
+      "select_all": "Tout sélectionner",
+      "selected": "sélectionné(s)",
       "filters": {
         "advanced_filters": "Filtres Avancés",
         "performance_title": "Métriques de Performance",
