@@ -60,6 +60,8 @@
       "loading_more": "Loading...",
       "showing": "Showing {{displayed}} of {{total}} RefTest",
       "showing_plural": "Showing {{displayed}} of {{total}} RefTests",
+      "select_all": "Select All",
+      "selected": "selected",
       "filters": {
         "advanced_filters": "Advanced Filters",
         "performance_title": "Performance Metrics",

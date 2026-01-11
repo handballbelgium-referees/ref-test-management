@@ -100,7 +100,7 @@ export class CreateRefTests {
 
     // Validate refTest configuration
     required(schemaPath.numberOfQuestions, {
-      message: 'ref_tests.create.form.numberOfQuestions.required',
+      message: 'ref_tests.create.form.number_of_questions.required',
       when: () => {
         return this.selectedQuestions().length === 0;
       },
@@ -112,14 +112,14 @@ export class CreateRefTests {
       return this.selectedQuestions().length > 0;
     });
     min(schemaPath.numberOfQuestions, 1, {
-      message: 'ref_tests.create.form.numberOfQuestions.min',
+      message: 'ref_tests.create.form.number_of_questions.min',
     });
 
     required(schemaPath.maxTimeInMinutes, {
-      message: 'ref_tests.create.form.maxTimeInMinutes.required',
+      message: 'ref_tests.create.form.max_time_in_minutes.required',
     });
     min(schemaPath.maxTimeInMinutes, 1, {
-      message: 'ref_tests.create.form.maxTimeInMinutes.min',
+      message: 'ref_tests.create.form.max_time_in_minutes.min',
     });
   });
 

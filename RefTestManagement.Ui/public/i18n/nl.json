@@ -60,6 +60,8 @@
       "loading_more": "Laden...",
       "showing": "{{displayed}} van {{total}} RefTest weergegeven",
       "showing_plural": "{{displayed}} van {{total}} RefTests weergegeven",
+      "select_all": "Alles selecteren",
+      "selected": "geselecteerd",
       "filters": {
         "advanced_filters": "Geavanceerde Filters",
         "performance_title": "Prestatiemetingen",

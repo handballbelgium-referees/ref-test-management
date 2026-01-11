@@ -525,6 +525,98 @@ export class ListRefTests {
     return Object.keys(filters).length > 0 ? filters : undefined;
   }
 
+  private buildWhereFilterExcludingStatus(): RefTestFilterInput | undefined {
+    const currentFilter = this.filter();
+    const filters: RefTestFilterInput = {};
+
+    // Exclude status filter
+
+    if (currentFilter.titleValue) {
+      filters.title = { value: { eq: currentFilter.titleValue } } as RefTestTitleFilterInput;
+    }
+
+    if (currentFilter.invitationSent !== undefined) {
+      filters.invitationSent = { eq: currentFilter.invitationSent } as BooleanOperationFilterInput;
+    }
+
+    if (currentFilter.resultsSent !== undefined) {
+      filters.resultsSent = { eq: currentFilter.resultsSent } as BooleanOperationFilterInput;
+    }
+
+    if (
+      currentFilter.minQuestionScore !== undefined ||
+      currentFilter.maxQuestionScore !== undefined
+    ) {
+      const scoreFilter: IntOperationFilterInput = {};
+      if (currentFilter.minQuestionScore !== undefined) {
+        scoreFilter.gte = currentFilter.minQuestionScore;
+      }
+      if (currentFilter.maxQuestionScore !== undefined) {
+        scoreFilter.lte = currentFilter.maxQuestionScore;
+      }
+      filters.questionScore = scoreFilter;
+    }
+
+    if (currentFilter.minAnswerScore !== undefined || currentFilter.maxAnswerScore !== undefined) {
+      const answerScoreFilter: IntOperationFilterInput = {};
+      if (currentFilter.minAnswerScore !== undefined) {
+        answerScoreFilter.gte = currentFilter.minAnswerScore;
+      }
+      if (currentFilter.maxAnswerScore !== undefined) {
+        answerScoreFilter.lte = currentFilter.maxAnswerScore;
+      }
+      filters.answerScore = answerScoreFilter;
+    }
+
+    if (currentFilter.percentageRange) {
+      const percentageFilter: FloatOperationFilterInput = {};
+      if (currentFilter.percentageRange === 'low') {
+        percentageFilter.lt = 50;
+      } else if (currentFilter.percentageRange === 'medium') {
+        percentageFilter.gte = 50;
+        percentageFilter.lt = 75;
+      } else if (currentFilter.percentageRange === 'high') {
+        percentageFilter.gte = 75;
+      }
+      filters.percentage = percentageFilter;
+    }
+
+    if (currentFilter.minQuestions !== undefined || currentFilter.maxQuestions !== undefined) {
+      const questionsFilter: IntOperationFilterInput = {};
+      if (currentFilter.minQuestions !== undefined) {
+        questionsFilter.gte = currentFilter.minQuestions;
+      }
+      if (currentFilter.maxQuestions !== undefined) {
+        questionsFilter.lte = currentFilter.maxQuestions;
+      }
+      filters.numberOfQuestions = questionsFilter;
+    }
+
+    if (currentFilter.startedAfter || currentFilter.startedBefore) {
+      const startedAtFilter: DateTimeOperationFilterInput = {};
+      if (currentFilter.startedAfter) {
+        startedAtFilter.gte = currentFilter.startedAfter;
+      }
+      if (currentFilter.startedBefore) {
+        startedAtFilter.lte = currentFilter.startedBefore;
+      }
+      filters.startedAt = startedAtFilter;
+    }
+
+    if (currentFilter.completedAfter || currentFilter.completedBefore) {
+      const completedAtFilter: DateTimeOperationFilterInput = {};
+      if (currentFilter.completedAfter) {
+        completedAtFilter.gte = currentFilter.completedAfter;
+      }
+      if (currentFilter.completedBefore) {
+        completedAtFilter.lte = currentFilter.completedBefore;
+      }
+      filters.completedAt = completedAtFilter;
+    }
+
+    return Object.keys(filters).length > 0 ? filters : undefined;
+  }
+
   private buildOrderClause() {
     const currentFilter = this.filter();
 
@@ -540,7 +632,8 @@ export class ListRefTests {
   }
 
   private updateCountQueries(): void {
-    const baseFilter = this.buildWhereFilter();
+    // Build base filter excluding status so we can add specific status filters for each count
+    const baseFilter = this.buildWhereFilterExcludingStatus();
 
     // All count (no additional status filter)
     this._allCountRef.refetch({
