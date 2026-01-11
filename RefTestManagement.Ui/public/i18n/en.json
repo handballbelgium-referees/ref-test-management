@@ -333,7 +333,6 @@
       "ref_test_expired_error": "This RefTest has expired. Please contact the administrator.",
       "invalid_ref_test_status_error": "This RefTest is no longer available or has already been completed."
     },
-    "back_to_welcome": "Back to Welcome",
     "welcome_title": "Welcome to Your RefTest",
     "welcome_subtitle": "Please review the information below before starting",
     "participant_name": "Name",
@@ -365,12 +364,7 @@
       "answer_score": "Answer Score",
       "question_score_short": "Q",
       "answer_score_short": "A",
-      "score": "Score",
-      "percentage": "Percentage",
-      "total_questions": "Total Questions",
-      "total_answers": "Total Answers",
-      "total": "Total Questions",
-      "review": "Review Your Answers"
+      "percentage": "Percentage"
     },
     "dialog": {
       "submit": {

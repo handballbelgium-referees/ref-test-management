@@ -333,7 +333,6 @@
       "ref_test_expired_error": "Dieser RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
       "invalid_ref_test_status_error": "Dieser RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
     },
-    "back_to_welcome": "Zurück zur Begrüßung",
     "welcome_title": "Willkommen zu Ihrem RefTest",
     "welcome_subtitle": "Bitte überprüfen Sie die folgenden Informationen, bevor Sie beginnen",
     "participant_name": "Name",
@@ -365,12 +364,7 @@
       "answer_score": "Antworten Punktzahl",
       "question_score_short": "F",
       "answer_score_short": "A",
-      "score": "Punktzahl",
-      "percentage": "Prozentsatz",
-      "total_questions": "Gesamtfragen",
-      "total_answers": "Gesamtantworten",
-      "total": "Gesamtzahl der Fragen",
-      "review": "Überprüfen Sie Ihre Antworten"
+      "percentage": "Prozentsatz"
     },
     "dialog": {
       "submit": {

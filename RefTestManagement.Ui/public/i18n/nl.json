@@ -333,7 +333,6 @@
       "ref_test_expired_error": "Deze RefTest is verlopen. Neem contact op met de beheerder.",
       "invalid_ref_test_status_error": "Deze RefTest is niet meer beschikbaar of is al voltooid."
     },
-    "back_to_welcome": "Terug naar Welkom",
     "welcome_title": "Welkom bij je RefTest",
     "welcome_subtitle": "Bekijk de informatie hieronder voordat je begint",
     "participant_name": "Naam",
@@ -365,12 +364,7 @@
       "answer_score": "Antwoorden Score",
       "question_score_short": "V",
       "answer_score_short": "A",
-      "score": "Score",
-      "percentage": "Percentage",
-      "total_questions": "Totaal Vragen",
-      "total_answers": "Totaal Antwoorden",
-      "total": "Totaal Aantal Vragen",
-      "review": "Bekijk Je Antwoorden"
+      "percentage": "Percentage"
     },
     "dialog": {
       "submit": {
