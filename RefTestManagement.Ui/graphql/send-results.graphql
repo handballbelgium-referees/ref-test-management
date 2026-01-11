@@ -1,0 +1,22 @@
+mutation SendRefTestResults($input: SendResultsInput!) {
+  sendResults(input: $input) {
+    sendResultsResult {
+      totalRequested
+      successfullySent
+      failed
+      sentRefTests {
+        id
+        resultsSent
+      }
+      errors {
+        refTestId
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}

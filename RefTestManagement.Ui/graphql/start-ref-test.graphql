@@ -1,0 +1,30 @@
+mutation StartRefTest($input: StartRefTestInput!) {
+  startRefTest(input: $input) {
+    refTest {
+      id
+      startedAt
+      maxTimeInMinutes
+      currentQuestionIndex
+      selectedAnswerIds
+      questions {
+        id
+        phrase
+        answers {
+          id
+          phrase
+        }
+      }
+    }
+    errors {
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on RefTestExpiredError {
+        message
+      }
+      ... on InvalidRefTestStatusError {
+        message
+      }
+    }
+  }
+}

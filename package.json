@@ -1,7 +1,7 @@
 {
-  "name": "handball-belgium-rules-quiz",
+  "name": "ref-test-management",
   "version": "0.0.0",
-  "description": "IHF Reftests for the referees of Handball Belgium",
+  "description": "RefTests for the referees of Handball Belgium",
   "main": "index.js",
   "scripts": {
     "prepare": "husky",
@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/handballbelgium/ruletests-quiz-management.git"
+    "url": "git+https://github.com/handballbelgium/ref-test-management.git"
   },
   "author": "Kristof Gilis <kristof.gilis@outlook.be>",
   "license": "ISC",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/handballbelgium/ruletests-quiz-management/issues"
+    "url": "https://github.com/handballbelgium/ref-test-management/issues"
   },
-  "homepage": "https://github.com/handballbelgium/ruletests-quiz-management#readme",
+  "homepage": "https://github.com/handballbelgium/ref-test-management#readme",
   "devDependencies": {
     "@commitlint/cli": "^20.2.0",
     "@commitlint/config-conventional": "^20.2.0",

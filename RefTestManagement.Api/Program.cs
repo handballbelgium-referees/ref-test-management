@@ -1,0 +1,134 @@
+using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Api;
+using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.Services;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.EntityFrameworkCore;
+using QuestPDF.Infrastructure;
+using StrawberryShake;
+
+// Configure QuestPDF license
+QuestPDF.Settings.License = LicenseType.Community;
+
+var builder = WebApplication.CreateBuilder(args);
+
+var services = builder.Services;
+var configuration = builder.Configuration;
+
+services.AddSecurityConfiguration(configuration);
+services.AddControllersWithViews();
+
+services.AddDbContextFactory<RefTestManagementContext>(options =>
+{
+    options.UseSqlServer(configuration.GetConnectionString("RefTestManagement"),
+        x => x
+            .EnableRetryOnFailure()
+            .MigrationsAssembly(typeof(RefTestManagementContext).Assembly.GetName().Name));
+#if DEBUG
+    options.EnableSensitiveDataLogging();
+#endif
+});
+
+// Add services
+var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>()
+                  ?? new EmailConfiguration();
+services.AddSingleton(emailConfig);
+var languageConfig = configuration.GetSection("LanguageConfiguration").Get<LanguageConfiguration>() ??
+                     LanguageConfiguration.CreateDefault();
+if (languageConfig.EnabledLanguages.Length == 0)
+    languageConfig = LanguageConfiguration.CreateDefault();
+
+if (string.IsNullOrEmpty(languageConfig.DefaultPhraseLanguage) ||
+    !languageConfig.EnabledLanguages.Contains(languageConfig.DefaultPhraseLanguage))
+    languageConfig.SetDefaultPhraseLanguage(languageConfig.EnabledLanguages[0]);
+
+services.AddSingleton(languageConfig);
+
+var scoreConfig = configuration.GetSection("ScoreConfiguration").Get<ScoreConfiguration>()
+                  ?? new ScoreConfiguration();
+services.AddSingleton(scoreConfig);
+
+var reportConfig = configuration.GetSection("ReportConfiguration").Get<ReportConfiguration>()
+                   ?? new ReportConfiguration();
+services.AddSingleton(reportConfig);
+
+var backgroundServiceConfig = configuration.GetSection("BackgroundServiceConfiguration")
+                                  .Get<BackgroundServiceConfiguration>()
+                              ?? new BackgroundServiceConfiguration();
+services.AddSingleton(backgroundServiceConfig);
+
+services.AddScoped<IEmailService, EmailService>();
+services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
+services.AddScoped<IRefTestReportService, RefTestReportService>();
+services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
+
+// Add background services
+services.AddHostedService<RefTestExpirationService>();
+
+// Add IHF Rules Questions GraphQL client
+services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
+    .ConfigureHttpClient((sp, c) =>
+    {
+        c.BaseAddress = new Uri(configuration["RulesQuestions:Url"]!);
+        var langConfig = sp.GetRequiredService<LanguageConfiguration>();
+        c.DefaultRequestHeaders.Add("Accept-Language", langConfig.DefaultPhraseLanguage);
+    });
+
+services.AddGraphQLServer()
+    .AddQueryType()
+    .AddMutationType()
+    .AddApiTypes()
+    .AddQueryConventions()
+    .AddMutationConventions()
+    .ModifyPagingOptions(options =>
+    {
+        options.DefaultPageSize = 20;
+        options.IncludeTotalCount = true;
+        options.MaxPageSize = 100;
+        options.AllowBackwardPagination = true;
+    })
+    .ModifyCostOptions(o => o.EnforceCostLimits = false)
+    .RegisterDbContextFactory<RefTestManagementContext>()
+    .AddFiltering()
+    .AddSorting()
+    .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
+    .AddGlobalObjectIdentification(true)
+    .AddAuthorization()
+    .AddHttpRequestInterceptor(async (ctx, _, _, _) =>
+    {
+        var result = await ctx.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
+        if (result is { Succeeded: true, Principal: not null })
+            ctx.User = result.Principal;
+
+        await Task.CompletedTask;
+    });
+
+var app = builder.Build();
+
+await app.MigrateRefTestManagementDatabase();
+
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedProto
+});
+
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
+
+app.UseAuthentication();
+app.UseAuthorization();
+
+app.MapControllerRoute(
+    "default",
+    "{controller}/{action=Index}/{id?}"
+);
+
+app.MapGraphQL();
+app.MapFallbackToFile("index.html");
+
+app.RunWithGraphQLCommands(args);

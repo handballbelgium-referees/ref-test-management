@@ -1,0 +1,472 @@
+<!-- Hero Section -->
+<div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ 'ref_tests.create.title' | translate }}</h1>
+    <p class="text-primary-100 text-lg">{{ 'ref_tests.create.subtitle' | translate }}</p>
+  </div>
+</div>
+
+<!-- Main Content -->
+<div class="bg-neutral-50 py-8 px-4">
+  <div class="max-w-7xl mx-auto">
+    <form (submit)="onSubmit(); $event.preventDefault()">
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Left Column: Participants (2/3 width on large screens) -->
+        <div class="contents lg:grid lg:col-span-2 lg:gap-6">
+          <!-- Participants Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-1 lg:order-0">
+            <div class="border-b border-neutral-200 px-6 py-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-primary-50 rounded-lg">
+                    <svg
+                      class="w-5 h-5 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold text-neutral-900">
+                      {{ 'ref_tests.create.form.users.label' | translate }}
+                    </h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">
+                      {{ 'ref_tests.create.form.users.count' | translate : { count: userCount() } }}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  tabindex="1"
+                  (click)="toggleBulkImport()"
+                  class="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  {{ 'ref_tests.create.form.users.bulk_import' | translate }}
+                </button>
+              </div>
+            </div>
+
+            <div class="p-6">
+              <app-bulk-user-import-modal
+                [show]="showBulkImport()"
+                (import)="onBulkUserImport($event)"
+                (cancel)="onBulkUserCancel()"
+              />
+
+              <div class="space-y-2">
+                @for (user of refTestModel().users; track $index; let i = $index) {
+                <app-ref-test-user-list-item
+                  [userFormControl]="refTestForm.users[i]"
+                  [index]="i"
+                  [showRemove]="refTestModel().users.length > 1"
+                  (remove)="removeUser(i)"
+                />
+                }
+              </div>
+
+              <button
+                type="button"
+                tabindex="2100"
+                (click)="addUser()"
+                class="mt-3 w-full py-2.5 border border-dashed border-neutral-300 rounded-lg text-neutral-600 hover:text-primary-600 hover:border-primary-400 hover:bg-primary-50 transition-colors font-medium flex items-center justify-center text-sm"
+              >
+                <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                  />
+                </svg>
+                {{ 'ref_tests.create.form.users.add_participant' | translate }}
+              </button>
+            </div>
+          </div>
+
+          <!-- Specific Questions Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-3 lg:order-0">
+            <div class="border-b border-neutral-200 px-6 py-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-primary-50 rounded-lg">
+                    <svg
+                      class="w-5 h-5 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold text-neutral-900">
+                      {{ 'ref_tests.create.form.specific_question_numbers.label' | translate }}
+                    </h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">
+                      {{
+                        'ref_tests.create.form.specific_question_numbers.count'
+                          | translate : { count: selectedQuestions().length }
+                      }}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  (click)="toggleBulkQuestionImport()"
+                  tabindex="2106"
+                  class="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                    />
+                  </svg>
+                  {{ 'ref_tests.create.form.specific_question_numbers.bulk_import' | translate }}
+                </button>
+              </div>
+            </div>
+            <div class="p-6 space-y-4">
+              <app-bulk-question-import-modal
+                [show]="showBulkQuestionImport()"
+                [loading]="loadingBulkQuestions()"
+                (import)="onBulkQuestionImport($event)"
+                (cancel)="onBulkQuestionCancel()"
+              />
+              <app-question-search-autocomplete
+                [currentLanguage]="currentLanguage()"
+                [selectedQuestions]="selectedQuestions()"
+                (selectQuestion)="onQuestionSelect($event)"
+                (removeQuestion)="onQuestionRemove($event)"
+                (bulk_import)="toggleBulkQuestionImport()"
+              />
+              <input
+                type="hidden"
+                [field]="refTestForm.specificQuestionNumbers"
+                title="Specific question numbers"
+                aria-label="Specific question numbers"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Right Column: RefTest Configuration (1/3 width on large screens) -->
+        <div class="contents lg:grid lg:gap-6">
+          <!-- RefTest Settings Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-2 lg:order-0">
+            <div class="border-b border-neutral-200 px-6 py-4">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary-50 rounded-lg">
+                  <svg
+                    class="w-5 h-5 text-primary-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                </div>
+                <h2 class="text-lg font-bold text-neutral-900">
+                  {{ 'ref_tests.create.form.config.label' | translate }}
+                </h2>
+              </div>
+            </div>
+            <div class="p-6 space-y-4">
+              <div>
+                <app-title-autocomplete (selectTitle)="onTitleSelect($event)" />
+                @if (refTestForm.title().touched() && refTestForm.title().invalid()) {
+                <p class="text-xs text-red-600 mt-1">
+                  {{ refTestForm.title().errors()[0]?.message | translate }}
+                </p>
+                }
+              </div>
+
+              <div>
+                <label
+                  for="numberOfQuestions"
+                  class="block text-sm font-semibold text-neutral-700 mb-2"
+                >
+                  {{ 'ref_tests.create.form.number_of_questions.label' | translate }}
+                  @if (refTestForm.numberOfQuestions().required()) { * }
+                </label>
+                <input
+                  id="numberOfQuestions"
+                  type="number"
+                  tabindex="2101"
+                  [field]="refTestForm.numberOfQuestions"
+                  [class.border-red-500]="
+                    refTestForm.numberOfQuestions().touched() &&
+                    refTestForm.numberOfQuestions().invalid()
+                  "
+                  [title]="'ref_tests.create.form.number_of_questions.label' | translate"
+                  [attr.aria-label]="'ref_tests.create.form.number_of_questions.label' | translate"
+                  class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white disabled:bg-neutral-50 disabled:text-neutral-500 disabled:cursor-not-allowed"
+                  placeholder="30"
+                />
+                @if (refTestForm.numberOfQuestions().touched() &&
+                refTestForm.numberOfQuestions().invalid()) {
+                <p class="text-xs text-red-600 mt-1">
+                  {{ refTestForm.numberOfQuestions().errors()[0]?.message | translate }}
+                </p>
+                }
+              </div>
+
+              <!-- Random Questions for Each User-->
+              <div class="flex items-start gap-3">
+                <input
+                  id="randomQuestionsForEachUser"
+                  type="checkbox"
+                  tabindex="2102"
+                  [field]="refTestForm.randomQuestionsForEachUser"
+                  [title]="'ref_tests.create.form.random_questions_for_each_user.label' | translate"
+                  [attr.aria-label]="
+                    'ref_tests.create.form.randomQuestionsForEachUser.label' | translate
+                  "
+                  class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+                />
+                <label for="randomQuestionsForEachUser" class="text-sm text-neutral-700 flex-1">
+                  <div class="font-medium mb-0.5">
+                    {{ 'ref_tests.create.form.random_questions_for_each_user.label' | translate }}
+                  </div>
+                  <p class="text-xs text-neutral-500">
+                    {{
+                      'ref_tests.create.form.random_questions_for_each_user.description' | translate
+                    }}
+                  </p>
+                </label>
+              </div>
+
+              <div>
+                <label
+                  for="maxTimeInMinutes"
+                  class="block text-sm font-semibold text-neutral-700 mb-2"
+                >
+                  {{ 'ref_tests.create.form.max_time_in_minutes.label' | translate }} *
+                </label>
+                <input
+                  id="maxTimeInMinutes"
+                  type="number"
+                  tabindex="2103"
+                  [field]="refTestForm.maxTimeInMinutes"
+                  [class.border-red-500]="
+                    refTestForm.maxTimeInMinutes().touched() &&
+                    refTestForm.maxTimeInMinutes().invalid()
+                  "
+                  [title]="'ref_tests.create.form.max_time_in_minutes.label' | translate"
+                  [attr.aria-label]="'ref_tests.create.form.max_time_in_minutes.label' | translate"
+                  class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white"
+                  placeholder="60"
+                />
+                @if (refTestForm.maxTimeInMinutes().touched() &&
+                refTestForm.maxTimeInMinutes().invalid()) {
+                <p class="text-xs text-red-600 mt-1">
+                  {{ refTestForm.maxTimeInMinutes().errors()[0]?.message | translate }}
+                </p>
+                }
+              </div>
+            </div>
+          </div>
+
+          <!-- Email Options Card -->
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-4 lg:order-0">
+            <div class="p-6 border-b border-neutral-200">
+              <div class="flex items-center gap-3">
+                <div class="p-2 bg-primary-50 rounded-lg">
+                  <svg
+                    class="w-5 h-5 text-primary-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <h3 class="text-lg font-bold text-neutral-900">
+                  {{ 'ref_tests.create.form.email_options.title' | translate }}
+                </h3>
+              </div>
+            </div>
+            <div class="p-6 space-y-6">
+              <!-- Send Invitations -->
+              <div class="flex items-start gap-3">
+                <input
+                  id="sendInvitations"
+                  type="checkbox"
+                  tabindex="2104"
+                  [field]="refTestForm.sendInvitations"
+                  [title]="'ref_tests.create.form.send_invitations.label' | translate"
+                  [attr.aria-label]="'ref_tests.create.form.send_invitations.label' | translate"
+                  class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+                />
+                <label for="sendInvitations" class="text-sm text-neutral-700 flex-1">
+                  <div class="font-medium mb-0.5">
+                    {{ 'ref_tests.create.form.send_invitations.label' | translate }}
+                  </div>
+                  <p class="text-xs text-neutral-500">
+                    {{ 'ref_tests.create.form.send_invitations.description' | translate }}
+                  </p>
+                </label>
+              </div>
+
+              <!-- Send Results -->
+              <div class="flex items-start gap-3">
+                <input
+                  id="sendResults"
+                  type="checkbox"
+                  tabindex="2105"
+                  [field]="refTestForm.sendResults"
+                  [title]="'ref_tests.create.form.send_results.label' | translate"
+                  [attr.aria-label]="'ref_tests.create.form.send_results.label' | translate"
+                  class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+                />
+                <label for="sendResults" class="text-sm text-neutral-700 flex-1">
+                  <div class="font-medium mb-0.5">
+                    {{ 'ref_tests.create.form.send_results.label' | translate }}
+                  </div>
+                  <p class="text-xs text-neutral-500">
+                    {{ 'ref_tests.create.form.send_results.description' | translate }}
+                  </p>
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div
+            class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-5 lg:order-0"
+          >
+            <div class="flex flex-col gap-3">
+              <button
+                type="submit"
+                tabindex="2800"
+                [disabled]="loading() || refTestForm().invalid()"
+                class="w-full py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-semibold shadow-md hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                @if (loading()) {
+                <div
+                  class="animate-spin rounded-full -ml-1 mr-3 h-5 w-5 border-b-2 border-white"
+                ></div>
+                {{ 'ref_tests.create.form.submitting' | translate }} } @else {
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                {{ 'ref_tests.create.form.submit' | translate }}
+                }
+              </button>
+              <button
+                type="button"
+                tabindex="2801"
+                (click)="cancel()"
+                [disabled]="loading()"
+                class="w-full py-2.5 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ 'common.cancel' | translate }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Success/Error Messages -->
+      @if (successCount() > 0) {
+      <div #messagesContainer class="bg-green-50 border border-green-200 rounded-xl p-4 mt-6">
+        <div class="flex items-start">
+          <svg
+            class="w-5 h-5 text-green-600 mr-3 shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <div>
+            <h3 class="text-green-800 font-semibold text-sm">
+              {{ 'ref_tests.create.success.created' | translate : { count: successCount() } }}
+            </h3>
+            @if (failedCount() > 0) {
+            <p class="text-green-700 mt-1 text-sm">
+              {{ 'ref_tests.create.success.failed_info' | translate : { count: failedCount() } }}
+            </p>
+            }
+          </div>
+        </div>
+      </div>
+      } @if (error()) {
+      <div #messagesContainer class="bg-red-50 border border-red-200 rounded-xl p-4 mt-6">
+        <div class="flex items-start">
+          <svg
+            class="w-5 h-5 text-red-600 mr-3 shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+          <p class="text-red-800 text-sm">{{ error() }}</p>
+        </div>
+      </div>
+      } @if (errors().length > 0) {
+      <div #messagesContainer class="bg-red-50 border border-red-200 rounded-xl p-4 mt-6">
+        <h4 class="text-red-800 font-semibold mb-2 text-sm">
+          {{ 'ref_tests.create.success.failed_title' | translate }}
+        </h4>
+        <ul class="space-y-1">
+          @for (err of errors(); track err.email) {
+          <li class="text-red-700 text-sm">
+            <strong>{{ err.email }}</strong
+            >: {{ err.message }}
+          </li>
+          }
+        </ul>
+      </div>
+      }
+    </form>
+  </div>
+</div>

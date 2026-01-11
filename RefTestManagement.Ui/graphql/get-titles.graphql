@@ -1,0 +1,21 @@
+query GetRefTestTitles(
+  $first: Int!
+  $after: String
+  $where: RefTestTitleFilterInput
+  $order: [RefTestTitleSortInput!]
+) {
+  refTestTitles(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        value
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}

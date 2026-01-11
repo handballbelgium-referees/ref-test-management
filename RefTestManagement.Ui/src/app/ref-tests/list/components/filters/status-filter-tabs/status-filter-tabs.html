@@ -1,0 +1,84 @@
+<div class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+  <div class="flex items-center gap-1 p-2">
+    <button
+      type="button"
+      (click)="scrollFilters('left')"
+      [disabled]="!canScrollLeft()"
+      aria-label="Scroll filters left"
+      class="md:hidden shrink-0 p-1 rounded-md hover:bg-neutral-100 text-neutral-600 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+      </svg>
+    </button>
+    <div
+      #filterScroll
+      class="flex-1 overflow-x-auto md:overflow-visible scrollbar-hide"
+      (scroll)="onFilterScroll()"
+    >
+      <div class="flex md:flex-wrap gap-2 min-w-max md:min-w-0">
+        <button
+          type="button"
+          (click)="onStatusChange(undefined, $event.target)"
+          [class.bg-primary-100]="!selectedStatus()"
+          [class.text-primary-700]="!selectedStatus()"
+          [class.font-medium]="!selectedStatus()"
+          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-neutral-100 transition-colors text-xs md:text-sm whitespace-nowrap"
+        >
+          {{ 'ref_tests.list.filters.all' | translate }} ({{ statusCounts().all }})
+        </button>
+        <button
+          type="button"
+          (click)="onStatusChange(RefTestStatus.Pending, $event.target)"
+          [class.bg-primary-100]="selectedStatus() === RefTestStatus.Pending"
+          [class.text-primary-700]="selectedStatus() === RefTestStatus.Pending"
+          [class.font-medium]="selectedStatus() === RefTestStatus.Pending"
+          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-neutral-100 transition-colors text-xs md:text-sm whitespace-nowrap"
+        >
+          {{ 'ref_tests.list.filters.pending' | translate }} ({{ statusCounts().pending }})
+        </button>
+        <button
+          type="button"
+          (click)="onStatusChange(RefTestStatus.InProgress, $event.target)"
+          [class.bg-primary-100]="selectedStatus() === RefTestStatus.InProgress"
+          [class.text-primary-700]="selectedStatus() === RefTestStatus.InProgress"
+          [class.font-medium]="selectedStatus() === RefTestStatus.InProgress"
+          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-neutral-100 transition-colors text-xs md:text-sm whitespace-nowrap"
+        >
+          {{ 'ref_tests.list.filters.in_progress' | translate }} ({{ statusCounts().inProgress }})
+        </button>
+        <button
+          type="button"
+          (click)="onStatusChange(RefTestStatus.Completed, $event.target)"
+          [class.bg-primary-100]="selectedStatus() === RefTestStatus.Completed"
+          [class.text-primary-700]="selectedStatus() === RefTestStatus.Completed"
+          [class.font-medium]="selectedStatus() === RefTestStatus.Completed"
+          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-neutral-100 transition-colors text-xs md:text-sm whitespace-nowrap"
+        >
+          {{ 'ref_tests.list.filters.completed' | translate }} ({{ statusCounts().completed }})
+        </button>
+        <button
+          type="button"
+          (click)="onStatusChange(RefTestStatus.Expired, $event.target)"
+          [class.bg-primary-100]="selectedStatus() === RefTestStatus.Expired"
+          [class.text-primary-700]="selectedStatus() === RefTestStatus.Expired"
+          [class.font-medium]="selectedStatus() === RefTestStatus.Expired"
+          class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-neutral-100 transition-colors text-xs md:text-sm whitespace-nowrap"
+        >
+          {{ 'ref_tests.list.filters.expired' | translate }} ({{ statusCounts().expired }})
+        </button>
+      </div>
+    </div>
+    <button
+      type="button"
+      (click)="scrollFilters('right')"
+      [disabled]="!canScrollRight()"
+      aria-label="Scroll filters right"
+      class="md:hidden shrink-0 p-1 rounded-md hover:bg-neutral-100 text-neutral-600 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+      </svg>
+    </button>
+  </div>
+</div>

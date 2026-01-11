@@ -1,0 +1,22 @@
+mutation SendRefTestInvitations($input: SendInvitationsInput!) {
+  sendInvitations(input: $input) {
+    sendInvitationsResult {
+      totalRequested
+      successfullySent
+      failed
+      sentRefTests {
+        id
+        invitationSent
+      }
+      errors {
+        refTestId
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}

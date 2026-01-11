@@ -1,0 +1,391 @@
+{
+  "app": {
+    "title": "Gestion du RefTest de Handball",
+    "page_title": "Gestion du RefTest de Handball"
+  },
+  "pwa": {
+    "update_available": "Une nouvelle version est disponible.",
+    "update_now": "Mettre à jour"
+  },
+  "common": {
+    "cancel": "Annuler",
+    "today": "Aujourd'hui",
+    "clear": "Effacer",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "refreshing": "Actualisation..."
+  },
+  "nav": {
+    "language": "Langue",
+    "logout": "Déconnexion"
+  },
+  "home": {
+    "hero": {
+      "title": "Système de Gestion des RefTests sur les Règles de Handball",
+      "subtitle": "Créer et gérer des RefTests sur les règles de handball pour les arbitres et délégués de la Fédération Belge de Handball",
+      "login": "Accéder au Tableau de Bord"
+    },
+    "actions": {
+      "title": "Actions Rapides",
+      "create": {
+        "title": "Créer des RefTests",
+        "description": "Créer des RefTests en masse"
+      },
+      "manage": {
+        "title": "Gérer les RefTests",
+        "description": "Suivre et gérer les RefTests"
+      }
+    },
+    "about": {
+      "title": "Système de Gestion des RefTests",
+      "description": "Cette application gère les RefTests sur les règles du handball. Les administrateurs peuvent créer des RefTests en masse pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des RefTests, filtrer et trier les RefTests selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les RefTests prennent en charge {{count}} langues ({{languages}}).",
+      "bulk": {
+        "title": "Création de RefTests en Masse",
+        "description": "Créez des RefTests pour plusieurs utilisateurs à la fois. Chaque RefTest est attribué à un utilisateur spécifique avec des capacités de suivi uniques."
+      },
+      "management": {
+        "title": "Gestion des RefTests",
+        "description": "Suivez les RefTests tout au long de leur cycle de vie : en attente, en cours, terminées ou expirées. Filtrez et triez par statut, date, score ou e-mail de l'utilisateur. Envoyez des invitations et gérez toutes les actions de RefTest."
+      }
+    }
+  },
+  "ref_tests": {
+    "list": {
+      "title": "Gérer les RefTests",
+      "subtitle": "Afficher, filtrer et suivre tous les RefTests",
+      "create_new": "Créer de Nouveaux RefTests",
+      "search_placeholder": "Rechercher par nom ou e-mail...",
+      "loading": "Chargement des RefTests...",
+      "load_more": "Charger Plus de RefTests",
+      "loading_more": "Chargement...",
+      "showing": "Affichage de {{displayed}} sur {{total}} RefTest",
+      "showing_plural": "Affichage de {{displayed}} sur {{total}} RefTests",
+      "filters": {
+        "advanced_filters": "Filtres Avancés",
+        "performance_title": "Métriques de Performance",
+        "from": "Du",
+        "to": "Au",
+        "all": "Toutes",
+        "pending": "En Attente",
+        "in_progress": "En Cours",
+        "completed": "Terminées",
+        "expired": "Expirées",
+        "title_label": "Titre du RefTest",
+        "title_all": "Tous les Titres",
+        "title_search_placeholder": "Rechercher des titres...",
+        "no_titles_found": "Aucun titre trouvé",
+        "invitation_label": "Statut d'Invitation",
+        "invitation_all": "Toutes",
+        "invitation_sent": "Envoyée",
+        "invitation_not_sent": "Non Envoyée",
+        "results_label": "Statut des Résultats",
+        "results_all": "Toutes",
+        "results_sent": "Envoyée",
+        "results_not_sent": "Non Envoyée",
+        "question_score_range": "Plage de Score des Questions",
+        "answer_score_range": "Plage de Score des Réponses",
+        "percentage_range": "Plage de Pourcentage",
+        "percentage_all": "Toutes",
+        "percentage_low": "0-50%",
+        "percentage_medium": "50-75%",
+        "percentage_high": "75-100%",
+        "questions_range": "Questions",
+        "min": "Min",
+        "max": "Max",
+        "started_date_range": "Date de Début",
+        "completed_date_range": "Date de Fin"
+      },
+      "sorting": {
+        "title": "Options de Tri",
+        "sortBy": "Trier Par",
+        "direction": "Direction",
+        "email": "Participant",
+        "status": "Statut",
+        "number_of_questions": "Questions",
+        "question_score": "Score Questions",
+        "answer_score": "Score Réponses",
+        "invitation_sent": "Invitation",
+        "results_sent": "Résultats",
+        "started_at": "Date de Début",
+        "completed_at": "Date de Fin",
+        "percentage": "Pourcentage",
+        "asc": "Croissant",
+        "desc": "Décroissant"
+      },
+      "status": {
+        "PENDING": "En Attente",
+        "IN_PROGRESS": "En Cours",
+        "COMPLETED": "Terminée",
+        "EXPIRED": "Expirée"
+      },
+      "table": {
+        "title": "Titre",
+        "participant": "Participant",
+        "status": "Statut",
+        "questions": "Questions",
+        "score": "Score (Q/R)",
+        "invitation": "Invitation",
+        "results": "Résultats",
+        "started": "Démarré",
+        "completed": "Terminé"
+      },
+      "columns": {
+        "toggle": "Afficher/Masquer les colonnes",
+        "title": "Titre",
+        "participant": "Participant",
+        "status": "Statut",
+        "questions": "Questions",
+        "score": "Score (Q/R)",
+        "invitation": "Invitation",
+        "results": "Résultats",
+        "started": "Démarré",
+        "completed": "Terminé"
+      },
+      "empty": {
+        "title": "Aucune RefTest trouvée",
+        "subtitle": "Commencez par créer vos premiers RefTests",
+        "action": "Créer des RefTests"
+      },
+      "bulk": {
+        "reftest_selected": "RefTest sélectionné",
+        "reftests_selected": "RefTests sélectionnés",
+        "send_invitations": "Envoyer les Invitations",
+        "send_results": "Envoyer les Résultats",
+        "generate_report": "Envoyer le Rapport",
+        "delete": "Supprimer"
+      },
+      "actions": {
+        "send_invitation": "Envoyer l'Invitation",
+        "send_results": "Envoyer les Résultats",
+        "generate_report": "Envoyer le Rapport",
+        "delete": "Supprimer"
+      },
+      "dialogs": {
+        "send_invitations": {
+          "title": "Envoyer les Invitations",
+          "message": "Êtes-vous sûr de vouloir envoyer les invitations?",
+          "new_invitations": "Nouvelles invitations ({{count}})",
+          "resend_invitations": "Renvoyer les invitations ({{count}})",
+          "confirm": "Envoyer les Invitations",
+          "cancel": "Annuler"
+        },
+        "send_results": {
+          "title": "Envoyer les Résultats",
+          "message": "Êtes-vous sûr de vouloir envoyer les résultats?",
+          "new_results": "Nouveaux résultats ({{count}})",
+          "resend_results": "Renvoyer les résultats ({{count}})",
+          "confirm": "Envoyer les Résultats",
+          "cancel": "Annuler"
+        },
+        "delete": {
+          "title": "Supprimer les RefTests",
+          "message": "Êtes-vous sûr de vouloir supprimer {{count}} RefTest(s)?",
+          "warning": "Cette action ne peut pas être annulée.",
+          "reftests": "RefTests à supprimer:",
+          "confirm": "Supprimer",
+          "cancel": "Annuler"
+        },
+        "generate_report": {
+          "title": "Générer et Envoyer le Rapport",
+          "message": "Êtes-vous sûr de vouloir générer et envoyer par e-mail un rapport pour les RefTests sélectionnés?",
+          "reftests_included": "RefTests à inclure ({{count}})",
+          "more_ref_tests": "+ {{count}} RefTest de plus",
+          "more_ref_tests_other": "+ {{count}} RefTests de plus",
+          "info": "Un rapport sera généré et envoyé par e-mail avec les détails de tous les RefTests sélectionnés.",
+          "confirm": "Générer et Envoyer le Rapport",
+          "cancel": "Annuler"
+        }
+      },
+      "report": {
+        "success": "Rapport généré et envoyé avec succès",
+        "error": "Échec de la génération ou de l'envoi du rapport",
+        "ref_test_count": "{{count}} RefTest incluse",
+        "ref_test_count_other": "{{count}} RefTests incluses",
+        "dismiss": "Fermer"
+      }
+    },
+    "create": {
+      "back": "Retour à l'accueil",
+      "title": "Créer des RefTests",
+      "subtitle": "Ajoutez des participants et configurez les paramètres du RefTest pour créer de nouvelles RefTests",
+
+      "form": {
+        "config": {
+          "label": "Configuration du RefTest"
+        },
+        "title": {
+          "label": "Titre du RefTest",
+          "placeholder": "Rechercher un titre existant ou entrer un nouveau...",
+          "required": "Le titre est requis",
+          "tooltip": "Exemple : Recyclage {{date}}",
+          "no_results": "Aucun titre existant trouvé",
+          "create_new": "Appuyez sur Entrée pour créer un nouveau titre avec ce nom",
+          "existing_title": "Utilisation du titre existant",
+          "new_title": "Créera un nouveau titre",
+          "clear": "Effacer le titre"
+        },
+        "users": {
+          "label": "Utilisateurs",
+          "placeholder": "Jean Dupont jean.dupont@example.com\nMarie Martin marie.martin@example.com\nutilisateur@example.com",
+          "hint": "Entrez un utilisateur par ligne. Format : \"Prénom Nom email@example.com\" ou \"email@example.com\"",
+          "error": "Veuillez entrer au moins un utilisateur",
+          "first_name_required": "Le prénom est requis",
+          "last_name_required": "Le nom de famille est requis",
+          "email_required": "L'e-mail est requis",
+          "email_invalid": "Veuillez entrer une adresse e-mail valide",
+          "count": "{{count}} participant",
+          "count_other": "{{count}} participants",
+          "bulk_import": "Import en Masse",
+          "bulk_import_label": "Collez les données des participants (un par ligne)",
+          "bulk_import_hint": "Format : \"Prénom Nom email\" (tous les champs obligatoires)",
+          "bulk_import_button": "Importer",
+          "first_name": "Prénom",
+          "first_name_placeholder": "Jean",
+          "last_name": "Nom",
+          "last_name_placeholder": "Dupont",
+          "email": "E-mail",
+          "email_placeholder": "jean.dupont@example.com",
+          "remove_participant": "Supprimer le participant",
+          "add_participant": "Ajouter un Participant"
+        },
+        "number_of_questions": {
+          "label": "Nombre de Questions",
+          "hint": "Nombre total de questions dans le RefTest",
+          "error": "Le nombre de questions doit être au moins 1",
+          "required": "Le nombre de questions est requis",
+          "min": "Doit avoir au moins 1 question"
+        },
+        "random_questions_for_each_user": {
+          "label": "Questions Aléatoires pour Chaque Utilisateur",
+          "hint": "Cochez pour attribuer des questions aléatoires différentes à chaque participant. Décochez pour utiliser les mêmes questions pour tous.",
+          "description": "Lorsqu'activé, chaque participant recevra un ensemble unique de questions aléatoires provenant de la banque de questions. Lorsqu'il est désactivé, tous les participants recevront le même ensemble de questions."
+        },
+        "max_time_in_minutes": {
+          "label": "Temps Maximum (minutes)",
+          "hint": "Temps maximum autorisé pour compléter le RefTest",
+          "error": "Le temps maximum doit être au moins 1 minute",
+          "required": "La limite de temps est requise",
+          "min": "Doit avoir au moins 1 minute"
+        },
+        "specific_question_numbers": {
+          "label": "Numéros de Questions Spécifiques (Optionnel)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Liste séparée par des virgules de numéros de questions spécifiques à inclure. Laisser vide pour des questions aléatoires.",
+          "bulk_import": "Import en Masse",
+          "count": "{{count}} question sélectionnée",
+          "count_other": "{{count}} questions sélectionnées",
+          "search_placeholder": "Rechercher et ajouter des questions par numéro...",
+          "bulk_import_label": "Collez les numéros de questions (un par ligne ou séparés par des virgules)",
+          "bulk_import_hint": "Format : Un numéro de question par ligne, ou séparés par des virgules",
+          "bulk_import_button": "Importer",
+          "bulk_import_importing": "Importation...",
+          "no_results": "Aucune question trouvée",
+          "table_number": "Numéro",
+          "table_question": "Question",
+          "remove_question": "Supprimer la question"
+        },
+        "email_options": {
+          "title": "Automatisation des e-mails"
+        },
+        "send_invitations": {
+          "label": "Envoyer les e-mails d'invitation",
+          "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des RefTests",
+          "description": "Les participants recevront un e-mail avec leur lien de RefTest"
+        },
+        "send_results": {
+          "label": "Envoyer les e-mails de résultats",
+          "hint": "Cochez pour envoyer les e-mails de résultats immédiatement après la création des RefTests",
+          "description": "Les participants recevront un e-mail avec leurs résultats de RefTest"
+        },
+        "submit": "Créer les RefTests",
+        "submitting": "Création...",
+        "cancel": "Annuler",
+        "validation_error": "Veuillez corriger les erreurs de validation avant de soumettre",
+        "no_participants": "Veuillez ajouter au moins un participant",
+        "submit_error": "Une erreur s'est produite lors de la création des RefTests"
+      },
+      "success": {
+        "title": "RefTests Créés avec Succès",
+        "message": "Les RefTests ont été créés. Redirection vers la liste des RefTests...",
+        "created": "Créé avec succès {{count}} RefTest !",
+        "created_other": "Créé avec succès {{count}} RefTests !",
+        "failed_info": "{{count}} échoué. Voir les erreurs ci-dessous.",
+        "failed_title": "RefTests échoués :"
+      },
+      "error": {
+        "title": "Erreur lors de la Création des RefTests"
+      }
+    }
+  },
+  "ref_test": {
+    "page_title": "RefTest de Handball",
+    "loading": "Chargement du RefTest...",
+    "error": {
+      "title": "Impossible de charger le RefTest",
+      "general": "Une erreur inattendue s'est produite lors du chargement du RefTest. Veuillez réessayer plus tard.",
+      "network": "Une erreur réseau est survenue. Vérifiez votre connexion et réessayez.",
+      "submit_failed": "L'envoi du RefTest a échoué. Veuillez réessayer plus tard.",
+      "ref_test_not_found_error": "Ce RefTest est introuvable. Veuillez vérifier votre lien.",
+      "ref_test_expired_error": "Ce RefTest a expiré. Veuillez contacter l'administrateur.",
+      "invalid_ref_test_status_error": "Ce RefTest n'est plus disponible ou a déjà été complété."
+    },
+    "welcome_title": "Bienvenue à votre RefTest",
+    "welcome_subtitle": "Veuillez consulter les informations ci-dessous avant de commencer",
+    "participant_name": "Nom",
+    "participant_email": "E-mail",
+    "number_of_questions": "Questions",
+    "time_limit": "Limite de temps",
+    "minutes": "min",
+    "no_limit": "Pas de limite",
+    "instructions_title": "Instructions",
+    "instruction_1": "Lisez attentivement chaque question avant de sélectionner vos réponses",
+    "instruction_2": "Certaines questions peuvent avoir plusieurs réponses correctes",
+    "instruction_3": "Vous pouvez naviguer en avant et en arrière entre les questions",
+    "instruction_progress_saved": "Votre progression est automatiquement sauvegardée, mais le chronomètre continue même si vous fermez la page",
+    "instruction_4": "Complétez le RefTest dans le délai imparti",
+    "start_button": "Commencer le RefTest",
+    "time_remaining": "Temps Restant",
+    "progress": "Progrès",
+    "question": "Question",
+    "of": "sur",
+    "answered": "répondu",
+    "previous": "Précédent",
+    "next": "Suivant",
+    "submit": "Soumettre le RefTest",
+    "progress_restored": "Bon retour !",
+    "continue_where_left": "Votre progression a été sauvegardée. Vous pouvez continuer où vous vous étiez arrêté.",
+    "results": {
+      "title": "RefTest Terminé!",
+      "subtitle": "Voici vos résultats",
+      "email_info": "Vous recevrez un e-mail avec vos résultats détaillés et vos réponses dans {{minutes}} minutes.",
+      "email_info_shortly": "Vous recevrez prochainement un e-mail avec vos résultats détaillés et vos réponses.",
+      "question_score": "Score Questions",
+      "answer_score": "Score Réponses",
+      "question_score_short": "Q",
+      "answer_score_short": "R",
+      "percentage": "Pourcentage"
+    },
+    "dialog": {
+      "submit": {
+        "title": "Soumettre le RefTest ?",
+        "message": "Êtes-vous sûr de vouloir soumettre votre RefTest ? Une fois soumis, vous ne pourrez plus modifier vos réponses.",
+        "answered": "Questions Répondues",
+        "unanswered": "Questions Non Répondues",
+        "warning": "Vous avez des questions non répondues. Elles seront marquées comme incorrectes.",
+        "confirm": "Soumettre le RefTest",
+        "cancel": "Continuer le RefTest"
+      },
+      "leave": {
+        "title": "Quitter le RefTest ?",
+        "message": "Êtes-vous sûr de vouloir partir ? Votre progression sera perdue si vous n'avez pas soumis le RefTest.",
+        "warning": "Votre progression sera perdue si vous n'avez pas soumis le RefTest.",
+        "confirm": "Quitter le RefTest",
+        "cancel": "Rester sur le RefTest"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} Gestion des RefTest Handball. Tous droits réservés.",
+    "creator": "Propriété de Kristof Gilis"
+  }
+}

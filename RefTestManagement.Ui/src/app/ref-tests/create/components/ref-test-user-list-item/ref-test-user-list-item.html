@@ -1,0 +1,115 @@
+<div
+  class="flex gap-2 items-start p-3 bg-neutral-50 rounded-lg border border-neutral-200 hover:border-primary-200 hover:bg-primary-50/30 transition-all group"
+>
+  <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-2">
+    <!-- First Name -->
+    <div role="group" [attr.aria-labelledby]="'firstName-label-' + index()">
+      <label
+        [id]="'firstName-label-' + index()"
+        [for]="'firstName-' + index()"
+        class="block text-xs font-medium text-neutral-700 mb-1"
+      >
+        {{ 'ref_tests.create.form.users.first_name' | translate }} *
+      </label>
+      <input
+        [id]="'firstName-' + index()"
+        type="text"
+        [attr.tabindex]="index() * 4 + 5"
+        [field]="userFormControl().firstName"
+        [class.border-red-500]="
+          userFormControl().firstName().touched() && userFormControl().firstName().invalid()
+        "
+        [title]="'ref_tests.create.form.users.first_name' | translate"
+        [attr.aria-label]="'ref_tests.create.form.users.first_name' | translate"
+        class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+        [placeholder]="'ref_tests.create.form.users.first_name_placeholder' | translate"
+      />
+      @if (userFormControl().firstName().touched() && userFormControl().firstName().invalid()) {
+      <p class="text-xs text-red-600 mt-1">
+        {{ userFormControl().firstName().errors()[0]?.message | translate }}
+      </p>
+      }
+    </div>
+
+    <!-- Last Name -->
+    <div role="group" [attr.aria-labelledby]="'lastName-label-' + index()">
+      <label
+        [id]="'lastName-label-' + index()"
+        [for]="'lastName-' + index()"
+        class="block text-xs font-medium text-neutral-700 mb-1"
+      >
+        {{ 'ref_tests.create.form.users.last_name' | translate }} *
+      </label>
+      <input
+        [id]="'lastName-' + index()"
+        type="text"
+        [attr.tabindex]="index() * 4 + 6"
+        [field]="userFormControl().lastName"
+        [class.border-red-500]="
+          userFormControl().lastName().touched() && userFormControl().lastName().invalid()
+        "
+        [title]="'ref_tests.create.form.users.last_name' | translate"
+        [attr.aria-label]="'ref_tests.create.form.users.last_name' | translate"
+        class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+        [placeholder]="'ref_tests.create.form.users.last_name_placeholder' | translate"
+      />
+      @if (userFormControl().lastName().touched() && userFormControl().lastName().invalid()) {
+      <p class="text-xs text-red-600 mt-1">
+        {{ userFormControl().lastName().errors()[0]?.message | translate }}
+      </p>
+      }
+    </div>
+
+    <!-- Email -->
+    <div role="group" [attr.aria-labelledby]="'email-label-' + index()">
+      <label
+        [id]="'email-label-' + index()"
+        [for]="'email-' + index()"
+        class="block text-xs font-medium text-neutral-700 mb-1"
+      >
+        {{ 'ref_tests.create.form.users.email' | translate }} *
+      </label>
+      <input
+        [id]="'email-' + index()"
+        type="email"
+        [attr.tabindex]="index() * 4 + 7"
+        [field]="userFormControl().email"
+        [class.border-red-500]="
+          userFormControl().email().touched() && userFormControl().email().invalid()
+        "
+        [title]="'ref_tests.create.form.users.email' | translate"
+        [attr.aria-label]="'ref_tests.create.form.users.email' | translate"
+        class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+        [placeholder]="'ref_tests.create.form.users.email_placeholder' | translate"
+      />
+      @if (userFormControl().email().touched() && userFormControl().email().invalid()) {
+      <p class="text-xs text-red-600 mt-1">
+        {{ userFormControl().email().errors()[0]?.message | translate }}
+      </p>
+      }
+    </div>
+  </div>
+
+  <!-- Remove Button -->
+  @if (showRemove()) {
+  <button
+    type="button"
+    [attr.tabindex]="index() * 4 + 8"
+    title="{{ 'ref_tests.create.form.users.remove_participant' | translate }}"
+    (click)="remove.emit()"
+    class="mt-6 p-1.5 text-neutral-400 focus:text-red-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100 focus:opacity-100"
+    [attr.aria-label]="
+      ('ref_tests.create.form.users.remove_participant' | translate) + ' ' + (index() + 1)
+    "
+  >
+    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+      />
+    </svg>
+  </button>
+  }
+</div>

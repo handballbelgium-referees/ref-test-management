@@ -48,11 +48,11 @@ jobs:
         run: npm ci
 
       - name: 📦 Install Angular dependencies
-        working-directory: ./QuizManagement.Ui
+        working-directory: ./RefTestManagement.Ui
         run: npm ci
 
       - name: 🏗 Build Angular application
-        working-directory: ./QuizManagement.Ui
+        working-directory: ./RefTestManagement.Ui
         run: npm run build -- --configuration production
         # Ensures that UI builds successfully in PR
 
@@ -62,9 +62,9 @@ jobs:
           dotnet-version: '${{ env.DOTNET_VERSION }}'
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore handball-belgium-rules-quiz-management.sln
+        run: dotnet restore RefTestManagement.sln
         # Makes sure all NuGet packages are restored for .NET projects
 
       - name: 🏗 Build .NET application
-        run: dotnet build handball-belgium-rules-quiz-management.sln --configuration Release --no-restore
+        run: dotnet build RefTestManagement.sln --configuration Release --no-restore
         # Validates .NET application can build successfully

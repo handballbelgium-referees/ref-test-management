@@ -1,0 +1,21 @@
+query GetRefTestByToken($token: String!) {
+  refTestByToken(token: $token) {
+    ... on RefTest {
+      id
+      name
+      email
+      numberOfQuestions
+      maxTimeInMinutes
+      currentQuestionIndex
+    }
+    ... on RefTestNotFoundError {
+      message
+    }
+    ... on RefTestExpiredError {
+      message
+    }
+    ... on InvalidRefTestStatusError {
+      message
+    }
+  }
+}

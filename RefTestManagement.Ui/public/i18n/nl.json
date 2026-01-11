@@ -1,0 +1,390 @@
+{
+  "app": {
+    "title": "Handbal RefTest Beheer",
+    "page_title": "Handbal RefTest Beheer"
+  },
+  "pwa": {
+    "update_available": "Er is een nieuwe versie beschikbaar.",
+    "update_now": "Bijwerken"
+  },
+  "common": {
+    "cancel": "Annuleren",
+    "today": "Vandaag",
+    "clear": "Wissen",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "refreshing": "Vernieuwen..."
+  },
+  "nav": {
+    "language": "Taal",
+    "logout": "Uitloggen"
+  },
+  "home": {
+    "hero": {
+      "title": "Handbal RefTest Beheersysteem",
+      "subtitle": "Creëer en beheer RefTests voor scheidsrechters en waarnemers van de Belgische Handbalbond",
+      "login": "Inloggen op Dashboard"
+    },
+    "actions": {
+      "title": "Snelle Acties",
+      "create": {
+        "title": "RefTests Aanmaken",
+        "description": "Maak RefTests bulksgewijs aan"
+      },
+      "manage": {
+        "title": "RefTests Beheren",
+        "description": "Volg en beheer RefTests"
+      }
+    },
+    "about": {
+      "title": "RefTest Beheersysteem",
+      "description": "Deze applicatie beheert handbalregels RefTests. Beheerders kunnen RefTests bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, voortgang en voltooiingsstatus volgen, filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. RefTests ondersteunen {{count}} talen ({{languages}}).",
+      "bulk": {
+        "title": "Bulk RefTest Aanmaak",
+        "description": "Maak RefTests aan voor meerdere gebruikers tegelijk. Elke RefTest wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
+      },
+      "management": {
+        "title": "RefTest Beheer",
+        "description": "Volg RefTests gedurende hun levenscyclus: in afwachting, bezig, voltooid of verlopen. Filter en sorteer op status, datum, score of gebruikers e-mail. Verstuur uitnodigingen en beheer alle RefTest acties."
+      }
+    }
+  },
+  "ref_tests": {
+    "list": {
+      "title": "Beheer RefTests",
+      "subtitle": "Bekijk, filter en volg alle RefTests",
+      "create_new": "Nieuwe RefTests Aanmaken",
+      "search_placeholder": "Zoeken op naam of e-mail...",
+      "loading": "RefTests laden...",
+      "load_more": "Meer RefTests Laden",
+      "loading_more": "Laden...",
+      "showing": "{{displayed}} van {{total}} RefTest weergegeven",
+      "showing_plural": "{{displayed}} van {{total}} RefTests weergegeven",
+      "filters": {
+        "advanced_filters": "Geavanceerde Filters",
+        "performance_title": "Prestatiemetingen",
+        "from": "Van",
+        "to": "Tot",
+        "all": "Alle",
+        "pending": "In Afwachting",
+        "in_progress": "Bezig",
+        "completed": "Voltooid",
+        "expired": "Verlopen",
+        "title_label": "RefTest Titel",
+        "title_all": "Alle Titels",
+        "title_search_placeholder": "Titels zoeken...",
+        "no_titles_found": "Geen titels gevonden",
+        "invitation_label": "Uitnodigingsstatus",
+        "invitation_all": "Alle",
+        "invitation_sent": "Verzonden",
+        "invitation_not_sent": "Niet Verzonden",
+        "results_label": "Resultaatstatus",
+        "results_all": "Alle",
+        "results_sent": "Verzonden",
+        "results_not_sent": "Niet Verzonden",
+        "question_score_range": "Vragen Score Bereik",
+        "answer_score_range": "Antwoorden Score Bereik",
+        "percentage_range": "Percentage Bereik",
+        "percentage_all": "Alle",
+        "percentage_low": "0-50%",
+        "percentage_medium": "50-75%",
+        "percentage_high": "75-100%",
+        "questions_range": "Vragen",
+        "min": "Min",
+        "max": "Max",
+        "started_date_range": "Startdatum",
+        "completed_date_range": "Voltooiingsdatum"
+      },
+      "sorting": {
+        "title": "Sorteeropties",
+        "sortBy": "Sorteren Op",
+        "direction": "Richting",
+        "email": "Deelnemer",
+        "status": "Status",
+        "number_of_questions": "Vragen",
+        "question_score": "Vragen Score",
+        "answer_score": "Antwoorden Score",
+        "invitation_sent": "Uitnodiging",
+        "results_sent": "Resultaten",
+        "started_at": "Startdatum",
+        "completed_at": "Voltooiingsdatum",
+        "percentage": "Percentage",
+        "asc": "Oplopend",
+        "desc": "Aflopend"
+      },
+      "status": {
+        "PENDING": "In Afwachting",
+        "IN_PROGRESS": "Bezig",
+        "COMPLETED": "Voltooid",
+        "EXPIRED": "Verlopen"
+      },
+      "table": {
+        "title": "Titel",
+        "participant": "Deelnemer",
+        "status": "Status",
+        "questions": "Vragen",
+        "score": "Score (V/A)",
+        "invitation": "Uitnodiging",
+        "results": "Resultaten",
+        "started": "Gestart",
+        "completed": "Voltooid"
+      },
+      "columns": {
+        "toggle": "Kolommen tonen/verbergen",
+        "title": "Titel",
+        "participant": "Deelnemer",
+        "status": "Status",
+        "questions": "Vragen",
+        "score": "Score (V/A)",
+        "invitation": "Uitnodiging",
+        "results": "Resultaten",
+        "started": "Gestart",
+        "completed": "Voltooid"
+      },
+      "empty": {
+        "title": "Geen RefTests gevonden",
+        "subtitle": "Begin met het aanmaken van uw eerste RefTests",
+        "action": "RefTests Aanmaken"
+      },
+      "bulk": {
+        "reftest_selected": "RefTest geselecteerd",
+        "reftests_selected": "RefTests geselecteerd",
+        "send_invitations": "Uitnodigingen Versturen",
+        "send_results": "Resultaten Versturen",
+        "generate_report": "Rapport Versturen",
+        "delete": "Verwijderen"
+      },
+      "actions": {
+        "send_invitation": "Uitnodiging Versturen",
+        "send_results": "Resultaten Versturen",
+        "generate_report": "Rapport Versturen",
+        "delete": "Verwijderen"
+      },
+      "dialogs": {
+        "send_invitations": {
+          "title": "Uitnodigingen Versturen",
+          "message": "Weet u zeker dat u uitnodigingen wilt versturen?",
+          "new_invitations": "Nieuwe uitnodigingen ({{count}})",
+          "resend_invitations": "Opnieuw versturen ({{count}})",
+          "confirm": "Uitnodigingen Versturen",
+          "cancel": "Annuleren"
+        },
+        "send_results": {
+          "title": "Resultaten Versturen",
+          "message": "Weet u zeker dat u resultaten wilt versturen?",
+          "new_results": "Nieuwe resultaten ({{count}})",
+          "resend_results": "Opnieuw versturen ({{count}})",
+          "confirm": "Resultaten Versturen",
+          "cancel": "Annuleren"
+        },
+        "delete": {
+          "title": "RefTests Verwijderen",
+          "message": "Weet u zeker dat u {{count}} RefTest(s) wilt verwijderen?",
+          "warning": "Deze actie kan niet ongedaan worden gemaakt.",
+          "ref_tests": "RefTests die verwijderd worden:",
+          "confirm": "Verwijderen",
+          "cancel": "Annuleren"
+        },
+        "generate_report": {
+          "title": "Rapport Genereren en Versturen",
+          "message": "Weet u zeker dat u een rapport wilt genereren en per e-mail versturen voor de geselecteerde RefTests?",
+          "reftests_included": "RefTests om op te nemen ({{count}})",
+          "more_ref_tests": "+ {{count}} RefTest meer",
+          "more_ref_tests_other": "+ {{count}} RefTests meer",
+          "info": "Er wordt een rapport gegenereerd en per e-mail verstuurd met de details van alle geselecteerde RefTests.",
+          "confirm": "Rapport Genereren en Versturen",
+          "cancel": "Annuleren"
+        }
+      },
+      "report": {
+        "success": "Rapport succesvol gegenereerd en verzonden",
+        "error": "Rapport genereren of verzenden mislukt",
+        "ref_test_count": "{{count}} RefTest opgenomen",
+        "ref_test_count_other": "{{count}} RefTests opgenomen",
+        "dismiss": "Sluiten"
+      }
+    },
+    "create": {
+      "back": "Terug naar Home",
+      "title": "RefTests Aanmaken",
+      "subtitle": "Voeg deelnemers toe en configureer RefTest-instellingen om nieuwe RefTests aan te maken",
+      "form": {
+        "config": {
+          "label": "RefTest Configuratie"
+        },
+        "title": {
+          "label": "RefTest Titel",
+          "placeholder": "Zoek naar een bestaande titel of voer een nieuwe in...",
+          "required": "Titel is verplicht",
+          "tooltip": "Voorbeeld: Bijscholing {{date}}",
+          "no_results": "Geen bestaande titels gevonden",
+          "create_new": "Druk op Enter om een nieuwe titel aan te maken met deze naam",
+          "existing_title": "Gebruik bestaande titel",
+          "new_title": "Zal nieuwe titel aanmaken",
+          "clear": "Wis titel"
+        },
+        "users": {
+          "label": "Gebruikers",
+          "placeholder": "Jan Jansen jan.jansen@example.com\nMarie Smit marie.smit@example.com\ngebruiker@example.com",
+          "hint": "Voer één gebruiker per regel in. Formaat: \"Voornaam Achternaam email@example.com\" of \"email@example.com\"",
+          "error": "Voer minimaal één gebruiker in",
+          "first_name_required": "Voornaam is verplicht",
+          "last_name_required": "Achternaam is verplicht",
+          "email_required": "E-mail is verplicht",
+          "email_invalid": "Voer een geldig e-mailadres in",
+          "count": "{{count}} deelnemer",
+          "count_other": "{{count}} deelnemers",
+          "bulk_import": "Bulk Import",
+          "bulk_import_label": "Plak deelnemersgegevens (één per regel)",
+          "bulk_import_hint": "Formaat: \"Voornaam Achternaam email\" (alle velden verplicht)",
+          "bulk_import_button": "Importeren",
+          "first_name": "Voornaam",
+          "first_name_placeholder": "Jan",
+          "last_name": "Achternaam",
+          "last_name_placeholder": "Jansen",
+          "email": "E-mail",
+          "email_placeholder": "jan.jansen@example.com",
+          "remove_participant": "Deelnemer verwijderen",
+          "add_participant": "Deelnemer Toevoegen"
+        },
+        "number_of_questions": {
+          "label": "Aantal Vragen",
+          "hint": "Totaal aantal vragen in de RefTest",
+          "error": "Aantal vragen moet minimaal 1 zijn",
+          "required": "Aantal vragen is verplicht",
+          "min": "Moet minimaal 1 vraag zijn"
+        },
+        "random_questions_for_each_user": {
+          "label": "Willekeurige Vragen voor Elke Deelnemer",
+          "hint": "Vink aan om verschillende willekeurige vragen aan elke deelnemer toe te wijzen. Vink uit om dezelfde vragen voor iedereen te gebruiken.",
+          "description": "Wanneer ingeschakeld, ontvangt elke deelnemer een unieke set willekeurige vragen uit de vraagpool. Wanneer uitgeschakeld, ontvangen alle deelnemers dezelfde set vragen."
+        },
+        "max_time_in_minutes": {
+          "label": "Maximale Tijd (minuten)",
+          "hint": "Maximale tijd om de RefTest te voltooien",
+          "error": "Maximale tijd moet minimaal 1 minuut zijn",
+          "required": "Tijdslimiet is verplicht",
+          "min": "Moet minimaal 1 minuut zijn"
+        },
+        "specific_question_numbers": {
+          "label": "Specifieke Vraagnummers (Optioneel)",
+          "placeholder": "1.1, 1.2, 2.3",
+          "hint": "Kommagescheiden lijst van specifieke vraagnummers om op te nemen. Laat leeg voor willekeurige vragen.",
+          "bulk_import": "Bulk Import",
+          "count": "{{count}} vraag geselecteerd",
+          "count_other": "{{count}} vragen geselecteerd",
+          "search_placeholder": "Zoek en voeg vragen toe op nummer...",
+          "bulk_import_label": "Plak vraagnummers (één per regel of gescheiden door komma's)",
+          "bulk_import_hint": "Formaat: Eén vraagnummer per regel, of gescheiden door komma's",
+          "bulk_import_button": "Importeren",
+          "bulk_import_importing": "Importeren...",
+          "no_results": "Geen vragen gevonden",
+          "table_number": "Nummer",
+          "table_question": "Vraag",
+          "remove_question": "Vraag verwijderen"
+        },
+        "email_options": {
+          "title": "E-mailautomatisering"
+        },
+        "send_invitations": {
+          "label": "Uitnodigingsmails versturen",
+          "hint": "Vink aan om uitnodigingsmails direct na aanmaken van RefTests te versturen",
+          "description": "Deelnemers ontvangen een e-mail met hun RefTest-link"
+        },
+        "send_results": {
+          "label": "Resultatenmails versturen",
+          "hint": "Vink aan om resultaatmails direct na aanmaken van RefTests te versturen",
+          "description": "Deelnemers ontvangen een e-mail met hun RefTest-resultaten"
+        },
+        "submit": "RefTests Aanmaken",
+        "submitting": "Aanmaken...",
+        "cancel": "Annuleren",
+        "validation_error": "Corrigeer de validatiefouten voordat u verzendt",
+        "no_participants": "Voeg minimaal één deelnemer toe",
+        "submit_error": "Er is een fout opgetreden bij het aanmaken van RefTests"
+      },
+      "success": {
+        "title": "RefTests Succesvol Aangemaakt",
+        "message": "RefTest-RefTests zijn aangemaakt. Doorverwijzen naar RefTestlijst...",
+        "created": "Succesvol {{count}} RefTest aangemaakt!",
+        "created_other": "Succesvol {{count}} RefTests aangemaakt!",
+        "failed_info": "{{count}} mislukt. Zie onderstaande fouten.",
+        "failed_title": "Mislukte RefTests:"
+      },
+      "error": {
+        "title": "Fout bij Aanmaken van RefTests"
+      }
+    }
+  },
+  "ref_test": {
+    "page_title": "Handbal RefTest",
+    "loading": "RefTest laden...",
+    "error": {
+      "title": "Kan RefTest niet laden",
+      "general": "Er is een onverwachte fout opgetreden bij het laden van de RefTest. Probeer het later opnieuw.",
+      "network": "Er is een netwerkfout opgetreden. Controleer uw verbinding en probeer het opnieuw.",
+      "submit_failed": "Het indienen van de RefTest is mislukt. Probeer het later opnieuw.",
+      "ref_test_not_found_error": "Deze RefTest kon niet worden gevonden. Controleer de link.",
+      "ref_test_expired_error": "Deze RefTest is verlopen. Neem contact op met de beheerder.",
+      "invalid_ref_test_status_error": "Deze RefTest is niet meer beschikbaar of is al voltooid."
+    },
+    "welcome_title": "Welkom bij je RefTest",
+    "welcome_subtitle": "Bekijk de informatie hieronder voordat je begint",
+    "participant_name": "Naam",
+    "participant_email": "E-mail",
+    "number_of_questions": "Vragen",
+    "time_limit": "Tijdslimiet",
+    "minutes": "min",
+    "no_limit": "Geen limiet",
+    "instructions_title": "Instructies",
+    "instruction_1": "Lees elke vraag zorgvuldig voordat je je antwoorden selecteert",
+    "instruction_2": "Sommige vragen kunnen meerdere juiste antwoorden hebben",
+    "instruction_3": "Je kunt heen en weer navigeren tussen vragen",
+    "instruction_progress_saved": "Je voortgang wordt automatisch opgeslagen, maar de timer loopt door, zelfs als je de pagina sluit",
+    "instruction_4": "Voltooi de RefTest binnen de tijdslimiet",
+    "start_button": "Start RefTest",
+    "time_remaining": "Resterende Tijd",
+    "progress": "Voortgang",
+    "question": "Vraag",
+    "of": "van",
+    "answered": "beantwoord",
+    "previous": "Vorige",
+    "next": "Volgende",
+    "submit": "RefTest Indienen",
+    "progress_restored": "Welkom terug!",
+    "continue_where_left": "Je voortgang is opgeslagen. Je kunt verdergaan waar je was gebleven.",
+    "results": {
+      "title": "RefTest Voltooid!",
+      "subtitle": "Hier zijn je resultaten",
+      "email_info": "Je ontvangt binnen {{minutes}} minuten een e-mail met je gedetailleerde resultaten en antwoorden.",
+      "email_info_shortly": "Je ontvangt binnenkort een e-mail met je gedetailleerde resultaten en antwoorden.",
+      "question_score": "Vragen Score",
+      "answer_score": "Antwoorden Score",
+      "question_score_short": "V",
+      "answer_score_short": "A",
+      "percentage": "Percentage"
+    },
+    "dialog": {
+      "submit": {
+        "title": "RefTest Indienen?",
+        "message": "Weet je zeker dat je de RefTest wilt indienen? Na het indienen kun je je antwoorden niet meer wijzigen.",
+        "answered": "Beantwoorde Vragen",
+        "unanswered": "Onbeantwoorde Vragen",
+        "warning": "Je hebt onbeantwoorde vragen. Deze worden als fout gemarkeerd.",
+        "confirm": "RefTest Indienen",
+        "cancel": "RefTest Voortzetten"
+      },
+      "leave": {
+        "title": "RefTest Verlaten?",
+        "message": "Weet je zeker dat je wilt vertrekken? Je voortgang gaat verloren als je de RefTest niet hebt ingediend.",
+        "warning": "Je voortgang gaat verloren als je de RefTest niet hebt ingediend.",
+        "confirm": "RefTest Verlaten",
+        "cancel": "Blijf bij RefTest"
+      }
+    }
+  },
+  "footer": {
+    "copyright": "© {{year}} Handbal RefTest Beheer. Alle rechten voorbehouden.",
+    "creator": "Eigendom van Kristof Gilis"
+  }
+}

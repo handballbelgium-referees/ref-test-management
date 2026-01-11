@@ -1,0 +1,29 @@
+<div class="mb-8 rounded-lg border-l-4 border-primary-500 bg-primary-50 p-4">
+  <h2 class="mb-2 font-semibold text-neutral-900">
+    {{ 'ref_test.instructions_title' | translate }}
+  </h2>
+  <ul class="space-y-2 text-sm text-neutral-700">
+    <li class="flex gap-2">
+      <span class="text-primary-600">•</span>
+      <span>{{ 'ref_test.instruction_1' | translate }}</span>
+    </li>
+    <li class="flex gap-2">
+      <span class="text-primary-600">•</span>
+      <span>{{ 'ref_test.instruction_2' | translate }}</span>
+    </li>
+    <li class="flex gap-2">
+      <span class="text-primary-600">•</span>
+      <span>{{ 'ref_test.instruction_3' | translate }}</span>
+    </li>
+    <li class="flex gap-2">
+      <span class="text-primary-600">•</span>
+      <span>{{ 'ref_test.instruction_progress_saved' | translate }}</span>
+    </li>
+    @if (hasTimeLimit()) {
+    <li class="flex gap-2">
+      <span class="text-primary-600">•</span>
+      <span>{{ 'ref_test.instruction_4' | translate }}</span>
+    </li>
+    }
+  </ul>
+</div>

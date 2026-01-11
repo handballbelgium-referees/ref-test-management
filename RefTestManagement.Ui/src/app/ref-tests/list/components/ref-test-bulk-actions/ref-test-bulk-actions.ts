@@ -1,0 +1,46 @@
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-ref-test-bulk-actions',
+  imports: [TranslatePipe],
+  templateUrl: './ref-test-bulk-actions.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
+})
+export class RefTestBulkActions {
+  readonly selectedCount = input.required<number>();
+  readonly hasCompletedRefTestsSelected = input.required<boolean>();
+  readonly hasPendingRefTestsSelected = input.required<boolean>();
+  readonly sendingInvitations = input.required<boolean>();
+  readonly sendingResults = input.required<boolean>();
+  readonly deletingRefTests = input.required<boolean>();
+  readonly generatingReport = input.required<boolean>();
+
+  readonly sendInvitations = output<void>();
+  readonly sendResults = output<void>();
+  readonly deleteSelected = output<void>();
+  readonly generateReport = output<void>();
+
+  protected onSendInvitations(event: Event): void {
+    event.stopPropagation();
+    this.sendInvitations.emit();
+  }
+
+  protected onSendResults(event: Event): void {
+    event.stopPropagation();
+    this.sendResults.emit();
+  }
+
+  protected onDeleteSelected(event: Event): void {
+    event.stopPropagation();
+    this.deleteSelected.emit();
+  }
+
+  protected onGenerateReport(event: Event): void {
+    event.stopPropagation();
+    this.generateReport.emit();
+  }
+}

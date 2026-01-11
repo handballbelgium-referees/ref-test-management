@@ -1,0 +1,58 @@
+@if (show()) {
+<div
+  class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+  (click)="cancel.emit()"
+>
+  <div
+    class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+    (click)="$event.stopPropagation()"
+  >
+    <!-- Header -->
+    <div class="px-6 py-4 border-b border-neutral-200">
+      <h2 class="text-xl font-bold text-neutral-900">
+        {{ 'ref_test.dialog.leave.title' | translate }}
+      </h2>
+    </div>
+
+    <!-- Content -->
+    <div class="px-6 py-4">
+      <p class="text-neutral-700 mb-4">
+        {{ 'ref_test.dialog.leave.message' | translate }}
+      </p>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+        <div class="flex gap-2">
+          <svg class="w-5 h-5 text-amber-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path
+              fill-rule="evenodd"
+              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+              clip-rule="evenodd"
+            />
+          </svg>
+          <p class="text-sm text-amber-800">
+            {{ 'ref_test.dialog.leave.warning' | translate }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
+      <button
+        type="button"
+        (click)="cancel.emit()"
+        class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
+      >
+        {{ 'ref_test.dialog.leave.cancel' | translate }}
+      </button>
+      <button
+        type="button"
+        (click)="confirm.emit()"
+        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+      >
+        {{ 'ref_test.dialog.leave.confirm' | translate }}
+      </button>
+    </div>
+  </div>
+</div>
+}
