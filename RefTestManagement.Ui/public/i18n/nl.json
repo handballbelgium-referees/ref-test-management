@@ -84,9 +84,6 @@
         "results_not_sent": "Niet Verzonden",
         "question_score_range": "Vragen Score Bereik",
         "answer_score_range": "Antwoorden Score Bereik",
-        "score_range": "Score Bereik",
-        "min_score": "Min Score",
-        "max_score": "Max Score",
         "percentage_range": "Percentage Bereik",
         "percentage_all": "Alle",
         "percentage_low": "0-50%",
@@ -107,7 +104,6 @@
         "number_of_questions": "Vragen",
         "question_score": "Vragen Score",
         "answer_score": "Antwoorden Score",
-        "score": "Score",
         "invitation_sent": "Uitnodiging",
         "results_sent": "Resultaten",
         "started_at": "Startdatum",
@@ -212,7 +208,6 @@
       "back": "Terug naar Home",
       "title": "RefTests Aanmaken",
       "subtitle": "Voeg deelnemers toe en configureer RefTest-instellingen om nieuwe RefTests aan te maken",
-      "description": "Maak RefTests bulksgewijs aan voor meerdere gebruikers. Voer e-mailadressen in en configureer RefTest-instellingen.",
       "form": {
         "config": {
           "label": "RefTest Configuratie"

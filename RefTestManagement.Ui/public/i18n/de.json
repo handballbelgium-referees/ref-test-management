@@ -212,7 +212,6 @@
       "back": "Zurück zur Startseite",
       "title": "RefTest-Erstellung",
       "subtitle": "Teilnehmer hinzufügen und RefTest-Einstellungen konfigurieren, um neue RefTests zu erstellen",
-      "description": "Erstellen Sie RefTests in großen Mengen für mehrere Benutzer. Geben Sie E-Mail-Adressen ein und konfigurieren Sie RefTest-Einstellungen.",
       "form": {
         "config": {
           "label": "RefTest-Konfiguration"

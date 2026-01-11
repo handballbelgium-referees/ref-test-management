@@ -84,9 +84,6 @@
         "results_not_sent": "Non Envoyée",
         "question_score_range": "Plage de Score des Questions",
         "answer_score_range": "Plage de Score des Réponses",
-        "score_range": "Plage de Score",
-        "min_score": "Score Min",
-        "max_score": "Score Max",
         "percentage_range": "Plage de Pourcentage",
         "percentage_all": "Toutes",
         "percentage_low": "0-50%",
@@ -107,7 +104,6 @@
         "number_of_questions": "Questions",
         "question_score": "Score Questions",
         "answer_score": "Score Réponses",
-        "score": "Score",
         "invitation_sent": "Invitation",
         "results_sent": "Résultats",
         "started_at": "Date de Début",
@@ -212,7 +208,7 @@
       "back": "Retour à l'accueil",
       "title": "Créer des RefTests",
       "subtitle": "Ajoutez des participants et configurez les paramètres du RefTest pour créer de nouvelles RefTests",
-      "description": "Créez des RefTests en masse pour plusieurs utilisateurs. Entrez les adresses e-mail et configurez les paramètres de RefTest.",
+
       "form": {
         "config": {
           "label": "Configuration du RefTest"

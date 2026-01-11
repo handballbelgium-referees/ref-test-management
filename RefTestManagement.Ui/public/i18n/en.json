@@ -84,9 +84,6 @@
         "results_not_sent": "Not Sent",
         "question_score_range": "Question Score Range",
         "answer_score_range": "Answer Score Range",
-        "score_range": "Score Range",
-        "min_score": "Min Score",
-        "max_score": "Max Score",
         "percentage_range": "Percentage Range",
         "percentage_all": "All",
         "percentage_low": "0-50%",
@@ -107,7 +104,6 @@
         "number_of_questions": "Questions",
         "question_score": "Question Score",
         "answer_score": "Answer Score",
-        "score": "Score",
         "invitation_sent": "Invitation",
         "results_sent": "Results",
         "started_at": "Start Date",
@@ -212,7 +208,6 @@
       "back": "Back to Home",
       "title": "Create RefTests",
       "subtitle": "Add participants and configure RefTest settings to create new RefTests",
-      "description": "Create RefTests in bulk for multiple users. Enter email addresses and configure RefTest settings.",
       "form": {
         "config": {
           "label": "RefTest Configuration"
