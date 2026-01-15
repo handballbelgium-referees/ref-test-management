@@ -9,7 +9,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { applyEach, disabled, email, Field, form, min, required } from '@angular/forms/signals';
+import { applyEach, disabled, email, form, FormField, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, delay, forkJoin, map, of, tap } from 'rxjs';
@@ -41,7 +41,7 @@ interface IRefTestFormData {
   selector: 'app-create-ref-tests',
   imports: [
     TranslatePipe,
-    Field,
+    FormField,
     RefTestUserListItem,
     BulkUserImportModal,
     QuestionSearchAutocomplete,
