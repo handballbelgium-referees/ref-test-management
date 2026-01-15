@@ -1,10 +1,10 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { Field } from '@angular/forms/signals';
+import { FormField } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-ref-test-user-list-item',
-  imports: [TranslatePipe, Field],
+  imports: [TranslatePipe, FormField],
   templateUrl: './ref-test-user-list-item.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

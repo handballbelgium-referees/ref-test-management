@@ -15,7 +15,7 @@
         [id]="'firstName-' + index()"
         type="text"
         [attr.tabindex]="index() * 4 + 5"
-        [field]="userFormControl().firstName"
+        [formField]="userFormControl().firstName"
         [class.border-red-500]="
           userFormControl().firstName().touched() && userFormControl().firstName().invalid()
         "
@@ -44,7 +44,7 @@
         [id]="'lastName-' + index()"
         type="text"
         [attr.tabindex]="index() * 4 + 6"
-        [field]="userFormControl().lastName"
+        [formField]="userFormControl().lastName"
         [class.border-red-500]="
           userFormControl().lastName().touched() && userFormControl().lastName().invalid()
         "
@@ -73,7 +73,7 @@
         [id]="'email-' + index()"
         type="email"
         [attr.tabindex]="index() * 4 + 7"
-        [field]="userFormControl().email"
+        [formField]="userFormControl().email"
         [class.border-red-500]="
           userFormControl().email().touched() && userFormControl().email().invalid()
         "
