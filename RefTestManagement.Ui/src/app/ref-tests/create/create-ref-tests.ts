@@ -1,0 +1,455 @@
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { applyEach, disabled, email, form, FormField, min, required } from '@angular/forms/signals';
+import { Router } from '@angular/router';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { catchError, delay, forkJoin, map, of, tap } from 'rxjs';
+import { CreateBulkRefTestsGQL, SearchQuestionsByNumberGQL } from '../../../../graphql/generated';
+import { BulkQuestionImportModal } from './components/bulk-question-import-modal/bulk-question-import-modal';
+import { BulkUserImportModal } from './components/bulk-user-import-modal/bulk-user-import-modal';
+import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
+import { RefTestUserListItem } from './components/ref-test-user-list-item/ref-test-user-list-item';
+import { TitleAutocomplete } from './components/title-autocomplete/title-autocomplete';
+
+interface IUserData {
+  firstName: string;
+  lastName: string;
+  email: string;
+}
+
+interface IRefTestFormData {
+  users: IUserData[];
+  title: { id?: string; name: string } | null;
+  numberOfQuestions: number;
+  randomQuestionsForEachUser: boolean;
+  maxTimeInMinutes: number;
+  specificQuestionNumbers: string;
+  sendInvitations: boolean;
+  sendResults: boolean;
+}
+
+@Component({
+  selector: 'app-create-ref-tests',
+  imports: [
+    TranslatePipe,
+    FormField,
+    RefTestUserListItem,
+    BulkUserImportModal,
+    QuestionSearchAutocomplete,
+    BulkQuestionImportModal,
+    TitleAutocomplete,
+  ],
+  templateUrl: './create-ref-tests.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'host',
+  },
+})
+export class CreateRefTests {
+  private readonly _destroyRef = inject(DestroyRef);
+  private readonly _createBulkRefTestsGQL = inject(CreateBulkRefTestsGQL);
+  private readonly _searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
+  private readonly _router = inject(Router);
+  private readonly _translate = inject(TranslateService);
+
+  protected readonly messagesContainer = viewChild<ElementRef>('messagesContainer');
+
+  // Angular v21 Signal Forms - model signal
+  protected readonly refTestModel = signal<IRefTestFormData>({
+    users: [{ firstName: '', lastName: '', email: '' }],
+    title: null,
+    numberOfQuestions: 30,
+    randomQuestionsForEachUser: false,
+    maxTimeInMinutes: 60,
+    specificQuestionNumbers: '',
+    sendInvitations: false,
+    sendResults: false,
+  });
+
+  // Form field tree with validation schema
+  protected readonly refTestForm = form(this.refTestModel, (schemaPath) => {
+    // Validate each user in the array
+    applyEach(schemaPath.users, (user) => {
+      required(user.firstName, {
+        message: 'ref_tests.create.form.users.first_name_required',
+      });
+      required(user.lastName, {
+        message: 'ref_tests.create.form.users.last_name_required',
+      });
+      required(user.email, {
+        message: 'ref_tests.create.form.users.email_required',
+      });
+      email(user.email, {
+        message: 'ref_tests.create.form.users.email_invalid',
+      });
+    });
+
+    // Validate title
+    required(schemaPath.title, {
+      message: 'ref_tests.create.form.title.required',
+    });
+
+    // Validate refTest configuration
+    required(schemaPath.numberOfQuestions, {
+      message: 'ref_tests.create.form.number_of_questions.required',
+      when: () => {
+        return this.selectedQuestions().length === 0;
+      },
+    });
+    disabled(schemaPath.numberOfQuestions, () => {
+      return this.selectedQuestions().length > 0;
+    });
+    disabled(schemaPath.randomQuestionsForEachUser, () => {
+      return this.selectedQuestions().length > 0;
+    });
+    min(schemaPath.numberOfQuestions, 1, {
+      message: 'ref_tests.create.form.number_of_questions.min',
+    });
+
+    required(schemaPath.maxTimeInMinutes, {
+      message: 'ref_tests.create.form.max_time_in_minutes.required',
+    });
+    min(schemaPath.maxTimeInMinutes, 1, {
+      message: 'ref_tests.create.form.max_time_in_minutes.min',
+    });
+  });
+
+  // Additional state signals
+  protected readonly loading = signal(false);
+  protected readonly error = signal<string | null>(null);
+  protected readonly successCount = signal(0);
+  protected readonly failedCount = signal(0);
+  protected readonly errors = signal<Array<{ email: string; message: string }>>([]);
+  protected readonly showBulkImport = signal(false);
+  protected readonly selectedQuestions = signal<
+    Array<{ number: string; phrase: Record<string, string> }>
+  >([]);
+  protected readonly showBulkQuestionImport = signal(false);
+  protected readonly loadingBulkQuestions = signal(false);
+  readonly currentLanguage = toSignal(
+    this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
+    {
+      initialValue: this._translate.getCurrentLang(),
+    }
+  );
+
+  // Computed signals
+  protected readonly userCount = computed(() => this.refTestModel().users.length);
+
+  protected addUser(): void {
+    const current = this.refTestModel();
+    this.refTestModel.set({
+      ...current,
+      users: [...current.users, { firstName: '', lastName: '', email: '' }],
+    });
+  }
+
+  protected removeUser(index: number): void {
+    const current = this.refTestModel();
+    const newUsers = current.users.filter((_, i) => i !== index);
+
+    // Ensure at least one user remains
+    if (newUsers.length === 0) {
+      newUsers.push({ firstName: '', lastName: '', email: '' });
+    }
+
+    this.refTestModel.set({
+      ...current,
+      users: newUsers,
+    });
+  }
+
+  protected toggleBulkImport(): void {
+    this.showBulkImport.update((v) => !v);
+  }
+
+  protected toggleBulkQuestionImport(): void {
+    this.showBulkQuestionImport.update((v) => !v);
+  }
+
+  protected onTitleSelect(title: { id?: string; name: string }): void {
+    const current = this.refTestModel();
+    this.refTestModel.set({
+      ...current,
+      title: title.name ? title : null,
+    });
+  }
+
+  protected onQuestionSelect(question: { number: string; phrase: Record<string, string> }): void {
+    const current = this.selectedQuestions();
+    if (!current.some((q) => q.number === question.number)) {
+      this.selectedQuestions.set([...current, question]);
+      this.updateQuestionNumbersField();
+      this.updateRandomQuestionsForEachUserField();
+      this.resetQuestionCount();
+    }
+  }
+
+  protected onQuestionRemove(questionNumber: string): void {
+    this.selectedQuestions.update((current) => current.filter((q) => q.number !== questionNumber));
+    this.updateQuestionNumbersField();
+    this.resetQuestionCount();
+  }
+
+  private updateQuestionNumbersField(): void {
+    const numbers = this.selectedQuestions()
+      .map((q) => q.number)
+      .join(', ');
+    const current = this.refTestModel();
+    this.refTestModel.set({
+      ...current,
+      specificQuestionNumbers: numbers,
+    });
+  }
+
+  private updateRandomQuestionsForEachUserField(): void {
+    const current = this.refTestModel();
+    this.refTestModel.set({
+      ...current,
+      randomQuestionsForEachUser: false,
+    });
+  }
+
+  private resetQuestionCount(): void {
+    const count = this.selectedQuestions().length;
+    const current = this.refTestModel();
+    this.refTestModel.set({
+      ...current,
+      numberOfQuestions: count > 0 ? count : 30,
+    });
+  }
+
+  protected onBulkQuestionImport(text: string): void {
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    const questionNumbers = lines
+      .flatMap((line) => line.split(','))
+      .map((num) => num.trim())
+      .filter((num) => num.length > 0);
+
+    if (questionNumbers.length === 0) {
+      this.showBulkQuestionImport.set(false);
+      return;
+    }
+
+    this.loadingBulkQuestions.set(true);
+
+    // Validate and add questions
+    const validationRequests = questionNumbers.map((number) =>
+      this._searchQuestionsByNumberGQL.fetch({ variables: { number } }).pipe(
+        map((result) => {
+          const question = result.data?.searchQuestionsByNumber?.[0];
+          return question
+            ? { number: question.number, phrase: question.phrase, isValid: true }
+            : null;
+        }),
+        catchError(() => of(null))
+      )
+    );
+
+    forkJoin(validationRequests)
+      .pipe(
+        map((results) =>
+          results
+            .filter(
+              (r): r is { number: string; phrase: Record<string, string>; isValid: boolean } =>
+                r !== null && (r?.isValid ?? false)
+            )
+            .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number))
+        ),
+        tap((validQuestions) => {
+          if (validQuestions.length > 0) {
+            this.selectedQuestions.update((current) => [...current, ...validQuestions]);
+            this.updateQuestionNumbersField();
+          }
+        }),
+        tap(() => {
+          this.loadingBulkQuestions.set(false);
+          this.showBulkQuestionImport.set(false);
+          this.resetQuestionCount();
+        }),
+        catchError(() => {
+          this.loadingBulkQuestions.set(false);
+          return of([]);
+        }),
+        takeUntilDestroyed(this._destroyRef)
+      )
+      .subscribe();
+  }
+
+  protected onBulkUserImport(text: string): void {
+    const lines = text
+      .split('\n')
+      .map((line) => line.trim())
+      .filter((line) => line.length > 0);
+
+    const users: IUserData[] = [];
+
+    lines.forEach((line) => {
+      const parts = line.split(/\s+/);
+      let firstName = '';
+      let lastName = '';
+      let email = '';
+
+      if (parts.length >= 3) {
+        email = parts[parts.length - 1];
+        lastName = parts[parts.length - 2];
+        firstName = parts.slice(0, parts.length - 2).join(' ');
+      } else if (parts.length === 1 && parts[0].includes('@')) {
+        email = parts[0];
+        const [localPart] = email.split('@');
+        firstName = localPart;
+      }
+
+      if (email) {
+        users.push({ firstName, lastName, email });
+      }
+    });
+
+    if (users.length > 0) {
+      const current = this.refTestModel();
+      // Filter out empty users (all fields empty)
+      const nonEmptyUsers = current.users.filter(
+        (user) => user.firstName.trim() || user.lastName.trim() || user.email.trim()
+      );
+      this.refTestModel.set({
+        ...current,
+        users: [...nonEmptyUsers, ...users],
+      });
+    }
+
+    this.showBulkImport.set(false);
+  }
+
+  protected onBulkUserCancel(): void {
+    this.showBulkImport.set(false);
+  }
+
+  protected onBulkQuestionCancel(): void {
+    this.showBulkQuestionImport.set(false);
+  }
+
+  protected onSubmit(): void {
+    // Check form validity
+    if (this.refTestForm().invalid()) {
+      // Mark all fields as touched to reveal validation errors
+      this.refTestForm().markAsTouched();
+      this.error.set('ref_tests.create.form.validation_error');
+      return;
+    }
+
+    const formData = this.refTestModel();
+
+    if (formData.users.length === 0) {
+      this.error.set('ref_tests.create.form.no_participants');
+      return;
+    }
+
+    const specificQuestions = formData.specificQuestionNumbers
+      .split(',')
+      .map((q) => q.trim())
+      .filter((q) => q.length > 0);
+
+    this.error.set(null);
+    this.successCount.set(0);
+    this.failedCount.set(0);
+    this.errors.set([]);
+
+    this._createBulkRefTestsGQL
+      .mutate({
+        variables: {
+          input: {
+            users: formData.users,
+            title: formData.title?.id
+              ? { id: formData.title.id }
+              : { name: formData.title?.name ?? '' },
+            numberOfQuestions: formData.numberOfQuestions,
+            randomQuestionsForEachUser: formData.randomQuestionsForEachUser,
+            maxTimeInMinutes: formData.maxTimeInMinutes,
+            specificQuestionNumbers: specificQuestions.length > 0 ? specificQuestions : undefined,
+            sendAutomatedInvitations: formData.sendInvitations,
+            sendAutomatedResults: formData.sendResults,
+          },
+        },
+      })
+      .pipe(
+        tap((result) => this.loading.set(result.loading ?? false)),
+        map((result) => result.data?.createBulkRefTests?.bulkRefTestsResult),
+        tap((data) => {
+          if (data) {
+            this.successCount.set(data.successfullyCreated);
+            this.failedCount.set(data.failed);
+
+            if (data.errors.length > 0) {
+              this.errors.set(
+                data.errors.map((e) => ({
+                  email: e.user.email,
+                  message: e.errorMessage,
+                }))
+              );
+            }
+
+            if (data.successfullyCreated > 0) {
+              // Reset form to initial state
+              this.refTestModel.set({
+                users: [{ firstName: '', lastName: '', email: '' }],
+                title: null,
+                numberOfQuestions: 30,
+                randomQuestionsForEachUser: false,
+                maxTimeInMinutes: 60,
+                specificQuestionNumbers: '',
+                sendInvitations: false,
+                sendResults: false,
+              });
+              // Reset form state
+              this.refTestForm().reset();
+            }
+
+            // Scroll to messages
+            setTimeout(() => {
+              this.messagesContainer()?.nativeElement.scrollIntoView({
+                behavior: 'smooth',
+                block: 'center',
+              });
+            }, 100);
+
+            if (data.successfullyCreated > 0 && data.failed === 0) {
+              of(null)
+                .pipe(delay(2000), takeUntilDestroyed(this._destroyRef))
+                .subscribe(() => this._router.navigate(['/ref-tests']));
+            }
+          }
+        }),
+        catchError((err) => {
+          this.loading.set(false);
+          this.error.set(err.message || 'ref_tests.create.form.submit_error');
+          // Scroll to error message
+          setTimeout(() => {
+            this.messagesContainer()?.nativeElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          }, 100);
+          return of(null);
+        }),
+        takeUntilDestroyed(this._destroyRef)
+      )
+      .subscribe();
+  }
+
+  protected cancel(): void {
+    this._router.navigate(['/']);
+  }
+}

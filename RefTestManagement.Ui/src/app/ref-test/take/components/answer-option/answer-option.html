@@ -1,0 +1,30 @@
+<button
+  type="button"
+  (click)="answerClick.emit()"
+  class="w-full text-left p-4 rounded-lg border-2 transition-all"
+  [class]="
+    selected()
+      ? 'border-primary-600 bg-primary-50'
+      : 'border-neutral-200 hover:border-primary-300 hover:bg-neutral-50'
+  "
+>
+  <div class="flex items-start gap-3">
+    <div
+      class="shrink-0 w-6 h-6 rounded border-2 flex items-center justify-center mt-0.5"
+      [class]="selected() ? 'border-primary-600 bg-primary-600' : 'border-neutral-300'"
+    >
+      @if (selected()) {
+      <svg class="w-4 h-4 text-white" fill="currentColor" viewBox="0 0 20 20">
+        <path
+          fill-rule="evenodd"
+          d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      }
+    </div>
+    <span class="text-neutral-900 wrap-break-word flex-1" [class]="selected() ? 'font-semibold' : ''">
+      {{ phrase() | appTranslation : currentLanguage() }}
+    </span>
+  </div>
+</button>

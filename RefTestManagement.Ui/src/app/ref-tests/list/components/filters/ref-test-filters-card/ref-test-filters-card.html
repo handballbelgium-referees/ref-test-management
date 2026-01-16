@@ -1,0 +1,151 @@
+<div class="space-y-4">
+  <!-- Status Filter Tabs -->
+  <app-status-filter-tabs
+    [selectedStatus]="filter().status"
+    [statusCounts]="statusCounts()"
+    (statusChange)="onStatusChange($event)"
+  />
+
+  <!-- Advanced Filters Panel -->
+  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+    <button
+      type="button"
+      (click)="toggleFilters()"
+      class="w-full px-4 py-3 flex items-center justify-between hover:bg-neutral-50 transition-colors"
+    >
+      <span class="text-sm font-medium text-neutral-900">
+        {{ 'ref_tests.list.filters.advanced_filters' | translate }}
+      </span>
+      <svg
+        class="w-5 h-5 text-neutral-500 transition-transform"
+        [class.rotate-180]="filtersExpanded()"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+      </svg>
+    </button>
+
+    @if (filtersExpanded()) {
+    <div class="p-4 sm:p-6 border-t border-neutral-200 bg-neutral-50">
+      <div class="space-y-6">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
+          <!-- Left Column -->
+          <div class="space-y-6">
+            <!-- Title Filter -->
+            <app-title-filter
+              [selectedTitleId]="filter().titleValue"
+              (titleChange)="onTitleChange($event)"
+            />
+
+            <!-- Date Filters -->
+            <div class="flex flex-col gap-4">
+              <!-- Started Date -->
+              <app-date-range-filter
+                label="ref_tests.list.filters.started_date_range"
+                [afterDate]="filter().startedAfter"
+                [beforeDate]="filter().startedBefore"
+                (dateChange)="onStartedDateChange($event)"
+              />
+
+              <!-- Completed Date -->
+              <app-date-range-filter
+                label="ref_tests.list.filters.completed_date_range"
+                [afterDate]="filter().completedAfter"
+                [beforeDate]="filter().completedBefore"
+                (dateChange)="onCompletedDateChange($event)"
+              />
+            </div>
+          </div>
+
+          <!-- Right Column -->
+          <div class="space-y-6">
+            <!-- Communication Status (Invitation & Results) -->
+            <div class="bg-white rounded-lg p-4 border border-neutral-200">
+              <div class="flex items-center gap-2 mb-3">
+                <svg
+                  class="w-5 h-5 text-primary-600"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+                <h3 class="text-sm font-semibold text-neutral-900">
+                  {{ 'ref_tests.list.filters.communication_status' | translate }}
+                </h3>
+              </div>
+              <div class="space-y-3">
+                <!-- Invitation Status -->
+                <div>
+                  <label class="block text-xs font-medium text-neutral-600 mb-1.5">
+                    {{ 'ref_tests.list.filters.invitation_label' | translate }}
+                  </label>
+                  <select
+                    [value]="filter().invitationSent === undefined ? '' : filter().invitationSent"
+                    (change)="onInvitationChange($any($event.target).value)"
+                    class="w-full pl-3 pr-8 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm appearance-none"
+                  >
+                    <option value="">{{ 'ref_tests.list.filters.invitation_all' | translate }}</option>
+                    <option value="true">
+                      {{ 'ref_tests.list.filters.invitation_sent' | translate }}
+                    </option>
+                    <option value="false">
+                      {{ 'ref_tests.list.filters.invitation_not_sent' | translate }}
+                    </option>
+                  </select>
+                </div>
+
+                <!-- Results Status -->
+                <div>
+                  <label class="block text-xs font-medium text-neutral-600 mb-1.5">
+                    {{ 'ref_tests.list.filters.results_label' | translate }}
+                  </label>
+                  <select
+                    [value]="filter().resultsSent === undefined ? '' : filter().resultsSent"
+                    (change)="onResultsChange($any($event.target).value)"
+                    class="w-full pl-3 pr-8 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm appearance-none"
+                  >
+                    <option value="">{{ 'ref_tests.list.filters.results_all' | translate }}</option>
+                    <option value="true">{{ 'ref_tests.list.filters.results_sent' | translate }}</option>
+                    <option value="false">
+                      {{ 'ref_tests.list.filters.results_not_sent' | translate }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <!-- Performance Filters -->
+            <app-performance-filters
+              [minQuestionScore]="filter().minQuestionScore"
+              [maxQuestionScore]="filter().maxQuestionScore"
+              [minAnswerScore]="filter().minAnswerScore"
+              [maxAnswerScore]="filter().maxAnswerScore"
+              [percentageRange]="filter().percentageRange"
+              [minQuestions]="filter().minQuestions"
+              [maxQuestions]="filter().maxQuestions"
+              [minMaxTimeInMinutes]="filter().minMaxTimeInMinutes"
+              [maxMaxTimeInMinutes]="filter().maxMaxTimeInMinutes"
+              (performanceChange)="onPerformanceChange($event)"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+    }
+  </div>
+
+  <!-- Sorting Panel -->
+  <app-sorting-panel
+    [sortField]="filter().sortField"
+    [sortDirection]="filter().sortDirection"
+    (sortingChange)="onSortingChange($event)"
+  />
+</div>

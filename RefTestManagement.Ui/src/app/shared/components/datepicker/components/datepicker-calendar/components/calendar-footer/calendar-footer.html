@@ -1,0 +1,21 @@
+<div
+  class="bg-neutral-100 border-t border-neutral-200 gap-2 flex px-3 py-2 md:px-4 md:py-3"
+  [class.rounded-b-xl]="!isSmallTouchDevice()"
+>
+  <button
+    type="button"
+    class="font-medium rounded-lg transition-all flex-1 border-none cursor-pointer bg-primary-600 text-white hover:bg-primary-700 text-xs py-1.5 px-3 md:text-sm md:py-2 md:px-4"
+    (click)="today.emit()"
+    tabindex="-1"
+  >
+    {{ 'common.today' | translate }}
+  </button>
+  <button
+    type="button"
+    class="font-medium rounded-lg transition-all flex-1 border border-neutral-200 cursor-pointer bg-white text-neutral-600 hover:bg-neutral-100 hover:border-neutral-300 hover:text-neutral-900 text-xs py-1.5 px-3 md:text-sm md:py-2 md:px-4"
+    (click)="clear.emit()"
+    tabindex="-1"
+  >
+    {{ 'common.clear' | translate }}
+  </button>
+</div>

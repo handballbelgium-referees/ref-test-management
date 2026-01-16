@@ -1,0 +1,15 @@
+<div class="grid grid-cols-3 gap-2">
+  @for (month of months(); track month.index) {
+  <button
+    type="button"
+    class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600 text-xs h-8 md:text-sm md:h-10"
+    [class.!bg-primary-600]="month.isSelected"
+    [class.!text-white]="month.isSelected"
+    [class.font-semibold]="month.isSelected"
+    (click)="selectMonth(month.index)"
+    tabindex="-1"
+  >
+    {{ month.name }}
+  </button>
+  }
+</div>

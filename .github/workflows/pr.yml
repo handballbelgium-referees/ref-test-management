@@ -1,0 +1,70 @@
+name: PR CI
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, edited]
+    branches: [main, beta]
+
+env:
+  DOTNET_VERSION: 10.0.x
+  NODE_VERSION: 22
+
+jobs:
+  validate-pr-title:
+    name: 📝 Validate PR Title
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+
+      - name: ⚡ Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+
+      - name: 📦 Install root dependencies
+        run: npm ci
+
+      - name: ✅ Validate PR title
+        run: echo "${{ github.event.pull_request.title }}" | npx commitlint
+        # Ensures PR title follows Conventional Commits or your commitlint rules
+
+  validate:
+    name: 🛠 Build & Validate
+    runs-on: ubuntu-latest
+    needs: validate-pr-title
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+
+      - name: ⚡ Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: '${{ env.NODE_VERSION }}'
+
+      - name: 📦 Install root dependencies
+        run: npm ci
+
+      - name: 📦 Install Angular dependencies
+        working-directory: ./RefTestManagement.Ui
+        run: npm ci
+
+      - name: 🏗 Build Angular application
+        working-directory: ./RefTestManagement.Ui
+        run: npm run build -- --configuration production
+        # Ensures that UI builds successfully in PR
+
+      - name: ⚡ Setup .NET
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '${{ env.DOTNET_VERSION }}'
+
+      - name: 🔄 Restore .NET dependencies
+        run: dotnet restore RefTestManagement.sln
+        # Makes sure all NuGet packages are restored for .NET projects
+
+      - name: 🏗 Build .NET application
+        run: dotnet build RefTestManagement.sln --configuration Release --no-restore
+        # Validates .NET application can build successfully

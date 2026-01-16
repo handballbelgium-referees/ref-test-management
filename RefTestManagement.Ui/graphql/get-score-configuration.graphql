@@ -1,0 +1,5 @@
+query GetScoreConfiguration {
+  scoreConfiguration {
+    passingPercentage
+  }
+}

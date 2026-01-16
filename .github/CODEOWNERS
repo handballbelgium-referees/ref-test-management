@@ -1,0 +1,19 @@
+# CODEOWNERS file
+# https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything in the repo
+* @KristofGilis
+
+# .NET API and infrastructure
+/RefTestManagement.Api/ @KristofGilis
+/RefTestManagement.Application/ @KristofGilis
+/RefTestManagement.Domain/ @KristofGilis
+/RefTestManagement.Infrastructure/ @KristofGilis
+
+# Angular frontend
+/RefTestManagement.Ui/ @KristofGilis
+
+# CI/CD and configuration
+/.github/ @KristofGilis
+/.releaserc.json @KristofGilis
+/commitlint.config.mjs @KristofGilis

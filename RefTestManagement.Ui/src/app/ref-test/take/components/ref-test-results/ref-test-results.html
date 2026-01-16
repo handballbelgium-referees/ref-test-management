@@ -1,0 +1,107 @@
+<div class="max-w-7xl mx-auto">
+  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 sm:p-8">
+    <div class="text-center mb-8">
+      <div
+        class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
+        [class]="
+          percentage() >= 80 ? 'bg-success-100' : percentage() >= 60 ? 'bg-yellow-100' : 'bg-red-100'
+        "
+      >
+        <svg
+          class="w-10 h-10"
+          [class]="percentage() >= passingPercentage() ? 'text-success-600' : 'text-red-600'"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          @if (percentage() >= 80) {
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+          } @else {
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+          }
+        </svg>
+      </div>
+      <h1 class="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2">
+        {{ 'ref_test.results.title' | translate }}
+      </h1>
+      <p class="text-neutral-600">{{ 'ref_test.results.subtitle' | translate }}</p>
+    </div>
+
+    <!-- Email Information Banner -->
+    <div class="max-w-4xl mx-auto mb-8">
+      <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+        <svg
+          class="w-5 h-5 text-blue-600 mt-0.5 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <p class="text-sm text-blue-900">
+          @if (emailDelayMinutes() === 0) {
+          {{ 'ref_test.results.email_info_shortly' | translate }}
+          } @else {
+          {{ 'ref_test.results.email_info' | translate : { minutes: emailDelayMinutes() } }}
+          }
+        </p>
+      </div>
+    </div>
+
+    <!-- Score Display -->
+    <div class="max-w-4xl mx-auto mb-8">
+      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-10 text-center">
+        <div
+          class="text-5xl font-bold mb-3"
+          [class]="
+            percentage() >= 80
+              ? 'text-success-600'
+              : percentage() >= 60
+              ? 'text-yellow-600'
+              : 'text-red-600'
+          "
+        >
+          {{ percentage() }}%
+        </div>
+        <div class="text-sm text-neutral-500 mb-8">
+          {{ 'ref_test.results.percentage' | translate }}
+        </div>
+
+        <div class="grid grid-cols-2 gap-8 pt-8 border-t border-neutral-200">
+          <div class="text-center">
+            <div class="text-xs text-neutral-500 mb-2">
+              {{ 'ref_test.results.question_score' | translate }}
+            </div>
+            <div class="text-2xl font-semibold text-neutral-900">
+              {{ questionScore()
+              }}<span class="text-lg text-neutral-400">/{{ questionTotal() }}</span>
+            </div>
+          </div>
+          <div class="text-center">
+            <div class="text-xs text-neutral-500 mb-2">
+              {{ 'ref_test.results.answer_score' | translate }}
+            </div>
+            <div class="text-2xl font-semibold text-neutral-900">
+              {{ answerScore() }}<span class="text-lg text-neutral-400">/{{ answerTotal() }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

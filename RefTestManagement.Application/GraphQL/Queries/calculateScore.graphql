@@ -1,0 +1,9 @@
+query calculateScore($questionIds: [ID], $selectedAnswerIds: [ID], $scoreConfigurationInput: ScoreConfigurationInput) {
+    calculateScore(questionIds: $questionIds, selectedAnswerIds: $selectedAnswerIds, scoreConfigurationInput: $scoreConfigurationInput) {
+        score
+        total
+        percentage
+        wrongQuestionsIds
+        wrongAnswerIds
+    }
+}

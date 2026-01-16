@@ -1,0 +1,30 @@
+{
+  "name": "ref-test-management",
+  "version": "0.0.0",
+  "description": "RefTests for the referees of Handball Belgium",
+  "main": "index.js",
+  "scripts": {
+    "prepare": "husky",
+    "semantic-release": "semantic-release"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/handballbelgium/ref-test-management.git"
+  },
+  "author": "Kristof Gilis <kristof.gilis@outlook.be>",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/handballbelgium/ref-test-management/issues"
+  },
+  "homepage": "https://github.com/handballbelgium/ref-test-management#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^20.2.0",
+    "@commitlint/config-conventional": "^20.2.0",
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^7.1.0",
+    "@semantic-release/git": "^10.0.1",
+    "husky": "^9.1.7",
+    "semantic-release": "^25.0.2"
+  }
+}

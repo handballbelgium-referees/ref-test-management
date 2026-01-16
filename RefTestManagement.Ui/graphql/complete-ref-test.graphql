@@ -1,0 +1,12 @@
+mutation CompleteRefTest($input: CompleteRefTestInput!) {
+  completeRefTest(input: $input) {
+    refTest {
+      id
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
+      percentage
+    }
+  }
+}

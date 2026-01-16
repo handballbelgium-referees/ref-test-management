@@ -1,0 +1,147 @@
+<div
+  class="bg-white rounded-lg border border-neutral-200 hover:border-neutral-300 hover:shadow-md transition-all p-4"
+>
+  <!-- Header -->
+  <div class="flex gap-3 items-start mb-3 pb-3 border-b border-neutral-100">
+    <input
+      type="checkbox"
+      [checked]="selected()"
+      (change)="onToggleSelection()"
+      (click)="$event.stopPropagation()"
+      class="h-5 w-5 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+    />
+    <div class="flex-1 min-w-0">
+      <h3 class="text-sm font-semibold text-neutral-900 truncate">{{ refTest().name }}</h3>
+      <p class="text-xs text-neutral-600 truncate">{{ refTest().email }}</p>
+      @if (refTest().title && isColumnVisible('title')) {
+      <p class="text-xs text-neutral-500 mt-1 truncate">{{ refTest().title?.value }}</p>
+      }
+    </div>
+    <span
+      [class]="getStatusClass(refTest().status)"
+      class="px-2 py-1 text-xs font-medium rounded-md whitespace-nowrap"
+    >
+      {{ 'ref_tests.list.status.' + refTest().status | translate }}
+    </span>
+  </div>
+
+  <!-- Details Grid -->
+  <div class="space-y-2 text-xs">
+    @if (isColumnVisible('questions')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded">
+      <span class="text-neutral-600 font-medium">{{
+        'ref_tests.list.table.questions' | translate
+      }}</span>
+      <span class="font-semibold text-neutral-900">{{ refTest().numberOfQuestions }}</span>
+    </div>
+    }
+
+    @if (isColumnVisible('maxTimeInMinutes')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded">
+      <span class="text-neutral-600 font-medium">{{
+        'ref_tests.list.table.max_time' | translate
+      }}</span>
+      <span class="font-semibold text-neutral-900">
+        @if (refTest().maxTimeInMinutes) {
+        {{ refTest().maxTimeInMinutes }} {{ 'ref_tests.list.table.minutes_short' | translate }}
+        } @else {
+        <span class="text-neutral-400">-</span>
+        }
+      </span>
+    </div>
+    }
+
+    <div class="grid grid-cols-2 gap-2">
+      @if (isColumnVisible('invitation')) {
+      <div class="flex items-center gap-1.5 py-1.5 px-2 bg-neutral-50 rounded">
+        <span class="text-neutral-600 text-[11px]">{{
+          'ref_tests.list.table.invitation' | translate
+        }}</span>
+        @if (refTest().invitationSent) {
+        <svg class="h-3.5 w-3.5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        } @else {
+        <svg class="h-3.5 w-3.5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        }
+      </div>
+      } @if (isColumnVisible('results')) {
+      <div class="flex items-center gap-1.5 py-1.5 px-2 bg-neutral-50 rounded">
+        <span class="text-neutral-600 text-[11px]">{{
+          'ref_tests.list.table.results' | translate
+        }}</span>
+        @if (refTest().resultsSent) {
+        <svg class="h-3.5 w-3.5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        } @else {
+        <svg class="h-3.5 w-3.5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        }
+      </div>
+      }
+    </div>
+
+    @if (refTest().questionScore !== null && isColumnVisible('score')) {
+    <div class="flex flex-col gap-2 py-3 px-3 bg-neutral-50 rounded">
+      <div class="flex items-center justify-between">
+        <span class="text-neutral-600 text-sm font-medium">{{
+          'ref_tests.list.table.score' | translate
+        }}</span>
+        <span
+          class="font-semibold text-lg"
+          [class]="
+            (refTest().percentage ?? 0) >= passingPercentage() ? 'text-success-600' : 'text-red-600'
+          "
+        >
+          {{ refTest().percentage }}%
+        </span>
+      </div>
+      <div class="flex items-center gap-4 text-xs text-neutral-500">
+        <span
+          >{{ 'ref_test.results.question_score_short' | translate }}:
+          {{ refTest().questionScore }}/{{ refTest().questionTotal }}</span
+        >
+        <span
+          >{{ 'ref_test.results.answer_score_short' | translate }}: {{ refTest().answerScore }}/{{
+            refTest().answerTotal
+          }}</span
+        >
+      </div>
+    </div>
+    } @if (refTest().startedAt && isColumnVisible('started')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded text-[11px]">
+      <span class="text-neutral-600">{{ 'ref_tests.list.table.started' | translate }}</span>
+      <span class="text-neutral-900 font-medium">{{
+        refTest().startedAt | localizedDate : 'short'
+      }}</span>
+    </div>
+    } @if (refTest().completedAt && isColumnVisible('completed')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded text-[11px]">
+      <span class="text-neutral-600">{{ 'ref_tests.list.table.completed' | translate }}</span>
+      <span class="text-neutral-900 font-medium">{{
+        refTest().completedAt | localizedDate : 'short'
+      }}</span>
+    </div>
+    }
+  </div>
+</div>

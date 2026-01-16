@@ -1,0 +1,43 @@
+<div class="bg-white rounded-lg p-4 border border-neutral-200 overflow-hidden">
+  <div class="flex items-center gap-2 mb-3">
+    <svg
+      class="w-5 h-5 shrink-0 text-primary-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      />
+    </svg>
+    <label class="text-sm font-semibold text-neutral-900 truncate">
+      {{ label() | translate }}
+    </label>
+  </div>
+  <div class="space-y-3">
+    <div class="min-w-0">
+      <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+        {{ 'ref_tests.list.filters.from' | translate }}
+      </label>
+      <app-datepicker
+        [value]="afterDate() ?? ''"
+        (dateChange)="onAfterChange($event)"
+        placeholder="dd/mm/yyyy"
+      />
+    </div>
+    <div class="min-w-0">
+      <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+        {{ 'ref_tests.list.filters.to' | translate }}
+      </label>
+      <app-datepicker
+        [value]="beforeDate() ?? ''"
+        (dateChange)="onBeforeChange($event)"
+        placeholder="dd/mm/yyyy"
+      />
+    </div>
+  </div>
+</div>

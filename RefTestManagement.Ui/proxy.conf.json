@@ -1,0 +1,27 @@
+{
+  "/Account": {
+    "target": "https://localhost:7039",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "Connection": "Keep-Alive"
+    }
+  },
+  "/graphql": {
+    "target": "https://localhost:7039",
+    "secure": false,
+    "changeOrigin": true,
+    "ws": true,
+    "headers": {
+      "Connection": "Keep-Alive"
+    }
+  },
+  "/callback": {
+    "target": "https://localhost:7039",
+    "secure": false,
+    "changeOrigin": true,
+    "headers": {
+      "Connection": "Keep-Alive"
+    }
+  }
+}
