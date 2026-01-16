@@ -7,7 +7,8 @@
       type="checkbox"
       [checked]="selected()"
       (change)="onToggleSelection()"
-      class="h-4 w-4 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+      (click)="$event.stopPropagation()"
+      class="h-5 w-5 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
     />
     <div class="flex-1 min-w-0">
       <h3 class="text-sm font-semibold text-neutral-900 truncate">{{ refTest().name }}</h3>

@@ -62,6 +62,7 @@ var backgroundServiceConfig = configuration.GetSection("BackgroundServiceConfigu
                               ?? new BackgroundServiceConfiguration();
 services.AddSingleton(backgroundServiceConfig);
 
+services.AddHttpClient<ILogoService, LogoService>();
 services.AddScoped<IEmailService, EmailService>();
 services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();

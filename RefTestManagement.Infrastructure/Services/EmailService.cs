@@ -13,9 +13,11 @@ public partial class EmailService(
     LanguageConfiguration languageConfiguration,
     ScoreConfiguration scoreConfiguration,
     BackgroundServiceConfiguration backgroundServiceConfiguration,
-    IRefTestResultsPdfService pdfService)
+    IRefTestResultsPdfService pdfService,
+    ILogoService logoService)
     : IEmailService
 {
+    
     public async Task SendRefTestInvitationAsync(string name, string email, string token, int numberOfQuestions,
         int maxTimeInMinutes)
     {
@@ -31,6 +33,11 @@ public partial class EmailService(
         }
 
         const string subject = "Referees Handball Belgium RefTest - Invitation";
+        var logoBase64 = await logoService.GetLogoAsBase64Async();
+        var logoTag = string.IsNullOrEmpty(logoBase64) 
+            ? "" 
+            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='max-width: 100px; height: auto; margin-bottom: 10px;' />";
+        
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -45,6 +52,7 @@ public partial class EmailService(
     <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
+            {logoTag}
             <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest</h1>
             <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Invitation</p>
         </div>
@@ -92,6 +100,11 @@ public partial class EmailService(
                 passed, resultColor, resultBgColor, resultIcon, isLast));
         }
 
+        var logoBase64 = await logoService.GetLogoAsBase64Async();
+        var logoTag = string.IsNullOrEmpty(logoBase64) 
+            ? "" 
+            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='max-width: 100px; height: auto; margin-bottom: 10px;' />";
+        
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -106,6 +119,7 @@ public partial class EmailService(
     <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
+            {logoTag}
             <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest</h1>
             <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Results</p>
         </div>
@@ -229,6 +243,11 @@ public partial class EmailService(
             languageSections.Append(BuildReportLanguageSection(langContent, nowCet, refTestCount, isLast));
         }
         
+        var logoBase64 = await logoService.GetLogoAsBase64Async();
+        var logoTag = string.IsNullOrEmpty(logoBase64) 
+            ? "" 
+            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='max-width: 100px; height: auto; margin-bottom: 10px;' />";
+        
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -243,6 +262,7 @@ public partial class EmailService(
     <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
         <!-- Header with Belgian Handball Colors -->
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
+            {logoTag}
             <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest Report</h1>
             <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium</p>
         </div>

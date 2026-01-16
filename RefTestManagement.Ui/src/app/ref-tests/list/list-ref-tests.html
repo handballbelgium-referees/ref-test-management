@@ -216,13 +216,14 @@
       <table class="min-w-full">
         <thead class="bg-neutral-100 border-b border-neutral-200">
           <tr>
-            <th class="px-4 py-3 text-left">
+            <th class="px-6 py-4 text-left">
               <input
                 type="checkbox"
                 [checked]="allSelected()"
                 [indeterminate]="someSelected()"
                 (change)="toggleSelectAll()"
-                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+                (click)="$event.stopPropagation()"
+                class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
               />
             </th>
             @if (isColumnVisible('title')) {
@@ -450,7 +451,8 @@
           [checked]="allSelected()"
           [indeterminate]="someSelected()"
           (change)="toggleSelectAll()"
-          class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+          (click)="$event.stopPropagation()"
+          class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
           [attr.aria-label]="'ref_tests.list.select_all' | translate"
         />
         <label class="text-sm font-medium text-neutral-700 cursor-pointer" (click)="toggleSelectAll()">
