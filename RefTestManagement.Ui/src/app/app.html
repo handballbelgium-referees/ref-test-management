@@ -5,18 +5,14 @@
       <!-- Logo and Title -->
       @if (showAuthUI()) {
       <a href="/" class="flex items-center gap-4 md:gap-8">
-        <img src="/URBH-KBHB-logo.svg" alt="Handball Belgium Logo" class="h-8 md:h-12 w-auto" />
-        <img src="/IHF-logo.svg" alt="IHF Logo" class="h-8 md:h-12 w-auto" />
-        <img src="/EHF-logo.svg" alt="EHF Logo" class="h-8 md:h-12 w-auto" />
+        <img src="/RefTest-logo.svg" alt="RefTest Logo" class="h-12 md:h-16 w-auto" />
         <span class="text-base lg:text-xl font-bold text-neutral-900 hidden sm:block">
           {{ 'app.title' | translate }}
         </span>
       </a>
       } @else {
       <div class="flex items-center gap-4 md:gap-8">
-        <img src="/URBH-KBHB-logo.svg" alt="Handball Belgium Logo" class="h-8 md:h-12 w-auto" />
-        <img src="/IHF-logo.svg" alt="IHF Logo" class="h-8 md:h-12 w-auto" />
-        <img src="/EHF-logo.svg" alt="EHF Logo" class="h-8 md:h-12 w-auto" />
+        <img src="/RefTest-logo.svg" alt="RefTest Logo" class="h-12 md:h-16 w-auto" />
         <span class="text-base lg:text-xl font-bold text-neutral-900 hidden sm:block">
           {{ 'app.title' | translate }}
         </span>
@@ -143,7 +139,19 @@
   </main>
 
   <!-- Footer -->
-  <footer class="bg-neutral-800 text-neutral-300">
+  <footer>
+    <!-- Federation Logos Section -->
+    <div class="bg-neutral-100 border-t border-neutral-200">
+      <div class="max-w-7xl mx-auto px-4 py-6">
+        <div class="flex items-center justify-center gap-8 md:gap-12">
+          <img src="/URBH-KBHB-logo.svg" alt="Handball Belgium Logo" class="h-10 md:h-12 w-auto" />
+          <img src="/IHF-logo.svg" alt="IHF Logo" class="h-10 md:h-12 w-auto" />
+          <img src="/EHF-logo.svg" alt="EHF Logo" class="h-10 md:h-12 w-auto" />
+        </div>
+      </div>
+    </div>
+    <!-- Copyright Section -->
+    <div class="bg-neutral-800 text-neutral-300">
     <div class="max-w-7xl mx-auto px-4 py-3">
       <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-center">
         <span class="text-neutral-300">
@@ -158,6 +166,7 @@
           v{{ version }}
         </span>
       </div>
+    </div>
     </div>
   </footer>
 </div>
