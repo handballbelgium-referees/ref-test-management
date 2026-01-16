@@ -62,7 +62,7 @@
           }}</span>
         </label>
         <label
-          class="flex md:hidden items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
+          class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
         >
           <input
             type="checkbox"
@@ -72,6 +72,17 @@
           />
           <span class="text-sm text-neutral-700">{{
             'ref_tests.list.columns.questions' | translate
+          }}</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+          <input
+            type="checkbox"
+            [checked]="isColumnVisible('maxTimeInMinutes')"
+            (change)="onToggleColumn('maxTimeInMinutes')"
+            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+          />
+          <span class="text-sm text-neutral-700">{{
+            'ref_tests.list.columns.max_time' | translate
           }}</span>
         </label>
         <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">

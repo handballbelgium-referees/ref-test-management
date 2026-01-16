@@ -423,7 +423,7 @@
           </svg>
           <div>
             <h3 class="text-green-800 font-semibold text-sm">
-              {{ 'ref_tests.create.success.created' | translate : { count: successCount() } }}
+              {{ ('ref_tests.create.success.created_' + (successCount() === 1 ? 'one' : 'other')) | translate : { count: successCount() } }}
             </h3>
             @if (failedCount() > 0) {
             <p class="text-green-700 mt-1 text-sm">

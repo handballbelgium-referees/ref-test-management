@@ -9,6 +9,8 @@ interface IPerformanceFilters {
   percentageRange?: 'low' | 'medium' | 'high' | '';
   minQuestions?: number;
   maxQuestions?: number;
+  minMaxTimeInMinutes?: number;
+  maxMaxTimeInMinutes?: number;
 }
 
 @Component({
@@ -36,6 +38,8 @@ export class PerformanceFilters {
   readonly percentageRange = input<'low' | 'medium' | 'high' | '' | undefined>();
   readonly minQuestions = input<number | undefined>();
   readonly maxQuestions = input<number | undefined>();
+  readonly minMaxTimeInMinutes = input<number | undefined>();
+  readonly maxMaxTimeInMinutes = input<number | undefined>();
 
   readonly performanceChange = output<Partial<IPerformanceFilters>>();
 
@@ -67,5 +71,13 @@ export class PerformanceFilters {
 
   protected onMaxQuestionsChange(value: string): void {
     this.performanceChange.emit({ maxQuestions: value ? Number(value) : undefined });
+  }
+
+  protected onMinMaxTimeInMinutesChange(value: string): void {
+    this.performanceChange.emit({ minMaxTimeInMinutes: value ? Number(value) : undefined });
+  }
+
+  protected onMaxMaxTimeInMinutesChange(value: string): void {
+    this.performanceChange.emit({ maxMaxTimeInMinutes: value ? Number(value) : undefined });
   }
 }

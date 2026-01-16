@@ -18,7 +18,8 @@ type SortField =
   | 'status'
   | 'numberOfQuestions'
   | 'invitationSent'
-  | 'resultsSent';
+  | 'resultsSent'
+  | 'maxTimeInMinutes';
 
 interface IRefTestFilter {
   status?: RefTestStatus;
@@ -35,6 +36,8 @@ interface IRefTestFilter {
   percentageRange?: 'low' | 'medium' | 'high';
   minQuestions?: number;
   maxQuestions?: number;
+  minMaxTimeInMinutes?: number;
+  maxMaxTimeInMinutes?: number;
   startedAfter?: string;
   startedBefore?: string;
   completedAfter?: string;
@@ -91,6 +94,8 @@ export class RefTestFiltersCard {
     percentageRange?: 'low' | 'medium' | 'high';
     minQuestions?: number;
     maxQuestions?: number;
+    minMaxTimeInMinutes?: number;
+    maxMaxTimeInMinutes?: number;
   }>();
   readonly dateRangeChange = output<{
     type: 'started' | 'completed';

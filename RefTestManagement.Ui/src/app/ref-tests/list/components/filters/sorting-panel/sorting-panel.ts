@@ -13,7 +13,8 @@ type SortField =
   | 'status'
   | 'numberOfQuestions'
   | 'invitationSent'
-  | 'resultsSent';
+  | 'resultsSent'
+  | 'maxTimeInMinutes';
 
 @Component({
   selector: 'app-sorting-panel',
