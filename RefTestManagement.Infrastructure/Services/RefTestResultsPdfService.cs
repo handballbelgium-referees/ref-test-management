@@ -70,18 +70,22 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
                         <rect width=""{size.Width}"" height=""{size.Height}"" rx=""12"" ry=""12"" fill=""#b30510""/>
                     </svg>");
 
-                layers.PrimaryLayer().Padding(20).Column(titleColumn =>
+                layers.PrimaryLayer().Padding(20).Row(titleRow =>
                 {
-                    // Add logo if available
+                    // Add logo if available - place it on the left
                     if (logo != null)
                     {
-                        titleColumn.Item().AlignCenter().Height(40).Image(logo);
-                        titleColumn.Item().PaddingTop(10);
+                        titleRow.ConstantItem(60).AlignMiddle().Height(50).Image(logo);
+                        titleRow.ConstantItem(15); // Spacing between logo and text
                     }
 
-                    titleColumn.Item().AlignCenter().Text("RefTest").FontSize(24).Bold().FontColor(Colors.White);
-                    titleColumn.Item().AlignCenter().Text(translations["resultsTitle"]).FontSize(14)
-                        .FontColor("#fecaca");
+                    // Text content on the right
+                    titleRow.RelativeItem().AlignMiddle().Column(textColumn =>
+                    {
+                        textColumn.Item().AlignLeft().Text("RefTest").FontSize(24).Bold().FontColor(Colors.White);
+                        textColumn.Item().AlignLeft().Text(translations["resultsTitle"]).FontSize(14)
+                            .FontColor("#fecaca");
+                    });
                 });
             });
 

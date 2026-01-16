@@ -36,7 +36,7 @@ public partial class EmailService(
         var logoBase64 = await logoService.GetLogoAsBase64Async();
         var logoTag = string.IsNullOrEmpty(logoBase64) 
             ? "" 
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='max-width: 100px; height: auto; margin-bottom: 10px;' />";
+            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
         
         var emailBody = $@"
 <!DOCTYPE html>
@@ -103,7 +103,7 @@ public partial class EmailService(
         var logoBase64 = await logoService.GetLogoAsBase64Async();
         var logoTag = string.IsNullOrEmpty(logoBase64) 
             ? "" 
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='max-width: 100px; height: auto; margin-bottom: 10px;' />";
+            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
         
         var emailBody = $@"
 <!DOCTYPE html>
@@ -246,7 +246,7 @@ public partial class EmailService(
         var logoBase64 = await logoService.GetLogoAsBase64Async();
         var logoTag = string.IsNullOrEmpty(logoBase64) 
             ? "" 
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='max-width: 100px; height: auto; margin-bottom: 10px;' />";
+            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
         
         var emailBody = $@"
 <!DOCTYPE html>
