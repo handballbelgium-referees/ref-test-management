@@ -19,7 +19,8 @@ const __dirname = fileURLToPath(new URL('.', import.meta.url));
 /* Configuration                                                              */
 /* -------------------------------------------------------------------------- */
 
-const svgPath = join(__dirname, '../public/URBH-KBHB-logo.svg');
+// const svgPath = join(__dirname, '../public/URBH-KBHB-logo.svg');
+const svgPath = join(__dirname, '../public/RefTest-logo.svg');
 const outputDir = join(__dirname, '../public/icons');
 
 const ICONS = [
@@ -45,6 +46,7 @@ const ICONS = [
   // Favicons
   { size: 16, name: 'favicon-16x16.png', favicon: true },
   { size: 32, name: 'favicon-32x32.png', favicon: true },
+  { size: 48, name: 'favicon.ico', favicon: true, ico: true },
 ];
 
 /* -------------------------------------------------------------------------- */
@@ -70,11 +72,11 @@ console.log('🎨 Generating white-background PWA icons...\n');
 
 async function generateIcons() {
   for (const icon of ICONS) {
-    const { size, name, maskable = false, favicon = false } = icon;
+    const { size, name, maskable = false, favicon = false, ico = false } = icon;
 
-    const padding = maskable ? 0.25 : favicon ? 0.05 : 0.1;
+    const padding = maskable ? 0.1 : favicon ? 0 : 0.02;
     const logoSize = Math.round(size * (1 - padding * 2));
-    const outputPath = join(outputDir, name);
+    const outputPath = ico ? join(__dirname, '../public', name) : join(outputDir, name);
 
     let svgContent = svgBuffer.toString();
 
@@ -99,10 +101,8 @@ async function generateIcons() {
       );
     }
 
-    // Wrap SVG only if not favicon
-    const wrappedSvg = favicon
-      ? Buffer.from(svgContent)
-      : wrapSvgWithWhiteBackground(Buffer.from(svgContent), logoSize);
+    // Use SVG content directly without background wrapper
+    const wrappedSvg = Buffer.from(svgContent);
 
     // Resize the logo
     const resizedLogo = await sharp(wrappedSvg, { density: 144 })
@@ -110,17 +110,21 @@ async function generateIcons() {
       .png()
       .toBuffer();
 
-    // Create final PNG with background
+    // Create final PNG with transparent background
     const sharpInstance = sharp({
       create: {
         width: size,
         height: size,
         channels: 4,
-        background: favicon ? 'transparent' : '#ffffff', // transparant for favicons, white otherwise
+        background: { r: 0, g: 0, b: 0, alpha: 0 }, // fully transparent
       },
     }).composite([{ input: resizedLogo, gravity: 'center' }]);
 
-    await sharpInstance.png({ compressionLevel: 9 }).toFile(outputPath);
+    if (ico) {
+      await sharpInstance.toFormat('png').toFile(outputPath);
+    } else {
+      await sharpInstance.png({ compressionLevel: 9 }).toFile(outputPath);
+    }
 
     const { size: fileSize } = statSync(outputPath);
     console.log(`✅ ${name.padEnd(32)} ${size}x${size}  ${(fileSize / 1024).toFixed(1)} KB`);
@@ -129,21 +133,6 @@ async function generateIcons() {
   console.log('\n✨ Icon generation complete');
 }
 
-function wrapSvgWithWhiteBackground(svgBuffer, size) {
-  return Buffer.from(`
-    <svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}"
-         xmlns="http://www.w3.org/2000/svg">
-      <rect width="100%" height="100%" fill="#ffffff"/>
-      <image
-        href="data:image/svg+xml;base64,${svgBuffer.toString('base64')}"
-        x="0"
-        y="0"
-        width="100%"
-        height="100%"
-        preserveAspectRatio="xMidYMid meet"/>
-    </svg>
-  `);
-}
 
 generateIcons().catch((err) => {
   console.error('❌ Icon generation failed:', err);
