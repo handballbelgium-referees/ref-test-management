@@ -227,7 +227,7 @@ public partial class EmailService(
 
     public async Task SendReportEmailAsync(string recipientEmail, byte[] excelReport, byte[] pdfReport, string timestamp, int refTestCount)
     {
-        var subject = $"RefTest Report - {DateTime.UtcNow:dd-MM-yyyy}";
+        var subject = $"Referees Handball Belgium RefTest - Report - {DateTime.UtcNow:dd-MM-yyyy}";
         
         // Convert to Central European Time
         var cetTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
@@ -264,7 +264,7 @@ public partial class EmailService(
         <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
             {logoTag}
             <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest Report</h1>
-            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium</p>
+            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Report</p>
         </div>
 
         <!-- Main Content -->
