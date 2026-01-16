@@ -136,8 +136,17 @@ public class IhfRulesQuestionsService(
         List<string> selectedAnswerIds,
         CancellationToken cancellationToken = default)
     {
+        var scoreConfigInput = new ScoreConfigurationInput
+        {
+            Correct = scoreConfiguration.Correct,
+            InCorrect = scoreConfiguration.InCorrect,
+            NotAnswered = scoreConfiguration.NotAnswered,
+            NegativeScore = scoreConfiguration.NegativeScore,
+            PenalizeGuessingStrategy = scoreConfiguration.PenalizeGuessingStrategy
+        };
+        
         var result =
-            await client.CalculateScore.ExecuteAsync(questionIds, selectedAnswerIds,
+            await client.CalculateScore.ExecuteAsync(questionIds, selectedAnswerIds, scoreConfigInput,
                 cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
