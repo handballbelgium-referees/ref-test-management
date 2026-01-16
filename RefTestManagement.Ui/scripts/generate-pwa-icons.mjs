@@ -106,7 +106,7 @@ async function generateIcons() {
 
     // Resize the logo
     const resizedLogo = await sharp(wrappedSvg, { density: 144 })
-      .resize(logoSize, logoSize, { fit: 'contain' })
+      .resize(logoSize, logoSize, { fit: 'cover', position: 'center' })
       .png()
       .toBuffer();
 
