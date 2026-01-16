@@ -19,6 +19,32 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'ref-tests/:id',
+    loadComponent: () => import('./ref-tests/detail/ref-test-detail').then((m) => m.RefTestDetail),
+    canActivate: [authGuard],
+    children: [
+      {
+        path: '',
+        redirectTo: 'details',
+        pathMatch: 'full',
+      },
+      {
+        path: 'details',
+        loadComponent: () =>
+          import('./ref-tests/detail/components/ref-test-detail-tab/ref-test-detail-tab').then(
+            (m) => m.RefTestDetailTab
+          ),
+      },
+      {
+        path: 'questions',
+        loadComponent: () =>
+          import(
+            './ref-tests/detail/components/ref-test-questions-tab/ref-test-questions-tab'
+          ).then((m) => m.RefTestQuestionsTab),
+      },
+    ],
+  },
+  {
     path: 'ref-test/:token',
     loadComponent: () =>
       import('./ref-test/welcome/ref-test-welcome').then((m) => m.RefTestWelcome),

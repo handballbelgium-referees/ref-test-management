@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { GetRefTestsQuery, RefTestStatus } from '../../../../../../../graphql/generated';
 import { LocalizedDate } from '../../../../../shared/pipes/localized-date';
@@ -13,10 +14,13 @@ type RefTestNode = NonNullable<
   templateUrl: './ref-test-mobile-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'block',
+    class: 'block cursor-pointer',
+    '(click)': 'onCardClick($event)',
   },
 })
 export class RefTestMobileCard {
+  private readonly router = inject(Router);
+
   readonly refTest = input.required<RefTestNode>();
   readonly selected = input.required<boolean>();
   readonly visibleColumns = input.required<Set<string>>();
@@ -44,5 +48,21 @@ export class RefTestMobileCard {
 
   protected onToggleSelection(): void {
     this.toggleSelection.emit(this.refTest().id);
+  }
+
+  protected onCardClick(event: MouseEvent): void {
+    // Don't navigate if clicking on checkbox
+    const target = event.target as HTMLElement;
+    if (
+      target.tagName === 'INPUT' ||
+      target.closest('input[type="checkbox"]') ||
+      event.ctrlKey ||
+      event.metaKey ||
+      event.shiftKey
+    ) {
+      return;
+    }
+
+    this.router.navigate(['/ref-tests', this.refTest().id]);
   }
 }

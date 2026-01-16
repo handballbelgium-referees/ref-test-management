@@ -13,7 +13,9 @@
     "clear": "Clear",
     "previous": "Previous",
     "next": "Next",
-    "refreshing": "Refreshing..."
+    "refreshing": "Refreshing...",
+    "yes": "Yes",
+    "no": "No"
   },
   "nav": {
     "language": "Language",
@@ -211,6 +213,43 @@
         "ref_test_count_other": "{{count}} RefTests included",
         "dismiss": "Dismiss"
       }
+    },
+    "detail": {
+      "back": "Back to List",
+      "loading": "Loading RefTest details...",
+      "no_title": "No Title",
+      "tabs_aria": "RefTest detail tabs",
+      "tabs": {
+        "details": "Details",
+        "questions": "Questions & Answers"
+      },
+      "participant_info": "Participant Information",
+      "name": "Name",
+      "email": "Email",
+      "test_info": "Test Information",
+      "title": "Title",
+      "number_of_questions": "Number of Questions",
+      "max_time": "Time Limit",
+      "minutes": "minutes",
+      "status_info": "Status Information",
+      "invitation_sent": "Invitation Sent",
+      "results_sent": "Results Sent",
+      "timeline": "Timeline",
+      "started_at": "Started At",
+      "completed_at": "Completed At",
+      "scores": "Test Scores",
+      "overall_score": "Overall Score",
+      "passed": "Passed",
+      "failed": "Failed",
+      "question_score": "Question Score",
+      "answer_score": "Answer Score",
+      "no_questions": "No Questions Available",
+      "no_questions_desc": "This RefTest has not been started yet or questions are not available.",
+      "selected": "Selected",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "answers_summary": "Answer Summary",
+      "answers_selected": "{{selected}} of {{total}} questions answered"
     },
     "create": {
       "back": "Back to Home",

@@ -13,7 +13,9 @@
     "clear": "Wissen",
     "previous": "Vorige",
     "next": "Volgende",
-    "refreshing": "Vernieuwen..."
+    "refreshing": "Vernieuwen...",
+    "yes": "Ja",
+    "no": "Nee"
   },
   "nav": {
     "language": "Taal",
@@ -211,6 +213,43 @@
         "ref_test_count_other": "{{count}} RefTests opgenomen",
         "dismiss": "Sluiten"
       }
+    },
+    "detail": {
+      "back": "Terug naar Lijst",
+      "loading": "RefTest details laden...",
+      "no_title": "Geen Titel",
+      "tabs_aria": "RefTest detail tabbladen",
+      "tabs": {
+        "details": "Details",
+        "questions": "Vragen & Antwoorden"
+      },
+      "participant_info": "Deelnemer Informatie",
+      "name": "Naam",
+      "email": "E-mail",
+      "test_info": "Test Informatie",
+      "title": "Titel",
+      "number_of_questions": "Aantal Vragen",
+      "max_time": "Tijdslimiet",
+      "minutes": "minuten",
+      "status_info": "Status Informatie",
+      "invitation_sent": "Uitnodiging Verzonden",
+      "results_sent": "Resultaten Verzonden",
+      "timeline": "Tijdlijn",
+      "started_at": "Gestart Op",
+      "completed_at": "Voltooid Op",
+      "scores": "Test Scores",
+      "overall_score": "Totaalscore",
+      "passed": "Geslaagd",
+      "failed": "Niet Geslaagd",
+      "question_score": "Vraag Score",
+      "answer_score": "Antwoord Score",
+      "no_questions": "Geen Vragen Beschikbaar",
+      "no_questions_desc": "Deze RefTest is nog niet gestart of vragen zijn niet beschikbaar.",
+      "selected": "Geselecteerd",
+      "correct": "Juist",
+      "incorrect": "Onjuist",
+      "answers_summary": "Antwoorden Samenvatting",
+      "answers_selected": "{{selected}} van {{total}} vragen beantwoord"
     },
     "create": {
       "back": "Terug naar Home",

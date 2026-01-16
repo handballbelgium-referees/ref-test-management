@@ -2,4 +2,4 @@
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Models;
 
-public record DeleteRefTestsInput([property: ID<RefTest>] List<Guid> Ids);
+public record DeleteRefTestsInput([ID<RefTest>] List<Guid> Ids);

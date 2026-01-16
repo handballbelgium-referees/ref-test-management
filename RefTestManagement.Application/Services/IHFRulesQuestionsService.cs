@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 
 namespace Handball.Belgium.RefTestManagement.Application.Services;
@@ -24,7 +25,8 @@ public interface IIhfRulesQuestionsService
 
 public class IhfRulesQuestionsService(
     IIHFRulesQuestionsClient client,
-    LanguageConfiguration languageConfiguration)
+    LanguageConfiguration languageConfiguration,
+    ScoreConfiguration scoreConfiguration)
     : IIhfRulesQuestionsService
 {
     public async Task<List<string>> GetRandomQuestionIdsAsync(int count,

@@ -13,7 +13,9 @@
     "clear": "Löschen",
     "previous": "Zurück",
     "next": "Weiter",
-    "refreshing": "Aktualisierung..."
+    "refreshing": "Aktualisierung...",
+    "yes": "Ja",
+    "no": "Nein"
   },
   "nav": {
     "language": "Sprache",
@@ -215,6 +217,43 @@
         "ref_test_count_other": "{{count}} RefTests enthalten",
         "dismiss": "Schließen"
       }
+    },
+    "detail": {
+      "back": "Zurück zur Liste",
+      "loading": "Lade RefTest-Details...",
+      "no_title": "Kein Titel",
+      "tabs_aria": "RefTest-Detail-Registerkarten",
+      "tabs": {
+        "details": "Details",
+        "questions": "Fragen & Antworten"
+      },
+      "participant_info": "Teilnehmerinformationen",
+      "name": "Name",
+      "email": "E-Mail",
+      "test_info": "Testinformationen",
+      "title": "Titel",
+      "number_of_questions": "Anzahl der Fragen",
+      "max_time": "Zeitlimit",
+      "minutes": "Minuten",
+      "status_info": "Statusinformationen",
+      "invitation_sent": "Einladung Gesendet",
+      "results_sent": "Ergebnisse Gesendet",
+      "timeline": "Zeitachse",
+      "started_at": "Gestartet Am",
+      "completed_at": "Abgeschlossen Am",
+      "scores": "Testergebnisse",
+      "overall_score": "Gesamtpunktzahl",
+      "passed": "Bestanden",
+      "failed": "Nicht Bestanden",
+      "question_score": "Fragenpunktzahl",
+      "answer_score": "Antwortpunktzahl",
+      "no_questions": "Keine Fragen Verfügbar",
+      "no_questions_desc": "Dieser RefTest wurde noch nicht gestartet oder Fragen sind nicht verfügbar.",
+      "selected": "Ausgewählt",
+      "correct": "Richtig",
+      "incorrect": "Falsch",
+      "answers_summary": "Antworten Zusammenfassung",
+      "answers_selected": "{{selected}} von {{total}} Fragen beantwortet"
     },
     "create": {
       "back": "Zurück zur Startseite",

@@ -13,7 +13,9 @@
     "clear": "Effacer",
     "previous": "Précédent",
     "next": "Suivant",
-    "refreshing": "Actualisation..."
+    "refreshing": "Actualisation...",
+    "yes": "Oui",
+    "no": "Non"
   },
   "nav": {
     "language": "Langue",
@@ -211,6 +213,43 @@
         "ref_test_count_other": "{{count}} RefTests incluses",
         "dismiss": "Fermer"
       }
+    },
+    "detail": {
+      "back": "Retour à la liste",
+      "loading": "Chargement des détails du RefTest...",
+      "no_title": "Aucun Titre",
+      "tabs_aria": "Onglets de détails du RefTest",
+      "tabs": {
+        "details": "Détails",
+        "questions": "Questions & Réponses"
+      },
+      "participant_info": "Informations sur le Participant",
+      "name": "Nom",
+      "email": "E-mail",
+      "test_info": "Informations sur le Test",
+      "title": "Titre",
+      "number_of_questions": "Nombre de Questions",
+      "max_time": "Limite de Temps",
+      "minutes": "minutes",
+      "status_info": "Informations sur le Statut",
+      "invitation_sent": "Invitation Envoyée",
+      "results_sent": "Résultats Envoyés",
+      "timeline": "Chronologie",
+      "started_at": "Commencé Le",
+      "completed_at": "Terminé Le",
+      "scores": "Scores du Test",
+      "overall_score": "Score Global",
+      "passed": "Réussi",
+      "failed": "Échoué",
+      "question_score": "Score des Questions",
+      "answer_score": "Score des Réponses",
+      "no_questions": "Aucune Question Disponible",
+      "no_questions_desc": "Ce RefTest n'a pas encore été commencé ou les questions ne sont pas disponibles.",
+      "selected": "Sélectionné",
+      "correct": "Correct",
+      "incorrect": "Incorrect",
+      "answers_summary": "Résumé des Réponses",
+      "answers_selected": "{{selected}} sur {{total}} questions répondues"
     },
     "create": {
       "back": "Retour à l'accueil",

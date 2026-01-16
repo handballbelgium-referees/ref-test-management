@@ -1,4 +1,5 @@
-﻿using Handball.Belgium.RefTestManagement.Application.Models;
+﻿using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -77,6 +78,16 @@ public static class RefTestQueries
     [UseSorting]
     public static IQueryable<RefTest> GetRefTests(RefTestManagementContext context)
         => context.RefTests;
+    
+    /// <summary>
+    /// Get a RefTest by id
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="dataLoader"></param>
+    /// <returns></returns>
+    [Authorize]
+    public static Task<RefTest?> GetRefTest([ID<RefTest>]Guid id, RefTestByIdDataLoader dataLoader)
+        => dataLoader.LoadAsync(id);
 
     [Authorize]
     public static Task<List<Question>> SearchQuestionsByNumber(string? number,

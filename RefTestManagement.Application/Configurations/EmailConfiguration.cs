@@ -1,4 +1,4 @@
-﻿namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
+﻿namespace Handball.Belgium.RefTestManagement.Application.Configurations;
 
 public class EmailConfiguration
 {

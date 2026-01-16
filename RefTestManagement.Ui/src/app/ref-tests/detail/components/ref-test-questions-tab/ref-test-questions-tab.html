@@ -1,0 +1,208 @@
+<div class="p-6 sm:p-8">
+  @if (refTest(); as test) { @if (!hasQuestions()) {
+  <div class="text-center py-12">
+    <svg
+      class="mx-auto h-12 w-12 text-neutral-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+    <h3 class="mt-4 text-lg font-medium text-neutral-900">
+      {{ 'ref_tests.detail.no_questions' | translate }}
+    </h3>
+    <p class="mt-2 text-sm text-neutral-600">
+      {{ 'ref_tests.detail.no_questions_desc' | translate }}
+    </p>
+  </div>
+  } @else {
+  <div class="space-y-6">
+    @for (question of test.questions ?? []; track question?.id; let questionIdx = $index) { @if
+    (question) {
+    <div class="bg-neutral-50 rounded-lg border border-neutral-200 overflow-hidden">
+      <!-- Question Header -->
+      <div class="bg-white border-b border-neutral-200 px-6 py-4">
+        <div class="flex items-start gap-3">
+          @if (question.number) {
+          <div class="shrink-0 px-3 py-1 bg-primary-600 text-white rounded-md font-bold text-sm">
+            {{ question.number }}
+          </div>
+          } @else {
+          <div
+            class="shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-semibold text-sm"
+          >
+            {{ questionIdx + 1 }}
+          </div>
+          }
+          <div class="flex-1 min-w-0">
+            @if (question.phrase) {
+            <p class="text-base font-medium text-neutral-900 whitespace-pre-wrap">
+              {{ question.phrase | appTranslation : currentLanguage() }}
+            </p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Answers -->
+      <div class="px-6 py-4">
+        <div class="space-y-3">
+          @for (answer of question.answers; track answer.id) {
+          <div
+            [class]="
+              isAnswerSelected(answer.id)
+                ? answer.isCorrect
+                  ? 'bg-green-50 border-green-300 ring-2 ring-green-500'
+                  : 'bg-red-50 border-red-300 ring-2 ring-red-500'
+                : answer.isCorrect
+                ? 'bg-green-50 border-green-200'
+                : 'bg-white border-neutral-200'
+            "
+            class="rounded-lg border p-4 transition-all"
+          >
+            <div class="flex items-start gap-3">
+              <!-- Radio Button -->
+              <div class="shrink-0 mt-0.5">
+                @if (isAnswerSelected(answer.id)) {
+                <div
+                  [class]="
+                    answer.isCorrect ? 'bg-green-600 border-green-600' : 'bg-red-600 border-red-600'
+                  "
+                  class="w-5 h-5 rounded-full border-2 flex items-center justify-center"
+                >
+                  <div class="w-2 h-2 rounded-full bg-white"></div>
+                </div>
+                } @else if (answer.isCorrect) {
+                <div class="w-5 h-5 rounded-full border-2 border-green-600 bg-white"></div>
+                } @else {
+                <div class="w-5 h-5 rounded-full border-2 border-neutral-300 bg-white"></div>
+                }
+              </div>
+
+              <!-- Answer Text -->
+              <div class="flex-1 min-w-0">
+                @if (answer.phrase) {
+                <p
+                  [class]="
+                    isAnswerSelected(answer.id)
+                      ? answer.isCorrect
+                        ? 'text-green-900 font-medium'
+                        : 'text-red-900 font-medium'
+                      : answer.isCorrect
+                      ? 'text-green-800 font-medium'
+                      : 'text-neutral-700'
+                  "
+                  class="text-sm whitespace-pre-wrap"
+                >
+                  @if (answer.number) {
+                  <span class="font-bold">{{ answer.number }})</span>
+                  }
+                  {{ answer.phrase | appTranslation : currentLanguage() }}
+                </p>
+                }
+              </div>
+
+              <!-- Status Badges -->
+              <div class="shrink-0 flex flex-col gap-1">
+                @if (isAnswerSelected(answer.id)) {
+                <span
+                  [class]="answer.isCorrect ? 'bg-green-600 text-white' : 'bg-red-600 text-white'"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                >
+                  <svg
+                    class="w-3 h-3 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    @if (answer.isCorrect) {
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                    } @else {
+                    <path
+                      fill-rule="evenodd"
+                      d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                      clip-rule="evenodd"
+                    />
+                    }
+                  </svg>
+                  {{
+                    (answer.isCorrect ? 'ref_tests.detail.correct' : 'ref_tests.detail.incorrect')
+                      | translate
+                  }}
+                </span>
+                } @else if (answer.isCorrect) {
+                <span
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                >
+                  <svg
+                    class="w-3 h-3 mr-1"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                    aria-hidden="true"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  {{ 'ref_tests.detail.correct' | translate }}
+                </span>
+                }
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+      </div>
+    </div>
+    } }
+  </div>
+
+  <!-- Summary -->
+  <div class="mt-6 bg-primary-50 rounded-lg p-6 border border-primary-200">
+    <div class="flex items-center gap-3">
+      <svg
+        class="w-6 h-6 text-primary-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+        />
+      </svg>
+      <div>
+        <p class="text-sm font-medium text-neutral-900">
+          {{ 'ref_tests.detail.answers_summary' | translate }}
+        </p>
+        <p class="text-sm text-neutral-600 mt-1">
+          {{
+            'ref_tests.detail.answers_selected'
+              | translate
+                : {
+                    selected: answeredQuestionsCount(),
+                    total: test.numberOfQuestions
+                  }
+          }}
+        </p>
+      </div>
+    </div>
+  </div>
+  } }
+</div>
