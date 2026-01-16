@@ -16,6 +16,7 @@ export class PwaUpdate {
   private readonly _swUpdate = inject(SwUpdate);
   private readonly _toastService = inject(Toast);
   private readonly _translateService = inject(TranslateService);
+  private _updateNotificationShown = false;
 
   /**
    * Setup PWA update checking with periodic checks and version update notifications
@@ -40,7 +41,9 @@ export class PwaUpdate {
 
     // Listen for available updates
     this._swUpdate.versionUpdates.pipe(takeUntilDestroyed(destroyRef)).subscribe((event) => {
-      if (event.type === 'VERSION_READY') {
+      if (event.type === 'VERSION_READY' && !this._updateNotificationShown) {
+        this._updateNotificationShown = true;
+
         // Show update notification with action button
         this._toastService.show(this._translateService.instant('pwa.update_available'), {
           type: 'info',
