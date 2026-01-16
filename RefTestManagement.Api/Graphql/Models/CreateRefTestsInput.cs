@@ -16,4 +16,4 @@ public record CreateBulkRefTestsInput(
 public record User(string FirstName, string LastName, string Email);
 
 [OneOf]
-public record Title([ID<RefTestTitle>]Guid? Id, string? Name);
+public record Title([property: ID<RefTestTitle>]Guid? Id, string? Name);

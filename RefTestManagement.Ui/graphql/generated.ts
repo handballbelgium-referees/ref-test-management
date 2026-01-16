@@ -582,7 +582,12 @@ export type SaveRefTestProgressPayload = {
 
 export type ScoreConfiguration = {
   __typename?: 'ScoreConfiguration';
+  correct: Scalars['Int']['output'];
+  inCorrect: Scalars['Int']['output'];
+  negativeScore: Scalars['Boolean']['output'];
+  notAnswered: Scalars['Int']['output'];
   passingPercentage: Scalars['Int']['output'];
+  penalizeGuessingStrategy: Scalars['Boolean']['output'];
 };
 
 export type SendInvitationError = {

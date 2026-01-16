@@ -2,4 +2,4 @@
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Models;
 
-public record SendInvitationsInput([ID<RefTest>] List<Guid> Ids);
+public record SendInvitationsInput([property: ID<RefTest>] List<Guid> Ids);
