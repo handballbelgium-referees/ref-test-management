@@ -7,7 +7,8 @@
       type="checkbox"
       [checked]="selected()"
       (change)="onToggleSelection()"
-      class="h-4 w-4 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+      (click)="$event.stopPropagation()"
+      class="h-5 w-5 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
     />
     <div class="flex-1 min-w-0">
       <h3 class="text-sm font-semibold text-neutral-900 truncate">{{ refTest().name }}</h3>
@@ -57,7 +58,7 @@
           'ref_tests.list.table.invitation' | translate
         }}</span>
         @if (refTest().invitationSent) {
-        <svg class="h-3.5 w-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="h-3.5 w-3.5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"
             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -80,7 +81,7 @@
           'ref_tests.list.table.results' | translate
         }}</span>
         @if (refTest().resultsSent) {
-        <svg class="h-3.5 w-3.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+        <svg class="h-3.5 w-3.5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
           <path
             fill-rule="evenodd"
             d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
@@ -109,7 +110,7 @@
         <span
           class="font-semibold text-lg"
           [class]="
-            (refTest().percentage ?? 0) >= passingPercentage() ? 'text-green-600' : 'text-red-600'
+            (refTest().percentage ?? 0) >= passingPercentage() ? 'text-success-600' : 'text-red-600'
           "
         >
           {{ refTest().percentage }}%

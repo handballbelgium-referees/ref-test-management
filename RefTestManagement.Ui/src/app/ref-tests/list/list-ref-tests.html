@@ -60,14 +60,14 @@
     @if (reportResult()) {
     <div
       [class]="
-        reportResult()!.success ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200'
+        reportResult()!.success ? 'bg-success-50 border-success-200' : 'bg-red-50 border-red-200'
       "
       class="mb-4 rounded-lg border p-4 flex items-start gap-3"
       role="alert"
     >
       @if (reportResult()!.success) {
       <svg
-        class="w-5 h-5 text-green-600 shrink-0 mt-0.5"
+        class="w-5 h-5 text-success-600 shrink-0 mt-0.5"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -98,7 +98,7 @@
       }
       <div class="flex-1 min-w-0">
         <p
-          [class]="reportResult()!.success ? 'text-green-800' : 'text-red-800'"
+          [class]="reportResult()!.success ? 'text-success-800' : 'text-red-800'"
           class="text-sm font-medium"
         >
           {{
@@ -110,7 +110,7 @@
         </p>
         @if (reportResult()!.refTestCount > 0) {
         <p
-          [class]="reportResult()!.success ? 'text-green-700' : 'text-red-700'"
+          [class]="reportResult()!.success ? 'text-success-700' : 'text-red-700'"
           class="text-xs mt-1"
         >
           {{
@@ -125,11 +125,11 @@
         (click)="dismissReportResult()"
         [class]="
           reportResult()!.success
-            ? 'text-green-600 hover:text-green-800'
+            ? 'text-success-600 hover:text-success-800'
             : 'text-red-600 hover:text-red-800'
         "
         class="shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded"
-        [class.focus:ring-green-500]="reportResult()!.success"
+        [class.focus:ring-success-500]="reportResult()!.success"
         [class.focus:ring-red-500]="!reportResult()!.success"
         [attr.aria-label]="'ref_tests.list.report.dismiss' | translate"
         title="{{ 'ref_tests.list.report.dismiss' | translate }}"
@@ -216,13 +216,14 @@
       <table class="min-w-full">
         <thead class="bg-neutral-100 border-b border-neutral-200">
           <tr>
-            <th class="px-4 py-3 text-left">
+            <th class="px-6 py-4 text-left">
               <input
                 type="checkbox"
                 [checked]="allSelected()"
                 [indeterminate]="someSelected()"
                 (change)="toggleSelectAll()"
-                class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+                (click)="$event.stopPropagation()"
+                class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
               />
             </th>
             @if (isColumnVisible('title')) {
@@ -450,7 +451,8 @@
           [checked]="allSelected()"
           [indeterminate]="someSelected()"
           (change)="toggleSelectAll()"
-          class="h-4 w-4 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+          (click)="$event.stopPropagation()"
+          class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
           [attr.aria-label]="'ref_tests.list.select_all' | translate"
         />
         <label class="text-sm font-medium text-neutral-700 cursor-pointer" (click)="toggleSelectAll()">

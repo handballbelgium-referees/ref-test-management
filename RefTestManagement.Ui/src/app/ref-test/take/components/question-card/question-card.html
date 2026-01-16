@@ -3,7 +3,7 @@
     <div class="text-sm text-neutral-500 mb-2">
       {{ 'ref_test.question' | translate }} {{ currentIndex() + 1 }} / {{ totalQuestions() }}
     </div>
-    <h2 class="text-xl md:text-2xl font-bold text-neutral-900 wrap-break-word">
+    <h2 class="text-lg font-bold text-neutral-900 wrap-break-word">
       {{ question().phrase | appTranslation : currentLanguage() }}
     </h2>
   </div>

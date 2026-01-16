@@ -4,12 +4,12 @@
       <div
         class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
         [class]="
-          percentage() >= 80 ? 'bg-green-100' : percentage() >= 60 ? 'bg-yellow-100' : 'bg-red-100'
+          percentage() >= 80 ? 'bg-success-100' : percentage() >= 60 ? 'bg-yellow-100' : 'bg-red-100'
         "
       >
         <svg
           class="w-10 h-10"
-          [class]="percentage() >= passingPercentage() ? 'text-green-600' : 'text-red-600'"
+          [class]="percentage() >= passingPercentage() ? 'text-success-600' : 'text-red-600'"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -70,7 +70,7 @@
           class="text-5xl font-bold mb-3"
           [class]="
             percentage() >= 80
-              ? 'text-green-600'
+              ? 'text-success-600'
               : percentage() >= 60
               ? 'text-yellow-600'
               : 'text-red-600'

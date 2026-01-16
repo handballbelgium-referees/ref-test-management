@@ -15,6 +15,7 @@ import {
   RouterOutlet,
 } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { onlyCompleteData } from 'apollo-angular';
 import { catchError, map, of, switchMap } from 'rxjs';
 import { GetRefTestByIdGQL, RefTestStatus } from '../../../../graphql/generated';
 import { RefTestDetailDataService } from './services/ref-test-detail-data.service';
@@ -44,7 +45,8 @@ export class RefTestDetail {
           return of(null);
         }
 
-        return this.getRefTestByIdGQL.fetch({ variables: { id } }).pipe(
+        return this.getRefTestByIdGQL.watch({ variables: { id } }).valueChanges.pipe(
+          onlyCompleteData(),
           map((result) => {
             if (!result.data?.refTest) {
               this.router.navigate(['/ref-tests']);
@@ -78,7 +80,7 @@ export class RefTestDetail {
   protected getStatusClass(status: RefTestStatus): string {
     switch (status) {
       case RefTestStatus.Completed:
-        return 'bg-green-100 text-green-800';
+        return 'bg-success-100 text-success-800';
       case RefTestStatus.InProgress:
         return 'bg-blue-100 text-blue-800';
       case RefTestStatus.Expired:
