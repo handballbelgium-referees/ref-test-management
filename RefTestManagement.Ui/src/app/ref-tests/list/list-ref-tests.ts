@@ -808,7 +808,7 @@ export class ListRefTests {
       case RefTestStatus.InProgress:
         return 'bg-blue-100 text-blue-800';
       case RefTestStatus.Completed:
-        return 'bg-green-100 text-green-800';
+        return 'bg-success-100 text-success-800';
       case RefTestStatus.Expired:
         return 'bg-red-100 text-red-800';
       default:

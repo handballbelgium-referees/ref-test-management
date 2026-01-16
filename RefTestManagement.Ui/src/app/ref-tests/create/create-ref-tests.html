@@ -406,10 +406,10 @@
 
       <!-- Success/Error Messages -->
       @if (successCount() > 0) {
-      <div #messagesContainer class="bg-green-50 border border-green-200 rounded-xl p-4 mt-6">
+      <div #messagesContainer class="bg-success-50 border border-success-200 rounded-xl p-4 mt-6">
         <div class="flex items-start">
           <svg
-            class="w-5 h-5 text-green-600 mr-3 shrink-0 mt-0.5"
+            class="w-5 h-5 text-success-600 mr-3 shrink-0 mt-0.5"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -422,11 +422,11 @@
             />
           </svg>
           <div>
-            <h3 class="text-green-800 font-semibold text-sm">
+            <h3 class="text-success-800 font-semibold text-sm">
               {{ ('ref_tests.create.success.created_' + (successCount() === 1 ? 'one' : 'other')) | translate : { count: successCount() } }}
             </h3>
             @if (failedCount() > 0) {
-            <p class="text-green-700 mt-1 text-sm">
+            <p class="text-success-700 mt-1 text-sm">
               {{ 'ref_tests.create.success.failed_info' | translate : { count: failedCount() } }}
             </p>
             }

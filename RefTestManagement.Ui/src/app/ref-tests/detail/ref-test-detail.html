@@ -1,46 +1,21 @@
 <!-- Hero Section -->
-<div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-8 px-4 sm:px-6 lg:px-8">
+<div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-6 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto">
-    <div class="flex items-center gap-4 mb-4">
-      <button
-        type="button"
-        (click)="navigateBack()"
-        class="flex items-center gap-2 text-primary-100 hover:text-white transition-colors focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-primary-600 rounded-lg px-3 py-2"
-        [attr.aria-label]="'ref_tests.detail.back' | translate"
-      >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M10 19l-7-7m0 0l7-7m-7 7h18"
-          />
-        </svg>
-        <span class="font-medium">{{ 'ref_tests.detail.back' | translate }}</span>
-      </button>
-    </div>
-
     @if (loading()) {
     <div class="animate-pulse">
-      <div class="h-8 bg-primary-500 rounded w-1/3 mb-2"></div>
-      <div class="h-4 bg-primary-500 rounded w-1/4"></div>
+      <div class="h-8 bg-white/20 rounded w-1/3 mb-2"></div>
+      <div class="h-4 bg-white/20 rounded w-1/4"></div>
     </div>
     } @else if (refTestData()) {
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div>
-        <h1 class="text-3xl md:text-4xl font-bold mb-2">
+      <div class="flex-1 min-w-0">
+        <h1 class="text-2xl md:text-3xl font-bold mb-3 text-white">
           {{ refTestData()!.title?.value || 'ref_tests.detail.no_title' | translate }}
         </h1>
-        <div class="flex flex-wrap items-center gap-3 text-primary-100">
+        <div class="flex flex-wrap items-center gap-4 text-sm text-white/90">
           <div class="flex items-center gap-2">
             <svg
-              class="w-5 h-5"
+              class="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -55,10 +30,10 @@
             </svg>
             <span class="font-medium">{{ refTestData()!.name }}</span>
           </div>
-          <span class="text-primary-200">•</span>
+          <span class="text-white/50">•</span>
           <div class="flex items-center gap-2">
             <svg
-              class="w-5 h-5"
+              class="w-4 h-4"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -75,10 +50,10 @@
           </div>
         </div>
       </div>
-      <div>
+      <div class="shrink-0">
         <span
           [class]="getStatusClass(refTestData()!.status)"
-          class="px-3 py-2 inline-flex text-sm font-semibold rounded-lg"
+          class="px-3 py-2 inline-flex text-sm font-semibold rounded-lg whitespace-nowrap"
         >
           {{ 'ref_tests.list.status.' + refTestData()!.status | translate }}
         </span>
@@ -98,6 +73,32 @@
     <p class="text-neutral-600">{{ 'ref_tests.detail.loading' | translate }}</p>
   </div>
   } @else if (refTestData()) {
+  <!-- Back Button -->
+  <div class="mb-6">
+    <button
+      type="button"
+      (click)="navigateBack()"
+      class="group inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-lg px-3 py-2 -ml-3"
+      [attr.aria-label]="'ref_tests.detail.back' | translate"
+    >
+      <svg
+        class="w-5 h-5 transition-transform group-hover:-translate-x-1"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 19l-7-7m0 0l7-7m-7 7h18"
+        />
+      </svg>
+      <span class="font-medium">{{ 'ref_tests.detail.back' | translate }}</span>
+    </button>
+  </div>
+
   <!-- Tabs Navigation -->
   <div class="bg-white rounded-t-xl shadow-sm border border-neutral-200 border-b-0">
     <div class="border-b border-neutral-200">
@@ -108,9 +109,9 @@
       >
         <a
           [routerLink]="['details']"
-          routerLinkActive="border-primary-600 text-primary-600"
+          routerLinkActive="!border-primary-600 !text-primary-600"
           [routerLinkActiveOptions]="{ exact: false }"
-          class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
+          class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
           role="tab"
         >
           <div class="flex items-center justify-center gap-2">
@@ -134,9 +135,9 @@
 
         <a
           [routerLink]="['questions']"
-          routerLinkActive="border-primary-600 text-primary-600"
+          routerLinkActive="!border-primary-600 !text-primary-600"
           [routerLinkActiveOptions]="{ exact: false }"
-          class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
+          class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
           role="tab"
         >
           <div class="flex items-center justify-center gap-2">

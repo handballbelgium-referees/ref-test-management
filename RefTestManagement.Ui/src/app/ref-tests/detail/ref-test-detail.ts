@@ -78,7 +78,7 @@ export class RefTestDetail {
   protected getStatusClass(status: RefTestStatus): string {
     switch (status) {
       case RefTestStatus.Completed:
-        return 'bg-green-100 text-green-800';
+        return 'bg-success-100 text-success-800';
       case RefTestStatus.InProgress:
         return 'bg-blue-100 text-blue-800';
       case RefTestStatus.Expired:

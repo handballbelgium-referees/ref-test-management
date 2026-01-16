@@ -112,7 +112,7 @@
           <dd class="mt-1 flex items-center gap-2">
             @if (test.invitationSent) {
             <svg
-              class="h-5 w-5 text-green-600"
+              class="h-5 w-5 text-success-600"
               fill="currentColor"
               viewBox="0 0 20 20"
               aria-hidden="true"
@@ -123,7 +123,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span class="text-sm text-green-800 font-medium">{{ 'common.yes' | translate }}</span>
+            <span class="text-sm text-success-800 font-medium">{{ 'common.yes' | translate }}</span>
             } @else {
             <svg
               class="h-5 w-5 text-neutral-400"
@@ -148,7 +148,7 @@
           <dd class="mt-1 flex items-center gap-2">
             @if (test.resultsSent) {
             <svg
-              class="h-5 w-5 text-green-600"
+              class="h-5 w-5 text-success-600"
               fill="currentColor"
               viewBox="0 0 20 20"
               aria-hidden="true"
@@ -159,7 +159,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span class="text-sm text-green-800 font-medium">{{ 'common.yes' | translate }}</span>
+            <span class="text-sm text-success-800 font-medium">{{ 'common.yes' | translate }}</span>
             } @else {
             <svg
               class="h-5 w-5 text-neutral-400"
@@ -206,7 +206,7 @@
           </dt>
           <dd class="mt-1 text-sm text-neutral-900">
             @if (test.startedAt) {
-            {{ test.startedAt | localizedDate }}
+            {{ test.startedAt | localizedDate: 'short' }}
             } @else {
             <span class="text-neutral-400">-</span>
             }
@@ -218,7 +218,7 @@
           </dt>
           <dd class="mt-1 text-sm text-neutral-900">
             @if (test.completedAt) {
-            {{ test.completedAt | localizedDate }}
+            {{ test.completedAt | localizedDate: 'short' }}
             } @else {
             <span class="text-neutral-400">-</span>
             }
@@ -231,7 +231,7 @@
   <!-- Scores Section -->
   @if (hasScore()) {
   <div
-    class="mt-6 bg-linear-to-r from-primary-50 to-primary-100 rounded-lg p-6 border border-primary-200"
+    class="mt-6 bg-neutral-50 rounded-lg p-6 border border-neutral-200"
   >
     <h2 class="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
       <svg
@@ -257,13 +257,13 @@
         <span class="text-sm font-medium text-neutral-700">{{
           'ref_tests.detail.overall_score' | translate
         }}</span>
-        <span [class]="isPassed() ? 'text-green-700' : 'text-red-700'" class="text-2xl font-bold">
+        <span [class]="isPassed() ? 'text-success-700' : 'text-red-700'" class="text-2xl font-bold">
           {{ test.percentage }}%
         </span>
       </div>
       <div class="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
         <div
-          [class]="isPassed() ? 'bg-green-600' : 'bg-red-600'"
+          [class]="isPassed() ? 'bg-success-600' : 'bg-red-600'"
           [style.width.%]="test.percentage"
           class="h-3 rounded-full transition-all duration-500"
         ></div>
@@ -271,7 +271,7 @@
       <div class="mt-2 flex items-center gap-2">
         @if (isPassed()) {
         <svg
-          class="w-5 h-5 text-green-600"
+          class="w-5 h-5 text-success-600"
           fill="currentColor"
           viewBox="0 0 20 20"
           aria-hidden="true"
@@ -282,7 +282,7 @@
             clip-rule="evenodd"
           />
         </svg>
-        <span class="text-sm font-medium text-green-700">{{
+        <span class="text-sm font-medium text-success-700">{{
           'ref_tests.detail.passed' | translate
         }}</span>
         } @else {
@@ -307,7 +307,7 @@
 
     <!-- Detailed Scores -->
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      <div class="bg-white rounded-lg p-4 border border-primary-200">
+      <div class="bg-white rounded-lg p-4 border border-neutral-200">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-neutral-600">{{
             'ref_tests.detail.question_score' | translate
@@ -324,7 +324,7 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-lg p-4 border border-primary-200">
+      <div class="bg-white rounded-lg p-4 border border-neutral-200">
         <div class="flex items-center justify-between mb-2">
           <span class="text-sm font-medium text-neutral-600">{{
             'ref_tests.detail.answer_score' | translate
