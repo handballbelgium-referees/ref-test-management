@@ -9,7 +9,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 public class RefTestReportService(
     ILogger<RefTestReportService> logger,
     IEmailService emailService,
-    LanguageConfiguration languageConfiguration)
+    LanguageConfiguration languageConfiguration,
+    ILogoService logoService)
     : IRefTestReportService
 {
     public async Task SendReportAsync(List<RefTestReportData> refTests, string[] recipientEmails,
@@ -21,8 +22,11 @@ public class RefTestReportService(
             return;
         }
 
+        // Download logo once for all PDFs
+        var logo = await logoService.GetLogoBytesAsync();
+
         var excelReport = GenerateExcelReportAsync(refTests, languageConfiguration.EnabledLanguages);
-        var pdfReport = GeneratePdfReportAsync(refTests, languageConfiguration.EnabledLanguages);
+        var pdfReport = GeneratePdfReportAsync(refTests, languageConfiguration.EnabledLanguages, logo);
 
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
 
@@ -400,7 +404,7 @@ public class RefTestReportService(
         return $"{formula}{closingParens}";
     }
 
-    private static byte[] GeneratePdfReportAsync(List<RefTestReportData> refTestReportDataList, string[] enabledLanguages)
+    private static byte[] GeneratePdfReportAsync(List<RefTestReportData> refTestReportDataList, string[] enabledLanguages, byte[]? logo)
     {
         var languageNames = new Dictionary<string, string>
         {
@@ -487,6 +491,13 @@ public class RefTestReportService(
                         .Padding(15)
                         .Row(row =>
                         {
+                            // Add logo if available
+                            if (logo != null)
+                            {
+                                row.ConstantItem(60).AlignMiddle().Height(50).Image(logo);
+                                row.ConstantItem(15); // Spacing between logo and text
+                            }
+
                             row.RelativeItem().Column(col =>
                             {
                                 col.Item().Text(trans["Report"]).FontSize(24).FontColor(Colors.White).Bold();
