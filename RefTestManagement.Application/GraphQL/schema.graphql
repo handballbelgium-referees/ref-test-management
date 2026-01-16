@@ -27,7 +27,7 @@ type Query {
   "IHF rules by ids"
   rulesById(ids: [ID!]!): [Rule]
   "Count the score for your questions based on the given answers"
-  calculateScore("Answered questions" questionIds: [ID] "Selected answers" selectedAnswerIds: [ID]): Score
+  calculateScore("Answered questions" questionIds: [ID] "Selected answers" selectedAnswerIds: [ID] "Optional score configuration overrides" scoreConfigurationInput: ScoreConfigurationInput): Score
   version: String
 }
 
@@ -135,7 +135,7 @@ type Rule implements Node {
   translations: JSON
 }
 
-"Score calculation based on following configuration:\r\n                Correct: 1,\r\n                Incorrect: -1,\r\n                Not answered: 0,\r\n                Negative score: False"
+"Score calculation based on following configuration:\r\n                Correct: 1,\r\n                Incorrect: -1,\r\n                Not answered: 0,\r\n                Negative score: False,\r\n                Penalize guessing strategy: True"
 type Score {
   "Your score"
   score: Int
@@ -278,6 +278,14 @@ type RulesEdge {
   cursor: String!
   "The item at the end of the edge."
   node: Rule
+}
+
+input ScoreConfigurationInput {
+  correct: Int
+  inCorrect: Int
+  notAnswered: Int
+  negativeScore: Boolean
+  penalizeGuessingStrategy: Boolean
 }
 
 "The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."

@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="RefTestManagement.Ui/public/RefTest-logo.svg" alt="RefTest Logo" width="150">
+</p>
+
 # RefTest Management Platform
 
 A comprehensive web application for managing and taking IHF (International Handball Federation) RefTests for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create RefTests, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed RefTests.
@@ -39,6 +43,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Advanced Filtering**: Filter RefTests by status, score range, percentage, and date ranges
 - **Bulk Operations**: Send invitations, results, and delete multiple RefTests efficiently
 - **Real-time Status**: Monitor RefTest completion and participant progress
+- **Detail View**: Dedicated detail page with tabbed interface showing participant info, test details, status, timing, and full question list with answers
 - **Responsive Design**: Optimized mobile and desktop views with customizable column visibility
 - **Loading Indicators**: Visual feedback for all asynchronous operations (send, delete)
 
@@ -331,15 +336,28 @@ The frontend will dynamically load only the enabled languages from the backend c
 
 ### 7. Configure Score Requirements (Optional)
 
-By default, the passing percentage is 80%. To change this:
+Customize scoring behavior and passing criteria:
 
 ```json
 {
   "ScoreConfiguration": {
-    "PassingPercentage": 80
+    "PassingPercentage": 80,
+    "Correct": 1,
+    "InCorrect": -1,
+    "NotAnswered": 0,
+    "NegativeScore": false,
+    "PenalizeGuessingStrategy": false
   }
 }
 ```
+
+**Configuration options:**
+- `PassingPercentage`: Percentage required to pass (default: 80)
+- `Correct`: Points for each correct answer selected (default: 1)
+- `InCorrect`: Points for each incorrect answer selected (default: -1)
+- `NotAnswered`: Points for each correct answer NOT selected (default: 0)
+- `NegativeScore`: Allow negative scores per question (default: false)
+- `PenalizeGuessingStrategy`: Set score to 0 if all answers selected (default: false)
 
 ### 8. Configure Report Recipients (Optional)
 
@@ -513,6 +531,13 @@ ref-test-management/
 │   │   │   │   ├── create/               # Create RefTests page
 │   │   │   │   │   ├── create-ref-tests.ts
 │   │   │   │   │   └── components/       # Question search, user import, etc.
+│   │   │   │   ├── detail/               # RefTest detail page
+│   │   │   │   │   ├── ref-test-detail.ts
+│   │   │   │   │   ├── services/         # Data service for detail tabs
+│   │   │   │   │   │   └── ref-test-detail-data.service.ts
+│   │   │   │   │   └── components/
+│   │   │   │   │       ├── ref-test-detail-tab/         # Participant & test info tab
+│   │   │   │   │       └── ref-test-questions-tab/      # Questions & answers tab
 │   │   │   │   └── list/                 # RefTests list page
 │   │   │   │       ├── list-ref-tests.ts
 │   │   │   │       └── components/
@@ -604,7 +629,7 @@ ref-test-management/
 | `RefTestManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
 | `RefTestManagement.Application/GraphQL`     | External GraphQL client schemas and queries (IHF Rules)  |
 | `RefTestManagement.Infrastructure/Services` | PDF/Excel generation and email delivery (Brevo)          |
-| `RefTestManagement.Ui/src/app/ref-tests`    | RefTest creation and management UI                       |
+| `RefTestManagement.Ui/src/app/ref-tests`    | RefTest creation, detail view, and management UI         |
 | `RefTestManagement.Ui/src/app/ref-test`     | RefTest-taking experience (welcome, take, results)       |
 | `RefTestManagement.Ui/graphql`              | GraphQL operation files and auto-generated types         |
 | `.github/workflows`                         | CI/CD pipelines for automated testing and deployment     |
@@ -689,6 +714,11 @@ Complete configuration file structure:
 | **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions              | ✅ Yes   |
 |                           | `EnabledLanguages`      | Array of enabled UI languages (en/nl/fr/de) | ⚠️ Optional (defaults to all 4) |
 | **ScoreConfiguration**    | `PassingPercentage`     | Percentage required to pass a RefTest       | ⚠️ Optional (defaults to 80) |
+|                           | `Correct`               | Points awarded for correct answer selected  | ⚠️ Optional (defaults to 1) |
+|                           | `InCorrect`             | Points for incorrect answer selected        | ⚠️ Optional (defaults to -1) |
+|                           | `NotAnswered`           | Points for correct answer NOT selected      | ⚠️ Optional (defaults to 0) |
+|                           | `NegativeScore`         | Allow negative scores per question          | ⚠️ Optional (defaults to false) |
+|                           | `PenalizeGuessingStrategy` | Zero score if all answers selected       | ⚠️ Optional (defaults to false) |
 | **BackgroundServiceConfiguration** | `ExpirationCheckIntervalMinutes` | How often to check for expired tests (minutes) | ⚠️ Optional (defaults to 5) |
 |                           | `StartupDelaySeconds`   | Delay before first expiration check (seconds) | ⚠️ Optional (defaults to 30) |
 |                           | `ExpirationIfNotStarted` | TimeSpan for how long a test is valid if not started (format: d.hh:mm:ss) | ⚠️ Optional (defaults to 7.00:00:00 - 7 days) |

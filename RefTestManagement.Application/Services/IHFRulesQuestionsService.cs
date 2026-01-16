@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 
 namespace Handball.Belgium.RefTestManagement.Application.Services;
@@ -24,7 +25,8 @@ public interface IIhfRulesQuestionsService
 
 public class IhfRulesQuestionsService(
     IIHFRulesQuestionsClient client,
-    LanguageConfiguration languageConfiguration)
+    LanguageConfiguration languageConfiguration,
+    ScoreConfiguration scoreConfiguration)
     : IIhfRulesQuestionsService
 {
     public async Task<List<string>> GetRandomQuestionIdsAsync(int count,
@@ -134,8 +136,17 @@ public class IhfRulesQuestionsService(
         List<string> selectedAnswerIds,
         CancellationToken cancellationToken = default)
     {
+        var scoreConfigInput = new ScoreConfigurationInput
+        {
+            Correct = scoreConfiguration.Correct,
+            InCorrect = scoreConfiguration.InCorrect,
+            NotAnswered = scoreConfiguration.NotAnswered,
+            NegativeScore = scoreConfiguration.NegativeScore,
+            PenalizeGuessingStrategy = scoreConfiguration.PenalizeGuessingStrategy
+        };
+        
         var result =
-            await client.CalculateScore.ExecuteAsync(questionIds, selectedAnswerIds,
+            await client.CalculateScore.ExecuteAsync(questionIds, selectedAnswerIds, scoreConfigInput,
                 cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);

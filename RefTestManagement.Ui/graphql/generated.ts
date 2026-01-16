@@ -26,6 +26,8 @@ export type Answer = {
   __typename?: 'Answer';
   /** Answer id */
   id: Scalars['String']['output'];
+  /** Answer is correct */
+  isCorrect: Scalars['Boolean']['output'];
   /** Answer number */
   number?: Maybe<Scalars['String']['output']>;
   /** Translations of the answer phrase */
@@ -114,7 +116,7 @@ export type DeleteRefTestError = {
 };
 
 export type DeleteRefTestsInput = {
-  ids: Array<Scalars['ID']['input']>;
+  ids: Array<Scalars['UUID']['input']>;
 };
 
 export type DeleteRefTestsPayload = {
@@ -156,7 +158,7 @@ export type FloatOperationFilterInput = {
 };
 
 export type GenerateRefTestsReportInput = {
-  ids: Array<Scalars['ID']['input']>;
+  ids: Array<Scalars['UUID']['input']>;
 };
 
 export type GenerateRefTestsReportPayload = {
@@ -268,6 +270,7 @@ export type Query = {
   node?: Maybe<Node>;
   /** Lookup nodes by a list of IDs. */
   nodes: Array<Maybe<Node>>;
+  refTest?: Maybe<RefTest>;
   refTestByToken: RefTestByTokenResult;
   refTestTitles?: Maybe<RefTestTitlesConnection>;
   refTests?: Maybe<RefTestsConnection>;
@@ -284,6 +287,11 @@ export type QueryNodeArgs = {
 
 export type QueryNodesArgs = {
   ids: Array<Scalars['ID']['input']>;
+};
+
+
+export type QueryRefTestArgs = {
+  id: Scalars['ID']['input'];
 };
 
 
@@ -368,7 +376,7 @@ export type RefTest = Node & {
   selectedAnswerIds: Array<Scalars['String']['output']>;
   /** Start date and time of the RefTest */
   startedAt?: Maybe<Scalars['DateTime']['output']>;
-  /** Status of the RefTest (e.g., InProgress, Completed, Expired) */
+  /** Status of the RefTest (e.g., InProgress, Completed, Expired). Expired tests are automatically processed by a background service. */
   status: RefTestStatus;
   /** Title of the RefTest */
   title?: Maybe<RefTestTitle>;
@@ -574,7 +582,12 @@ export type SaveRefTestProgressPayload = {
 
 export type ScoreConfiguration = {
   __typename?: 'ScoreConfiguration';
+  correct: Scalars['Int']['output'];
+  inCorrect: Scalars['Int']['output'];
+  negativeScore: Scalars['Boolean']['output'];
+  notAnswered: Scalars['Int']['output'];
   passingPercentage: Scalars['Int']['output'];
+  penalizeGuessingStrategy: Scalars['Boolean']['output'];
 };
 
 export type SendInvitationError = {
@@ -585,7 +598,7 @@ export type SendInvitationError = {
 };
 
 export type SendInvitationsInput = {
-  ids: Array<Scalars['ID']['input']>;
+  ids: Array<Scalars['UUID']['input']>;
 };
 
 export type SendInvitationsPayload = {
@@ -610,7 +623,7 @@ export type SendResultError = {
 };
 
 export type SendResultsInput = {
-  ids: Array<Scalars['ID']['input']>;
+  ids: Array<Scalars['UUID']['input']>;
 };
 
 export type SendResultsPayload = {
@@ -660,7 +673,7 @@ export type StringOperationFilterInput = {
 };
 
 export type TitleInput = {
-  id?: InputMaybe<Scalars['ID']['input']>;
+  id?: InputMaybe<Scalars['UUID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -724,6 +737,13 @@ export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>
 
 
 export type GetEnabledLanguagesQuery = { __typename?: 'Query', enabledLanguages: Array<string> };
+
+export type GetRefTestByIdQueryVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type GetRefTestByIdQuery = { __typename?: 'Query', refTest?: { __typename?: 'RefTest', id: string, name?: string | null, email: string, invitationSent: boolean, resultsSent: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null } | null };
 
 export type GetRefTestByTokenQueryVariables = Exact<{
   token: Scalars['String']['input'];
@@ -930,6 +950,54 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetRefTestByIdDocument = gql`
+    query GetRefTestById($id: ID!) {
+  refTest(id: $id) {
+    id
+    title {
+      id
+      value
+    }
+    name
+    email
+    invitationSent
+    resultsSent
+    status
+    numberOfQuestions
+    maxTimeInMinutes
+    startedAt
+    completedAt
+    questionScore
+    answerScore
+    questionTotal
+    answerTotal
+    percentage
+    selectedAnswerIds
+    questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
+      id
+      number
+      phrase
+      answers {
+        id
+        number
+        phrase
+        isCorrect
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetRefTestByIdGQL extends Apollo.Query<GetRefTestByIdQuery, GetRefTestByIdQueryVariables> {
+    override document = GetRefTestByIdDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

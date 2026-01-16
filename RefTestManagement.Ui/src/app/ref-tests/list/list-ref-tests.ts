@@ -54,7 +54,8 @@ type SortField =
   | 'status'
   | 'numberOfQuestions'
   | 'invitationSent'
-  | 'resultsSent';
+  | 'resultsSent'
+  | 'maxTimeInMinutes';
 
 interface IRefTestFilter {
   status?: RefTestStatus;
@@ -71,6 +72,8 @@ interface IRefTestFilter {
   percentageRange?: 'low' | 'medium' | 'high';
   minQuestions?: number;
   maxQuestions?: number;
+  minMaxTimeInMinutes?: number;
+  maxMaxTimeInMinutes?: number;
   startedAfter?: string;
   startedBefore?: string;
   completedAfter?: string;
@@ -120,6 +123,7 @@ export class ListRefTests {
       'participant',
       'status',
       'questions',
+      'maxTimeInMinutes',
       'score',
       'invitation',
       'results',
@@ -500,6 +504,20 @@ export class ListRefTests {
       filters.numberOfQuestions = questionsFilter;
     }
 
+    if (
+      currentFilter.minMaxTimeInMinutes !== undefined ||
+      currentFilter.maxMaxTimeInMinutes !== undefined
+    ) {
+      const maxTimeInMinutesFilter: IntOperationFilterInput = {};
+      if (currentFilter.minMaxTimeInMinutes !== undefined) {
+        maxTimeInMinutesFilter.gte = currentFilter.minMaxTimeInMinutes;
+      }
+      if (currentFilter.maxMaxTimeInMinutes !== undefined) {
+        maxTimeInMinutesFilter.lte = currentFilter.maxMaxTimeInMinutes;
+      }
+      filters.maxTimeInMinutes = maxTimeInMinutesFilter;
+    }
+
     if (currentFilter.startedAfter || currentFilter.startedBefore) {
       const startedAtFilter: DateTimeOperationFilterInput = {};
       if (currentFilter.startedAfter) {
@@ -592,6 +610,20 @@ export class ListRefTests {
       filters.numberOfQuestions = questionsFilter;
     }
 
+    if (
+      currentFilter.minMaxTimeInMinutes !== undefined ||
+      currentFilter.maxMaxTimeInMinutes !== undefined
+    ) {
+      const maxTimeInMinutesFilter: IntOperationFilterInput = {};
+      if (currentFilter.minMaxTimeInMinutes !== undefined) {
+        maxTimeInMinutesFilter.gte = currentFilter.minMaxTimeInMinutes;
+      }
+      if (currentFilter.maxMaxTimeInMinutes !== undefined) {
+        maxTimeInMinutesFilter.lte = currentFilter.maxMaxTimeInMinutes;
+      }
+      filters.maxTimeInMinutes = maxTimeInMinutesFilter;
+    }
+
     if (currentFilter.startedAfter || currentFilter.startedBefore) {
       const startedAtFilter: DateTimeOperationFilterInput = {};
       if (currentFilter.startedAfter) {
@@ -628,7 +660,10 @@ export class ListRefTests {
       ];
     }
 
-    return [{ [currentFilter.sortField]: currentFilter.sortDirection }];
+    return [
+      { [currentFilter.sortField]: currentFilter.sortDirection },
+      { createdAt: SortEnumType.Desc }, // Secondary sort to ensure consistent order
+    ];
   }
 
   private updateCountQueries(): void {
@@ -712,6 +747,8 @@ export class ListRefTests {
     percentageRange?: 'low' | 'medium' | 'high';
     minQuestions?: number;
     maxQuestions?: number;
+    minMaxTimeInMinutes?: number;
+    maxMaxTimeInMinutes?: number;
   }): void {
     this.filter.update((f) => ({ ...f, ...performance }));
   }

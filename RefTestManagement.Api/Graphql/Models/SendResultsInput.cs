@@ -1,3 +1,5 @@
-﻿namespace Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+﻿using Handball.Belgium.RefTestManagement.Domain;
 
-public record SendResultsInput([property: ID<Domain.RefTest>] List<Guid> Ids);
+namespace Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+
+public record SendResultsInput([property: ID<RefTest>] List<Guid> Ids);

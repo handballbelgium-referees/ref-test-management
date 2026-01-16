@@ -35,6 +35,21 @@
     </div>
     }
 
+    @if (isColumnVisible('maxTimeInMinutes')) {
+    <div class="flex items-center justify-between py-1.5 px-2 bg-neutral-50 rounded">
+      <span class="text-neutral-600 font-medium">{{
+        'ref_tests.list.table.max_time' | translate
+      }}</span>
+      <span class="font-semibold text-neutral-900">
+        @if (refTest().maxTimeInMinutes) {
+        {{ refTest().maxTimeInMinutes }} {{ 'ref_tests.list.table.minutes_short' | translate }}
+        } @else {
+        <span class="text-neutral-400">-</span>
+        }
+      </span>
+    </div>
+    }
+
     <div class="grid grid-cols-2 gap-2">
       @if (isColumnVisible('invitation')) {
       <div class="flex items-center gap-1.5 py-1.5 px-2 bg-neutral-50 rounded">

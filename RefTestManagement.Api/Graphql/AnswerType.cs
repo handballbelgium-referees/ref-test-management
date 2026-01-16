@@ -13,10 +13,11 @@ public class AnswerType : ObjectType<Answer>
         descriptor.BindFieldsExplicitly();
         
         descriptor.Field(x => x.Id).Description("Answer id");
-        descriptor.Field(x => x.Number).Description("Answer number");
+        descriptor.Field(x => x.Number).Description("Answer number").Authorize();
         descriptor.Field(x => x.Phrase)
             .Type<JsonType>()
             .Description("Translations of the answer phrase")
             .Resolve(ctx => JsonSerializer.Serialize(ctx.Parent<Answer>().Phrase));
+        descriptor.Field(x => x.IsCorrect).Description("Answer is correct").Authorize();
     }
 }

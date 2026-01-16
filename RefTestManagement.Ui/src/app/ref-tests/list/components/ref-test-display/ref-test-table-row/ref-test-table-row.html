@@ -30,6 +30,14 @@
 <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-600 font-medium">
   {{ refTest().numberOfQuestions }}
 </td>
+} @if (isColumnVisible('maxTimeInMinutes')) {
+<td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-600">
+  @if (refTest().maxTimeInMinutes) {
+  {{ refTest().maxTimeInMinutes }} {{ 'ref_tests.list.table.minutes_short' | translate }}
+  } @else {
+  <span class="text-neutral-400">-</span>
+  }
+</td>
 } @if (isColumnVisible('score')) {
 <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">
   @if (refTest().questionScore !== null) {

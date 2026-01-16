@@ -4,7 +4,7 @@
   "extensions": {
     "strawberryShake": {
       "name": "IHFRulesQuestionsClient",
-      "url": "http://api-ihf-rules-questions.azurewebsites.net/graphql/",
+      "url": "https://api-ihf-rules-questions.azurewebsites.net/graphql/",
       "records": {
         "inputs": false,
         "entities": false
