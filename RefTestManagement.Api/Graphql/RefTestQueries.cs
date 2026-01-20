@@ -1,4 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -67,7 +67,9 @@ public static class RefTestQueries
     [UseFiltering]
     [UseSorting]
     public static IQueryable<RefTestTitleDto> GetRefTestTitles(RefTestManagementContext context)
-        => context.RefTestTitles.AsNoTracking().Select(RefTestTitleMappings.ToDto);
+        => context.RefTestTitles
+            .AsNoTracking()
+            .Select(RefTestTitleMappings.ToDto);
 
     /// <summary>
     /// Get all RefTests
@@ -80,7 +82,10 @@ public static class RefTestQueries
     [UseFiltering<RefTestFilterType>]
     [UseSorting<RefTestSortType>]
     public static IQueryable<RefTestDto> GetRefTests(RefTestManagementContext context)
-        => context.RefTests.AsNoTracking().Select(RefTestMappings.ToDto);
+        => context.RefTests
+            .AsNoTracking()
+            .Include(x => x.Title)
+            .Select(RefTestMappings.ToDto);
 
     /// <summary>
     /// Get a RefTest by id
