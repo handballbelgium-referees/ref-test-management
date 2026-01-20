@@ -1,13 +1,15 @@
-﻿using Handball.Belgium.RefTestManagement.Domain;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Domain;
 using HotChocolate.Data.Filters;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
 
-public class RefTestFilterType : FilterInputType<RefTest>
+public class RefTestFilterType : FilterInputType<RefTestDto>
 {
-    protected override void Configure(IFilterInputTypeDescriptor<RefTest> descriptor)
+    protected override void Configure(IFilterInputTypeDescriptor<RefTestDto> descriptor)
     {
         descriptor.BindFieldsExplicitly();
+        descriptor.Name($"{nameof(RefTest)}FilterInput");
         descriptor.Description("Filter RefTests based on Id, Email or Status");
         descriptor.Field(x => x.Id).Description("Filter on RefTest id");
         descriptor.Field(x => x.Title).Description("Filter on RefTest title");
