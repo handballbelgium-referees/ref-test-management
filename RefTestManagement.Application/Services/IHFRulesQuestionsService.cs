@@ -12,7 +12,7 @@ public interface IIhfRulesQuestionsService
     Task<List<string>> GetQuestionIdsByNumberAsync(List<string> numbers,
         CancellationToken cancellationToken = default);
 
-    Task<List<Question>> GetQuestionsByIdAsync(List<string> ids, bool includeNumber = false,
+    Task<List<Question>> GetQuestionsByIdAsync(IReadOnlyList<string> ids, bool includeNumber = false,
         bool includeIsCorrect = false,
         bool randomAnswerOrder = true,
         CancellationToken cancellationToken = default);
@@ -50,7 +50,7 @@ public class IhfRulesQuestionsService(
         if (nodes is null)
             return [];
 
-        // Convert nodes to dictionary for fast lookup by number (filter out null numbers)
+        // Convert nodes to dictionary for a fast lookup by number (filter out null numbers)
         var questionDict = nodes.Where(x => x.Number != null)
             .ToDictionary(x => x.Number!, x => x.Id);
 
@@ -60,7 +60,7 @@ public class IhfRulesQuestionsService(
             .ToList();
     }
 
-    public async Task<List<Question>> GetQuestionsByIdAsync(List<string> ids, bool includeNumber = false,
+    public async Task<List<Question>> GetQuestionsByIdAsync(IReadOnlyList<string> ids, bool includeNumber = false,
         bool includeIsCorrect = false, bool randomAnswerOrder = true,
         CancellationToken cancellationToken = default)
     {

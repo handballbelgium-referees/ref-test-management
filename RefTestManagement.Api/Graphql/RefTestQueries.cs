@@ -1,4 +1,5 @@
-﻿using Handball.Belgium.RefTestManagement.Application.Configurations;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
@@ -28,7 +29,7 @@ public static class RefTestQueries
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     [Error<RefTestExpiredException>]
-    public static async Task<RefTest?> GetRefTestByTokenAsync(
+    public static async Task<RefTestDto?> GetRefTestByTokenAsync(
         string token,
         RefTestManagementContext context,
         BackgroundServiceConfiguration configuration,
@@ -45,7 +46,7 @@ public static class RefTestQueries
                 [RefTestStatus.Pending, RefTestStatus.InProgress]);
 
         if (!refTest.IsExpired(configuration.ExpirationIfNotStarted)) 
-            return refTest;
+            return refTest.ToDto();
 
         refTest.Expire();
         context.RefTests.Update(refTest);
@@ -61,10 +62,11 @@ public static class RefTestQueries
     /// <returns></returns>
     [Authorize]
     [UsePaging]
+    [UseProjection]
     [UseFiltering]
     [UseSorting]
-    public static IQueryable<RefTestTitle> GetRefTestTitles(RefTestManagementContext context)
-    => context.RefTestTitles;
+    public static IQueryable<RefTestTitleDto> GetRefTestTitles(RefTestManagementContext context)
+    => context.RefTestTitles.Select(RefTestTitleMappings.ToDto);
 
     /// <summary>
     /// Get all RefTests
@@ -73,10 +75,11 @@ public static class RefTestQueries
     /// <returns></returns>
     [Authorize]
     [UsePaging]
-    [UseFiltering]
-    [UseSorting]
-    public static IQueryable<RefTest> GetRefTests(RefTestManagementContext context)
-        => context.RefTests;
+    [UseProjection]
+    [UseFiltering<RefTestFilterType>]
+    [UseSorting<RefTestSortType>]
+    public static IQueryable<RefTestDto> GetRefTests(RefTestManagementContext context)
+        => context.RefTests.Select(RefTestMappings.ToDto);
     
     /// <summary>
     /// Get a RefTest by id
@@ -85,7 +88,8 @@ public static class RefTestQueries
     /// <param name="dataLoader"></param>
     /// <returns></returns>
     [Authorize]
-    public static Task<RefTest?> GetRefTest([ID<RefTest>]Guid id, RefTestByIdDataLoader dataLoader)
+    [UseProjection]
+    public static Task<RefTestDto?> GetRefTest([ID<RefTest>]Guid id, RefTestByIdDataLoader dataLoader)
         => dataLoader.LoadAsync(id);
 
     [Authorize]

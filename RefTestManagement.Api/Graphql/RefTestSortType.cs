@@ -1,13 +1,15 @@
-﻿using Handball.Belgium.RefTestManagement.Domain;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Domain;
 using HotChocolate.Data.Sorting;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
 
-public class RefTestSortType : SortInputType<RefTest>
+public class RefTestSortType : SortInputType<RefTestDto>
 {
-    protected override void Configure(ISortInputTypeDescriptor<RefTest> descriptor)
+    protected override void Configure(ISortInputTypeDescriptor<RefTestDto> descriptor)
     {
         descriptor.BindFieldsExplicitly();
+        descriptor.Name($"{nameof(RefTest)}SortInput");
         descriptor.Description("Sort RefTests by Id, Email, Status, Creation Date, Start Date, Completion Date, Percentage, QuestionScore, Number of Questions and Maximum Time");
         descriptor.Field(x => x.Id).Description("Sort on RefTest id");
         descriptor.Field(x => x.FirstName).Description("Sort on first name of the user who started the RefTest");

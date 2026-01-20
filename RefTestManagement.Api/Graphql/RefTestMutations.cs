@@ -1,4 +1,5 @@
 ﻿using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -30,7 +31,7 @@ public static class RefTestMutations
     [Error<RefTestNotFoundException>]
     [Error<RefTestExpiredException>]
     [Error<InvalidRefTestStatusException>]
-    public static async Task<RefTest> StartRefTestAsync(
+    public static async Task<RefTestDto> StartRefTestAsync(
         string token,
         RefTestManagementContext context,
         BackgroundServiceConfiguration configuration,
@@ -51,13 +52,13 @@ public static class RefTestMutations
         }
 
         if (refTest.Status == RefTestStatus.InProgress)
-            return refTest;
+            return refTest.ToDto();
 
         refTest.Start();
         context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
-        return refTest;
+        return refTest.ToDto();
     }
 
     /// <summary>
@@ -71,7 +72,7 @@ public static class RefTestMutations
     /// <exception cref="InvalidRefTestStatusException"></exception>
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
-    public static async Task<RefTest> SaveRefTestProgressAsync(
+    public static async Task<RefTestDto> SaveRefTestProgressAsync(
         SaveRefTestProgressInput input,
         RefTestManagementContext context,
         CancellationToken cancellationToken)
@@ -89,7 +90,7 @@ public static class RefTestMutations
         context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
-        return refTest;
+        return refTest.ToDto();
     }
 
     /// <summary>
@@ -107,7 +108,7 @@ public static class RefTestMutations
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     [Error<EmailException>]
-    public static async Task<RefTest> CompleteRefTestAsync(
+    public static async Task<RefTestDto> CompleteRefTestAsync(
         CompleteRefTestInput input,
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
@@ -146,7 +147,7 @@ public static class RefTestMutations
         await context.SaveChangesAsync(cancellationToken);
 
         if (!refTest.SendResultsAutomatically)
-            return refTest;
+            return refTest.ToDto();
 
         var questionsWithCorrectAnswers =
             await ihfRulesQuestionsService.GetQuestionsByIdAsync(refTest.QuestionIds, true, true, false,
@@ -172,7 +173,7 @@ public static class RefTestMutations
         context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
-        return refTest;
+        return refTest.ToDto();
     }
 
     /// <summary>
@@ -297,7 +298,7 @@ public static class RefTestMutations
                     refTest.MaxTimeInMinutes
                 );
 
-                result.CreatedRefTests.Add(refTest);
+                result.CreatedRefTests.Add(refTest.ToDto());
                 refTest.SendInvitation();
             }
             catch (Exception ex)
@@ -364,7 +365,7 @@ public static class RefTestMutations
                     refTest.MaxTimeInMinutes
                 );
 
-                result.SentRefTests.Add(refTest);
+                result.SentRefTests.Add(refTest.ToDto());
                 result.SuccessfullySent++;
 
                 refTest.SendInvitation();
@@ -452,7 +453,7 @@ public static class RefTestMutations
                     !refTest.ResultsSent
                 );
 
-                result.SentRefTests.Add(refTest);
+                result.SentRefTests.Add(refTest.ToDto());
                 result.SuccessfullySent++;
 
                 refTest.SendResults();
@@ -514,7 +515,7 @@ public static class RefTestMutations
 
                 context.RefTests.Remove(refTest);
                 result.SuccessfullyDeleted++;
-                result.DeletedRefTests.Add(refTest);
+                result.DeletedRefTests.Add(refTest.ToDto());
             }
             catch (Exception e)
             {
