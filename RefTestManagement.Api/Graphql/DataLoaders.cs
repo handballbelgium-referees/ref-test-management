@@ -14,6 +14,7 @@ public static class DataLoaders
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await context.RefTests
+            .AsNoTracking()
             .Where(x => ids.Contains(x.Id))
             .Select(RefTestMappings.ToDto)
             .ToDictionaryAsync(x => x.Id, cancellationToken);
@@ -27,6 +28,7 @@ public static class DataLoaders
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await context.RefTestTitles
+            .AsNoTracking()
             .Where(x => ids.Contains(x.Id))
             .Select(RefTestTitleMappings.ToDto)
             .ToDictionaryAsync(x => x.Id, cancellationToken);
