@@ -5,6 +5,7 @@ using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using HotChocolate.Authorization;
+using HotChocolate.Caching;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
@@ -101,6 +102,7 @@ public static class RefTestQueries
     /// </summary>
     /// <param name="languageConfiguration"></param>
     /// <returns></returns>
+    [CacheControl(MaxAge = 3600)]
     public static string[] GetEnabledLanguages([Service] LanguageConfiguration languageConfiguration)
         => languageConfiguration.EnabledLanguages;
 
@@ -109,6 +111,7 @@ public static class RefTestQueries
     /// </summary>
     /// <param name="scoreConfiguration"></param>
     /// <returns></returns>
+    [CacheControl(MaxAge = 3600)]
     public static ScoreConfiguration GetScoreConfiguration([Service] ScoreConfiguration scoreConfiguration)
         => scoreConfiguration;
 
@@ -117,6 +120,7 @@ public static class RefTestQueries
     /// </summary>
     /// <param name="emailConfiguration"></param>
     /// <returns></returns>
+    [CacheControl(MaxAge = 3600)]
     public static int GetResultsEmailDelayMinutes([Service] EmailConfiguration emailConfiguration)
         => emailConfiguration.ScheduledDelayMinutes;
 }
