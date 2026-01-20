@@ -1,4 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,6 +15,7 @@ public static class DataLoaders
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         return await context.RefTests
             .AsNoTracking()
+            .Include(x => x.Title)
             .Where(x => ids.Contains(x.Id))
             .Select(RefTestMappings.ToDto)
             .ToDictionaryAsync(x => x.Id, cancellationToken);
