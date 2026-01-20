@@ -1,5 +1,5 @@
 query GetRefTestsCount($where: RefTestFilterInput) {
-  refTests(where: $where) {
+  refTests(first: 0, where: $where) {
     totalCount
   }
 }

@@ -45,7 +45,7 @@ public static class RefTestQueries
             throw new InvalidRefTestStatusException(refTest.Status,
                 [RefTestStatus.Pending, RefTestStatus.InProgress]);
 
-        if (!refTest.IsExpired(configuration.ExpirationIfNotStarted)) 
+        if (!refTest.IsExpired(configuration.ExpirationIfNotStarted))
             return refTest.ToDto();
 
         refTest.Expire();
@@ -54,7 +54,7 @@ public static class RefTestQueries
 
         throw new RefTestExpiredException(token);
     }
-    
+
     /// <summary>
     /// Get all RefTest titles
     /// </summary>
@@ -66,7 +66,7 @@ public static class RefTestQueries
     [UseFiltering]
     [UseSorting]
     public static IQueryable<RefTestTitleDto> GetRefTestTitles(RefTestManagementContext context)
-    => context.RefTestTitles.Select(RefTestTitleMappings.ToDto);
+        => context.RefTestTitles.AsNoTracking().Select(RefTestTitleMappings.ToDto);
 
     /// <summary>
     /// Get all RefTests
@@ -79,8 +79,8 @@ public static class RefTestQueries
     [UseFiltering<RefTestFilterType>]
     [UseSorting<RefTestSortType>]
     public static IQueryable<RefTestDto> GetRefTests(RefTestManagementContext context)
-        => context.RefTests.Select(RefTestMappings.ToDto);
-    
+        => context.RefTests.AsNoTracking().Select(RefTestMappings.ToDto);
+
     /// <summary>
     /// Get a RefTest by id
     /// </summary>
@@ -88,8 +88,7 @@ public static class RefTestQueries
     /// <param name="dataLoader"></param>
     /// <returns></returns>
     [Authorize]
-    [UseProjection]
-    public static Task<RefTestDto?> GetRefTest([ID<RefTest>]Guid id, RefTestByIdDataLoader dataLoader)
+    public static Task<RefTestDto?> GetRefTest([ID<RefTest>] Guid id, RefTestByIdDataLoader dataLoader)
         => dataLoader.LoadAsync(id);
 
     [Authorize]
@@ -104,7 +103,7 @@ public static class RefTestQueries
     /// <returns></returns>
     public static string[] GetEnabledLanguages([Service] LanguageConfiguration languageConfiguration)
         => languageConfiguration.EnabledLanguages;
-    
+
     /// <summary>
     /// Get score configuration
     /// </summary>
