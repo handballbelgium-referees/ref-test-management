@@ -28,7 +28,7 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTestManagement.D
             .HasMaxLength(256);
 
         builder.Property(x => x.SendInvitationsAutomatically);
-        builder.Property(x => x.InvitationSent);
+        builder.Property(x => x.InvitationSentAt);
 
         builder.Property(x => x.Token)
             .IsRequired()
@@ -99,7 +99,7 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTestManagement.D
                 c => c.ToList()));
 
         builder.Property(x => x.SendResultsAutomatically);
-        builder.Property(x => x.ResultsSent);
+        builder.Property(x => x.ResultsSentAt);
         
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);

@@ -32,7 +32,7 @@ public class RefTestReportService(
 
         foreach (var recipientEmail in recipientEmails)
         {
-            await emailService.SendReportEmailAsync(recipientEmail, excelReport, pdfReport, timestamp, refTests.Count);
+            await emailService.SendReportEmailAsync(recipientEmail, excelReport, pdfReport, timestamp, refTests.Count, cancellationToken);
         }
     }
 

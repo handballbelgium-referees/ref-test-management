@@ -17,9 +17,8 @@ public partial class EmailService(
     ILogoService logoService)
     : IEmailService
 {
-    
     public async Task SendRefTestInvitationAsync(string name, string email, string token, int numberOfQuestions,
-        int maxTimeInMinutes)
+        int maxTimeInMinutes, CancellationToken cancellationToken)
     {
         var enabledLanguages = GetEnabledLanguagesForInvitation(token);
         var languageSections = new StringBuilder();
@@ -34,10 +33,10 @@ public partial class EmailService(
 
         const string subject = "Referees Handball Belgium RefTest - Invitation";
         var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64) 
-            ? "" 
+        var logoTag = string.IsNullOrEmpty(logoBase64)
+            ? ""
             : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
-        
+
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -70,18 +69,20 @@ public partial class EmailService(
 </html>";
 
 
-        var firstRefTestUrl = enabledLanguages.FirstOrDefault()?.RefTestUrl ?? $"{configuration.BaseUrl}/ref-test/{token}";
+        var firstRefTestUrl =
+            enabledLanguages.FirstOrDefault()?.RefTestUrl ?? $"{configuration.BaseUrl}/ref-test/{token}";
         LogSendingRefTestInvitationToEmailTokenTokenQuestionsQuestionsTimeTimeMinutes(logger, email, token,
             numberOfQuestions, maxTimeInMinutes, firstRefTestUrl);
 
-        await SendEmailAsync(email, subject, emailBody);
+        await SendEmailAsync(email, subject, emailBody, cancellationToken: cancellationToken);
 
         LogRefTestInvitationEmailSentToEmail(logger, email);
     }
 
-    public async Task SendRefTestResultsAsync(string name, string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage,
+    public async Task SendRefTestResultsAsync(string name, string email, int questionScore, int answerScore,
+        int totalQuestions, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
-        List<Question> questionsWithCorrectAnswers, bool scheduleEmail)
+        List<Question> questionsWithCorrectAnswers, bool scheduleEmail, CancellationToken cancellationToken)
     {
         const string subject = "Referees Handball Belgium RefTest - Results";
         var passed = percentage >= scoreConfiguration.PassingPercentage;
@@ -96,15 +97,16 @@ public partial class EmailService(
         {
             var langContent = enabledLanguages[i];
             var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildResultsLanguageSection(langContent, name, questionScore, answerScore, totalQuestions, answerTotal, percentage,
+            languageSections.Append(BuildResultsLanguageSection(langContent, name, questionScore, answerScore,
+                totalQuestions, answerTotal, percentage,
                 passed, resultColor, resultBgColor, resultIcon, isLast));
         }
 
         var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64) 
-            ? "" 
+        var logoTag = string.IsNullOrEmpty(logoBase64)
+            ? ""
             : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
-        
+
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -142,20 +144,23 @@ public partial class EmailService(
         {
             var langUpper = lang.ToUpperInvariant();
             return new EmailAttachment($"RefTest_Results_{langUpper}.pdf",
-                pdfService.GenerateRefTestResultsPdf(name, lang, questionScore, answerScore, totalQuestions, answerTotal, percentage, selectedAnswerIds, wrongQuestionIds,
+                pdfService.GenerateRefTestResultsPdf(name, lang, questionScore, answerScore, totalQuestions,
+                    answerTotal, percentage, selectedAnswerIds, wrongQuestionIds,
                     wrongAnswerIds, questionsWithCorrectAnswers));
         }).ToList();
 
-        LogSendingRefTestResultsToEmailScoreScoreTotalPercentageF1(logger, email, questionScore, answerScore, totalQuestions, answerTotal, percentage);
+        LogSendingRefTestResultsToEmailScoreScoreTotalPercentageF1(logger, email, questionScore, answerScore,
+            totalQuestions, answerTotal, percentage);
 
-        await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail);
+        await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail, cancellationToken);
 
         LogRefTestResultsEmailSentToEmail(logger, email);
     }
 
 
     private async Task SendEmailAsync(string toEmail, string subject, string body,
-        List<EmailAttachment>? attachments = null, bool scheduleEmail = false)
+        List<EmailAttachment>? attachments = null, bool scheduleEmail = false,
+        CancellationToken cancellationToken = default)
     {
         LogSendingEmailToEmailWithSubjectAndBody(logger, toEmail, subject, body);
 
@@ -191,10 +196,10 @@ public partial class EmailService(
                 subject,
                 htmlContent = body,
                 textContent = plainTextBody,
-                
+
                 // 👇 Brevo scheduling (only used if not null)
                 scheduledAt,
-                
+
                 attachment = attachments?.Select(a => new
                 {
                     name = a.FileName,
@@ -206,7 +211,7 @@ public partial class EmailService(
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             var brevoUrl = $"{configuration.BrevoApiUrl}/smtp/email";
-            var response = await httpClient.PostAsync(brevoUrl, content);
+            var response = await httpClient.PostAsync(brevoUrl, content, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
@@ -214,7 +219,7 @@ public partial class EmailService(
             }
             else
             {
-                var responseBody = await response.Content.ReadAsStringAsync();
+                var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
                 LogEmailFailedWithStatusCode(logger, toEmail, (int)response.StatusCode, responseBody);
             }
         }
@@ -225,14 +230,15 @@ public partial class EmailService(
         }
     }
 
-    public async Task SendReportEmailAsync(string recipientEmail, byte[] excelReport, byte[] pdfReport, string timestamp, int refTestCount)
+    public async Task SendReportEmailAsync(string recipientEmail, byte[] excelReport, byte[] pdfReport,
+        string timestamp, int refTestCount, CancellationToken cancellationToken)
     {
         var subject = $"Referees Handball Belgium RefTest - Report - {DateTime.UtcNow:dd-MM-yyyy}";
-        
+
         // Convert to Central European Time
         var cetTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
         var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cetTimeZone);
-        
+
         var enabledLanguages = GetEnabledLanguagesForReport();
         var languageSections = new StringBuilder();
 
@@ -242,12 +248,12 @@ public partial class EmailService(
             var isLast = i == enabledLanguages.Count - 1;
             languageSections.Append(BuildReportLanguageSection(langContent, nowCet, refTestCount, isLast));
         }
-        
+
         var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64) 
-            ? "" 
+        var logoTag = string.IsNullOrEmpty(logoBase64)
+            ? ""
             : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
-        
+
         var emailBody = $@"
 <!DOCTYPE html>
 <html>
@@ -285,7 +291,7 @@ public partial class EmailService(
             new($"RefTest_Report_{timestamp}.pdf", pdfReport)
         };
 
-        await SendEmailAsync(recipientEmail, subject, emailBody, attachments);
+        await SendEmailAsync(recipientEmail, subject, emailBody, attachments, cancellationToken: cancellationToken);
 
         LogReportEmailSentToEmail(logger, recipientEmail);
     }
@@ -298,7 +304,8 @@ public partial class EmailService(
     [LoggerMessage(LogLevel.Information, "RefTest invitation email sent to {email}")]
     static partial void LogRefTestInvitationEmailSentToEmail(ILogger<EmailService> logger, string email);
 
-    [LoggerMessage(LogLevel.Information, "Sending RefTest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
+    [LoggerMessage(LogLevel.Information,
+        "Sending RefTest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
     static partial void LogSendingRefTestResultsToEmailScoreScoreTotalPercentageF1(ILogger<EmailService> logger,
         string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage);
 
@@ -396,19 +403,19 @@ public partial class EmailService(
         {
             var totalHours = (int)expiration.TotalHours;
             var totalDays = (int)expiration.TotalDays;
-            
+
             return lang switch
             {
-                "en" => totalHours < 24 
+                "en" => totalHours < 24
                     ? $"⏰ This RefTest is valid for {totalHours} {(totalHours == 1 ? "hour" : "hours")}"
                     : $"⏰ This RefTest is valid for {totalDays} {(totalDays == 1 ? "day" : "days")}",
-                "nl" => totalHours < 24 
+                "nl" => totalHours < 24
                     ? $"⏰ Deze RefTest is {totalHours} {(totalHours == 1 ? "uur" : "uren")} geldig"
                     : $"⏰ Deze RefTest is {totalDays} {(totalDays == 1 ? "dag" : "dagen")} geldig",
-                "fr" => totalHours < 24 
+                "fr" => totalHours < 24
                     ? $"⏰ Ce RefTest est valide pendant {totalHours} {(totalHours <= 1 ? "heure" : "heures")}"
                     : $"⏰ Ce RefTest est valide pendant {totalDays} {(totalDays <= 1 ? "jour" : "jours")}",
-                "de" => totalHours < 24 
+                "de" => totalHours < 24
                     ? $"⏰ Dieser RefTest ist {totalHours} {(totalHours == 1 ? "Stunde" : "Stunden")} lang gültig"
                     : $"⏰ Dieser RefTest ist {totalDays} {(totalDays == 1 ? "Tag" : "Tage")} lang gültig",
                 _ => $"⏰ Valid for {totalDays} days"
@@ -606,7 +613,8 @@ public partial class EmailService(
             </div>{separator}";
     }
 
-    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int questionScore, int answerScore, int totalQuestions, int answerTotal,
+    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int questionScore,
+        int answerScore, int totalQuestions, int answerTotal,
         double percentage, bool passed, string resultColor, string resultBgColor, string resultIcon, bool isLast)
     {
         var t = langContent.Translations;
@@ -642,7 +650,8 @@ public partial class EmailService(
             </div>{separator}";
     }
 
-    private static string BuildReportLanguageSection(LanguageContent langContent, DateTime reportDate, int refTestCount, bool isLast)
+    private static string BuildReportLanguageSection(LanguageContent langContent, DateTime reportDate, int refTestCount,
+        bool isLast)
     {
         var t = langContent.Translations;
         var separator = isLast
@@ -675,4 +684,3 @@ public partial class EmailService(
 public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");
 
 public record EmailAttachment(string FileName, byte[] Content);
-

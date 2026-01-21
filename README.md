@@ -49,11 +49,15 @@ A comprehensive web application for managing and taking IHF (International Handb
 
 ### 📧 Email Automation
 
+- **Background Job Queue**: All emails processed asynchronously for fast API responses and automatic retry
 - **Automated Invitations**: Optionally send RefTest invitations automatically upon RefTest creation
 - **Result Notifications**: Automatically email results upon RefTest completion
+- **Automatic Retry**: Failed email jobs retry automatically (up to 3 attempts with exponential backoff)
+- **Scheduled Delivery**: Support for delayed/scheduled email sending
 - **Multilingual Templates**: Email templates in English, Dutch, French, and German
 - **Personalization**: Emails include participant names and RefTest-specific details
 - **Brevo Integration**: Reliable email delivery via Brevo API (formerly SendGrid)
+- **Self-Cleaning**: Old email jobs automatically cleaned up from the database
 
 ### 🔐 Authentication & Security
 
@@ -471,6 +475,7 @@ ref-test-management/
 │   ├── Controllers/
 │   │   └── AccountController.cs          # Authentication endpoints
 │   ├── BackgroundServices/               # Background services
+│   │   ├── BackgroundJobService.cs       # Job queue processor (emails, PDFs, reports)
 │   │   └── RefTestExpirationService.cs   # Automatic RefTest expiration (runs every 5 min)
 │   ├── Graphql/                          # Hot Chocolate GraphQL
 │   │   ├── RefTestQueries.cs             # GraphQL queries (RefTests, questions, titles)
@@ -490,6 +495,9 @@ ref-test-management/
 │   │   ├── schema.graphql                # IHF Rules Questions schema
 │   │   └── Queries/                      # GraphQL query definitions
 │   ├── Models/                           # Application models (Question, Answer, etc.)
+│   │   └── JobPayloads.cs                # Job payload DTOs (InvitationEmail, ResultEmail, ReportEmail)
+│   ├── Configurations/                   # Configuration models
+│   │   └── BackgroundJobConfiguration.cs # Job queue configuration
 │   └── RefTestManagement.Application.csproj # Dependencies: StrawberryShake.Server
 │
 ├── RefTestManagement.Domain/                # 🔷 Domain Layer (.NET 10)
@@ -497,6 +505,9 @@ ref-test-management/
 │   ├── RefTestTitle.cs                      # RefTest title entity
 │   ├── RefTestStatus.cs                     # RefTest status enum
 │   ├── RefTestExceptions.cs                 # Domain exceptions
+│   ├── Job.cs                               # Job queue entity
+│   ├── JobStatus.cs                         # Job status enum (Pending, Processing, Completed, Failed)
+│   ├── JobType.cs                           # Job type enum (InvitationEmail, ResultEmail, ReportEmail)
 │   └── RefTestManagement.Domain.csproj      # No external dependencies (pure domain)
 │
 ├── RefTestManagement.Infrastructure/        # 🔷 Infrastructure Layer (.NET 10)
@@ -504,11 +515,13 @@ ref-test-management/
 │   ├── Migrations/                       # Database migrations
 │   ├── Configurations/                   # EF Core entity configurations
 │   │   ├── RefTestConfiguration.cs
-│   │   └── RefTestTitleConfiguration.cs
+│   │   ├── RefTestTitleConfiguration.cs
+│   │   └── JobConfiguration.cs           # Job queue configuration
 │   ├── Services/                         # External service implementations
 │   │   ├── EmailService.cs               # Brevo email integration
 │   │   ├── RefTestResultsPdfService.cs   # QuestPDF report generation
 │   │   ├── RefTestReportService.cs       # Combined Excel + PDF reports
+│   │   ├── JobEnqueueService.cs          # Job queue enqueue service
 │   │   └── ...                           # Configuration classes
 │   └── RefTestManagement.Infrastructure.csproj # Dependencies: EF Core, QuestPDF, ClosedXML
 │
@@ -683,10 +696,22 @@ Complete configuration file structure:
     "PassingPercentage": 80
   },
 
-  "BackgroundServiceConfiguration": {
+  "RefTestExpirationConfiguration": {
     "ExpirationCheckIntervalMinutes": 5,
     "StartupDelaySeconds": 30,
     "ExpirationIfNotStarted": "7.00:00:00"
+  },
+
+  "BackgroundJobConfiguration": {
+    "PollingIntervalSeconds": 5,
+    "LockDurationMinutes": 5,
+    "MaxAttempts": 3,
+    "BatchSize": 10,
+    "StartupDelaySeconds": 10,
+    "EnableCleanup": true,
+    "CleanupIntervalHours": 24,
+    "RetainCompletedJobsDays": 7,
+    "RetainFailedJobsDays": 30
   },
 
   "ReportConfiguration": {
@@ -719,9 +744,18 @@ Complete configuration file structure:
 |                           | `NotAnswered`           | Points for correct answer NOT selected      | ⚠️ Optional (defaults to 0) |
 |                           | `NegativeScore`         | Allow negative scores per question          | ⚠️ Optional (defaults to false) |
 |                           | `PenalizeGuessingStrategy` | Zero score if all answers selected       | ⚠️ Optional (defaults to false) |
-| **BackgroundServiceConfiguration** | `ExpirationCheckIntervalMinutes` | How often to check for expired tests (minutes) | ⚠️ Optional (defaults to 5) |
+| **RefTestExpirationConfiguration** | `ExpirationCheckIntervalMinutes` | How often to check for expired tests (minutes) | ⚠️ Optional (defaults to 5) |
 |                           | `StartupDelaySeconds`   | Delay before first expiration check (seconds) | ⚠️ Optional (defaults to 30) |
 |                           | `ExpirationIfNotStarted` | TimeSpan for how long a test is valid if not started (format: d.hh:mm:ss) | ⚠️ Optional (defaults to 7.00:00:00 - 7 days) |
+| **BackgroundJobConfiguration** | `PollingIntervalSeconds` | How often to poll for new jobs (seconds) | ⚠️ Optional (defaults to 5) |
+|                           | `LockDurationMinutes`   | How long a job is locked during processing (minutes) | ⚠️ Optional (defaults to 5) |
+|                           | `MaxAttempts`           | Maximum retry attempts for failed jobs | ⚠️ Optional (defaults to 3) |
+|                           | `BatchSize`             | Maximum jobs to process per cycle | ⚠️ Optional (defaults to 10) |
+|                           | `StartupDelaySeconds`   | Delay before starting job processing (seconds) | ⚠️ Optional (defaults to 10) |
+|                           | `EnableCleanup`         | Enable automatic cleanup of old jobs | ⚠️ Optional (defaults to true) |
+|                           | `CleanupIntervalHours`  | How often to run cleanup (hours) | ⚠️ Optional (defaults to 24) |
+|                           | `RetainCompletedJobsDays` | Keep successful jobs for X days | ⚠️ Optional (defaults to 7) |
+|                           | `RetainFailedJobsDays`  | Keep failed jobs for X days | ⚠️ Optional (defaults to 30) |
 | **ReportConfiguration**   | `RecipientEmails`       | Array of emails to receive system reports   | ⚠️ Optional (defaults to empty) |
 
 ### User Secrets (Development)
@@ -761,10 +795,21 @@ dotnet user-secrets set "LanguageConfiguration:EnabledLanguages:3" "de"
 # Score Configuration
 dotnet user-secrets set "ScoreConfiguration:PassingPercentage" "80"
 
-# Background Service Configuration
-dotnet user-secrets set "BackgroundServiceConfiguration:ExpirationCheckIntervalMinutes" "5"
-dotnet user-secrets set "BackgroundServiceConfiguration:StartupDelaySeconds" "30"
-dotnet user-secrets set "BackgroundServiceConfiguration:ExpirationIfNotStarted" "7.00:00:00"
+# RefTest Expiration Configuration
+dotnet user-secrets set "RefTestExpirationConfiguration:ExpirationCheckIntervalMinutes" "5"
+dotnet user-secrets set "RefTestExpirationConfiguration:StartupDelaySeconds" "30"
+dotnet user-secrets set "RefTestExpirationConfiguration:ExpirationIfNotStarted" "7.00:00:00"
+
+# Background Job Configuration
+dotnet user-secrets set "BackgroundJobConfiguration:PollingIntervalSeconds" "5"
+dotnet user-secrets set "BackgroundJobConfiguration:LockDurationMinutes" "5"
+dotnet user-secrets set "BackgroundJobConfiguration:MaxAttempts" "3"
+dotnet user-secrets set "BackgroundJobConfiguration:BatchSize" "10"
+dotnet user-secrets set "BackgroundJobConfiguration:StartupDelaySeconds" "10"
+dotnet user-secrets set "BackgroundJobConfiguration:EnableCleanup" "true"
+dotnet user-secrets set "BackgroundJobConfiguration:CleanupIntervalHours" "24"
+dotnet user-secrets set "BackgroundJobConfiguration:RetainCompletedJobsDays" "7"
+dotnet user-secrets set "BackgroundJobConfiguration:RetainFailedJobsDays" "30"
 
 # Report Configuration (for multiple recipients, use indexed keys)
 dotnet user-secrets set "ReportConfiguration:RecipientEmails:0" "admin1@domain.com"
@@ -839,13 +884,158 @@ Note the `appId` (client ID), `tenant` (tenant ID) from output.
 
 ## ⏱️ Background Services
 
-### Automatic RefTest Expiration
+The application includes **two built-in background services** that run continuously within your application at **no additional cost** on Azure.
 
-The application includes a **built-in background service** that automatically manages RefTest expiration. This service runs continuously within your application at **no additional cost** on Azure.
+### 1. Background Job Queue Service
+
+The `BackgroundJobService` provides a **reliable, asynchronous job queue** for email delivery and PDF generation. All email operations are processed in the background, ensuring fast API responses and automatic retry on failure.
 
 #### How It Works
 
-The `RefTestExpirationService` runs every 5 minutes (configurable) and:
+The job queue system:
+
+1. **Enqueues jobs** when GraphQL mutations are called (e.g., create RefTest, send results)
+2. **Polls the database** every 5 seconds for pending jobs
+3. **Processes jobs** by type:
+   - **InvitationEmail**: Sends RefTest invitation emails
+   - **ResultEmail**: Generates result PDFs and sends them via email
+   - **ReportEmail**: Generates Excel-style reports and sends to admins
+4. **Handles failures** with automatic retry (up to 3 attempts with exponential backoff)
+5. **Cleans up** old jobs periodically to prevent database bloat
+
+#### Key Benefits
+
+✅ **Non-blocking operations**: GraphQL mutations return immediately without waiting for email delivery  
+✅ **Automatic retries**: Failed jobs retry automatically (3 attempts max)  
+✅ **Concurrency-safe**: Multiple instances can run simultaneously without job conflicts  
+✅ **Scheduled delivery**: Jobs can be scheduled to execute at a future time  
+✅ **Observable**: Comprehensive logging for monitoring and debugging  
+✅ **Self-cleaning**: Automatically removes old completed/failed jobs  
+✅ **Accurate tracking**: RefTests are marked with precise timestamps only when emails are successfully delivered
+
+#### Email Delivery Tracking
+
+The system tracks email delivery with precision using DateTime fields:
+
+- **`InvitationSentAt`**: Timestamp when invitation email was successfully delivered
+- **`ResultsSentAt`**: Timestamp when result email was successfully delivered
+
+**Important:** RefTests are **not** marked as "sent" when jobs are enqueued. They are only marked with timestamps **after** the background job successfully delivers the email. This ensures:
+
+- ✅ Accurate state: Failed jobs don't incorrectly mark emails as "sent"
+- ✅ Retry-safe: Jobs can be retried without state corruption
+- ✅ Auditing: Know exactly when emails were delivered, not just queued
+- ✅ Analytics: Measure email delivery latency and performance
+
+**Example:**
+```
+1. RefTest created (InvitationSentAt = NULL)
+2. Job enqueued (InvitationSentAt = NULL)
+3. Background job sends email successfully
+4. RefTest updated (InvitationSentAt = 2026-01-21 10:00:05)
+```
+
+#### Configuration
+
+Configure the job queue in `appsettings.json`:
+
+```json
+{
+  "BackgroundJobConfiguration": {
+    "PollingIntervalSeconds": 5,
+    "LockDurationMinutes": 5,
+    "MaxAttempts": 3,
+    "BatchSize": 10,
+    "StartupDelaySeconds": 10,
+    "EnableCleanup": true,
+    "CleanupIntervalHours": 24,
+    "RetainCompletedJobsDays": 7,
+    "RetainFailedJobsDays": 30
+  }
+}
+```
+
+| Setting | Description | Default |
+|---------|-------------|---------|
+| `PollingIntervalSeconds` | How often to check for new jobs | 5 seconds |
+| `LockDurationMinutes` | How long a job is locked during processing | 5 minutes |
+| `MaxAttempts` | Maximum retry attempts for failed jobs | 3 |
+| `BatchSize` | Maximum jobs to process per cycle | 10 |
+| `StartupDelaySeconds` | Delay before starting job processing | 10 seconds |
+| `EnableCleanup` | Enable automatic cleanup of old jobs | true |
+| `CleanupIntervalHours` | How often to run cleanup | 24 hours |
+| `RetainCompletedJobsDays` | Keep successful jobs for X days | 7 days |
+| `RetainFailedJobsDays` | Keep failed jobs for X days | 30 days |
+
+#### Job Lifecycle
+
+```
+Pending → Processing → Completed (deleted after 7 days)
+                    ↓
+                  Failed → Retry (up to 3 attempts)
+                        ↓
+                  Failed (permanently, deleted after 30 days)
+```
+
+#### Monitoring
+
+The service logs all job processing activities:
+
+```
+[Information] BackgroundJobService is starting
+[Information] Found 3 jobs to process
+[Information] Processing job {JobId} of type InvitationEmail (attempt 1/3)
+[Information] Successfully completed job {JobId} of type InvitationEmail
+[Warning] Job {JobId} of type ResultEmail failed (attempt 2/3): SMTP connection timeout
+[Information] Running job cleanup - removing jobs older than: Completed=7 days, Failed=30 days
+[Information] Job cleanup completed - removed 42 old jobs
+```
+
+**Database Queries:**
+
+```sql
+-- View job queue status
+SELECT Status, COUNT(*) as Count
+FROM Jobs
+GROUP BY Status;
+
+-- View recent failed jobs
+SELECT TOP 10 Id, JobType, ErrorMessage, Attempts, CreatedAt
+FROM Jobs
+WHERE Status = 'Failed'
+ORDER BY CreatedAt DESC;
+
+-- Check email delivery times for RefTests
+SELECT 
+    Email,
+    CreatedAt,
+    InvitationSentAt,
+    CompletedAt,
+    ResultsSentAt,
+    DATEDIFF(SECOND, CreatedAt, InvitationSentAt) as InvitationDeliverySeconds,
+    DATEDIFF(SECOND, CompletedAt, ResultsSentAt) as ResultDeliverySeconds
+FROM RefTests
+WHERE InvitationSentAt IS NOT NULL OR ResultsSentAt IS NOT NULL
+ORDER BY CreatedAt DESC;
+
+-- Find emails not delivered within 5 minutes
+SELECT Email, CompletedAt, ResultsSentAt
+FROM RefTests
+WHERE CompletedAt IS NOT NULL 
+  AND SendResultsAutomatically = 1
+  AND (ResultsSentAt IS NULL OR DATEDIFF(MINUTE, CompletedAt, ResultsSentAt) > 5)
+ORDER BY CompletedAt DESC;
+```
+
+**For a detailed technical diagram of the job queue architecture, see [ARCHITECTURE-DIAGRAM.md](./ARCHITECTURE-DIAGRAM.md).**
+
+### 2. Automatic RefTest Expiration
+
+The `RefTestExpirationService` automatically manages RefTest expiration.
+
+#### How It Works
+
+The service runs every 5 minutes (configurable) and:
 
 1. **Checks for expired tests** based on:
    - **Started tests**: Expire after `MaxTimeInMinutes` from `StartedAt`
@@ -855,15 +1045,15 @@ The `RefTestExpirationService` runs every 5 minutes (configurable) and:
    - **Pending tests** → Marked as `Expired`
    - **In-progress tests** → Automatically completed with current answers, then marked as `Completed`
 
-3. **Sends notifications**: If configured, emails results to participants when auto-completed
+3. **Sends notifications**: Result emails are enqueued in the job queue when tests are auto-completed
 
 #### Configuration
 
-Configure the background service in `appsettings.json`:
+Configure the expiration service in `appsettings.json`:
 
 ```json
 {
-  "BackgroundServiceConfiguration": {
+  "RefTestExpirationConfiguration": {
     "ExpirationCheckIntervalMinutes": 5,
     "StartupDelaySeconds": 30,
     "ExpirationIfNotStarted": "7.00:00:00"
@@ -903,18 +1093,15 @@ The service logs all activities to help you monitor expiration processing:
 **View logs in Azure:**
 - Azure Portal → App Service → Log Stream
 - Application Insights → Logs → traces table
-- Query: `traces | where message contains "RefTest Expiration"`
+- Query: `traces | where message contains "Background"`
 
-#### Azure Deployment
+### Azure Deployment
 
-✅ **FREE** - Runs within your existing App Service, no additional resources required
-✅ **Reliable** - Starts automatically with your application
-✅ **Scalable** - Handles thousands of tests efficiently
-✅ **Zero Configuration** - Works out of the box with sensible defaults
-
-The background service uses **high-performance LoggerMessage source generators** for minimal overhead and optimal performance.
-
-For more technical details, see [`BACKGROUND_SERVICE_DOCUMENTATION.md`](./BACKGROUND_SERVICE_DOCUMENTATION.md).
+✅ **FREE** - Both services run within your existing App Service, no additional resources required  
+✅ **Reliable** - Start automatically with your application  
+✅ **Scalable** - Handle thousands of operations efficiently  
+✅ **Zero Configuration** - Work out of the box with sensible defaults  
+✅ **High Performance** - Use LoggerMessage source generators for minimal overhead
 
 ## 🔄 Development Workflow
 

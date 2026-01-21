@@ -22,7 +22,7 @@ public static class RefTestExtensions
             Email = refTest.Email,
             Token = refTest.Token,
             SendInvitationsAutomatically = refTest.SendInvitationsAutomatically,
-            InvitationSent = refTest.InvitationSent,
+            InvitationSent = refTest.InvitationSentAt.HasValue,
             NumberOfQuestions = refTest.NumberOfQuestions,
             MaxTimeInMinutes = refTest.MaxTimeInMinutes,
             QuestionIds = refTest.QuestionIds,
@@ -40,9 +40,9 @@ public static class RefTestExtensions
             WrongQuestionIds = refTest.WrongQuestionIds,
             WrongAnswerIds = refTest.WrongAnswerIds,
             SendResultsAutomatically = refTest.SendResultsAutomatically,
-            ResultsSent = refTest.ResultsSent,
+            ResultsSent = refTest.ResultsSentAt.HasValue,
             Language = refTest.Language,
-            Duration = refTest.CompletedAt.HasValue && refTest.StartedAt.HasValue
+            Duration = refTest is { CompletedAt: not null, StartedAt: not null }
                 ? refTest.CompletedAt.Value - refTest.StartedAt.Value
                 : null
         };

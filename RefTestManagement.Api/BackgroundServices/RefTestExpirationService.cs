@@ -24,12 +24,12 @@ public partial class RefTestExpirationService : BackgroundService
     public RefTestExpirationService(
         IServiceProvider serviceProvider,
         ILogger<RefTestExpirationService> logger,
-        BackgroundServiceConfiguration? configuration = null)
+        RefTestExpirationConfiguration? configuration = null)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         
-        configuration ??= new BackgroundServiceConfiguration();
+        configuration ??= new RefTestExpirationConfiguration();
         _checkInterval = TimeSpan.FromMinutes(configuration.ExpirationCheckIntervalMinutes);
         _startupDelay = TimeSpan.FromSeconds(configuration.StartupDelaySeconds);
         _expirationIfNotStarted = configuration.ExpirationIfNotStarted;
@@ -134,13 +134,13 @@ public partial class RefTestExpirationService : BackgroundService
                 try
                 {
                     var ihfRulesQuestionsService = scope.ServiceProvider.GetRequiredService<IIhfRulesQuestionsService>();
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
+                    var jobEnqueueService = scope.ServiceProvider.GetRequiredService<IJobEnqueueService>();
                     
                     await RefTestMutations.CompleteRefTestAsync(
                         new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
                         context,
                         ihfRulesQuestionsService,
-                        emailService,
+                        jobEnqueueService,
                         cancellationToken);
 
                     completedCount++;
