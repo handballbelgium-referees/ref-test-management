@@ -68,7 +68,15 @@ var backgroundJobConfig = configuration.GetSection("BackgroundJobConfiguration")
 services.AddSingleton(backgroundJobConfig);
 
 services.AddHttpClient<ILogoService, LogoService>();
-services.AddScoped<IEmailService, EmailService>();
+services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
+{
+    var emailCfg = sp.GetRequiredService<EmailConfiguration>();
+    client.DefaultRequestHeaders.Add("api-key", emailCfg.BrevoApiKey);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.BaseAddress = new Uri(emailCfg.BrevoApiUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
 services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();

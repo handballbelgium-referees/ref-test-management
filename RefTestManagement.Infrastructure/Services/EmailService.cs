@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -12,62 +13,27 @@ public partial class EmailService(
     EmailConfiguration configuration,
     LanguageConfiguration languageConfiguration,
     ScoreConfiguration scoreConfiguration,
-    BackgroundServiceConfiguration backgroundServiceConfiguration,
+    RefTestExpirationConfiguration refTestExpirationConfiguration,
     IRefTestResultsPdfService pdfService,
-    ILogoService logoService)
+    IEmailTemplateService templateService,
+    HttpClient httpClient)
     : IEmailService
 {
+    // Compiled regex for performance (allocated once)
+    private static readonly Regex HtmlTagRegex = new("<[^>]*>", RegexOptions.Compiled);
+    private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
+
+    // Cache translation dictionaries (allocated once instead of per email)
+    private Dictionary<string, Dictionary<string, string>>? _invitationTranslationsCache;
+    private Dictionary<string, Dictionary<string, string>>? _resultsTranslationsCache;
+    private Dictionary<string, Dictionary<string, string>>? _reportTranslationsCache;
     public async Task SendRefTestInvitationAsync(string name, string email, string token, int numberOfQuestions,
         int maxTimeInMinutes, CancellationToken cancellationToken)
     {
         var enabledLanguages = GetEnabledLanguagesForInvitation(token);
-        var languageSections = new StringBuilder();
-
-        for (var i = 0; i < enabledLanguages.Count; i++)
-        {
-            var langContent = enabledLanguages[i];
-            var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildInvitationLanguageSection(langContent, name, numberOfQuestions,
-                maxTimeInMinutes, isLast));
-        }
 
         const string subject = "Referees Handball Belgium RefTest - Invitation";
-        var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64)
-            ? ""
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
-
-        var emailBody = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <style>
-        body {{ font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }}
-    </style>
-</head>
-<body style='margin: 0; padding: 0;'>
-    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
-        <!-- Header with Belgian Handball Colors -->
-        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
-            {logoTag}
-            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest</h1>
-            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Invitation</p>
-        </div>
-
-        <!-- Main Content -->
-        <div style='padding: 20px;'>
-{languageSections}
-            <!-- Footer -->
-            <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
-                <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>";
-
+        var emailBody = await templateService.BuildCompleteInvitationEmailAsync(enabledLanguages, name, numberOfQuestions, maxTimeInMinutes);
 
         var firstRefTestUrl =
             enabledLanguages.FirstOrDefault()?.RefTestUrl ?? $"{configuration.BaseUrl}/ref-test/{token}";
@@ -91,53 +57,10 @@ public partial class EmailService(
         var resultIcon = passed ? "✓" : "✗";
 
         var enabledLanguages = GetEnabledLanguagesForResults();
-        var languageSections = new StringBuilder();
+        var enabledLanguagesDisplay = string.Join(", ", languageConfiguration.EnabledLanguages.Select(l => GetInvitationTranslations()[l]["displayName"]));
 
-        for (var i = 0; i < enabledLanguages.Count; i++)
-        {
-            var langContent = enabledLanguages[i];
-            var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildResultsLanguageSection(langContent, name, questionScore, answerScore,
-                totalQuestions, answerTotal, percentage,
-                passed, resultColor, resultBgColor, resultIcon, isLast));
-        }
-
-        var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64)
-            ? ""
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
-
-        var emailBody = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <style>
-        body {{ font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }}
-    </style>
-</head>
-<body style='margin: 0; padding: 0;'>
-    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
-        <!-- Header with Belgian Handball Colors -->
-        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
-            {logoTag}
-            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest</h1>
-            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Results</p>
-        </div>
-
-        <!-- Main Content -->
-        <div style='padding: 20px;'>
-{languageSections}
-            <!-- Footer -->
-            <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
-                <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>";
-
+        var emailBody = await templateService.BuildCompleteResultsEmailAsync(enabledLanguages, name, questionScore, answerScore,
+            totalQuestions, answerTotal, percentage, passed, resultColor, resultBgColor, resultIcon, enabledLanguagesDisplay);
 
         // Generate PDF attachments for enabled languages only
         var attachments = languageConfiguration.EnabledLanguages.Select(lang =>
@@ -172,15 +95,9 @@ public partial class EmailService(
 
         try
         {
-            using var httpClient = new HttpClient();
-
-            // Set up API key authentication for Brevo
-            httpClient.DefaultRequestHeaders.Add("api-key", configuration.BrevoApiKey);
-            httpClient.DefaultRequestHeaders.Add("Accept", "application/json");
-
-            // Create a plain text version by stripping HTML tags (simple version)
-            var plainTextBody = System.Text.RegularExpressions.Regex.Replace(body, "<[^>]*>", "");
-            plainTextBody = System.Text.RegularExpressions.Regex.Replace(plainTextBody, @"\s+", " ").Trim();
+            // Create a plain text version using cached compiled regex
+            var plainTextBody = HtmlTagRegex.Replace(body, "");
+            plainTextBody = WhitespaceRegex.Replace(plainTextBody, " ").Trim();
 
             var scheduledAt = scheduleEmail && configuration.ScheduledDelayMinutes > 0
                 ? DateTimeOffset.UtcNow
@@ -240,50 +157,8 @@ public partial class EmailService(
         var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cetTimeZone);
 
         var enabledLanguages = GetEnabledLanguagesForReport();
-        var languageSections = new StringBuilder();
 
-        for (var i = 0; i < enabledLanguages.Count; i++)
-        {
-            var langContent = enabledLanguages[i];
-            var isLast = i == enabledLanguages.Count - 1;
-            languageSections.Append(BuildReportLanguageSection(langContent, nowCet, refTestCount, isLast));
-        }
-
-        var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64)
-            ? ""
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
-
-        var emailBody = $@"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <style>
-        body {{ font-family: ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji'; }}
-    </style>
-</head>
-<body style='margin: 0; padding: 0;'>
-    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
-        <!-- Header with Belgian Handball Colors -->
-        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
-            {logoTag}
-            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest Report</h1>
-            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium RefTest - Report</p>
-        </div>
-
-        <!-- Main Content -->
-        <div style='padding: 20px;'>
-{languageSections}
-            <!-- Footer -->
-            <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
-                <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
-            </div>
-        </div>
-    </div>
-</body>
-</html>";
+        var emailBody = await templateService.BuildCompleteReportEmailAsync(enabledLanguages, nowCet, refTestCount);
 
         var attachments = new List<EmailAttachment>
         {
@@ -333,16 +208,41 @@ public partial class EmailService(
         Message = "Report email sent to {Email}")]
     private static partial void LogReportEmailSentToEmail(ILogger logger, string email);
 
-    private record LanguageContent(
-        string RefTestUrl,
-        Dictionary<string, string> Translations
-    );
 
     private Dictionary<string, Dictionary<string, string>> GetInvitationTranslations()
     {
-        var expiration = backgroundServiceConfiguration.ExpirationIfNotStarted;
+        // Lazy initialization - create once and cache
+        if (_invitationTranslationsCache != null)
+            return _invitationTranslationsCache;
 
-        return new Dictionary<string, Dictionary<string, string>>
+        var expiration = refTestExpirationConfiguration.ExpirationIfNotStarted;
+
+
+        // Format the expiration time in a human-readable way for each language
+        string GetValidityText(string lang)
+        {
+            var totalHours = (int)expiration.TotalHours;
+            var totalDays = (int)expiration.TotalDays;
+
+            return lang switch
+            {
+                "en" => totalHours < 24
+                    ? $"⏰ This RefTest is valid for {totalHours} {(totalHours == 1 ? "hour" : "hours")}"
+                    : $"⏰ This RefTest is valid for {totalDays} {(totalDays == 1 ? "day" : "days")}",
+                "nl" => totalHours < 24
+                    ? $"⏰ Deze RefTest is {totalHours} {(totalHours == 1 ? "uur" : "uren")} geldig"
+                    : $"⏰ Deze RefTest is {totalDays} {(totalDays == 1 ? "dag" : "dagen")} geldig",
+                "fr" => totalHours < 24
+                    ? $"⏰ Ce RefTest est valide pendant {totalHours} {(totalHours <= 1 ? "heure" : "heures")}"
+                    : $"⏰ Ce RefTest est valide pendant {totalDays} {(totalDays <= 1 ? "jour" : "jours")}",
+                "de" => totalHours < 24
+                    ? $"⏰ Dieser RefTest ist {totalHours} {(totalHours == 1 ? "Stunde" : "Stunden")} lang gültig"
+                    : $"⏰ Dieser RefTest ist {totalDays} {(totalDays == 1 ? "Tag" : "Tage")} lang gültig",
+                _ => $"⏰ Valid for {totalDays} days"
+            };
+        }
+
+        _invitationTranslationsCache = new Dictionary<string, Dictionary<string, string>>
         {
             ["en"] = new()
             {
@@ -398,32 +298,16 @@ public partial class EmailService(
             }
         };
 
-        // Format the expiration time in a human-readable way for each language
-        string GetValidityText(string lang)
-        {
-            var totalHours = (int)expiration.TotalHours;
-            var totalDays = (int)expiration.TotalDays;
-
-            return lang switch
-            {
-                "en" => totalHours < 24
-                    ? $"⏰ This RefTest is valid for {totalHours} {(totalHours == 1 ? "hour" : "hours")}"
-                    : $"⏰ This RefTest is valid for {totalDays} {(totalDays == 1 ? "day" : "days")}",
-                "nl" => totalHours < 24
-                    ? $"⏰ Deze RefTest is {totalHours} {(totalHours == 1 ? "uur" : "uren")} geldig"
-                    : $"⏰ Deze RefTest is {totalDays} {(totalDays == 1 ? "dag" : "dagen")} geldig",
-                "fr" => totalHours < 24
-                    ? $"⏰ Ce RefTest est valide pendant {totalHours} {(totalHours <= 1 ? "heure" : "heures")}"
-                    : $"⏰ Ce RefTest est valide pendant {totalDays} {(totalDays <= 1 ? "jour" : "jours")}",
-                "de" => totalHours < 24
-                    ? $"⏰ Dieser RefTest ist {totalHours} {(totalHours == 1 ? "Stunde" : "Stunden")} lang gültig"
-                    : $"⏰ Dieser RefTest ist {totalDays} {(totalDays == 1 ? "Tag" : "Tage")} lang gültig",
-                _ => $"⏰ Valid for {totalDays} days"
-            };
-        }
+        return _invitationTranslationsCache;
     }
 
-    private static Dictionary<string, Dictionary<string, string>> GetResultsTranslations() => new()
+    private Dictionary<string, Dictionary<string, string>> GetResultsTranslations()
+    {
+        // Lazy initialization - create once and cache
+        if (_resultsTranslationsCache != null)
+            return _resultsTranslationsCache;
+
+        _resultsTranslationsCache = new()
     {
         ["en"] = new Dictionary<string, string>
         {
@@ -500,7 +384,16 @@ public partial class EmailService(
         }
     };
 
-    private static Dictionary<string, Dictionary<string, string>> GetReportTranslations() => new()
+        return _resultsTranslationsCache;
+    }
+
+    private Dictionary<string, Dictionary<string, string>> GetReportTranslations()
+    {
+        // Lazy initialization - create once and cache
+        if (_reportTranslationsCache != null)
+            return _reportTranslationsCache;
+
+        _reportTranslationsCache = new()
     {
         ["en"] = new Dictionary<string, string>
         {
@@ -539,6 +432,9 @@ public partial class EmailService(
             ["reportDetails"] = "Berichtsdetails"
         }
     };
+
+        return _reportTranslationsCache;
+    }
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
     {
@@ -581,106 +477,9 @@ public partial class EmailService(
                 ))
         ];
     }
-
-    private static string BuildInvitationLanguageSection(LanguageContent langContent, string name,
-        int numberOfQuestions, int maxTimeInMinutes, bool isLast)
-    {
-        var t = langContent.Translations;
-        var separator = isLast
-            ? ""
-            : @"
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
-
-        return $@"
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
-                
-                <!-- RefTest Details -->
-                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📋 {t["refTestDetails"]}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["questions"]}:</strong> {numberOfQuestions}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["timeLimit"]}:</strong> {maxTimeInMinutes} {t["minutes"]}</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{t["validDays"]}</em></p>
-                </div>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>{t["greeting"]} {name},</p>
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>{t["inviteText"]}</p>
-                
-                <div style='text-align: center; margin: 20px 0;'>
-                    <a href='{langContent.RefTestUrl}' style='background-color: #e30613; color: #ffffff; padding: 14px 32px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold; font-size: 16px;'>{t["startButton"]}</a>
-                </div>
-            </div>{separator}";
-    }
-
-    private string BuildResultsLanguageSection(LanguageContent langContent, string name, int questionScore,
-        int answerScore, int totalQuestions, int answerTotal,
-        double percentage, bool passed, string resultColor, string resultBgColor, string resultIcon, bool isLast)
-    {
-        var t = langContent.Translations;
-        var separator = isLast
-            ? ""
-            : @"
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
-
-        return $@"
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
-                
-                <!-- Score Display -->
-                <div style='background-color: {resultBgColor}; border-left: 4px solid {resultColor}; padding: 20px; margin-bottom: 20px; border-radius: 4px;'>
-                    <h3 style='color: {resultColor}; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>{resultIcon} {(passed ? t["passed"] : t["notPassed"])}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["percentage"]}:</strong> {percentage:F2} %</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["score"]}:</strong> {t["questions"]}: {questionScore} / {totalQuestions} &nbsp; &nbsp; &nbsp;  {t["answers"]}: {answerScore} / {answerTotal}</p>
-                    <p style='margin: 8px 0; color: #737373; font-size: 14px;'><em>{(passed ? t["passedMessage"] : t["failedMessage"])}</em></p>
-                </div>
-
-                <!-- Greeting -->
-                <p style='color: #404040; font-size: 16px; margin: 0 0 20px 0;'>{t["greeting"]} {name},</p>
-
-                <p style='color: #404040; font-size: 16px; margin: 0 0 16px 0;'>
-                    {(passed ? t["passedText"] : t["failedText"])}
-                </p>
-
-                <!-- PDF Reference -->
-                <div style='background-color: #f5f5f5; border-left: 4px solid #e30613; padding: 16px; margin: 16px 0; border-radius: 4px;'>
-                    <p style='margin: 0; color: #404040; font-size: 14px;'>{t["pdfNote"]} ({string.Join(", ", languageConfiguration.EnabledLanguages.Select(l => GetInvitationTranslations()[l]["displayName"]))}).</p>
-                </div>
-            </div>{separator}";
-    }
-
-    private static string BuildReportLanguageSection(LanguageContent langContent, DateTime reportDate, int refTestCount,
-        bool isLast)
-    {
-        var t = langContent.Translations;
-        var separator = isLast
-            ? ""
-            : @"
-            <!-- Separator -->
-            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
-
-        return $@"
-            <div style='padding: 0; margin-bottom: 20px;'>
-                <h2 style='color: #e30613; font-size: 24px; margin: 0 0 20px 0; text-align: center;'>{t["displayName"]}</h2>
-                
-                <p style='font-size: 16px; line-height: 1.6; color: #374151;'>
-                    {t["introText"]}
-                </p>
-                
-                <div style='background-color: #fef2f2; border-left: 4px solid #e30613; padding: 20px; margin: 20px 0; border-radius: 4px;'>
-                    <h3 style='color: #e30613; margin: 0 0 12px 0; font-size: 16px; font-weight: bold;'>📊 {t["reportDetails"]}</h3>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["reportDate"]}:</strong> {reportDate:dd-MM-yyyy HH:mm}</p>
-                    <p style='margin: 8px 0; color: #404040; font-size: 15px;'><strong>{t["numberOfRefTests"]}:</strong> {refTestCount}</p>
-                </div>
-
-                <p style='font-size: 14px; color: #374151;'>
-                    {t["attachmentText"]}
-                </p>
-            </div>{separator}";
-    }
 }
 
 public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");
 
 public record EmailAttachment(string FileName, byte[] Content);
+
