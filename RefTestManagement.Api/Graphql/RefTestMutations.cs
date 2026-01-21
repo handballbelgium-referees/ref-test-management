@@ -100,6 +100,7 @@ public static class RefTestMutations
     /// <param name="context"></param>
     /// <param name="ihfRulesQuestionsService"></param>
     /// <param name="jobEnqueueService"></param>
+    /// <param name="emailConfiguration"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -111,6 +112,7 @@ public static class RefTestMutations
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] EmailConfiguration emailConfiguration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -162,7 +164,10 @@ public static class RefTestMutations
             refTest.WrongAnswerIds
         );
 
-        await jobEnqueueService.EnqueueResultEmailAsync(payload, cancellationToken: cancellationToken);
+        DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
+            ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
+            : null;
+        await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt, cancellationToken);
 
         return refTest.ToDto();
     }
@@ -290,7 +295,8 @@ public static class RefTestMutations
                     refTest.MaxTimeInMinutes
                 );
 
-                await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload, cancellationToken: cancellationToken);
+                await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                    cancellationToken: cancellationToken);
 
                 result.CreatedRefTests.Add(refTest.ToDto());
             }
@@ -359,7 +365,8 @@ public static class RefTestMutations
                     refTest.MaxTimeInMinutes
                 );
 
-                await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload, cancellationToken: cancellationToken);
+                await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                    cancellationToken: cancellationToken);
 
                 result.SentRefTests.Add(refTest.ToDto());
                 result.SuccessfullySent++;
