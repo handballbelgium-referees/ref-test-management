@@ -1,4 +1,3 @@
-using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.Extensions.Logging;

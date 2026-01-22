@@ -1,5 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Domain;
-using Handball.Belgium.RefTestManagement.Domain.Jobs;
+﻿using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
