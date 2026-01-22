@@ -5,7 +5,23 @@ using QuestPDF.Infrastructure;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
-public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResultsPdfService
+public interface IRefTestResultsPdfService
+{
+    byte[] GenerateRefTestResultsPdf(
+        string name,
+        string language,
+        int questionScore,
+        int answerScore,
+        int totalQuestions,
+        int answerTotal,
+        double percentage,
+        List<string> selectedAnswerIds,
+        List<string> wrongQuestionIds,
+        List<string> wrongAnswerIds,
+        List<Question> questionsWithCorrectAnswers);
+}
+
+public class RefTestResultsPdfService(ILogoService logoService, ITranslationService translationService) : IRefTestResultsPdfService
 {
 
     public byte[] GenerateRefTestResultsPdf(
@@ -55,10 +71,10 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
         return document.GeneratePdf();
     }
 
-    private static void ComposeHeader(IContainer container, string name, string language, int questionScore,
+    private void ComposeHeader(IContainer container, string name, string language, int questionScore,
         int answerScore, int totalQuestions, int answerTotal, double percentage, byte[]? logo)
     {
-        var translations = GetTranslations(language);
+        var translations = translationService.GetPdfResultsTranslations(language);
         
         container.Column(column =>
         {
@@ -126,10 +142,10 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
         });
     }
 
-    private static void ComposeContent(IContainer container, string language, List<Question> questions,
+    private void ComposeContent(IContainer container, string language, List<Question> questions,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds)
     {
-        var translations = GetTranslations(language);
+        var translations = translationService.GetPdfResultsTranslations(language);
 
         container.Column(column =>
         {
@@ -301,64 +317,5 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
                 });
             }
         });
-    }
-
-    private static Dictionary<string, string> GetTranslations(string language)
-    {
-        return language switch
-        {
-            "nl" => new Dictionary<string, string>
-            {
-                ["resultsTitle"] = "Jouw Resultaten",
-                ["name"] = "Naam",
-                ["percentage"] = "Percentage",
-                ["score"] = "Jouw score",
-                ["questions"] = "V",
-                ["answers"] = "A",
-                ["reviewAnswers"] = "Antwoorden Beoordelen",
-                ["question"] = "Vraag",
-                ["yourAnswer"] = "Jouw antwoord",
-                ["correctAnswer"] = "Juist antwoord"
-            },
-            "fr" => new Dictionary<string, string>
-            {
-                ["resultsTitle"] = "Vos Résultats",
-                ["name"] = "Nom",
-                ["percentage"] = "Pourcentage",
-                ["score"] = "Votre score",
-                ["questions"] = "Q",
-                ["answers"] = "R",
-                ["reviewAnswers"] = "Réviser les Réponses",
-                ["question"] = "Question",
-                ["yourAnswer"] = "Votre réponse",
-                ["correctAnswer"] = "Réponse correcte"
-            },
-            "de" => new Dictionary<string, string>
-            {
-                ["resultsTitle"] = "Ihre Ergebnisse",
-                ["name"] = "Name",
-                ["percentage"] = "Prozent",
-                ["score"] = "Ihre Punktzahl",
-                ["questions"] = "F",
-                ["answers"] = "A",
-                ["reviewAnswers"] = "Antworten Überprüfen",
-                ["question"] = "Frage",
-                ["yourAnswer"] = "Ihre Antwort",
-                ["correctAnswer"] = "Richtige Antwort"
-            },
-            _ => new Dictionary<string, string> // "en" (default)
-            {
-                ["resultsTitle"] = "Your Results",
-                ["name"] = "Name",
-                ["percentage"] = "Percentage",
-                ["score"] = "Your score",
-                ["questions"] = "Q",
-                ["answers"] = "A",
-                ["reviewAnswers"] = "Review Answers",
-                ["question"] = "Question",
-                ["yourAnswer"] = "Your answer",
-                ["correctAnswer"] = "Correct answer"
-            }
-        };
     }
 }

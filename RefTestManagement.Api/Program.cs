@@ -68,6 +68,7 @@ var backgroundJobConfig = configuration.GetSection("BackgroundJobConfiguration")
 services.AddSingleton(backgroundJobConfig);
 
 services.AddHttpClient<ILogoService, LogoService>();
+services.AddSingleton<ITranslationService, TranslationService>();
 services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
 {
     var emailCfg = sp.GetRequiredService<EmailConfiguration>();

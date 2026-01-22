@@ -19,7 +19,7 @@ public interface IEmailTemplateService
 
 public record LanguageContent(
     string RefTestUrl,
-    Dictionary<string, string> Translations
+    IReadOnlyDictionary<string, string> Translations
 );
 
 public class EmailTemplateService(ILogoService logoService) : IEmailTemplateService

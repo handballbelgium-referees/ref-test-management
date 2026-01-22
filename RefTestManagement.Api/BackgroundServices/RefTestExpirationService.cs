@@ -1,5 +1,6 @@
 ﻿using Handball.Belgium.RefTestManagement.Api.Graphql;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
@@ -135,12 +136,14 @@ public partial class RefTestExpirationService : BackgroundService
                 {
                     var ihfRulesQuestionsService = scope.ServiceProvider.GetRequiredService<IIhfRulesQuestionsService>();
                     var jobEnqueueService = scope.ServiceProvider.GetRequiredService<IJobEnqueueService>();
+                    var emailConfiguration = scope.ServiceProvider.GetRequiredService<EmailConfiguration>();
                     
                     await RefTestMutations.CompleteRefTestAsync(
                         new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
                         context,
                         ihfRulesQuestionsService,
                         jobEnqueueService,
+                        emailConfiguration,
                         cancellationToken);
 
                     completedCount++;

@@ -5,6 +5,16 @@ using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
+/// <summary>
+/// Service for enqueuing background jobs
+/// </summary>
+public interface IJobEnqueueService
+{
+    Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
+    Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
+    Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
+}
+
 public partial class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqueueService> logger)
     : IJobEnqueueService
 {
