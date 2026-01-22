@@ -35,7 +35,7 @@ public static class RefTestMutations
     public static async Task<RefTestDto> StartRefTestAsync(
         string token,
         RefTestManagementContext context,
-        [Service] BackgroundServiceConfiguration configuration,
+        [Service] RefTestExpirationConfiguration configuration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -47,7 +47,6 @@ public static class RefTestMutations
         if (refTest.IsExpired(configuration.ExpirationIfNotStarted))
         {
             refTest.Expire();
-            context.RefTests.Update(refTest);
             await context.SaveChangesAsync(cancellationToken);
             throw new RefTestExpiredException(token);
         }
@@ -56,7 +55,6 @@ public static class RefTestMutations
             return refTest.ToDto();
 
         refTest.Start();
-        context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
         return refTest.ToDto();
@@ -88,7 +86,6 @@ public static class RefTestMutations
             throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
 
         refTest.SaveProgress(input.CurrentQuestionIndex, input.SelectedAnswerIds, input.Language);
-        context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
         return refTest.ToDto();
@@ -144,7 +141,6 @@ public static class RefTestMutations
             input.Language
         );
 
-        context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
         if (!refTest.SendResultsAutomatically)

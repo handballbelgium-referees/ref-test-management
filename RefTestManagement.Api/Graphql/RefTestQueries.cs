@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Authorization;
 using HotChocolate.Caching;
 using Microsoft.EntityFrameworkCore;
@@ -22,6 +23,7 @@ public static class RefTestQueries
     /// <param name="token"></param>
     /// <param name="context"></param>
     /// <param name="configuration"></param>
+    /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -33,10 +35,12 @@ public static class RefTestQueries
     public static async Task<RefTestDto?> GetRefTestByTokenAsync(
         string token,
         RefTestManagementContext context,
-        [Service] BackgroundServiceConfiguration configuration,
+        [Service] RefTestExpirationConfiguration configuration,
+        [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
+            .AsNoTracking()
             .FirstOrDefaultAsync(x => x.Token == token, cancellationToken);
 
         if (refTest is null)
@@ -49,9 +53,10 @@ public static class RefTestQueries
         if (!refTest.IsExpired(configuration.ExpirationIfNotStarted))
             return refTest.ToDto();
 
-        refTest.Expire();
-        context.RefTests.Update(refTest);
-        await context.SaveChangesAsync(cancellationToken);
+        // Enqueue a specific job to handle this expired test
+        await jobEnqueueService.EnqueueRefTestExpirationAsync(
+            new RefTestExpirationPayload(refTest.Id, RefTestExpirationAction.MarkAsExpired),
+            cancellationToken: cancellationToken);
 
         throw new RefTestExpiredException(token);
     }

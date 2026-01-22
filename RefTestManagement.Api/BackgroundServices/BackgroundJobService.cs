@@ -228,9 +228,18 @@ public class BackgroundJobService : BackgroundService
 
         ServiceLoggerMessages.LogSendingResultEmail(_logger, payload.Email);
 
-        // Get questions with correct answers
+        // Get the RefTest to retrieve all question IDs
+        var refTest = await context.RefTests
+            .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
+        
+        if (refTest == null)
+        {
+            throw new InvalidOperationException($"RefTest {payload.RefTestId} not found");
+        }
+
+        // Get ALL questions with correct answers (not just the wrong ones)
         var questionsWithCorrectAnswers = await questionsService.GetQuestionsByIdAsync(
-            payload.WrongQuestionIds.Concat(payload.WrongAnswerIds).Distinct().ToList(),
+            refTest.QuestionIds,
             includeNumber: true,
             includeIsCorrect: true,
             randomAnswerOrder: false,
@@ -252,14 +261,8 @@ public class BackgroundJobService : BackgroundService
             cancellationToken); // Already scheduled via the job system
 
         // Mark the RefTest results as sent
-        var refTest = await context.RefTests
-            .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
-        
-        if (refTest != null)
-        {
-            refTest.SendResults();
-            await context.SaveChangesAsync(cancellationToken);
-        }
+        refTest.SendResults();
+        await context.SaveChangesAsync(cancellationToken);
     }
 
     private async Task ProcessReportEmailJobAsync(

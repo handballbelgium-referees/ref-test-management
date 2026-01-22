@@ -58,7 +58,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Personalization**: Emails include participant names and RefTest-specific details
 - **Brevo Integration**: Reliable email delivery via Brevo API (formerly SendGrid)
 - **Self-Cleaning**: Old email jobs automatically cleaned up from the database
-- **High Performance**: 
+- **High Performance**:
   - **Thread-safe operations** (no race conditions)
   - **Memory optimized** (75% reduction in peak memory usage)
   - **Fast processing** (~120 jobs/minute throughput)
@@ -146,11 +146,13 @@ This application follows a **clean architecture pattern** with clear separation 
 ### Key Architectural Highlights
 
 #### ✅ Clean Architecture
+
 - **Clear separation** between Domain, Application, and Infrastructure layers
 - **Dependency Inversion** - Infrastructure depends on Application abstractions
 - **SOLID principles** throughout the codebase
 
 #### 🚀 Performance Optimizations
+
 - **Singleton services** for shared state (TranslationService, EmailTemplateService, LogoService)
 - **Static caching** of email templates and translations (loaded once at startup)
 - **Compiled regex** for HTML parsing (zero allocation)
@@ -159,6 +161,7 @@ This application follows a **clean architecture pattern** with clear separation 
 - **Sequential PDF generation** to reduce memory pressure by 75%
 
 #### 🔄 Background Processing
+
 - **Asynchronous job queue** for email operations (no blocking)
 - **Automatic retry** with exponential backoff (up to 3 attempts)
 - **Batch processing** (configurable batch size)
@@ -166,7 +169,9 @@ This application follows a **clean architecture pattern** with clear separation 
 - **Self-cleaning** old jobs (configurable retention periods)
 
 #### 🎯 Service Responsibilities
+
 Each service has a **single, clear responsibility**:
+
 - **EmailService** → Send emails via Brevo API
 - **EmailTemplateService** → Generate HTML email templates
 - **TranslationService** → Manage all UI/email translations
@@ -182,9 +187,11 @@ Each service has a **single, clear responsibility**:
 The backend services have been **architected for excellence** with focus on performance, reliability, and maintainability:
 
 #### ✅ Single Responsibility Principle (10/10)
+
 Every service has ONE clear, focused responsibility. No mixed concerns, no god classes.
 
 #### ✅ Performance Optimization (9.5/10)
+
 - **Thread-safe operations** - Zero race conditions with proper dictionary handling
 - **Memory efficient** - 75% reduction in peak memory usage for PDF generation
 - **Cached resources** - Translations, templates, and logos loaded once at startup
@@ -193,6 +200,7 @@ Every service has ONE clear, focused responsibility. No mixed concerns, no god c
 - **Read-only APIs** - Immutable dictionaries prevent accidental mutations
 
 #### ✅ Scalability Features
+
 - **Singleton services** for shared state (TranslationService, EmailTemplateService)
 - **Batch processing** for job queue (configurable batch sizes)
 - **Row-level locking** for concurrent job processing
@@ -200,6 +208,7 @@ Every service has ONE clear, focused responsibility. No mixed concerns, no god c
 - **Connection pooling** via EF Core and HttpClient factory
 
 #### ✅ Code Quality
+
 - **SOLID principles** throughout
 - **Dependency injection** for all services
 - **Clear interfaces** with well-defined contracts
@@ -208,15 +217,16 @@ Every service has ONE clear, focused responsibility. No mixed concerns, no god c
 
 #### Performance Metrics
 
-| Scenario | Memory Usage | CPU Usage | Throughput |
-|----------|--------------|-----------|------------|
-| Single email (no PDF) | ~50 KB | < 1% | N/A |
-| Single email (with 4 PDFs) | ~2 MB | < 5% | N/A |
-| Job queue processing | ~100 KB | < 2% | ~120 jobs/min |
-| RefTest expiration check | ~10 MB | < 1% | Every 5 min |
-| 100 concurrent users | ~200 MB | ~15% | Good |
+| Scenario                   | Memory Usage | CPU Usage | Throughput    |
+| -------------------------- | ------------ | --------- | ------------- |
+| Single email (no PDF)      | ~50 KB       | < 1%      | N/A           |
+| Single email (with 4 PDFs) | ~2 MB        | < 5%      | N/A           |
+| Job queue processing       | ~100 KB      | < 2%      | ~120 jobs/min |
+| RefTest expiration check   | ~10 MB       | < 1%      | Every 5 min   |
+| 100 concurrent users       | ~200 MB      | ~15%      | Good          |
 
 **Optimization Highlights:**
+
 - **Before optimization**: 8 MB peak memory per email with PDFs
 - **After optimization**: 2 MB peak memory (75% reduction)
 - **Thread safety issue**: Fixed critical dictionary mutation bug
@@ -238,19 +248,19 @@ public static partial class ServiceLoggerMessages
     // Generic Service Operations (3 methods)
     [LoggerMessage(LogLevel.Information, "Service {serviceName} is starting")]
     public static partial void LogServiceStarting(ILogger logger, string serviceName);
-    
+
     // Email Operations (9 methods)
     [LoggerMessage(LogLevel.Information, "Sending email to {email} with subject: {subject}")]
     public static partial void LogSendingEmail(ILogger logger, string email, string subject);
-    
+
     // Job Processing Operations (11 methods)
     [LoggerMessage(LogLevel.Information, "Processing job {jobId} of type {jobType}")]
     public static partial void LogProcessingJob(ILogger logger, Guid jobId, JobType jobType, ...);
-    
+
     // RefTest Expiration Operations (9 methods)
     [LoggerMessage(LogLevel.Information, "Enqueued {count} RefTest expiration jobs")]
     public static partial void LogEnqueuedExpirationJobs(ILogger logger, int count);
-    
+
     // ... 31 more methods across 9 categories
 }
 ```
@@ -262,7 +272,7 @@ public static partial class ServiceLoggerMessages
 ✅ **Perfect Consistency** - Same log format across all services  
 ✅ **No CA1873 Warnings** - All expressions evaluated only if logging enabled  
 ✅ **Type-Safe** - Compile-time validation of log messages  
-✅ **Discoverable** - IntelliSense shows all 53 available methods  
+✅ **Discoverable** - IntelliSense shows all 53 available methods
 
 #### Logger Method Categories (53 Total)
 
@@ -295,14 +305,14 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 
 #### Backend (.NET 10)
 
-| Technology                | Version   | Purpose                                                        |
-| ------------------------- | --------- | -------------------------------------------------------------- |
-| **.NET**                  | 10.0      | Latest .NET framework for high-performance APIs                |
-| **Hot Chocolate**         | 15.1.11   | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.1    | ORM for database access with migrations                        |
-| **SQL Server**            | -         | Primary data store (Azure SQL or local)                        || **ClosedXML**             | 0.105.0   | Excel file generation and manipulation                         || **QuestPDF**              | 2025.12.1 | PDF generation for RefTest results                             |
-| **Auth0**                 | -         | OAuth2/OpenID Connect authentication                           |
-| **Brevo API**             | -         | Email delivery service                                         |
+| Technology                | Version | Purpose                                                        |
+| ------------------------- | ------- | -------------------------------------------------------------- | --- | ------------- | ------- | -------------------------------------- | --- | ------------ | --------- | ---------------------------------- |
+| **.NET**                  | 10.0    | Latest .NET framework for high-performance APIs                |
+| **Hot Chocolate**         | 15.1.11 | GraphQL server with authorization, data loaders, and filtering |
+| **Entity Framework Core** | 10.0.1  | ORM for database access with migrations                        |
+| **SQL Server**            | -       | Primary data store (Azure SQL or local)                        |     | **ClosedXML** | 0.105.0 | Excel file generation and manipulation |     | **QuestPDF** | 2025.12.1 | PDF generation for RefTest results |
+| **Auth0**                 | -       | OAuth2/OpenID Connect authentication                           |
+| **Brevo API**             | -       | Email delivery service                                         |
 
 **Project Structure:**
 
@@ -526,6 +536,7 @@ Customize scoring behavior and passing criteria:
 ```
 
 **Configuration options:**
+
 - `PassingPercentage`: Percentage required to pass (default: 80)
 - `Correct`: Points for each correct answer selected (default: 1)
 - `InCorrect`: Points for each incorrect answer selected (default: -1)
@@ -815,7 +826,7 @@ ref-test-management/
 ### Key Directories Explained
 
 | Directory                                   | Purpose                                                  |
-|---------------------------------------------|----------------------------------------------------------|
+| ------------------------------------------- | -------------------------------------------------------- |
 | `RefTestManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
 | `RefTestManagement.Application/GraphQL`     | External GraphQL client schemas and queries (IHF Rules)  |
 | `RefTestManagement.Infrastructure/Services` | PDF/Excel generation and email delivery (Brevo)          |
@@ -899,41 +910,41 @@ Complete configuration file structure:
 
 ### Configuration Options Explained
 
-| Section                   | Key                     | Description                                 | Required |
-| ------------------------- | ----------------------- |---------------------------------------------| -------- |
-| **ConnectionStrings**     | `RefTestManagement`     | SQL Server or Azure SQL connection string   | ✅ Yes   |
-| **Auth0**                 | `Domain`                | Auth0 tenant domain                         | ✅ Yes   |
-|                           | `ClientId`              | Auth0 application client ID                 | ✅ Yes   |
-|                           | `ClientSecret`          | Auth0 application client secret             | ✅ Yes   |
-|                           | `Audience`              | Auth0 API identifier                        | ✅ Yes   |
-| **EmailConfiguration**    | `BaseUrl`               | Base URL for email links                    | ✅ Yes   |
-|                           | `BrevoApiKey`           | Brevo (SendGrid) API key                    | ✅ Yes   |
-|                           | `BrevoApiUrl`           | Brevo API endpoint                          | ✅ Yes   |
-|                           | `FromEmail`             | Sender email address                        | ✅ Yes   |
-|                           | `FromName`              | Sender display name                         | ✅ Yes   |
-|                           | `ScheduledDelayMinutes` | Delay in minutes for scheduled emails       | ⚠️ Optional (defaults to 0) |
-| **RulesQuestions**        | `Url`                   | External question bank GraphQL endpoint     | ✅ Yes   |
-| **LanguageConfiguration** | `DefaultPhraseLanguage` | Default language for questions              | ✅ Yes   |
-|                           | `EnabledLanguages`      | Array of enabled UI languages (en/nl/fr/de) | ⚠️ Optional (defaults to all 4) |
-| **ScoreConfiguration**    | `PassingPercentage`     | Percentage required to pass a RefTest       | ⚠️ Optional (defaults to 80) |
-|                           | `Correct`               | Points awarded for correct answer selected  | ⚠️ Optional (defaults to 1) |
-|                           | `InCorrect`             | Points for incorrect answer selected        | ⚠️ Optional (defaults to -1) |
-|                           | `NotAnswered`           | Points for correct answer NOT selected      | ⚠️ Optional (defaults to 0) |
-|                           | `NegativeScore`         | Allow negative scores per question          | ⚠️ Optional (defaults to false) |
-|                           | `PenalizeGuessingStrategy` | Zero score if all answers selected       | ⚠️ Optional (defaults to false) |
-| **RefTestExpirationConfiguration** | `ExpirationCheckIntervalMinutes` | How often to check for expired tests (minutes) | ⚠️ Optional (defaults to 5) |
-|                           | `StartupDelaySeconds`   | Delay before first expiration check (seconds) | ⚠️ Optional (defaults to 30) |
-|                           | `ExpirationIfNotStarted` | TimeSpan for how long a test is valid if not started (format: d.hh:mm:ss) | ⚠️ Optional (defaults to 7.00:00:00 - 7 days) |
-| **BackgroundJobConfiguration** | `PollingIntervalSeconds` | How often to poll for new jobs (seconds) | ⚠️ Optional (defaults to 5) |
-|                           | `LockDurationMinutes`   | How long a job is locked during processing (minutes) | ⚠️ Optional (defaults to 5) |
-|                           | `MaxAttempts`           | Maximum retry attempts for failed jobs | ⚠️ Optional (defaults to 3) |
-|                           | `BatchSize`             | Maximum jobs to process per cycle | ⚠️ Optional (defaults to 10) |
-|                           | `StartupDelaySeconds`   | Delay before starting job processing (seconds) | ⚠️ Optional (defaults to 10) |
-|                           | `EnableCleanup`         | Enable automatic cleanup of old jobs | ⚠️ Optional (defaults to true) |
-|                           | `CleanupIntervalHours`  | How often to run cleanup (hours) | ⚠️ Optional (defaults to 24) |
-|                           | `RetainCompletedJobsDays` | Keep successful jobs for X days | ⚠️ Optional (defaults to 7) |
-|                           | `RetainFailedJobsDays`  | Keep failed jobs for X days | ⚠️ Optional (defaults to 30) |
-| **ReportConfiguration**   | `RecipientEmails`       | Array of emails to receive system reports   | ⚠️ Optional (defaults to empty) |
+| Section                            | Key                              | Description                                                               | Required                                      |
+| ---------------------------------- | -------------------------------- | ------------------------------------------------------------------------- | --------------------------------------------- |
+| **ConnectionStrings**              | `RefTestManagement`              | SQL Server or Azure SQL connection string                                 | ✅ Yes                                        |
+| **Auth0**                          | `Domain`                         | Auth0 tenant domain                                                       | ✅ Yes                                        |
+|                                    | `ClientId`                       | Auth0 application client ID                                               | ✅ Yes                                        |
+|                                    | `ClientSecret`                   | Auth0 application client secret                                           | ✅ Yes                                        |
+|                                    | `Audience`                       | Auth0 API identifier                                                      | ✅ Yes                                        |
+| **EmailConfiguration**             | `BaseUrl`                        | Base URL for email links                                                  | ✅ Yes                                        |
+|                                    | `BrevoApiKey`                    | Brevo (SendGrid) API key                                                  | ✅ Yes                                        |
+|                                    | `BrevoApiUrl`                    | Brevo API endpoint                                                        | ✅ Yes                                        |
+|                                    | `FromEmail`                      | Sender email address                                                      | ✅ Yes                                        |
+|                                    | `FromName`                       | Sender display name                                                       | ✅ Yes                                        |
+|                                    | `ScheduledDelayMinutes`          | Delay in minutes for scheduled emails                                     | ⚠️ Optional (defaults to 0)                   |
+| **RulesQuestions**                 | `Url`                            | External question bank GraphQL endpoint                                   | ✅ Yes                                        |
+| **LanguageConfiguration**          | `DefaultPhraseLanguage`          | Default language for questions                                            | ✅ Yes                                        |
+|                                    | `EnabledLanguages`               | Array of enabled UI languages (en/nl/fr/de)                               | ⚠️ Optional (defaults to all 4)               |
+| **ScoreConfiguration**             | `PassingPercentage`              | Percentage required to pass a RefTest                                     | ⚠️ Optional (defaults to 80)                  |
+|                                    | `Correct`                        | Points awarded for correct answer selected                                | ⚠️ Optional (defaults to 1)                   |
+|                                    | `InCorrect`                      | Points for incorrect answer selected                                      | ⚠️ Optional (defaults to -1)                  |
+|                                    | `NotAnswered`                    | Points for correct answer NOT selected                                    | ⚠️ Optional (defaults to 0)                   |
+|                                    | `NegativeScore`                  | Allow negative scores per question                                        | ⚠️ Optional (defaults to false)               |
+|                                    | `PenalizeGuessingStrategy`       | Zero score if all answers selected                                        | ⚠️ Optional (defaults to false)               |
+| **RefTestExpirationConfiguration** | `ExpirationCheckIntervalMinutes` | How often to check for expired tests (minutes)                            | ⚠️ Optional (defaults to 5)                   |
+|                                    | `StartupDelaySeconds`            | Delay before first expiration check (seconds)                             | ⚠️ Optional (defaults to 30)                  |
+|                                    | `ExpirationIfNotStarted`         | TimeSpan for how long a test is valid if not started (format: d.hh:mm:ss) | ⚠️ Optional (defaults to 7.00:00:00 - 7 days) |
+| **BackgroundJobConfiguration**     | `PollingIntervalSeconds`         | How often to poll for new jobs (seconds)                                  | ⚠️ Optional (defaults to 5)                   |
+|                                    | `LockDurationMinutes`            | How long a job is locked during processing (minutes)                      | ⚠️ Optional (defaults to 5)                   |
+|                                    | `MaxAttempts`                    | Maximum retry attempts for failed jobs                                    | ⚠️ Optional (defaults to 3)                   |
+|                                    | `BatchSize`                      | Maximum jobs to process per cycle                                         | ⚠️ Optional (defaults to 10)                  |
+|                                    | `StartupDelaySeconds`            | Delay before starting job processing (seconds)                            | ⚠️ Optional (defaults to 10)                  |
+|                                    | `EnableCleanup`                  | Enable automatic cleanup of old jobs                                      | ⚠️ Optional (defaults to true)                |
+|                                    | `CleanupIntervalHours`           | How often to run cleanup (hours)                                          | ⚠️ Optional (defaults to 24)                  |
+|                                    | `RetainCompletedJobsDays`        | Keep successful jobs for X days                                           | ⚠️ Optional (defaults to 7)                   |
+|                                    | `RetainFailedJobsDays`           | Keep failed jobs for X days                                               | ⚠️ Optional (defaults to 30)                  |
+| **ReportConfiguration**            | `RecipientEmails`                | Array of emails to receive system reports                                 | ⚠️ Optional (defaults to empty)               |
 
 ### User Secrets (Development)
 
@@ -1123,16 +1134,16 @@ The job queue system:
 
 #### Performance Characteristics
 
-| Metric | Value |
-|--------|-------|
-| **Polling Interval** | 5 seconds (configurable) |
-| **Batch Size** | 10 jobs per cycle (configurable) |
-| **Lock Duration** | 5 minutes (configurable) |
-| **Max Retry Attempts** | 3 (configurable) |
-| **Cleanup Interval** | Every 24 hours (configurable) |
-| **Job Retention** | Completed: 7 days, Failed: 30 days (configurable) |
-| **Memory per Email** | ~2 MB (with PDFs) |
-| **Throughput** | ~120 jobs/minute |
+| Metric                 | Value                                             |
+| ---------------------- | ------------------------------------------------- |
+| **Polling Interval**   | 5 seconds (configurable)                          |
+| **Batch Size**         | 10 jobs per cycle (configurable)                  |
+| **Lock Duration**      | 5 minutes (configurable)                          |
+| **Max Retry Attempts** | 3 (configurable)                                  |
+| **Cleanup Interval**   | Every 24 hours (configurable)                     |
+| **Job Retention**      | Completed: 7 days, Failed: 30 days (configurable) |
+| **Memory per Email**   | ~2 MB (with PDFs)                                 |
+| **Throughput**         | ~120 jobs/minute                                  |
 
 #### Database Schema
 
@@ -1150,7 +1161,7 @@ CREATE TABLE Jobs (
     ExecuteAfter DATETIME2 NOT NULL,         -- Scheduled execution time
     LockedUntil DATETIME2 NULL,              -- Concurrency lock
     CompletedAt DATETIME2 NULL,              -- When job finished
-    
+
     -- Optimized indexes for job processing
     INDEX IX_Jobs_Status_ExecuteAfter_LockedUntil (Status, ExecuteAfter, LockedUntil)
 );
@@ -1163,15 +1174,15 @@ Configure in `appsettings.json`:
 ```json
 {
   "BackgroundJobConfiguration": {
-    "PollingIntervalSeconds": 5,        // How often to check for jobs
-    "LockDurationMinutes": 5,           // Job processing timeout
-    "MaxAttempts": 3,                   // Retry limit
-    "BatchSize": 10,                    // Jobs per cycle
-    "StartupDelaySeconds": 10,          // Delay before first poll
-    "EnableCleanup": true,              // Auto-cleanup old jobs
-    "CleanupIntervalHours": 24,         // How often to cleanup
-    "RetainCompletedJobsDays": 7,       // Keep successful jobs
-    "RetainFailedJobsDays": 30          // Keep failed jobs longer for debugging
+    "PollingIntervalSeconds": 5, // How often to check for jobs
+    "LockDurationMinutes": 5, // Job processing timeout
+    "MaxAttempts": 3, // Retry limit
+    "BatchSize": 10, // Jobs per cycle
+    "StartupDelaySeconds": 10, // Delay before first poll
+    "EnableCleanup": true, // Auto-cleanup old jobs
+    "CleanupIntervalHours": 24, // How often to cleanup
+    "RetainCompletedJobsDays": 7, // Keep successful jobs
+    "RetainFailedJobsDays": 30 // Keep failed jobs longer for debugging
   }
 }
 ```
@@ -1179,6 +1190,7 @@ Configure in `appsettings.json`:
 #### Job Types & Payloads
 
 **InvitationEmail**:
+
 ```json
 {
   "name": "John Doe",
@@ -1191,6 +1203,7 @@ Configure in `appsettings.json`:
 ```
 
 **ResultEmail**:
+
 ```json
 {
   "name": "John Doe",
@@ -1209,6 +1222,7 @@ Configure in `appsettings.json`:
 ```
 
 **ReportEmail**:
+
 ```json
 {
   "refTests": [...],
@@ -1239,6 +1253,7 @@ Each job handles ONE RefTest:
 ```
 
 **Detailed Flow:**
+
 1. **Scheduler checks every 5 minutes** (configurable)
 2. **Queries for potentially expired tests** - loads only needed data (ID, Status, timestamps)
 3. **Checks expiration in-memory** - fast calculation, no heavy database operations
@@ -1258,29 +1273,29 @@ Each job handles ONE RefTest:
 ✅ **Failure Isolation** - If one test fails, others still succeed  
 ✅ **Configurable Grace Period** - 7-day validity for unused invitations  
 ✅ **Fair Scoring** - Uses submitted answers up to expiration time  
-✅ **Email Notifications** - Optionally sends results for expired tests  
+✅ **Email Notifications** - Optionally sends results for expired tests
 
 #### Performance Comparison
 
-| Metric | Old Approach | New Approach | Improvement |
-|--------|-------------|--------------|-------------|
-| **Memory Usage** | 150 KB | 10 KB | **93% reduction** |
-| **Query Load** | Heavy (all fields) | Light (5 fields) | **95% reduction** |
-| **Processing** | Sequential | Parallel (up to 10) | **10× throughput** |
-| **Failure Impact** | All tests affected | Single test only | **Better isolation** |
-| **Job History** | Generic | Per-test detail | **Full audit trail** |
+| Metric             | Old Approach       | New Approach        | Improvement          |
+| ------------------ | ------------------ | ------------------- | -------------------- |
+| **Memory Usage**   | 150 KB             | 10 KB               | **93% reduction**    |
+| **Query Load**     | Heavy (all fields) | Light (5 fields)    | **95% reduction**    |
+| **Processing**     | Sequential         | Parallel (up to 10) | **10× throughput**   |
+| **Failure Impact** | All tests affected | Single test only    | **Better isolation** |
+| **Job History**    | Generic            | Per-test detail     | **Full audit trail** |
 
 #### Configuration
 
 ```json
 {
   "RefTestExpirationConfiguration": {
-    "ExpirationCheckIntervalMinutes": 5,     // How often scheduler checks
-    "StartupDelaySeconds": 30,               // Delay before first check
-    "ExpirationIfNotStarted": "7.00:00:00"   // 7 days validity for unused invitations
+    "ExpirationCheckIntervalMinutes": 5, // How often scheduler checks
+    "StartupDelaySeconds": 30, // Delay before first check
+    "ExpirationIfNotStarted": "7.00:00:00" // 7 days validity for unused invitations
   },
   "BackgroundJobConfiguration": {
-    "BatchSize": 10                          // Process up to 10 expired tests in parallel
+    "BatchSize": 10 // Process up to 10 expired tests in parallel
   }
 }
 ```
@@ -1288,10 +1303,12 @@ Each job handles ONE RefTest:
 #### Job Types Created
 
 **RefTestExpiration Jobs** with specific actions:
+
 - **AutoComplete**: For in-progress tests that exceeded time limit
 - **MarkAsExpired**: For pending tests that were never started
 
 Each job includes:
+
 - `RefTestId`: Specific test to process
 - `Action`: Pre-determined action (AutoComplete or MarkAsExpired)
 - Automatic retry on failure
@@ -1300,24 +1317,28 @@ Each job includes:
 ### Why Background Services?
 
 #### ✅ Cost Efficiency
+
 - **No separate infrastructure** needed (runs in your App Service)
 - **No Azure Functions** required (saves $10-50/month)
 - **No Service Bus** needed (saves $10/month)
 - **Zero additional cost** on Azure
 
 #### ✅ Reliability
+
 - **Start automatically** with your application
 - **Health monitoring** via application logs
 - **Graceful shutdown** on app restart
 - **Exception handling** prevents crashes
 
 #### ✅ Performance
+
 - **Optimized queries** with proper indexing
 - **Batch processing** reduces database load
 - **Source-generated logging** (zero allocation)
 - **Thread-safe** operations throughout
 
 #### ✅ Observability
+
 - **Structured logging** for all operations
 - **Job status tracking** in database
 - **Error messages** stored for failed jobs
@@ -1338,6 +1359,7 @@ az webapp log tail --name YourAppName --resource-group YourResourceGroup \\
 ```
 
 **Log Events to Monitor:**
+
 - `BackgroundJobService is starting` - Service initialized
 - `Found {count} jobs to process` - Jobs available
 - `Successfully completed job {jobId}` - Job succeeded
@@ -1353,8 +1375,10 @@ az webapp log tail --name YourAppName --resource-group YourResourceGroup \\
 ✅ **Zero Configuration** - Work out of the box with sensible defaults  
 ✅ **High Performance** - Optimized queries, minimal CPU/memory usage  
 ✅ **Observable** - Full logging and error tracking
-   - **ResultEmail**: Generates result PDFs and sends them via email
-   - **ReportEmail**: Generates Excel-style reports and sends to admins
+
+- **ResultEmail**: Generates result PDFs and sends them via email
+- **ReportEmail**: Generates Excel-style reports and sends to admins
+
 4. **Handles failures** with automatic retry (up to 3 attempts with exponential backoff)
 5. **Cleans up** old jobs periodically to prevent database bloat
 
@@ -1383,6 +1407,7 @@ The system tracks email delivery with precision using DateTime fields:
 - ✅ Analytics: Measure email delivery latency and performance
 
 **Example:**
+
 ```
 1. RefTest created (InvitationSentAt = NULL)
 2. Job enqueued (InvitationSentAt = NULL)
@@ -1410,17 +1435,17 @@ Configure the job queue in `appsettings.json`:
 }
 ```
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `PollingIntervalSeconds` | How often to check for new jobs | 5 seconds |
-| `LockDurationMinutes` | How long a job is locked during processing | 5 minutes |
-| `MaxAttempts` | Maximum retry attempts for failed jobs | 3 |
-| `BatchSize` | Maximum jobs to process per cycle | 10 |
-| `StartupDelaySeconds` | Delay before starting job processing | 10 seconds |
-| `EnableCleanup` | Enable automatic cleanup of old jobs | true |
-| `CleanupIntervalHours` | How often to run cleanup | 24 hours |
-| `RetainCompletedJobsDays` | Keep successful jobs for X days | 7 days |
-| `RetainFailedJobsDays` | Keep failed jobs for X days | 30 days |
+| Setting                   | Description                                | Default    |
+| ------------------------- | ------------------------------------------ | ---------- |
+| `PollingIntervalSeconds`  | How often to check for new jobs            | 5 seconds  |
+| `LockDurationMinutes`     | How long a job is locked during processing | 5 minutes  |
+| `MaxAttempts`             | Maximum retry attempts for failed jobs     | 3          |
+| `BatchSize`               | Maximum jobs to process per cycle          | 10         |
+| `StartupDelaySeconds`     | Delay before starting job processing       | 10 seconds |
+| `EnableCleanup`           | Enable automatic cleanup of old jobs       | true       |
+| `CleanupIntervalHours`    | How often to run cleanup                   | 24 hours   |
+| `RetainCompletedJobsDays` | Keep successful jobs for X days            | 7 days     |
+| `RetainFailedJobsDays`    | Keep failed jobs for X days                | 30 days    |
 
 #### Job Lifecycle
 
@@ -1461,7 +1486,7 @@ WHERE Status = 'Failed'
 ORDER BY CreatedAt DESC;
 
 -- Check email delivery times for RefTests
-SELECT 
+SELECT
     Email,
     CreatedAt,
     InvitationSentAt,
@@ -1476,7 +1501,7 @@ ORDER BY CreatedAt DESC;
 -- Find emails not delivered within 5 minutes
 SELECT Email, CompletedAt, ResultsSentAt
 FROM RefTests
-WHERE CompletedAt IS NOT NULL 
+WHERE CompletedAt IS NOT NULL
   AND SendResultsAutomatically = 1
   AND (ResultsSentAt IS NULL OR DATEDIFF(MINUTE, CompletedAt, ResultsSentAt) > 5)
 ORDER BY CompletedAt DESC;
@@ -1516,13 +1541,14 @@ Configure the expiration service in `appsettings.json`:
 }
 ```
 
-| Setting | Description | Default |
-|---------|-------------|---------|
-| `ExpirationCheckIntervalMinutes` | How often to check for expired tests | 5 minutes |
-| `StartupDelaySeconds` | Delay before first check (allows app to fully start) | 30 seconds |
-| `ExpirationIfNotStarted` | How long a test is valid if not started (TimeSpan format: d.hh:mm:ss) | 7.00:00:00 (7 days) |
+| Setting                          | Description                                                           | Default             |
+| -------------------------------- | --------------------------------------------------------------------- | ------------------- |
+| `ExpirationCheckIntervalMinutes` | How often to check for expired tests                                  | 5 minutes           |
+| `StartupDelaySeconds`            | Delay before first check (allows app to fully start)                  | 30 seconds          |
+| `ExpirationIfNotStarted`         | How long a test is valid if not started (TimeSpan format: d.hh:mm:ss) | 7.00:00:00 (7 days) |
 
 **TimeSpan Format Examples for `ExpirationIfNotStarted`:**
+
 - `1.00:00:00` = 1 day
 - `3.00:00:00` = 3 days
 - `7.00:00:00` = 7 days (default)
@@ -1536,6 +1562,7 @@ Configure the expiration service in `appsettings.json`:
 The service logs all activities to help you monitor expiration processing:
 
 **Log Examples:**
+
 ```
 [Information] RefTest Expiration Service is starting
 [Information] Checking 3 potentially expired RefTests
@@ -1546,6 +1573,7 @@ The service logs all activities to help you monitor expiration processing:
 ```
 
 **View logs in Azure:**
+
 - Azure Portal → App Service → Log Stream
 - Application Insights → Logs → traces table
 - Query: `traces | where message contains "Background"`
@@ -1720,10 +1748,8 @@ Versions are automatically determined by [semantic-release](https://github.com/s
 
 1. Commits merged to `main` trigger semantic-release
 2. Semantic-release analyzes commits and determines version
-3. Updates both `package.json` files
-4. Generates `CHANGELOG.md` with emoji-categorized sections
-5. Creates Git tag and GitHub release
-6. Triggers build and deployment pipeline
+3. Creates Git tag and GitHub release
+4. Triggers build and deployment pipeline
 
 ## 📄 License
 
