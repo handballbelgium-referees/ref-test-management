@@ -1,8 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Api.Graphql;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
-using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
+﻿using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
@@ -13,7 +9,8 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 
 
 /// <summary>
-/// Background service that periodically checks for expired RefTests and updates their status
+/// Background service that checks for expired RefTests and enqueues specific jobs to handle them.
+/// This approach is more efficient than processing all tests - it only creates jobs for tests that need action.
 /// </summary>
 public class RefTestExpirationService : BackgroundService
 {
@@ -48,7 +45,7 @@ public class RefTestExpirationService : BackgroundService
         {
             try
             {
-                await ProcessExpiredRefTestsAsync(stoppingToken);
+                await CheckAndEnqueueExpiredTestsAsync(stoppingToken);
             }
             catch (Exception ex)
             {
@@ -69,15 +66,17 @@ public class RefTestExpirationService : BackgroundService
         ServiceLoggerMessages.LogServiceStopping(_logger, nameof(RefTestExpirationService));
     }
 
-    private async Task ProcessExpiredRefTestsAsync(CancellationToken cancellationToken)
+    private async Task CheckAndEnqueueExpiredTestsAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
         var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var jobEnqueueService = scope.ServiceProvider.GetRequiredService<IJobEnqueueService>();
 
-        // Find all tests that are not completed and might be expired
+        // Find all tests that might be expired - only load what we need for checking
         var potentiallyExpiredTests = await context.RefTests
             .Where(rt => rt.Status != RefTestStatus.Completed && rt.Status != RefTestStatus.Expired)
+            .Select(rt => new { rt.Id, rt.Status, rt.StartedAt, rt.CreatedAt, rt.MaxTimeInMinutes })
             .ToListAsync(cancellationToken);
 
         if (potentiallyExpiredTests.Count == 0)
@@ -88,57 +87,57 @@ public class RefTestExpirationService : BackgroundService
 
         ServiceLoggerMessages.LogCheckingExpiredTests(_logger, potentiallyExpiredTests.Count);
 
-        var expiredCount = 0;
-        var completedCount = 0;
+        var enqueuedCount = 0;
+        var now = DateTime.UtcNow;
 
-        foreach (var refTest in potentiallyExpiredTests)
+        foreach (var test in potentiallyExpiredTests)
         {
-            var isExpired = refTest.IsExpired(_expirationIfNotStarted);
-            ServiceLoggerMessages.LogRefTestExpirationCheck(_logger, refTest.Id, isExpired, refTest.Status);
+            var isExpired = IsExpired(test.Status, test.StartedAt, test.CreatedAt, test.MaxTimeInMinutes, now);
             
             if (!isExpired)
                 continue;
 
-            if (refTest.Status == RefTestStatus.InProgress)
-            {
-                // For in-progress tests, complete them automatically
-                try
-                {
-                    var ihfRulesQuestionsService = scope.ServiceProvider.GetRequiredService<IIhfRulesQuestionsService>();
-                    var jobEnqueueService = scope.ServiceProvider.GetRequiredService<IJobEnqueueService>();
-                    var emailConfiguration = scope.ServiceProvider.GetRequiredService<EmailConfiguration>();
-                    
-                    await RefTestMutations.CompleteRefTestAsync(
-                        new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
-                        context,
-                        ihfRulesQuestionsService,
-                        jobEnqueueService,
-                        emailConfiguration,
-                        cancellationToken);
+            // Determine the action based on status
+            var action = test.Status == RefTestStatus.InProgress 
+                ? RefTestExpirationAction.AutoComplete 
+                : RefTestExpirationAction.MarkAsExpired;
 
-                    completedCount++;
-                    ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
-                }
-                catch (Exception ex)
-                {
-                    ServiceLoggerMessages.LogAutoCompleteFailed(_logger, ex, refTest.Id, refTest.Email);
-                }
-            }
-            else
-            {
-                // For other statuses (Pending), just mark as expired
-                refTest.Expire();
-                context.RefTests.Update(refTest);
-                expiredCount++;
-                
-                ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
-            }
+            // Enqueue a specific job to handle this expired test
+            await jobEnqueueService.EnqueueRefTestExpirationAsync(
+                new RefTestExpirationPayload(test.Id, action), 
+                executeAfter: null, 
+                cancellationToken);
+
+            enqueuedCount++;
+            ServiceLoggerMessages.LogEnqueuedExpirationJob(_logger, action, test.Id);
         }
 
-        if (expiredCount > 0 || completedCount > 0)
+        if (enqueuedCount > 0)
         {
-            await context.SaveChangesAsync(cancellationToken);
-            ServiceLoggerMessages.LogProcessingSummary(_logger, expiredCount + completedCount, expiredCount, completedCount);
+            ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, enqueuedCount);
+        }
+    }
+
+    private bool IsExpired(RefTestStatus status, DateTime? startedAt, DateTime createdAt, int maxTimeInMinutes, DateTime now)
+    {
+        switch (status)
+        {
+            case RefTestStatus.InProgress when startedAt.HasValue:
+            {
+                // Check if the test has exceeded its time limit
+                var expirationTime = startedAt.Value.AddMinutes(maxTimeInMinutes);
+                return now >= expirationTime;
+            }
+            case RefTestStatus.Pending:
+            {
+                // Check if the test was never started and is too old
+                var expirationTime = createdAt.Add(_expirationIfNotStarted);
+                return now >= expirationTime;
+            }
+            case RefTestStatus.Completed:
+            case RefTestStatus.Expired:
+            default:
+                return false;
         }
     }
 }

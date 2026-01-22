@@ -1,8 +1,11 @@
 ﻿using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Api.Graphql;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -151,6 +154,10 @@ public class BackgroundJobService : BackgroundService
                     await ProcessReportEmailJobAsync(job, serviceProvider, cancellationToken);
                     break;
 
+                case JobType.RefTestExpiration:
+                    await ProcessRefTestExpirationJobAsync(job, serviceProvider, cancellationToken);
+                    break;
+
                 default:
                     throw new InvalidOperationException($"Unknown job type: {job.JobType}");
             }
@@ -282,6 +289,70 @@ public class BackgroundJobService : BackgroundService
             r.Duration)).ToList();
 
         await reportService.SendReportAsync(refTests, payload.RecipientEmails, cancellationToken);
+    }
+
+    private async Task ProcessRefTestExpirationJobAsync(
+        Job job,
+        IServiceProvider serviceProvider,
+        CancellationToken cancellationToken)
+    {
+        var payload = DeserializePayload<RefTestExpirationPayload>(job);
+        
+        var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
+        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+
+        // Load the specific RefTest
+        var refTest = await context.RefTests
+            .FirstOrDefaultAsync(rt => rt.Id == payload.RefTestId, cancellationToken);
+
+        if (refTest == null)
+        {
+            _logger.LogWarning("RefTest {RefTestId} not found for expiration job", payload.RefTestId);
+            return;
+        }
+
+        // Skip if already completed or expired
+        if (refTest.Status == RefTestStatus.Completed || refTest.Status == RefTestStatus.Expired)
+        {
+            _logger.LogDebug("RefTest {RefTestId} already in status {Status}, skipping", refTest.Id, refTest.Status);
+            return;
+        }
+
+        ServiceLoggerMessages.LogRefTestExpirationCheck(_logger, refTest.Id, true, refTest.Status);
+
+        try
+        {
+            if (payload.Action == RefTestExpirationAction.AutoComplete && refTest.Status == RefTestStatus.InProgress)
+            {
+                // Auto-complete the in-progress test
+                var ihfRulesQuestionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
+                var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
+                var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
+                
+                await RefTestMutations.CompleteRefTestAsync(
+                    new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
+                    context,
+                    ihfRulesQuestionsService,
+                    jobEnqueueService,
+                    emailConfiguration,
+                    cancellationToken);
+
+                ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
+            }
+            else if (payload.Action == RefTestExpirationAction.MarkAsExpired)
+            {
+                // Mark as expired (for pending tests)
+                refTest.Expire();
+                await context.SaveChangesAsync(cancellationToken);
+                
+                ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
+            }
+        }
+        catch (Exception ex)
+        {
+            ServiceLoggerMessages.LogAutoCompleteFailed(_logger, ex, refTest.Id, refTest.Email);
+            throw; // Re-throw so the job can be retried
+        }
     }
 
     private T DeserializePayload<T>(Job job) where T : IJobPayload

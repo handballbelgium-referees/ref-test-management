@@ -1,4 +1,7 @@
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.Extensions.Logging;
 
@@ -135,6 +138,12 @@ public static partial class ServiceLoggerMessages
 
     [LoggerMessage(LogLevel.Information, "Processed {totalCount} expired RefTests: {expiredCount} expired, {completedCount} auto-completed")]
     public static partial void LogProcessingSummary(ILogger logger, int totalCount, int expiredCount, int completedCount);
+
+    [LoggerMessage(LogLevel.Information, "Enqueued {count} RefTest expiration jobs")]
+    public static partial void LogEnqueuedExpirationJobs(ILogger logger, int count);
+
+    [LoggerMessage(LogLevel.Debug, "Enqueued {action} job for RefTest {refTestId}")]
+    public static partial void LogEnqueuedExpirationJob(ILogger logger, RefTestExpirationAction action, Guid refTestId);
 
     // ========================================
     // Database Operations

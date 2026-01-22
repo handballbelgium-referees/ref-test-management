@@ -14,6 +14,7 @@ public interface IJobEnqueueService
     Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
     Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
     Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
+    Task EnqueueRefTestExpirationAsync(RefTestExpirationPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
 }
 
 public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqueueService> logger)
@@ -56,5 +57,16 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         await context.SaveChangesAsync(cancellationToken);
 
         ServiceLoggerMessages.LogEnqueuedReportEmail(logger, job.Id, payload.RecipientEmails.Length);
+    }
+
+    public async Task EnqueueRefTestExpirationAsync(RefTestExpirationPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default)
+    {
+        var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
+        var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter);
+        
+        context.Jobs.Add(job);
+        await context.SaveChangesAsync(cancellationToken);
+
+        ServiceLoggerMessages.LogJobEnqueued(logger, JobType.RefTestExpiration, job.Id);
     }
 }

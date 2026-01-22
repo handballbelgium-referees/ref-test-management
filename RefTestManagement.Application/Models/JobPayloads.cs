@@ -63,3 +63,28 @@ public record RefTestReportPayloadData(
     string? Language,
     TimeSpan? Duration
 );
+
+/// <summary>
+/// Payload for RefTest expiration check jobs
+/// </summary>
+public record RefTestExpirationPayload(
+    Guid RefTestId,
+    RefTestExpirationAction Action
+) : IJobPayload;
+
+/// <summary>
+/// Action to take for an expired RefTest
+/// </summary>
+public enum RefTestExpirationAction
+{
+    /// <summary>
+    /// Mark the RefTest as expired (for pending tests)
+    /// </summary>
+    MarkAsExpired,
+    
+    /// <summary>
+    /// Auto-complete the RefTest (for in-progress tests)
+    /// </summary>
+    AutoComplete
+}
+
