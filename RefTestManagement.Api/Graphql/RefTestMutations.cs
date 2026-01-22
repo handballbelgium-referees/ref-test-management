@@ -35,7 +35,7 @@ public static class RefTestMutations
     public static async Task<RefTestDto> StartRefTestAsync(
         string token,
         RefTestManagementContext context,
-        BackgroundServiceConfiguration configuration,
+        [Service] BackgroundServiceConfiguration configuration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests

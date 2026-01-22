@@ -33,7 +33,7 @@ public static class RefTestQueries
     public static async Task<RefTestDto?> GetRefTestByTokenAsync(
         string token,
         RefTestManagementContext context,
-        BackgroundServiceConfiguration configuration,
+        [Service] BackgroundServiceConfiguration configuration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -64,8 +64,8 @@ public static class RefTestQueries
     [Authorize]
     [UsePaging]
     [UseProjection]
-    [UseFiltering]
-    [UseSorting]
+    [UseFiltering<RefTestTitleFilterType>]
+    [UseSorting<RefTestTitleSortType>]
     public static IQueryable<RefTestTitleDto> GetRefTestTitles(RefTestManagementContext context)
         => context.RefTestTitles
             .AsNoTracking()
