@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,7 +13,7 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 /// <summary>
 /// Background service that processes jobs from a database queue
 /// </summary>
-public partial class BackgroundJobService : BackgroundService
+public class BackgroundJobService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<BackgroundJobService> _logger;
@@ -26,6 +27,11 @@ public partial class BackgroundJobService : BackgroundService
     private readonly TimeSpan _retainCompletedJobs;
     private readonly TimeSpan _retainFailedJobs;
     private DateTime _lastCleanupTime;
+    
+    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public BackgroundJobService(
         IServiceProvider serviceProvider,
@@ -48,63 +54,9 @@ public partial class BackgroundJobService : BackgroundService
         _lastCleanupTime = DateTime.MinValue;
     }
 
-    // High-performance logging using source generators
-    [LoggerMessage(Level = LogLevel.Information, Message = "BackgroundJobService is starting")]
-    partial void LogServiceStarting();
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "BackgroundJobService is stopping")]
-    partial void LogServiceStopping();
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error occurred while processing jobs")]
-    partial void LogProcessingError(Exception ex);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "No jobs available for processing")]
-    partial void LogNoJobsAvailable();
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Found {count} jobs to process")]
-    partial void LogJobsFound(int count);
-
-    [LoggerMessage(Level = LogLevel.Information,
-        Message = "Processing job {jobId} of type {jobType} (attempt {attempt}/{maxAttempts})")]
-    partial void LogProcessingJob(Guid jobId, JobType jobType, int attempt, int maxAttempts);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Successfully completed job {jobId} of type {jobType}")]
-    partial void LogJobCompleted(Guid jobId, JobType jobType);
-
-    [LoggerMessage(Level = LogLevel.Warning,
-        Message = "Job {jobId} of type {jobType} failed (attempt {attempt}/{maxAttempts}): {errorMessage}")]
-    partial void LogJobFailed(Guid jobId, JobType jobType, int attempt, int maxAttempts, string errorMessage);
-
-    [LoggerMessage(Level = LogLevel.Error,
-        Message = "Job {jobId} of type {jobType} failed permanently after {attempts} attempts")]
-    partial void LogJobFailedPermanently(Guid jobId, JobType jobType, int attempts);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Sending invitation email to {email}")]
-    partial void LogSendingInvitationEmail(string email);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Sending result email to {email}")]
-    partial void LogSendingResultEmail(string email);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "Sending report email to {count} recipients")]
-    partial void LogSendingReportEmail(int count);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to deserialize job payload for job {jobId}")]
-    partial void LogDeserializationError(Exception ex, Guid jobId);
-
-    [LoggerMessage(Level = LogLevel.Information,
-        Message =
-            "Running job cleanup - removing jobs older than: Completed={completedDays} days, Failed={failedDays} days")]
-    partial void LogCleanupStarting(int completedDays, int failedDays);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Job cleanup completed - removed {count} old jobs")]
-    partial void LogCleanupCompleted(int count);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error occurred during job cleanup")]
-    partial void LogCleanupError(Exception ex);
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        LogServiceStarting();
+        ServiceLoggerMessages.LogServiceStarting(_logger, nameof(BackgroundJobService));
 
         // Wait a bit before the first execution to let the app fully start
         await Task.Delay(_startupDelay, stoppingToken);
@@ -124,21 +76,21 @@ public partial class BackgroundJobService : BackgroundService
             }
             catch (Exception ex)
             {
-                LogProcessingError(ex);
+                ServiceLoggerMessages.LogServiceError(_logger, ex, nameof(BackgroundJobService));
             }
 
             try
             {
                 await Task.Delay(_pollingInterval, stoppingToken);
             }
-            catch (TaskCanceledException)
+            catch (OperationCanceledException)
             {
-                // Expected when the service is stopping
+                // Normal shutdown, no need to log
                 break;
             }
         }
 
-        LogServiceStopping();
+        ServiceLoggerMessages.LogServiceStopping(_logger, nameof(BackgroundJobService));
     }
 
     private async Task ProcessJobsAsync(CancellationToken cancellationToken)
@@ -158,11 +110,11 @@ public partial class BackgroundJobService : BackgroundService
 
         if (jobs.Count == 0)
         {
-            LogNoJobsAvailable();
+            ServiceLoggerMessages.LogNoJobsAvailable(_logger);
             return;
         }
 
-        LogJobsFound(jobs.Count);
+        ServiceLoggerMessages.LogJobsFound(_logger, jobs.Count);
 
         foreach (var job in jobs.TakeWhile(_ => !cancellationToken.IsCancellationRequested))
         {
@@ -182,7 +134,7 @@ public partial class BackgroundJobService : BackgroundService
             job.MarkAsProcessing(_lockDuration);
             await context.SaveChangesAsync(cancellationToken);
 
-            LogProcessingJob(job.Id, job.JobType, job.Attempts + 1, _maxAttempts);
+            ServiceLoggerMessages.LogProcessingJob(_logger, job.Id, job.JobType, job.Attempts + 1, _maxAttempts);
 
             // Process based on a job type
             switch (job.JobType)
@@ -207,7 +159,7 @@ public partial class BackgroundJobService : BackgroundService
             job.MarkAsCompleted();
             await context.SaveChangesAsync(cancellationToken);
 
-            LogJobCompleted(job.Id, job.JobType);
+            ServiceLoggerMessages.LogJobCompleted(_logger, job.Id, job.JobType);
         }
         catch (Exception ex)
         {
@@ -218,11 +170,11 @@ public partial class BackgroundJobService : BackgroundService
 
             if (job.Status == JobStatus.Failed)
             {
-                LogJobFailedPermanently(job.Id, job.JobType, job.Attempts);
+                ServiceLoggerMessages.LogJobFailedPermanently(_logger, job.Id, job.JobType, job.Attempts);
             }
             else
             {
-                LogJobFailed(job.Id, job.JobType, job.Attempts, _maxAttempts, errorMessage);
+                ServiceLoggerMessages.LogJobFailed(_logger, job.Id, job.JobType, job.Attempts, _maxAttempts, errorMessage);
             }
         }
     }
@@ -236,7 +188,7 @@ public partial class BackgroundJobService : BackgroundService
         var emailService = serviceProvider.GetRequiredService<IEmailService>();
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
 
-        LogSendingInvitationEmail(payload.Email);
+        ServiceLoggerMessages.LogSendingInvitationEmail(_logger, payload.Email);
 
         await emailService.SendRefTestInvitationAsync(
             payload.Name,
@@ -267,7 +219,7 @@ public partial class BackgroundJobService : BackgroundService
         var questionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
 
-        LogSendingResultEmail(payload.Email);
+        ServiceLoggerMessages.LogSendingResultEmail(_logger, payload.Email);
 
         // Get questions with correct answers
         var questionsWithCorrectAnswers = await questionsService.GetQuestionsByIdAsync(
@@ -311,7 +263,7 @@ public partial class BackgroundJobService : BackgroundService
         var payload = DeserializePayload<ReportEmailPayload>(job);
         var reportService = serviceProvider.GetRequiredService<IRefTestReportService>();
 
-        LogSendingReportEmail(payload.RecipientEmails.Length);
+        ServiceLoggerMessages.LogSendingReportEmail(_logger, payload.RecipientEmails.Length);
 
         // Convert payload data to service data
         var refTests = payload.RefTests.Select(r => new RefTestReportData(
@@ -336,18 +288,13 @@ public partial class BackgroundJobService : BackgroundService
     {
         try
         {
-            var options = new JsonSerializerOptions
-            {
-                PropertyNameCaseInsensitive = true
-            };
-
-            var payload = JsonSerializer.Deserialize<T>(job.Payload, options);
+            var payload = JsonSerializer.Deserialize<T>(job.Payload, _jsonSerializerOptions);
 
             return payload ?? throw new InvalidOperationException("Deserialized payload is null");
         }
         catch (Exception ex)
         {
-            LogDeserializationError(ex, job.Id);
+            ServiceLoggerMessages.LogJobDeserializationError(_logger, ex, job.Id);
             throw;
         }
     }
@@ -369,7 +316,7 @@ public partial class BackgroundJobService : BackgroundService
             var completedCutoff = now - _retainCompletedJobs;
             var failedCutoff = now - _retainFailedJobs;
 
-            LogCleanupStarting((int)_retainCompletedJobs.TotalDays, (int)_retainFailedJobs.TotalDays);
+            ServiceLoggerMessages.LogCleanupStarting(_logger, "Jobs", (int)_retainCompletedJobs.TotalDays);
 
             // Delete old completed jobs
             var oldJobs = await context.Jobs
@@ -382,16 +329,16 @@ public partial class BackgroundJobService : BackgroundService
             {
                 context.Jobs.RemoveRange(oldJobs);
                 await context.SaveChangesAsync(cancellationToken);
-                LogCleanupCompleted(oldJobs.Count);
+                ServiceLoggerMessages.LogCleanupCompleted(_logger, "Jobs", oldJobs.Count);
             }
             else
             {
-                LogCleanupCompleted(0);
+                ServiceLoggerMessages.LogCleanupCompleted(_logger, "Jobs", 0);
             }
         }
         catch (Exception ex)
         {
-            LogCleanupError(ex);
+            ServiceLoggerMessages.LogCleanupError(_logger, ex, "Jobs");
         }
     }
 }

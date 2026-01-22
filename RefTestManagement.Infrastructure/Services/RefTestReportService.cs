@@ -1,5 +1,6 @@
 using ClosedXML.Excel;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -40,7 +41,7 @@ public class RefTestReportService(
     {
         if (recipientEmails.Length == 0)
         {
-            logger.LogWarning("No recipient emails configured for reports");
+            ServiceLoggerMessages.LogNoReportRecipients(logger);
             return;
         }
 

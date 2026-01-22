@@ -231,37 +231,35 @@ public class RefTestResultsPdfService(ILogoService logoService, ITranslationServ
                                             answerRow.ConstantItem(20).AlignMiddle().Width(12).Height(12).Svg(_ =>
                                             {
                                                 string svgIcon;
-                                                if (isUserSelected && isWrongAnswer)
+                                                switch (isUserSelected)
                                                 {
-                                                    // Red X/Cross for wrong answer
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                    case true when isWrongAnswer:
+                                                        // Red X/Cross for wrong answer
+                                                        svgIcon =
+                                                            @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
                                                                     <circle cx=""12"" cy=""12"" r=""11"" fill=""#dc2626""/>
                                                                     <path d=""M16 8L8 16M8 8L16 16"" stroke=""white"" stroke-width=""2.5"" stroke-linecap=""round"" stroke-linejoin=""round""/>
                                                                 </svg>";
-                                                }
-                                                else if (isUserSelected && !isWrongAnswer)
-                                                {
-                                                    // Green checkmark for the correct user answer
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                        break;
+                                                    case true when !isWrongAnswer:
+                                                        // Green checkmark for the correct user answer
+                                                        svgIcon =
+                                                            @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
                                                                     <circle cx=""12"" cy=""12"" r=""11"" fill=""#16a34a""/>
                                                                     <path d=""M17 8L10 16L6 12"" stroke=""white"" stroke-width=""2.5"" stroke-linecap=""round"" stroke-linejoin=""round""/>
                                                                 </svg>";
-                                                }
-                                                else if (isCorrectAnswer)
-                                                {
-                                                    // Green checkmark (no circle) for correct answer not selected
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                        break;
+                                                    default:
+                                                    {
+                                                        // Green checkmark (no circle) for correct answer not selected
+                                                        svgIcon = isCorrectAnswer ? @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
                                                                     <path d=""M20 6L9 17L4 12"" stroke=""#16a34a"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
-                                                                </svg>";
-                                                }
-                                                else
-                                                {
-                                                    // Empty for non-selected, non-correct answers
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg""></svg>";
+                                                                </svg>" :
+                                                            // Empty for non-selected, non-correct answers
+                                                            @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg""></svg>";
+
+                                                        break;
+                                                    }
                                                 }
 
                                                 return svgIcon;

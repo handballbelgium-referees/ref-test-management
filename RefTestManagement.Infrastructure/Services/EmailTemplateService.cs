@@ -33,10 +33,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
     public async Task<string> BuildCompleteInvitationEmailAsync(
         List<LanguageContent> enabledLanguages, string name, int numberOfQuestions, int maxTimeInMinutes)
     {
-        var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64)
-            ? ""
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
+        var logoTag = await CreateLogoImageTag();
 
         var languageSections = BuildAllInvitationLanguageSections(enabledLanguages, name, numberOfQuestions, maxTimeInMinutes);
         return BuildInvitationEmail(logoTag, languageSections);
@@ -47,10 +44,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         int totalQuestions, int answerTotal, double percentage, bool passed, string resultColor, 
         string resultBgColor, string resultIcon, string enabledLanguagesDisplay)
     {
-        var logoBase64 = await logoService.GetLogoAsBase64Async();
-        var logoTag = string.IsNullOrEmpty(logoBase64)
-            ? ""
-            : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
+        var logoTag = await CreateLogoImageTag();
 
         var languageSections = BuildAllResultsLanguageSections(enabledLanguages, name, questionScore, answerScore,
             totalQuestions, answerTotal, percentage, passed, resultColor, resultBgColor, resultIcon, enabledLanguagesDisplay);
@@ -60,13 +54,19 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
     public async Task<string> BuildCompleteReportEmailAsync(
         List<LanguageContent> enabledLanguages, DateTime reportDate, int refTestCount)
     {
+        var logoTag = await CreateLogoImageTag();
+
+        var languageSections = BuildAllReportLanguageSections(enabledLanguages, reportDate, refTestCount);
+        return BuildReportEmail(logoTag, languageSections);
+    }
+
+    private async Task<string> CreateLogoImageTag()
+    {
         var logoBase64 = await logoService.GetLogoAsBase64Async();
         var logoTag = string.IsNullOrEmpty(logoBase64)
             ? ""
             : $"<img src='data:image/png;base64,{logoBase64}' alt='RefTest Logo' style='width: 100px; height: auto; margin-bottom: 10px;' />";
-
-        var languageSections = BuildAllReportLanguageSections(enabledLanguages, reportDate, refTestCount);
-        return BuildReportEmail(logoTag, languageSections);
+        return logoTag;
     }
 
     private static string BuildInvitationEmail(string logoTag, string languageSections)

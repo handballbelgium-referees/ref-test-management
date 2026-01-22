@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -22,7 +23,7 @@ public interface IEmailService
         int refTestCount, CancellationToken cancellationToken);
 }
 
-public partial class EmailService(
+public class EmailService(
     ILogger<EmailService> logger,
     EmailConfiguration configuration,
     LanguageConfiguration languageConfiguration,
@@ -50,12 +51,12 @@ public partial class EmailService(
 
         var firstRefTestUrl =
             enabledLanguages.FirstOrDefault()?.RefTestUrl ?? $"{configuration.BaseUrl}/ref-test/{token}";
-        LogSendingRefTestInvitationToEmailTokenTokenQuestionsQuestionsTimeTimeMinutes(logger, email, token,
-            numberOfQuestions, maxTimeInMinutes, firstRefTestUrl);
+        
+        ServiceLoggerMessages.LogSendingRefTestInvitation(logger, email, token, numberOfQuestions, maxTimeInMinutes, firstRefTestUrl);
 
         await SendEmailAsync(email, subject, emailBody, cancellationToken: cancellationToken);
 
-        LogRefTestInvitationEmailSentToEmail(logger, email);
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, email);
     }
 
     public async Task SendRefTestResultsAsync(string name, string email, int questionScore, int answerScore,
@@ -88,12 +89,11 @@ public partial class EmailService(
                     questionsWithCorrectAnswers)
             select new EmailAttachment($"RefTest_Results_{langUpper}.pdf", pdfBytes)).ToList();
 
-        LogSendingRefTestResultsToEmailScoreScoreTotalPercentageF1(logger, email, questionScore, answerScore,
-            totalQuestions, answerTotal, percentage);
+        ServiceLoggerMessages.LogSendingRefTestResults(logger, email, questionScore, totalQuestions, answerScore, answerTotal, percentage);
 
         await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail, cancellationToken);
 
-        LogRefTestResultsEmailSentToEmail(logger, email);
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, email);
     }
 
 
@@ -101,11 +101,11 @@ public partial class EmailService(
         List<EmailAttachment>? attachments = null, bool scheduleEmail = false,
         CancellationToken cancellationToken = default)
     {
-        LogSendingEmailToEmailWithSubjectAndBody(logger, toEmail, subject, body);
+        ServiceLoggerMessages.LogSendingEmail(logger, toEmail, subject);
 
         if (string.IsNullOrWhiteSpace(configuration.BrevoApiKey))
         {
-            LogBrevoApiKeyNotConfiguredEmailNotSent(logger);
+            ServiceLoggerMessages.LogApiKeyNotConfigured(logger);
             return;
         }
 
@@ -148,17 +148,17 @@ public partial class EmailService(
 
             if (response.IsSuccessStatusCode)
             {
-                LogEmailSentSuccessfully(logger, toEmail);
+                ServiceLoggerMessages.LogEmailSentSuccessfully(logger, toEmail);
             }
             else
             {
                 var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                LogEmailFailedWithStatusCode(logger, toEmail, (int)response.StatusCode, responseBody);
+                ServiceLoggerMessages.LogEmailFailed(logger, toEmail, (int)response.StatusCode, responseBody);
             }
         }
         catch (Exception ex)
         {
-            LogErrorSendingEmailToEmail(logger, ex, toEmail);
+            ServiceLoggerMessages.LogEmailError(logger, ex, toEmail);
             throw new EmailException(toEmail);
         }
     }
@@ -184,45 +184,8 @@ public partial class EmailService(
 
         await SendEmailAsync(recipientEmail, subject, emailBody, attachments, cancellationToken: cancellationToken);
 
-        LogReportEmailSentToEmail(logger, recipientEmail);
+        ServiceLoggerMessages.LogReportEmailSent(logger, recipientEmail);
     }
-
-    [LoggerMessage(LogLevel.Information,
-        "Sending RefTest invitation to {email}. Token: {token}, Questions: {questions}, Time: {time} minutes. URL: {url}")]
-    static partial void LogSendingRefTestInvitationToEmailTokenTokenQuestionsQuestionsTimeTimeMinutes(
-        ILogger<EmailService> logger, string email, string token, int questions, int time, string url);
-
-    [LoggerMessage(LogLevel.Information, "RefTest invitation email sent to {email}")]
-    static partial void LogRefTestInvitationEmailSentToEmail(ILogger<EmailService> logger, string email);
-
-    [LoggerMessage(LogLevel.Information,
-        "Sending RefTest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
-    static partial void LogSendingRefTestResultsToEmailScoreScoreTotalPercentageF1(ILogger<EmailService> logger,
-        string email, int questionScore, int answerScore, int totalQuestions, int answerTotal, double percentage);
-
-    [LoggerMessage(LogLevel.Information, "RefTest results email sent to {email}")]
-    static partial void LogRefTestResultsEmailSentToEmail(ILogger<EmailService> logger, string email);
-
-    [LoggerMessage(LogLevel.Information, "Sending email to {email} with {subject} and {body}")]
-    static partial void LogSendingEmailToEmailWithSubjectAndBody(ILogger<EmailService> logger, string email,
-        string subject, string body);
-
-    [LoggerMessage(LogLevel.Warning, "Brevo API key not configured. Email not sent.")]
-    static partial void LogBrevoApiKeyNotConfiguredEmailNotSent(ILogger<EmailService> logger);
-
-    [LoggerMessage(LogLevel.Information, "Email sent successfully to {email}")]
-    static partial void LogEmailSentSuccessfully(ILogger<EmailService> logger, string email);
-
-    [LoggerMessage(LogLevel.Warning, "Email to {email} failed with status code {statusCode}: {responseBody}")]
-    static partial void LogEmailFailedWithStatusCode(ILogger<EmailService> logger, string email, int statusCode,
-        string responseBody);
-
-    [LoggerMessage(LogLevel.Error, "Error sending email to {email}")]
-    static partial void LogErrorSendingEmailToEmail(ILogger<EmailService> logger, Exception ex, string email);
-
-    [LoggerMessage(EventId = 8, Level = LogLevel.Information,
-        Message = "Report email sent to {Email}")]
-    private static partial void LogReportEmailSentToEmail(ILogger logger, string email);
 
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
@@ -231,7 +194,7 @@ public partial class EmailService(
             .Select(lang =>
             {
                 var baseTranslations = translationService.GetEmailInvitationTranslations(lang);
-                // Create NEW dictionary to avoid mutating shared singleton state
+                // Create a NEW dictionary to avoid mutating shared singleton state
                 var translations = new Dictionary<string, string>(baseTranslations)
                 {
                     ["validDays"] =

@@ -5,6 +5,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,7 +15,7 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 /// <summary>
 /// Background service that periodically checks for expired RefTests and updates their status
 /// </summary>
-public partial class RefTestExpirationService : BackgroundService
+public class RefTestExpirationService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<RefTestExpirationService> _logger;
@@ -36,40 +37,9 @@ public partial class RefTestExpirationService : BackgroundService
         _expirationIfNotStarted = configuration.ExpirationIfNotStarted;
     }
 
-    // High-performance logging using source generators
-    [LoggerMessage(Level = LogLevel.Information, Message = "RefTest Expiration Service is starting")]
-    partial void LogServiceStarting();
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "RefTest Expiration Service is stopping")]
-    partial void LogServiceStopping();
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error occurred while processing expired RefTests")]
-    partial void LogProcessingError(Exception ex);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "No potentially expired RefTests found")]
-    partial void LogNoPotentiallyExpiredTests();
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Checking {count} potentially expired RefTests")]
-    partial void LogCheckingExpiredTests(int count);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "RefTest {refTestId} is expired: {isExpired}, Status: {status}")]
-    partial void LogRefTestExpirationCheck(Guid refTestId, bool isExpired, RefTestStatus status);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Auto-completed expired RefTest {refTestId} for {email}")]
-    partial void LogAutoCompleted(Guid refTestId, string email);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to auto-complete expired RefTest {refTestId} for {email}")]
-    partial void LogAutoCompleteFailed(Exception ex, Guid refTestId, string email);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Expired RefTest {refTestId} in status {status} for {email}")]
-    partial void LogExpired(Guid refTestId, RefTestStatus status, string email);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Processed {totalCount} expired RefTests: {expiredCount} expired, {completedCount} auto-completed")]
-    partial void LogProcessingSummary(int totalCount, int expiredCount, int completedCount);
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        LogServiceStarting();
+        ServiceLoggerMessages.LogServiceStarting(_logger, nameof(RefTestExpirationService));
 
         // Wait a bit before the first execution to let the app fully start
         await Task.Delay(_startupDelay, stoppingToken);
@@ -82,7 +52,7 @@ public partial class RefTestExpirationService : BackgroundService
             }
             catch (Exception ex)
             {
-                LogProcessingError(ex);
+                ServiceLoggerMessages.LogServiceError(_logger, ex, nameof(RefTestExpirationService));
             }
 
             try
@@ -96,7 +66,7 @@ public partial class RefTestExpirationService : BackgroundService
             }
         }
 
-        LogServiceStopping();
+        ServiceLoggerMessages.LogServiceStopping(_logger, nameof(RefTestExpirationService));
     }
 
     private async Task ProcessExpiredRefTestsAsync(CancellationToken cancellationToken)
@@ -112,11 +82,11 @@ public partial class RefTestExpirationService : BackgroundService
 
         if (potentiallyExpiredTests.Count == 0)
         {
-            LogNoPotentiallyExpiredTests();
+            ServiceLoggerMessages.LogNoPotentiallyExpiredTests(_logger);
             return;
         }
 
-        LogCheckingExpiredTests(potentiallyExpiredTests.Count);
+        ServiceLoggerMessages.LogCheckingExpiredTests(_logger, potentiallyExpiredTests.Count);
 
         var expiredCount = 0;
         var completedCount = 0;
@@ -124,7 +94,7 @@ public partial class RefTestExpirationService : BackgroundService
         foreach (var refTest in potentiallyExpiredTests)
         {
             var isExpired = refTest.IsExpired(_expirationIfNotStarted);
-            LogRefTestExpirationCheck(refTest.Id, isExpired, refTest.Status);
+            ServiceLoggerMessages.LogRefTestExpirationCheck(_logger, refTest.Id, isExpired, refTest.Status);
             
             if (!isExpired)
                 continue;
@@ -147,11 +117,11 @@ public partial class RefTestExpirationService : BackgroundService
                         cancellationToken);
 
                     completedCount++;
-                    LogAutoCompleted(refTest.Id, refTest.Email);
+                    ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
                 }
                 catch (Exception ex)
                 {
-                    LogAutoCompleteFailed(ex, refTest.Id, refTest.Email);
+                    ServiceLoggerMessages.LogAutoCompleteFailed(_logger, ex, refTest.Id, refTest.Email);
                 }
             }
             else
@@ -161,15 +131,14 @@ public partial class RefTestExpirationService : BackgroundService
                 context.RefTests.Update(refTest);
                 expiredCount++;
                 
-                LogExpired(refTest.Id, refTest.Status, refTest.Email);
+                ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
             }
         }
 
         if (expiredCount > 0 || completedCount > 0)
         {
             await context.SaveChangesAsync(cancellationToken);
-            LogProcessingSummary(expiredCount + completedCount, expiredCount, completedCount);
+            ServiceLoggerMessages.LogProcessingSummary(_logger, expiredCount + completedCount, expiredCount, completedCount);
         }
     }
 }
-

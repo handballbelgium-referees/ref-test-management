@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -15,7 +16,7 @@ public interface IJobEnqueueService
     Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default);
 }
 
-public partial class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqueueService> logger)
+public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqueueService> logger)
     : IJobEnqueueService
 {
     private readonly JsonSerializerOptions _jsonOptions = new()
@@ -32,7 +33,7 @@ public partial class JobEnqueueService(RefTestManagementContext context, ILogger
         context.Jobs.Add(job);
         await context.SaveChangesAsync(cancellationToken);
 
-        LogEnqueuedInvitationEmailJobJobIdForEmail(logger, job.Id, payload.Email);
+        ServiceLoggerMessages.LogEnqueuedInvitationEmail(logger, job.Id, payload.Email);
     }
 
     public async Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default)
@@ -43,7 +44,7 @@ public partial class JobEnqueueService(RefTestManagementContext context, ILogger
         context.Jobs.Add(job);
         await context.SaveChangesAsync(cancellationToken);
 
-        LogEnqueuedResultEmailJobJobIdForEmail(logger, job.Id, payload.Email);
+        ServiceLoggerMessages.LogEnqueuedResultEmail(logger, job.Id, payload.Email);
     }
 
     public async Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null, CancellationToken cancellationToken = default)
@@ -54,15 +55,6 @@ public partial class JobEnqueueService(RefTestManagementContext context, ILogger
         context.Jobs.Add(job);
         await context.SaveChangesAsync(cancellationToken);
 
-        LogEnqueuedReportEmailJobJobIdForRecipientCountRecipients(logger, job.Id, payload.RecipientEmails.Length);
+        ServiceLoggerMessages.LogEnqueuedReportEmail(logger, job.Id, payload.RecipientEmails.Length);
     }
-
-    [LoggerMessage(LogLevel.Information, "Enqueued invitation email job {jobId} for {email}")]
-    static partial void LogEnqueuedInvitationEmailJobJobIdForEmail(ILogger<JobEnqueueService> logger, Guid jobId, string email);
-
-    [LoggerMessage(LogLevel.Information, "Enqueued result email job {jobId} for {email}")]
-    static partial void LogEnqueuedResultEmailJobJobIdForEmail(ILogger<JobEnqueueService> logger, Guid jobId, string email);
-
-    [LoggerMessage(LogLevel.Information, "Enqueued report email job {jobId} for {recipientCount} recipients")]
-    static partial void LogEnqueuedReportEmailJobJobIdForRecipientCountRecipients(ILogger<JobEnqueueService> logger, Guid jobId, int recipientCount);
 }
