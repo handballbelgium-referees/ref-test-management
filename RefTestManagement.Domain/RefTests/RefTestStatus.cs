@@ -1,4 +1,4 @@
-﻿namespace Handball.Belgium.RefTestManagement.Domain;
+﻿namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 public enum RefTestStatus
 {

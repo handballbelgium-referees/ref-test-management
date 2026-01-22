@@ -18,6 +18,7 @@ const config: CodegenConfig = {
           UUID: 'string',
           DateTime: 'string',
           JSON: 'Record<string, string>',
+          TimeSpan: 'string',
         },
       },
     },

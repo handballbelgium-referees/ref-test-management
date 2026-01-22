@@ -3,7 +3,8 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
-using Handball.Belgium.RefTestManagement.Domain;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Authorization;
@@ -34,7 +35,7 @@ public static class RefTestMutations
     public static async Task<RefTestDto> StartRefTestAsync(
         string token,
         RefTestManagementContext context,
-        BackgroundServiceConfiguration configuration,
+        [Service] RefTestExpirationConfiguration configuration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -46,7 +47,6 @@ public static class RefTestMutations
         if (refTest.IsExpired(configuration.ExpirationIfNotStarted))
         {
             refTest.Expire();
-            context.RefTests.Update(refTest);
             await context.SaveChangesAsync(cancellationToken);
             throw new RefTestExpiredException(token);
         }
@@ -55,7 +55,6 @@ public static class RefTestMutations
             return refTest.ToDto();
 
         refTest.Start();
-        context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
         return refTest.ToDto();
@@ -87,7 +86,6 @@ public static class RefTestMutations
             throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
 
         refTest.SaveProgress(input.CurrentQuestionIndex, input.SelectedAnswerIds, input.Language);
-        context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
         return refTest.ToDto();
@@ -99,20 +97,20 @@ public static class RefTestMutations
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <param name="ihfRulesQuestionsService"></param>
-    /// <param name="emailService"></param>
+    /// <param name="jobEnqueueService"></param>
+    /// <param name="emailConfiguration"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    /// <exception cref="EmailException"></exception>
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
-    [Error<EmailException>]
     public static async Task<RefTestDto> CompleteRefTestAsync(
         CompleteRefTestInput input,
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
-        [Service] IEmailService emailService,
+        [Service] IJobEnqueueService jobEnqueueService,
+        [Service] EmailConfiguration emailConfiguration,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -143,18 +141,14 @@ public static class RefTestMutations
             input.Language
         );
 
-        context.RefTests.Update(refTest);
         await context.SaveChangesAsync(cancellationToken);
 
         if (!refTest.SendResultsAutomatically)
             return refTest.ToDto();
 
-        var questionsWithCorrectAnswers =
-            await ihfRulesQuestionsService.GetQuestionsByIdAsync(refTest.QuestionIds, true, true, false,
-                cancellationToken);
-
-        // Send results email
-        await emailService.SendRefTestResultsAsync(
+        // Enqueue result email job
+        var payload = new ResultEmailPayload(
+            refTest.Id,
             refTest.FullName,
             refTest.Email,
             refTest.QuestionScore ?? 0,
@@ -164,14 +158,13 @@ public static class RefTestMutations
             refTest.Percentage ?? 0,
             refTest.SelectedAnswerIds,
             refTest.WrongQuestionIds,
-            refTest.WrongAnswerIds,
-            questionsWithCorrectAnswers,
-            true
+            refTest.WrongAnswerIds
         );
 
-        refTest.SendResults();
-        context.RefTests.Update(refTest);
-        await context.SaveChangesAsync(cancellationToken);
+        DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
+            ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
+            : null;
+        await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt, cancellationToken);
 
         return refTest.ToDto();
     }
@@ -182,7 +175,7 @@ public static class RefTestMutations
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <param name="ihfRulesQuestionsService"></param>
-    /// <param name="emailService"></param>
+    /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize]
@@ -190,7 +183,7 @@ public static class RefTestMutations
         CreateBulkRefTestsInput input,
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
-        [Service] IEmailService emailService,
+        [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
         var result = new BulkRefTestsResult
@@ -290,7 +283,8 @@ public static class RefTestMutations
         {
             try
             {
-                await emailService.SendRefTestInvitationAsync(
+                var invitationPayload = new InvitationEmailPayload(
+                    refTest.Id,
                     refTest.FullName,
                     refTest.Email,
                     refTest.Token,
@@ -298,17 +292,19 @@ public static class RefTestMutations
                     refTest.MaxTimeInMinutes
                 );
 
+                await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                    cancellationToken: cancellationToken);
+
                 result.CreatedRefTests.Add(refTest.ToDto());
-                refTest.SendInvitation();
             }
             catch (Exception ex)
             {
-                // Email failed, but the RefTest was created
+                // Email job enqueue failed, but the RefTest was created
                 // Log the error but don't fail the entire operation
                 result.Errors.Add(new BulkCreationError
                 {
                     User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = $"RefTest created but email failed: {ex.Message}"
+                    ErrorMessage = $"RefTest created but email job enqueue failed: {ex.Message}"
                 });
             }
         }
@@ -324,14 +320,14 @@ public static class RefTestMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
-    /// <param name="emailService"></param>
+    /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize]
     public static async Task<SendInvitationsResult> SendInvitationsAsync(
         SendInvitationsInput input,
         RefTestManagementContext context,
-        [Service] IEmailService emailService,
+        [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
         var refTests = await context.RefTests
@@ -357,7 +353,8 @@ public static class RefTestMutations
                 if (refTest.Status != RefTestStatus.Pending)
                     throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Pending);
 
-                await emailService.SendRefTestInvitationAsync(
+                var invitationPayload = new InvitationEmailPayload(
+                    refTest.Id,
                     refTest.FullName,
                     refTest.Email,
                     refTest.Token,
@@ -365,10 +362,11 @@ public static class RefTestMutations
                     refTest.MaxTimeInMinutes
                 );
 
+                await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                    cancellationToken: cancellationToken);
+
                 result.SentRefTests.Add(refTest.ToDto());
                 result.SuccessfullySent++;
-
-                refTest.SendInvitation();
             }
             catch (Exception e)
             {
@@ -385,9 +383,6 @@ public static class RefTestMutations
             }
         }
 
-        context.RefTests.UpdateRange(refTests);
-        await context.SaveChangesAsync(cancellationToken);
-
         return result;
     }
 
@@ -396,8 +391,7 @@ public static class RefTestMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
-    /// <param name="emailService"></param>
-    /// <param name="ihfRulesQuestionsService"></param>
+    /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -406,8 +400,7 @@ public static class RefTestMutations
     public static async Task<SendResultsResult> SendResultsAsync(
         SendResultsInput input,
         RefTestManagementContext context,
-        [Service] IEmailService emailService,
-        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
+        [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
         var refTests = await context.RefTests
@@ -433,30 +426,24 @@ public static class RefTestMutations
                 if (refTest.Status != RefTestStatus.Completed)
                     throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Completed);
 
-                var questionsWithCorrectAnswers =
-                    await ihfRulesQuestionsService.GetQuestionsByIdAsync(refTest.QuestionIds, true, true, false,
-                        cancellationToken);
-
-                // Send results email
-                await emailService.SendRefTestResultsAsync(
+                var payload = new ResultEmailPayload(
+                    refTest.Id,
                     refTest.FullName,
                     refTest.Email,
                     refTest.QuestionScore ?? 0,
                     refTest.AnswerScore ?? 0,
-                    refTest.QuestionIds.Count,
+                    refTest.QuestionTotal,
                     refTest.AnswerTotal ?? 0,
                     refTest.Percentage ?? 0,
                     refTest.SelectedAnswerIds,
                     refTest.WrongQuestionIds,
-                    refTest.WrongAnswerIds,
-                    questionsWithCorrectAnswers,
-                    !refTest.ResultsSent
+                    refTest.WrongAnswerIds
                 );
+
+                await jobEnqueueService.EnqueueResultEmailAsync(payload, cancellationToken: cancellationToken);
 
                 result.SentRefTests.Add(refTest.ToDto());
                 result.SuccessfullySent++;
-
-                refTest.SendResults();
             }
             catch (Exception e)
             {
@@ -472,9 +459,6 @@ public static class RefTestMutations
                 });
             }
         }
-
-        context.RefTests.UpdateRange(refTests);
-        await context.SaveChangesAsync(cancellationToken);
 
         return result;
     }
@@ -538,7 +522,7 @@ public static class RefTestMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
-    /// <param name="reportService"></param>
+    /// <param name="jobEnqueueService"></param>
     /// <param name="reportConfig"></param>
     /// <param name="scoreConfig"></param>
     /// <param name="cancellationToken"></param>
@@ -547,7 +531,7 @@ public static class RefTestMutations
     public static async Task<GenerateReportResult> GenerateRefTestsReportAsync(
         GenerateRefTestsReportInput input,
         RefTestManagementContext context,
-        [Service] IRefTestReportService reportService,
+        [Service] IJobEnqueueService jobEnqueueService,
         [Service] ReportConfiguration reportConfig,
         [Service] ScoreConfiguration scoreConfig,
         CancellationToken cancellationToken)
@@ -568,7 +552,7 @@ public static class RefTestMutations
             };
         }
 
-        var reportData = refTests.Select(s => new RefTestReportData(
+        var reportData = refTests.Select(s => new RefTestReportPayloadData(
             s.Title?.Value ?? "Unknown",
             s.FirstName,
             s.LastName,
@@ -598,12 +582,18 @@ public static class RefTestMutations
 
         try
         {
-            await reportService.SendReportAsync(reportData, recipients, cancellationToken);
+            var reportPayload = new ReportEmailPayload(
+                recipients,
+                reportData,
+                DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
+            );
+
+            await jobEnqueueService.EnqueueReportEmailAsync(reportPayload, cancellationToken: cancellationToken);
 
             return new GenerateReportResult
             {
                 Success = true,
-                Message = $"Report successfully generated and sent to {recipients.Length} recipient(s)",
+                Message = $"Report job successfully enqueued for {recipients.Length} recipient(s)",
                 RefTestCount = refTests.Count
             };
         }
@@ -612,7 +602,7 @@ public static class RefTestMutations
             return new GenerateReportResult
             {
                 Success = false,
-                Message = $"Failed to generate or send report: {ex.Message}",
+                Message = $"Failed to enqueue report job: {ex.Message}",
                 RefTestCount = refTests.Count
             };
         }

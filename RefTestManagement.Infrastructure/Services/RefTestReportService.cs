@@ -1,16 +1,39 @@
 using ClosedXML.Excel;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
+public interface IRefTestReportService
+{
+    Task SendReportAsync(List<RefTestReportData> refTests, string[] recipientEmails, CancellationToken cancellationToken = default);
+}
+
+public record RefTestReportData(
+    string TitleName,
+    string FirstName,
+    string LastName,
+    DateTime? StartedAt,
+    DateTime? CompletedAt,
+    int? QuestionScore,
+    int QuestionTotal,
+    int? AnswerScore,
+    int? AnswerTotal,
+    double? Percentage,
+    bool Passed,
+    string? Language,
+    TimeSpan? Duration);
+
+
 public class RefTestReportService(
     ILogger<RefTestReportService> logger,
     IEmailService emailService,
     LanguageConfiguration languageConfiguration,
-    ILogoService logoService)
+    ILogoService logoService,
+    ITranslationService translationService)
     : IRefTestReportService
 {
     public async Task SendReportAsync(List<RefTestReportData> refTests, string[] recipientEmails,
@@ -18,25 +41,25 @@ public class RefTestReportService(
     {
         if (recipientEmails.Length == 0)
         {
-            logger.LogWarning("No recipient emails configured for reports");
+            ServiceLoggerMessages.LogNoReportRecipients(logger);
             return;
         }
 
         // Download logo once for all PDFs
         var logo = await logoService.GetLogoBytesAsync();
 
-        var excelReport = GenerateExcelReportAsync(refTests, languageConfiguration.EnabledLanguages);
-        var pdfReport = GeneratePdfReportAsync(refTests, languageConfiguration.EnabledLanguages, logo);
+        var excelReport = GenerateExcelReport(refTests, languageConfiguration.EnabledLanguages);
+        var pdfReport = GeneratePdfReport(refTests, languageConfiguration.EnabledLanguages, logo);
 
         var timestamp = DateTime.UtcNow.ToString("yyyyMMdd_HHmmss");
 
         foreach (var recipientEmail in recipientEmails)
         {
-            await emailService.SendReportEmailAsync(recipientEmail, excelReport, pdfReport, timestamp, refTests.Count);
+            await emailService.SendReportEmailAsync(recipientEmail, excelReport, pdfReport, timestamp, refTests.Count, cancellationToken);
         }
     }
 
-    private static byte[] GenerateExcelReportAsync(List<RefTestReportData> refTestReportDataList, string[] enabledLanguages)
+    private byte[] GenerateExcelReport(List<RefTestReportData> refTestReportDataList, string[] enabledLanguages)
     {
         using var workbook = new XLWorkbook();
 
@@ -52,62 +75,16 @@ public class RefTestReportService(
 
         // Add translation headers
         translationsSheet.Cell(2, 1).Value = "Column";
-        var languageNames = new Dictionary<string, string>
-        {
-            ["en"] = "English",
-            ["nl"] = "Nederlands",
-            ["fr"] = "Français",
-            ["de"] = "Deutsch"
-        };
 
         for (var i = 0; i < enabledLanguages.Length; i++)
         {
             var lang = enabledLanguages[i];
-            translationsSheet.Cell(2, i + 2).Value =
-                languageNames.TryGetValue(lang, out var value) ? value : lang.ToUpper();
+            translationsSheet.Cell(2, i + 2).Value = translationService.GetLanguageDisplayName(lang);
         }
 
         translationsSheet.Range(2, 1, 2, enabledLanguages.Length + 1).Style.Font.Bold = true;
         translationsSheet.Range(2, 1, 2, enabledLanguages.Length + 1).Style.Fill.BackgroundColor = XLColor.LightGray;
 
-        var allTranslations = new Dictionary<string, Dictionary<string, string>>
-        {
-            ["en"] = new()
-            {
-                ["Title"] = "Title", ["First Name"] = "First Name", ["Last Name"] = "Last Name",
-                ["Started At"] = "Started At", ["Completed At"] = "Completed At", ["Duration"] = "Duration",
-                ["Language"] = "Language", ["Question Score"] = "Question Score", ["Question Total"] = "Question Total",
-                ["Answer Score"] = "Answer Score", ["Answer Total"] = "Answer Total", ["Percentage"] = "Percentage",
-                ["Passed"] = "Passed"
-            },
-            ["nl"] = new()
-            {
-                ["Title"] = "Titel", ["First Name"] = "Voornaam", ["Last Name"] = "Achternaam",
-                ["Started At"] = "Gestart Op", ["Completed At"] = "Voltooid Op", ["Duration"] = "Duur",
-                ["Language"] = "Taal", ["Question Score"] = "Vraag Score", ["Question Total"] = "Vraag Totaal",
-                ["Answer Score"] = "Antwoord Score", ["Answer Total"] = "Antwoord Totaal",
-                ["Percentage"] = "Percentage",
-                ["Passed"] = "Geslaagd"
-            },
-            ["fr"] = new()
-            {
-                ["Title"] = "Titre", ["First Name"] = "Prénom", ["Last Name"] = "Nom",
-                ["Started At"] = "Commencé À", ["Completed At"] = "Terminé À", ["Duration"] = "Durée",
-                ["Language"] = "Langue", ["Question Score"] = "Score Questions", ["Question Total"] = "Total Questions",
-                ["Answer Score"] = "Score Réponses", ["Answer Total"] = "Total Réponses",
-                ["Percentage"] = "Pourcentage",
-                ["Passed"] = "Réussi"
-            },
-            ["de"] = new()
-            {
-                ["Title"] = "Titel", ["First Name"] = "Vorname", ["Last Name"] = "Nachname",
-                ["Started At"] = "Gestartet Am", ["Completed At"] = "Abgeschlossen Am", ["Duration"] = "Dauer",
-                ["Language"] = "Sprache", ["Question Score"] = "Fragen Punkte", ["Question Total"] = "Fragen Gesamt",
-                ["Answer Score"] = "Antworten Punkte", ["Answer Total"] = "Antworten Gesamt",
-                ["Percentage"] = "Prozentsatz",
-                ["Passed"] = "Bestanden"
-            }
-        };
 
         var columnKeys = new[]
         {
@@ -125,10 +102,8 @@ public class RefTestReportService(
             for (var langIdx = 0; langIdx < enabledLanguages.Length; langIdx++)
             {
                 var lang = enabledLanguages[langIdx];
-                var translation = allTranslations.TryGetValue(lang, out var value1) &&
-                                  value1.TryGetValue(key, out var value)
-                    ? value
-                    : key; // Fallback to an English key if translation not found
+                var translations = translationService.GetReportColumnTranslations(lang);
+                var translation = translations.GetValueOrDefault(key, key);
                 translationsSheet.Cell(row, langIdx + 2).Value = translation;
             }
 
@@ -145,47 +120,22 @@ public class RefTestReportService(
         var worksheet = workbook.Worksheets.Add("RefTests");
         worksheet.Position = 1; // Make it the first sheet
 
-        // Add compact language switcher in row 1 - all in one merged cell
-        var languageLabel = new Dictionary<string, string>
-        {
-            ["en"] = "Language",
-            ["nl"] = "Taal",
-            ["fr"] = "Langue",
-            ["de"] = "Sprache"
-        };
-
-        var instructionTexts = new Dictionary<string, string>
-        {
-            ["en"] = "Select language",
-            ["nl"] = "Selecteer taal",
-            ["fr"] = "Sélectionner la langue",
-            ["de"] = "Sprache wählen"
-        };
-
-        // Add instruction and language label translations to Translations sheet
+        // Add instruction and language label translations to a Translations sheet
         var instructionRow = columnKeys.Length + 3;
         var labelRow = columnKeys.Length + 4;
         translationsSheet.Cell(instructionRow, 1).Value = "LanguageInstruction";
-        translationsSheet.Cell(labelRow, 1).Value = "LanguageLabel";
+        translationsSheet.Cell(labelRow, 1).Value = "Language";
 
         for (var i = 0; i < enabledLanguages.Length; i++)
         {
             var lang = enabledLanguages[i];
-            if (instructionTexts.TryGetValue(lang, out var instruction))
-            {
-                translationsSheet.Cell(instructionRow, i + 2).Value = instruction;
-            }
-
-            if (languageLabel.TryGetValue(lang, out var label))
-            {
-                translationsSheet.Cell(labelRow, i + 2).Value = label;
-            }
+            var translations = translationService.GetReportColumnTranslations(lang);
+            translationsSheet.Cell(instructionRow, i + 2).Value = translations.GetValueOrDefault("LanguageInstruction", "Select language");
+            translationsSheet.Cell(labelRow, i + 2).Value = translations.GetValueOrDefault("Language", "Language");
         }
 
-        // Create compact language switcher in row 1
-        var defaultLanguage = languageNames.TryGetValue(enabledLanguages[0], out var value3)
-            ? value3
-            : enabledLanguages[0].ToUpper();
+        // Create a compact language switcher in row 1
+        var defaultLanguage = translationService.GetLanguageDisplayName(enabledLanguages[0]);
 
         // A1: Label
         worksheet.Cell(1, 1).Value = "Language:";
@@ -217,11 +167,12 @@ public class RefTestReportService(
         var instructionCell = worksheet.Cell(1, 3);
         if (enabledLanguages.Length == 1)
         {
-            instructionCell.Value = $"← {instructionTexts[enabledLanguages[0]]}";
+            var firstLangTranslations = translationService.GetReportColumnTranslations(enabledLanguages[0]);
+            instructionCell.Value = $"← {firstLangTranslations.GetValueOrDefault("LanguageInstruction", "Select language")}";
         }
         else
         {
-            var instructionFormula = BuildLanguageFormula(enabledLanguages, languageNames, instructionRow);
+            var instructionFormula = BuildLanguageFormula(enabledLanguages, instructionRow);
             instructionCell.FormulaA1 = $@"=""← ""&{instructionFormula}";
         }
 
@@ -251,7 +202,7 @@ public class RefTestReportService(
                 for (var langIdx = 0; langIdx < enabledLanguages.Length; langIdx++)
                 {
                     var lang = enabledLanguages[langIdx];
-                    var langDisplayName = languageNames.TryGetValue(lang, out var value) ? value : lang.ToUpper();
+                    var langDisplayName = translationService.GetLanguageDisplayName(lang);
                     var columnRef = GetExcelColumnName(langIdx + 2); // Column B=2, C=3, D=4, etc.
 
                     if (langIdx == 0)
@@ -369,7 +320,7 @@ public class RefTestReportService(
         return columnName;
     }
 
-    private static string BuildLanguageFormula(string[] enabledLanguages, Dictionary<string, string> languageNames,
+    private string BuildLanguageFormula(string[] enabledLanguages,
         int row, string cellRef = "B")
     {
         if (enabledLanguages.Length == 1)
@@ -382,7 +333,7 @@ public class RefTestReportService(
         for (var langIdx = 0; langIdx < enabledLanguages.Length; langIdx++)
         {
             var lang = enabledLanguages[langIdx];
-            var langDisplayName = languageNames.TryGetValue(lang, out var value) ? value : lang.ToUpper();
+            var langDisplayName = translationService.GetLanguageDisplayName(lang);
             var columnRef = GetExcelColumnName(langIdx + 2);
 
             if (langIdx == 0)
@@ -404,68 +355,8 @@ public class RefTestReportService(
         return $"{formula}{closingParens}";
     }
 
-    private static byte[] GeneratePdfReportAsync(List<RefTestReportData> refTestReportDataList, string[] enabledLanguages, byte[]? logo)
+    private byte[] GeneratePdfReport(List<RefTestReportData> refTestReportDataList, string[] enabledLanguages, byte[]? logo)
     {
-        var languageNames = new Dictionary<string, string>
-        {
-            ["en"] = "English",
-            ["nl"] = "Nederlands",
-            ["fr"] = "Français",
-            ["de"] = "Deutsch"
-        };
-
-        var translations = new Dictionary<string, Dictionary<string, string>>
-        {
-            ["en"] = new()
-            {
-                ["Report"] = "RefTest Report",
-                ["Version"] = "Version",
-                ["Title"] = "Title", ["First Name"] = "First Name", ["Last Name"] = "Last Name",
-                ["Started At"] = "Started At", ["Completed At"] = "Completed At", ["Duration"] = "Duration",
-                ["Language"] = "Language", ["Q Score"] = "Q Score", ["Q Total"] = "Q Total",
-                ["A Score"] = "A Score", ["A Total"] = "A Total", ["Percentage"] = "%",
-                ["Passed"] = "Passed", ["Yes"] = "Yes", ["No"] = "No",
-                ["Generated"] = "Generated", ["Total RefTests"] = "Total RefTests",
-                ["Page"] = "Page", ["of"] = "of"
-            },
-            ["nl"] = new()
-            {
-                ["Report"] = "RefTest Rapport",
-                ["Version"] = "Versie",
-                ["Title"] = "Titel", ["First Name"] = "Voornaam", ["Last Name"] = "Achternaam",
-                ["Started At"] = "Gestart Op", ["Completed At"] = "Voltooid Op", ["Duration"] = "Duur",
-                ["Language"] = "Taal", ["Q Score"] = "Vraag Score", ["Q Total"] = "Vraag Totaal",
-                ["A Score"] = "Antwoord Score", ["A Total"] = "Antwoord Totaal", ["Percentage"] = "%",
-                ["Passed"] = "Geslaagd", ["Yes"] = "Ja", ["No"] = "Nee",
-                ["Generated"] = "Gegenereerd", ["Total RefTests"] = "Totaal RefTests",
-                ["Page"] = "Pagina", ["of"] = "van"
-            },
-            ["fr"] = new()
-            {
-                ["Report"] = "Rapport RefTest",
-                ["Version"] = "Version",
-                ["Title"] = "Titre", ["First Name"] = "Prénom", ["Last Name"] = "Nom",
-                ["Started At"] = "Commencé", ["Completed At"] = "Terminé", ["Duration"] = "Durée",
-                ["Language"] = "Langue", ["Q Score"] = "Score Questions", ["Q Total"] = "Total Questions",
-                ["A Score"] = "Score Réponses", ["A Total"] = "Total Réponses", ["Percentage"] = "%",
-                ["Passed"] = "Réussi", ["Yes"] = "Oui", ["No"] = "Non",
-                ["Generated"] = "Généré", ["Total RefTests"] = "RefTests Totales",
-                ["Page"] = "Page", ["of"] = "de"
-            },
-            ["de"] = new()
-            {
-                ["Report"] = "RefTest Bericht",
-                ["Version"] = "Version",
-                ["Title"] = "Titel", ["First Name"] = "Vorname", ["Last Name"] = "Nachname",
-                ["Started At"] = "Gestartet", ["Completed At"] = "Abgeschlossen", ["Duration"] = "Dauer",
-                ["Language"] = "Sprache", ["Q Score"] = "Fragen Punkte", ["Q Total"] = "Fragen Gesamt",
-                ["A Score"] = "Antworten Punkte", ["A Total"] = "Antworten Gesamt", ["Percentage"] = "%",
-                ["Passed"] = "Bestanden", ["Yes"] = "Ja", ["No"] = "Nein",
-                ["Generated"] = "Erstellt", ["Total RefTests"] = "Gesamt RefTests",
-                ["Page"] = "Seite", ["of"] = "von"
-            }
-        };
-
         var cetTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
         var nowCet = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, cetTimeZone);
 
@@ -474,8 +365,8 @@ public class RefTestReportService(
             // Generate one section per language
             foreach (var lang in enabledLanguages)
             {
-                var langName = languageNames.TryGetValue(lang, out var name) ? name : lang.ToUpper();
-                var trans = translations.TryGetValue(lang, out var t) ? t : translations["en"];
+                var langName = translationService.GetLanguageDisplayName(lang);
+                var trans = translationService.GetPdfReportTranslations(lang);
 
                 container.Page(page =>
                 {

@@ -64,7 +64,15 @@ export type BulkRefTestsResult = {
   totalRequested: Scalars['Int']['output'];
 };
 
-export type CompleteRefTestError = EmailError | InvalidRefTestStatusError | RefTestNotFoundError;
+/** The scope of a cache hint. */
+export enum CacheControlScope {
+  /** The value to cache is specific to a single user. */
+  Private = 'PRIVATE',
+  /** The value to cache is not tied to a single user. */
+  Public = 'PUBLIC'
+}
+
+export type CompleteRefTestError = InvalidRefTestStatusError | RefTestNotFoundError;
 
 export type CompleteRefTestInput = {
   language?: InputMaybe<Scalars['String']['input']>;
@@ -131,11 +139,6 @@ export type DeleteRefTestsResult = {
   failed: Scalars['Int']['output'];
   successfullyDeleted: Scalars['Int']['output'];
   totalRequested: Scalars['Int']['output'];
-};
-
-export type EmailError = Error & {
-  __typename?: 'EmailError';
-  message: Scalars['String']['output'];
 };
 
 export type Error = {
@@ -418,7 +421,7 @@ export type RefTestFilterInput = {
   firstName?: InputMaybe<StringOperationFilterInput>;
   /** Filter on RefTest id */
   id?: InputMaybe<UuidOperationFilterInput>;
-  /** Filter on invitation was sent */
+  /** Filter on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<BooleanOperationFilterInput>;
   /** Filter on last name of the user who started the RefTest */
   lastName?: InputMaybe<StringOperationFilterInput>;
@@ -433,7 +436,7 @@ export type RefTestFilterInput = {
   questionScore?: InputMaybe<IntOperationFilterInput>;
   /** Filter on total possible question score */
   questionTotal?: InputMaybe<IntOperationFilterInput>;
-  /** Filter on results were sent */
+  /** Filter on results were sent for the RefTest */
   resultsSent?: InputMaybe<BooleanOperationFilterInput>;
   /** Filter on start date of the RefTest */
   startedAt?: InputMaybe<DateTimeOperationFilterInput>;
@@ -464,7 +467,7 @@ export type RefTestSortInput = {
   firstName?: InputMaybe<SortEnumType>;
   /** Sort on RefTest id */
   id?: InputMaybe<SortEnumType>;
-  /** Sort on invitation was sent */
+  /** Sort on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<SortEnumType>;
   /** Sort on last name of the user who started the RefTest */
   lastName?: InputMaybe<SortEnumType>;
@@ -478,7 +481,7 @@ export type RefTestSortInput = {
   questionScore?: InputMaybe<SortEnumType>;
   /** Sort on total possible question score */
   questionTotal?: InputMaybe<SortEnumType>;
-  /** Sort on results were sent */
+  /** Sort on results were sent for the RefTest */
   resultsSent?: InputMaybe<SortEnumType>;
   /** Sort on start date of the RefTest */
   startedAt?: InputMaybe<SortEnumType>;

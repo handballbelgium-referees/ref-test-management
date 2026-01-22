@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
 {
     [DbContext(typeof(RefTestManagementContext))]
-    partial class RefTestManagementContextModelSnapshot : ModelSnapshot
+    [Migration("20260120213350_AddJobTable")]
+    partial class AddJobTable
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -100,8 +103,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTime?>("InvitationSentAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("InvitationSent")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Language")
                         .HasColumnType("nvarchar(max)");
@@ -128,8 +131,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.Property<int?>("QuestionScore")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("ResultsSentAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("ResultsSent")
+                        .HasColumnType("bit");
 
                     b.Property<string>("SelectedAnswerIds")
                         .IsRequired()
