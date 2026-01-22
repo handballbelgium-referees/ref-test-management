@@ -1,4 +1,4 @@
-﻿namespace Handball.Belgium.RefTestManagement.Domain;
+﻿namespace Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 
 public class RefTestTitle
 {

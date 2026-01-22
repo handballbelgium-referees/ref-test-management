@@ -1,4 +1,4 @@
-﻿namespace Handball.Belgium.RefTestManagement.Domain;
+﻿namespace Handball.Belgium.RefTestManagement.Domain.Jobs;
 
 /// <summary>
 /// Represents the status of a background job

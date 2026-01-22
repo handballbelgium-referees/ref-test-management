@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using Handball.Belgium.RefTestManagement.Domain;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 

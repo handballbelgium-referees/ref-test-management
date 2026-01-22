@@ -1,12 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Configurations;
 
-public class RefTestConfiguration : IEntityTypeConfiguration<RefTestManagement.Domain.RefTest>
+public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 {
-    public void Configure(EntityTypeBuilder<RefTestManagement.Domain.RefTest> builder)
+    public void Configure(EntityTypeBuilder<RefTest> builder)
     {
         builder.HasKey(x => x.Id);
         

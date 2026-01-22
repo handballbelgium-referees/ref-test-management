@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 
-namespace Handball.Belgium.RefTestManagement.Domain;
+namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 public class RefTest
 {

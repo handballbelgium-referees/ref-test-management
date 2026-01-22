@@ -1,5 +1,6 @@
 ﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Domain;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using HotChocolate.Data.Filters;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
