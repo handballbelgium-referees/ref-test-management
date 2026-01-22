@@ -671,13 +671,16 @@ ref-test-management/
 │   └── RefTestManagement.Application.csproj # Dependencies: StrawberryShake.Server
 │
 ├── RefTestManagement.Domain/                # 🔷 Domain Layer (.NET 10)
-│   ├── RefTest.cs                           # RefTest aggregate root
-│   ├── RefTestTitle.cs                      # RefTest title entity
-│   ├── RefTestStatus.cs                     # RefTest status enum
-│   ├── RefTestExceptions.cs                 # Domain exceptions
-│   ├── Job.cs                               # Job queue entity
-│   ├── JobStatus.cs                         # Job status enum (Pending, Processing, Completed, Failed)
-│   ├── JobType.cs                           # Job type enum (InvitationEmail, ResultEmail, ReportEmail, RefTestExpiration)
+│   ├── Jobs/                                # Job queue domain entities
+│   │   ├── Job.cs                           # Job queue entity
+│   │   ├── JobStatus.cs                     # Job status enum (Pending, Processing, Completed, Failed)
+│   │   └── JobType.cs                       # Job type enum (InvitationEmail, ResultEmail, ReportEmail, RefTestExpiration)
+│   ├── RefTests/                            # RefTest domain entities
+│   │   ├── RefTest.cs                       # RefTest aggregate root
+│   │   ├── RefTestStatus.cs                 # RefTest status enum
+│   │   └── RefTestExceptions.cs             # Domain exceptions
+│   ├── RefTestTitles/                       # RefTest title domain entities
+│   │   └── RefTestTitle.cs                  # RefTest title entity
 │   └── RefTestManagement.Domain.csproj      # No external dependencies (pure domain)
 │
 ├── RefTestManagement.Infrastructure/        # 🔷 Infrastructure Layer (.NET 10)
