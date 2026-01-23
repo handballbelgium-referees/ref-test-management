@@ -316,8 +316,18 @@ export class ListRefTests {
   }
 
   private setupFilterChangeHandler(): void {
+    let isFirstRun = true;
+
     effect(() => {
       this.filterState.filter(); // Track changes
+
+      // Skip the first run since Apollo watch() already executes on subscription
+      if (isFirstRun) {
+        isFirstRun = false;
+        return;
+      }
+
+      // On subsequent filter changes, refetch the data
       this.resetPagination();
       this.refetchData();
       this.dataService.updateCountQueries();

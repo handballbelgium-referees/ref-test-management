@@ -1,10 +1,10 @@
-import { computed, DestroyRef, inject, Injectable } from '@angular/core';
+import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { catchError, finalize, map, of, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
   GenerateReportGQL,
-  GetRefTestsCountGQL,
+  GetRefTestsAllCountsGQL,
   GetRefTestsGQL,
   RefTestFilterInput,
   RefTestStatus,
@@ -18,7 +18,7 @@ import { IReportResult } from './types';
 @Injectable()
 export class RefTestData {
   private readonly getRefTestsGQL = inject(GetRefTestsGQL);
-  private readonly getRefTestsCountGQL = inject(GetRefTestsCountGQL);
+  private readonly getRefTestsAllCountsGQL = inject(GetRefTestsAllCountsGQL);
   private readonly deleteRefTestsGQL = inject(DeleteRefTestsGQL);
   private readonly sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
   private readonly sendResultsGQL = inject(SendRefTestResultsGQL);
@@ -28,16 +28,51 @@ export class RefTestData {
   private readonly queryBuilder = inject(RefTestQueryBuilder);
 
   private readonly queryRef = this.getRefTestsGQL.watch({
+    variables: this.getInitialQueryVariables(),
     fetchPolicy: 'cache-first',
+    notifyOnNetworkStatusChange: true,
   });
 
-  private readonly countQueries = {
-    all: this.getRefTestsCountGQL.watch({ fetchPolicy: 'cache-first' }),
-    pending: this.getRefTestsCountGQL.watch({ fetchPolicy: 'cache-first' }),
-    inProgress: this.getRefTestsCountGQL.watch({ fetchPolicy: 'cache-first' }),
-    completed: this.getRefTestsCountGQL.watch({ fetchPolicy: 'cache-first' }),
-    expired: this.getRefTestsCountGQL.watch({ fetchPolicy: 'cache-first' }),
-  };
+  private readonly countsQueryRef = this.getRefTestsAllCountsGQL.watch({
+    variables: this.getInitialCountsVariables(),
+    fetchPolicy: 'cache-first',
+    notifyOnNetworkStatusChange: true,
+  });
+
+  private getInitialQueryVariables() {
+    const filter = this.filterState.filter();
+    const where = this.queryBuilder.buildWhereFilter(filter);
+    const order = this.queryBuilder.buildOrderClause(filter);
+    return {
+      first: 20, // REF_TEST_CONFIG.PAGE_SIZE
+      after: undefined,
+      where,
+      order,
+    };
+  }
+
+  private getInitialCountsVariables() {
+    const filter = this.filterState.filter();
+    const baseFilter = this.queryBuilder.buildWhereFilter(filter, {
+      excludeStatus: true,
+    });
+
+    return {
+      allWhere: baseFilter,
+      pendingWhere: this.queryBuilder.mergeFilters(baseFilter, {
+        status: { eq: RefTestStatus.Pending },
+      }),
+      inProgressWhere: this.queryBuilder.mergeFilters(baseFilter, {
+        status: { eq: RefTestStatus.InProgress },
+      }),
+      completedWhere: this.queryBuilder.mergeFilters(baseFilter, {
+        status: { eq: RefTestStatus.Completed },
+      }),
+      expiredWhere: this.queryBuilder.mergeFilters(baseFilter, {
+        status: { eq: RefTestStatus.Expired },
+      }),
+    };
+  }
 
   readonly loading = toSignal(this.queryRef.valueChanges.pipe(map((result) => result.loading)), {
     initialValue: true,
@@ -45,39 +80,26 @@ export class RefTestData {
 
   readonly queryResult = toSignal(this.queryRef.valueChanges);
 
-  // Create signals for each count query
-  private readonly allCountResult = toSignal(
-    this.countQueries.all.valueChanges.pipe(map((r) => r.data?.refTests?.totalCount ?? 0)),
-    { initialValue: 0 },
+  readonly statusCounts = toSignal(
+    this.countsQueryRef.valueChanges.pipe(
+      map((result) => ({
+        all: result.data?.all?.totalCount ?? 0,
+        pending: result.data?.pending?.totalCount ?? 0,
+        inProgress: result.data?.inProgress?.totalCount ?? 0,
+        completed: result.data?.completed?.totalCount ?? 0,
+        expired: result.data?.expired?.totalCount ?? 0,
+      })),
+    ),
+    {
+      initialValue: {
+        all: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        expired: 0,
+      },
+    },
   );
-
-  private readonly pendingCountResult = toSignal(
-    this.countQueries.pending.valueChanges.pipe(map((r) => r.data?.refTests?.totalCount ?? 0)),
-    { initialValue: 0 },
-  );
-
-  private readonly inProgressCountResult = toSignal(
-    this.countQueries.inProgress.valueChanges.pipe(map((r) => r.data?.refTests?.totalCount ?? 0)),
-    { initialValue: 0 },
-  );
-
-  private readonly completedCountResult = toSignal(
-    this.countQueries.completed.valueChanges.pipe(map((r) => r.data?.refTests?.totalCount ?? 0)),
-    { initialValue: 0 },
-  );
-
-  private readonly expiredCountResult = toSignal(
-    this.countQueries.expired.valueChanges.pipe(map((r) => r.data?.refTests?.totalCount ?? 0)),
-    { initialValue: 0 },
-  );
-
-  readonly statusCounts = computed(() => ({
-    all: this.allCountResult(),
-    pending: this.pendingCountResult(),
-    inProgress: this.inProgressCountResult(),
-    completed: this.completedCountResult(),
-    expired: this.expiredCountResult(),
-  }));
 
   refetchRefTests(variables: {
     first: number;
@@ -103,28 +125,18 @@ export class RefTestData {
       excludeStatus: true,
     });
 
-    this.countQueries.all.refetch({ where: baseFilter });
-
-    this.countQueries.pending.refetch({
-      where: this.queryBuilder.mergeFilters(baseFilter, {
+    this.countsQueryRef.refetch({
+      allWhere: baseFilter,
+      pendingWhere: this.queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Pending },
       }),
-    });
-
-    this.countQueries.inProgress.refetch({
-      where: this.queryBuilder.mergeFilters(baseFilter, {
+      inProgressWhere: this.queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.InProgress },
       }),
-    });
-
-    this.countQueries.completed.refetch({
-      where: this.queryBuilder.mergeFilters(baseFilter, {
+      completedWhere: this.queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Completed },
       }),
-    });
-
-    this.countQueries.expired.refetch({
-      where: this.queryBuilder.mergeFilters(baseFilter, {
+      expiredWhere: this.queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Expired },
       }),
     });

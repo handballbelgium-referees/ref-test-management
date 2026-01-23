@@ -779,6 +779,17 @@ export type GetRefTestByTokenQuery = { __typename?: 'Query', refTestByToken:
     | { __typename?: 'RefTestNotFoundError', message: string }
    };
 
+export type GetRefTestsAllCountsQueryVariables = Exact<{
+  allWhere?: InputMaybe<RefTestFilterInput>;
+  pendingWhere?: InputMaybe<RefTestFilterInput>;
+  inProgressWhere?: InputMaybe<RefTestFilterInput>;
+  completedWhere?: InputMaybe<RefTestFilterInput>;
+  expiredWhere?: InputMaybe<RefTestFilterInput>;
+}>;
+
+
+export type GetRefTestsAllCountsQuery = { __typename?: 'Query', all?: { __typename?: 'RefTestsConnection', totalCount: number } | null, pending?: { __typename?: 'RefTestsConnection', totalCount: number } | null, inProgress?: { __typename?: 'RefTestsConnection', totalCount: number } | null, completed?: { __typename?: 'RefTestsConnection', totalCount: number } | null, expired?: { __typename?: 'RefTestsConnection', totalCount: number } | null };
+
 export type GetRefTestsCountQueryVariables = Exact<{
   where?: InputMaybe<RefTestFilterInput>;
 }>;
@@ -1074,6 +1085,36 @@ export const GetRefTestByTokenDocument = gql`
   })
   export class GetRefTestByTokenGQL extends Apollo.Query<GetRefTestByTokenQuery, GetRefTestByTokenQueryVariables> {
     override document = GetRefTestByTokenDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetRefTestsAllCountsDocument = gql`
+    query GetRefTestsAllCounts($allWhere: RefTestFilterInput, $pendingWhere: RefTestFilterInput, $inProgressWhere: RefTestFilterInput, $completedWhere: RefTestFilterInput, $expiredWhere: RefTestFilterInput) {
+  all: refTests(first: 0, where: $allWhere) {
+    totalCount
+  }
+  pending: refTests(first: 0, where: $pendingWhere) {
+    totalCount
+  }
+  inProgress: refTests(first: 0, where: $inProgressWhere) {
+    totalCount
+  }
+  completed: refTests(first: 0, where: $completedWhere) {
+    totalCount
+  }
+  expired: refTests(first: 0, where: $expiredWhere) {
+    totalCount
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetRefTestsAllCountsGQL extends Apollo.Query<GetRefTestsAllCountsQuery, GetRefTestsAllCountsQueryVariables> {
+    override document = GetRefTestsAllCountsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
