@@ -1,50 +1,54 @@
 import { DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { ApolloClient } from '@apollo/client';
 import { catchError, finalize, map, of, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
   GenerateReportGQL,
   GetRefTestsAllCountsGQL,
   GetRefTestsGQL,
+  GetRefTestsQuery,
   RefTestFilterInput,
+  RefTestSortInput,
   RefTestStatus,
   SendRefTestInvitationsGQL,
   SendRefTestResultsGQL,
 } from '../../../../../graphql/generated';
+import { REF_TEST_CONFIG } from './constants';
 import { RefTestFilterState } from './ref-test-filter-state';
 import { RefTestQueryBuilder } from './ref-test-query-builder';
 import { IReportResult } from './types';
 
 @Injectable()
 export class RefTestData {
-  private readonly getRefTestsGQL = inject(GetRefTestsGQL);
-  private readonly getRefTestsAllCountsGQL = inject(GetRefTestsAllCountsGQL);
-  private readonly deleteRefTestsGQL = inject(DeleteRefTestsGQL);
-  private readonly sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
-  private readonly sendResultsGQL = inject(SendRefTestResultsGQL);
-  private readonly generateReportGQL = inject(GenerateReportGQL);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly filterState = inject(RefTestFilterState);
-  private readonly queryBuilder = inject(RefTestQueryBuilder);
+  private readonly _getRefTestsGQL = inject(GetRefTestsGQL);
+  private readonly _getRefTestsAllCountsGQL = inject(GetRefTestsAllCountsGQL);
+  private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
+  private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
+  private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
+  private readonly _generateReportGQL = inject(GenerateReportGQL);
+  private readonly _destroyRef = inject(DestroyRef);
+  private readonly _filterState = inject(RefTestFilterState);
+  private readonly _queryBuilder = inject(RefTestQueryBuilder);
 
-  private readonly queryRef = this.getRefTestsGQL.watch({
+  private readonly _queryRef = this._getRefTestsGQL.watch({
     variables: this.getInitialQueryVariables(),
     fetchPolicy: 'cache-first',
     notifyOnNetworkStatusChange: true,
   });
 
-  private readonly countsQueryRef = this.getRefTestsAllCountsGQL.watch({
+  private readonly _countsQueryRef = this._getRefTestsAllCountsGQL.watch({
     variables: this.getInitialCountsVariables(),
     fetchPolicy: 'cache-first',
     notifyOnNetworkStatusChange: true,
   });
 
   private getInitialQueryVariables() {
-    const filter = this.filterState.filter();
-    const where = this.queryBuilder.buildWhereFilter(filter);
-    const order = this.queryBuilder.buildOrderClause(filter);
+    const filter = this._filterState.filter();
+    const where = this._queryBuilder.buildWhereFilter(filter);
+    const order = this._queryBuilder.buildOrderClause(filter);
     return {
-      first: 20, // REF_TEST_CONFIG.PAGE_SIZE
+      first: REF_TEST_CONFIG.PAGE_SIZE,
       after: undefined,
       where,
       order,
@@ -52,36 +56,36 @@ export class RefTestData {
   }
 
   private getInitialCountsVariables() {
-    const filter = this.filterState.filter();
-    const baseFilter = this.queryBuilder.buildWhereFilter(filter, {
+    const filter = this._filterState.filter();
+    const baseFilter = this._queryBuilder.buildWhereFilter(filter, {
       excludeStatus: true,
     });
 
     return {
       allWhere: baseFilter,
-      pendingWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      pendingWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Pending },
       }),
-      inProgressWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      inProgressWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.InProgress },
       }),
-      completedWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      completedWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Completed },
       }),
-      expiredWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      expiredWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Expired },
       }),
     };
   }
 
-  readonly loading = toSignal(this.queryRef.valueChanges.pipe(map((result) => result.loading)), {
+  readonly loading = toSignal(this._queryRef.valueChanges.pipe(map((result) => result.loading)), {
     initialValue: true,
   });
 
-  readonly queryResult = toSignal(this.queryRef.valueChanges);
+  readonly queryResult = toSignal(this._queryRef.valueChanges);
 
   readonly statusCounts = toSignal(
-    this.countsQueryRef.valueChanges.pipe(
+    this._countsQueryRef.valueChanges.pipe(
       map((result) => ({
         all: result.data?.all?.totalCount ?? 0,
         pending: result.data?.pending?.totalCount ?? 0,
@@ -105,44 +109,43 @@ export class RefTestData {
     first: number;
     after?: string;
     where?: RefTestFilterInput;
-    order?: any;
+    order?: RefTestSortInput[];
   }): void {
-    this.queryRef.setVariables(variables);
+    this._queryRef.setVariables(variables);
   }
 
   fetchMore(variables: {
     first: number;
     after?: string;
     where?: RefTestFilterInput;
-    order?: any;
-  }): Promise<any> {
-    return this.queryRef.fetchMore({ variables });
+    order?: RefTestSortInput[];
+  }): Promise<ApolloClient.QueryResult<GetRefTestsQuery>> {
+    return this._queryRef.fetchMore({ variables });
   }
 
   updateCountQueries(): void {
-    const filter = this.filterState.filter();
-    const baseFilter = this.queryBuilder.buildWhereFilter(filter, {
+    const filter = this._filterState.filter();
+    const baseFilter = this._queryBuilder.buildWhereFilter(filter, {
       excludeStatus: true,
     });
 
     const variables = {
       allWhere: baseFilter,
-      pendingWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      pendingWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Pending },
       }),
-      inProgressWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      inProgressWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.InProgress },
       }),
-      completedWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      completedWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Completed },
       }),
-      expiredWhere: this.queryBuilder.mergeFilters(baseFilter, {
+      expiredWhere: this._queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Expired },
       }),
     };
 
-    // Use setVariables instead of refetch to respect cache-first policy
-    this.countsQueryRef.setVariables(variables);
+    this._countsQueryRef.setVariables(variables);
   }
 
   deleteRefTests(
@@ -156,7 +159,7 @@ export class RefTestData {
   ): void {
     if (callbacks.onStart) callbacks.onStart();
 
-    this.deleteRefTestsGQL
+    this._deleteRefTestsGQL
       .mutate({
         variables: { input: { ids } },
         fetchPolicy: 'no-cache',
@@ -176,7 +179,7 @@ export class RefTestData {
         finalize(() => {
           if (callbacks.onComplete) callbacks.onComplete();
         }),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }
@@ -192,7 +195,7 @@ export class RefTestData {
   ): void {
     if (callbacks.onStart) callbacks.onStart();
 
-    this.sendInvitationsGQL
+    this._sendInvitationsGQL
       .mutate({
         variables: { input: { ids } },
       })
@@ -211,7 +214,7 @@ export class RefTestData {
         finalize(() => {
           if (callbacks.onComplete) callbacks.onComplete();
         }),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }
@@ -227,7 +230,7 @@ export class RefTestData {
   ): void {
     if (callbacks.onStart) callbacks.onStart();
 
-    this.sendResultsGQL
+    this._sendResultsGQL
       .mutate({
         variables: { input: { ids } },
       })
@@ -246,7 +249,7 @@ export class RefTestData {
         finalize(() => {
           if (callbacks.onComplete) callbacks.onComplete();
         }),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }
@@ -262,7 +265,7 @@ export class RefTestData {
   ): void {
     if (callbacks.onStart) callbacks.onStart();
 
-    this.generateReportGQL
+    this._generateReportGQL
       .mutate({
         variables: { input: { ids } },
       })
@@ -283,7 +286,7 @@ export class RefTestData {
         finalize(() => {
           if (callbacks.onComplete) callbacks.onComplete();
         }),
-        takeUntilDestroyed(this.destroyRef),
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }

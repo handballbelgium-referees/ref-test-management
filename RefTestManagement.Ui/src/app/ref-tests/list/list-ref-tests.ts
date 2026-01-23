@@ -15,7 +15,6 @@ import { onlyCompleteData } from 'apollo-angular';
 import { debounceTime, map, Subject } from 'rxjs';
 import {
   GetScoreConfigurationGQL,
-  RefTestsEdge,
   RefTestStatus,
   SortEnumType,
 } from '../../../../graphql/generated';
@@ -407,19 +406,13 @@ export class ListRefTests {
         if (result.data?.refTests) {
           const edges = result.data.refTests.edges ?? [];
           const newRefTests = edges
-            .filter(
-              (edge: RefTestsEdge): edge is NonNullable<typeof edge> & { node: RefTestNode } =>
-                !!edge && !!edge.node,
-            )
-            .map((edge: RefTestsEdge) => edge.node);
+            .filter((edge): edge is NonNullable<typeof edge> => !!edge && !!edge.node)
+            .map((edge) => edge.node as RefTestNode);
 
           this.allLoadedRefTests.update((current) => [...current, ...newRefTests]);
           this.hasNextPage.set(result.data.refTests.pageInfo?.hasNextPage ?? false);
           this.endCursor.set(result.data.refTests.pageInfo?.endCursor ?? undefined);
         }
-      })
-      .catch((error) => {
-        console.error('Error loading more ref tests:', error);
       })
       .finally(() => {
         this.loadingMore.set(false);

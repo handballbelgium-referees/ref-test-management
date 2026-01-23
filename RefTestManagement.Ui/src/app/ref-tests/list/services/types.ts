@@ -1,9 +1,5 @@
 import { GetRefTestsQuery, RefTestStatus, SortEnumType } from '../../../../../graphql/generated';
 
-// ============================================================================
-// TYPES
-// ============================================================================
-
 export type SortField =
   | 'title'
   | 'completedAt'
