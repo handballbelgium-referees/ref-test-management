@@ -44,8 +44,8 @@
     <!-- Filters and Sorting -->
     <div class="mb-6">
       <app-ref-test-filters-card
-        [filter]="filter()"
-        [statusCounts]="statusCounts()"
+        [filter]="filterState.filter()"
+        [statusCounts]="dataService.statusCounts()"
         (statusFilterChange)="setStatusFilter($event)"
         (titleFilterChange)="setTitleFilter($event)"
         (invitationFilterChange)="setInvitationFilter($event)"
@@ -58,98 +58,98 @@
 
     <!-- Report Result Banner -->
     @if (reportResult()) {
-    <div
-      [class]="
-        reportResult()!.success ? 'bg-success-50 border-success-200' : 'bg-red-50 border-red-200'
-      "
-      class="mb-4 rounded-lg border p-4 flex items-start gap-3"
-      role="alert"
-    >
-      @if (reportResult()!.success) {
-      <svg
-        class="w-5 h-5 text-success-600 shrink-0 mt-0.5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      } @else {
-      <svg
-        class="w-5 h-5 text-red-600 shrink-0 mt-0.5"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-        />
-      </svg>
-      }
-      <div class="flex-1 min-w-0">
-        <p
-          [class]="reportResult()!.success ? 'text-success-800' : 'text-red-800'"
-          class="text-sm font-medium"
-        >
-          {{
-            (reportResult()!.success
-              ? 'ref_tests.list.report.success'
-              : 'ref_tests.list.report.error'
-            ) | translate
-          }}
-        </p>
-        @if (reportResult()!.refTestCount > 0) {
-        <p
-          [class]="reportResult()!.success ? 'text-success-700' : 'text-red-700'"
-          class="text-xs mt-1"
-        >
-          {{
-            'ref_tests.list.report.ref_test_count'
-              | translate : { count: reportResult()!.refTestCount }
-          }}
-        </p>
-        }
-      </div>
-      <button
-        type="button"
-        (click)="dismissReportResult()"
+      <div
         [class]="
-          reportResult()!.success
-            ? 'text-success-600 hover:text-success-800'
-            : 'text-red-600 hover:text-red-800'
+          reportResult()!.success ? 'bg-success-50 border-success-200' : 'bg-red-50 border-red-200'
         "
-        class="shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded"
-        [class.focus:ring-success-500]="reportResult()!.success"
-        [class.focus:ring-red-500]="!reportResult()!.success"
-        [attr.aria-label]="'ref_tests.list.report.dismiss' | translate"
-        title="{{ 'ref_tests.list.report.dismiss' | translate }}"
+        class="mb-4 rounded-lg border p-4 flex items-start gap-3"
+        role="alert"
       >
-        <svg
-          class="w-5 h-5"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
+        @if (reportResult()!.success) {
+          <svg
+            class="w-5 h-5 text-success-600 shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        } @else {
+          <svg
+            class="w-5 h-5 text-red-600 shrink-0 mt-0.5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        }
+        <div class="flex-1 min-w-0">
+          <p
+            [class]="reportResult()!.success ? 'text-success-800' : 'text-red-800'"
+            class="text-sm font-medium"
+          >
+            {{
+              (reportResult()!.success
+                ? 'ref_tests.list.report.success'
+                : 'ref_tests.list.report.error'
+              ) | translate
+            }}
+          </p>
+          @if (reportResult()!.refTestCount > 0) {
+            <p
+              [class]="reportResult()!.success ? 'text-success-700' : 'text-red-700'"
+              class="text-xs mt-1"
+            >
+              {{
+                'ref_tests.list.report.ref_test_count'
+                  | translate: { count: reportResult()!.refTestCount }
+              }}
+            </p>
+          }
+        </div>
+        <button
+          type="button"
+          (click)="dismissReportResult()"
+          [class]="
+            reportResult()!.success
+              ? 'text-success-600 hover:text-success-800'
+              : 'text-red-600 hover:text-red-800'
+          "
+          class="shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded"
+          [class.focus:ring-success-500]="reportResult()!.success"
+          [class.focus:ring-red-500]="!reportResult()!.success"
+          [attr.aria-label]="'ref_tests.list.report.dismiss' | translate"
+          title="{{ 'ref_tests.list.report.dismiss' | translate }}"
         >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      </button>
-    </div>
+          <svg
+            class="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M6 18L18 6M6 6l12 12"
+            />
+          </svg>
+        </button>
+      </div>
     }
 
     <!-- Bulk Actions Bar -->
@@ -169,337 +169,359 @@
 
     <!-- Loading State -->
     @if (loading()) {
-    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
-      <div
-        class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto mb-4"
-      ></div>
-      <p class="text-neutral-600">{{ 'ref_tests.list.loading' | translate }}</p>
-    </div>
+      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+        <div
+          class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto mb-4"
+        ></div>
+        <p class="text-neutral-600">{{ 'ref_tests.list.loading' | translate }}</p>
+      </div>
     }
 
     <!-- Empty State -->
     @else if (refTests().length === 0) {
-    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
-      <svg
-        class="mx-auto h-12 w-12 text-neutral-400"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-        />
-      </svg>
-      <h3 class="mt-4 text-lg font-medium text-neutral-900">
-        {{ 'ref_tests.list.empty.title' | translate }}
-      </h3>
-      <p class="mt-2 text-sm text-neutral-600">{{ 'ref_tests.list.empty.subtitle' | translate }}</p>
-      <button
-        type="button"
-        (click)="navigateToCreate()"
-        class="mt-6 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
-      >
-        {{ 'ref_tests.list.empty.action' | translate }}
-      </button>
-    </div>
+      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+        <svg
+          class="mx-auto h-12 w-12 text-neutral-400"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
+        </svg>
+        <h3 class="mt-4 text-lg font-medium text-neutral-900">
+          {{ 'ref_tests.list.empty.title' | translate }}
+        </h3>
+        <p class="mt-2 text-sm text-neutral-600">
+          {{ 'ref_tests.list.empty.subtitle' | translate }}
+        </p>
+        <button
+          type="button"
+          (click)="navigateToCreate()"
+          class="mt-6 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
+        >
+          {{ 'ref_tests.list.empty.action' | translate }}
+        </button>
+      </div>
     }
 
     <!-- ref_tests List -->
     @else {
-    <!-- Desktop Table View -->
-    <div
-      class="hidden md:block bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto"
-    >
-      <table class="min-w-full">
-        <thead class="bg-neutral-100 border-b border-neutral-200">
-          <tr>
-            <th class="px-6 py-4 text-left">
-              <input
-                type="checkbox"
-                [checked]="allSelected()"
-                [indeterminate]="someSelected()"
-                (change)="toggleSelectAll()"
-                (click)="$event.stopPropagation()"
-                class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
-              />
-            </th>
-            @if (isColumnVisible('title')) {
-            <th
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
-            >
-              {{ 'ref_tests.list.table.title' | translate }}
-            </th>
-            } @if (isColumnVisible('participant')) {
-            <th
-              (click)="sortByColumn('email')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.participant' | translate }}
-                @if (filter().sortField === 'email') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
-            } @if (isColumnVisible('status')) {
-            <th
-              (click)="sortByColumn('status')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.status' | translate }}
-                @if (filter().sortField === 'status') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
-            } @if (isColumnVisible('questions')) {
-            <th
-              (click)="sortByColumn('numberOfQuestions')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.questions' | translate }}
-                @if (filter().sortField === 'numberOfQuestions') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
-            } @if (isColumnVisible('maxTimeInMinutes')) {
-            <th
-              (click)="sortByColumn('maxTimeInMinutes')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.max_time' | translate }}
-                @if (filter().sortField === 'maxTimeInMinutes') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
-            } @if (isColumnVisible('score')) {
-            <th
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.score' | translate }}
-              </div>
-            </th>
-            } @if (isColumnVisible('invitation')) {
-            <th
-              (click)="sortByColumn('invitationSent')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.invitation' | translate }}
-                @if (filter().sortField === 'invitationSent') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
-            } @if (isColumnVisible('results')) {
-            <th
-              (click)="sortByColumn('resultsSent')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.results' | translate }}
-                @if (filter().sortField === 'resultsSent') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
-            } @if (isColumnVisible('started')) {
-            <th
-              (click)="sortByColumn('startedAt')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.started' | translate }}
-                @if (filter().sortField === 'startedAt') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
-            } @if (isColumnVisible('completed')) {
-            <th
-              (click)="sortByColumn('completedAt')"
-              class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
-            >
-              <div class="flex items-center gap-1">
-                {{ 'ref_tests.list.table.completed' | translate }}
-                @if (filter().sortField === 'completedAt') { @if (filter().sortDirection ===
-                SortEnumType.Asc) {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                  />
-                </svg>
-                } @else {
-                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                  />
-                </svg>
-                } }
-              </div>
-            </th>
+      <!-- Desktop Table View -->
+      <div
+        class="hidden md:block bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto"
+      >
+        <table class="min-w-full">
+          <thead class="bg-neutral-100 border-b border-neutral-200">
+            <tr>
+              <th class="px-6 py-4 text-left">
+                <input
+                  type="checkbox"
+                  [checked]="allSelected()"
+                  [indeterminate]="someSelected()"
+                  (change)="toggleSelectAll()"
+                  (click)="$event.stopPropagation()"
+                  class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+                />
+              </th>
+              @if (isColumnVisible('title')) {
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+                >
+                  {{ 'ref_tests.list.table.title' | translate }}
+                </th>
+              }
+              @if (isColumnVisible('participant')) {
+                <th
+                  (click)="sortByColumn('email')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.participant' | translate }}
+                    @if (filterState.filter().sortField === 'email') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('status')) {
+                <th
+                  (click)="sortByColumn('status')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.status' | translate }}
+                    @if (filterState.filter().sortField === 'status') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('questions')) {
+                <th
+                  (click)="sortByColumn('numberOfQuestions')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.questions' | translate }}
+                    @if (filterState.filter().sortField === 'numberOfQuestions') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('maxTimeInMinutes')) {
+                <th
+                  (click)="sortByColumn('maxTimeInMinutes')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.max_time' | translate }}
+                    @if (filterState.filter().sortField === 'maxTimeInMinutes') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('score')) {
+                <th
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.score' | translate }}
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('invitation')) {
+                <th
+                  (click)="sortByColumn('invitationSent')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.invitation' | translate }}
+                    @if (filterState.filter().sortField === 'invitationSent') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('results')) {
+                <th
+                  (click)="sortByColumn('resultsSent')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.results' | translate }}
+                    @if (filterState.filter().sortField === 'resultsSent') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('started')) {
+                <th
+                  (click)="sortByColumn('startedAt')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.started' | translate }}
+                    @if (filterState.filter().sortField === 'startedAt') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+              @if (isColumnVisible('completed')) {
+                <th
+                  (click)="sortByColumn('completedAt')"
+                  class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide cursor-pointer hover:bg-neutral-50 transition-colors"
+                >
+                  <div class="flex items-center gap-1">
+                    {{ 'ref_tests.list.table.completed' | translate }}
+                    @if (filterState.filter().sortField === 'completedAt') {
+                      @if (filterState.filter().sortDirection === SortEnumType.Asc) {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                          />
+                        </svg>
+                      } @else {
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                          <path
+                            d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          />
+                        </svg>
+                      }
+                    }
+                  </div>
+                </th>
+              }
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-neutral-100">
+            @for (refTest of refTests(); track refTest.id) {
+              <tr
+                app-ref-test-table-row
+                [refTest]="refTest"
+                [selected]="isSelected(refTest.id)"
+                [visibleColumns]="visibleColumns()"
+                [passingPercentage]="passingPercentage()"
+                (toggleSelection)="toggleRefTestSelection($event)"
+              ></tr>
             }
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-neutral-100">
-          @for (refTest of refTests(); track refTest.id) {
-          <tr
-            app-ref-test-table-row
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Mobile Card View -->
+      <div class="md:hidden space-y-4">
+        <!-- Mobile Select All Header -->
+        <div class="bg-white rounded-lg border border-neutral-200 p-3 flex items-center gap-3">
+          <input
+            type="checkbox"
+            [checked]="allSelected()"
+            [indeterminate]="someSelected()"
+            (change)="toggleSelectAll()"
+            (click)="$event.stopPropagation()"
+            class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+            [attr.aria-label]="'ref_tests.list.select_all' | translate"
+          />
+          <label
+            class="text-sm font-medium text-neutral-700 cursor-pointer"
+            (click)="toggleSelectAll()"
+          >
+            {{ 'ref_tests.list.select_all' | translate }}
+          </label>
+          @if (selectedCount() > 0) {
+            <span class="ml-auto text-xs text-primary-600 font-medium">
+              {{ selectedCount() }} {{ 'ref_tests.list.selected' | translate }}
+            </span>
+          }
+        </div>
+
+        @for (refTest of refTests(); track refTest.id) {
+          <app-ref-test-mobile-card
             [refTest]="refTest"
             [selected]="isSelected(refTest.id)"
             [visibleColumns]="visibleColumns()"
             [passingPercentage]="passingPercentage()"
             (toggleSelection)="toggleRefTestSelection($event)"
-          ></tr>
+          />
+        }
+      </div>
+
+      <!-- Results Count -->
+      <div class="mt-6 text-center">
+        <div class="text-sm text-neutral-600 mb-4">
+          @if (totalCount() === 1) {
+            {{
+              'ref_tests.list.showing'
+                | translate: { displayed: refTests().length, total: totalCount() }
+            }}
+          } @else {
+            {{
+              'ref_tests.list.showing_plural'
+                | translate: { displayed: refTests().length, total: totalCount() }
+            }}
           }
-        </tbody>
-      </table>
-    </div>
+        </div>
 
-    <!-- Mobile Card View -->
-    <div class="md:hidden space-y-4">
-      <!-- Mobile Select All Header -->
-      <div class="bg-white rounded-lg border border-neutral-200 p-3 flex items-center gap-3">
-        <input
-          type="checkbox"
-          [checked]="allSelected()"
-          [indeterminate]="someSelected()"
-          (change)="toggleSelectAll()"
-          (click)="$event.stopPropagation()"
-          class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
-          [attr.aria-label]="'ref_tests.list.select_all' | translate"
-        />
-        <label class="text-sm font-medium text-neutral-700 cursor-pointer" (click)="toggleSelectAll()">
-          {{ 'ref_tests.list.select_all' | translate }}
-        </label>
-        @if (selectedCount() > 0) {
-        <span class="ml-auto text-xs text-primary-600 font-medium">
-          {{ selectedCount() }} {{ 'ref_tests.list.selected' | translate }}
-        </span>
+        <!-- Loading More Indicator -->
+        @if (loadingMore()) {
+          <div class="flex items-center justify-center gap-2 text-primary-600">
+            <div class="animate-spin rounded-full h-6 w-6 border-b-4 border-primary-600"></div>
+            <span class="text-sm">{{ 'ref_tests.list.loading_more' | translate }}</span>
+          </div>
         }
       </div>
-
-      @for (refTest of refTests(); track refTest.id) {
-      <app-ref-test-mobile-card
-        [refTest]="refTest"
-        [selected]="isSelected(refTest.id)"
-        [visibleColumns]="visibleColumns()"
-        [passingPercentage]="passingPercentage()"
-        (toggleSelection)="toggleRefTestSelection($event)"
-      />
-      }
-    </div>
-
-    <!-- Results Count -->
-    <div class="mt-6 text-center">
-      <div class="text-sm text-neutral-600 mb-4">
-        @if (totalCount() === 1) {
-        {{
-          'ref_tests.list.showing'
-            | translate : { displayed: refTests().length, total: totalCount() }
-        }}
-        } @else {
-        {{
-          'ref_tests.list.showing_plural'
-            | translate : { displayed: refTests().length, total: totalCount() }
-        }}
-        }
-      </div>
-
-      <!-- Loading More Indicator -->
-      @if (loadingMore()) {
-      <div class="flex items-center justify-center gap-2 text-primary-600">
-        <div class="animate-spin rounded-full h-6 w-6 border-b-4 border-primary-600"></div>
-        <span class="text-sm">{{ 'ref_tests.list.loading_more' | translate }}</span>
-      </div>
-      }
-    </div>
     }
   </div>
 
