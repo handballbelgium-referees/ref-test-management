@@ -317,20 +317,53 @@ export class ListRefTests {
 
   private setupFilterChangeHandler(): void {
     let isFirstRun = true;
+    let previousCountsFilter: string | undefined;
 
     effect(() => {
-      this.filterState.filter(); // Track changes
+      const filter = this.filterState.filter();
 
       // Skip the first run since Apollo watch() already executes on subscription
       if (isFirstRun) {
         isFirstRun = false;
+        // Store initial counts filter
+        previousCountsFilter = this.getCountsFilterKey(filter);
         return;
       }
 
-      // On subsequent filter changes, refetch the data
+      // Always refetch the main data on filter changes
       this.resetPagination();
       this.refetchData();
-      this.dataService.updateCountQueries();
+
+      // Only refetch counts if filters affecting counts have changed
+      // (exclude status and sorting changes)
+      const currentCountsFilter = this.getCountsFilterKey(filter);
+      if (currentCountsFilter !== previousCountsFilter) {
+        this.dataService.updateCountQueries();
+        previousCountsFilter = currentCountsFilter;
+      }
+    });
+  }
+
+  private getCountsFilterKey(filter: any): string {
+    // Create a key from filters that affect counts (excluding status and sorting)
+    return JSON.stringify({
+      titleValue: filter.titleValue,
+      invitationSent: filter.invitationSent,
+      resultsSent: filter.resultsSent,
+      minQuestionScore: filter.minQuestionScore,
+      maxQuestionScore: filter.maxQuestionScore,
+      minAnswerScore: filter.minAnswerScore,
+      maxAnswerScore: filter.maxAnswerScore,
+      percentageRange: filter.percentageRange,
+      minQuestions: filter.minQuestions,
+      maxQuestions: filter.maxQuestions,
+      minMaxTimeInMinutes: filter.minMaxTimeInMinutes,
+      maxMaxTimeInMinutes: filter.maxMaxTimeInMinutes,
+      startedAfter: filter.startedAfter,
+      startedBefore: filter.startedBefore,
+      completedAfter: filter.completedAfter,
+      completedBefore: filter.completedBefore,
+      searchTerm: filter.searchTerm,
     });
   }
 

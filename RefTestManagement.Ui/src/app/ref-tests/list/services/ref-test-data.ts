@@ -107,7 +107,7 @@ export class RefTestData {
     where?: RefTestFilterInput;
     order?: any;
   }): void {
-    this.queryRef.refetch(variables);
+    this.queryRef.setVariables(variables);
   }
 
   fetchMore(variables: {
@@ -125,7 +125,7 @@ export class RefTestData {
       excludeStatus: true,
     });
 
-    this.countsQueryRef.refetch({
+    const variables = {
       allWhere: baseFilter,
       pendingWhere: this.queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Pending },
@@ -139,7 +139,10 @@ export class RefTestData {
       expiredWhere: this.queryBuilder.mergeFilters(baseFilter, {
         status: { eq: RefTestStatus.Expired },
       }),
-    });
+    };
+
+    // Use setVariables instead of refetch to respect cache-first policy
+    this.countsQueryRef.setVariables(variables);
   }
 
   deleteRefTests(
