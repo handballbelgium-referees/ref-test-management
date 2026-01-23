@@ -790,13 +790,6 @@ export type GetRefTestsAllCountsQueryVariables = Exact<{
 
 export type GetRefTestsAllCountsQuery = { __typename?: 'Query', all?: { __typename?: 'RefTestsConnection', totalCount: number } | null, pending?: { __typename?: 'RefTestsConnection', totalCount: number } | null, inProgress?: { __typename?: 'RefTestsConnection', totalCount: number } | null, completed?: { __typename?: 'RefTestsConnection', totalCount: number } | null, expired?: { __typename?: 'RefTestsConnection', totalCount: number } | null };
 
-export type GetRefTestsCountQueryVariables = Exact<{
-  where?: InputMaybe<RefTestFilterInput>;
-}>;
-
-
-export type GetRefTestsCountQuery = { __typename?: 'Query', refTests?: { __typename?: 'RefTestsConnection', totalCount: number } | null };
-
 export type GetRefTestsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
   after?: InputMaybe<Scalars['String']['input']>;
@@ -1115,24 +1108,6 @@ export const GetRefTestsAllCountsDocument = gql`
   })
   export class GetRefTestsAllCountsGQL extends Apollo.Query<GetRefTestsAllCountsQuery, GetRefTestsAllCountsQueryVariables> {
     override document = GetRefTestsAllCountsDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
-export const GetRefTestsCountDocument = gql`
-    query GetRefTestsCount($where: RefTestFilterInput) {
-  refTests(first: 0, where: $where) {
-    totalCount
-  }
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class GetRefTestsCountGQL extends Apollo.Query<GetRefTestsCountQuery, GetRefTestsCountQueryVariables> {
-    override document = GetRefTestsCountDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
