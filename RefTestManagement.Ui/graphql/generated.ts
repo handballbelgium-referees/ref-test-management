@@ -273,6 +273,7 @@ export type Query = {
   node?: Maybe<Node>;
   /** Lookup nodes by a list of IDs. */
   nodes: Array<Maybe<Node>>;
+  questionsByNumber: Array<Question>;
   refTest?: Maybe<RefTest>;
   refTestByToken: RefTestByTokenResult;
   refTestTitles?: Maybe<RefTestTitlesConnection>;
@@ -290,6 +291,11 @@ export type QueryNodeArgs = {
 
 export type QueryNodesArgs = {
   ids: Array<Scalars['ID']['input']>;
+};
+
+
+export type QueryQuestionsByNumberArgs = {
+  numbers: Array<Scalars['String']['input']>;
 };
 
 
@@ -747,6 +753,13 @@ export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>
 
 export type GetEnabledLanguagesQuery = { __typename?: 'Query', enabledLanguages: Array<string> };
 
+export type GetQuestionsByNumberQueryVariables = Exact<{
+  numbers: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+
+export type GetQuestionsByNumberQuery = { __typename?: 'Query', questionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null }> };
+
 export type GetRefTestByIdQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
@@ -959,6 +972,26 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetQuestionsByNumberDocument = gql`
+    query GetQuestionsByNumber($numbers: [String!]!) {
+  questionsByNumber(numbers: $numbers) {
+    id
+    number
+    phrase
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetQuestionsByNumberGQL extends Apollo.Query<GetQuestionsByNumberQuery, GetQuestionsByNumberQueryVariables> {
+    override document = GetQuestionsByNumberDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

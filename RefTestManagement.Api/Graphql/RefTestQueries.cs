@@ -102,10 +102,29 @@ public static class RefTestQueries
     public static Task<RefTestDto?> GetRefTest([ID<RefTest>] Guid id, RefTestByIdDataLoader dataLoader)
         => dataLoader.LoadAsync(id);
 
+    /// <summary>
+    /// Search questions by number
+    /// </summary>
+    /// <param name="number"></param>
+    /// <param name="ihfRulesQuestionsService"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
     [Authorize]
     public static Task<List<Question>> SearchQuestionsByNumber(string? number,
-        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService)
-        => ihfRulesQuestionsService.SearchQuestionsByNumberAsync(number);
+        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService, CancellationToken cancellationToken)
+        => ihfRulesQuestionsService.SearchQuestionsByNumberAsync(number, cancellationToken);
+
+    /// <summary>
+    /// Get questions by number
+    /// </summary>
+    /// <param name="numbers"></param>
+    /// <param name="ihfRulesQuestionsService"></param>
+    /// <param name="cancellationToken"></param>
+    /// <returns></returns>
+    [Authorize]
+    public static Task<List<Question>> GetQuestionsByNumber(List<string> numbers,
+        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService, CancellationToken cancellationToken)
+        => ihfRulesQuestionsService.GetQuestionsByNumberAsync(numbers, cancellationToken);
 
     /// <summary>
     /// Get enabled languages from configuration

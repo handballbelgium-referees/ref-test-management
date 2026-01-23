@@ -18,6 +18,8 @@ public interface IIhfRulesQuestionsService
         CancellationToken cancellationToken = default);
 
     Task<List<Question>> SearchQuestionsByNumberAsync(string? number, CancellationToken cancellationToken = default);
+    
+    Task<List<Question>> GetQuestionsByNumberAsync(List<string> numbers, CancellationToken cancellationToken = default);
 
     Task<ScoreCalculation> CalculateScoreAsync(List<string> questionIds, List<string> selectedAnswerIds,
         CancellationToken cancellationToken = default);
@@ -125,6 +127,26 @@ public class IhfRulesQuestionsService(
             if (!string.IsNullOrEmpty(x.Phrase))
                 questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
 
+            return new Question(x.Id, questionPhrases, [])
+            {
+                Number = x.Number ?? string.Empty
+            };
+        }).ToList() ?? [];
+    }
+
+    public async Task<List<Question>> GetQuestionsByNumberAsync(List<string> numbers, CancellationToken cancellationToken = default)
+    {
+        var result = await client.GetQuestionsByNumbers.ExecuteAsync(numbers, cancellationToken);
+        if (result.Errors.Any())
+            throw new Exception(result.Errors[0].Message);
+        var nodes = result.Data?.Questions?.Nodes?.OfType<GetQuestionsByNumbers_Questions_Nodes_Question>();
+        return nodes?.Select(x =>
+        {
+            var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??
+                                  new Dictionary<string, string>();
+            if (!string.IsNullOrEmpty(x.Phrase))
+                questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
+        
             return new Question(x.Id, questionPhrases, [])
             {
                 Number = x.Number ?? string.Empty
