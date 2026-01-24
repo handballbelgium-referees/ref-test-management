@@ -2,9 +2,10 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  HostListener,
+  effect,
   inject,
   signal,
+  WritableSignal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
@@ -56,6 +57,7 @@ import { IParticipantInfo, IReportResult, RefTestNode, SortField } from './servi
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
+    '(window:scroll)': 'onScroll()',
   },
 })
 export class ListRefTests {
@@ -105,6 +107,11 @@ export class ListRefTests {
   private readonly deletedRefTestIds = signal<Set<string>>(new Set());
   private readonly updatedInvitationIds = signal<Set<string>>(new Set());
   private readonly updatedResultsIds = signal<Set<string>>(new Set());
+
+  private readonly paginationInfo = signal<{
+    endCursor?: string | null;
+    hasNextPage: boolean;
+  } | null>(null);
 
   // ========================================================================
   // SELECTION STATE
@@ -181,6 +188,11 @@ export class ListRefTests {
 
   protected readonly loading = this.dataService.loading;
   protected readonly statusCounts = this.dataService.statusCounts;
+
+  // Only show main loading spinner on initial load, not during pagination
+  protected readonly showMainLoading = computed(() => {
+    return this.loading() && !this.loadingMore() && this.refTests().length === 0;
+  });
 
   // ========================================================================
   // COMPUTED VALUES - Selection Summaries
@@ -277,8 +289,16 @@ export class ListRefTests {
       )
       .map((edge) => edge.node);
 
-    // Include additional loaded tests from pagination
-    const allTests = [...baseRefTests, ...this.additionalLoadedRefTests()];
+    // Include additional loaded tests from pagination, deduplicate by ID
+    const seenIds = new Set<string>();
+    const allTests: RefTestNode[] = [];
+
+    for (const test of [...baseRefTests, ...this.additionalLoadedRefTests()]) {
+      if (!seenIds.has(test.id)) {
+        seenIds.add(test.id);
+        allTests.push(test);
+      }
+    }
 
     // Apply local operation state
     const deletedIds = this.deletedRefTestIds();
@@ -294,14 +314,17 @@ export class ListRefTests {
       }));
   });
 
-  private readonly endCursor = computed(() => {
+  private readonly basePageInfo = computed(() => {
     const result = this.dataService.queryResult();
-    return result?.data?.refTests?.pageInfo?.endCursor;
+    return result?.data?.refTests?.pageInfo;
+  });
+
+  private readonly endCursor = computed(() => {
+    return this.paginationInfo()?.endCursor ?? this.basePageInfo()?.endCursor;
   });
 
   protected readonly hasNextPage = computed(() => {
-    const result = this.dataService.queryResult();
-    return result?.data?.refTests?.pageInfo?.hasNextPage ?? false;
+    return this.paginationInfo()?.hasNextPage ?? this.basePageInfo()?.hasNextPage ?? false;
   });
 
   // ========================================================================
@@ -309,7 +332,11 @@ export class ListRefTests {
   // ========================================================================
 
   constructor() {
-    // No subscriptions needed - everything is derived from signals
+    effect(() => {
+      if (this.isRefreshing() && !this.loading()) {
+        this.isRefreshing.set(false);
+      }
+    });
   }
 
   // ========================================================================
@@ -338,7 +365,6 @@ export class ListRefTests {
   // SCROLL HANDLING
   // ========================================================================
 
-  @HostListener('window:scroll')
   onScroll(): void {
     if (this.loadingMore() || !this.hasNextPage()) {
       return;
@@ -373,12 +399,27 @@ export class ListRefTests {
       })
       .then((result) => {
         if (result.data?.refTests) {
+          this.paginationInfo.set({
+            endCursor: result.data.refTests.pageInfo?.endCursor,
+            hasNextPage: result.data.refTests.pageInfo?.hasNextPage ?? false,
+          });
+
+          const baseIds = new Set(
+            (this.dataService.queryResult()?.data?.refTests?.edges ?? [])
+              .map((e) => e?.node?.id)
+              .filter((id): id is string => !!id),
+          );
+
           const edges = result.data.refTests.edges ?? [];
           const newRefTests = edges
             .filter((edge): edge is NonNullable<typeof edge> => !!edge && !!edge.node)
             .map((edge) => edge.node as RefTestNode);
 
-          this.additionalLoadedRefTests.update((current) => [...current, ...newRefTests]);
+          this.additionalLoadedRefTests.update((current) => {
+            const alreadyLoadedIds = new Set([...baseIds, ...current.map((t) => t.id)]);
+            const uniqueNew = newRefTests.filter((t) => !alreadyLoadedIds.has(t.id));
+            return uniqueNew.length > 0 ? [...current, ...uniqueNew] : current;
+          });
         }
       })
       .finally(() => {
@@ -399,13 +440,6 @@ export class ListRefTests {
     this.resetPagination();
     this.refetchData();
     this.dataService.updateCountQueries();
-
-    // Clear refresh state after a short delay to ensure loading completes
-    setTimeout(() => {
-      if (!this.loading()) {
-        this.isRefreshing.set(false);
-      }
-    }, 100);
   }
 
   private resetPagination(): void {
@@ -413,6 +447,19 @@ export class ListRefTests {
     this.deletedRefTestIds.set(new Set());
     this.updatedInvitationIds.set(new Set());
     this.updatedResultsIds.set(new Set());
+    this.paginationInfo.set(null);
+  }
+
+  private addIds(target: WritableSignal<Set<string>>, ids: string[]): void {
+    target.update((current) => new Set([...current, ...ids]));
+  }
+
+  private removeIds(target: WritableSignal<Set<string>>, ids: string[]): void {
+    target.update((current) => {
+      const next = new Set(current);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
   }
 
   private refetchData(): void {
@@ -484,6 +531,15 @@ export class ListRefTests {
 
   protected sortByColumn(field: SortField): void {
     this.filterState.toggleSortDirection(field);
+  }
+
+  protected getAriaSort(field: SortField): 'none' | 'ascending' | 'descending' {
+    const filter = this.filterState.filter();
+    if (filter.sortField !== field) {
+      return 'none';
+    }
+
+    return filter.sortDirection === SortEnumType.Asc ? 'ascending' : 'descending';
   }
 
   protected onSearchInput(event: Event): void {
@@ -585,9 +641,7 @@ export class ListRefTests {
     const refTestIds = Array.from(this.selectedRefTestIds());
 
     // Mark as deleting
-    refTestIds.forEach((id) => {
-      this.deletingRefTestIds.update((ids) => new Set(ids).add(id));
-    });
+    this.addIds(this.deletingRefTestIds, refTestIds);
 
     this.dataService.deleteRefTests(refTestIds, {
       onStart: () => this.deletingRefTests.set(true),
@@ -605,13 +659,7 @@ export class ListRefTests {
         console.error('Error deleting ref tests:', error);
       },
       onComplete: () => {
-        refTestIds.forEach((id) => {
-          this.deletingRefTestIds.update((ids) => {
-            const newIds = new Set(ids);
-            newIds.delete(id);
-            return newIds;
-          });
-        });
+        this.removeIds(this.deletingRefTestIds, refTestIds);
         this.deletingRefTests.set(false);
       },
     });
@@ -650,9 +698,7 @@ export class ListRefTests {
     });
 
     // Mark as sending
-    refTestIds.forEach((id) => {
-      this.sendingInvitationIds.update((ids) => new Set(ids).add(id));
-    });
+    this.addIds(this.sendingInvitationIds, refTestIds);
 
     this.dataService.sendInvitations(refTestIds, {
       onStart: () => this.sendingInvitations.set(true),
@@ -669,13 +715,7 @@ export class ListRefTests {
         console.error('Error sending invitations:', error);
       },
       onComplete: () => {
-        refTestIds.forEach((id) => {
-          this.sendingInvitationIds.update((ids) => {
-            const newIds = new Set(ids);
-            newIds.delete(id);
-            return newIds;
-          });
-        });
+        this.removeIds(this.sendingInvitationIds, refTestIds);
         this.sendingInvitations.set(false);
       },
     });
@@ -714,9 +754,7 @@ export class ListRefTests {
     });
 
     // Mark as sending
-    refTestIds.forEach((id) => {
-      this.sendingResultsIds.update((ids) => new Set(ids).add(id));
-    });
+    this.addIds(this.sendingResultsIds, refTestIds);
 
     this.dataService.sendResults(refTestIds, {
       onStart: () => this.sendingResults.set(true),
@@ -733,13 +771,7 @@ export class ListRefTests {
         console.error('Error sending results:', error);
       },
       onComplete: () => {
-        refTestIds.forEach((id) => {
-          this.sendingResultsIds.update((ids) => {
-            const newIds = new Set(ids);
-            newIds.delete(id);
-            return newIds;
-          });
-        });
+        this.removeIds(this.sendingResultsIds, refTestIds);
         this.sendingResults.set(false);
       },
     });

@@ -5,8 +5,6 @@ import {
   FloatOperationFilterInput,
   IntOperationFilterInput,
   RefTestFilterInput,
-  RefTestStatusOperationFilterInput,
-  RefTestTitleFilterInput,
   SortEnumType,
 } from '../../../../../graphql/generated';
 import { PERCENTAGE_RANGES } from './constants';
@@ -22,14 +20,14 @@ export class RefTestQueryBuilder {
 
     // Status filter
     if (!options.excludeStatus && filter.status) {
-      filters.status = { eq: filter.status } as RefTestStatusOperationFilterInput;
+      filters.status = { eq: filter.status };
     }
 
     // Title filter
     if (filter.titleValue) {
       filters.title = {
         value: { eq: filter.titleValue },
-      } as RefTestTitleFilterInput;
+      };
     }
 
     // Boolean filters
@@ -46,14 +44,14 @@ export class RefTestQueryBuilder {
     }
 
     // Score filters
-    this.applyRangeFilter(
+    this.applyIntRangeFilter(
       filters,
       'questionScore',
       filter.minQuestionScore,
       filter.maxQuestionScore,
     );
 
-    this.applyRangeFilter(filters, 'answerScore', filter.minAnswerScore, filter.maxAnswerScore);
+    this.applyIntRangeFilter(filters, 'answerScore', filter.minAnswerScore, filter.maxAnswerScore);
 
     // Percentage filter
     if (filter.percentageRange) {
@@ -61,10 +59,15 @@ export class RefTestQueryBuilder {
     }
 
     // Questions count filter
-    this.applyRangeFilter(filters, 'numberOfQuestions', filter.minQuestions, filter.maxQuestions);
+    this.applyIntRangeFilter(
+      filters,
+      'numberOfQuestions',
+      filter.minQuestions,
+      filter.maxQuestions,
+    );
 
     // Max time filter
-    this.applyRangeFilter(
+    this.applyIntRangeFilter(
       filters,
       'maxTimeInMinutes',
       filter.minMaxTimeInMinutes,
@@ -107,9 +110,9 @@ export class RefTestQueryBuilder {
     return { ...baseFilter, ...additionalFilter };
   }
 
-  private applyRangeFilter(
+  private applyIntRangeFilter(
     filters: RefTestFilterInput,
-    field: keyof RefTestFilterInput,
+    field: 'questionScore' | 'answerScore' | 'numberOfQuestions' | 'maxTimeInMinutes',
     min?: number,
     max?: number,
   ): void {
@@ -121,12 +124,12 @@ export class RefTestQueryBuilder {
     if (min !== undefined) rangeFilter.gte = min;
     if (max !== undefined) rangeFilter.lte = max;
 
-    (filters as any)[field] = rangeFilter;
+    filters[field] = rangeFilter;
   }
 
   private applyDateRangeFilter(
     filters: RefTestFilterInput,
-    field: keyof RefTestFilterInput,
+    field: 'startedAt' | 'completedAt',
     after?: string,
     before?: string,
   ): void {
@@ -138,7 +141,7 @@ export class RefTestQueryBuilder {
     if (after) dateFilter.gte = after;
     if (before) dateFilter.lte = before;
 
-    (filters as any)[field] = dateFilter;
+    filters[field] = dateFilter;
   }
 
   private buildPercentageFilter(range: 'low' | 'medium' | 'high'): FloatOperationFilterInput {
