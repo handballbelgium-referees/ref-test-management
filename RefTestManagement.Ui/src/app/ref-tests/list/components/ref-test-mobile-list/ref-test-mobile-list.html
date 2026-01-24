@@ -1,0 +1,35 @@
+<div class="md:hidden space-y-4">
+  <!-- Mobile Select All Header -->
+  <div class="bg-white rounded-lg border border-neutral-200 p-3 flex items-center gap-3">
+    <input
+      type="checkbox"
+      [checked]="allSelected()"
+      [indeterminate]="someSelected()"
+      (change)="toggleSelectAll.emit()"
+      (click)="$event.stopPropagation()"
+      class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+      [attr.aria-label]="'ref_tests.list.select_all' | translate"
+    />
+    <label
+      class="text-sm font-medium text-neutral-700 cursor-pointer"
+      (click)="toggleSelectAll.emit()"
+    >
+      {{ 'ref_tests.list.select_all' | translate }}
+    </label>
+    @if (selectedCount() > 0) {
+      <span class="ml-auto text-xs text-primary-600 font-medium">
+        {{ selectedCount() }} {{ 'ref_tests.list.selected' | translate }}
+      </span>
+    }
+  </div>
+
+  @for (refTest of refTests(); track refTest.id) {
+    <app-ref-test-mobile-card
+      [refTest]="refTest"
+      [selected]="isSelected(refTest.id)"
+      [visibleColumns]="visibleColumns()"
+      [passingPercentage]="passingPercentage()"
+      (toggleSelection)="toggleSelection.emit($event)"
+    />
+  }
+</div>

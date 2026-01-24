@@ -1,0 +1,281 @@
+<div
+  class="hidden md:block bg-white rounded-lg border border-neutral-200 shadow-sm overflow-hidden overflow-x-auto"
+>
+  <table class="min-w-full">
+    <thead class="bg-neutral-100 border-b border-neutral-200">
+      <tr>
+        <th class="px-6 py-4 text-left">
+          <input
+            type="checkbox"
+            [checked]="allSelected()"
+            [indeterminate]="someSelected()"
+            (change)="toggleSelectAll.emit()"
+            (click)="$event.stopPropagation()"
+            [attr.aria-label]="'ref_tests.list.select_all' | translate"
+            class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+          />
+        </th>
+        @if (isColumnVisible('title')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+          >
+            {{ 'ref_tests.list.table.title' | translate }}
+          </th>
+        }
+        @if (isColumnVisible('participant')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('email')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('email')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.participant' | translate }}
+              @if (filter().sortField === 'email') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+        @if (isColumnVisible('status')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('status')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('status')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.status' | translate }}
+              @if (filter().sortField === 'status') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+        @if (isColumnVisible('questions')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('numberOfQuestions')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('numberOfQuestions')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.questions' | translate }}
+              @if (filter().sortField === 'numberOfQuestions') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+        @if (isColumnVisible('maxTimeInMinutes')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('maxTimeInMinutes')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('maxTimeInMinutes')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.max_time' | translate }}
+              @if (filter().sortField === 'maxTimeInMinutes') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+        @if (isColumnVisible('score')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+          >
+            <div class="flex items-center gap-1">
+              {{ 'ref_tests.list.table.score' | translate }}
+            </div>
+          </th>
+        }
+        @if (isColumnVisible('invitation')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('invitationSent')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('invitationSent')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.invitation' | translate }}
+              @if (filter().sortField === 'invitationSent') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+        @if (isColumnVisible('results')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('resultsSent')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('resultsSent')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.results' | translate }}
+              @if (filter().sortField === 'resultsSent') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+        @if (isColumnVisible('started')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('startedAt')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('startedAt')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.started' | translate }}
+              @if (filter().sortField === 'startedAt') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+        @if (isColumnVisible('completed')) {
+          <th
+            class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
+            [attr.aria-sort]="getAriaSort('completedAt')"
+          >
+            <button
+              type="button"
+              (click)="sortColumn.emit('completedAt')"
+              class="w-full text-left flex items-center gap-1 hover:bg-neutral-50 transition-colors rounded focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
+            >
+              {{ 'ref_tests.list.table.completed' | translate }}
+              @if (filter().sortField === 'completedAt') {
+                @if (filter().sortDirection === SortEnumType.Asc) {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                    />
+                  </svg>
+                }
+              }
+            </button>
+          </th>
+        }
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-neutral-100">
+      @for (refTest of refTests(); track refTest.id) {
+        <tr
+          app-ref-test-table-row
+          [refTest]="refTest"
+          [selected]="isSelected(refTest.id)"
+          [visibleColumns]="visibleColumns()"
+          [passingPercentage]="passingPercentage()"
+          (toggleSelection)="toggleSelection.emit($event)"
+        ></tr>
+      }
+    </tbody>
+  </table>
+</div>

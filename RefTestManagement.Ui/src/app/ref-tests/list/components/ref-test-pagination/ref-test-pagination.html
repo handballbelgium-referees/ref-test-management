@@ -1,0 +1,64 @@
+<div class="mt-6 text-center">
+  <div class="text-sm text-neutral-600 mb-4">
+    @if (totalCount() === 1) {
+      {{
+        'ref_tests.list.showing' | translate: { displayed: displayedCount(), total: totalCount() }
+      }}
+    } @else {
+      {{
+        'ref_tests.list.showing_plural'
+          | translate: { displayed: displayedCount(), total: totalCount() }
+      }}
+    }
+  </div>
+
+  <!-- Load More Button -->
+  @if (canLoadMore()) {
+    <button
+      type="button"
+      (click)="loadMore.emit()"
+      [disabled]="loadingMore()"
+      class="px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+      [attr.aria-label]="'ref_tests.list.load_more' | translate"
+    >
+      @if (loadingMore()) {
+        <span class="flex items-center gap-2">
+          <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+          {{ 'ref_tests.list.loading_more' | translate }}
+        </span>
+      } @else {
+        {{ 'ref_tests.list.load_more' | translate }}
+      }
+    </button>
+  }
+
+  <!-- Max Capacity Message -->
+  @if (isAtMaxCapacity()) {
+    <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
+      <div class="flex gap-3">
+        <svg
+          class="w-5 h-5 text-neutral-600 shrink-0 mt-0.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+        <div class="flex-1 text-left">
+          <p class="text-sm font-medium text-neutral-900 mb-1">
+            {{ 'ref_tests.list.max_capacity_title' | translate }}
+          </p>
+          <p class="text-sm text-neutral-600">
+            {{ 'ref_tests.list.max_capacity_message' | translate: { limit: maxLoadableItems() } }}
+          </p>
+        </div>
+      </div>
+    </div>
+  }
+</div>

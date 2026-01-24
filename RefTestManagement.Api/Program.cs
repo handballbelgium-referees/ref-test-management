@@ -57,19 +57,35 @@ var reportConfig = configuration.GetSection("ReportConfiguration").Get<ReportCon
                    ?? new ReportConfiguration();
 services.AddSingleton(reportConfig);
 
-var backgroundServiceConfig = configuration.GetSection("BackgroundServiceConfiguration")
-                                  .Get<BackgroundServiceConfiguration>()
-                              ?? new BackgroundServiceConfiguration();
-services.AddSingleton(backgroundServiceConfig);
+var refTestExpirationConfig = configuration.GetSection("RefTestExpirationConfiguration")
+                                  .Get<RefTestExpirationConfiguration>()
+                              ?? new RefTestExpirationConfiguration();
+services.AddSingleton(refTestExpirationConfig);
+
+var backgroundJobConfig = configuration.GetSection("BackgroundJobConfiguration")
+                              .Get<BackgroundJobConfiguration>()
+                          ?? new BackgroundJobConfiguration();
+services.AddSingleton(backgroundJobConfig);
 
 services.AddHttpClient<ILogoService, LogoService>();
-services.AddScoped<IEmailService, EmailService>();
+services.AddSingleton<ITranslationService, TranslationService>();
+services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
+{
+    var emailCfg = sp.GetRequiredService<EmailConfiguration>();
+    client.DefaultRequestHeaders.Add("api-key", emailCfg.BrevoApiKey);
+    client.DefaultRequestHeaders.Add("Accept", "application/json");
+    client.BaseAddress = new Uri(emailCfg.BrevoApiUrl);
+    client.Timeout = TimeSpan.FromSeconds(30);
+});
+services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
 services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
+services.AddScoped<IJobEnqueueService, JobEnqueueService>();
 
 // Add background services
 services.AddHostedService<RefTestExpirationService>();
+services.AddHostedService<BackgroundJobService>();
 
 // Add IHF Rules Questions GraphQL client
 services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
@@ -95,8 +111,10 @@ services.AddGraphQLServer()
     })
     .ModifyCostOptions(o => o.EnforceCostLimits = false)
     .RegisterDbContextFactory<RefTestManagementContext>()
+    .AddProjections()
     .AddFiltering()
     .AddSorting()
+    .AddCacheControl()
     .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
     .AddGlobalObjectIdentification(true)
     .AddAuthorization()

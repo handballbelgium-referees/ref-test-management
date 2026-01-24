@@ -64,7 +64,15 @@ export type BulkRefTestsResult = {
   totalRequested: Scalars['Int']['output'];
 };
 
-export type CompleteRefTestError = EmailError | InvalidRefTestStatusError | RefTestNotFoundError;
+/** The scope of a cache hint. */
+export enum CacheControlScope {
+  /** The value to cache is specific to a single user. */
+  Private = 'PRIVATE',
+  /** The value to cache is not tied to a single user. */
+  Public = 'PUBLIC'
+}
+
+export type CompleteRefTestError = InvalidRefTestStatusError | RefTestNotFoundError;
 
 export type CompleteRefTestInput = {
   language?: InputMaybe<Scalars['String']['input']>;
@@ -116,7 +124,7 @@ export type DeleteRefTestError = {
 };
 
 export type DeleteRefTestsInput = {
-  ids: Array<Scalars['UUID']['input']>;
+  ids: Array<Scalars['ID']['input']>;
 };
 
 export type DeleteRefTestsPayload = {
@@ -131,11 +139,6 @@ export type DeleteRefTestsResult = {
   failed: Scalars['Int']['output'];
   successfullyDeleted: Scalars['Int']['output'];
   totalRequested: Scalars['Int']['output'];
-};
-
-export type EmailError = Error & {
-  __typename?: 'EmailError';
-  message: Scalars['String']['output'];
 };
 
 export type Error = {
@@ -158,7 +161,7 @@ export type FloatOperationFilterInput = {
 };
 
 export type GenerateRefTestsReportInput = {
-  ids: Array<Scalars['UUID']['input']>;
+  ids: Array<Scalars['ID']['input']>;
 };
 
 export type GenerateRefTestsReportPayload = {
@@ -270,6 +273,7 @@ export type Query = {
   node?: Maybe<Node>;
   /** Lookup nodes by a list of IDs. */
   nodes: Array<Maybe<Node>>;
+  questionsByNumber: Array<Question>;
   refTest?: Maybe<RefTest>;
   refTestByToken: RefTestByTokenResult;
   refTestTitles?: Maybe<RefTestTitlesConnection>;
@@ -287,6 +291,11 @@ export type QueryNodeArgs = {
 
 export type QueryNodesArgs = {
   ids: Array<Scalars['ID']['input']>;
+};
+
+
+export type QueryQuestionsByNumberArgs = {
+  numbers: Array<Scalars['String']['input']>;
 };
 
 
@@ -359,7 +368,7 @@ export type RefTest = Node & {
   /** Maximum time in minutes for the RefTest */
   maxTimeInMinutes: Scalars['Int']['output'];
   /** Name of the user who started the RefTest (e.g., ) */
-  name?: Maybe<Scalars['String']['output']>;
+  name: Scalars['String']['output'];
   /** Number of questions in the RefTest */
   numberOfQuestions: Scalars['Int']['output'];
   /** Percentage of correct answers */
@@ -418,7 +427,7 @@ export type RefTestFilterInput = {
   firstName?: InputMaybe<StringOperationFilterInput>;
   /** Filter on RefTest id */
   id?: InputMaybe<UuidOperationFilterInput>;
-  /** Filter on invitation was sent */
+  /** Filter on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<BooleanOperationFilterInput>;
   /** Filter on last name of the user who started the RefTest */
   lastName?: InputMaybe<StringOperationFilterInput>;
@@ -433,7 +442,7 @@ export type RefTestFilterInput = {
   questionScore?: InputMaybe<IntOperationFilterInput>;
   /** Filter on total possible question score */
   questionTotal?: InputMaybe<IntOperationFilterInput>;
-  /** Filter on results were sent */
+  /** Filter on results were sent for the RefTest */
   resultsSent?: InputMaybe<BooleanOperationFilterInput>;
   /** Filter on start date of the RefTest */
   startedAt?: InputMaybe<DateTimeOperationFilterInput>;
@@ -464,7 +473,7 @@ export type RefTestSortInput = {
   firstName?: InputMaybe<SortEnumType>;
   /** Sort on RefTest id */
   id?: InputMaybe<SortEnumType>;
-  /** Sort on invitation was sent */
+  /** Sort on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<SortEnumType>;
   /** Sort on last name of the user who started the RefTest */
   lastName?: InputMaybe<SortEnumType>;
@@ -478,7 +487,7 @@ export type RefTestSortInput = {
   questionScore?: InputMaybe<SortEnumType>;
   /** Sort on total possible question score */
   questionTotal?: InputMaybe<SortEnumType>;
-  /** Sort on results were sent */
+  /** Sort on results were sent for the RefTest */
   resultsSent?: InputMaybe<SortEnumType>;
   /** Sort on start date of the RefTest */
   startedAt?: InputMaybe<SortEnumType>;
@@ -509,15 +518,21 @@ export type RefTestTitle = Node & {
   value: Scalars['String']['output'];
 };
 
+/** Filter RefTest titles based on Value */
 export type RefTestTitleFilterInput = {
   and?: InputMaybe<Array<RefTestTitleFilterInput>>;
+  /** Filter on RefTest title id */
   id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<RefTestTitleFilterInput>>;
+  /** Filter on RefTest title value */
   value?: InputMaybe<StringOperationFilterInput>;
 };
 
+/** Sort RefTest titles by Value */
 export type RefTestTitleSortInput = {
+  /** Sort on RefTest title id */
   id?: InputMaybe<SortEnumType>;
+  /** Sort on RefTest title value */
   value?: InputMaybe<SortEnumType>;
 };
 
@@ -598,7 +613,7 @@ export type SendInvitationError = {
 };
 
 export type SendInvitationsInput = {
-  ids: Array<Scalars['UUID']['input']>;
+  ids: Array<Scalars['ID']['input']>;
 };
 
 export type SendInvitationsPayload = {
@@ -623,7 +638,7 @@ export type SendResultError = {
 };
 
 export type SendResultsInput = {
-  ids: Array<Scalars['UUID']['input']>;
+  ids: Array<Scalars['ID']['input']>;
 };
 
 export type SendResultsPayload = {
@@ -673,7 +688,7 @@ export type StringOperationFilterInput = {
 };
 
 export type TitleInput = {
-  id?: InputMaybe<Scalars['UUID']['input']>;
+  id?: InputMaybe<Scalars['ID']['input']>;
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
@@ -724,7 +739,7 @@ export type DeleteRefTestsMutationVariables = Exact<{
 }>;
 
 
-export type DeleteRefTestsMutation = { __typename?: 'Mutation', deleteRefTests: { __typename?: 'DeleteRefTestsPayload', deleteRefTestsResult?: { __typename?: 'DeleteRefTestsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedRefTests: Array<{ __typename?: 'RefTest', id: string }>, errors: Array<{ __typename?: 'DeleteRefTestError', refTestId: string, errorMessage: string }> } | null } };
+export type DeleteRefTestsMutation = { __typename?: 'Mutation', deleteRefTests: { __typename?: 'DeleteRefTestsPayload', deleteRefTestsResult?: { __typename?: 'DeleteRefTestsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedRefTests: Array<{ __typename?: 'RefTest', id: string, status: RefTestStatus }>, errors: Array<{ __typename?: 'DeleteRefTestError', refTestId: string, errorMessage: string }> } | null } };
 
 export type GenerateReportMutationVariables = Exact<{
   input: GenerateRefTestsReportInput;
@@ -738,12 +753,19 @@ export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>
 
 export type GetEnabledLanguagesQuery = { __typename?: 'Query', enabledLanguages: Array<string> };
 
+export type GetQuestionsByNumberQueryVariables = Exact<{
+  numbers: Array<Scalars['String']['input']> | Scalars['String']['input'];
+}>;
+
+
+export type GetQuestionsByNumberQuery = { __typename?: 'Query', questionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null }> };
+
 export type GetRefTestByIdQueryVariables = Exact<{
   id: Scalars['ID']['input'];
 }>;
 
 
-export type GetRefTestByIdQuery = { __typename?: 'Query', refTest?: { __typename?: 'RefTest', id: string, name?: string | null, email: string, invitationSent: boolean, resultsSent: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null } | null };
+export type GetRefTestByIdQuery = { __typename?: 'Query', refTest?: { __typename?: 'RefTest', id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null } | null };
 
 export type GetRefTestByTokenQueryVariables = Exact<{
   token: Scalars['String']['input'];
@@ -752,17 +774,21 @@ export type GetRefTestByTokenQueryVariables = Exact<{
 
 export type GetRefTestByTokenQuery = { __typename?: 'Query', refTestByToken:
     | { __typename?: 'InvalidRefTestStatusError', message: string }
-    | { __typename?: 'RefTest', id: string, name?: string | null, email: string, numberOfQuestions: number, maxTimeInMinutes: number, currentQuestionIndex?: number | null }
+    | { __typename?: 'RefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, currentQuestionIndex?: number | null }
     | { __typename?: 'RefTestExpiredError', message: string }
     | { __typename?: 'RefTestNotFoundError', message: string }
    };
 
-export type GetRefTestsCountQueryVariables = Exact<{
-  where?: InputMaybe<RefTestFilterInput>;
+export type GetRefTestsAllCountsQueryVariables = Exact<{
+  allWhere?: InputMaybe<RefTestFilterInput>;
+  pendingWhere?: InputMaybe<RefTestFilterInput>;
+  inProgressWhere?: InputMaybe<RefTestFilterInput>;
+  completedWhere?: InputMaybe<RefTestFilterInput>;
+  expiredWhere?: InputMaybe<RefTestFilterInput>;
 }>;
 
 
-export type GetRefTestsCountQuery = { __typename?: 'Query', refTests?: { __typename?: 'RefTestsConnection', totalCount: number } | null };
+export type GetRefTestsAllCountsQuery = { __typename?: 'Query', all?: { __typename?: 'RefTestsConnection', totalCount: number } | null, pending?: { __typename?: 'RefTestsConnection', totalCount: number } | null, inProgress?: { __typename?: 'RefTestsConnection', totalCount: number } | null, completed?: { __typename?: 'RefTestsConnection', totalCount: number } | null, expired?: { __typename?: 'RefTestsConnection', totalCount: number } | null };
 
 export type GetRefTestsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -772,7 +798,7 @@ export type GetRefTestsQueryVariables = Exact<{
 }>;
 
 
-export type GetRefTestsQuery = { __typename?: 'Query', refTests?: { __typename?: 'RefTestsConnection', totalCount: number, edges?: Array<{ __typename?: 'RefTestsEdge', cursor: string, node: { __typename?: 'RefTest', id: string, name?: string | null, email: string, invitationSent: boolean, resultsSent: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
+export type GetRefTestsQuery = { __typename?: 'Query', refTests?: { __typename?: 'RefTestsConnection', totalCount: number, edges?: Array<{ __typename?: 'RefTestsEdge', cursor: string, node: { __typename?: 'RefTest', id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
 
 export type GetResultsEmailDelayMinutesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -897,6 +923,7 @@ export const DeleteRefTestsDocument = gql`
       failed
       deletedRefTests {
         id
+        status
       }
       errors {
         refTestId
@@ -950,6 +977,26 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetQuestionsByNumberDocument = gql`
+    query GetQuestionsByNumber($numbers: [String!]!) {
+  questionsByNumber(numbers: $numbers) {
+    id
+    number
+    phrase
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetQuestionsByNumberGQL extends Apollo.Query<GetQuestionsByNumberQuery, GetQuestionsByNumberQueryVariables> {
+    override document = GetQuestionsByNumberDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -1037,9 +1084,21 @@ export const GetRefTestByTokenDocument = gql`
       super(apollo);
     }
   }
-export const GetRefTestsCountDocument = gql`
-    query GetRefTestsCount($where: RefTestFilterInput) {
-  refTests(where: $where) {
+export const GetRefTestsAllCountsDocument = gql`
+    query GetRefTestsAllCounts($allWhere: RefTestFilterInput, $pendingWhere: RefTestFilterInput, $inProgressWhere: RefTestFilterInput, $completedWhere: RefTestFilterInput, $expiredWhere: RefTestFilterInput) {
+  all: refTests(first: 0, where: $allWhere) {
+    totalCount
+  }
+  pending: refTests(first: 0, where: $pendingWhere) {
+    totalCount
+  }
+  inProgress: refTests(first: 0, where: $inProgressWhere) {
+    totalCount
+  }
+  completed: refTests(first: 0, where: $completedWhere) {
+    totalCount
+  }
+  expired: refTests(first: 0, where: $expiredWhere) {
     totalCount
   }
 }
@@ -1048,8 +1107,8 @@ export const GetRefTestsCountDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class GetRefTestsCountGQL extends Apollo.Query<GetRefTestsCountQuery, GetRefTestsCountQueryVariables> {
-    override document = GetRefTestsCountDocument;
+  export class GetRefTestsAllCountsGQL extends Apollo.Query<GetRefTestsAllCountsQuery, GetRefTestsAllCountsQueryVariables> {
+    override document = GetRefTestsAllCountsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

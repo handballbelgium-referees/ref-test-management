@@ -1,8 +1,8 @@
-name: Main CI/CD
+name: Main CI/CD (Beta Pre-releases)
 
 on:
   push:
-    branches: [main, beta]
+    branches: [main]
 
 env:
   DOTNET_VERSION: 10.0.x
@@ -10,10 +10,11 @@ env:
 
 jobs:
   release:
-    name: 🚀 Release Job
+    name: 🚀 Beta Pre-release
     runs-on: ubuntu-latest
     outputs:
       new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
+      new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
     permissions:
       contents: write
       issues: write
@@ -23,7 +24,7 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # fetch full history to read Git tags
+          fetch-depth: 0
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@v6
@@ -36,19 +37,20 @@ jobs:
       - name: 🏷 Run semantic-release
         id: semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Required for GitHub releases
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           LATEST_TAG_BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           npx semantic-release
           LATEST_TAG_AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ "$LATEST_TAG_BEFORE" != "$LATEST_TAG_AFTER" ] && [ -n "$LATEST_TAG_AFTER" ]; then
             echo "new_release_published=true" >> $GITHUB_OUTPUT
+            echo "new_release_version=$LATEST_TAG_AFTER" >> $GITHUB_OUTPUT
           else
             echo "new_release_published=false" >> $GITHUB_OUTPUT
           fi
 
   build:
-    name: 🛠 Build Job
+    name: 🛠 Build Application
     runs-on: ubuntu-latest
     needs: release
     if: needs.release.outputs.new-release-published == 'true'
@@ -59,7 +61,8 @@ jobs:
       - name: 📥 Checkout code
         uses: actions/checkout@v6
         with:
-          fetch-depth: 0  # needed to read Git tags
+          fetch-depth: 0
+          ref: main
 
       - name: 🏷 Get version from Git tag
         run: |
@@ -116,14 +119,17 @@ jobs:
           path: ./publish
           retention-days: 1
 
-  deploy:
-    name: 🚢 Deploy Job
+  deploy-testing:
+    name: 🧪 Deploy to Testing (${{ needs.release.outputs.new-release-version }})
     runs-on: ubuntu-latest
-    needs: build
+    needs: [release, build]
+    environment:
+      name: testing
+      url: ${{ steps.deploy.outputs.webapp-url }}
     permissions:
       id-token: write
       contents: read
-      actions: read    
+      actions: read
 
     steps:
       - name: ⬇️ Download build artifacts
@@ -139,9 +145,10 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
-      - name: 🚀 Deploy to Azure Web App
+      - name: 🚀 Deploy to Azure Web App (Testing)
+        id: deploy
         uses: azure/webapps-deploy@v3
         with:
-          app-name: ${{ github.ref == 'refs/heads/main' && secrets.AZURE_WEBAPP_NAME || secrets.AZURE_WEBAPP_BETA_NAME }}
+          app-name: ${{ secrets.AZURE_WEBAPP_TESTING_NAME }}
           package: ${{ github.workspace }}/publish
           clean: true
