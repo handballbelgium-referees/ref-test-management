@@ -1,9 +1,0 @@
-mutation generateReport($input: GenerateRefTestsReportInput!) {
-  generateRefTestsReport(input: $input) {
-    generateReportResult {
-      success
-      message
-      refTestCount
-    }
-  }
-}

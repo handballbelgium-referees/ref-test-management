@@ -145,6 +145,19 @@ export type Error = {
   message: Scalars['String']['output'];
 };
 
+export type ExtendRefTestTimeError = InvalidRefTestStatusError | RefTestNotFoundError;
+
+export type ExtendRefTestTimeInput = {
+  additionalMinutes: Scalars['Int']['input'];
+  refTestId: Scalars['UUID']['input'];
+};
+
+export type ExtendRefTestTimePayload = {
+  __typename?: 'ExtendRefTestTimePayload';
+  errors?: Maybe<Array<ExtendRefTestTimeError>>;
+  refTest?: Maybe<RefTest>;
+};
+
 export type FloatOperationFilterInput = {
   eq?: InputMaybe<Scalars['Float']['input']>;
   gt?: InputMaybe<Scalars['Float']['input']>;
@@ -158,22 +171,6 @@ export type FloatOperationFilterInput = {
   nin?: InputMaybe<Array<InputMaybe<Scalars['Float']['input']>>>;
   nlt?: InputMaybe<Scalars['Float']['input']>;
   nlte?: InputMaybe<Scalars['Float']['input']>;
-};
-
-export type GenerateRefTestsReportInput = {
-  ids: Array<Scalars['ID']['input']>;
-};
-
-export type GenerateRefTestsReportPayload = {
-  __typename?: 'GenerateRefTestsReportPayload';
-  generateReportResult?: Maybe<GenerateReportResult>;
-};
-
-export type GenerateReportResult = {
-  __typename?: 'GenerateReportResult';
-  message: Scalars['String']['output'];
-  refTestCount: Scalars['Int']['output'];
-  success: Scalars['Boolean']['output'];
 };
 
 export type IntOperationFilterInput = {
@@ -201,11 +198,18 @@ export type Mutation = {
   completeRefTest: CompleteRefTestPayload;
   createBulkRefTests: CreateBulkRefTestsPayload;
   deleteRefTests: DeleteRefTestsPayload;
-  generateRefTestsReport: GenerateRefTestsReportPayload;
+  extendRefTestTime: ExtendRefTestTimePayload;
+  regenerateRefTestToken: RegenerateRefTestTokenPayload;
+  resetRefTest: ResetRefTestPayload;
+  reviveExpiredRefTest: ReviveExpiredRefTestPayload;
   saveRefTestProgress: SaveRefTestProgressPayload;
   sendInvitations: SendInvitationsPayload;
+  sendReport: SendReportPayload;
   sendResults: SendResultsPayload;
   startRefTest: StartRefTestPayload;
+  updateRefTestConfiguration: UpdateRefTestConfigurationPayload;
+  updateRefTestDetails: UpdateRefTestDetailsPayload;
+  updateRefTestNotificationSettings: UpdateRefTestNotificationSettingsPayload;
 };
 
 
@@ -224,8 +228,23 @@ export type MutationDeleteRefTestsArgs = {
 };
 
 
-export type MutationGenerateRefTestsReportArgs = {
-  input: GenerateRefTestsReportInput;
+export type MutationExtendRefTestTimeArgs = {
+  input: ExtendRefTestTimeInput;
+};
+
+
+export type MutationRegenerateRefTestTokenArgs = {
+  input: RegenerateRefTestTokenInput;
+};
+
+
+export type MutationResetRefTestArgs = {
+  input: ResetRefTestInput;
+};
+
+
+export type MutationReviveExpiredRefTestArgs = {
+  input: ReviveExpiredRefTestInput;
 };
 
 
@@ -239,6 +258,11 @@ export type MutationSendInvitationsArgs = {
 };
 
 
+export type MutationSendReportArgs = {
+  input: SendReportInput;
+};
+
+
 export type MutationSendResultsArgs = {
   input: SendResultsInput;
 };
@@ -246,6 +270,21 @@ export type MutationSendResultsArgs = {
 
 export type MutationStartRefTestArgs = {
   input: StartRefTestInput;
+};
+
+
+export type MutationUpdateRefTestConfigurationArgs = {
+  input: UpdateRefTestConfigurationInput;
+};
+
+
+export type MutationUpdateRefTestDetailsArgs = {
+  input: UpdateRefTestDetailsInput;
+};
+
+
+export type MutationUpdateRefTestNotificationSettingsArgs = {
+  input: UpdateRefTestNotificationSettingsInput;
 };
 
 /** The node interface is implemented by entities that have a global unique identifier. */
@@ -457,6 +496,11 @@ export type RefTestNotFoundError = Error & {
   message: Scalars['String']['output'];
 };
 
+export enum RefTestResetType {
+  Hard = 'HARD',
+  Soft = 'SOFT'
+}
+
 /** Sort RefTests by Id, Email, Status, Creation Date, Start Date, Completion Date, Percentage, QuestionScore, Number of Questions and Maximum Time */
 export type RefTestSortInput = {
   /** Sort on answer score of the RefTest */
@@ -580,6 +624,44 @@ export type RefTestsEdge = {
   node: RefTest;
 };
 
+export type RegenerateRefTestTokenError = InvalidRefTestStatusError | RefTestNotFoundError;
+
+export type RegenerateRefTestTokenInput = {
+  refTestId: Scalars['UUID']['input'];
+};
+
+export type RegenerateRefTestTokenPayload = {
+  __typename?: 'RegenerateRefTestTokenPayload';
+  errors?: Maybe<Array<RegenerateRefTestTokenError>>;
+  refTest?: Maybe<RefTest>;
+};
+
+export type ResetRefTestError = InvalidRefTestStatusError | RefTestNotFoundError;
+
+export type ResetRefTestInput = {
+  refTestId: Scalars['UUID']['input'];
+  regenerateToken?: Scalars['Boolean']['input'];
+  resetType: RefTestResetType;
+};
+
+export type ResetRefTestPayload = {
+  __typename?: 'ResetRefTestPayload';
+  errors?: Maybe<Array<ResetRefTestError>>;
+  refTest?: Maybe<RefTest>;
+};
+
+export type ReviveExpiredRefTestError = InvalidRefTestStatusError | RefTestNotFoundError;
+
+export type ReviveExpiredRefTestInput = {
+  refTestId: Scalars['UUID']['input'];
+};
+
+export type ReviveExpiredRefTestPayload = {
+  __typename?: 'ReviveExpiredRefTestPayload';
+  errors?: Maybe<Array<ReviveExpiredRefTestError>>;
+  refTest?: Maybe<RefTest>;
+};
+
 export type SaveRefTestProgressError = InvalidRefTestStatusError | RefTestNotFoundError;
 
 export type SaveRefTestProgressInput = {
@@ -628,6 +710,22 @@ export type SendInvitationsResult = {
   sentRefTests: Array<RefTest>;
   successfullySent: Scalars['Int']['output'];
   totalRequested: Scalars['Int']['output'];
+};
+
+export type SendReportInput = {
+  ids: Array<Scalars['ID']['input']>;
+};
+
+export type SendReportPayload = {
+  __typename?: 'SendReportPayload';
+  sendReportResult?: Maybe<SendReportResult>;
+};
+
+export type SendReportResult = {
+  __typename?: 'SendReportResult';
+  message: Scalars['String']['output'];
+  refTestCount: Scalars['Int']['output'];
+  success: Scalars['Boolean']['output'];
 };
 
 export type SendResultError = {
@@ -692,6 +790,52 @@ export type TitleInput = {
   name?: InputMaybe<Scalars['String']['input']>;
 };
 
+export type UpdateRefTestConfigurationError = InvalidRefTestStatusError | RefTestNotFoundError;
+
+export type UpdateRefTestConfigurationInput = {
+  maxTimeInMinutes: Scalars['Int']['input'];
+  numberOfQuestions: Scalars['Int']['input'];
+  randomQuestions?: Scalars['Boolean']['input'];
+  refTestId: Scalars['UUID']['input'];
+  specificQuestionNumbers?: InputMaybe<Array<Scalars['String']['input']>>;
+  titleId: Scalars['UUID']['input'];
+};
+
+export type UpdateRefTestConfigurationPayload = {
+  __typename?: 'UpdateRefTestConfigurationPayload';
+  errors?: Maybe<Array<UpdateRefTestConfigurationError>>;
+  refTest?: Maybe<RefTest>;
+};
+
+export type UpdateRefTestDetailsError = InvalidRefTestStatusError | RefTestNotFoundError;
+
+export type UpdateRefTestDetailsInput = {
+  email: Scalars['String']['input'];
+  firstName: Scalars['String']['input'];
+  lastName: Scalars['String']['input'];
+  refTestId: Scalars['UUID']['input'];
+};
+
+export type UpdateRefTestDetailsPayload = {
+  __typename?: 'UpdateRefTestDetailsPayload';
+  errors?: Maybe<Array<UpdateRefTestDetailsError>>;
+  refTest?: Maybe<RefTest>;
+};
+
+export type UpdateRefTestNotificationSettingsError = RefTestNotFoundError;
+
+export type UpdateRefTestNotificationSettingsInput = {
+  refTestId: Scalars['UUID']['input'];
+  sendInvitationsAutomatically?: InputMaybe<Scalars['Boolean']['input']>;
+  sendResultsAutomatically?: InputMaybe<Scalars['Boolean']['input']>;
+};
+
+export type UpdateRefTestNotificationSettingsPayload = {
+  __typename?: 'UpdateRefTestNotificationSettingsPayload';
+  errors?: Maybe<Array<UpdateRefTestNotificationSettingsError>>;
+  refTest?: Maybe<RefTest>;
+};
+
 export type User = {
   __typename?: 'User';
   email: Scalars['String']['output'];
@@ -727,6 +871,46 @@ export type CompleteRefTestMutationVariables = Exact<{
 
 export type CompleteRefTestMutation = { __typename?: 'Mutation', completeRefTest: { __typename?: 'CompleteRefTestPayload', refTest?: { __typename?: 'RefTest', id: string, questionScore?: number | null, questionTotal: number, answerScore?: number | null, answerTotal?: number | null, percentage?: number | null } | null } };
 
+export type SaveRefTestProgressMutationVariables = Exact<{
+  input: SaveRefTestProgressInput;
+}>;
+
+
+export type SaveRefTestProgressMutation = { __typename?: 'Mutation', saveRefTestProgress: { __typename?: 'SaveRefTestProgressPayload', refTest?: { __typename?: 'RefTest', id: string, currentQuestionIndex?: number | null, selectedAnswerIds: Array<string> } | null } };
+
+export type StartRefTestMutationVariables = Exact<{
+  input: StartRefTestInput;
+}>;
+
+
+export type StartRefTestMutation = { __typename?: 'Mutation', startRefTest: { __typename?: 'StartRefTestPayload', refTest?: { __typename?: 'RefTest', id: string, startedAt?: string | null, maxTimeInMinutes: number, currentQuestionIndex?: number | null, selectedAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, phrase?: Record<string, string> | null }> } | null> | null } | null, errors?: Array<
+      | { __typename?: 'InvalidRefTestStatusError', message: string }
+      | { __typename?: 'RefTestExpiredError', message: string }
+      | { __typename?: 'RefTestNotFoundError', message: string }
+    > | null } };
+
+export type GetRefTestByTokenQueryVariables = Exact<{
+  token: Scalars['String']['input'];
+}>;
+
+
+export type GetRefTestByTokenQuery = { __typename?: 'Query', refTestByToken:
+    | { __typename?: 'InvalidRefTestStatusError', message: string }
+    | { __typename?: 'RefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, currentQuestionIndex?: number | null }
+    | { __typename?: 'RefTestExpiredError', message: string }
+    | { __typename?: 'RefTestNotFoundError', message: string }
+   };
+
+export type GetResultsEmailDelayMinutesQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetResultsEmailDelayMinutesQuery = { __typename?: 'Query', resultsEmailDelayMinutes: number };
+
+export type GetScoreConfigurationQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetScoreConfigurationQuery = { __typename?: 'Query', scoreConfiguration: { __typename?: 'ScoreConfiguration', passingPercentage: number } };
+
 export type CreateBulkRefTestsMutationVariables = Exact<{
   input: CreateBulkRefTestsInput;
 }>;
@@ -741,12 +925,26 @@ export type DeleteRefTestsMutationVariables = Exact<{
 
 export type DeleteRefTestsMutation = { __typename?: 'Mutation', deleteRefTests: { __typename?: 'DeleteRefTestsPayload', deleteRefTestsResult?: { __typename?: 'DeleteRefTestsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedRefTests: Array<{ __typename?: 'RefTest', id: string, status: RefTestStatus }>, errors: Array<{ __typename?: 'DeleteRefTestError', refTestId: string, errorMessage: string }> } | null } };
 
-export type GenerateReportMutationVariables = Exact<{
-  input: GenerateRefTestsReportInput;
+export type SendRefTestInvitationsMutationVariables = Exact<{
+  input: SendInvitationsInput;
 }>;
 
 
-export type GenerateReportMutation = { __typename?: 'Mutation', generateRefTestsReport: { __typename?: 'GenerateRefTestsReportPayload', generateReportResult?: { __typename?: 'GenerateReportResult', success: boolean, message: string, refTestCount: number } | null } };
+export type SendRefTestInvitationsMutation = { __typename?: 'Mutation', sendInvitations: { __typename?: 'SendInvitationsPayload', sendInvitationsResult?: { __typename?: 'SendInvitationsResult', totalRequested: number, successfullySent: number, failed: number, sentRefTests: Array<{ __typename?: 'RefTest', id: string, invitationSent: boolean }>, errors: Array<{ __typename?: 'SendInvitationError', refTestId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
+
+export type SendReportMutationVariables = Exact<{
+  input: SendReportInput;
+}>;
+
+
+export type SendReportMutation = { __typename?: 'Mutation', sendReport: { __typename?: 'SendReportPayload', sendReportResult?: { __typename?: 'SendReportResult', success: boolean, message: string, refTestCount: number } | null } };
+
+export type SendRefTestResultsMutationVariables = Exact<{
+  input: SendResultsInput;
+}>;
+
+
+export type SendRefTestResultsMutation = { __typename?: 'Mutation', sendResults: { __typename?: 'SendResultsPayload', sendResultsResult?: { __typename?: 'SendResultsResult', totalRequested: number, successfullySent: number, failed: number, sentRefTests: Array<{ __typename?: 'RefTest', id: string, resultsSent: boolean }>, errors: Array<{ __typename?: 'SendResultError', refTestId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
 
 export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>;
 
@@ -766,18 +964,6 @@ export type GetRefTestByIdQueryVariables = Exact<{
 
 
 export type GetRefTestByIdQuery = { __typename?: 'Query', refTest?: { __typename?: 'RefTest', id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null } | null };
-
-export type GetRefTestByTokenQueryVariables = Exact<{
-  token: Scalars['String']['input'];
-}>;
-
-
-export type GetRefTestByTokenQuery = { __typename?: 'Query', refTestByToken:
-    | { __typename?: 'InvalidRefTestStatusError', message: string }
-    | { __typename?: 'RefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, currentQuestionIndex?: number | null }
-    | { __typename?: 'RefTestExpiredError', message: string }
-    | { __typename?: 'RefTestNotFoundError', message: string }
-   };
 
 export type GetRefTestsAllCountsQueryVariables = Exact<{
   allWhere?: InputMaybe<RefTestFilterInput>;
@@ -800,16 +986,6 @@ export type GetRefTestsQueryVariables = Exact<{
 
 export type GetRefTestsQuery = { __typename?: 'Query', refTests?: { __typename?: 'RefTestsConnection', totalCount: number, edges?: Array<{ __typename?: 'RefTestsEdge', cursor: string, node: { __typename?: 'RefTest', id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
 
-export type GetResultsEmailDelayMinutesQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetResultsEmailDelayMinutesQuery = { __typename?: 'Query', resultsEmailDelayMinutes: number };
-
-export type GetScoreConfigurationQueryVariables = Exact<{ [key: string]: never; }>;
-
-
-export type GetScoreConfigurationQuery = { __typename?: 'Query', scoreConfiguration: { __typename?: 'ScoreConfiguration', passingPercentage: number } };
-
 export type GetRefTestTitlesQueryVariables = Exact<{
   first: Scalars['Int']['input'];
   after?: InputMaybe<Scalars['String']['input']>;
@@ -820,44 +996,12 @@ export type GetRefTestTitlesQueryVariables = Exact<{
 
 export type GetRefTestTitlesQuery = { __typename?: 'Query', refTestTitles?: { __typename?: 'RefTestTitlesConnection', totalCount: number, edges?: Array<{ __typename?: 'RefTestTitlesEdge', cursor: string, node: { __typename?: 'RefTestTitle', id: string, value: string } }> | null, pageInfo: { __typename?: 'PageInfo', hasNextPage: boolean, endCursor?: string | null } } | null };
 
-export type SaveRefTestProgressMutationVariables = Exact<{
-  input: SaveRefTestProgressInput;
-}>;
-
-
-export type SaveRefTestProgressMutation = { __typename?: 'Mutation', saveRefTestProgress: { __typename?: 'SaveRefTestProgressPayload', refTest?: { __typename?: 'RefTest', id: string, currentQuestionIndex?: number | null, selectedAnswerIds: Array<string> } | null } };
-
 export type SearchQuestionsByNumberQueryVariables = Exact<{
   number?: InputMaybe<Scalars['String']['input']>;
 }>;
 
 
 export type SearchQuestionsByNumberQuery = { __typename?: 'Query', searchQuestionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null }> };
-
-export type SendRefTestInvitationsMutationVariables = Exact<{
-  input: SendInvitationsInput;
-}>;
-
-
-export type SendRefTestInvitationsMutation = { __typename?: 'Mutation', sendInvitations: { __typename?: 'SendInvitationsPayload', sendInvitationsResult?: { __typename?: 'SendInvitationsResult', totalRequested: number, successfullySent: number, failed: number, sentRefTests: Array<{ __typename?: 'RefTest', id: string, invitationSent: boolean }>, errors: Array<{ __typename?: 'SendInvitationError', refTestId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
-
-export type SendRefTestResultsMutationVariables = Exact<{
-  input: SendResultsInput;
-}>;
-
-
-export type SendRefTestResultsMutation = { __typename?: 'Mutation', sendResults: { __typename?: 'SendResultsPayload', sendResultsResult?: { __typename?: 'SendResultsResult', totalRequested: number, successfullySent: number, failed: number, sentRefTests: Array<{ __typename?: 'RefTest', id: string, resultsSent: boolean }>, errors: Array<{ __typename?: 'SendResultError', refTestId: string, errorMessage: string, user?: { __typename?: 'User', firstName: string, lastName: string, email: string } | null }> } | null } };
-
-export type StartRefTestMutationVariables = Exact<{
-  input: StartRefTestInput;
-}>;
-
-
-export type StartRefTestMutation = { __typename?: 'Mutation', startRefTest: { __typename?: 'StartRefTestPayload', refTest?: { __typename?: 'RefTest', id: string, startedAt?: string | null, maxTimeInMinutes: number, currentQuestionIndex?: number | null, selectedAnswerIds: Array<string>, questions?: Array<{ __typename?: 'Question', id: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, phrase?: Record<string, string> | null }> } | null> | null } | null, errors?: Array<
-      | { __typename?: 'InvalidRefTestStatusError', message: string }
-      | { __typename?: 'RefTestExpiredError', message: string }
-      | { __typename?: 'RefTestNotFoundError', message: string }
-    > | null } };
 
 export const CompleteRefTestDocument = gql`
     mutation CompleteRefTest($input: CompleteRefTestInput!) {
@@ -879,6 +1023,139 @@ export const CompleteRefTestDocument = gql`
   })
   export class CompleteRefTestGQL extends Apollo.Mutation<CompleteRefTestMutation, CompleteRefTestMutationVariables> {
     override document = CompleteRefTestDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const SaveRefTestProgressDocument = gql`
+    mutation SaveRefTestProgress($input: SaveRefTestProgressInput!) {
+  saveRefTestProgress(input: $input) {
+    refTest {
+      id
+      currentQuestionIndex
+      selectedAnswerIds
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SaveRefTestProgressGQL extends Apollo.Mutation<SaveRefTestProgressMutation, SaveRefTestProgressMutationVariables> {
+    override document = SaveRefTestProgressDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const StartRefTestDocument = gql`
+    mutation StartRefTest($input: StartRefTestInput!) {
+  startRefTest(input: $input) {
+    refTest {
+      id
+      startedAt
+      maxTimeInMinutes
+      currentQuestionIndex
+      selectedAnswerIds
+      questions {
+        id
+        phrase
+        answers {
+          id
+          phrase
+        }
+      }
+    }
+    errors {
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on RefTestExpiredError {
+        message
+      }
+      ... on InvalidRefTestStatusError {
+        message
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class StartRefTestGQL extends Apollo.Mutation<StartRefTestMutation, StartRefTestMutationVariables> {
+    override document = StartRefTestDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetRefTestByTokenDocument = gql`
+    query GetRefTestByToken($token: String!) {
+  refTestByToken(token: $token) {
+    ... on RefTest {
+      id
+      name
+      email
+      numberOfQuestions
+      maxTimeInMinutes
+      currentQuestionIndex
+    }
+    ... on RefTestNotFoundError {
+      message
+    }
+    ... on RefTestExpiredError {
+      message
+    }
+    ... on InvalidRefTestStatusError {
+      message
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetRefTestByTokenGQL extends Apollo.Query<GetRefTestByTokenQuery, GetRefTestByTokenQueryVariables> {
+    override document = GetRefTestByTokenDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetResultsEmailDelayMinutesDocument = gql`
+    query getResultsEmailDelayMinutes {
+  resultsEmailDelayMinutes
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetResultsEmailDelayMinutesGQL extends Apollo.Query<GetResultsEmailDelayMinutesQuery, GetResultsEmailDelayMinutesQueryVariables> {
+    override document = GetResultsEmailDelayMinutesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetScoreConfigurationDocument = gql`
+    query GetScoreConfiguration {
+  scoreConfiguration {
+    passingPercentage
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetScoreConfigurationGQL extends Apollo.Query<GetScoreConfigurationQuery, GetScoreConfigurationQueryVariables> {
+    override document = GetScoreConfigurationDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -944,10 +1221,45 @@ export const DeleteRefTestsDocument = gql`
       super(apollo);
     }
   }
-export const GenerateReportDocument = gql`
-    mutation generateReport($input: GenerateRefTestsReportInput!) {
-  generateRefTestsReport(input: $input) {
-    generateReportResult {
+export const SendRefTestInvitationsDocument = gql`
+    mutation SendRefTestInvitations($input: SendInvitationsInput!) {
+  sendInvitations(input: $input) {
+    sendInvitationsResult {
+      totalRequested
+      successfullySent
+      failed
+      sentRefTests {
+        id
+        invitationSent
+      }
+      errors {
+        refTestId
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SendRefTestInvitationsGQL extends Apollo.Mutation<SendRefTestInvitationsMutation, SendRefTestInvitationsMutationVariables> {
+    override document = SendRefTestInvitationsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const SendReportDocument = gql`
+    mutation sendReport($input: SendReportInput!) {
+  sendReport(input: $input) {
+    sendReportResult {
       success
       message
       refTestCount
@@ -959,8 +1271,43 @@ export const GenerateReportDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class GenerateReportGQL extends Apollo.Mutation<GenerateReportMutation, GenerateReportMutationVariables> {
-    override document = GenerateReportDocument;
+  export class SendReportGQL extends Apollo.Mutation<SendReportMutation, SendReportMutationVariables> {
+    override document = SendReportDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const SendRefTestResultsDocument = gql`
+    mutation SendRefTestResults($input: SendResultsInput!) {
+  sendResults(input: $input) {
+    sendResultsResult {
+      totalRequested
+      successfullySent
+      failed
+      sentRefTests {
+        id
+        resultsSent
+      }
+      errors {
+        refTestId
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class SendRefTestResultsGQL extends Apollo.Mutation<SendRefTestResultsMutation, SendRefTestResultsMutationVariables> {
+    override document = SendRefTestResultsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -1050,40 +1397,6 @@ export const GetRefTestByIdDocument = gql`
       super(apollo);
     }
   }
-export const GetRefTestByTokenDocument = gql`
-    query GetRefTestByToken($token: String!) {
-  refTestByToken(token: $token) {
-    ... on RefTest {
-      id
-      name
-      email
-      numberOfQuestions
-      maxTimeInMinutes
-      currentQuestionIndex
-    }
-    ... on RefTestNotFoundError {
-      message
-    }
-    ... on RefTestExpiredError {
-      message
-    }
-    ... on InvalidRefTestStatusError {
-      message
-    }
-  }
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class GetRefTestByTokenGQL extends Apollo.Query<GetRefTestByTokenQuery, GetRefTestByTokenQueryVariables> {
-    override document = GetRefTestByTokenDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
 export const GetRefTestsAllCountsDocument = gql`
     query GetRefTestsAllCounts($allWhere: RefTestFilterInput, $pendingWhere: RefTestFilterInput, $inProgressWhere: RefTestFilterInput, $completedWhere: RefTestFilterInput, $expiredWhere: RefTestFilterInput) {
   all: refTests(first: 0, where: $allWhere) {
@@ -1160,40 +1473,6 @@ export const GetRefTestsDocument = gql`
       super(apollo);
     }
   }
-export const GetResultsEmailDelayMinutesDocument = gql`
-    query getResultsEmailDelayMinutes {
-  resultsEmailDelayMinutes
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class GetResultsEmailDelayMinutesGQL extends Apollo.Query<GetResultsEmailDelayMinutesQuery, GetResultsEmailDelayMinutesQueryVariables> {
-    override document = GetResultsEmailDelayMinutesDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
-export const GetScoreConfigurationDocument = gql`
-    query GetScoreConfiguration {
-  scoreConfiguration {
-    passingPercentage
-  }
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class GetScoreConfigurationGQL extends Apollo.Query<GetScoreConfigurationQuery, GetScoreConfigurationQueryVariables> {
-    override document = GetScoreConfigurationDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
 export const GetRefTestTitlesDocument = gql`
     query GetRefTestTitles($first: Int!, $after: String, $where: RefTestTitleFilterInput, $order: [RefTestTitleSortInput!]) {
   refTestTitles(first: $first, after: $after, where: $where, order: $order) {
@@ -1223,28 +1502,6 @@ export const GetRefTestTitlesDocument = gql`
       super(apollo);
     }
   }
-export const SaveRefTestProgressDocument = gql`
-    mutation SaveRefTestProgress($input: SaveRefTestProgressInput!) {
-  saveRefTestProgress(input: $input) {
-    refTest {
-      id
-      currentQuestionIndex
-      selectedAnswerIds
-    }
-  }
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class SaveRefTestProgressGQL extends Apollo.Mutation<SaveRefTestProgressMutation, SaveRefTestProgressMutationVariables> {
-    override document = SaveRefTestProgressDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
 export const SearchQuestionsByNumberDocument = gql`
     query SearchQuestionsByNumber($number: String) {
   searchQuestionsByNumber(number: $number) {
@@ -1260,119 +1517,6 @@ export const SearchQuestionsByNumberDocument = gql`
   })
   export class SearchQuestionsByNumberGQL extends Apollo.Query<SearchQuestionsByNumberQuery, SearchQuestionsByNumberQueryVariables> {
     override document = SearchQuestionsByNumberDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
-export const SendRefTestInvitationsDocument = gql`
-    mutation SendRefTestInvitations($input: SendInvitationsInput!) {
-  sendInvitations(input: $input) {
-    sendInvitationsResult {
-      totalRequested
-      successfullySent
-      failed
-      sentRefTests {
-        id
-        invitationSent
-      }
-      errors {
-        refTestId
-        user {
-          firstName
-          lastName
-          email
-        }
-        errorMessage
-      }
-    }
-  }
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class SendRefTestInvitationsGQL extends Apollo.Mutation<SendRefTestInvitationsMutation, SendRefTestInvitationsMutationVariables> {
-    override document = SendRefTestInvitationsDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
-export const SendRefTestResultsDocument = gql`
-    mutation SendRefTestResults($input: SendResultsInput!) {
-  sendResults(input: $input) {
-    sendResultsResult {
-      totalRequested
-      successfullySent
-      failed
-      sentRefTests {
-        id
-        resultsSent
-      }
-      errors {
-        refTestId
-        user {
-          firstName
-          lastName
-          email
-        }
-        errorMessage
-      }
-    }
-  }
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class SendRefTestResultsGQL extends Apollo.Mutation<SendRefTestResultsMutation, SendRefTestResultsMutationVariables> {
-    override document = SendRefTestResultsDocument;
-    
-    constructor(apollo: Apollo.Apollo) {
-      super(apollo);
-    }
-  }
-export const StartRefTestDocument = gql`
-    mutation StartRefTest($input: StartRefTestInput!) {
-  startRefTest(input: $input) {
-    refTest {
-      id
-      startedAt
-      maxTimeInMinutes
-      currentQuestionIndex
-      selectedAnswerIds
-      questions {
-        id
-        phrase
-        answers {
-          id
-          phrase
-        }
-      }
-    }
-    errors {
-      ... on RefTestNotFoundError {
-        message
-      }
-      ... on RefTestExpiredError {
-        message
-      }
-      ... on InvalidRefTestStatusError {
-        message
-      }
-    }
-  }
-}
-    `;
-
-  @Injectable({
-    providedIn: 'root'
-  })
-  export class StartRefTestGQL extends Apollo.Mutation<StartRefTestMutation, StartRefTestMutationVariables> {
-    override document = StartRefTestDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

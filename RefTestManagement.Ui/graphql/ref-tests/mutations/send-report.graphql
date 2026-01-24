@@ -1,0 +1,9 @@
+mutation sendReport($input: SendReportInput!) {
+  sendReport(input: $input) {
+    sendReportResult {
+      success
+      message
+      refTestCount
+    }
+  }
+}

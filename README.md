@@ -225,24 +225,26 @@ Graphql/
 
 #### ✅ Mutation Organization
 
-| Folder | Files | Mutations | Purpose |
-|--------|-------|-----------|---------|
-| **Lifecycle** | 3 | 3 | User test execution (Start, SaveProgress, Complete) |
-| **Creation** | 3 | 1 | Bulk test creation with question selection |
-| **Email** | 7 | 3 | Send invitations, results, and reports via email |
-| **Update** | 5 | 5 | Update details, config, time, notifications, token |
-| **Reset** | 2 | 2 | Reset and revive operations for retakes |
-| **Deletion** | 3 | 1 | Delete operations with bulk support |
-| **Shared** | 1 | - | Shared DTOs (User record) used across mutations |
+| Folder        | Files | Mutations | Purpose                                             |
+| ------------- | ----- | --------- | --------------------------------------------------- |
+| **Lifecycle** | 3     | 3         | User test execution (Start, SaveProgress, Complete) |
+| **Creation**  | 3     | 1         | Bulk test creation with question selection          |
+| **Email**     | 7     | 3         | Send invitations, results, and reports via email    |
+| **Update**    | 5     | 5         | Update details, config, time, notifications, token  |
+| **Reset**     | 2     | 2         | Reset and revive operations for retakes             |
+| **Deletion**  | 3     | 1         | Delete operations with bulk support                 |
+| **Shared**    | 1     | -         | Shared DTOs (User record) used across mutations     |
 
 #### ✅ Developer Experience
 
 **Before:**
+
 - ❌ 860 lines to scroll through
 - ❌ Models scattered in separate folder
 - ❌ Hard to find related code
 
 **After:**
+
 - ✅ Instant discovery: `cd Mutations/Update/` → all update operations + models
 - ✅ Easy navigation: Everything where you expect it
 - ✅ Clear boundaries: Each category isolated
@@ -918,17 +920,31 @@ ref-test-management/
 │   │   └── styles.css                    # Global TailwindCSS styles
 │   │
 │   ├── graphql/                          # 📡 GraphQL Operations
-│   │   ├── complete-ref-test.graphql      # Complete RefTest mutation
-│   │   ├── create-ref-tests.graphql       # Create RefTests mutation
-│   │   ├── delete-ref-test.graphql        # Delete RefTests mutation
-│   │   ├── get-ref-tests.graphql          # List RefTests query
-│   │   ├── get-ref-test-by-token.graphql  # Get RefTest by token query
-│   │   ├── send-invitations.graphql      # Send email invitations mutation
-│   │   ├── send-results.graphql          # Send results mutation
-│   │   ├── search-questions-by-number.graphql
-│   │   ├── get-titles.graphql            # Get RefTest titles
-│   │   ├── start-ref-test.graphql         # Start RefTest mutation
-│   │   └── generated.ts                  # 🤖 Auto-generated TypeScript types
+│   │   ├── generated.ts                  # 🤖 Auto-generated TypeScript types
+│   │   ├── ref-test/                     # Single RefTest operations (test-taking)
+│   │   │   ├── mutations/
+│   │   │   │   ├── complete-ref-test.graphql      # Complete RefTest mutation
+│   │   │   │   ├── save-ref-test-progress.graphql # Save progress mutation
+│   │   │   │   └── start-ref-test.graphql         # Start RefTest mutation
+│   │   │   └── queries/
+│   │   │       ├── get-ref-test-by-token.graphql       # Get RefTest by token query
+│   │   │       ├── get-results-email-delay-minutes.graphql # Get email delay config
+│   │   │       └── get-score-configuration.graphql     # Get score configuration
+│   │   └── ref-tests/                    # Multiple RefTests operations (admin management)
+│   │       ├── mutations/
+│   │       │   ├── create-ref-tests.graphql       # Create RefTests mutation
+│   │       │   ├── delete-ref-tests.graphql       # Delete RefTests mutation
+│   │       │   ├── send-invitations.graphql       # Send email invitations mutation
+│   │       │   ├── send-report.graphql            # Send report mutation
+│   │       │   └── send-results.graphql           # Send results mutation
+│   │       └── queries/
+│   │           ├── get-enabled-languages.graphql  # Get enabled languages
+│   │           ├── get-questions-by-number.graphql # Get questions by number
+│   │           ├── get-ref-test-by-id.graphql     # Get RefTest by ID query
+│   │           ├── get-ref-tests-all-counts.graphql # Get counts for all filters
+│   │           ├── get-ref-tests.graphql          # List RefTests query
+│   │           ├── get-titles.graphql             # Get RefTest titles
+│   │           └── search-questions-by-number.graphql # Search questions
 │   │
 │   ├── scripts/
 │   │   └── generate-version.mjs          # Sync version from package.json
@@ -962,7 +978,8 @@ ref-test-management/
 | `RefTestManagement.Ui/src/app/ref-tests/list`          | List view with mobile/desktop layouts, filters, and bulk operations |
 | `RefTestManagement.Ui/src/app/ref-tests/list/services` | Business logic services for data, filters, and state management     |
 | `RefTestManagement.Ui/src/app/ref-test`                | RefTest-taking experience (welcome, take, results)                  |
-| `RefTestManagement.Ui/graphql`                         | GraphQL operation files and auto-generated types                    |
+| `RefTestManagement.Ui/graphql/ref-test`                | Single RefTest operations (start, progress, complete, get by token) |
+| `RefTestManagement.Ui/graphql/ref-tests`               | Multiple RefTests operations (create, delete, send emails, queries) |
 | `.github/workflows`                                    | CI/CD pipelines for automated testing and deployment                |
 
 ## ⚙️ Configuration

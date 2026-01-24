@@ -5,7 +5,6 @@ import { onlyCompleteData } from 'apollo-angular';
 import { catchError, finalize, map, of, switchMap, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
-  GenerateReportGQL,
   GetRefTestsAllCountsGQL,
   GetRefTestsAllCountsQuery,
   GetRefTestsGQL,
@@ -13,6 +12,7 @@ import {
   RefTestStatus,
   SendRefTestInvitationsGQL,
   SendRefTestResultsGQL,
+  SendReportGQL,
 } from '../../../../../graphql/generated';
 import { REF_TEST_CONFIG } from './constants';
 import { RefTestFilterState } from './ref-test-filter-state';
@@ -26,7 +26,7 @@ export class RefTestData {
   private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
   private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
-  private readonly _generateReportGQL = inject(GenerateReportGQL);
+  private readonly _sendReportGQL = inject(SendReportGQL);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _filterState = inject(RefTestFilterState);
   private readonly _queryBuilder = inject(RefTestQueryBuilder);
@@ -367,17 +367,17 @@ export class RefTestData {
   ): void {
     if (callbacks.onStart) callbacks.onStart();
 
-    this._generateReportGQL
+    this._sendReportGQL
       .mutate({
         variables: { input: { ids } },
       })
       .pipe(
         tap((result) => {
-          const generateResult = result.data?.generateRefTestsReport?.generateReportResult;
-          if (generateResult && callbacks.onSuccess) {
+          const sendResult = result.data?.sendReport?.sendReportResult;
+          if (sendResult && callbacks.onSuccess) {
             callbacks.onSuccess({
-              success: generateResult.success,
-              refTestCount: generateResult.refTestCount || 0,
+              success: sendResult.success,
+              refTestCount: sendResult.refTestCount || 0,
             });
           }
         }),
