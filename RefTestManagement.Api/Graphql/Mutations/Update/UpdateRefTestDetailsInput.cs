@@ -4,7 +4,8 @@ public record UpdateRefTestDetailsInput(
     Guid RefTestId,
     string FirstName,
     string LastName,
-    string Email
+    string Email,
+    bool ResendInvitation = false
 );
 
 

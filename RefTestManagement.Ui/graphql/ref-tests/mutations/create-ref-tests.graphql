@@ -1,6 +1,6 @@
-mutation CreateBulkRefTests($input: CreateBulkRefTestsInput!) {
-  createBulkRefTests(input: $input) {
-    bulkRefTestsResult {
+mutation CreateRefTests($input: CreateRefTestsInput!) {
+  createRefTests(input: $input) {
+    createRefTestsResult {
       totalRequested
       successfullyCreated
       failed

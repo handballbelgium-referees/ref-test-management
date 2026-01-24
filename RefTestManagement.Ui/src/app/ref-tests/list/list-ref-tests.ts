@@ -22,7 +22,7 @@ import { GenerateReportDialog } from './components/dialogs/generate-report-dialo
 import { SendInvitationsDialog } from './components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from './components/dialogs/send-results-dialog/send-results-dialog';
 import { RefTestFiltersCard } from './components/filters/ref-test-filters-card/ref-test-filters-card';
-import { RefTestBulkActions } from './components/ref-test-bulk-actions/ref-test-bulk-actions';
+import { RefTestActions } from './components/ref-test-actions/ref-test-actions';
 import { RefTestEmptyState } from './components/ref-test-empty-state/ref-test-empty-state';
 import { RefTestListHero } from './components/ref-test-list-hero/ref-test-list-hero';
 import { RefTestListToolbar } from './components/ref-test-list-toolbar/ref-test-list-toolbar';
@@ -45,14 +45,14 @@ import { RefTestNode, SortField } from './services/types';
 
 /**
  * Main component for listing and managing reference tests.
- * Provides filtering, sorting, selection, and bulk operations.
+ * Provides filtering, sorting, selection, and operations.
  */
 @Component({
   selector: 'app-list-ref-tests',
   imports: [
     TranslatePipe,
     RefTestFiltersCard,
-    RefTestBulkActions,
+    RefTestActions,
     SendInvitationsDialog,
     SendResultsDialog,
     DeleteRefTestsDialog,

@@ -30,8 +30,8 @@ A comprehensive web application for managing and taking IHF (International Handb
 
 ### 📝 RefTest Management
 
-- **Bulk RefTest Creation**: Create multiple RefTests simultaneously with customizable settings
-- **Question Bank Integration**: Search and bulk import questions from the central question database
+- **RefTest Creation**: Create multiple RefTests simultaneously with customizable settings
+- **Question Bank Integration**: Search and import questions from the central question database
 - **Randomization**: Optional random answer order per RefTest to prevent pattern memorization
 - **Time Management**: Configurable time limits with auto-submit functionality
 - **Automatic Expiration**: Background service automatically expires and completes tests (no extra cost on Azure)
@@ -41,7 +41,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 ### 🗂️ RefTest Management
 
 - **Advanced Filtering**: Filter RefTests by status, score range, percentage, and date ranges
-- **Bulk Operations**: Send invitations, results, and delete multiple RefTests efficiently
+- **Operations**: Send invitations, results, and delete multiple RefTests efficiently
 - **Real-time Status**: Monitor RefTest completion and participant progress
 - **Detail View**: Dedicated detail page with tabbed interface showing participant info, test details, status, timing, and full question list with answers
 - **Responsive Design**:
@@ -55,6 +55,30 @@ A comprehensive web application for managing and taking IHF (International Handb
   - Performance warning banners for large result sets
 - **Loading Indicators**: Visual feedback for all asynchronous operations (send, delete)
 - **Report Banners**: Display success or error states for report generation operations
+
+### 🔄 RefTest Update & Reset
+
+- **Update Operations**: Modify RefTests with status-aware validation
+  - **Update Details**: Change participant name and email (Pending/Expired only)
+    - Optional `ResendInvitation` flag to send invitation to updated email
+  - **Update Configuration**: Modify test title, questions, and time limits (Pending/Expired only)
+  - **Extend Time**: Add additional time for in-progress tests (InProgress only)
+  - **Update Notifications**: Enable/disable automatic invitation and result emails
+  - **Regenerate Token**: Create new access token with automatic invitation resend
+- **Reset Operations**: Allow test retakes with flexible options (handles multiple tests)
+  - **Soft Reset**: Clear progress while preserving audit trail (`CreatedAt`, `InvitationSentAt`)
+  - **Hard Reset**: Complete fresh start with new `CreatedAt` (resets expiration timer)
+  - Optional token regeneration with soft reset
+  - Automatic invitation resending when token is regenerated
+- **Revive Operations**: Restore expired tests (handles multiple tests)
+  - Reset expired tests to Pending status
+  - Always regenerates token and resets expiration timer
+  - Automatically resends invitations
+- **Status-Aware Rules**: Different capabilities based on RefTest status
+  - **Pending**: Full flexibility for updates and resets
+  - **InProgress**: Can only extend time and update notification settings
+  - **Completed**: Can only update result notification settings and reset for retake
+  - **Expired**: Can update like Pending, reset, or revive with fresh timer
 
 ### 📧 Email Automation
 
@@ -203,10 +227,10 @@ All mutation files are co-located with their input/output models in organized su
 Graphql/
 ├── Mutations/                    # All mutations organized by domain
 │   ├── Lifecycle/                (3 files) - Start, Progress, Complete + inputs
-│   ├── Creation/                 (3 files) - CreateBulkRefTests + input/output
+│   ├── Creation/                 (3 files) - CreateRefTests + input/output
 │   ├── Email/                    (7 files) - Send invitations, results, reports
 │   ├── Update/                   (5 files) - 5 update operations + inputs
-│   ├── Reset/                    (2 files) - Reset/Revive + input
+│   ├── Reset/                    (4 files) - Reset & Revive operations + results
 │   ├── Deletion/                 (3 files) - Delete + input/output
 │   └── Shared/                   (1 file)  - Shared User DTO
 ├── Queries/                      (2 files) - Queries + DataLoaders
@@ -217,7 +241,7 @@ Graphql/
 #### ✅ Key Benefits
 
 - **From**: 1 monolithic 860-line mutation file
-- **To**: 7 organized subfolders with 24 well-organized files
+- **To**: 7 organized subfolders with 26 well-organized files
 - **Average file size**: ~180 lines (highly maintainable)
 - **Perfect co-location**: Each mutation with its input/output models
 - **Shared DTOs**: Common models in dedicated Shared folder
@@ -228,11 +252,11 @@ Graphql/
 | Folder        | Files | Mutations | Purpose                                             |
 | ------------- | ----- | --------- | --------------------------------------------------- |
 | **Lifecycle** | 3     | 3         | User test execution (Start, SaveProgress, Complete) |
-| **Creation**  | 3     | 1         | Bulk test creation with question selection          |
+| **Creation**  | 3     | 1         | Create multiple tests with question selection       |
 | **Email**     | 7     | 3         | Send invitations, results, and reports via email    |
 | **Update**    | 5     | 5         | Update details, config, time, notifications, token  |
-| **Reset**     | 2     | 2         | Reset and revive operations for retakes             |
-| **Deletion**  | 3     | 1         | Delete operations with bulk support                 |
+| **Reset**     | 4     | 2         | Reset tests for retake and revive expired tests     |
+| **Deletion**  | 3     | 1         | Delete operations                                   |
 | **Shared**    | 1     | -         | Shared DTOs (User record) used across mutations     |
 
 #### ✅ Developer Experience
@@ -735,9 +759,9 @@ ref-test-management/
 │   │   │   │   ├── SaveRefTestProgressInput.cs       # Progress input model
 │   │   │   │   └── CompleteRefTestInput.cs           # Completion input model
 │   │   │   ├── Creation/                 # Test creation mutations
-│   │   │   │   ├── RefTestCreationMutations.cs       # CreateBulkRefTests
+│   │   │   │   ├── RefTestCreationMutations.cs       # CreateRefTests
 │   │   │   │   ├── CreateRefTestsInput.cs            # Creation input model
-│   │   │   │   └── BulkRefTestsResult.cs             # Creation result model
+│   │   │   │   └── RefTestsResult.cs                 # Creation result model
 │   │   │   ├── Email/                    # Email operation mutations
 │   │   │   │   ├── RefTestEmailMutations.cs          # Send invitations/results/reports
 │   │   │   │   ├── SendInvitationsInput.cs
@@ -748,13 +772,15 @@ ref-test-management/
 │   │   │   │   └── SendReportResult.cs
 │   │   │   ├── Update/                   # Update operation mutations
 │   │   │   │   ├── RefTestUpdateMutations.cs         # All update operations
-│   │   │   │   ├── UpdateRefTestDetailsInput.cs
+│   │   │   │   ├── UpdateRefTestDetailsInput.cs      # With ResendInvitation flag
 │   │   │   │   ├── UpdateRefTestConfigurationInput.cs
 │   │   │   │   ├── ExtendRefTestTimeInput.cs
 │   │   │   │   └── UpdateRefTestNotificationSettingsInput.cs
 │   │   │   ├── Reset/                    # Reset & revive mutations
-│   │   │   │   ├── RefTestResetMutations.cs          # Reset, Revive
-│   │   │   │   └── ResetRefTestInput.cs
+│   │   │   │   ├── RefTestResetMutations.cs          # ResetRefTests, ReviveExpiredRefTests
+│   │   │   │   ├── ResetRefTestInput.cs              # Input with List<Guid> RefTestIds
+│   │   │   │   ├── ResetRefTestsResult.cs            # Result for reset operations
+│   │   │   │   └── ReviveRefTestsResult.cs           # Result for revive operations
 │   │   │   ├── Deletion/                 # Delete operation mutations
 │   │   │   │   ├── RefTestDeletionMutations.cs       # DeleteRefTests
 │   │   │   │   ├── DeleteRefTestsInput.cs
@@ -887,7 +913,7 @@ ref-test-management/
 │   │   │   │           │   ├── send-results-dialog/
 │   │   │   │           │   └── generate-report-dialog/
 │   │   │   │           ├── column-visibility-menu/      # Table column toggles
-│   │   │   │           └── ref-test-bulk-actions/        # Bulk operations toolbar
+│   │   │   │           └── ref-test-actions/        # Operations toolbar
 │   │   │   │
 │   │   │   ├── ref-test/                  # 🎯 RefTest Taking
 │   │   │   │   ├── welcome/              # RefTest start page
@@ -975,7 +1001,7 @@ ref-test-management/
 | `RefTestManagement.Application/GraphQL`                | External GraphQL client schemas and queries (IHF Rules)             |
 | `RefTestManagement.Infrastructure/Services`            | PDF/Excel generation and email delivery (Brevo)                     |
 | `RefTestManagement.Ui/src/app/ref-tests`               | RefTest creation, detail view, and management UI                    |
-| `RefTestManagement.Ui/src/app/ref-tests/list`          | List view with mobile/desktop layouts, filters, and bulk operations |
+| `RefTestManagement.Ui/src/app/ref-tests/list`          | List view with mobile/desktop layouts, filters and operations       |
 | `RefTestManagement.Ui/src/app/ref-tests/list/services` | Business logic services for data, filters, and state management     |
 | `RefTestManagement.Ui/src/app/ref-test`                | RefTest-taking experience (welcome, take, results)                  |
 | `RefTestManagement.Ui/graphql/ref-test`                | Single RefTest operations (start, progress, complete, get by token) |
@@ -1841,7 +1867,7 @@ This regenerates TypeScript types in `graphql/generated.ts` based on your GraphQ
 
 1. **GraphQL Playground**: `https://localhost:7039/graphql/`
 2. **Test Authentication**: Click "Sign In" and verify Auth0 redirect
-3. **Create RefTest**: Navigate to RefTests > Create and test bulk creation
+3. **Create RefTest**: Navigate to RefTests > Create and test RefTest creation
 4. **Take RefTest**: Use the generated token URL to take a RefTest
 5. **Check Emails**: Verify invitation and result emails (if configured)
 

@@ -6,8 +6,8 @@ public enum RefTestResetType
     Hard
 }
 
-public record ResetRefTestInput(
-    Guid RefTestId,
+public record ResetRefTestsInput(
+    List<Guid> RefTestIds,
     RefTestResetType ResetType,
     bool RegenerateToken = true
 );

@@ -31,7 +31,7 @@
       "title": "Snelle Acties",
       "create": {
         "title": "RefTests Aanmaken",
-        "description": "Maak RefTests bulksgewijs aan"
+        "description": "Maak nieuwe RefTests aan"
       },
       "manage": {
         "title": "RefTests Beheren",
@@ -40,9 +40,9 @@
     },
     "about": {
       "title": "RefTest Beheersysteem",
-      "description": "Deze applicatie beheert handbalregels RefTests. Beheerders kunnen RefTests bulksgewijs aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, voortgang en voltooiingsstatus volgen, filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. RefTests ondersteunen {{count}} talen ({{languages}}).",
-      "bulk": {
-        "title": "Bulk RefTest Aanmaak",
+      "description": "Deze applicatie beheert handbalregels RefTests. Beheerders kunnen RefTests aanmaken voor meerdere gebruikers, e-mail uitnodigingen versturen, voortgang en voltooiingsstatus volgen, filteren en sorteren op verschillende criteria, en prestatie-analyses bekijken inclusief scores en voltooiingspercentages. RefTests ondersteunen {{count}} talen ({{languages}}).",
+      "creation": {
+        "title": "RefTest Creatie",
         "description": "Maak RefTests aan voor meerdere gebruikers tegelijk. Elke RefTest wordt toegewezen aan een specifieke gebruiker met unieke volgmogelijkheden."
       },
       "management": {
@@ -160,16 +160,12 @@
         "subtitle": "Begin met het aanmaken van uw eerste RefTests",
         "action": "RefTests Aanmaken"
       },
-      "bulk": {
+      "actions": {
         "reftest_selected": "RefTest geselecteerd",
         "reftests_selected": "RefTests geselecteerd",
-        "send_invitations": "Uitnodigingen Versturen",
-        "send_results": "Resultaten Versturen",
-        "generate_report": "Rapport Versturen",
-        "delete": "Verwijderen"
-      },
-      "actions": {
         "send_invitation": "Uitnodiging Versturen",
+        "send_invitations": "Uitnodigingen Versturen",
+        "send_result": "Resultaat Versturen",
         "send_results": "Resultaten Versturen",
         "generate_report": "Rapport Versturen",
         "delete": "Verwijderen"
@@ -300,10 +296,10 @@
           "email_invalid": "Voer een geldig e-mailadres in",
           "count": "{{count}} deelnemer",
           "count_other": "{{count}} deelnemers",
-          "bulk_import": "Bulk Import",
-          "bulk_import_label": "Plak deelnemersgegevens (één per regel)",
-          "bulk_import_hint": "Formaat: \"Voornaam Achternaam email\" (alle velden verplicht)",
-          "bulk_import_button": "Importeren",
+          "import": "Importeren",
+          "import_label": "Plak deelnemersgegevens (één per regel)",
+          "import_hint": "Formaat: \"Voornaam Achternaam email\" (alle velden verplicht)",
+          "import_button": "Importeren",
           "first_name": "Voornaam",
           "first_name_placeholder": "Jan",
           "last_name": "Achternaam",
@@ -336,14 +332,14 @@
           "label": "Specifieke Vraagnummers (Optioneel)",
           "placeholder": "1.1, 1.2, 2.3",
           "hint": "Kommagescheiden lijst van specifieke vraagnummers om op te nemen. Laat leeg voor willekeurige vragen.",
-          "bulk_import": "Bulk Import",
+          "import": "Importeren",
           "count": "{{count}} vraag geselecteerd",
           "count_other": "{{count}} vragen geselecteerd",
           "search_placeholder": "Zoek en voeg vragen toe op nummer...",
-          "bulk_import_label": "Plak vraagnummers (één per regel of gescheiden door komma's)",
-          "bulk_import_hint": "Formaat: Eén vraagnummer per regel, of gescheiden door komma's",
-          "bulk_import_button": "Importeren",
-          "bulk_import_importing": "Importeren...",
+          "import_label": "Plak vraagnummers (één per regel of gescheiden door komma's)",
+          "import_hint": "Formaat: Eén vraagnummer per regel, of gescheiden door komma's",
+          "import_button": "Importeren",
+          "importing": "Importeren...",
           "no_results": "Geen vragen gevonden",
           "table_number": "Nummer",
           "table_question": "Vraag",

@@ -8,7 +8,7 @@ import { RefTestSelectionManager } from './ref-test-selection-manager';
 import { IReportResult, RefTestNode } from './types';
 
 /**
- * Service responsible for managing bulk operations on ref tests
+ * Service responsible for managing operations on ref tests
  * (delete, send invitations, send results, generate report)
  */
 @Injectable()

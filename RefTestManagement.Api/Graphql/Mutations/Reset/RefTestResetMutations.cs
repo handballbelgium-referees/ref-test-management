@@ -1,4 +1,3 @@
-using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -15,115 +14,176 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Reset;
 public static class RefTestResetMutations
 {
     /// <summary>
-    /// Reset a RefTest to allow retake. Soft reset preserves the audit trail, hard reset clears everything.
+    /// Reset one or more RefTests to allow retake. Soft reset preserves the audit trail, hard reset clears everything.
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="RefTestNotFoundException"></exception>
-    /// <exception cref="InvalidRefTestStatusException"></exception>
     [Authorize]
-    [Error<RefTestNotFoundException>]
-    [Error<InvalidRefTestStatusException>]
-    public static async Task<RefTestDto> ResetRefTestAsync(
-        ResetRefTestInput input,
+    public static async Task<ResetRefTestsResult> ResetRefTestsAsync(
+        ResetRefTestsInput input,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
-        var refTest = await context.RefTests
-            .FirstOrDefaultAsync(rt => rt.Id == input.RefTestId, cancellationToken);
-
-        if (refTest == null)
-            throw new RefTestNotFoundException(input.RefTestId);
-
-        // Check if the invitation was previously sent
-        var invitationWasSent = refTest.InvitationSentAt.HasValue;
-
-        if (input.ResetType == RefTestResetType.Soft)
+        var result = new ResetRefTestsResult
         {
-            refTest.SoftReset(input.RegenerateToken);
-        }
-        else
+            TotalRequested = input.RefTestIds.Count
+        };
+
+        var refTests = await context.RefTests
+            .Where(rt => input.RefTestIds.Contains(rt.Id))
+            .ToListAsync(cancellationToken);
+
+        var successCount = 0;
+        var failedCount = 0;
+        var errors = new List<ResetRefTestsError>();
+
+        foreach (var id in input.RefTestIds)
         {
-            refTest.HardReset();
+            try
+            {
+                var refTest = refTests.FirstOrDefault(rt => rt.Id == id);
+
+                if (refTest == null)
+                    throw new RefTestNotFoundException(id);
+
+                // Check if the invitation was previously sent
+                var invitationWasSent = refTest.InvitationSentAt.HasValue;
+
+                if (input.ResetType == RefTestResetType.Soft)
+                {
+                    refTest.SoftReset(input.RegenerateToken);
+                }
+                else
+                {
+                    refTest.HardReset();
+                }
+
+                // If an invitation was previously sent and the token was regenerated, send a new invitation
+                var shouldSendInvitation = invitationWasSent &&
+                                           (input.ResetType == RefTestResetType.Hard ||
+                                            input is { ResetType: RefTestResetType.Soft, RegenerateToken: true });
+
+                if (shouldSendInvitation)
+                {
+                    var invitationPayload = new InvitationEmailPayload(
+                        refTest.Id,
+                        refTest.FullName,
+                        refTest.Email,
+                        refTest.Token,
+                        refTest.NumberOfQuestions,
+                        refTest.MaxTimeInMinutes
+                    );
+
+                    await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                        cancellationToken: cancellationToken);
+                }
+
+                successCount++;
+            }
+            catch (Exception ex)
+            {
+                failedCount++;
+                errors.Add(new ResetRefTestsError
+                {
+                    RefTestId = id,
+                    ErrorMessage = ex.Message
+                });
+            }
         }
 
         await context.SaveChangesAsync(cancellationToken);
 
-        // If an invitation was previously sent and the token was regenerated, send a new invitation
-        var shouldSendInvitation = invitationWasSent &&
-                                   (input.ResetType == RefTestResetType.Hard ||
-                                    input is { ResetType: RefTestResetType.Soft, RegenerateToken: true });
-
-        if (!shouldSendInvitation)
-            return refTest.ToDto();
-
-        var invitationPayload = new InvitationEmailPayload(
-            refTest.Id,
-            refTest.FullName,
-            refTest.Email,
-            refTest.Token,
-            refTest.NumberOfQuestions,
-            refTest.MaxTimeInMinutes
-        );
-
-        await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
-            cancellationToken: cancellationToken);
-
-        return refTest.ToDto();
+        return result with
+        {
+            SuccessfullyReset = successCount,
+            Failed = failedCount,
+            Errors = errors
+        };
     }
 
     /// <summary>
-    /// Revive an expired RefTest by resetting it to Pending status with a new token and fresh expiration timer
+    /// Revive one or more expired RefTests by resetting them to Pending status with a new token and fresh expiration timer
     /// </summary>
-    /// <param name="refTestId"></param>
+    /// <param name="refTestIds"></param>
     /// <param name="context"></param>
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    /// <exception cref="RefTestNotFoundException"></exception>
-    /// <exception cref="InvalidRefTestStatusException"></exception>
     [Authorize]
-    [Error<RefTestNotFoundException>]
-    [Error<InvalidRefTestStatusException>]
-    public static async Task<RefTestDto> ReviveExpiredRefTestAsync(
-        Guid refTestId,
+    public static async Task<ReviveRefTestsResult> ReviveExpiredRefTestsAsync(
+        List<Guid> refTestIds,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
-        var refTest = await context.RefTests
-            .FirstOrDefaultAsync(rt => rt.Id == refTestId, cancellationToken);
+        var result = new ReviveRefTestsResult
+        {
+            TotalRequested = refTestIds.Count
+        };
 
-        if (refTest == null)
-            throw new RefTestNotFoundException(refTestId);
+        var refTests = await context.RefTests
+            .Where(rt => refTestIds.Contains(rt.Id))
+            .ToListAsync(cancellationToken);
 
-        // Check if the invitation was previously sent
-        var invitationWasSent = refTest.InvitationSentAt.HasValue;
+        var successCount = 0;
+        var failedCount = 0;
+        var errors = new List<ReviveRefTestsError>();
 
-        refTest.Revive();
+        foreach (var id in refTestIds)
+        {
+            try
+            {
+                var refTest = refTests.FirstOrDefault(rt => rt.Id == id);
+
+                if (refTest == null)
+                    throw new RefTestNotFoundException(id);
+
+                // Check if the invitation was previously sent
+                var invitationWasSent = refTest.InvitationSentAt.HasValue;
+
+                refTest.Revive();
+
+                // If an invitation was previously sent, send a new one with the new token
+                // (Revive always regenerates the token)
+                if (invitationWasSent)
+                {
+                    var invitationPayload = new InvitationEmailPayload(
+                        refTest.Id,
+                        refTest.FullName,
+                        refTest.Email,
+                        refTest.Token,
+                        refTest.NumberOfQuestions,
+                        refTest.MaxTimeInMinutes
+                    );
+
+                    await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                        cancellationToken: cancellationToken);
+                }
+
+                successCount++;
+            }
+            catch (Exception ex)
+            {
+                failedCount++;
+                errors.Add(new ReviveRefTestsError
+                {
+                    RefTestId = id,
+                    ErrorMessage = ex.Message
+                });
+            }
+        }
+
         await context.SaveChangesAsync(cancellationToken);
 
-        if (!invitationWasSent)
-            return refTest.ToDto();
-
-        // If an invitation was previously sent, send a new one with the new token
-        // (Revive always regenerates the token)
-        var invitationPayload = new InvitationEmailPayload(
-            refTest.Id,
-            refTest.FullName,
-            refTest.Email,
-            refTest.Token,
-            refTest.NumberOfQuestions,
-            refTest.MaxTimeInMinutes
-        );
-
-        await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
-            cancellationToken: cancellationToken);
-
-        return refTest.ToDto();
+        return result with
+        {
+            SuccessfullyRevived = successCount,
+            Failed = failedCount,
+            Errors = errors
+        };
     }
 }

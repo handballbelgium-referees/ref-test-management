@@ -20,6 +20,7 @@ public static class RefTestUpdateMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
+    /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -30,6 +31,7 @@ public static class RefTestUpdateMutations
     public static async Task<RefTestDto> UpdateRefTestDetailsAsync(
         UpdateRefTestDetailsInput input,
         RefTestManagementContext context,
+        [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -38,8 +40,27 @@ public static class RefTestUpdateMutations
         if (refTest == null)
             throw new RefTestNotFoundException(input.RefTestId);
 
+        var emailChanged = refTest.Email != input.Email;
+        var invitationWasSent = refTest.InvitationSentAt.HasValue;
+
         refTest.UpdateBasicDetails(input.FirstName, input.LastName, input.Email);
         await context.SaveChangesAsync(cancellationToken);
+
+        if (!emailChanged || !input.ResendInvitation || !invitationWasSent) 
+            return refTest.ToDto();
+
+        // If the email was changed and the ResendInvitation flag is true and the invitation was previously sent, resend it
+        var invitationPayload = new InvitationEmailPayload(
+            refTest.Id,
+            refTest.FullName,
+            refTest.Email,
+            refTest.Token,
+            refTest.NumberOfQuestions,
+            refTest.MaxTimeInMinutes
+        );
+
+        await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+            cancellationToken: cancellationToken);
 
         return refTest.ToDto();
     }
@@ -188,30 +209,30 @@ public static class RefTestUpdateMutations
                 cancellationToken: cancellationToken);
         }
 
+        if (!input.SendResultsAutomatically.HasValue ||
+            wasResultAutoSendEnabled ||
+            !input.SendResultsAutomatically.Value ||
+            refTest.Status != RefTestStatus.Completed ||
+            resultWasSent) 
+            return refTest.ToDto();
+
         // If SendResultsAutomatically was just enabled (changed from false to true)
         // and the test is Completed and results were never sent, send them now
-        if (input.SendResultsAutomatically.HasValue &&
-            !wasResultAutoSendEnabled &&
-            input.SendResultsAutomatically.Value &&
-            refTest.Status == RefTestStatus.Completed &&
-            !resultWasSent)
-        {
-            var resultPayload = new ResultEmailPayload(
-                refTest.Id,
-                refTest.FullName,
-                refTest.Email,
-                refTest.QuestionScore ?? 0,
-                refTest.AnswerScore ?? 0,
-                refTest.QuestionTotal,
-                refTest.AnswerTotal ?? 0,
-                refTest.Percentage ?? 0,
-                refTest.SelectedAnswerIds,
-                refTest.WrongQuestionIds,
-                refTest.WrongAnswerIds
-            );
+        var resultPayload = new ResultEmailPayload(
+            refTest.Id,
+            refTest.FullName,
+            refTest.Email,
+            refTest.QuestionScore ?? 0,
+            refTest.AnswerScore ?? 0,
+            refTest.QuestionTotal,
+            refTest.AnswerTotal ?? 0,
+            refTest.Percentage ?? 0,
+            refTest.SelectedAnswerIds,
+            refTest.WrongQuestionIds,
+            refTest.WrongAnswerIds
+        );
 
-            await jobEnqueueService.EnqueueResultEmailAsync(resultPayload, cancellationToken: cancellationToken);
-        }
+        await jobEnqueueService.EnqueueResultEmailAsync(resultPayload, cancellationToken: cancellationToken);
 
         return refTest.ToDto();
     }

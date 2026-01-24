@@ -31,7 +31,7 @@
       "title": "Schnellaktionen",
       "create": {
         "title": "RefTests Erstellen",
-        "description": "RefTests in großen Mengen erstellen"
+        "description": "Neue RefTests erstellen"
       },
       "manage": {
         "title": "RefTests Verwalten",
@@ -40,9 +40,9 @@
     },
     "about": {
       "title": "RefTest-Verwaltungssystem",
-      "description": "Diese Anwendung verwaltet Handball-Regeln-RefTests. Administratoren können RefTests in großen Mengen für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Fortschritt und Abschlussstatus verfolgen, RefTests nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. RefTests unterstützen {{count}} Sprachen ({{languages}}).",
-      "bulk": {
-        "title": "Massen-RefTest-Erstellung",
+      "description": "Diese Anwendung verwaltet Handball-Regeln-RefTests. Administratoren können RefTests für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Fortschritt und Abschlussstatus verfolgen, RefTests nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. RefTests unterstützen {{count}} Sprachen ({{languages}}).",
+      "creation": {
+        "title": "RefTest-Erstellung",
         "description": "Erstellen Sie RefTests für mehrere Benutzer auf einmal. Jeder RefTest wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
       },
       "management": {
@@ -164,16 +164,12 @@
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten RefTests",
         "action": "RefTests Erstellen"
       },
-      "bulk": {
+      "actions": {
         "reftest_selected": "RefTest ausgewählt",
         "reftests_selected": "RefTests ausgewählt",
-        "send_invitations": "Einladungen Senden",
-        "send_results": "Ergebnisse Senden",
-        "generate_report": "Bericht Senden",
-        "delete": "Löschen"
-      },
-      "actions": {
         "send_invitation": "Einladung Senden",
+        "send_invitations": "Einladungen Senden",
+        "send_result": "Ergebnis Senden",
         "send_results": "Ergebnisse Senden",
         "generate_report": "Bericht Senden",
         "delete": "Löschen"
@@ -304,10 +300,10 @@
           "email_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
           "count": "{{count}} Teilnehmer",
           "count_other": "{{count}} Teilnehmer",
-          "bulk_import": "Massenimport",
-          "bulk_import_label": "Teilnehmerdaten einfügen (eine pro Zeile)",
-          "bulk_import_hint": "Format: \"Vorname Nachname E-Mail\" (alle Felder erforderlich)",
-          "bulk_import_button": "Importieren",
+          "import": "Massenimport",
+          "import_label": "Teilnehmerdaten einfügen (eine pro Zeile)",
+          "import_hint": "Format: \"Vorname Nachname E-Mail\" (alle Felder erforderlich)",
+          "import_button": "Importieren",
           "first_name": "Vorname",
           "first_name_placeholder": "Hans",
           "last_name": "Nachname",
@@ -340,14 +336,14 @@
           "label": "Spezifische Fragennummern (Optional)",
           "placeholder": "1.1, 1.2, 2.3",
           "hint": "Kommagetrennte Liste spezifischer Fragennummern, die einbezogen werden sollen. Leer lassen für zufällige Fragen.",
-          "bulk_import": "Massenimport",
+          "import": "Importieren",
           "count": "{{count}} Frage ausgewählt",
           "count_other": "{{count}} Fragen ausgewählt",
           "search_placeholder": "Fragen nach Nummer suchen und hinzufügen...",
-          "bulk_import_label": "Fragennummern einfügen (eine pro Zeile oder durch Kommas getrennt)",
-          "bulk_import_hint": "Format: Eine Fragennummer pro Zeile oder durch Kommas getrennt",
-          "bulk_import_button": "Importieren",
-          "bulk_import_importing": "Importiert...",
+          "import_label": "Fragennummern einfügen (eine pro Zeile oder durch Kommas getrennt)",
+          "import_hint": "Format: Eine Fragennummer pro Zeile oder durch Kommas getrennt",
+          "import_button": "Importieren",
+          "import_importing": "Importiert...",
           "no_results": "Keine Fragen gefunden",
           "table_number": "Nummer",
           "table_question": "Frage",

@@ -26,14 +26,14 @@ public static class RefTestCreationMutations
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize]
-    public static async Task<BulkRefTestsResult> CreateBulkRefTestsAsync(
-        CreateBulkRefTestsInput input,
+    public static async Task<CreateRefTestsResult> CreateRefTestsAsync(
+        CreateRefTestsInput input,
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
-        var result = new BulkRefTestsResult
+        var result = new CreateRefTestsResult
         {
             TotalRequested = input.Users.Count
         };
@@ -105,7 +105,7 @@ public static class RefTestCreationMutations
             catch (Exception ex)
             {
                 result.Failed++;
-                result.Errors.Add(new BulkCreationError
+                result.Errors.Add(new CreateRefTestsError
                 {
                     User = user,
                     ErrorMessage = ex.Message
@@ -148,7 +148,7 @@ public static class RefTestCreationMutations
             {
                 // Email job enqueue failed, but the RefTest was created
                 // Log the error but don't fail the entire operation
-                result.Errors.Add(new BulkCreationError
+                result.Errors.Add(new CreateRefTestsError
                 {
                     User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
                     ErrorMessage = $"RefTest created but email job enqueue failed: {ex.Message}"

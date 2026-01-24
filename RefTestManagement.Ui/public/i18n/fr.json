@@ -31,7 +31,7 @@
       "title": "Actions Rapides",
       "create": {
         "title": "Créer des RefTests",
-        "description": "Créer des RefTests en masse"
+        "description": "Créer des nouveaux RefTests"
       },
       "manage": {
         "title": "Gérer les RefTests",
@@ -40,9 +40,9 @@
     },
     "about": {
       "title": "Système de Gestion des RefTests",
-      "description": "Cette application gère les RefTests sur les règles du handball. Les administrateurs peuvent créer des RefTests en masse pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des RefTests, filtrer et trier les RefTests selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les RefTests prennent en charge {{count}} langues ({{languages}}).",
-      "bulk": {
-        "title": "Création de RefTests en Masse",
+      "description": "Cette application gère les RefTests sur les règles du handball. Les administrateurs peuvent créer des RefTests pour plusieurs utilisateurs, envoyer des invitations par e-mail, suivre la progression et l'état d'achèvement des RefTests, filtrer et trier les RefTests selon divers critères, et consulter les analyses de performance incluant les scores et les taux d'achèvement. Les RefTests prennent en charge {{count}} langues ({{languages}}).",
+      "creation": {
+        "title": "Création de RefTests",
         "description": "Créez des RefTests pour plusieurs utilisateurs à la fois. Chaque RefTest est attribué à un utilisateur spécifique avec des capacités de suivi uniques."
       },
       "management": {
@@ -160,16 +160,12 @@
         "subtitle": "Commencez par créer vos premiers RefTests",
         "action": "Créer des RefTests"
       },
-      "bulk": {
+      "actions": {
         "reftest_selected": "RefTest sélectionné",
         "reftests_selected": "RefTests sélectionnés",
-        "send_invitations": "Envoyer les Invitations",
-        "send_results": "Envoyer les Résultats",
-        "generate_report": "Envoyer le Rapport",
-        "delete": "Supprimer"
-      },
-      "actions": {
         "send_invitation": "Envoyer l'Invitation",
+        "send_invitations": "Envoyer les Invitations",
+        "send_result": "Envoyer le Résultat",
         "send_results": "Envoyer les Résultats",
         "generate_report": "Envoyer le Rapport",
         "delete": "Supprimer"
@@ -301,10 +297,10 @@
           "email_invalid": "Veuillez entrer une adresse e-mail valide",
           "count": "{{count}} participant",
           "count_other": "{{count}} participants",
-          "bulk_import": "Import en Masse",
-          "bulk_import_label": "Collez les données des participants (un par ligne)",
-          "bulk_import_hint": "Format : \"Prénom Nom email\" (tous les champs obligatoires)",
-          "bulk_import_button": "Importer",
+          "import": "Importer",
+          "import_label": "Collez les données des participants (un par ligne)",
+          "import_hint": "Format : \"Prénom Nom email\" (tous les champs obligatoires)",
+          "import_button": "Importer",
           "first_name": "Prénom",
           "first_name_placeholder": "Jean",
           "last_name": "Nom",
@@ -337,14 +333,14 @@
           "label": "Numéros de Questions Spécifiques (Optionnel)",
           "placeholder": "1.1, 1.2, 2.3",
           "hint": "Liste séparée par des virgules de numéros de questions spécifiques à inclure. Laisser vide pour des questions aléatoires.",
-          "bulk_import": "Import en Masse",
+          "import": "Importer",
           "count": "{{count}} question sélectionnée",
           "count_other": "{{count}} questions sélectionnées",
           "search_placeholder": "Rechercher et ajouter des questions par numéro...",
-          "bulk_import_label": "Collez les numéros de questions (un par ligne ou séparés par des virgules)",
-          "bulk_import_hint": "Format : Un numéro de question par ligne, ou séparés par des virgules",
-          "bulk_import_button": "Importer",
-          "bulk_import_importing": "Importation...",
+          "import_label": "Collez les numéros de questions (un par ligne ou séparés par des virgules)",
+          "import_hint": "Format : Un numéro de question par ligne, ou séparés par des virgules",
+          "import_button": "Importer",
+          "importing": "Importation...",
           "no_results": "Aucune question trouvée",
           "table_number": "Numéro",
           "table_question": "Question",

@@ -3,7 +3,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 
-public record CreateBulkRefTestsInput(
+public record CreateRefTestsInput(
     Title Title,
     List<User> Users,
     int NumberOfQuestions,

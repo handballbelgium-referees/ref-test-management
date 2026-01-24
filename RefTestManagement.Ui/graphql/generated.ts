@@ -49,21 +49,6 @@ export type BooleanOperationFilterInput = {
   neq?: InputMaybe<Scalars['Boolean']['input']>;
 };
 
-export type BulkCreationError = {
-  __typename?: 'BulkCreationError';
-  errorMessage: Scalars['String']['output'];
-  user: User;
-};
-
-export type BulkRefTestsResult = {
-  __typename?: 'BulkRefTestsResult';
-  createdRefTests: Array<RefTest>;
-  errors: Array<BulkCreationError>;
-  failed: Scalars['Int']['output'];
-  successfullyCreated: Scalars['Int']['output'];
-  totalRequested: Scalars['Int']['output'];
-};
-
 /** The scope of a cache hint. */
 export enum CacheControlScope {
   /** The value to cache is specific to a single user. */
@@ -86,7 +71,13 @@ export type CompleteRefTestPayload = {
   refTest?: Maybe<RefTest>;
 };
 
-export type CreateBulkRefTestsInput = {
+export type CreateRefTestsError = {
+  __typename?: 'CreateRefTestsError';
+  errorMessage: Scalars['String']['output'];
+  user: User;
+};
+
+export type CreateRefTestsInput = {
   maxTimeInMinutes: Scalars['Int']['input'];
   numberOfQuestions: Scalars['Int']['input'];
   randomQuestionsForEachUser: Scalars['Boolean']['input'];
@@ -97,9 +88,18 @@ export type CreateBulkRefTestsInput = {
   users: Array<UserInput>;
 };
 
-export type CreateBulkRefTestsPayload = {
-  __typename?: 'CreateBulkRefTestsPayload';
-  bulkRefTestsResult?: Maybe<BulkRefTestsResult>;
+export type CreateRefTestsPayload = {
+  __typename?: 'CreateRefTestsPayload';
+  createRefTestsResult?: Maybe<CreateRefTestsResult>;
+};
+
+export type CreateRefTestsResult = {
+  __typename?: 'CreateRefTestsResult';
+  createdRefTests: Array<RefTest>;
+  errors: Array<CreateRefTestsError>;
+  failed: Scalars['Int']['output'];
+  successfullyCreated: Scalars['Int']['output'];
+  totalRequested: Scalars['Int']['output'];
 };
 
 export type DateTimeOperationFilterInput = {
@@ -196,12 +196,12 @@ export type InvalidRefTestStatusError = Error & {
 export type Mutation = {
   __typename?: 'Mutation';
   completeRefTest: CompleteRefTestPayload;
-  createBulkRefTests: CreateBulkRefTestsPayload;
+  createRefTests: CreateRefTestsPayload;
   deleteRefTests: DeleteRefTestsPayload;
   extendRefTestTime: ExtendRefTestTimePayload;
   regenerateRefTestToken: RegenerateRefTestTokenPayload;
-  resetRefTest: ResetRefTestPayload;
-  reviveExpiredRefTest: ReviveExpiredRefTestPayload;
+  resetRefTests: ResetRefTestsPayload;
+  reviveExpiredRefTests: ReviveExpiredRefTestsPayload;
   saveRefTestProgress: SaveRefTestProgressPayload;
   sendInvitations: SendInvitationsPayload;
   sendReport: SendReportPayload;
@@ -218,8 +218,8 @@ export type MutationCompleteRefTestArgs = {
 };
 
 
-export type MutationCreateBulkRefTestsArgs = {
-  input: CreateBulkRefTestsInput;
+export type MutationCreateRefTestsArgs = {
+  input: CreateRefTestsInput;
 };
 
 
@@ -238,13 +238,13 @@ export type MutationRegenerateRefTestTokenArgs = {
 };
 
 
-export type MutationResetRefTestArgs = {
-  input: ResetRefTestInput;
+export type MutationResetRefTestsArgs = {
+  input: ResetRefTestsInput;
 };
 
 
-export type MutationReviveExpiredRefTestArgs = {
-  input: ReviveExpiredRefTestInput;
+export type MutationReviveExpiredRefTestsArgs = {
+  input: ReviveExpiredRefTestsInput;
 };
 
 
@@ -636,30 +636,52 @@ export type RegenerateRefTestTokenPayload = {
   refTest?: Maybe<RefTest>;
 };
 
-export type ResetRefTestError = InvalidRefTestStatusError | RefTestNotFoundError;
+export type ResetRefTestsError = {
+  __typename?: 'ResetRefTestsError';
+  errorMessage: Scalars['String']['output'];
+  refTestId: Scalars['UUID']['output'];
+};
 
-export type ResetRefTestInput = {
-  refTestId: Scalars['UUID']['input'];
+export type ResetRefTestsInput = {
+  refTestIds: Array<Scalars['UUID']['input']>;
   regenerateToken?: Scalars['Boolean']['input'];
   resetType: RefTestResetType;
 };
 
-export type ResetRefTestPayload = {
-  __typename?: 'ResetRefTestPayload';
-  errors?: Maybe<Array<ResetRefTestError>>;
-  refTest?: Maybe<RefTest>;
+export type ResetRefTestsPayload = {
+  __typename?: 'ResetRefTestsPayload';
+  resetRefTestsResult?: Maybe<ResetRefTestsResult>;
 };
 
-export type ReviveExpiredRefTestError = InvalidRefTestStatusError | RefTestNotFoundError;
-
-export type ReviveExpiredRefTestInput = {
-  refTestId: Scalars['UUID']['input'];
+export type ResetRefTestsResult = {
+  __typename?: 'ResetRefTestsResult';
+  errors: Array<ResetRefTestsError>;
+  failed: Scalars['Int']['output'];
+  successfullyReset: Scalars['Int']['output'];
+  totalRequested: Scalars['Int']['output'];
 };
 
-export type ReviveExpiredRefTestPayload = {
-  __typename?: 'ReviveExpiredRefTestPayload';
-  errors?: Maybe<Array<ReviveExpiredRefTestError>>;
-  refTest?: Maybe<RefTest>;
+export type ReviveExpiredRefTestsInput = {
+  refTestIds: Array<Scalars['UUID']['input']>;
+};
+
+export type ReviveExpiredRefTestsPayload = {
+  __typename?: 'ReviveExpiredRefTestsPayload';
+  reviveRefTestsResult?: Maybe<ReviveRefTestsResult>;
+};
+
+export type ReviveRefTestsError = {
+  __typename?: 'ReviveRefTestsError';
+  errorMessage: Scalars['String']['output'];
+  refTestId: Scalars['UUID']['output'];
+};
+
+export type ReviveRefTestsResult = {
+  __typename?: 'ReviveRefTestsResult';
+  errors: Array<ReviveRefTestsError>;
+  failed: Scalars['Int']['output'];
+  successfullyRevived: Scalars['Int']['output'];
+  totalRequested: Scalars['Int']['output'];
 };
 
 export type SaveRefTestProgressError = InvalidRefTestStatusError | RefTestNotFoundError;
@@ -814,6 +836,7 @@ export type UpdateRefTestDetailsInput = {
   firstName: Scalars['String']['input'];
   lastName: Scalars['String']['input'];
   refTestId: Scalars['UUID']['input'];
+  resendInvitation?: Scalars['Boolean']['input'];
 };
 
 export type UpdateRefTestDetailsPayload = {
@@ -911,12 +934,12 @@ export type GetScoreConfigurationQueryVariables = Exact<{ [key: string]: never; 
 
 export type GetScoreConfigurationQuery = { __typename?: 'Query', scoreConfiguration: { __typename?: 'ScoreConfiguration', passingPercentage: number } };
 
-export type CreateBulkRefTestsMutationVariables = Exact<{
-  input: CreateBulkRefTestsInput;
+export type CreateRefTestsMutationVariables = Exact<{
+  input: CreateRefTestsInput;
 }>;
 
 
-export type CreateBulkRefTestsMutation = { __typename?: 'Mutation', createBulkRefTests: { __typename?: 'CreateBulkRefTestsPayload', bulkRefTestsResult?: { __typename?: 'BulkRefTestsResult', totalRequested: number, successfullyCreated: number, failed: number, errors: Array<{ __typename?: 'BulkCreationError', errorMessage: string, user: { __typename?: 'User', firstName: string, lastName: string, email: string } }> } | null } };
+export type CreateRefTestsMutation = { __typename?: 'Mutation', createRefTests: { __typename?: 'CreateRefTestsPayload', createRefTestsResult?: { __typename?: 'CreateRefTestsResult', totalRequested: number, successfullyCreated: number, failed: number, errors: Array<{ __typename?: 'CreateRefTestsError', errorMessage: string, user: { __typename?: 'User', firstName: string, lastName: string, email: string } }> } | null } };
 
 export type DeleteRefTestsMutationVariables = Exact<{
   input: DeleteRefTestsInput;
@@ -1161,10 +1184,10 @@ export const GetScoreConfigurationDocument = gql`
       super(apollo);
     }
   }
-export const CreateBulkRefTestsDocument = gql`
-    mutation CreateBulkRefTests($input: CreateBulkRefTestsInput!) {
-  createBulkRefTests(input: $input) {
-    bulkRefTestsResult {
+export const CreateRefTestsDocument = gql`
+    mutation CreateRefTests($input: CreateRefTestsInput!) {
+  createRefTests(input: $input) {
+    createRefTestsResult {
       totalRequested
       successfullyCreated
       failed
@@ -1184,8 +1207,8 @@ export const CreateBulkRefTestsDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class CreateBulkRefTestsGQL extends Apollo.Mutation<CreateBulkRefTestsMutation, CreateBulkRefTestsMutationVariables> {
-    override document = CreateBulkRefTestsDocument;
+  export class CreateRefTestsGQL extends Apollo.Mutation<CreateRefTestsMutation, CreateRefTestsMutationVariables> {
+    override document = CreateRefTestsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

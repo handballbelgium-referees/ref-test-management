@@ -31,7 +31,7 @@
       "title": "Quick Actions",
       "create": {
         "title": "Create RefTests",
-        "description": "Create RefTests in bulk"
+        "description": "Create new RefTests"
       },
       "manage": {
         "title": "Manage RefTests",
@@ -40,9 +40,9 @@
     },
     "about": {
       "title": "RefTest Management System",
-      "description": "This application manages handball rules RefTests. Administrators can create RefTests in bulk for multiple users, send email invitations, track RefTest progress and completion status, filter and sort RefTests by various criteria, and view performance analytics including scores and completion rates. RefTests support {{count}} languages ({{languages}}).",
-      "bulk": {
-        "title": "Bulk RefTest Creation",
+      "description": "This application manages handball rules RefTests. Administrators can create RefTests for multiple users, send email invitations, track RefTest progress and completion status, filter and sort RefTests by various criteria, and view performance analytics including scores and completion rates. RefTests support {{count}} languages ({{languages}}).",
+      "creation": {
+        "title": "RefTest Creation",
         "description": "Create RefTests for multiple users at once. Each RefTest is assigned to a specific user with unique tracking capabilities."
       },
       "management": {
@@ -160,16 +160,12 @@
         "subtitle": "Get started by creating your first RefTests",
         "action": "Create RefTests"
       },
-      "bulk": {
+      "actions": {
         "reftest_selected": "RefTest selected",
         "reftests_selected": "RefTests selected",
-        "send_invitations": "Send Invitations",
-        "send_results": "Send Results",
-        "generate_report": "Send Report",
-        "delete": "Delete"
-      },
-      "actions": {
         "send_invitation": "Send Invitation",
+        "send_invitations": "Send Invitations",
+        "send_result": "Send Result",
         "send_results": "Send Results",
         "generate_report": "Send Report",
         "delete": "Delete"
@@ -300,10 +296,10 @@
           "email_invalid": "Please enter a valid email address",
           "count": "{{count}} participant",
           "count_other": "{{count}} participants",
-          "bulk_import": "Bulk Import",
-          "bulk_import_label": "Paste participant data (one per line)",
-          "bulk_import_hint": "Format: \"First name Last name email\" (all fields required)",
-          "bulk_import_button": "Import",
+          "import": "Import",
+          "import_label": "Paste participant data (one per line)",
+          "import_hint": "Format: \"First name Last name email\" (all fields required)",
+          "import_button": "Import",
           "first_name": "First Name",
           "first_name_placeholder": "John",
           "last_name": "Last Name",
@@ -336,14 +332,14 @@
           "label": "Specific Question Numbers (Optional)",
           "placeholder": "1.1, 1.2, 2.3",
           "hint": "Comma-separated list of specific question numbers to include. Leave empty for random questions.",
-          "bulk_import": "Bulk Import",
+          "import": "Import",
           "count": "{{count}} question selected",
           "count_other": "{{count}} questions selected",
           "search_placeholder": "Search and add questions by number...",
-          "bulk_import_label": "Paste question numbers (one per line or comma-separated)",
-          "bulk_import_hint": "Format: One question number per line, or comma-separated",
-          "bulk_import_button": "Import",
-          "bulk_import_importing": "Importing...",
+          "import_label": "Paste question numbers (one per line or comma-separated)",
+          "import_hint": "Format: One question number per line, or comma-separated",
+          "import_button": "Import",
+          "importing": "Importing...",
           "no_results": "No questions found",
           "table_number": "Number",
           "table_question": "Question",

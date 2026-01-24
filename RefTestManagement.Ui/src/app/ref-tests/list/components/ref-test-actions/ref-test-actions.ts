@@ -2,15 +2,15 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
-  selector: 'app-ref-test-bulk-actions',
+  selector: 'app-ref-test-actions',
   imports: [TranslatePipe],
-  templateUrl: './ref-test-bulk-actions.html',
+  templateUrl: './ref-test-actions.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },
 })
-export class RefTestBulkActions {
+export class RefTestActions {
   readonly selectedCount = input.required<number>();
   readonly hasCompletedRefTestsSelected = input.required<boolean>();
   readonly hasPendingRefTestsSelected = input.required<boolean>();
