@@ -17,10 +17,57 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.1")
+                .HasAnnotation("ProductVersion", "10.0.2")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
+
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Job", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Attempts")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("ErrorMessage")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("ExecuteAfter")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("JobType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("LockedUntil")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Payload")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(450)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CreatedAt")
+                        .HasDatabaseName("IX_Jobs_CreatedAt");
+
+                    b.HasIndex("Status", "ExecuteAfter", "LockedUntil")
+                        .HasDatabaseName("IX_Jobs_Status_ExecuteAfter_LockedUntil");
+
+                    b.ToTable("Jobs");
+                });
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTest", b =>
                 {
@@ -53,8 +100,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<bool>("InvitationSent")
-                        .HasColumnType("bit");
+                    b.Property<DateTime?>("InvitationSentAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Language")
                         .HasColumnType("nvarchar(max)");
@@ -81,8 +128,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.Property<int?>("QuestionScore")
                         .HasColumnType("int");
 
-                    b.Property<bool>("ResultsSent")
-                        .HasColumnType("bit");
+                    b.Property<DateTime?>("ResultsSentAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("SelectedAnswerIds")
                         .IsRequired()

@@ -1,15 +1,16 @@
-﻿using Handball.Belgium.RefTestManagement.Application.Models;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
-using Handball.Belgium.RefTestManagement.Domain;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
 
 /// <summary>
 /// GraphQL type extension for RefTest to add resolved fields
 /// </summary>
-public class RefTestType : ObjectType<RefTest>
+public class RefTestType : ObjectType<RefTestDto>
 {
-    protected override void Configure(IObjectTypeDescriptor<RefTest> descriptor)
+    protected override void Configure(IObjectTypeDescriptor<RefTestDto> descriptor)
     {
         descriptor.Name(nameof(RefTest));
         descriptor.Description("RefTest");
@@ -22,13 +23,9 @@ public class RefTestType : ObjectType<RefTest>
             .Description("The RefTest id");
 
         descriptor.Field(x => x.Title)
-            .Description("Title of the RefTest")
-            .Resolve(ctx =>
-                ctx.DataLoader<RefTestTitleByIdDataLoader>()
-                    .LoadAsync(ctx.Parent<RefTest>().TitleId, ctx.RequestAborted));
+            .Description("Title of the RefTest");
 
-        descriptor.Field("name").Description("Name of the user who started the RefTest (e.g., )").Resolve(ctx =>
-            $"{ctx.Parent<RefTest>().FirstName} {ctx.Parent<RefTest>().LastName}");
+        descriptor.Field(x => x.FullName).Name("name").Description("Name of the user who started the RefTest (e.g., )");
         descriptor.Field(x => x.Email).Description("Email of the user who started the RefTest");
         descriptor.Field(x => x.InvitationSent).Description("Indication of invitation was sent").Authorize();
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Maximum time in minutes for the RefTest");
@@ -45,7 +42,8 @@ public class RefTestType : ObjectType<RefTest>
         descriptor.Field(x => x.WrongAnswerIds).Description("List of answer IDs that were answered incorrectly");
         descriptor.Field(x => x.ResultsSent).Description("Indication of results were sent").Authorize();
         descriptor.Field(x => x.Status)
-            .Description("Status of the RefTest (e.g., InProgress, Completed, Expired). Expired tests are automatically processed by a background service.")
+            .Description(
+                "Status of the RefTest (e.g., InProgress, Completed, Expired). Expired tests are automatically processed by a background service.")
             .Authorize();
         descriptor.Field(x => x.CurrentQuestionIndex).Description("Index of the current question");
         descriptor.Field(x => x.SelectedAnswerIds).Description("List of selected answer IDs");
@@ -55,7 +53,7 @@ public class RefTestType : ObjectType<RefTest>
             .Argument("includeIsCorrect", x => x.Type<BooleanType>().DefaultValue(false))
             .Argument("randomAnswerOrder", x => x.Type<BooleanType>().DefaultValue(true))
             .Resolve((ctx, ct) =>
-                GetQuestions(ctx.Parent<RefTest>(), ctx.Service<IIhfRulesQuestionsService>(),
+                GetQuestions(ctx.Parent<RefTestDto>().QuestionIds, ctx.Service<IIhfRulesQuestionsService>(),
                     ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"),
                     ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
     }
@@ -64,13 +62,13 @@ public class RefTestType : ObjectType<RefTest>
     /// Get questions for this RefTest
     /// </summary>
     private static Task<List<Question>> GetQuestions(
-        [Parent] RefTest refTest,
-        [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
-        [Argument] bool includeNumber,
-        [Argument] bool includeIsCorrect,
-        [Argument] bool randomAnswerOrder,
+        IReadOnlyList<string> questionIds,
+        IIhfRulesQuestionsService ihfRulesQuestionsService,
+        bool includeNumber,
+        bool includeIsCorrect,
+        bool randomAnswerOrder,
         CancellationToken cancellationToken)
-        => ihfRulesQuestionsService.GetQuestionsByIdAsync(refTest.QuestionIds, includeNumber, includeIsCorrect,
+        => ihfRulesQuestionsService.GetQuestionsByIdAsync(questionIds, includeNumber, includeIsCorrect,
             randomAnswerOrder,
             cancellationToken);
 }

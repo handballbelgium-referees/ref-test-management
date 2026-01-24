@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 
-namespace Handball.Belgium.RefTestManagement.Domain;
+namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 public class RefTest
 {
@@ -41,7 +42,7 @@ public class RefTest
     public string Email { get; private set; }
     public string Token { get; private set; }
     public bool SendInvitationsAutomatically { get; private set; }
-    public bool InvitationSent { get; private set; }
+    public DateTime? InvitationSentAt { get; private set; }
     public int NumberOfQuestions { get; private set; }
     public int MaxTimeInMinutes { get; private set; }
     public List<string> QuestionIds { get; private set; }
@@ -59,7 +60,7 @@ public class RefTest
     public List<string> WrongQuestionIds { get; private set; } = [];
     public List<string> WrongAnswerIds { get; private set; } = [];
     public bool SendResultsAutomatically { get; private set; }
-    public bool ResultsSent { get; private set; }
+    public DateTime? ResultsSentAt { get; private set; }
     public string? Language { get; private set; }
     
     [NotMapped]
@@ -99,7 +100,7 @@ public class RefTest
 
     public void SendInvitation()
     {
-        InvitationSent = true;
+        InvitationSentAt = DateTime.UtcNow;
     }
 
     public void Start()
@@ -141,7 +142,7 @@ public class RefTest
     
     public void SendResults()
     {
-        ResultsSent = true;
+        ResultsSentAt = DateTime.UtcNow;
     }
 
     public void Expire()

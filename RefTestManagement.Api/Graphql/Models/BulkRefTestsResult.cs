@@ -1,4 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Domain;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Models;
 
@@ -7,7 +7,7 @@ public class BulkRefTestsResult
     public int TotalRequested { get; set; }
     public int SuccessfullyCreated { get; set; }
     public int Failed { get; set; }
-    public List<RefTest> CreatedRefTests { get; set; } = [];
+    public List<RefTestDto> CreatedRefTests { get; set; } = [];
     public List<BulkCreationError> Errors { get; set; } = [];
 }
 

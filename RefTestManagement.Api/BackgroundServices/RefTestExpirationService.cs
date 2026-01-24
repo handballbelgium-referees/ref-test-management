@@ -1,9 +1,7 @@
-﻿using Handball.Belgium.RefTestManagement.Api.Graphql;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
-using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
-using Handball.Belgium.RefTestManagement.Domain;
+﻿using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -11,9 +9,10 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 
 
 /// <summary>
-/// Background service that periodically checks for expired RefTests and updates their status
+/// Background service that checks for expired RefTests and enqueues specific jobs to handle them.
+/// This approach is more efficient than processing all tests - it only creates jobs for tests that need action.
 /// </summary>
-public partial class RefTestExpirationService : BackgroundService
+public class RefTestExpirationService : BackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<RefTestExpirationService> _logger;
@@ -24,51 +23,20 @@ public partial class RefTestExpirationService : BackgroundService
     public RefTestExpirationService(
         IServiceProvider serviceProvider,
         ILogger<RefTestExpirationService> logger,
-        BackgroundServiceConfiguration? configuration = null)
+        RefTestExpirationConfiguration? configuration = null)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         
-        configuration ??= new BackgroundServiceConfiguration();
+        configuration ??= new RefTestExpirationConfiguration();
         _checkInterval = TimeSpan.FromMinutes(configuration.ExpirationCheckIntervalMinutes);
         _startupDelay = TimeSpan.FromSeconds(configuration.StartupDelaySeconds);
         _expirationIfNotStarted = configuration.ExpirationIfNotStarted;
     }
 
-    // High-performance logging using source generators
-    [LoggerMessage(Level = LogLevel.Information, Message = "RefTest Expiration Service is starting")]
-    partial void LogServiceStarting();
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "RefTest Expiration Service is stopping")]
-    partial void LogServiceStopping();
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Error occurred while processing expired RefTests")]
-    partial void LogProcessingError(Exception ex);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "No potentially expired RefTests found")]
-    partial void LogNoPotentiallyExpiredTests();
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Checking {count} potentially expired RefTests")]
-    partial void LogCheckingExpiredTests(int count);
-
-    [LoggerMessage(Level = LogLevel.Debug, Message = "RefTest {refTestId} is expired: {isExpired}, Status: {status}")]
-    partial void LogRefTestExpirationCheck(Guid refTestId, bool isExpired, RefTestStatus status);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Auto-completed expired RefTest {refTestId} for {email}")]
-    partial void LogAutoCompleted(Guid refTestId, string email);
-
-    [LoggerMessage(Level = LogLevel.Error, Message = "Failed to auto-complete expired RefTest {refTestId} for {email}")]
-    partial void LogAutoCompleteFailed(Exception ex, Guid refTestId, string email);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Expired RefTest {refTestId} in status {status} for {email}")]
-    partial void LogExpired(Guid refTestId, RefTestStatus status, string email);
-
-    [LoggerMessage(Level = LogLevel.Information, Message = "Processed {totalCount} expired RefTests: {expiredCount} expired, {completedCount} auto-completed")]
-    partial void LogProcessingSummary(int totalCount, int expiredCount, int completedCount);
-
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        LogServiceStarting();
+        ServiceLoggerMessages.LogServiceStarting(_logger, nameof(RefTestExpirationService));
 
         // Wait a bit before the first execution to let the app fully start
         await Task.Delay(_startupDelay, stoppingToken);
@@ -77,11 +45,11 @@ public partial class RefTestExpirationService : BackgroundService
         {
             try
             {
-                await ProcessExpiredRefTestsAsync(stoppingToken);
+                await CheckAndEnqueueExpiredTestsAsync(stoppingToken);
             }
             catch (Exception ex)
             {
-                LogProcessingError(ex);
+                ServiceLoggerMessages.LogServiceError(_logger, ex, nameof(RefTestExpirationService));
             }
 
             try
@@ -95,78 +63,81 @@ public partial class RefTestExpirationService : BackgroundService
             }
         }
 
-        LogServiceStopping();
+        ServiceLoggerMessages.LogServiceStopping(_logger, nameof(RefTestExpirationService));
     }
 
-    private async Task ProcessExpiredRefTestsAsync(CancellationToken cancellationToken)
+    private async Task CheckAndEnqueueExpiredTestsAsync(CancellationToken cancellationToken)
     {
         using var scope = _serviceProvider.CreateScope();
         var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var jobEnqueueService = scope.ServiceProvider.GetRequiredService<IJobEnqueueService>();
 
-        // Find all tests that are not completed and might be expired
+        // Find all tests that might be expired - only load what we need for checking
         var potentiallyExpiredTests = await context.RefTests
             .Where(rt => rt.Status != RefTestStatus.Completed && rt.Status != RefTestStatus.Expired)
+            .Select(rt => new { rt.Id, rt.Status, rt.StartedAt, rt.CreatedAt, rt.MaxTimeInMinutes })
             .ToListAsync(cancellationToken);
 
         if (potentiallyExpiredTests.Count == 0)
         {
-            LogNoPotentiallyExpiredTests();
+            ServiceLoggerMessages.LogNoPotentiallyExpiredTests(_logger);
             return;
         }
 
-        LogCheckingExpiredTests(potentiallyExpiredTests.Count);
+        ServiceLoggerMessages.LogCheckingExpiredTests(_logger, potentiallyExpiredTests.Count);
 
-        var expiredCount = 0;
-        var completedCount = 0;
+        var enqueuedCount = 0;
+        var now = DateTime.UtcNow;
 
-        foreach (var refTest in potentiallyExpiredTests)
+        foreach (var test in potentiallyExpiredTests)
         {
-            var isExpired = refTest.IsExpired(_expirationIfNotStarted);
-            LogRefTestExpirationCheck(refTest.Id, isExpired, refTest.Status);
+            var isExpired = IsExpired(test.Status, test.StartedAt, test.CreatedAt, test.MaxTimeInMinutes, now);
             
             if (!isExpired)
                 continue;
 
-            if (refTest.Status == RefTestStatus.InProgress)
-            {
-                // For in-progress tests, complete them automatically
-                try
-                {
-                    var ihfRulesQuestionsService = scope.ServiceProvider.GetRequiredService<IIhfRulesQuestionsService>();
-                    var emailService = scope.ServiceProvider.GetRequiredService<IEmailService>();
-                    
-                    await RefTestMutations.CompleteRefTestAsync(
-                        new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
-                        context,
-                        ihfRulesQuestionsService,
-                        emailService,
-                        cancellationToken);
+            // Determine the action based on status
+            var action = test.Status == RefTestStatus.InProgress 
+                ? RefTestExpirationAction.AutoComplete 
+                : RefTestExpirationAction.MarkAsExpired;
 
-                    completedCount++;
-                    LogAutoCompleted(refTest.Id, refTest.Email);
-                }
-                catch (Exception ex)
-                {
-                    LogAutoCompleteFailed(ex, refTest.Id, refTest.Email);
-                }
-            }
-            else
-            {
-                // For other statuses (Pending), just mark as expired
-                refTest.Expire();
-                context.RefTests.Update(refTest);
-                expiredCount++;
-                
-                LogExpired(refTest.Id, refTest.Status, refTest.Email);
-            }
+            // Enqueue a specific job to handle this expired test
+            await jobEnqueueService.EnqueueRefTestExpirationAsync(
+                new RefTestExpirationPayload(test.Id, action), 
+                executeAfter: null, 
+                cancellationToken);
+
+            enqueuedCount++;
+            ServiceLoggerMessages.LogEnqueuedExpirationJob(_logger, action, test.Id);
         }
 
-        if (expiredCount > 0 || completedCount > 0)
+        if (enqueuedCount > 0)
         {
-            await context.SaveChangesAsync(cancellationToken);
-            LogProcessingSummary(expiredCount + completedCount, expiredCount, completedCount);
+            ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, enqueuedCount);
+        }
+    }
+
+    private bool IsExpired(RefTestStatus status, DateTime? startedAt, DateTime createdAt, int maxTimeInMinutes, DateTime now)
+    {
+        switch (status)
+        {
+            case RefTestStatus.InProgress when startedAt.HasValue:
+            {
+                // Check if the test has exceeded its time limit
+                var expirationTime = startedAt.Value.AddMinutes(maxTimeInMinutes);
+                return now >= expirationTime;
+            }
+            case RefTestStatus.Pending:
+            {
+                // Check if the test was never started and is too old
+                var expirationTime = createdAt.Add(_expirationIfNotStarted);
+                return now >= expirationTime;
+            }
+            case RefTestStatus.Completed:
+            case RefTestStatus.Expired:
+            default:
+                return false;
         }
     }
 }
-

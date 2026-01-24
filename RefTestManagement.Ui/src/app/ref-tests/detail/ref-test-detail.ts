@@ -5,6 +5,7 @@ import {
   DestroyRef,
   effect,
   inject,
+  signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import {
@@ -14,55 +15,88 @@ import {
   RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
-import { catchError, map, of, switchMap } from 'rxjs';
-import { GetRefTestByIdGQL, RefTestStatus } from '../../../../graphql/generated';
+import { catchError, EMPTY, finalize, map, switchMap, tap } from 'rxjs';
+import {
+  DeleteRefTestsGQL,
+  GetRefTestByIdGQL,
+  GetRefTestsAllCountsDocument,
+  RefTestStatus,
+  SendRefTestInvitationsGQL,
+  SendRefTestResultsGQL,
+} from '../../../../graphql/generated';
+import { Toast } from '../../services/toast';
+import { DeleteRefTestsDialog } from '../list/components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
+import { SendInvitationsDialog } from '../list/components/dialogs/send-invitations-dialog/send-invitations-dialog';
+import { SendResultsDialog } from '../list/components/dialogs/send-results-dialog/send-results-dialog';
 import { RefTestDetailDataService } from './services/ref-test-detail-data.service';
 
 @Component({
   selector: 'app-ref-test-detail',
-  imports: [TranslatePipe, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [
+    TranslatePipe,
+    RouterLink,
+    RouterLinkActive,
+    RouterOutlet,
+    SendInvitationsDialog,
+    SendResultsDialog,
+    DeleteRefTestsDialog,
+  ],
   providers: [RefTestDetailDataService],
   templateUrl: './ref-test-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RefTestDetail {
-  private readonly route = inject(ActivatedRoute);
-  private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
-  private readonly getRefTestByIdGQL = inject(GetRefTestByIdGQL);
-  private readonly dataService = inject(RefTestDetailDataService);
+  private readonly _route = inject(ActivatedRoute);
+  private readonly _router = inject(Router);
+  private readonly _destroyRef = inject(DestroyRef);
+  private readonly _getRefTestByIdGQL = inject(GetRefTestByIdGQL);
+  private readonly _dataService = inject(RefTestDetailDataService);
+  private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
+  private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
+  private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
+  private readonly _toastService = inject(Toast);
+  private readonly _translateService = inject(TranslateService);
 
   protected readonly RefTestStatus = RefTestStatus;
 
+  // Dialog state
+  protected readonly showSendInvitationDialog = signal(false);
+  protected readonly showSendResultsDialog = signal(false);
+  protected readonly showDeleteDialog = signal(false);
+
+  // Operation state
+  protected readonly sendingInvitation = signal(false);
+  protected readonly sendingResults = signal(false);
+  protected readonly deletingRefTest = signal(false);
+
   protected readonly refTestData = toSignal(
-    this.route.paramMap.pipe(
+    this._route.paramMap.pipe(
       switchMap((params) => {
         const id = params.get('id');
         if (!id) {
-          this.router.navigate(['/ref-tests']);
-          return of(null);
+          this._router.navigate(['/ref-tests']);
+          return EMPTY;
         }
 
-        return this.getRefTestByIdGQL.watch({ variables: { id } }).valueChanges.pipe(
+        return this._getRefTestByIdGQL.watch({ variables: { id } }).valueChanges.pipe(
           onlyCompleteData(),
           map((result) => {
-            if (!result.data?.refTest) {
-              this.router.navigate(['/ref-tests']);
+            if (!result.data.refTest) {
+              this._router.navigate(['/ref-tests']);
               return null;
             }
             return result.data.refTest;
           }),
-          catchError((error) => {
-            console.error('Error loading ref test:', error);
-            this.router.navigate(['/ref-tests']);
-            return of(null);
-          })
+          catchError(() => {
+            this._router.navigate(['/ref-tests']);
+            return EMPTY;
+          }),
         );
       }),
-      takeUntilDestroyed(this.destroyRef)
-    )
+      takeUntilDestroyed(this._destroyRef),
+    ),
   );
 
   constructor() {
@@ -70,12 +104,52 @@ export class RefTestDetail {
     effect(() => {
       const data = this.refTestData();
       if (data) {
-        this.dataService.setRefTest(data);
+        this._dataService.setRefTest(data);
       }
     });
   }
 
   protected readonly loading = computed(() => !this.refTestData());
+
+  // Computed properties for actions
+  protected readonly canSendInvitation = computed(() => {
+    const data = this.refTestData();
+    return data?.status === RefTestStatus.Pending;
+  });
+
+  protected readonly canSendResults = computed(() => {
+    const data = this.refTestData();
+    return data?.status === RefTestStatus.Completed;
+  });
+
+  protected readonly invitationSummary = computed(() => {
+    const data = this.refTestData();
+    if (!data) return { newInvitations: [], resendInvitations: [] };
+
+    const participant = { name: data.name || '', email: data.email || '' };
+    return {
+      newInvitations: data.invitationSent ? [] : [participant],
+      resendInvitations: data.invitationSent ? [participant] : [],
+    };
+  });
+
+  protected readonly resultsSummary = computed(() => {
+    const data = this.refTestData();
+    if (!data) return { newResults: [], resendResults: [] };
+
+    const participant = { name: data.name || '', email: data.email || '' };
+    return {
+      newResults: data.resultsSent ? [] : [participant],
+      resendResults: data.resultsSent ? [participant] : [],
+    };
+  });
+
+  protected readonly refTestsToDelete = computed(() => {
+    const data = this.refTestData();
+    if (!data) return [];
+
+    return [{ name: data.name || '', email: data.email || '' }];
+  });
 
   protected getStatusClass(status: RefTestStatus): string {
     switch (status) {
@@ -92,6 +166,129 @@ export class RefTestDetail {
   }
 
   protected navigateBack(): void {
-    this.router.navigate(['/ref-tests']);
+    this._router.navigate(['/ref-tests']);
+  }
+
+  // ========================================================================
+  // INVITATION OPERATIONS
+  // ========================================================================
+
+  protected openSendInvitationDialog(): void {
+    this.showSendInvitationDialog.set(true);
+  }
+
+  protected confirmSendInvitation(): void {
+    this.showSendInvitationDialog.set(false);
+    const data = this.refTestData();
+    if (!data) return;
+
+    this.sendingInvitation.set(true);
+    this._sendInvitationsGQL
+      .mutate({ variables: { input: { ids: [data.id] } } })
+      .pipe(
+        tap((result) => {
+          if (result.data?.sendInvitations) {
+            this._toastService.success(
+              this._translateService.instant('ref_tests.detail.invitation_sent'),
+            );
+          }
+        }),
+        catchError(() => {
+          this._toastService.error(
+            this._translateService.instant('ref_tests.detail.invitation_error'),
+          );
+          return EMPTY;
+        }),
+        finalize(() => this.sendingInvitation.set(false)),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected cancelSendInvitation(): void {
+    this.showSendInvitationDialog.set(false);
+  }
+
+  // ========================================================================
+  // RESULTS OPERATIONS
+  // ========================================================================
+
+  protected openSendResultsDialog(): void {
+    this.showSendResultsDialog.set(true);
+  }
+
+  protected confirmSendResults(): void {
+    this.showSendResultsDialog.set(false);
+    const data = this.refTestData();
+    if (!data) return;
+
+    this.sendingResults.set(true);
+    this._sendResultsGQL
+      .mutate({ variables: { input: { ids: [data.id] } } })
+      .pipe(
+        tap((result) => {
+          if (result.data?.sendResults) {
+            this._toastService.success(
+              this._translateService.instant('ref_tests.detail.results_sent'),
+            );
+          }
+        }),
+        catchError(() => {
+          this._toastService.error(
+            this._translateService.instant('ref_tests.detail.results_error'),
+          );
+          return EMPTY;
+        }),
+        finalize(() => this.sendingResults.set(false)),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected cancelSendResults(): void {
+    this.showSendResultsDialog.set(false);
+  }
+
+  // ========================================================================
+  // DELETE OPERATIONS
+  // ========================================================================
+
+  protected openDeleteDialog(): void {
+    this.showDeleteDialog.set(true);
+  }
+
+  protected confirmDelete(): void {
+    this.showDeleteDialog.set(false);
+    const data = this.refTestData();
+    if (!data) return;
+
+    this.deletingRefTest.set(true);
+    this._deleteRefTestsGQL
+      .mutate({
+        variables: { input: { ids: [data.id] } },
+        refetchQueries: [{ query: GetRefTestsAllCountsDocument }],
+      })
+      .pipe(
+        tap((result) => {
+          if (result.data?.deleteRefTests) {
+            this._toastService.success(
+              this._translateService.instant('ref_tests.detail.delete_success'),
+            );
+            // Navigate back to list after successful delete
+            this._router.navigate(['/ref-tests']);
+          }
+        }),
+        catchError(() => {
+          this._toastService.error(this._translateService.instant('ref_tests.detail.delete_error'));
+          return EMPTY;
+        }),
+        finalize(() => this.deletingRefTest.set(false)),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  protected cancelDelete(): void {
+    this.showDeleteDialog.set(false);
   }
 }
