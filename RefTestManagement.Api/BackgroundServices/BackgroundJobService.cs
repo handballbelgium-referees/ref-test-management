@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
-using Handball.Belgium.RefTestManagement.Api.Graphql;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -325,30 +324,33 @@ public class BackgroundJobService : BackgroundService
 
         try
         {
-            if (payload.Action == RefTestExpirationAction.AutoComplete && refTest.Status == RefTestStatus.InProgress)
+            switch (payload.Action)
             {
-                // Auto-complete the in-progress test
-                var ihfRulesQuestionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
-                var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
-                var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
+                case RefTestExpirationAction.AutoComplete when refTest.Status == RefTestStatus.InProgress:
+                {
+                    // Auto-complete the in-progress test
+                    var ihfRulesQuestionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
+                    var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
+                    var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
                 
-                await RefTestMutations.CompleteRefTestAsync(
-                    new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
-                    context,
-                    ihfRulesQuestionsService,
-                    jobEnqueueService,
-                    emailConfiguration,
-                    cancellationToken);
+                await RefTestLifecycleMutations.CompleteRefTestAsync(
+                        new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
+                        context,
+                        ihfRulesQuestionsService,
+                        jobEnqueueService,
+                        emailConfiguration,
+                        cancellationToken);
 
-                ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
-            }
-            else if (payload.Action == RefTestExpirationAction.MarkAsExpired)
-            {
-                // Mark as expired (for pending tests)
-                refTest.Expire();
-                await context.SaveChangesAsync(cancellationToken);
+                    ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
+                    break;
+                }
+                case RefTestExpirationAction.MarkAsExpired:
+                    // Mark as expired (for pending tests)
+                    refTest.Expire();
+                    await context.SaveChangesAsync(cancellationToken);
                 
-                ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
+                    ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
+                    break;
             }
         }
         catch (Exception ex)
