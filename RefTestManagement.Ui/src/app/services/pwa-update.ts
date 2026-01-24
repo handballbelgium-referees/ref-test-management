@@ -24,7 +24,6 @@ export class PwaUpdate {
    */
   initializeUpdateCheck(destroyRef: DestroyRef): void {
     if (!this._swUpdate.isEnabled) {
-      console.log('Service Worker is not enabled');
       return;
     }
 
@@ -35,7 +34,7 @@ export class PwaUpdate {
     interval(3600000)
       .pipe(
         takeUntilDestroyed(destroyRef),
-        switchMap(() => this._swUpdate.checkForUpdate())
+        switchMap(() => this._swUpdate.checkForUpdate()),
       )
       .subscribe();
 

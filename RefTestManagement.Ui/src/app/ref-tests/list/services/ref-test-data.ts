@@ -1,15 +1,15 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { computed, DestroyRef, inject, Injectable } from '@angular/core';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApolloClient } from '@apollo/client';
-import { catchError, finalize, map, of, tap } from 'rxjs';
+import { onlyCompleteData } from 'apollo-angular';
+import { catchError, finalize, map, of, switchMap, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
   GenerateReportGQL,
   GetRefTestsAllCountsGQL,
+  GetRefTestsAllCountsQuery,
   GetRefTestsGQL,
   GetRefTestsQuery,
-  RefTestFilterInput,
-  RefTestSortInput,
   RefTestStatus,
   SendRefTestInvitationsGQL,
   SendRefTestResultsGQL,
@@ -32,65 +32,119 @@ export class RefTestData {
   private readonly _queryBuilder = inject(RefTestQueryBuilder);
 
   private readonly _queryRef = this._getRefTestsGQL.watch({
-    variables: this.getInitialQueryVariables(),
-    fetchPolicy: 'cache-first',
-    notifyOnNetworkStatusChange: true,
+    variables: {
+      first: this._filterState.filter().pagingInfo.first,
+      after: this._filterState.filter().pagingInfo.after,
+      where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
+      order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
+    },
+  });
+
+  private readonly endCursor = computed(() => {
+    return this.queryResult()?.data?.refTests?.pageInfo?.endCursor ?? undefined;
   });
 
   private readonly _countsQueryRef = this._getRefTestsAllCountsGQL.watch({
-    variables: this.getInitialCountsVariables(),
-    fetchPolicy: 'cache-first',
-    notifyOnNetworkStatusChange: true,
+    variables: {
+      allWhere: this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+        excludeStatus: true,
+      }),
+      pendingWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Pending } },
+      ),
+      inProgressWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.InProgress } },
+      ),
+      completedWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Completed } },
+      ),
+      expiredWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Expired } },
+      ),
+    },
   });
 
-  private getInitialQueryVariables() {
-    const filter = this._filterState.filter();
-    const where = this._queryBuilder.buildWhereFilter(filter);
-    const order = this._queryBuilder.buildOrderClause(filter);
-    return {
-      first: REF_TEST_CONFIG.PAGE_SIZE,
-      after: undefined,
-      where,
-      order,
-    };
-  }
+  readonly queryResult = toSignal(
+    toObservable(this._filterState.filter).pipe(
+      switchMap((filter) => {
+        const where = this._queryBuilder.buildWhereFilter(filter);
+        const order = this._queryBuilder.buildOrderClause(filter);
+        this._queryRef.setVariables({
+          where,
+          order,
+          first: filter.pagingInfo.first,
+          after: filter.pagingInfo.after,
+        });
 
-  private getInitialCountsVariables() {
-    const filter = this._filterState.filter();
-    const baseFilter = this._queryBuilder.buildWhereFilter(filter, {
-      excludeStatus: true,
-    });
+        return this._queryRef.valueChanges;
+      }),
+    ),
+  );
 
-    return {
-      allWhere: baseFilter,
-      pendingWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.Pending },
-      }),
-      inProgressWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.InProgress },
-      }),
-      completedWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.Completed },
-      }),
-      expiredWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.Expired },
-      }),
-    };
-  }
-
-  // Expose observables for direct subscription (avoid effects with Apollo watch)
-  readonly loading$ = this._queryRef.valueChanges.pipe(map((result) => result.loading));
-  readonly queryResult$ = this._queryRef.valueChanges;
-
-  // Signals for template usage
-  readonly loading = toSignal(this.loading$, {
-    initialValue: true,
+  readonly loading = computed(() => {
+    return this.queryResult()?.loading ?? false;
   });
 
-  readonly queryResult = toSignal(this.queryResult$);
+  readonly hasNextPage = computed(() => {
+    return this.queryResult()?.data?.refTests?.pageInfo?.hasNextPage ?? false;
+  });
+
+  readonly showPerformanceWarning = computed(() => {
+    const loadedCount = this.queryResult()?.data?.refTests?.edges?.length ?? 0;
+    return (
+      loadedCount >= REF_TEST_CONFIG.PERFORMANCE_WARNING_THRESHOLD &&
+      loadedCount < REF_TEST_CONFIG.MAX_LOADABLE_ITEMS &&
+      this.hasNextPage()
+    );
+  });
+
+  readonly canLoadMore = computed(() => {
+    const loadedCount = this.queryResult()?.data?.refTests?.edges?.length ?? 0;
+    return this.hasNextPage() && loadedCount < REF_TEST_CONFIG.MAX_LOADABLE_ITEMS;
+  });
+
+  readonly isAtMaxCapacity = computed(() => {
+    const loadedCount = this.queryResult()?.data?.refTests?.edges?.length ?? 0;
+    return loadedCount >= REF_TEST_CONFIG.MAX_LOADABLE_ITEMS && this.hasNextPage();
+  });
 
   readonly statusCounts = toSignal(
-    this._countsQueryRef.valueChanges.pipe(
+    toObservable(this._filterState.filter).pipe(
+      switchMap((filter) => {
+        const baseFilter = this._queryBuilder.buildWhereFilter(filter, {
+          excludeStatus: true,
+        });
+        const variables = {
+          allWhere: baseFilter,
+          pendingWhere: this._queryBuilder.mergeFilters(baseFilter, {
+            status: { eq: RefTestStatus.Pending },
+          }),
+          inProgressWhere: this._queryBuilder.mergeFilters(baseFilter, {
+            status: { eq: RefTestStatus.InProgress },
+          }),
+          completedWhere: this._queryBuilder.mergeFilters(baseFilter, {
+            status: { eq: RefTestStatus.Completed },
+          }),
+          expiredWhere: this._queryBuilder.mergeFilters(baseFilter, {
+            status: { eq: RefTestStatus.Expired },
+          }),
+        };
+        this._countsQueryRef.setVariables(variables);
+        return this._countsQueryRef.valueChanges;
+      }),
+      onlyCompleteData(),
       map((result) => ({
         all: result.data?.all?.totalCount ?? 0,
         pending: result.data?.pending?.totalCount ?? 0,
@@ -110,47 +164,15 @@ export class RefTestData {
     },
   );
 
-  refetchRefTests(variables: {
-    first: number;
-    after?: string;
-    where?: RefTestFilterInput;
-    order?: RefTestSortInput[];
-  }): void {
-    this._queryRef.setVariables(variables);
-  }
-
-  fetchMore(variables: {
-    first: number;
-    after?: string;
-    where?: RefTestFilterInput;
-    order?: RefTestSortInput[];
-  }): Promise<ApolloClient.QueryResult<GetRefTestsQuery>> {
-    return this._queryRef.fetchMore({ variables });
-  }
-
-  updateCountQueries(): void {
-    const filter = this._filterState.filter();
-    const baseFilter = this._queryBuilder.buildWhereFilter(filter, {
-      excludeStatus: true,
+  fetchMore(): Promise<ApolloClient.QueryResult<GetRefTestsQuery>> {
+    return this._queryRef.fetchMore({
+      variables: {
+        first: this._filterState.filter().pagingInfo.first,
+        after: this.endCursor(),
+        where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
+        order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
+      },
     });
-
-    const variables = {
-      allWhere: baseFilter,
-      pendingWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.Pending },
-      }),
-      inProgressWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.InProgress },
-      }),
-      completedWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.Completed },
-      }),
-      expiredWhere: this._queryBuilder.mergeFilters(baseFilter, {
-        status: { eq: RefTestStatus.Expired },
-      }),
-    };
-
-    this._countsQueryRef.setVariables(variables);
   }
 
   deleteRefTests(
@@ -167,7 +189,82 @@ export class RefTestData {
     this._deleteRefTestsGQL
       .mutate({
         variables: { input: { ids } },
-        fetchPolicy: 'no-cache',
+        update: (cache, { data }) => {
+          const refTestCounts = cache.readQuery<GetRefTestsAllCountsQuery>({
+            query: this._getRefTestsAllCountsGQL.document,
+            variables: this._countsQueryRef.variables,
+          });
+
+          if (!refTestCounts) return;
+
+          const deletedRefTests = data?.deleteRefTests.deleteRefTestsResult?.deletedRefTests ?? [];
+
+          // Count deletions by status
+          const deletionCounts = {
+            total: deletedRefTests.length,
+            pending: 0,
+            inProgress: 0,
+            completed: 0,
+            expired: 0,
+          };
+
+          for (const deleted of deletedRefTests) {
+            switch (deleted.status) {
+              case RefTestStatus.Pending:
+                deletionCounts.pending++;
+                break;
+              case RefTestStatus.InProgress:
+                deletionCounts.inProgress++;
+                break;
+              case RefTestStatus.Completed:
+                deletionCounts.completed++;
+                break;
+              case RefTestStatus.Expired:
+                deletionCounts.expired++;
+                break;
+            }
+          }
+
+          // Create new immutable counts object
+          const updatedCounts: GetRefTestsAllCountsQuery = {
+            all: refTestCounts.all
+              ? {
+                  ...refTestCounts.all,
+                  totalCount: refTestCounts.all.totalCount - deletionCounts.total,
+                }
+              : refTestCounts.all,
+            pending: refTestCounts.pending
+              ? {
+                  ...refTestCounts.pending,
+                  totalCount: refTestCounts.pending.totalCount - deletionCounts.pending,
+                }
+              : refTestCounts.pending,
+            inProgress: refTestCounts.inProgress
+              ? {
+                  ...refTestCounts.inProgress,
+                  totalCount: refTestCounts.inProgress.totalCount - deletionCounts.inProgress,
+                }
+              : refTestCounts.inProgress,
+            completed: refTestCounts.completed
+              ? {
+                  ...refTestCounts.completed,
+                  totalCount: refTestCounts.completed.totalCount - deletionCounts.completed,
+                }
+              : refTestCounts.completed,
+            expired: refTestCounts.expired
+              ? {
+                  ...refTestCounts.expired,
+                  totalCount: refTestCounts.expired.totalCount - deletionCounts.expired,
+                }
+              : refTestCounts.expired,
+          };
+
+          cache.writeQuery<GetRefTestsAllCountsQuery>({
+            query: this._getRefTestsAllCountsGQL.document,
+            data: updatedCounts,
+            variables: this._countsQueryRef.variables,
+          });
+        },
       })
       .pipe(
         tap((result) => {

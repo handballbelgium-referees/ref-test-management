@@ -1,4 +1,5 @@
 ﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Models;
 
@@ -16,4 +17,4 @@ public record CreateBulkRefTestsInput(
 public record User(string FirstName, string LastName, string Email);
 
 [OneOf]
-public record Title([property: ID<RefTestTitleDto>]Guid? Id, string? Name);
+public record Title([property: ID<RefTestTitle>]Guid? Id, string? Name);

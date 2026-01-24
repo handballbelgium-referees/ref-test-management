@@ -47,10 +47,9 @@ export class LanguageConfig {
             }));
         }),
         catchError(() => {
-          console.warn('Failed to fetch enabled languages, using defaults');
           return of(DEFAULT_LANGUAGES);
         }),
-        shareReplay(1)
+        shareReplay(1),
       );
     }
     return this._availableLanguages$;
@@ -83,7 +82,7 @@ export class LanguageConfig {
 
         this._translate.use(defaultLang);
         return defaultLang;
-      })
+      }),
     );
   }
 
