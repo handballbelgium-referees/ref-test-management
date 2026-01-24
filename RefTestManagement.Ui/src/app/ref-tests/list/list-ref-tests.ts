@@ -17,22 +17,30 @@ import {
   SortEnumType,
 } from '../../../../graphql/generated';
 import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
-import { ColumnVisibilityMenu } from './components/column-visibility-menu/column-visibility-menu';
 import { DeleteRefTestsDialog } from './components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { GenerateReportDialog } from './components/dialogs/generate-report-dialog/generate-report-dialog';
 import { SendInvitationsDialog } from './components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from './components/dialogs/send-results-dialog/send-results-dialog';
 import { RefTestFiltersCard } from './components/filters/ref-test-filters-card/ref-test-filters-card';
 import { RefTestBulkActions } from './components/ref-test-bulk-actions/ref-test-bulk-actions';
-import { RefTestMobileCard } from './components/ref-test-display/ref-test-mobile-card/ref-test-mobile-card';
-import { RefTestTableRow } from './components/ref-test-display/ref-test-table-row/ref-test-table-row';
+import { RefTestEmptyState } from './components/ref-test-empty-state/ref-test-empty-state';
+import { RefTestListHero } from './components/ref-test-list-hero/ref-test-list-hero';
+import { RefTestListToolbar } from './components/ref-test-list-toolbar/ref-test-list-toolbar';
+import { RefTestMobileList } from './components/ref-test-mobile-list/ref-test-mobile-list';
+import { RefTestPagination } from './components/ref-test-pagination/ref-test-pagination';
+import { RefTestPerformanceWarning } from './components/ref-test-performance-warning/ref-test-performance-warning';
+import { RefTestReportBanner } from './components/ref-test-report-banner/ref-test-report-banner';
+import { RefTestTable } from './components/ref-test-table/ref-test-table';
 import { ColumnVisibilityManager } from './services/column-visibility-manager';
 import { COLUMNS, REF_TEST_CONFIG } from './services/constants';
 import { RefTestData } from './services/ref-test-data';
+import { RefTestFilterActions } from './services/ref-test-filter-actions';
 import { RefTestFilterState } from './services/ref-test-filter-state';
+import { RefTestLocalStateManager } from './services/ref-test-local-state-manager';
 import { RefTestOperationManager } from './services/ref-test-operation-manager';
 import { RefTestQueryBuilder } from './services/ref-test-query-builder';
 import { RefTestSelectionManager } from './services/ref-test-selection-manager';
+import { RefTestUIHelpers } from './services/ref-test-ui-helpers';
 import { RefTestNode, SortField } from './services/types';
 
 /**
@@ -45,22 +53,30 @@ import { RefTestNode, SortField } from './services/types';
     TranslatePipe,
     RefTestFiltersCard,
     RefTestBulkActions,
-    RefTestTableRow,
-    RefTestMobileCard,
-    ColumnVisibilityMenu,
     SendInvitationsDialog,
     SendResultsDialog,
     DeleteRefTestsDialog,
     GenerateReportDialog,
     PullToRefresh,
+    RefTestListHero,
+    RefTestListToolbar,
+    RefTestReportBanner,
+    RefTestEmptyState,
+    RefTestTable,
+    RefTestMobileList,
+    RefTestPerformanceWarning,
+    RefTestPagination,
   ],
   providers: [
     RefTestFilterState,
+    RefTestFilterActions,
     RefTestQueryBuilder,
     RefTestData,
     RefTestSelectionManager,
     RefTestOperationManager,
+    RefTestLocalStateManager,
     ColumnVisibilityManager,
+    RefTestUIHelpers,
   ],
   templateUrl: './list-ref-tests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -77,11 +93,14 @@ export class ListRefTests {
 
   // Services
   protected readonly filterState = inject(RefTestFilterState);
+  protected readonly filterActions = inject(RefTestFilterActions);
   protected readonly queryBuilder = inject(RefTestQueryBuilder);
   protected readonly dataService = inject(RefTestData);
   protected readonly selectionManager = inject(RefTestSelectionManager);
   protected readonly operationManager = inject(RefTestOperationManager);
+  protected readonly localStateManager = inject(RefTestLocalStateManager);
   protected readonly columnVisibility = inject(ColumnVisibilityManager);
+  protected readonly uiHelpers = inject(RefTestUIHelpers);
 
   // ========================================================================
   // CONSTANTS
@@ -95,15 +114,7 @@ export class ListRefTests {
   // UI STATE
   // ========================================================================
   protected readonly isRefreshing = signal(false);
-
-  // ========================================================================
-  // DATA STATE
-  // ========================================================================
   protected readonly loadingMore = signal(false);
-  private readonly _additionalLoadedRefTests = signal<RefTestNode[]>([]);
-  private readonly _deletedRefTestIds = signal<Set<string>>(new Set());
-  private readonly _updatedInvitationIds = signal<Set<string>>(new Set());
-  private readonly _updatedResultsIds = signal<Set<string>>(new Set());
 
   // ========================================================================
   // SEARCH
@@ -203,47 +214,28 @@ export class ListRefTests {
   // COMPUTED VALUES - Apollo Query Results
   // ========================================================================
 
-  protected readonly allLoadedRefTests = computed((): RefTestNode[] => {
-    const queryData = this._queryData();
-    if (!queryData) return [];
+  protected readonly allLoadedRefTests = this.localStateManager.createApplyLocalStateComputed(
+    () => {
+      const queryData = this._queryData();
+      if (!queryData) return [];
 
-    const edges = queryData.edges ?? [];
-    const baseRefTests = edges
-      .filter(
-        (edge): edge is NonNullable<typeof edge> & { node: RefTestNode } => !!edge && !!edge.node,
-      )
-      .map((edge) => edge.node);
-
-    // Include additional loaded tests from pagination, deduplicate by ID
-    const seenIds = new Set<string>();
-    const allTests: RefTestNode[] = [];
-
-    for (const test of [...baseRefTests, ...this._additionalLoadedRefTests()]) {
-      if (!seenIds.has(test.id)) {
-        seenIds.add(test.id);
-        allTests.push(test);
-      }
-    }
-
-    // Apply local operation state
-    const deletedIds = this._deletedRefTestIds();
-    const invitationSentIds = this._updatedInvitationIds();
-    const resultsSentIds = this._updatedResultsIds();
-
-    return allTests
-      .filter((test) => !deletedIds.has(test.id))
-      .map((test) => ({
-        ...test,
-        invitationSent: invitationSentIds.has(test.id) ? true : test.invitationSent,
-        resultsSent: resultsSentIds.has(test.id) ? true : test.resultsSent,
-      }));
-  });
+      const edges = queryData.edges ?? [];
+      return edges
+        .filter(
+          (edge): edge is NonNullable<typeof edge> & { node: RefTestNode } => !!edge && !!edge.node,
+        )
+        .map((edge) => edge.node);
+    },
+  );
 
   // ========================================================================
   // LIFECYCLE
   // ========================================================================
 
   constructor() {
+    // Set callback for filter changes to reset pagination
+    this.filterActions.setOnFilterChangeCallback(() => this.handleFilterChange());
+
     effect(() => {
       if (this.isRefreshing() && !this.loading()) {
         this.isRefreshing.set(false);
@@ -267,8 +259,7 @@ export class ListRefTests {
 
     // Set new timer
     this._searchDebounceTimer = setTimeout(() => {
-      this.filterState.setSearchTerm(searchTerm);
-      this.handleFilterChange();
+      this.filterActions.setSearchTerm(searchTerm);
     }, REF_TEST_CONFIG.SEARCH_DEBOUNCE_MS);
   }
 
@@ -298,11 +289,15 @@ export class ListRefTests {
             .filter((edge): edge is NonNullable<typeof edge> => !!edge && !!edge.node)
             .map((edge) => edge.node as RefTestNode);
 
-          this._additionalLoadedRefTests.update((current) => {
-            const alreadyLoadedIds = new Set([...baseIds, ...current.map((t) => t.id)]);
-            const uniqueNew = newRefTests.filter((t) => !alreadyLoadedIds.has(t.id));
-            return uniqueNew.length > 0 ? [...current, ...uniqueNew] : current;
-          });
+          const alreadyLoadedIds = new Set([
+            ...baseIds,
+            ...this.localStateManager.getAdditionalLoadedRefTests().map((t) => t.id),
+          ]);
+          const uniqueNew = newRefTests.filter((t) => !alreadyLoadedIds.has(t.id));
+
+          if (uniqueNew.length > 0) {
+            this.localStateManager.addLoadedRefTests(uniqueNew);
+          }
         }
       })
       .finally(() => {
@@ -324,39 +319,31 @@ export class ListRefTests {
   }
 
   private resetPagination(): void {
-    this._additionalLoadedRefTests.set([]);
-    this._deletedRefTestIds.set(new Set());
-    this._updatedInvitationIds.set(new Set());
-    this._updatedResultsIds.set(new Set());
+    this.localStateManager.resetAllState();
   }
 
   // ========================================================================
-  // FILTER METHODS
+  // FILTER METHODS (delegated to filter actions)
   // ========================================================================
 
   protected setStatusFilter(status?: RefTestStatus): void {
-    this.filterState.setStatus(status);
-    this.handleFilterChange();
+    this.filterActions.setStatusFilter(status);
   }
 
   protected setTitleFilter(titleId?: string): void {
-    this.filterState.setTitle(titleId);
-    this.handleFilterChange();
+    this.filterActions.setTitleFilter(titleId);
   }
 
   protected setInvitationFilter(invitationSent?: boolean): void {
-    this.filterState.setInvitationSent(invitationSent);
-    this.handleFilterChange();
+    this.filterActions.setInvitationFilter(invitationSent);
   }
 
   protected setResultsFilter(resultsSent?: boolean): void {
-    this.filterState.setResultsSent(resultsSent);
-    this.handleFilterChange();
+    this.filterActions.setResultsFilter(resultsSent);
   }
 
   protected setSorting(sortField: SortField, sortDirection: SortEnumType): void {
-    this.filterState.setSorting(sortField, sortDirection);
-    this.handleFilterChange();
+    this.filterActions.setSorting(sortField, sortDirection);
   }
 
   protected setPerformanceFilters(performance: {
@@ -370,26 +357,19 @@ export class ListRefTests {
     minMaxTimeInMinutes?: number;
     maxMaxTimeInMinutes?: number;
   }): void {
-    this.filterState.setPerformanceFilters(performance);
-    this.handleFilterChange();
+    this.filterActions.setPerformanceFilters(performance);
   }
 
   protected setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
-    this.filterState.setDateRange(type, after, before);
-    this.handleFilterChange();
+    this.filterActions.setDateRange(type, after, before);
   }
 
   protected sortByColumn(field: SortField): void {
-    this.filterState.toggleSortDirection(field);
+    this.filterActions.sortByColumn(field);
   }
 
   protected getAriaSort(field: SortField): 'none' | 'ascending' | 'descending' {
-    const filter = this.filterState.filter();
-    if (filter.sortField !== field) {
-      return 'none';
-    }
-
-    return filter.sortDirection === SortEnumType.Asc ? 'ascending' : 'descending';
+    return this.filterActions.getAriaSort(field);
   }
 
   protected onSearchInput(event: Event): void {
@@ -406,18 +386,11 @@ export class ListRefTests {
   }
 
   // ========================================================================
-  // UI HELPERS
+  // UI HELPERS (delegated to UI helpers service)
   // ========================================================================
 
   protected getStatusClass(status: RefTestStatus): string {
-    const statusClasses: Record<RefTestStatus, string> = {
-      [RefTestStatus.Pending]: 'bg-yellow-100 text-yellow-800',
-      [RefTestStatus.InProgress]: 'bg-blue-100 text-blue-800',
-      [RefTestStatus.Completed]: 'bg-success-100 text-success-800',
-      [RefTestStatus.Expired]: 'bg-red-100 text-red-800',
-    };
-
-    return statusClasses[status] ?? 'bg-neutral-100 text-neutral-800';
+    return this.uiHelpers.getStatusClass(status);
   }
 
   // ========================================================================
@@ -462,12 +435,7 @@ export class ListRefTests {
 
   protected confirmDelete(): void {
     this.operationManager.confirmDelete((deletedIds) => {
-      // Add deleted IDs to the signal to filter them out
-      this._deletedRefTestIds.update((ids) => {
-        const newIds = new Set(ids);
-        deletedIds.forEach((id) => newIds.add(id));
-        return newIds;
-      });
+      this.localStateManager.markAsDeleted(deletedIds);
     });
   }
 
@@ -489,12 +457,7 @@ export class ListRefTests {
 
   protected confirmSendInvitations(): void {
     this.operationManager.confirmSendInvitations(this.allLoadedRefTests(), (sentIds) => {
-      // Add sent IDs to the signal to update their state
-      this._updatedInvitationIds.update((ids) => {
-        const newIds = new Set(ids);
-        sentIds.forEach((id) => newIds.add(id));
-        return newIds;
-      });
+      this.localStateManager.markInvitationsSent(sentIds);
     });
   }
 
@@ -516,12 +479,7 @@ export class ListRefTests {
 
   protected confirmSendResults(): void {
     this.operationManager.confirmSendResults(this.allLoadedRefTests(), (sentIds) => {
-      // Add sent IDs to the signal to update their state
-      this._updatedResultsIds.update((ids) => {
-        const newIds = new Set(ids);
-        sentIds.forEach((id) => newIds.add(id));
-        return newIds;
-      });
+      this.localStateManager.markResultsSent(sentIds);
     });
   }
 
