@@ -149,7 +149,7 @@ export class ListRefTests {
 
   protected readonly totalCount = computed(() => this._queryData()?.totalCount ?? 0);
 
-  protected readonly loading = signal(false);
+  protected readonly loading = this.dataService.loading;
   protected readonly statusCounts = this.dataService.statusCounts;
 
   // Only show main loading spinner on initial load, not during pagination

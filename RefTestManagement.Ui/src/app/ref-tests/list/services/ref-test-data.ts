@@ -93,6 +93,10 @@ export class RefTestData {
     ),
   );
 
+  readonly loading = computed(() => {
+    return this.queryResult()?.loading ?? false;
+  });
+
   readonly hasNextPage = computed(() => {
     return this.queryResult()?.data?.refTests?.pageInfo?.hasNextPage ?? false;
   });
