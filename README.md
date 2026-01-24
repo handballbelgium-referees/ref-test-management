@@ -44,8 +44,17 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Bulk Operations**: Send invitations, results, and delete multiple RefTests efficiently
 - **Real-time Status**: Monitor RefTest completion and participant progress
 - **Detail View**: Dedicated detail page with tabbed interface showing participant info, test details, status, timing, and full question list with answers
-- **Responsive Design**: Optimized mobile and desktop views with customizable column visibility
+- **Responsive Design**:
+  - **Mobile View**: Card-based layout with touch-optimized interactions and select all functionality
+  - **Desktop View**: Responsive table with sortable columns and customizable column visibility
+  - **Adaptive UI**: Seamless transitions between mobile and desktop layouts
+- **Performance Optimizations**:
+  - Efficient count retrieval across all filters with optimized GraphQL queries
+  - Cache-first policy for improved data loading performance
+  - Load more functionality with pagination and maximum capacity handling
+  - Performance warning banners for large result sets
 - **Loading Indicators**: Visual feedback for all asynchronous operations (send, delete)
+- **Report Banners**: Display success or error states for report generation operations
 
 ### 📧 Email Automation
 
@@ -325,7 +334,7 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 
 | Technology                 | Version  | Purpose                                         |
 | -------------------------- | -------- | ----------------------------------------------- |
-| **Angular**                | 21.0.0   | Modern SPA framework with standalone components |
+| **Angular**                | 21.1.0   | Modern SPA framework with standalone components |
 | **TypeScript**             | 5.9.2    | Strict type-checking for reliability            |
 | **Signals**                | Built-in | Reactive state management                       |
 | **TailwindCSS**            | 4.1.12   | Utility-first CSS framework                     |
@@ -338,10 +347,13 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 **Key Patterns:**
 
 - Standalone components (no NgModules)
-- Signal-based state management
+- Signal-based state management with reactive services
 - OnPush change detection strategy
 - Route guards for authentication
 - GraphQL operations in separate `.graphql` files
+- Service-oriented architecture for business logic separation
+- Optimistic UI updates with local state management
+- Cache-first Apollo Client policy for performance
 
 #### DevOps & Tooling
 
@@ -744,7 +756,10 @@ ref-test-management/
 │   │   │   │       ├── services/                 # 🎯 Business Logic Services
 │   │   │   │       │   ├── ref-test-data.ts      # Data fetching and mutations
 │   │   │   │       │   ├── ref-test-filter-state.ts # Filter state management
+│   │   │   │       │   ├── ref-test-filter-actions.ts # Filter action handlers
 │   │   │   │       │   ├── ref-test-query-builder.ts # GraphQL query builder
+│   │   │   │       │   ├── ref-test-local-state-manager.ts # Optimistic UI updates
+│   │   │   │       │   ├── ref-test-ui-helpers.ts # Status and score display helpers
 │   │   │   │       │   ├── types.ts              # Shared TypeScript types
 │   │   │   │       │   └── constants.ts          # Configuration constants
 │   │   │   │       └── components/
@@ -758,6 +773,14 @@ ref-test-management/
 │   │   │   │           ├── ref-test-display/             # 📱 Display Components
 │   │   │   │           │   ├── ref-test-mobile-card/     # Mobile card view
 │   │   │   │           │   └── ref-test-table-row/       # Desktop table row
+│   │   │   │           ├── ref-test-mobile-list/        # 📱 Mobile view container
+│   │   │   │           ├── ref-test-table/              # 🖥️ Desktop table container
+│   │   │   │           ├── ref-test-list-hero/          # Hero section with title
+│   │   │   │           ├── ref-test-list-toolbar/       # Action toolbar
+│   │   │   │           ├── ref-test-pagination/         # Load more pagination
+│   │   │   │           ├── ref-test-performance-warning/ # Performance alerts
+│   │   │   │           ├── ref-test-report-banner/      # Report status display
+│   │   │   │           ├── ref-test-empty-state/        # Empty state placeholder
 │   │   │   │           ├── dialogs/                     # 💬 Modal Dialogs
 │   │   │   │           │   ├── delete-ref-tests-dialog/
 │   │   │   │           │   ├── send-invitations-dialog/
@@ -832,15 +855,17 @@ ref-test-management/
 
 ### Key Directories Explained
 
-| Directory                                   | Purpose                                                  |
-| ------------------------------------------- | -------------------------------------------------------- |
-| `RefTestManagement.Api/Graphql`             | GraphQL schema, queries, mutations, and type definitions |
-| `RefTestManagement.Application/GraphQL`     | External GraphQL client schemas and queries (IHF Rules)  |
-| `RefTestManagement.Infrastructure/Services` | PDF/Excel generation and email delivery (Brevo)          |
-| `RefTestManagement.Ui/src/app/ref-tests`    | RefTest creation, detail view, and management UI         |
-| `RefTestManagement.Ui/src/app/ref-test`     | RefTest-taking experience (welcome, take, results)       |
-| `RefTestManagement.Ui/graphql`              | GraphQL operation files and auto-generated types         |
-| `.github/workflows`                         | CI/CD pipelines for automated testing and deployment     |
+| Directory                                              | Purpose                                                             |
+| ------------------------------------------------------ | ------------------------------------------------------------------- |
+| `RefTestManagement.Api/Graphql`                        | GraphQL schema, queries, mutations, and type definitions            |
+| `RefTestManagement.Application/GraphQL`                | External GraphQL client schemas and queries (IHF Rules)             |
+| `RefTestManagement.Infrastructure/Services`            | PDF/Excel generation and email delivery (Brevo)                     |
+| `RefTestManagement.Ui/src/app/ref-tests`               | RefTest creation, detail view, and management UI                    |
+| `RefTestManagement.Ui/src/app/ref-tests/list`          | List view with mobile/desktop layouts, filters, and bulk operations |
+| `RefTestManagement.Ui/src/app/ref-tests/list/services` | Business logic services for data, filters, and state management     |
+| `RefTestManagement.Ui/src/app/ref-test`                | RefTest-taking experience (welcome, take, results)                  |
+| `RefTestManagement.Ui/graphql`                         | GraphQL operation files and auto-generated types                    |
+| `.github/workflows`                                    | CI/CD pipelines for automated testing and deployment                |
 
 ## ⚙️ Configuration
 
