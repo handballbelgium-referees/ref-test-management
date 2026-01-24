@@ -1,4 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Domain;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Models;
 
@@ -7,7 +7,7 @@ public class SendResultsResult
     public int TotalRequested { get; set; }
     public int SuccessfullySent { get; set; }
     public int Failed { get; set; }
-    public List<RefTest> SentRefTests { get; set; } = [];
+    public List<RefTestDto> SentRefTests { get; set; } = [];
     public List<SendResultError> Errors { get; set; } = [];
 }
 
