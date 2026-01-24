@@ -739,7 +739,7 @@ export type DeleteRefTestsMutationVariables = Exact<{
 }>;
 
 
-export type DeleteRefTestsMutation = { __typename?: 'Mutation', deleteRefTests: { __typename?: 'DeleteRefTestsPayload', deleteRefTestsResult?: { __typename?: 'DeleteRefTestsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedRefTests: Array<{ __typename?: 'RefTest', id: string }>, errors: Array<{ __typename?: 'DeleteRefTestError', refTestId: string, errorMessage: string }> } | null } };
+export type DeleteRefTestsMutation = { __typename?: 'Mutation', deleteRefTests: { __typename?: 'DeleteRefTestsPayload', deleteRefTestsResult?: { __typename?: 'DeleteRefTestsResult', totalRequested: number, successfullyDeleted: number, failed: number, deletedRefTests: Array<{ __typename?: 'RefTest', id: string, status: RefTestStatus }>, errors: Array<{ __typename?: 'DeleteRefTestError', refTestId: string, errorMessage: string }> } | null } };
 
 export type GenerateReportMutationVariables = Exact<{
   input: GenerateRefTestsReportInput;
@@ -923,6 +923,7 @@ export const DeleteRefTestsDocument = gql`
       failed
       deletedRefTests {
         id
+        status
       }
       errors {
         refTestId

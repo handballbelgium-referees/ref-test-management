@@ -2,63 +2,63 @@
 <div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-6 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto">
     @if (loading()) {
-    <div class="animate-pulse">
-      <div class="h-8 bg-white/20 rounded w-1/3 mb-2"></div>
-      <div class="h-4 bg-white/20 rounded w-1/4"></div>
-    </div>
+      <div class="animate-pulse">
+        <div class="h-8 bg-white/20 rounded w-1/3 mb-2"></div>
+        <div class="h-4 bg-white/20 rounded w-1/4"></div>
+      </div>
     } @else if (refTestData()) {
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-      <div class="flex-1 min-w-0">
-        <h1 class="text-2xl md:text-3xl font-bold mb-3 text-white">
-          {{ refTestData()!.title?.value || 'ref_tests.detail.no_title' | translate }}
-        </h1>
-        <div class="flex flex-wrap items-center gap-4 text-sm text-white/90">
-          <div class="flex items-center gap-2">
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-              />
-            </svg>
-            <span class="font-medium">{{ refTestData()!.name }}</span>
-          </div>
-          <span class="text-white/50">•</span>
-          <div class="flex items-center gap-2">
-            <svg
-              class="w-4 h-4"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-              />
-            </svg>
-            <span>{{ refTestData()!.email }}</span>
+      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div class="flex-1 min-w-0">
+          <h1 class="text-2xl md:text-3xl font-bold mb-3 text-white">
+            {{ refTestData()!.title?.value || 'ref_tests.detail.no_title' | translate }}
+          </h1>
+          <div class="flex flex-wrap items-center gap-4 text-sm text-white/90">
+            <div class="flex items-center gap-2">
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                />
+              </svg>
+              <span class="font-medium">{{ refTestData()!.name }}</span>
+            </div>
+            <span class="text-white/50">•</span>
+            <div class="flex items-center gap-2">
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+              <span>{{ refTestData()!.email }}</span>
+            </div>
           </div>
         </div>
+        <div class="shrink-0">
+          <span
+            [class]="getStatusClass(refTestData()!.status)"
+            class="px-3 py-2 inline-flex text-sm font-semibold rounded-lg whitespace-nowrap"
+          >
+            {{ 'ref_tests.list.status.' + refTestData()!.status | translate }}
+          </span>
+        </div>
       </div>
-      <div class="shrink-0">
-        <span
-          [class]="getStatusClass(refTestData()!.status)"
-          class="px-3 py-2 inline-flex text-sm font-semibold rounded-lg whitespace-nowrap"
-        >
-          {{ 'ref_tests.list.status.' + refTestData()!.status | translate }}
-        </span>
-      </div>
-    </div>
     }
   </div>
 </div>
@@ -66,105 +66,206 @@
 <!-- Main Content -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
   @if (loading()) {
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
-    <div
-      class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto mb-4"
-    ></div>
-    <p class="text-neutral-600">{{ 'ref_tests.detail.loading' | translate }}</p>
-  </div>
-  } @else if (refTestData()) {
-  <!-- Back Button -->
-  <div class="mb-6">
-    <button
-      type="button"
-      (click)="navigateBack()"
-      class="group inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-lg px-3 py-2 -ml-3"
-      [attr.aria-label]="'ref_tests.detail.back' | translate"
-    >
-      <svg
-        class="w-5 h-5 transition-transform group-hover:-translate-x-1"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M10 19l-7-7m0 0l7-7m-7 7h18"
-        />
-      </svg>
-      <span class="font-medium">{{ 'ref_tests.detail.back' | translate }}</span>
-    </button>
-  </div>
-
-  <!-- Tabs Navigation -->
-  <div class="bg-white rounded-t-xl shadow-sm border border-neutral-200 border-b-0">
-    <div class="border-b border-neutral-200">
-      <nav
-        class="flex -mb-px"
-        role="tablist"
-        aria-label="{{ 'ref_tests.detail.tabs_aria' | translate }}"
-      >
-        <a
-          [routerLink]="['details']"
-          routerLinkActive="!border-primary-600 !text-primary-600"
-          [routerLinkActiveOptions]="{ exact: false }"
-          class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
-          role="tab"
-        >
-          <div class="flex items-center justify-center gap-2">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{{ 'ref_tests.detail.tabs.details' | translate }}</span>
-          </div>
-        </a>
-
-        <a
-          [routerLink]="['questions']"
-          routerLinkActive="!border-primary-600 !text-primary-600"
-          [routerLinkActiveOptions]="{ exact: false }"
-          class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
-          role="tab"
-        >
-          <div class="flex items-center justify-center gap-2">
-            <svg
-              class="w-5 h-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              aria-hidden="true"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <span>{{ 'ref_tests.detail.tabs.questions' | translate }}</span>
-          </div>
-        </a>
-      </nav>
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+      <div
+        class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600 mx-auto mb-4"
+      ></div>
+      <p class="text-neutral-600">{{ 'ref_tests.detail.loading' | translate }}</p>
     </div>
-  </div>
+  } @else if (refTestData()) {
+    <!-- Back Button and Actions -->
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <button
+        type="button"
+        (click)="navigateBack()"
+        class="group inline-flex items-center gap-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 transition-all focus:outline-none focus:ring-2 focus:ring-primary-500 rounded-lg px-3 py-2 -ml-3"
+        [attr.aria-label]="'ref_tests.detail.back' | translate"
+      >
+        <svg
+          class="w-5 h-5 transition-transform group-hover:-translate-x-1"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          />
+        </svg>
+        <span class="font-medium">{{ 'ref_tests.detail.back' | translate }}</span>
+      </button>
 
-  <!-- Tab Content -->
-  <div class="bg-white rounded-b-xl shadow-sm border border-neutral-200" role="tabpanel">
-    <router-outlet />
-  </div>
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap gap-2 w-full sm:w-auto">
+        @if (canSendInvitation()) {
+          <button
+            type="button"
+            (click)="openSendInvitationDialog()"
+            [disabled]="sendingInvitation()"
+            class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            @if (sendingInvitation()) {
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"
+              ></div>
+            } @else {
+              <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            }
+            {{ 'ref_tests.detail.send_invitation' | translate }}
+          </button>
+        }
+
+        @if (canSendResults()) {
+          <button
+            type="button"
+            (click)="openSendResultsDialog()"
+            [disabled]="sendingResults()"
+            class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            @if (sendingResults()) {
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"
+              ></div>
+            } @else {
+              <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            }
+            {{ 'ref_tests.detail.send_results' | translate }}
+          </button>
+        }
+
+        <button
+          type="button"
+          (click)="openDeleteDialog()"
+          [disabled]="deletingRefTest()"
+          class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (deletingRefTest()) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>
+          } @else {
+            <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
+            </svg>
+          }
+          {{ 'ref_tests.detail.delete' | translate }}
+        </button>
+      </div>
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="bg-white rounded-t-xl shadow-sm border border-neutral-200 border-b-0">
+      <div class="border-b border-neutral-200">
+        <nav
+          class="flex -mb-px"
+          role="tablist"
+          aria-label="{{ 'ref_tests.detail.tabs_aria' | translate }}"
+        >
+          <a
+            [routerLink]="['details']"
+            routerLinkActive="!border-primary-600 !text-primary-600"
+            [routerLinkActiveOptions]="{ exact: false }"
+            class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
+            role="tab"
+          >
+            <div class="flex items-center justify-center gap-2">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{{ 'ref_tests.detail.tabs.details' | translate }}</span>
+            </div>
+          </a>
+
+          <a
+            [routerLink]="['questions']"
+            routerLinkActive="!border-primary-600 !text-primary-600"
+            [routerLinkActiveOptions]="{ exact: false }"
+            class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
+            role="tab"
+          >
+            <div class="flex items-center justify-center gap-2">
+              <svg
+                class="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              <span>{{ 'ref_tests.detail.tabs.questions' | translate }}</span>
+            </div>
+          </a>
+        </nav>
+      </div>
+    </div>
+
+    <!-- Tab Content -->
+    <div class="bg-white rounded-b-xl shadow-sm border border-neutral-200" role="tabpanel">
+      <router-outlet />
+    </div>
   }
 </div>
+
+<!-- Dialogs -->
+@if (refTestData()) {
+  <!-- Send Invitation Dialog -->
+  <app-send-invitations-dialog
+    [show]="showSendInvitationDialog()"
+    [summary]="invitationSummary()"
+    (confirm)="confirmSendInvitation()"
+    (cancel)="cancelSendInvitation()"
+  />
+
+  <!-- Send Results Dialog -->
+  <app-send-results-dialog
+    [show]="showSendResultsDialog()"
+    [summary]="resultsSummary()"
+    (confirm)="confirmSendResults()"
+    (cancel)="cancelSendResults()"
+  />
+
+  <!-- Delete Dialog -->
+  <app-delete-ref-tests-dialog
+    [show]="showDeleteDialog()"
+    [refTests]="refTestsToDelete()"
+    (confirm)="confirmDelete()"
+    (cancel)="cancelDelete()"
+  />
+}

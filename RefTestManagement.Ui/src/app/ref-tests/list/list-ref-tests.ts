@@ -9,7 +9,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { TranslatePipe } from '@ngx-translate/core';
+import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
 import { map } from 'rxjs';
 import {
@@ -17,6 +17,7 @@ import {
   RefTestStatus,
   SortEnumType,
 } from '../../../../graphql/generated';
+import { Toast } from '../../services/toast';
 import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
 import { ColumnVisibilityMenu } from './components/column-visibility-menu/column-visibility-menu';
 import { DeleteRefTestsDialog } from './components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
@@ -63,8 +64,10 @@ export class ListRefTests {
   // ========================================================================
   // DEPENDENCIES
   // ========================================================================
-  private readonly router = inject(Router);
-  private readonly scoreConfigGQL = inject(GetScoreConfigurationGQL);
+  private readonly _router = inject(Router);
+  private readonly _scoreConfigGQL = inject(GetScoreConfigurationGQL);
+  private readonly _toastService = inject(Toast);
+  private readonly _translateService = inject(TranslateService);
 
   // Services
   protected readonly filterState = inject(RefTestFilterState);
@@ -77,6 +80,7 @@ export class ListRefTests {
   protected readonly RefTestStatus = RefTestStatus;
   protected readonly SortEnumType = SortEnumType;
   protected readonly COLUMNS = COLUMNS;
+  protected readonly REF_TEST_CONFIG = REF_TEST_CONFIG;
 
   // ========================================================================
   // UI STATE
@@ -102,15 +106,10 @@ export class ListRefTests {
   // DATA STATE
   // ========================================================================
   protected readonly loadingMore = signal(false);
-  private readonly additionalLoadedRefTests = signal<RefTestNode[]>([]);
-  private readonly deletedRefTestIds = signal<Set<string>>(new Set());
-  private readonly updatedInvitationIds = signal<Set<string>>(new Set());
-  private readonly updatedResultsIds = signal<Set<string>>(new Set());
-
-  private readonly paginationInfo = signal<{
-    endCursor?: string | null;
-    hasNextPage: boolean;
-  } | null>(null);
+  private readonly _additionalLoadedRefTests = signal<RefTestNode[]>([]);
+  private readonly _deletedRefTestIds = signal<Set<string>>(new Set());
+  private readonly _updatedInvitationIds = signal<Set<string>>(new Set());
+  private readonly _updatedResultsIds = signal<Set<string>>(new Set());
 
   // ========================================================================
   // SELECTION STATE
@@ -148,14 +147,14 @@ export class ListRefTests {
   // ========================================================================
   // SEARCH
   // ========================================================================
-  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  private _searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ========================================================================
   // COMPUTED VALUES - Configuration
   // ========================================================================
 
   protected readonly passingPercentage = toSignal(
-    this.scoreConfigGQL.watch().valueChanges.pipe(
+    this._scoreConfigGQL.watch().valueChanges.pipe(
       onlyCompleteData(),
       map((result) => result.data.scoreConfiguration.passingPercentage),
     ),
@@ -165,6 +164,12 @@ export class ListRefTests {
   // ========================================================================
   // COMPUTED VALUES - Data
   // ========================================================================
+
+  // Base computed that reads from the Apollo query result
+  // All other computeds should derive from this to avoid redundant signal reads
+  private readonly _queryData = computed(() => {
+    return this.dataService.queryResult()?.data?.refTests;
+  });
 
   protected readonly refTests = computed((): RefTestNode[] => {
     const allTests = this.allLoadedRefTests();
@@ -181,11 +186,9 @@ export class ListRefTests {
     );
   });
 
-  protected readonly totalCount = computed(
-    () => this.dataService.queryResult()?.data?.refTests?.totalCount ?? 0,
-  );
+  protected readonly totalCount = computed(() => this._queryData()?.totalCount ?? 0);
 
-  protected readonly loading = this.dataService.loading;
+  protected readonly loading = signal(false);
   protected readonly statusCounts = this.dataService.statusCounts;
 
   // Only show main loading spinner on initial load, not during pagination
@@ -278,10 +281,10 @@ export class ListRefTests {
   // ========================================================================
 
   protected readonly allLoadedRefTests = computed((): RefTestNode[] => {
-    const result = this.dataService.queryResult();
-    if (!result?.data?.refTests) return [];
+    const queryData = this._queryData();
+    if (!queryData) return [];
 
-    const edges = result.data.refTests.edges ?? [];
+    const edges = queryData.edges ?? [];
     const baseRefTests = edges
       .filter(
         (edge): edge is NonNullable<typeof edge> & { node: RefTestNode } => !!edge && !!edge.node,
@@ -292,7 +295,7 @@ export class ListRefTests {
     const seenIds = new Set<string>();
     const allTests: RefTestNode[] = [];
 
-    for (const test of [...baseRefTests, ...this.additionalLoadedRefTests()]) {
+    for (const test of [...baseRefTests, ...this._additionalLoadedRefTests()]) {
       if (!seenIds.has(test.id)) {
         seenIds.add(test.id);
         allTests.push(test);
@@ -300,9 +303,9 @@ export class ListRefTests {
     }
 
     // Apply local operation state
-    const deletedIds = this.deletedRefTestIds();
-    const invitationSentIds = this.updatedInvitationIds();
-    const resultsSentIds = this.updatedResultsIds();
+    const deletedIds = this._deletedRefTestIds();
+    const invitationSentIds = this._updatedInvitationIds();
+    const resultsSentIds = this._updatedResultsIds();
 
     return allTests
       .filter((test) => !deletedIds.has(test.id))
@@ -311,36 +314,6 @@ export class ListRefTests {
         invitationSent: invitationSentIds.has(test.id) ? true : test.invitationSent,
         resultsSent: resultsSentIds.has(test.id) ? true : test.resultsSent,
       }));
-  });
-
-  private readonly basePageInfo = computed(() => {
-    const result = this.dataService.queryResult();
-    return result?.data?.refTests?.pageInfo;
-  });
-
-  private readonly endCursor = computed(() => {
-    return this.paginationInfo()?.endCursor ?? this.basePageInfo()?.endCursor;
-  });
-
-  protected readonly hasNextPage = computed(() => {
-    return this.paginationInfo()?.hasNextPage ?? this.basePageInfo()?.hasNextPage ?? false;
-  });
-
-  protected readonly showPerformanceWarning = computed(() => {
-    const loadedCount = this.refTests().length;
-    return (
-      loadedCount >= REF_TEST_CONFIG.PERFORMANCE_WARNING_THRESHOLD &&
-      loadedCount < REF_TEST_CONFIG.MAX_LOADABLE_ITEMS &&
-      this.hasNextPage()
-    );
-  });
-
-  protected readonly canLoadMore = computed(() => {
-    return this.hasNextPage() && this.refTests().length < REF_TEST_CONFIG.MAX_LOADABLE_ITEMS;
-  });
-
-  protected readonly isAtMaxCapacity = computed(() => {
-    return this.refTests().length >= REF_TEST_CONFIG.MAX_LOADABLE_ITEMS && this.hasNextPage();
   });
 
   // ========================================================================
@@ -361,17 +334,16 @@ export class ListRefTests {
 
   private handleFilterChange(): void {
     this.resetPagination();
-    this.refetchData();
   }
 
   private handleSearchChange(searchTerm: string): void {
     // Clear existing timer
-    if (this.searchDebounceTimer) {
-      clearTimeout(this.searchDebounceTimer);
+    if (this._searchDebounceTimer) {
+      clearTimeout(this._searchDebounceTimer);
     }
 
     // Set new timer
-    this.searchDebounceTimer = setTimeout(() => {
+    this._searchDebounceTimer = setTimeout(() => {
       this.filterState.setSearchTerm(searchTerm);
       this.handleFilterChange();
     }, REF_TEST_CONFIG.SEARCH_DEBOUNCE_MS);
@@ -382,33 +354,18 @@ export class ListRefTests {
   // ========================================================================
 
   protected loadMore(): void {
-    if (this.loadingMore() || !this.canLoadMore()) {
+    if (this.loadingMore() || !this.dataService.canLoadMore()) {
       return;
     }
 
     this.loadingMore.set(true);
 
-    const filter = this.filterState.filter();
-    const where = this.queryBuilder.buildWhereFilter(filter);
-    const order = this.queryBuilder.buildOrderClause(filter);
-    const cursor = this.endCursor();
-
     this.dataService
-      .fetchMore({
-        first: REF_TEST_CONFIG.PAGE_SIZE,
-        after: cursor ?? undefined,
-        where,
-        order,
-      })
+      .fetchMore()
       .then((result) => {
         if (result.data?.refTests) {
-          this.paginationInfo.set({
-            endCursor: result.data.refTests.pageInfo?.endCursor,
-            hasNextPage: result.data.refTests.pageInfo?.hasNextPage ?? false,
-          });
-
           const baseIds = new Set(
-            (this.dataService.queryResult()?.data?.refTests?.edges ?? [])
+            (this._queryData()?.edges ?? [])
               .map((e) => e?.node?.id)
               .filter((id): id is string => !!id),
           );
@@ -418,7 +375,7 @@ export class ListRefTests {
             .filter((edge): edge is NonNullable<typeof edge> => !!edge && !!edge.node)
             .map((edge) => edge.node as RefTestNode);
 
-          this.additionalLoadedRefTests.update((current) => {
+          this._additionalLoadedRefTests.update((current) => {
             const alreadyLoadedIds = new Set([...baseIds, ...current.map((t) => t.id)]);
             const uniqueNew = newRefTests.filter((t) => !alreadyLoadedIds.has(t.id));
             return uniqueNew.length > 0 ? [...current, ...uniqueNew] : current;
@@ -441,16 +398,13 @@ export class ListRefTests {
 
     this.isRefreshing.set(true);
     this.resetPagination();
-    this.refetchData();
-    this.dataService.updateCountQueries();
   }
 
   private resetPagination(): void {
-    this.additionalLoadedRefTests.set([]);
-    this.deletedRefTestIds.set(new Set());
-    this.updatedInvitationIds.set(new Set());
-    this.updatedResultsIds.set(new Set());
-    this.paginationInfo.set(null);
+    this._additionalLoadedRefTests.set([]);
+    this._deletedRefTestIds.set(new Set());
+    this._updatedInvitationIds.set(new Set());
+    this._updatedResultsIds.set(new Set());
   }
 
   private addIds(target: WritableSignal<Set<string>>, ids: string[]): void {
@@ -462,19 +416,6 @@ export class ListRefTests {
       const next = new Set(current);
       ids.forEach((id) => next.delete(id));
       return next;
-    });
-  }
-
-  private refetchData(): void {
-    const filter = this.filterState.filter();
-    const where = this.queryBuilder.buildWhereFilter(filter);
-    const order = this.queryBuilder.buildOrderClause(filter);
-
-    this.dataService.refetchRefTests({
-      first: REF_TEST_CONFIG.PAGE_SIZE,
-      after: undefined,
-      where,
-      order,
     });
   }
 
@@ -490,19 +431,16 @@ export class ListRefTests {
   protected setTitleFilter(titleId?: string): void {
     this.filterState.setTitle(titleId);
     this.handleFilterChange();
-    this.dataService.updateCountQueries();
   }
 
   protected setInvitationFilter(invitationSent?: boolean): void {
     this.filterState.setInvitationSent(invitationSent);
     this.handleFilterChange();
-    this.dataService.updateCountQueries();
   }
 
   protected setResultsFilter(resultsSent?: boolean): void {
     this.filterState.setResultsSent(resultsSent);
     this.handleFilterChange();
-    this.dataService.updateCountQueries();
   }
 
   protected setSorting(sortField: SortField, sortDirection: SortEnumType): void {
@@ -523,13 +461,11 @@ export class ListRefTests {
   }): void {
     this.filterState.setPerformanceFilters(performance);
     this.handleFilterChange();
-    this.dataService.updateCountQueries();
   }
 
   protected setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
     this.filterState.setDateRange(type, after, before);
     this.handleFilterChange();
-    this.dataService.updateCountQueries();
   }
 
   protected sortByColumn(field: SortField): void {
@@ -555,7 +491,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected navigateToCreate(): void {
-    this.router.navigate(['/ref-tests/create']);
+    this._router.navigate(['/ref-tests/create']);
   }
 
   // ========================================================================
@@ -650,16 +586,16 @@ export class ListRefTests {
       onStart: () => this.deletingRefTests.set(true),
       onSuccess: (deletedIds) => {
         // Add deleted IDs to the signal to filter them out
-        this.deletedRefTestIds.update((ids) => {
+        this._deletedRefTestIds.update((ids) => {
           const newIds = new Set(ids);
           deletedIds.forEach((id) => newIds.add(id));
           return newIds;
         });
         this.selectedRefTestIds.set(new Set());
-        this.dataService.updateCountQueries();
+        this._toastService.success(this._translateService.instant('ref_tests.list.delete_success'));
       },
-      onError: (error) => {
-        console.error('Error deleting ref tests:', error);
+      onError: () => {
+        this._toastService.error(this._translateService.instant('ref_tests.list.delete_error'));
       },
       onComplete: () => {
         this.removeIds(this.deletingRefTestIds, refTestIds);
@@ -707,15 +643,20 @@ export class ListRefTests {
       onStart: () => this.sendingInvitations.set(true),
       onSuccess: (sentIds) => {
         // Add sent IDs to the signal to update their state
-        this.updatedInvitationIds.update((ids) => {
+        this._updatedInvitationIds.update((ids) => {
           const newIds = new Set(ids);
           sentIds.forEach((id) => newIds.add(id));
           return newIds;
         });
         this.selectedRefTestIds.set(new Set());
+        this._toastService.success(
+          this._translateService.instant('ref_tests.list.invitations_sent'),
+        );
       },
-      onError: (error) => {
-        console.error('Error sending invitations:', error);
+      onError: () => {
+        this._toastService.error(
+          this._translateService.instant('ref_tests.list.invitations_error'),
+        );
       },
       onComplete: () => {
         this.removeIds(this.sendingInvitationIds, refTestIds);
@@ -763,15 +704,16 @@ export class ListRefTests {
       onStart: () => this.sendingResults.set(true),
       onSuccess: (sentIds) => {
         // Add sent IDs to the signal to update their state
-        this.updatedResultsIds.update((ids) => {
+        this._updatedResultsIds.update((ids) => {
           const newIds = new Set(ids);
           sentIds.forEach((id) => newIds.add(id));
           return newIds;
         });
         this.selectedRefTestIds.set(new Set());
+        this._toastService.success(this._translateService.instant('ref_tests.list.results_sent'));
       },
-      onError: (error) => {
-        console.error('Error sending results:', error);
+      onError: () => {
+        this._toastService.error(this._translateService.instant('ref_tests.list.results_error'));
       },
       onComplete: () => {
         this.removeIds(this.sendingResultsIds, refTestIds);
@@ -809,12 +751,17 @@ export class ListRefTests {
         this.scheduleReportDismissal();
         if (result.success) {
           this.selectedRefTestIds.set(new Set());
+          this._toastService.success(
+            this._translateService.instant('ref_tests.list.report_success'),
+          );
+        } else {
+          this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
         }
       },
-      onError: (error) => {
-        console.error('Error generating report:', error);
+      onError: () => {
         this.reportResult.set({ success: false, refTestCount: 0 });
         this.scheduleReportDismissal();
+        this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
       },
       onComplete: () => {
         this.generatingReport.set(false);

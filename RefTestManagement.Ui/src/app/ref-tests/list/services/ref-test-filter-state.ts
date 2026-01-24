@@ -1,5 +1,6 @@
 import { Injectable, signal } from '@angular/core';
 import { RefTestStatus, SortEnumType } from '../../../../../graphql/generated';
+import { REF_TEST_CONFIG } from './constants';
 import { IRefTestFilter, SortField } from './types';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class RefTestFilterState {
     searchTerm: '',
     sortField: 'completedAt',
     sortDirection: SortEnumType.Desc,
+    pagingInfo: { first: REF_TEST_CONFIG.PAGE_SIZE },
   });
 
   readonly filter = this._filter.asReadonly();
@@ -48,6 +50,15 @@ export class RefTestFilterState {
     this.updateFilter({ sortField, sortDirection });
   }
 
+  setEndCursor(endCursor?: string): void {
+    this.updateFilter({
+      pagingInfo: {
+        first: REF_TEST_CONFIG.PAGE_SIZE,
+        after: endCursor,
+      },
+    });
+  }
+
   toggleSortDirection(field: SortField): void {
     const current = this._filter();
     if (current.sortField === field) {
@@ -86,6 +97,7 @@ export class RefTestFilterState {
       searchTerm: '',
       sortField: 'completedAt',
       sortDirection: SortEnumType.Desc,
+      pagingInfo: { first: REF_TEST_CONFIG.PAGE_SIZE },
     });
   }
 }

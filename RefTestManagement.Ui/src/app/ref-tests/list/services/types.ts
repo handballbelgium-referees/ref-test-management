@@ -35,6 +35,7 @@ export interface IRefTestFilter {
   startedBefore?: string;
   completedAfter?: string;
   completedBefore?: string;
+  pagingInfo: IPagingInfo;
 }
 
 export type RefTestNode = NonNullable<
@@ -49,4 +50,9 @@ export interface IReportResult {
 export interface IParticipantInfo {
   name: string;
   email: string;
+}
+
+export interface IPagingInfo {
+  first: number;
+  after?: string;
 }
