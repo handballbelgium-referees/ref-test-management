@@ -12,8 +12,8 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { applyEach, disabled, email, form, FormField, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, delay, forkJoin, map, of, tap } from 'rxjs';
-import { CreateBulkRefTestsGQL, SearchQuestionsByNumberGQL } from '../../../../graphql/generated';
+import { catchError, delay, map, of, tap } from 'rxjs';
+import { CreateBulkRefTestsGQL, GetQuestionsByNumberGQL } from '../../../../graphql/generated';
 import { BulkQuestionImportModal } from './components/bulk-question-import-modal/bulk-question-import-modal';
 import { BulkUserImportModal } from './components/bulk-user-import-modal/bulk-user-import-modal';
 import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
@@ -57,7 +57,7 @@ interface IRefTestFormData {
 export class CreateRefTests {
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _createBulkRefTestsGQL = inject(CreateBulkRefTestsGQL);
-  private readonly _searchQuestionsByNumberGQL = inject(SearchQuestionsByNumberGQL);
+  private readonly _getQuestionsByNumberGQL = inject(GetQuestionsByNumberGQL);
   private readonly _router = inject(Router);
   private readonly _translate = inject(TranslateService);
 
@@ -139,7 +139,7 @@ export class CreateRefTests {
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
     {
       initialValue: this._translate.getCurrentLang(),
-    }
+    },
   );
 
   // Computed signals
@@ -247,28 +247,16 @@ export class CreateRefTests {
     this.loadingBulkQuestions.set(true);
 
     // Validate and add questions
-    const validationRequests = questionNumbers.map((number) =>
-      this._searchQuestionsByNumberGQL.fetch({ variables: { number } }).pipe(
-        map((result) => {
-          const question = result.data?.searchQuestionsByNumber?.[0];
-          return question
-            ? { number: question.number, phrase: question.phrase, isValid: true }
-            : null;
-        }),
-        catchError(() => of(null))
-      )
-    );
-
-    forkJoin(validationRequests)
+    this._getQuestionsByNumberGQL
+      .fetch({ variables: { numbers: questionNumbers } })
       .pipe(
-        map((results) =>
-          results
-            .filter(
-              (r): r is { number: string; phrase: Record<string, string>; isValid: boolean } =>
-                r !== null && (r?.isValid ?? false)
-            )
-            .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number))
-        ),
+        map((result) => {
+          const questions = result.data?.questionsByNumber ?? [];
+          return questions
+            .filter((q) => q.phrase != null)
+            .map((q) => ({ number: q.number, phrase: q.phrase! }))
+            .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number));
+        }),
         tap((validQuestions) => {
           if (validQuestions.length > 0) {
             this.selectedQuestions.update((current) => [...current, ...validQuestions]);
@@ -284,7 +272,7 @@ export class CreateRefTests {
           this.loadingBulkQuestions.set(false);
           return of([]);
         }),
-        takeUntilDestroyed(this._destroyRef)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }
@@ -322,7 +310,7 @@ export class CreateRefTests {
       const current = this.refTestModel();
       // Filter out empty users (all fields empty)
       const nonEmptyUsers = current.users.filter(
-        (user) => user.firstName.trim() || user.lastName.trim() || user.email.trim()
+        (user) => user.firstName.trim() || user.lastName.trim() || user.email.trim(),
       );
       this.refTestModel.set({
         ...current,
@@ -397,7 +385,7 @@ export class CreateRefTests {
                 data.errors.map((e) => ({
                   email: e.user.email,
                   message: e.errorMessage,
-                }))
+                })),
               );
             }
 
@@ -444,7 +432,7 @@ export class CreateRefTests {
           }, 100);
           return of(null);
         }),
-        takeUntilDestroyed(this._destroyRef)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }

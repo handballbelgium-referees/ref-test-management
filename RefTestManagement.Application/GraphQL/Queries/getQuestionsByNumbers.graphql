@@ -1,0 +1,10 @@
+﻿query getQuestionsByNumbers($numbers: [String]) {
+    questions(where: {number: {in: $numbers}} order: {number: ASC}) {
+        nodes {
+            id
+            number
+            phrase
+            translations
+        }
+    }
+}

@@ -6,6 +6,7 @@ mutation DeleteRefTests($input: DeleteRefTestsInput!) {
       failed
       deletedRefTests {
         id
+        status
       }
       errors {
         refTestId
