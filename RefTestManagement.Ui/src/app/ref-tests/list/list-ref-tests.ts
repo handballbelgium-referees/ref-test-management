@@ -5,11 +5,10 @@ import {
   effect,
   inject,
   signal,
-  WritableSignal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
 import { map } from 'rxjs';
 import {
@@ -17,7 +16,6 @@ import {
   RefTestStatus,
   SortEnumType,
 } from '../../../../graphql/generated';
-import { Toast } from '../../services/toast';
 import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
 import { ColumnVisibilityMenu } from './components/column-visibility-menu/column-visibility-menu';
 import { DeleteRefTestsDialog } from './components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
@@ -28,11 +26,14 @@ import { RefTestFiltersCard } from './components/filters/ref-test-filters-card/r
 import { RefTestBulkActions } from './components/ref-test-bulk-actions/ref-test-bulk-actions';
 import { RefTestMobileCard } from './components/ref-test-display/ref-test-mobile-card/ref-test-mobile-card';
 import { RefTestTableRow } from './components/ref-test-display/ref-test-table-row/ref-test-table-row';
+import { ColumnVisibilityManager } from './services/column-visibility-manager';
 import { COLUMNS, REF_TEST_CONFIG } from './services/constants';
 import { RefTestData } from './services/ref-test-data';
 import { RefTestFilterState } from './services/ref-test-filter-state';
+import { RefTestOperationManager } from './services/ref-test-operation-manager';
 import { RefTestQueryBuilder } from './services/ref-test-query-builder';
-import { IParticipantInfo, IReportResult, RefTestNode, SortField } from './services/types';
+import { RefTestSelectionManager } from './services/ref-test-selection-manager';
+import { RefTestNode, SortField } from './services/types';
 
 /**
  * Main component for listing and managing reference tests.
@@ -53,7 +54,14 @@ import { IParticipantInfo, IReportResult, RefTestNode, SortField } from './servi
     GenerateReportDialog,
     PullToRefresh,
   ],
-  providers: [RefTestFilterState, RefTestQueryBuilder, RefTestData],
+  providers: [
+    RefTestFilterState,
+    RefTestQueryBuilder,
+    RefTestData,
+    RefTestSelectionManager,
+    RefTestOperationManager,
+    ColumnVisibilityManager,
+  ],
   templateUrl: './list-ref-tests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -66,13 +74,14 @@ export class ListRefTests {
   // ========================================================================
   private readonly _router = inject(Router);
   private readonly _scoreConfigGQL = inject(GetScoreConfigurationGQL);
-  private readonly _toastService = inject(Toast);
-  private readonly _translateService = inject(TranslateService);
 
   // Services
   protected readonly filterState = inject(RefTestFilterState);
   protected readonly queryBuilder = inject(RefTestQueryBuilder);
   protected readonly dataService = inject(RefTestData);
+  protected readonly selectionManager = inject(RefTestSelectionManager);
+  protected readonly operationManager = inject(RefTestOperationManager);
+  protected readonly columnVisibility = inject(ColumnVisibilityManager);
 
   // ========================================================================
   // CONSTANTS
@@ -85,21 +94,6 @@ export class ListRefTests {
   // ========================================================================
   // UI STATE
   // ========================================================================
-  protected readonly visibleColumns = signal(
-    new Set<string>([
-      COLUMNS.TITLE,
-      COLUMNS.PARTICIPANT,
-      COLUMNS.STATUS,
-      COLUMNS.QUESTIONS,
-      COLUMNS.MAX_TIME,
-      COLUMNS.SCORE,
-      COLUMNS.INVITATION,
-      COLUMNS.RESULTS,
-      COLUMNS.STARTED,
-      COLUMNS.COMPLETED,
-    ]),
-  );
-  protected readonly showColumnMenu = signal(false);
   protected readonly isRefreshing = signal(false);
 
   // ========================================================================
@@ -110,39 +104,6 @@ export class ListRefTests {
   private readonly _deletedRefTestIds = signal<Set<string>>(new Set());
   private readonly _updatedInvitationIds = signal<Set<string>>(new Set());
   private readonly _updatedResultsIds = signal<Set<string>>(new Set());
-
-  // ========================================================================
-  // SELECTION STATE
-  // ========================================================================
-  protected readonly selectedRefTestIds = signal<Set<string>>(new Set());
-
-  // ========================================================================
-  // OPERATION STATE
-  // ========================================================================
-  protected readonly deletingRefTestIds = signal<Set<string>>(new Set());
-  protected readonly sendingInvitationIds = signal<Set<string>>(new Set());
-  protected readonly sendingResultsIds = signal<Set<string>>(new Set());
-
-  // ========================================================================
-  // DIALOG STATE
-  // ========================================================================
-  protected readonly showSendInvitationsDialog = signal(false);
-  protected readonly showSendResultsDialog = signal(false);
-  protected readonly showDeleteDialog = signal(false);
-  protected readonly showGenerateReportDialog = signal(false);
-
-  // ========================================================================
-  // LOADING STATE
-  // ========================================================================
-  protected readonly sendingInvitations = signal(false);
-  protected readonly sendingResults = signal(false);
-  protected readonly deletingRefTests = signal(false);
-  protected readonly generatingReport = signal(false);
-
-  // ========================================================================
-  // RESULT STATE
-  // ========================================================================
-  protected readonly reportResult = signal<IReportResult | null>(null);
 
   // ========================================================================
   // SEARCH
@@ -197,84 +158,46 @@ export class ListRefTests {
   });
 
   // ========================================================================
-  // COMPUTED VALUES - Selection Summaries
+  // COMPUTED VALUES - Selection Summaries (delegated to selection manager)
   // ========================================================================
 
-  protected readonly invitationSummary = computed(() => {
-    const selectedIds = this.selectedRefTestIds();
-    const allRefTests = this.allLoadedRefTests();
-    const pendingSelected = allRefTests.filter(
-      (t) => selectedIds.has(t.id) && t.status === RefTestStatus.Pending,
-    );
+  protected readonly invitationSummary = this.selectionManager.createInvitationSummaryComputed(() =>
+    this.allLoadedRefTests(),
+  );
 
-    return {
-      newInvitations: this.mapToParticipantInfo(pendingSelected.filter((t) => !t.invitationSent)),
-      resendInvitations: this.mapToParticipantInfo(pendingSelected.filter((t) => t.invitationSent)),
-    };
-  });
+  protected readonly resultsSummary = this.selectionManager.createResultsSummaryComputed(() =>
+    this.allLoadedRefTests(),
+  );
 
-  protected readonly resultsSummary = computed(() => {
-    const selectedIds = this.selectedRefTestIds();
-    const allRefTests = this.allLoadedRefTests();
-    const completedSelected = allRefTests.filter(
-      (t) => selectedIds.has(t.id) && t.status === RefTestStatus.Completed,
-    );
+  protected readonly refTestsToDelete = this.selectionManager.createRefTestsToDeleteComputed(() =>
+    this.allLoadedRefTests(),
+  );
 
-    return {
-      newResults: this.mapToParticipantInfo(completedSelected.filter((t) => !t.resultsSent)),
-      resendResults: this.mapToParticipantInfo(completedSelected.filter((t) => t.resultsSent)),
-    };
-  });
-
-  protected readonly refTestsToDelete = computed(() => {
-    const selectedIds = this.selectedRefTestIds();
-    const allRefTests = this.allLoadedRefTests();
-    return this.mapToParticipantInfo(allRefTests.filter((t) => selectedIds.has(t.id)));
-  });
-
-  protected readonly reportSummary = computed(() => {
-    const selectedIds = this.selectedRefTestIds();
-    const allRefTests = this.allLoadedRefTests();
-    return {
-      refTests: this.mapToParticipantInfo(allRefTests.filter((t) => selectedIds.has(t.id))),
-    };
-  });
+  protected readonly reportSummary = this.selectionManager.createReportSummaryComputed(() =>
+    this.allLoadedRefTests(),
+  );
 
   // ========================================================================
-  // COMPUTED VALUES - Selection State
+  // COMPUTED VALUES - Selection State (delegated to selection manager)
   // ========================================================================
 
-  protected readonly hasCompletedRefTestsSelected = computed(() => {
-    const selectedIds = this.selectedRefTestIds();
-    const allRefTests = this.allLoadedRefTests();
-    return allRefTests.some((t) => selectedIds.has(t.id) && t.status === RefTestStatus.Completed);
-  });
+  protected readonly hasCompletedRefTestsSelected =
+    this.selectionManager.createHasCompletedSelectedComputed(() => this.allLoadedRefTests());
 
-  protected readonly hasPendingRefTestsSelected = computed(() => {
-    const selectedIds = this.selectedRefTestIds();
-    const allRefTests = this.allLoadedRefTests();
-    return allRefTests.some((t) => selectedIds.has(t.id) && t.status === RefTestStatus.Pending);
-  });
+  protected readonly hasPendingRefTestsSelected =
+    this.selectionManager.createHasPendingSelectedComputed(() => this.allLoadedRefTests());
 
-  protected readonly allSelected = computed(() => {
-    const refTests = this.refTests();
-    const selected = this.selectedRefTestIds();
-    const totalCount = this.totalCount();
+  protected readonly allSelected = this.selectionManager.createAllSelectedComputed(
+    () => this.refTests(),
+    () => this.totalCount(),
+  );
 
-    if (selected.size > 0 && selected.size === totalCount) {
-      return true;
-    }
+  protected readonly someSelected = this.selectionManager.createSomeSelectedComputed(
+    () => this.refTests(),
+    () => this.allSelected(),
+  );
 
-    return refTests.length > 0 && refTests.every((t) => selected.has(t.id));
-  });
-
-  protected readonly someSelected = computed(() => {
-    const refTests = this.refTests();
-    const selected = this.selectedRefTestIds();
-    return refTests.some((t) => selected.has(t.id)) && !this.allSelected();
-  });
-
-  protected readonly selectedCount = computed(() => this.selectedRefTestIds().size);
+  protected readonly selectedCount = this.selectionManager.selectedCount;
 
   // ========================================================================
   // COMPUTED VALUES - Apollo Query Results
@@ -407,18 +330,6 @@ export class ListRefTests {
     this._updatedResultsIds.set(new Set());
   }
 
-  private addIds(target: WritableSignal<Set<string>>, ids: string[]): void {
-    target.update((current) => new Set([...current, ...ids]));
-  }
-
-  private removeIds(target: WritableSignal<Set<string>>, ids: string[]): void {
-    target.update((current) => {
-      const next = new Set(current);
-      ids.forEach((id) => next.delete(id));
-      return next;
-    });
-  }
-
   // ========================================================================
   // FILTER METHODS
   // ========================================================================
@@ -510,287 +421,131 @@ export class ListRefTests {
   }
 
   // ========================================================================
-  // SELECTION METHODS
+  // SELECTION METHODS (delegated to selection manager)
   // ========================================================================
 
   protected toggleSelectAll(): void {
-    if (this.allSelected()) {
-      this.selectedRefTestIds.set(new Set());
-    } else {
-      const allIds = this.refTests().map((t) => t.id);
-      this.selectedRefTestIds.set(new Set(allIds));
-    }
+    this.selectionManager.toggleSelectAll(this.refTests());
   }
 
   protected toggleRefTestSelection(refTestId: string): void {
-    this.selectedRefTestIds.update((ids) => {
-      const newIds = new Set(ids);
-      if (newIds.has(refTestId)) {
-        newIds.delete(refTestId);
-      } else {
-        newIds.add(refTestId);
-      }
-      return newIds;
-    });
+    this.selectionManager.toggleSelection(refTestId);
   }
 
   protected isSelected(refTestId: string): boolean {
-    return this.selectedRefTestIds().has(refTestId);
+    return this.selectionManager.isSelected(refTestId);
   }
 
   // ========================================================================
-  // COLUMN VISIBILITY
+  // COLUMN VISIBILITY (delegated to column visibility manager)
   // ========================================================================
 
   protected isColumnVisible(column: string): boolean {
-    return this.visibleColumns().has(column);
+    return this.columnVisibility.isColumnVisible(column);
   }
 
   protected toggleColumn(column: string): void {
-    this.visibleColumns.update((cols) => {
-      const newCols = new Set(cols);
-      if (newCols.has(column)) {
-        newCols.delete(column);
-      } else {
-        newCols.add(column);
-      }
-      return newCols;
-    });
+    this.columnVisibility.toggleColumn(column);
   }
 
   protected toggleColumnMenu(): void {
-    this.showColumnMenu.update((show) => !show);
+    this.columnVisibility.toggleColumnMenu();
   }
 
   // ========================================================================
-  // DELETE OPERATIONS
+  // DELETE OPERATIONS (delegated to operation manager)
   // ========================================================================
 
   protected deleteSelectedRefTests(): void {
-    const refTestIds = Array.from(this.selectedRefTestIds());
-    if (refTestIds.length === 0) {
-      return;
-    }
-
-    this.showDeleteDialog.set(true);
+    this.operationManager.initiateDelete();
   }
 
   protected confirmDelete(): void {
-    this.showDeleteDialog.set(false);
-    const refTestIds = Array.from(this.selectedRefTestIds());
-
-    // Mark as deleting
-    this.addIds(this.deletingRefTestIds, refTestIds);
-
-    this.dataService.deleteRefTests(refTestIds, {
-      onStart: () => this.deletingRefTests.set(true),
-      onSuccess: (deletedIds) => {
-        // Add deleted IDs to the signal to filter them out
-        this._deletedRefTestIds.update((ids) => {
-          const newIds = new Set(ids);
-          deletedIds.forEach((id) => newIds.add(id));
-          return newIds;
-        });
-        this.selectedRefTestIds.set(new Set());
-        this._toastService.success(this._translateService.instant('ref_tests.list.delete_success'));
-      },
-      onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.delete_error'));
-      },
-      onComplete: () => {
-        this.removeIds(this.deletingRefTestIds, refTestIds);
-        this.deletingRefTests.set(false);
-      },
+    this.operationManager.confirmDelete((deletedIds) => {
+      // Add deleted IDs to the signal to filter them out
+      this._deletedRefTestIds.update((ids) => {
+        const newIds = new Set(ids);
+        deletedIds.forEach((id) => newIds.add(id));
+        return newIds;
+      });
     });
   }
 
   protected cancelDelete(): void {
-    this.showDeleteDialog.set(false);
+    this.operationManager.cancelDelete();
   }
 
   protected isDeleting(refTestId: string): boolean {
-    return this.deletingRefTestIds().has(refTestId);
+    return this.operationManager.isDeleting(refTestId);
   }
 
   // ========================================================================
-  // INVITATION OPERATIONS
+  // INVITATION OPERATIONS (delegated to operation manager)
   // ========================================================================
 
   protected sendInvitationsToSelected(): void {
-    const refTestIds = Array.from(this.selectedRefTestIds());
-    if (refTestIds.length === 0) {
-      return;
-    }
-
-    this.showSendInvitationsDialog.set(true);
+    this.operationManager.initiateSendInvitations();
   }
 
   protected confirmSendInvitations(): void {
-    this.showSendInvitationsDialog.set(false);
-    const selectedIds = Array.from(this.selectedRefTestIds());
-    const allRefTests = this.allLoadedRefTests();
-
-    // Filter to only pending ref tests
-    const refTestIds = selectedIds.filter((id) => {
-      const refTest = allRefTests.find((t) => t.id === id);
-      return refTest?.status === RefTestStatus.Pending;
-    });
-
-    // Mark as sending
-    this.addIds(this.sendingInvitationIds, refTestIds);
-
-    this.dataService.sendInvitations(refTestIds, {
-      onStart: () => this.sendingInvitations.set(true),
-      onSuccess: (sentIds) => {
-        // Add sent IDs to the signal to update their state
-        this._updatedInvitationIds.update((ids) => {
-          const newIds = new Set(ids);
-          sentIds.forEach((id) => newIds.add(id));
-          return newIds;
-        });
-        this.selectedRefTestIds.set(new Set());
-        this._toastService.success(
-          this._translateService.instant('ref_tests.list.invitations_sent'),
-        );
-      },
-      onError: () => {
-        this._toastService.error(
-          this._translateService.instant('ref_tests.list.invitations_error'),
-        );
-      },
-      onComplete: () => {
-        this.removeIds(this.sendingInvitationIds, refTestIds);
-        this.sendingInvitations.set(false);
-      },
+    this.operationManager.confirmSendInvitations(this.allLoadedRefTests(), (sentIds) => {
+      // Add sent IDs to the signal to update their state
+      this._updatedInvitationIds.update((ids) => {
+        const newIds = new Set(ids);
+        sentIds.forEach((id) => newIds.add(id));
+        return newIds;
+      });
     });
   }
 
   protected cancelSendInvitations(): void {
-    this.showSendInvitationsDialog.set(false);
+    this.operationManager.cancelSendInvitations();
   }
 
   protected isSendingInvitation(refTestId: string): boolean {
-    return this.sendingInvitationIds().has(refTestId);
+    return this.operationManager.isSendingInvitation(refTestId);
   }
 
   // ========================================================================
-  // RESULTS OPERATIONS
+  // RESULTS OPERATIONS (delegated to operation manager)
   // ========================================================================
 
   protected sendResultsToSelected(): void {
-    const selectedIds = Array.from(this.selectedRefTestIds());
-    if (selectedIds.length === 0) {
-      return;
-    }
-
-    this.showSendResultsDialog.set(true);
+    this.operationManager.initiateSendResults();
   }
 
   protected confirmSendResults(): void {
-    this.showSendResultsDialog.set(false);
-    const selectedIds = Array.from(this.selectedRefTestIds());
-    const allRefTests = this.allLoadedRefTests();
-
-    // Filter to only completed ref tests
-    const refTestIds = selectedIds.filter((id) => {
-      const refTest = allRefTests.find((t) => t.id === id);
-      return refTest?.status === RefTestStatus.Completed;
-    });
-
-    // Mark as sending
-    this.addIds(this.sendingResultsIds, refTestIds);
-
-    this.dataService.sendResults(refTestIds, {
-      onStart: () => this.sendingResults.set(true),
-      onSuccess: (sentIds) => {
-        // Add sent IDs to the signal to update their state
-        this._updatedResultsIds.update((ids) => {
-          const newIds = new Set(ids);
-          sentIds.forEach((id) => newIds.add(id));
-          return newIds;
-        });
-        this.selectedRefTestIds.set(new Set());
-        this._toastService.success(this._translateService.instant('ref_tests.list.results_sent'));
-      },
-      onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.results_error'));
-      },
-      onComplete: () => {
-        this.removeIds(this.sendingResultsIds, refTestIds);
-        this.sendingResults.set(false);
-      },
+    this.operationManager.confirmSendResults(this.allLoadedRefTests(), (sentIds) => {
+      // Add sent IDs to the signal to update their state
+      this._updatedResultsIds.update((ids) => {
+        const newIds = new Set(ids);
+        sentIds.forEach((id) => newIds.add(id));
+        return newIds;
+      });
     });
   }
 
   protected cancelSendResults(): void {
-    this.showSendResultsDialog.set(false);
+    this.operationManager.cancelSendResults();
   }
 
   // ========================================================================
-  // REPORT OPERATIONS
+  // REPORT OPERATIONS (delegated to operation manager)
   // ========================================================================
 
   protected generateReportForSelected(): void {
-    const refTestIds = Array.from(this.selectedRefTestIds());
-    if (refTestIds.length === 0) {
-      return;
-    }
-
-    this.showGenerateReportDialog.set(true);
+    this.operationManager.initiateGenerateReport();
   }
 
   protected confirmGenerateReport(): void {
-    this.showGenerateReportDialog.set(false);
-    const refTestIds = Array.from(this.selectedRefTestIds());
-    this.reportResult.set(null);
-
-    this.dataService.generateReport(refTestIds, {
-      onStart: () => this.generatingReport.set(true),
-      onSuccess: (result) => {
-        this.reportResult.set(result);
-        this.scheduleReportDismissal();
-        if (result.success) {
-          this.selectedRefTestIds.set(new Set());
-          this._toastService.success(
-            this._translateService.instant('ref_tests.list.report_success'),
-          );
-        } else {
-          this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
-        }
-      },
-      onError: () => {
-        this.reportResult.set({ success: false, refTestCount: 0 });
-        this.scheduleReportDismissal();
-        this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
-      },
-      onComplete: () => {
-        this.generatingReport.set(false);
-      },
-    });
+    this.operationManager.confirmGenerateReport();
   }
 
   protected cancelGenerateReport(): void {
-    this.showGenerateReportDialog.set(false);
+    this.operationManager.cancelGenerateReport();
   }
 
   protected dismissReportResult(): void {
-    this.reportResult.set(null);
-  }
-
-  private scheduleReportDismissal(): void {
-    setTimeout(() => {
-      this.dismissReportResult();
-    }, REF_TEST_CONFIG.REPORT_BANNER_TIMEOUT_MS);
-  }
-
-  // ========================================================================
-  // HELPER METHODS
-  // ========================================================================
-
-  private mapToParticipantInfo(refTests: RefTestNode[]): IParticipantInfo[] {
-    return refTests.map((t) => ({
-      name: t.name || '',
-      email: t.email || '',
-    }));
+    this.operationManager.dismissReportResult();
   }
 }

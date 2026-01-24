@@ -23,8 +23,8 @@
       <div class="flex gap-2 w-full sm:w-auto">
         <!-- Column Visibility Menu -->
         <app-column-visibility-menu
-          [visibleColumns]="visibleColumns()"
-          [showMenu]="showColumnMenu()"
+          [visibleColumns]="columnVisibility.visibleColumns()"
+          [showMenu]="columnVisibility.showColumnMenu()"
           (toggleMenu)="toggleColumnMenu()"
           (toggleColumn)="toggleColumn($event)"
         />
@@ -58,15 +58,17 @@
     </div>
 
     <!-- Report Result Banner -->
-    @if (reportResult()) {
+    @if (operationManager.reportResult()) {
       <div
         [class]="
-          reportResult()!.success ? 'bg-success-50 border-success-200' : 'bg-red-50 border-red-200'
+          operationManager.reportResult()!.success
+            ? 'bg-success-50 border-success-200'
+            : 'bg-red-50 border-red-200'
         "
         class="mb-4 rounded-lg border p-4 flex items-start gap-3"
         role="alert"
       >
-        @if (reportResult()!.success) {
+        @if (operationManager.reportResult()!.success) {
           <svg
             class="w-5 h-5 text-success-600 shrink-0 mt-0.5"
             fill="none"
@@ -99,24 +101,26 @@
         }
         <div class="flex-1 min-w-0">
           <p
-            [class]="reportResult()!.success ? 'text-success-800' : 'text-red-800'"
+            [class]="operationManager.reportResult()!.success ? 'text-success-800' : 'text-red-800'"
             class="text-sm font-medium"
           >
             {{
-              (reportResult()!.success
+              (operationManager.reportResult()!.success
                 ? 'ref_tests.list.report.success'
                 : 'ref_tests.list.report.error'
               ) | translate
             }}
           </p>
-          @if (reportResult()!.refTestCount > 0) {
+          @if (operationManager.reportResult()!.refTestCount > 0) {
             <p
-              [class]="reportResult()!.success ? 'text-success-700' : 'text-red-700'"
+              [class]="
+                operationManager.reportResult()!.success ? 'text-success-700' : 'text-red-700'
+              "
               class="text-xs mt-1"
             >
               {{
                 'ref_tests.list.report.ref_test_count'
-                  | translate: { count: reportResult()!.refTestCount }
+                  | translate: { count: operationManager.reportResult()!.refTestCount }
               }}
             </p>
           }
@@ -125,13 +129,13 @@
           type="button"
           (click)="dismissReportResult()"
           [class]="
-            reportResult()!.success
+            operationManager.reportResult()!.success
               ? 'text-success-600 hover:text-success-800'
               : 'text-red-600 hover:text-red-800'
           "
           class="shrink-0 focus:outline-none focus:ring-2 focus:ring-offset-2 rounded"
-          [class.focus:ring-success-500]="reportResult()!.success"
-          [class.focus:ring-red-500]="!reportResult()!.success"
+          [class.focus:ring-success-500]="operationManager.reportResult()!.success"
+          [class.focus:ring-red-500]="!operationManager.reportResult()!.success"
           [attr.aria-label]="'ref_tests.list.report.dismiss' | translate"
           title="{{ 'ref_tests.list.report.dismiss' | translate }}"
         >
@@ -155,13 +159,13 @@
 
     <!-- Bulk Actions Bar -->
     <app-ref-test-bulk-actions
-      [selectedCount]="selectedCount()"
+      [selectedCount]="selectionManager.selectedCount()"
       [hasCompletedRefTestsSelected]="hasCompletedRefTestsSelected()"
       [hasPendingRefTestsSelected]="hasPendingRefTestsSelected()"
-      [sendingInvitations]="sendingInvitations()"
-      [sendingResults]="sendingResults()"
-      [deletingRefTests]="deletingRefTests()"
-      [generatingReport]="generatingReport()"
+      [sendingInvitations]="operationManager.sendingInvitations()"
+      [sendingResults]="operationManager.sendingResults()"
+      [deletingRefTests]="operationManager.deletingRefTests()"
+      [generatingReport]="operationManager.generatingReport()"
       (sendInvitations)="sendInvitationsToSelected()"
       (sendResults)="sendResultsToSelected()"
       (deleteSelected)="deleteSelectedRefTests()"
@@ -486,7 +490,7 @@
                 app-ref-test-table-row
                 [refTest]="refTest"
                 [selected]="isSelected(refTest.id)"
-                [visibleColumns]="visibleColumns()"
+                [visibleColumns]="columnVisibility.visibleColumns()"
                 [passingPercentage]="passingPercentage()"
                 (toggleSelection)="toggleRefTestSelection($event)"
               ></tr>
@@ -525,7 +529,7 @@
           <app-ref-test-mobile-card
             [refTest]="refTest"
             [selected]="isSelected(refTest.id)"
-            [visibleColumns]="visibleColumns()"
+            [visibleColumns]="columnVisibility.visibleColumns()"
             [passingPercentage]="passingPercentage()"
             (toggleSelection)="toggleRefTestSelection($event)"
           />
@@ -636,7 +640,7 @@
 
   <!-- Send Invitations Dialog -->
   <app-send-invitations-dialog
-    [show]="showSendInvitationsDialog()"
+    [show]="operationManager.showSendInvitationsDialog()"
     [summary]="invitationSummary()"
     (confirm)="confirmSendInvitations()"
     (cancel)="cancelSendInvitations()"
@@ -645,7 +649,7 @@
 
   <!-- Send Results Dialog -->
   <app-send-results-dialog
-    [show]="showSendResultsDialog()"
+    [show]="operationManager.showSendResultsDialog()"
     [summary]="resultsSummary()"
     (confirm)="confirmSendResults()"
     (cancel)="cancelSendResults()"
@@ -654,7 +658,7 @@
 
   <!-- Delete ref_tests Dialog -->
   <app-delete-ref-tests-dialog
-    [show]="showDeleteDialog()"
+    [show]="operationManager.showDeleteDialog()"
     [refTests]="refTestsToDelete()"
     (confirm)="confirmDelete()"
     (cancel)="cancelDelete()"
@@ -663,7 +667,7 @@
 
   <!-- Generate Report Dialog -->
   <app-generate-report-dialog
-    [show]="showGenerateReportDialog()"
+    [show]="operationManager.showGenerateReportDialog()"
     [summary]="reportSummary()"
     (confirm)="confirmGenerateReport()"
     (cancel)="cancelGenerateReport()"
