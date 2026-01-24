@@ -1,0 +1,172 @@
+name: Create Stable Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "CREATE RELEASE" to confirm'
+        required: true
+        type: string
+
+env:
+  NODE_VERSION: 22
+
+jobs:
+  validate-input:
+    name: ✅ Validate Input
+    runs-on: ubuntu-latest
+    outputs:
+      confirmed: ${{ steps.check.outputs.confirmed }}
+
+    steps:
+      - name: 🔒 Check confirmation
+        id: check
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" = "CREATE RELEASE" ]; then
+            echo "✅ Confirmed"
+            echo "confirmed=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Invalid confirmation input"
+            echo "confirmed=false" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+
+  create-stable-release:
+    name: 🏷 Create Stable Release
+    runs-on: ubuntu-latest
+    needs: validate-input
+    if: needs.validate-input.outputs.confirmed == 'true'
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: ⚡ Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      - name: 🔍 Calculate next stable version
+        id: calculate-version
+        run: |
+          # Use semantic-release with dry-run to calculate the next version
+          # The "stable" branch in .releaserc.json is used only for version calculation
+          cat > /tmp/releaserc-stable.json << 'EOF'
+          {
+            "branches": ["stable"],
+            "plugins": [
+              "@semantic-release/commit-analyzer",
+              "@semantic-release/release-notes-generator"
+            ],
+            "dryRun": true
+          }
+          EOF
+
+          # Create a temporary stable branch pointing to main for version calculation
+          git branch -f stable origin/main
+          git checkout stable
+
+          # Run semantic-release in dry-run mode to get the next version
+          OUTPUT=$(npx semantic-release --dry-run --extends /tmp/releaserc-stable.json 2>&1 || true)
+          echo "$OUTPUT"
+
+          NEXT_VERSION=$(echo "$OUTPUT" | grep -oP 'The next release version is \K[0-9]+\.[0-9]+\.[0-9]+' || echo "")
+
+          if [ -z "$NEXT_VERSION" ]; then
+            echo "❌ Could not determine next version. There may be no releasable commits."
+            exit 1
+          fi
+
+          echo "Next stable version: $NEXT_VERSION"
+          echo "version=$NEXT_VERSION" >> $GITHUB_OUTPUT
+          echo "tag=v$NEXT_VERSION" >> $GITHUB_OUTPUT
+
+          # Switch back to main
+          git checkout main
+
+      - name: 📝 Generate release notes
+        id: release-notes
+        run: |
+          # Get the latest stable tag (not pre-release)
+          LATEST_STABLE=$(git tag -l 'v*.*.*' --sort=-version:refname | grep -v '-' | head -n1 || echo "")
+
+          if [ -z "$LATEST_STABLE" ]; then
+            # No previous stable release, use all commits
+            RANGE="HEAD"
+          else
+            RANGE="${LATEST_STABLE}..HEAD"
+          fi
+
+          echo "Generating release notes from $RANGE"
+
+          # Generate release notes using conventional commits
+          NOTES=$(git log $RANGE --pretty=format:"* %s (%h)" --no-merges | grep -E "^\\* (feat|fix|perf|refactor|style|build|chore):" || echo "")
+
+          if [ -z "$NOTES" ]; then
+            NOTES="No conventional commits found in range $RANGE"
+          fi
+
+          # Save to file for multi-line output
+          cat > /tmp/release-notes.txt << EOF
+          ## What's Changed
+
+          $NOTES
+
+          **Full Changelog**: https://github.com/${{ github.repository }}/compare/${LATEST_STABLE}...${{ steps.calculate-version.outputs.tag }}
+          EOF
+
+          echo "notes-file=/tmp/release-notes.txt" >> $GITHUB_OUTPUT
+
+      - name: 🏷 Create Git tag
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git tag -a "${{ steps.calculate-version.outputs.tag }}" -m "Release ${{ steps.calculate-version.outputs.tag }}"
+          git push origin "${{ steps.calculate-version.outputs.tag }}"
+
+          echo "✅ Created and pushed tag: ${{ steps.calculate-version.outputs.tag }}"
+
+      - name: 📦 Create GitHub Release (Draft)
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const releaseNotes = fs.readFileSync('${{ steps.release-notes.outputs.notes-file }}', 'utf8');
+
+            const release = await github.rest.repos.createRelease({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag_name: '${{ steps.calculate-version.outputs.tag }}',
+              name: 'Release ${{ steps.calculate-version.outputs.version }}',
+              body: releaseNotes,
+              draft: true,
+              prerelease: false
+            });
+
+            core.notice(`✅ Created draft release: ${release.data.html_url}`);
+            console.log(`Draft release created: ${release.data.html_url}`);
+
+      - name: 🎉 Summary
+        run: |
+          echo "## 🎉 Stable Release Created" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Version**: ${{ steps.calculate-version.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tag**: ${{ steps.calculate-version.outputs.tag }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: Draft release created (requires manual publishing)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Next Steps:" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the draft release in GitHub" >> $GITHUB_STEP_SUMMARY
+          echo "2. Edit release notes if needed" >> $GITHUB_STEP_SUMMARY
+          echo "3. Publish the release to trigger production deployment" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "⚠️ **Note**: Publishing the release will NOT trigger deployment." >> $GITHUB_STEP_SUMMARY
+          echo "The production deployment will be triggered automatically by the tag push." >> $GITHUB_STEP_SUMMARY
