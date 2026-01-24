@@ -78,11 +78,16 @@ export class RefTestData {
     };
   }
 
-  readonly loading = toSignal(this._queryRef.valueChanges.pipe(map((result) => result.loading)), {
+  // Expose observables for direct subscription (avoid effects with Apollo watch)
+  readonly loading$ = this._queryRef.valueChanges.pipe(map((result) => result.loading));
+  readonly queryResult$ = this._queryRef.valueChanges;
+
+  // Signals for template usage
+  readonly loading = toSignal(this.loading$, {
     initialValue: true,
   });
 
-  readonly queryResult = toSignal(this._queryRef.valueChanges);
+  readonly queryResult = toSignal(this.queryResult$);
 
   readonly statusCounts = toSignal(
     this._countsQueryRef.valueChanges.pipe(

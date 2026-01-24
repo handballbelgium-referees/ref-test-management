@@ -2,17 +2,15 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
-  effect,
   HostListener,
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
-import { debounceTime, map, Subject } from 'rxjs';
+import { map } from 'rxjs';
 import {
   GetScoreConfigurationGQL,
   RefTestStatus,
@@ -65,7 +63,6 @@ export class ListRefTests {
   // DEPENDENCIES
   // ========================================================================
   private readonly router = inject(Router);
-  private readonly destroyRef = inject(DestroyRef);
   private readonly scoreConfigGQL = inject(GetScoreConfigurationGQL);
 
   // Services
@@ -103,10 +100,11 @@ export class ListRefTests {
   // ========================================================================
   // DATA STATE
   // ========================================================================
-  protected readonly allLoadedRefTests = signal<RefTestNode[]>([]);
   protected readonly loadingMore = signal(false);
-  private readonly endCursor = signal<string | undefined>(undefined);
-  protected readonly hasNextPage = signal(false);
+  private readonly additionalLoadedRefTests = signal<RefTestNode[]>([]);
+  private readonly deletedRefTestIds = signal<Set<string>>(new Set());
+  private readonly updatedInvitationIds = signal<Set<string>>(new Set());
+  private readonly updatedResultsIds = signal<Set<string>>(new Set());
 
   // ========================================================================
   // SELECTION STATE
@@ -144,7 +142,7 @@ export class ListRefTests {
   // ========================================================================
   // SEARCH
   // ========================================================================
-  private readonly searchSubject = new Subject<string>();
+  private searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
   // ========================================================================
   // COMPUTED VALUES - Configuration
@@ -265,105 +263,75 @@ export class ListRefTests {
   protected readonly selectedCount = computed(() => this.selectedRefTestIds().size);
 
   // ========================================================================
+  // COMPUTED VALUES - Apollo Query Results
+  // ========================================================================
+
+  protected readonly allLoadedRefTests = computed((): RefTestNode[] => {
+    const result = this.dataService.queryResult();
+    if (!result?.data?.refTests) return [];
+
+    const edges = result.data.refTests.edges ?? [];
+    const baseRefTests = edges
+      .filter(
+        (edge): edge is NonNullable<typeof edge> & { node: RefTestNode } => !!edge && !!edge.node,
+      )
+      .map((edge) => edge.node);
+
+    // Include additional loaded tests from pagination
+    const allTests = [...baseRefTests, ...this.additionalLoadedRefTests()];
+
+    // Apply local operation state
+    const deletedIds = this.deletedRefTestIds();
+    const invitationSentIds = this.updatedInvitationIds();
+    const resultsSentIds = this.updatedResultsIds();
+
+    return allTests
+      .filter((test) => !deletedIds.has(test.id))
+      .map((test) => ({
+        ...test,
+        invitationSent: invitationSentIds.has(test.id) ? true : test.invitationSent,
+        resultsSent: resultsSentIds.has(test.id) ? true : test.resultsSent,
+      }));
+  });
+
+  private readonly endCursor = computed(() => {
+    const result = this.dataService.queryResult();
+    return result?.data?.refTests?.pageInfo?.endCursor;
+  });
+
+  protected readonly hasNextPage = computed(() => {
+    const result = this.dataService.queryResult();
+    return result?.data?.refTests?.pageInfo?.hasNextPage ?? false;
+  });
+
+  // ========================================================================
   // LIFECYCLE
   // ========================================================================
 
   constructor() {
-    this.setupSearchDebounce();
-    this.setupRefreshSync();
-    this.setupQueryResultsHandler();
-    this.setupFilterChangeHandler();
+    // No subscriptions needed - everything is derived from signals
   }
 
   // ========================================================================
-  // SETUP METHODS
+  // HELPER METHODS
   // ========================================================================
 
-  private setupSearchDebounce(): void {
-    this.searchSubject
-      .pipe(debounceTime(REF_TEST_CONFIG.SEARCH_DEBOUNCE_MS), takeUntilDestroyed(this.destroyRef))
-      .subscribe((searchTerm) => {
-        this.filterState.setSearchTerm(searchTerm);
-      });
+  private handleFilterChange(): void {
+    this.resetPagination();
+    this.refetchData();
   }
 
-  private setupRefreshSync(): void {
-    effect(() => {
-      const isLoading = this.loading();
-      if (!isLoading && this.isRefreshing()) {
-        this.isRefreshing.set(false);
-      }
-    });
-  }
+  private handleSearchChange(searchTerm: string): void {
+    // Clear existing timer
+    if (this.searchDebounceTimer) {
+      clearTimeout(this.searchDebounceTimer);
+    }
 
-  private setupQueryResultsHandler(): void {
-    effect(() => {
-      const result = this.dataService.queryResult();
-      if (!result?.data?.refTests) return;
-
-      const edges = result.data.refTests.edges ?? [];
-      const newRefTests = edges
-        .filter(
-          (edge): edge is NonNullable<typeof edge> & { node: RefTestNode } => !!edge && !!edge.node,
-        )
-        .map((edge) => edge.node);
-
-      this.allLoadedRefTests.set(newRefTests);
-      this.hasNextPage.set(result.data.refTests.pageInfo?.hasNextPage ?? false);
-      this.endCursor.set(result.data.refTests.pageInfo?.endCursor ?? undefined);
-    });
-  }
-
-  private setupFilterChangeHandler(): void {
-    let isFirstRun = true;
-    let previousCountsFilter: string | undefined;
-
-    effect(() => {
-      const filter = this.filterState.filter();
-
-      // Skip the first run since Apollo watch() already executes on subscription
-      if (isFirstRun) {
-        isFirstRun = false;
-        // Store initial counts filter
-        previousCountsFilter = this.getCountsFilterKey(filter);
-        return;
-      }
-
-      // Always refetch the main data on filter changes
-      this.resetPagination();
-      this.refetchData();
-
-      // Only refetch counts if filters affecting counts have changed
-      // (exclude status and sorting changes)
-      const currentCountsFilter = this.getCountsFilterKey(filter);
-      if (currentCountsFilter !== previousCountsFilter) {
-        this.dataService.updateCountQueries();
-        previousCountsFilter = currentCountsFilter;
-      }
-    });
-  }
-
-  private getCountsFilterKey(filter: any): string {
-    // Create a key from filters that affect counts (excluding status and sorting)
-    return JSON.stringify({
-      titleValue: filter.titleValue,
-      invitationSent: filter.invitationSent,
-      resultsSent: filter.resultsSent,
-      minQuestionScore: filter.minQuestionScore,
-      maxQuestionScore: filter.maxQuestionScore,
-      minAnswerScore: filter.minAnswerScore,
-      maxAnswerScore: filter.maxAnswerScore,
-      percentageRange: filter.percentageRange,
-      minQuestions: filter.minQuestions,
-      maxQuestions: filter.maxQuestions,
-      minMaxTimeInMinutes: filter.minMaxTimeInMinutes,
-      maxMaxTimeInMinutes: filter.maxMaxTimeInMinutes,
-      startedAfter: filter.startedAfter,
-      startedBefore: filter.startedBefore,
-      completedAfter: filter.completedAfter,
-      completedBefore: filter.completedBefore,
-      searchTerm: filter.searchTerm,
-    });
+    // Set new timer
+    this.searchDebounceTimer = setTimeout(() => {
+      this.filterState.setSearchTerm(searchTerm);
+      this.handleFilterChange();
+    }, REF_TEST_CONFIG.SEARCH_DEBOUNCE_MS);
   }
 
   // ========================================================================
@@ -394,11 +362,12 @@ export class ListRefTests {
     const filter = this.filterState.filter();
     const where = this.queryBuilder.buildWhereFilter(filter);
     const order = this.queryBuilder.buildOrderClause(filter);
+    const cursor = this.endCursor();
 
     this.dataService
       .fetchMore({
         first: REF_TEST_CONFIG.PAGE_SIZE,
-        after: this.endCursor(),
+        after: cursor ?? undefined,
         where,
         order,
       })
@@ -409,9 +378,7 @@ export class ListRefTests {
             .filter((edge): edge is NonNullable<typeof edge> => !!edge && !!edge.node)
             .map((edge) => edge.node as RefTestNode);
 
-          this.allLoadedRefTests.update((current) => [...current, ...newRefTests]);
-          this.hasNextPage.set(result.data.refTests.pageInfo?.hasNextPage ?? false);
-          this.endCursor.set(result.data.refTests.pageInfo?.endCursor ?? undefined);
+          this.additionalLoadedRefTests.update((current) => [...current, ...newRefTests]);
         }
       })
       .finally(() => {
@@ -432,11 +399,20 @@ export class ListRefTests {
     this.resetPagination();
     this.refetchData();
     this.dataService.updateCountQueries();
+
+    // Clear refresh state after a short delay to ensure loading completes
+    setTimeout(() => {
+      if (!this.loading()) {
+        this.isRefreshing.set(false);
+      }
+    }, 100);
   }
 
   private resetPagination(): void {
-    this.allLoadedRefTests.set([]);
-    this.endCursor.set(undefined);
+    this.additionalLoadedRefTests.set([]);
+    this.deletedRefTestIds.set(new Set());
+    this.updatedInvitationIds.set(new Set());
+    this.updatedResultsIds.set(new Set());
   }
 
   private refetchData(): void {
@@ -458,22 +434,30 @@ export class ListRefTests {
 
   protected setStatusFilter(status?: RefTestStatus): void {
     this.filterState.setStatus(status);
+    this.handleFilterChange();
   }
 
   protected setTitleFilter(titleId?: string): void {
     this.filterState.setTitle(titleId);
+    this.handleFilterChange();
+    this.dataService.updateCountQueries();
   }
 
   protected setInvitationFilter(invitationSent?: boolean): void {
     this.filterState.setInvitationSent(invitationSent);
+    this.handleFilterChange();
+    this.dataService.updateCountQueries();
   }
 
   protected setResultsFilter(resultsSent?: boolean): void {
     this.filterState.setResultsSent(resultsSent);
+    this.handleFilterChange();
+    this.dataService.updateCountQueries();
   }
 
   protected setSorting(sortField: SortField, sortDirection: SortEnumType): void {
     this.filterState.setSorting(sortField, sortDirection);
+    this.handleFilterChange();
   }
 
   protected setPerformanceFilters(performance: {
@@ -488,10 +472,14 @@ export class ListRefTests {
     maxMaxTimeInMinutes?: number;
   }): void {
     this.filterState.setPerformanceFilters(performance);
+    this.handleFilterChange();
+    this.dataService.updateCountQueries();
   }
 
   protected setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
     this.filterState.setDateRange(type, after, before);
+    this.handleFilterChange();
+    this.dataService.updateCountQueries();
   }
 
   protected sortByColumn(field: SortField): void {
@@ -500,7 +488,7 @@ export class ListRefTests {
 
   protected onSearchInput(event: Event): void {
     const value = (event.target as HTMLInputElement).value;
-    this.searchSubject.next(value);
+    this.handleSearchChange(value);
   }
 
   // ========================================================================
@@ -604,8 +592,12 @@ export class ListRefTests {
     this.dataService.deleteRefTests(refTestIds, {
       onStart: () => this.deletingRefTests.set(true),
       onSuccess: (deletedIds) => {
-        const deletedSet = new Set(deletedIds);
-        this.allLoadedRefTests.update((tests) => tests.filter((t) => !deletedSet.has(t.id)));
+        // Add deleted IDs to the signal to filter them out
+        this.deletedRefTestIds.update((ids) => {
+          const newIds = new Set(ids);
+          deletedIds.forEach((id) => newIds.add(id));
+          return newIds;
+        });
         this.selectedRefTestIds.set(new Set());
         this.dataService.updateCountQueries();
       },
@@ -665,10 +657,12 @@ export class ListRefTests {
     this.dataService.sendInvitations(refTestIds, {
       onStart: () => this.sendingInvitations.set(true),
       onSuccess: (sentIds) => {
-        const sentSet = new Set(sentIds);
-        this.allLoadedRefTests.update((tests) =>
-          tests.map((t) => (sentSet.has(t.id) ? { ...t, invitationSent: true } : t)),
-        );
+        // Add sent IDs to the signal to update their state
+        this.updatedInvitationIds.update((ids) => {
+          const newIds = new Set(ids);
+          sentIds.forEach((id) => newIds.add(id));
+          return newIds;
+        });
         this.selectedRefTestIds.set(new Set());
       },
       onError: (error) => {
@@ -727,10 +721,12 @@ export class ListRefTests {
     this.dataService.sendResults(refTestIds, {
       onStart: () => this.sendingResults.set(true),
       onSuccess: (sentIds) => {
-        const sentSet = new Set(sentIds);
-        this.allLoadedRefTests.update((tests) =>
-          tests.map((t) => (sentSet.has(t.id) ? { ...t, resultsSent: true } : t)),
-        );
+        // Add sent IDs to the signal to update their state
+        this.updatedResultsIds.update((ids) => {
+          const newIds = new Set(ids);
+          sentIds.forEach((id) => newIds.add(id));
+          return newIds;
+        });
         this.selectedRefTestIds.set(new Set());
       },
       onError: (error) => {
