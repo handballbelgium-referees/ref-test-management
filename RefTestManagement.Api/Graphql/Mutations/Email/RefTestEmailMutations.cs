@@ -165,7 +165,7 @@ public static class RefTestEmailMutations
     }
     
     /// <summary>
-    /// Generate and email a report of RefTests
+    /// Send RefTest report email
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
@@ -175,8 +175,8 @@ public static class RefTestEmailMutations
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize]
-    public static async Task<GenerateReportResult> GenerateRefTestsReportAsync(
-        GenerateRefTestsReportInput input,
+    public static async Task<SendReportResult> SendReportAsync(
+        SendReportInput input,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] ReportConfiguration reportConfig,
@@ -191,7 +191,7 @@ public static class RefTestEmailMutations
 
         if (refTests.Count == 0)
         {
-            return new GenerateReportResult
+            return new SendReportResult
             {
                 Success = false,
                 Message = "No RefTests found with the provided IDs",
@@ -219,7 +219,7 @@ public static class RefTestEmailMutations
 
         if (recipients.Length == 0)
         {
-            return new GenerateReportResult
+            return new SendReportResult
             {
                 Success = false,
                 Message = "No recipient emails configured",
@@ -237,7 +237,7 @@ public static class RefTestEmailMutations
 
             await jobEnqueueService.EnqueueReportEmailAsync(reportPayload, cancellationToken: cancellationToken);
 
-            return new GenerateReportResult
+            return new SendReportResult
             {
                 Success = true,
                 Message = $"Report job successfully enqueued for {recipients.Length} recipient(s)",
@@ -246,7 +246,7 @@ public static class RefTestEmailMutations
         }
         catch (Exception ex)
         {
-            return new GenerateReportResult
+            return new SendReportResult
             {
                 Success = false,
                 Message = $"Failed to enqueue report job: {ex.Message}",

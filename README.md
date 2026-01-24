@@ -204,7 +204,7 @@ Graphql/
 ├── Mutations/                    # All mutations organized by domain
 │   ├── Lifecycle/                (3 files) - Start, Progress, Complete + inputs
 │   ├── Creation/                 (3 files) - CreateBulkRefTests + input/output
-│   ├── Email/                    (7 files) - Send emails, reports + models
+│   ├── Email/                    (7 files) - Send invitations, results, reports
 │   ├── Update/                   (5 files) - 5 update operations + inputs
 │   ├── Reset/                    (2 files) - Reset/Revive + input
 │   ├── Deletion/                 (3 files) - Delete + input/output
@@ -229,7 +229,7 @@ Graphql/
 |--------|-------|-----------|---------|
 | **Lifecycle** | 3 | 3 | User test execution (Start, SaveProgress, Complete) |
 | **Creation** | 3 | 1 | Bulk test creation with question selection |
-| **Email** | 7 | 3 | All email operations (invitations, results, reports) |
+| **Email** | 7 | 3 | Send invitations, results, and reports via email |
 | **Update** | 5 | 5 | Update details, config, time, notifications, token |
 | **Reset** | 2 | 2 | Reset and revive operations for retakes |
 | **Deletion** | 3 | 1 | Delete operations with bulk support |
@@ -742,8 +742,8 @@ ref-test-management/
 │   │   │   │   ├── SendInvitationsResult.cs
 │   │   │   │   ├── SendResultsInput.cs
 │   │   │   │   ├── SendResultsResult.cs
-│   │   │   │   ├── GenerateRefTestsReportInput.cs
-│   │   │   │   └── GenerateReportResult.cs
+│   │   │   │   ├── SendReportInput.cs
+│   │   │   │   └── SendReportResult.cs
 │   │   │   ├── Update/                   # Update operation mutations
 │   │   │   │   ├── RefTestUpdateMutations.cs         # All update operations
 │   │   │   │   ├── UpdateRefTestDetailsInput.cs
