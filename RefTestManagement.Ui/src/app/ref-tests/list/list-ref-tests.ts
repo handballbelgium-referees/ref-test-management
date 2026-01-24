@@ -144,18 +144,7 @@ export class ListRefTests {
   });
 
   protected readonly refTests = computed((): RefTestNode[] => {
-    const allTests = this.allLoadedRefTests();
-    const searchTerm = this.filterState.filter().searchTerm.toLowerCase();
-
-    if (!searchTerm) {
-      return allTests;
-    }
-
-    return allTests.filter(
-      (test) =>
-        test.name?.toLowerCase().includes(searchTerm) ||
-        test.email?.toLowerCase().includes(searchTerm),
-    );
+    return this.allLoadedRefTests();
   });
 
   protected readonly totalCount = computed(() => this._queryData()?.totalCount ?? 0);

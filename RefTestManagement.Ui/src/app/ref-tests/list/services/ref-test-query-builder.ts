@@ -6,6 +6,7 @@ import {
   IntOperationFilterInput,
   RefTestFilterInput,
   SortEnumType,
+  StringOperationFilterInput,
 } from '../../../../../graphql/generated';
 import { PERCENTAGE_RANGES } from './constants';
 import { IRefTestFilter } from './types';
@@ -17,6 +18,18 @@ export class RefTestQueryBuilder {
     options: { excludeStatus?: boolean } = {},
   ): RefTestFilterInput | undefined {
     const filters: RefTestFilterInput = {};
+
+    // Search term filter (OR across email, firstName, lastName)
+    if (filter.searchTerm) {
+      const searchFilter: StringOperationFilterInput = {
+        contains: filter.searchTerm,
+      };
+      filters.or = [
+        { email: searchFilter },
+        { firstName: searchFilter },
+        { lastName: searchFilter },
+      ];
+    }
 
     // Status filter
     if (!options.excludeStatus && filter.status) {
