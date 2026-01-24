@@ -57,7 +57,6 @@ import { IParticipantInfo, IReportResult, RefTestNode, SortField } from './servi
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
-    '(window:scroll)': 'onScroll()',
   },
 })
 export class ListRefTests {
@@ -327,6 +326,23 @@ export class ListRefTests {
     return this.paginationInfo()?.hasNextPage ?? this.basePageInfo()?.hasNextPage ?? false;
   });
 
+  protected readonly showPerformanceWarning = computed(() => {
+    const loadedCount = this.refTests().length;
+    return (
+      loadedCount >= REF_TEST_CONFIG.PERFORMANCE_WARNING_THRESHOLD &&
+      loadedCount < REF_TEST_CONFIG.MAX_LOADABLE_ITEMS &&
+      this.hasNextPage()
+    );
+  });
+
+  protected readonly canLoadMore = computed(() => {
+    return this.hasNextPage() && this.refTests().length < REF_TEST_CONFIG.MAX_LOADABLE_ITEMS;
+  });
+
+  protected readonly isAtMaxCapacity = computed(() => {
+    return this.refTests().length >= REF_TEST_CONFIG.MAX_LOADABLE_ITEMS && this.hasNextPage();
+  });
+
   // ========================================================================
   // LIFECYCLE
   // ========================================================================
@@ -362,24 +378,11 @@ export class ListRefTests {
   }
 
   // ========================================================================
-  // SCROLL HANDLING
+  // LOAD MORE HANDLING
   // ========================================================================
 
-  onScroll(): void {
-    if (this.loadingMore() || !this.hasNextPage()) {
-      return;
-    }
-
-    const scrollPosition = window.innerHeight + window.scrollY;
-    const documentHeight = document.documentElement.scrollHeight;
-
-    if (scrollPosition >= documentHeight - REF_TEST_CONFIG.SCROLL_THRESHOLD) {
-      this.loadMore();
-    }
-  }
-
   protected loadMore(): void {
-    if (this.loadingMore() || !this.hasNextPage()) {
+    if (this.loadingMore() || !this.canLoadMore()) {
       return;
     }
 
