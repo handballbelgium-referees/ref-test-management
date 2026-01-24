@@ -1,0 +1,7 @@
+query GetQuestionsByNumber($numbers: [String!]!) {
+  questionsByNumber(numbers: $numbers) {
+    id
+    number
+    phrase
+  }
+}

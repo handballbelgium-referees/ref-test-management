@@ -5,7 +5,23 @@ using QuestPDF.Infrastructure;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
-public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResultsPdfService
+public interface IRefTestResultsPdfService
+{
+    byte[] GenerateRefTestResultsPdf(
+        string name,
+        string language,
+        int questionScore,
+        int answerScore,
+        int totalQuestions,
+        int answerTotal,
+        double percentage,
+        List<string> selectedAnswerIds,
+        List<string> wrongQuestionIds,
+        List<string> wrongAnswerIds,
+        List<Question> questionsWithCorrectAnswers);
+}
+
+public class RefTestResultsPdfService(ILogoService logoService, ITranslationService translationService) : IRefTestResultsPdfService
 {
 
     public byte[] GenerateRefTestResultsPdf(
@@ -55,10 +71,10 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
         return document.GeneratePdf();
     }
 
-    private static void ComposeHeader(IContainer container, string name, string language, int questionScore,
+    private void ComposeHeader(IContainer container, string name, string language, int questionScore,
         int answerScore, int totalQuestions, int answerTotal, double percentage, byte[]? logo)
     {
-        var translations = GetTranslations(language);
+        var translations = translationService.GetPdfResultsTranslations(language);
         
         container.Column(column =>
         {
@@ -126,10 +142,10 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
         });
     }
 
-    private static void ComposeContent(IContainer container, string language, List<Question> questions,
+    private void ComposeContent(IContainer container, string language, List<Question> questions,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds)
     {
-        var translations = GetTranslations(language);
+        var translations = translationService.GetPdfResultsTranslations(language);
 
         container.Column(column =>
         {
@@ -215,37 +231,35 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
                                             answerRow.ConstantItem(20).AlignMiddle().Width(12).Height(12).Svg(_ =>
                                             {
                                                 string svgIcon;
-                                                if (isUserSelected && isWrongAnswer)
+                                                switch (isUserSelected)
                                                 {
-                                                    // Red X/Cross for wrong answer
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                    case true when isWrongAnswer:
+                                                        // Red X/Cross for wrong answer
+                                                        svgIcon =
+                                                            @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
                                                                     <circle cx=""12"" cy=""12"" r=""11"" fill=""#dc2626""/>
                                                                     <path d=""M16 8L8 16M8 8L16 16"" stroke=""white"" stroke-width=""2.5"" stroke-linecap=""round"" stroke-linejoin=""round""/>
                                                                 </svg>";
-                                                }
-                                                else if (isUserSelected && !isWrongAnswer)
-                                                {
-                                                    // Green checkmark for the correct user answer
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                        break;
+                                                    case true when !isWrongAnswer:
+                                                        // Green checkmark for the correct user answer
+                                                        svgIcon =
+                                                            @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
                                                                     <circle cx=""12"" cy=""12"" r=""11"" fill=""#16a34a""/>
                                                                     <path d=""M17 8L10 16L6 12"" stroke=""white"" stroke-width=""2.5"" stroke-linecap=""round"" stroke-linejoin=""round""/>
                                                                 </svg>";
-                                                }
-                                                else if (isCorrectAnswer)
-                                                {
-                                                    // Green checkmark (no circle) for correct answer not selected
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
+                                                        break;
+                                                    default:
+                                                    {
+                                                        // Green checkmark (no circle) for correct answer not selected
+                                                        svgIcon = isCorrectAnswer ? @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg"">
                                                                     <path d=""M20 6L9 17L4 12"" stroke=""#16a34a"" stroke-width=""3"" stroke-linecap=""round"" stroke-linejoin=""round""/>
-                                                                </svg>";
-                                                }
-                                                else
-                                                {
-                                                    // Empty for non-selected, non-correct answers
-                                                    svgIcon =
-                                                        @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg""></svg>";
+                                                                </svg>" :
+                                                            // Empty for non-selected, non-correct answers
+                                                            @"<svg width=""12"" height=""12"" viewBox=""0 0 24 24"" fill=""none"" xmlns=""http://www.w3.org/2000/svg""></svg>";
+
+                                                        break;
+                                                    }
                                                 }
 
                                                 return svgIcon;
@@ -301,64 +315,5 @@ public class RefTestResultsPdfService(ILogoService logoService) : IRefTestResult
                 });
             }
         });
-    }
-
-    private static Dictionary<string, string> GetTranslations(string language)
-    {
-        return language switch
-        {
-            "nl" => new Dictionary<string, string>
-            {
-                ["resultsTitle"] = "Jouw Resultaten",
-                ["name"] = "Naam",
-                ["percentage"] = "Percentage",
-                ["score"] = "Jouw score",
-                ["questions"] = "V",
-                ["answers"] = "A",
-                ["reviewAnswers"] = "Antwoorden Beoordelen",
-                ["question"] = "Vraag",
-                ["yourAnswer"] = "Jouw antwoord",
-                ["correctAnswer"] = "Juist antwoord"
-            },
-            "fr" => new Dictionary<string, string>
-            {
-                ["resultsTitle"] = "Vos Résultats",
-                ["name"] = "Nom",
-                ["percentage"] = "Pourcentage",
-                ["score"] = "Votre score",
-                ["questions"] = "Q",
-                ["answers"] = "R",
-                ["reviewAnswers"] = "Réviser les Réponses",
-                ["question"] = "Question",
-                ["yourAnswer"] = "Votre réponse",
-                ["correctAnswer"] = "Réponse correcte"
-            },
-            "de" => new Dictionary<string, string>
-            {
-                ["resultsTitle"] = "Ihre Ergebnisse",
-                ["name"] = "Name",
-                ["percentage"] = "Prozent",
-                ["score"] = "Ihre Punktzahl",
-                ["questions"] = "F",
-                ["answers"] = "A",
-                ["reviewAnswers"] = "Antworten Überprüfen",
-                ["question"] = "Frage",
-                ["yourAnswer"] = "Ihre Antwort",
-                ["correctAnswer"] = "Richtige Antwort"
-            },
-            _ => new Dictionary<string, string> // "en" (default)
-            {
-                ["resultsTitle"] = "Your Results",
-                ["name"] = "Name",
-                ["percentage"] = "Percentage",
-                ["score"] = "Your score",
-                ["questions"] = "Q",
-                ["answers"] = "A",
-                ["reviewAnswers"] = "Review Answers",
-                ["question"] = "Question",
-                ["yourAnswer"] = "Your answer",
-                ["correctAnswer"] = "Correct answer"
-            }
-        };
     }
 }

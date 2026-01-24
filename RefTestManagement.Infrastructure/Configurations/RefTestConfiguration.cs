@@ -1,12 +1,13 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Configurations;
 
-public class RefTestConfiguration : IEntityTypeConfiguration<RefTestManagement.Domain.RefTest>
+public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 {
-    public void Configure(EntityTypeBuilder<RefTestManagement.Domain.RefTest> builder)
+    public void Configure(EntityTypeBuilder<RefTest> builder)
     {
         builder.HasKey(x => x.Id);
         
@@ -28,7 +29,7 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTestManagement.D
             .HasMaxLength(256);
 
         builder.Property(x => x.SendInvitationsAutomatically);
-        builder.Property(x => x.InvitationSent);
+        builder.Property(x => x.InvitationSentAt);
 
         builder.Property(x => x.Token)
             .IsRequired()
@@ -99,7 +100,7 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTestManagement.D
                 c => c.ToList()));
 
         builder.Property(x => x.SendResultsAutomatically);
-        builder.Property(x => x.ResultsSent);
+        builder.Property(x => x.ResultsSentAt);
         
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);

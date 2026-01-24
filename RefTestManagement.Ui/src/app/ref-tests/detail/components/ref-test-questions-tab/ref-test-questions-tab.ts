@@ -12,16 +12,16 @@ import { RefTestDetailDataService } from '../../services/ref-test-detail-data.se
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RefTestQuestionsTab {
-  private readonly translate = inject(TranslateService);
-  private readonly dataService = inject(RefTestDetailDataService);
+  private readonly _translate = inject(TranslateService);
+  private readonly _dataService = inject(RefTestDetailDataService);
 
-  protected readonly refTest = this.dataService.refTest;
+  protected readonly refTest = this._dataService.refTest;
 
   protected readonly currentLanguage = toSignal(
-    this.translate.onLangChange.pipe(map(() => this.translate.getCurrentLang())),
+    this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
     {
-      initialValue: this.translate.getCurrentLang(),
-    }
+      initialValue: this._translate.getCurrentLang(),
+    },
   );
 
   protected readonly selectedAnswerIdsSet = computed(() => {

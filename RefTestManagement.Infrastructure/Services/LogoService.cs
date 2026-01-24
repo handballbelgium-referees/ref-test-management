@@ -1,4 +1,5 @@
 ﻿using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -26,7 +27,7 @@ public class LogoService(ILogger<LogoService> logger, EmailConfiguration configu
         }
         catch (Exception ex)
         {
-            logger.LogWarning(ex, "Failed to download logo from {LogoUrl}", logoUrl);
+            ServiceLoggerMessages.LogLogoDownloadFailed(logger, ex, logoUrl);
             return null;
         }
     }

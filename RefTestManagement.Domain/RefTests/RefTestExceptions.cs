@@ -1,4 +1,4 @@
-﻿namespace Handball.Belgium.RefTestManagement.Domain;
+﻿namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 /// <summary>
 /// Exception thrown when a RefTest is not found

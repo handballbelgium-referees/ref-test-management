@@ -1,0 +1,23 @@
+query GetRefTestsAllCounts(
+  $allWhere: RefTestFilterInput
+  $pendingWhere: RefTestFilterInput
+  $inProgressWhere: RefTestFilterInput
+  $completedWhere: RefTestFilterInput
+  $expiredWhere: RefTestFilterInput
+) {
+  all: refTests(first: 0, where: $allWhere) {
+    totalCount
+  }
+  pending: refTests(first: 0, where: $pendingWhere) {
+    totalCount
+  }
+  inProgress: refTests(first: 0, where: $inProgressWhere) {
+    totalCount
+  }
+  completed: refTests(first: 0, where: $completedWhere) {
+    totalCount
+  }
+  expired: refTests(first: 0, where: $expiredWhere) {
+    totalCount
+  }
+}
