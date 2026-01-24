@@ -740,7 +740,13 @@ ref-test-management/
 │   │   │   │   │       ├── ref-test-detail-tab/         # Participant & test info tab
 │   │   │   │   │       └── ref-test-questions-tab/      # Questions & answers tab
 │   │   │   │   └── list/                 # RefTests list page
-│   │   │   │       ├── list-ref-tests.ts
+│   │   │   │       ├── list-ref-tests.ts         # Main list component
+│   │   │   │       ├── services/                 # 🎯 Business Logic Services
+│   │   │   │       │   ├── ref-test-data.ts      # Data fetching and mutations
+│   │   │   │       │   ├── ref-test-filter-state.ts # Filter state management
+│   │   │   │       │   ├── ref-test-query-builder.ts # GraphQL query builder
+│   │   │   │       │   ├── types.ts              # Shared TypeScript types
+│   │   │   │       │   └── constants.ts          # Configuration constants
 │   │   │   │       └── components/
 │   │   │   │           ├── filters/                     # 🔍 Filter Components
 │   │   │   │           │   ├── date-range-filter/       # Reusable date range picker
@@ -755,7 +761,8 @@ ref-test-management/
 │   │   │   │           ├── dialogs/                     # 💬 Modal Dialogs
 │   │   │   │           │   ├── delete-ref-tests-dialog/
 │   │   │   │           │   ├── send-invitations-dialog/
-│   │   │   │           │   └── send-results-dialog/
+│   │   │   │           │   ├── send-results-dialog/
+│   │   │   │           │   └── generate-report-dialog/
 │   │   │   │           ├── column-visibility-menu/      # Table column toggles
 │   │   │   │           └── ref-test-bulk-actions/        # Bulk operations toolbar
 │   │   │   │

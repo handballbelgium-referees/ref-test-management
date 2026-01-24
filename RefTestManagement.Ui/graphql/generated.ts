@@ -779,12 +779,16 @@ export type GetRefTestByTokenQuery = { __typename?: 'Query', refTestByToken:
     | { __typename?: 'RefTestNotFoundError', message: string }
    };
 
-export type GetRefTestsCountQueryVariables = Exact<{
-  where?: InputMaybe<RefTestFilterInput>;
+export type GetRefTestsAllCountsQueryVariables = Exact<{
+  allWhere?: InputMaybe<RefTestFilterInput>;
+  pendingWhere?: InputMaybe<RefTestFilterInput>;
+  inProgressWhere?: InputMaybe<RefTestFilterInput>;
+  completedWhere?: InputMaybe<RefTestFilterInput>;
+  expiredWhere?: InputMaybe<RefTestFilterInput>;
 }>;
 
 
-export type GetRefTestsCountQuery = { __typename?: 'Query', refTests?: { __typename?: 'RefTestsConnection', totalCount: number } | null };
+export type GetRefTestsAllCountsQuery = { __typename?: 'Query', all?: { __typename?: 'RefTestsConnection', totalCount: number } | null, pending?: { __typename?: 'RefTestsConnection', totalCount: number } | null, inProgress?: { __typename?: 'RefTestsConnection', totalCount: number } | null, completed?: { __typename?: 'RefTestsConnection', totalCount: number } | null, expired?: { __typename?: 'RefTestsConnection', totalCount: number } | null };
 
 export type GetRefTestsQueryVariables = Exact<{
   first?: InputMaybe<Scalars['Int']['input']>;
@@ -1079,9 +1083,21 @@ export const GetRefTestByTokenDocument = gql`
       super(apollo);
     }
   }
-export const GetRefTestsCountDocument = gql`
-    query GetRefTestsCount($where: RefTestFilterInput) {
-  refTests(first: 0, where: $where) {
+export const GetRefTestsAllCountsDocument = gql`
+    query GetRefTestsAllCounts($allWhere: RefTestFilterInput, $pendingWhere: RefTestFilterInput, $inProgressWhere: RefTestFilterInput, $completedWhere: RefTestFilterInput, $expiredWhere: RefTestFilterInput) {
+  all: refTests(first: 0, where: $allWhere) {
+    totalCount
+  }
+  pending: refTests(first: 0, where: $pendingWhere) {
+    totalCount
+  }
+  inProgress: refTests(first: 0, where: $inProgressWhere) {
+    totalCount
+  }
+  completed: refTests(first: 0, where: $completedWhere) {
+    totalCount
+  }
+  expired: refTests(first: 0, where: $expiredWhere) {
     totalCount
   }
 }
@@ -1090,8 +1106,8 @@ export const GetRefTestsCountDocument = gql`
   @Injectable({
     providedIn: 'root'
   })
-  export class GetRefTestsCountGQL extends Apollo.Query<GetRefTestsCountQuery, GetRefTestsCountQueryVariables> {
-    override document = GetRefTestsCountDocument;
+  export class GetRefTestsAllCountsGQL extends Apollo.Query<GetRefTestsAllCountsQuery, GetRefTestsAllCountsQueryVariables> {
+    override document = GetRefTestsAllCountsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
