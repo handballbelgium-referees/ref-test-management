@@ -25,6 +25,7 @@
         [sendInvitationsAutomatically]="test.sendInvitationsAutomatically"
         [sendResultsAutomatically]="test.sendResultsAutomatically"
         [status]="test.status"
+        (edit)="onEditNotificationSettings()"
       />
 
       <!-- Timeline -->
@@ -61,5 +62,12 @@
     [show]="showEditConfigDialog()"
     (closeDialog)="onEditConfigDialogClose()"
     (cancel)="onEditConfigDialogClose()"
+  />
+
+  <!-- Edit Notification Settings Dialog -->
+  <app-edit-notification-settings-dialog
+    [show]="showEditNotificationDialog()"
+    (closeDialog)="onEditNotificationDialogClose()"
+    (cancel)="onEditNotificationDialogClose()"
   />
 </div>

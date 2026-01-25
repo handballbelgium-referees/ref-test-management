@@ -272,6 +272,17 @@
         "success": "Test configuration updated successfully",
         "error": "Failed to update test configuration"
       },
+      "edit_notification_settings": {
+        "title": "Edit Notification Settings",
+        "subtitle": "Update automatic sending preferences",
+        "edit_button": "Edit notification settings",
+        "send_invitations_label": "Send Invitations Automatically",
+        "send_invitations_description": "When enabled, invitations will be sent automatically when the test is created.",
+        "send_results_label": "Send Results Automatically",
+        "send_results_description": "When enabled, results will be sent automatically when the test is completed.",
+        "success": "Notification settings updated successfully",
+        "error": "Failed to update notification settings"
+      },
       "test_info": "Test Information",
       "title": "Title",
       "number_of_questions": "Number of Questions",

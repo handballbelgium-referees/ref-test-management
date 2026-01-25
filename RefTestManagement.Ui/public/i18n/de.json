@@ -276,6 +276,17 @@
         "success": "Testkonfiguration erfolgreich aktualisiert",
         "error": "Testkonfiguration konnte nicht aktualisiert werden"
       },
+      "edit_notification_settings": {
+        "title": "Benachrichtigungseinstellungen Bearbeiten",
+        "subtitle": "Automatische Sendeeinstellungen aktualisieren",
+        "edit_button": "Benachrichtigungseinstellungen bearbeiten",
+        "send_invitations_label": "Einladungen Automatisch Senden",
+        "send_invitations_description": "Wenn aktiviert, werden Einladungen automatisch gesendet, wenn der Test erstellt wird.",
+        "send_results_label": "Ergebnisse Automatisch Senden",
+        "send_results_description": "Wenn aktiviert, werden Ergebnisse automatisch gesendet, wenn der Test abgeschlossen ist.",
+        "success": "Benachrichtigungseinstellungen erfolgreich aktualisiert",
+        "error": "Benachrichtigungseinstellungen konnten nicht aktualisiert werden"
+      },
       "test_info": "Testinformationen",
       "title": "Titel",
       "number_of_questions": "Anzahl der Fragen",

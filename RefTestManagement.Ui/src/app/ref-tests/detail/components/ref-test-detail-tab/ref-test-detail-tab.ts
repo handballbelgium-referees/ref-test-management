@@ -12,6 +12,7 @@ import { map } from 'rxjs';
 import { GetScoreConfigurationGQL, RefTestStatus } from '../../../../../../graphql/generated';
 import { RefTestDetailDataService } from '../../services/ref-test-detail-data.service';
 import { EditConfigurationDialog } from './components/dialogs/edit-configuration-dialog/edit-configuration-dialog';
+import { EditNotificationSettingsDialog } from './components/dialogs/edit-notification-settings-dialog/edit-notification-settings-dialog';
 import { EditParticipantDialog } from './components/dialogs/edit-participant-dialog/edit-participant-dialog';
 import { ParticipantInfoCard } from './components/participant-info-card/participant-info-card';
 import { ScoresCard } from './components/scores-card/scores-card';
@@ -29,6 +30,7 @@ import { TimelineCard } from './components/timeline-card/timeline-card';
     ScoresCard,
     EditParticipantDialog,
     EditConfigurationDialog,
+    EditNotificationSettingsDialog,
   ],
   templateUrl: './ref-test-detail-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,6 +46,9 @@ export class RefTestDetailTab {
 
   protected readonly editConfigDialog = viewChild(EditConfigurationDialog);
   protected readonly showEditConfigDialog = signal(false);
+
+  protected readonly editNotificationDialog = viewChild(EditNotificationSettingsDialog);
+  protected readonly showEditNotificationDialog = signal(false);
 
   private readonly _passingPercentage = toSignal(
     inject(GetScoreConfigurationGQL)
@@ -103,5 +108,27 @@ export class RefTestDetailTab {
 
   protected onEditConfigDialogClose(): void {
     this.showEditConfigDialog.set(false);
+  }
+
+  protected onEditNotificationSettings(): void {
+    const refTest = this.refTest();
+    if (!refTest) return;
+
+    this.showEditNotificationDialog.set(true);
+    const dialog = this.editNotificationDialog();
+    if (dialog) {
+      dialog.initialize(
+        refTest.id,
+        refTest.status,
+        refTest.invitationSent,
+        refTest.resultsSent,
+        refTest.sendInvitationsAutomatically,
+        refTest.sendResultsAutomatically,
+      );
+    }
+  }
+
+  protected onEditNotificationDialogClose(): void {
+    this.showEditNotificationDialog.set(false);
   }
 }

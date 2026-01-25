@@ -272,6 +272,17 @@
         "success": "Testconfiguratie succesvol bijgewerkt",
         "error": "Kan testconfiguratie niet bijwerken"
       },
+      "edit_notification_settings": {
+        "title": "Meldingsinstellingen Bewerken",
+        "subtitle": "Automatische verzendvoorkeuren bijwerken",
+        "edit_button": "Meldingsinstellingen bewerken",
+        "send_invitations_label": "Uitnodigingen Automatisch Verzenden",
+        "send_invitations_description": "Indien ingeschakeld, worden uitnodigingen automatisch verzonden wanneer de test wordt aangemaakt.",
+        "send_results_label": "Resultaten Automatisch Verzenden",
+        "send_results_description": "Indien ingeschakeld, worden resultaten automatisch verzonden wanneer de test is voltooid.",
+        "success": "Meldingsinstellingen succesvol bijgewerkt",
+        "error": "Kan meldingsinstellingen niet bijwerken"
+      },
       "test_info": "Test Informatie",
       "title": "Titel",
       "number_of_questions": "Aantal Vragen",
