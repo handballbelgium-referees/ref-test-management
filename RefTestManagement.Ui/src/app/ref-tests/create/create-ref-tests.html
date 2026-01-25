@@ -6,6 +6,7 @@
   </div>
 </div>
 
+
 <!-- Main Content -->
 <div class="bg-neutral-50 py-8 px-4">
   <div class="max-w-7xl mx-auto">
@@ -410,75 +411,6 @@
           </div>
         </div>
       </div>
-
-      <!-- Success/Error Messages -->
-      @if (successCount() > 0) {
-        <div #messagesContainer class="bg-success-50 border border-success-200 rounded-xl p-4 mt-6">
-          <div class="flex items-start">
-            <svg
-              class="w-5 h-5 text-success-600 mr-3 shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <div>
-              <h3 class="text-success-800 font-semibold text-sm">
-                {{
-                  'ref_tests.create.success.created_' + (successCount() === 1 ? 'one' : 'other')
-                    | translate: { count: successCount() }
-                }}
-              </h3>
-              @if (failedCount() > 0) {
-                <p class="text-success-700 mt-1 text-sm">
-                  {{ 'ref_tests.create.success.failed_info' | translate: { count: failedCount() } }}
-                </p>
-              }
-            </div>
-          </div>
-        </div>
-      }
-      @if (error()) {
-        <div #messagesContainer class="bg-red-50 border border-red-200 rounded-xl p-4 mt-6">
-          <div class="flex items-start">
-            <svg
-              class="w-5 h-5 text-red-600 mr-3 shrink-0 mt-0.5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
-            <p class="text-red-800 text-sm">{{ error() }}</p>
-          </div>
-        </div>
-      }
-      @if (errors().length > 0) {
-        <div #messagesContainer class="bg-red-50 border border-red-200 rounded-xl p-4 mt-6">
-          <h4 class="text-red-800 font-semibold mb-2 text-sm">
-            {{ 'ref_tests.create.success.failed_title' | translate }}
-          </h4>
-          <ul class="space-y-1">
-            @for (err of errors(); track err.email) {
-              <li class="text-red-700 text-sm">
-                <strong>{{ err.email }}</strong
-                >: {{ err.message }}
-              </li>
-            }
-          </ul>
-        </div>
-      }
     </form>
   </div>
 </div>

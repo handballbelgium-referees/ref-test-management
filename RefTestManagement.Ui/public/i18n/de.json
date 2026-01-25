@@ -16,8 +16,10 @@
     "refreshing": "Aktualisierung...",
     "yes": "Ja",
     "no": "Nein",
+    "save": "Speichern",
     "saving": "Speichern...",
-    "processing": "Verarbeitung..."
+    "processing": "Verarbeitung...",
+    "close": "Schließen"
   },
   "nav": {
     "language": "Sprache",

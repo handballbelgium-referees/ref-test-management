@@ -16,8 +16,10 @@
     "refreshing": "Actualisation...",
     "yes": "Oui",
     "no": "Non",
+    "save": "Enregistrer",
     "saving": "Enregistrement...",
-    "processing": "Traitement..."
+    "processing": "Traitement...",
+    "close": "Fermer"
   },
   "nav": {
     "language": "Langue",

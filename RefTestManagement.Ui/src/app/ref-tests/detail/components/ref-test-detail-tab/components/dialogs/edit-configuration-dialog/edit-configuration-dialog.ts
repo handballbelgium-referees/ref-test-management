@@ -15,7 +15,7 @@ import { disabled, form, FormField, min, required } from '@angular/forms/signals
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { UpdateRefTestConfigurationGQL } from '../../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../../services/toast';
+import { Banner } from '../../../../../../../services/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 import { QuestionSearchAutocomplete } from '../../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
 import { TitleAutocomplete } from '../../../../../../create/components/title-autocomplete/title-autocomplete';
@@ -36,7 +36,7 @@ interface IConfigurationData {
 export class EditConfigurationDialog {
   private readonly _updateRefTestConfigurationGQL = inject(UpdateRefTestConfigurationGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _toast = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translate = inject(TranslateService);
 
   protected readonly configurationModel = signal<IConfigurationData>({
@@ -226,7 +226,7 @@ export class EditConfigurationDialog {
           }
 
           if (data?.refTest) {
-            this._toast.success(
+            this._bannerService.success(
               this._translate.instant('ref_tests.detail.edit_configuration.success'),
             );
             this.closeDialog.emit();

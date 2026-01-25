@@ -26,7 +26,8 @@ import {
   SendRefTestInvitationsGQL,
   SendRefTestResultsGQL,
 } from '../../../../graphql/generated';
-import { Toast } from '../../services/toast';
+import { Banner as BannerService } from '../../services/banner';
+import { Banner } from '../../shared/components/banner/banner';
 import { DeleteRefTestsDialog } from '../list/components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { SendInvitationsDialog } from '../list/components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from '../list/components/dialogs/send-results-dialog/send-results-dialog';
@@ -42,6 +43,7 @@ import { RefTestDetailDataService } from './services/ref-test-detail-data.servic
     SendInvitationsDialog,
     SendResultsDialog,
     DeleteRefTestsDialog,
+    Banner,
   ],
   providers: [RefTestDetailDataService],
   templateUrl: './ref-test-detail.html',
@@ -56,7 +58,7 @@ export class RefTestDetail {
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
   private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
   private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
-  private readonly _toastService = inject(Toast);
+  private readonly _bannerService = inject(BannerService);
   private readonly _translateService = inject(TranslateService);
 
   protected readonly RefTestStatus = RefTestStatus;
@@ -188,13 +190,13 @@ export class RefTestDetail {
       .pipe(
         tap((result) => {
           if (result.data?.sendInvitations) {
-            this._toastService.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.invitation_sent'),
             );
           }
         }),
         catchError(() => {
-          this._toastService.error(
+          this._bannerService.error(
             this._translateService.instant('ref_tests.detail.invitation_error'),
           );
           return EMPTY;
@@ -228,13 +230,13 @@ export class RefTestDetail {
       .pipe(
         tap((result) => {
           if (result.data?.sendResults) {
-            this._toastService.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.results_sent'),
             );
           }
         }),
         catchError(() => {
-          this._toastService.error(
+          this._bannerService.error(
             this._translateService.instant('ref_tests.detail.results_error'),
           );
           return EMPTY;
@@ -271,7 +273,7 @@ export class RefTestDetail {
       .pipe(
         tap((result) => {
           if (result.data?.deleteRefTests) {
-            this._toastService.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.delete_success'),
             );
             // Navigate back to list after successful delete
@@ -279,7 +281,9 @@ export class RefTestDetail {
           }
         }),
         catchError(() => {
-          this._toastService.error(this._translateService.instant('ref_tests.detail.delete_error'));
+          this._bannerService.error(
+            this._translateService.instant('ref_tests.detail.delete_error'),
+          );
           return EMPTY;
         }),
         finalize(() => this.deletingRefTest.set(false)),

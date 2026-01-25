@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SwUpdate } from '@angular/service-worker';
 import { TranslateService } from '@ngx-translate/core';
 import { interval, switchMap } from 'rxjs';
-import { Toast } from './toast';
+import { Banner } from './banner';
 
 /**
  * Service to handle PWA updates
@@ -14,7 +14,7 @@ import { Toast } from './toast';
 })
 export class PwaUpdate {
   private readonly _swUpdate = inject(SwUpdate);
-  private readonly _toastService = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
   private _updateNotificationShown = false;
 
@@ -44,7 +44,7 @@ export class PwaUpdate {
         this._updateNotificationShown = true;
 
         // Show update notification with action button
-        this._toastService.show(this._translateService.instant('pwa.update_available'), {
+        this._bannerService.show(this._translateService.instant('pwa.update_available'), {
           type: 'info',
           duration: 0,
           dismissible: true,

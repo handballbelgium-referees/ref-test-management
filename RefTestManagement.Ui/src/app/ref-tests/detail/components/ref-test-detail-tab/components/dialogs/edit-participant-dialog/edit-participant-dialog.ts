@@ -14,7 +14,7 @@ import { email, form, FormField, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { UpdateRefTestDetailsGQL } from '../../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../../services/toast';
+import { Banner } from '../../../../../../../services/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 interface IParticipantData {
@@ -32,7 +32,7 @@ interface IParticipantData {
 export class EditParticipantDialog {
   private readonly _updateRefTestDetailsGQL = inject(UpdateRefTestDetailsGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _toast = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
 
   protected readonly participantModel = signal<IParticipantData>({
@@ -116,7 +116,7 @@ export class EditParticipantDialog {
           }
 
           if (data?.refTest) {
-            this._toast.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.edit_participant.success'),
             );
             this.closeDialog.emit();

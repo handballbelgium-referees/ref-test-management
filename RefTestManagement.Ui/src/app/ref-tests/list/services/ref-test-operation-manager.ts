@@ -1,7 +1,7 @@
 import { inject, Injectable, signal, WritableSignal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../graphql/generated';
-import { Toast } from '../../../services/toast';
+import { Banner } from '../../../services/banner';
 import { REF_TEST_CONFIG } from './constants';
 import { RefTestData } from './ref-test-data';
 import { RefTestSelectionManager } from './ref-test-selection-manager';
@@ -13,7 +13,7 @@ import { IReportResult, IResetOptions, RefTestNode } from './types';
  */
 @Injectable()
 export class RefTestOperationManager {
-  private readonly _toastService = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
   private readonly _dataService = inject(RefTestData);
   private readonly _selectionManager = inject(RefTestSelectionManager);
@@ -104,10 +104,12 @@ export class RefTestOperationManager {
       onSuccess: (deletedIds) => {
         onDeleteSuccess(deletedIds);
         this._selectionManager.clearSelection();
-        this._toastService.success(this._translateService.instant('ref_tests.list.delete_success'));
+        this._bannerService.success(
+          this._translateService.instant('ref_tests.list.delete_success'),
+        );
       },
       onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.delete_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.delete_error'));
       },
       onComplete: () => {
         this.removeIds(this.deletingRefTestIds, refTestIds);
@@ -153,12 +155,12 @@ export class RefTestOperationManager {
       onSuccess: (sentIds) => {
         onInvitationsSent(sentIds);
         this._selectionManager.clearSelection();
-        this._toastService.success(
+        this._bannerService.success(
           this._translateService.instant('ref_tests.list.invitations_sent'),
         );
       },
       onError: () => {
-        this._toastService.error(
+        this._bannerService.error(
           this._translateService.instant('ref_tests.list.invitations_error'),
         );
       },
@@ -203,10 +205,10 @@ export class RefTestOperationManager {
       onSuccess: (sentIds) => {
         onResultsSent(sentIds);
         this._selectionManager.clearSelection();
-        this._toastService.success(this._translateService.instant('ref_tests.list.results_sent'));
+        this._bannerService.success(this._translateService.instant('ref_tests.list.results_sent'));
       },
       onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.results_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.results_error'));
       },
       onComplete: () => {
         this.removeIds(this.sendingResultsIds, refTestIds);
@@ -243,17 +245,17 @@ export class RefTestOperationManager {
         this.scheduleReportDismissal();
         if (result.success) {
           this._selectionManager.clearSelection();
-          this._toastService.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.list.report_success'),
           );
         } else {
-          this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
+          this._bannerService.error(this._translateService.instant('ref_tests.list.report_error'));
         }
       },
       onError: () => {
         this.reportResult.set({ success: false, refTestCount: 0 });
         this.scheduleReportDismissal();
-        this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.report_error'));
       },
       onComplete: () => {
         this.generatingReport.set(false);
@@ -299,14 +301,14 @@ export class RefTestOperationManager {
       onSuccess: (successCount, failedCount) => {
         if (successCount > 0) {
           this._selectionManager.clearSelection();
-          this._toastService.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.list.reset_success', {
               count: successCount,
             }),
           );
         }
         if (failedCount > 0) {
-          this._toastService.error(
+          this._bannerService.error(
             this._translateService.instant('ref_tests.list.reset_partial_error', {
               count: failedCount,
             }),
@@ -314,7 +316,7 @@ export class RefTestOperationManager {
         }
       },
       onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.reset_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.reset_error'));
       },
       onComplete: () => {
         this.removeIds(this.resettingRefTestIds, refTestIds);
@@ -351,14 +353,14 @@ export class RefTestOperationManager {
       onSuccess: (successCount, failedCount) => {
         if (successCount > 0) {
           this._selectionManager.clearSelection();
-          this._toastService.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.list.revive_success', {
               count: successCount,
             }),
           );
         }
         if (failedCount > 0) {
-          this._toastService.error(
+          this._bannerService.error(
             this._translateService.instant('ref_tests.list.revive_partial_error', {
               count: failedCount,
             }),
@@ -366,7 +368,7 @@ export class RefTestOperationManager {
         }
       },
       onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.revive_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.revive_error'));
       },
       onComplete: () => {
         this.removeIds(this.revivingRefTestIds, refTestIds);

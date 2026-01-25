@@ -15,7 +15,7 @@ import { disabled, form, FormField } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { RefTestResetType, ResetRefTestsGQL } from '../../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../../services/toast';
+import { Banner } from '../../../../../../../services/banner';
 
 interface IResetOptions {
   resetType: RefTestResetType;
@@ -31,7 +31,7 @@ interface IResetOptions {
 export class ResetRefTestDialog {
   private readonly _resetRefTestsGQL = inject(ResetRefTestsGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _toast = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
 
   protected readonly resetOptionsModel = signal<IResetOptions>({
@@ -115,7 +115,9 @@ export class ResetRefTestDialog {
             const error = resetResult.errors[0];
             this.error.set(error.errorMessage);
           } else if (resetResult?.successfullyReset === 1) {
-            this._toast.success(this._translateService.instant('ref_tests.detail.reset.success'));
+            this._bannerService.success(
+              this._translateService.instant('ref_tests.detail.reset.success'),
+            );
             this.closeDialog.emit();
           }
         }),

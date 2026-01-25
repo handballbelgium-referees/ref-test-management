@@ -16,6 +16,7 @@ import {
   RefTestStatus,
   SortEnumType,
 } from '../../../../graphql/generated';
+import { Banner } from '../../shared/components/banner/banner';
 import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
 import { DeleteRefTestsDialog } from './components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { GenerateReportDialog } from './components/dialogs/generate-report-dialog/generate-report-dialog';
@@ -70,6 +71,7 @@ import { IResetOptions, RefTestNode, SortField } from './services/types';
     RefTestMobileList,
     RefTestPerformanceWarning,
     RefTestPagination,
+    Banner,
   ],
   providers: [
     RefTestFilterState,

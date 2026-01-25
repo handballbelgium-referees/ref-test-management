@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, tap } from 'rxjs';
 import { ReviveRefTestsGQL } from '../../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../../services/toast';
+import { Banner } from '../../../../../../../services/banner';
 
 @Component({
   selector: 'app-revive-ref-test-dialog',
@@ -23,7 +23,7 @@ import { Toast } from '../../../../../../../services/toast';
 export class ReviveRefTestDialog {
   private readonly _reviveRefTestsGQL = inject(ReviveRefTestsGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _toast = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
 
   protected readonly loading = signal(false);
@@ -68,7 +68,9 @@ export class ReviveRefTestDialog {
             const error = reviveResult.errors[0];
             this.error.set(error.errorMessage);
           } else if (reviveResult?.successfullyRevived === 1) {
-            this._toast.success(this._translateService.instant('ref_tests.detail.revive.success'));
+            this._bannerService.success(
+              this._translateService.instant('ref_tests.detail.revive.success'),
+            );
             this.closeDialog.emit();
           }
         }),

@@ -14,6 +14,7 @@ import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, delay, map, of, tap } from 'rxjs';
 import { CreateRefTestsGQL, GetQuestionsByNumberGQL } from '../../../../graphql/generated';
+import { Banner } from '../../services/banner';
 import { QuestionImportModal } from './components/question-import-modal/question-import-modal';
 import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
 import { RefTestUserListItem } from './components/ref-test-user-list-item/ref-test-user-list-item';
@@ -60,6 +61,7 @@ export class CreateRefTests {
   private readonly _getQuestionsByNumberGQL = inject(GetQuestionsByNumberGQL);
   private readonly _router = inject(Router);
   private readonly _translate = inject(TranslateService);
+  private readonly _bannerService = inject(Banner);
 
   protected readonly messagesContainer = viewChild<ElementRef>('messagesContainer');
 
@@ -125,10 +127,6 @@ export class CreateRefTests {
 
   // Additional state signals
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
-  protected readonly successCount = signal(0);
-  protected readonly failedCount = signal(0);
-  protected readonly errors = signal<Array<{ email: string; message: string }>>([]);
   protected readonly showImport = signal(false);
   protected readonly selectedQuestions = signal<
     Array<{ number: string; phrase: Record<string, string> }>
@@ -334,14 +332,14 @@ export class CreateRefTests {
     if (this.refTestForm().invalid()) {
       // Mark all fields as touched to reveal validation errors
       this.refTestForm().markAsTouched();
-      this.error.set('ref_tests.create.form.validation_error');
+      this._bannerService.error(this._translate.instant('ref_tests.create.form.validation_error'));
       return;
     }
 
     const formData = this.refTestModel();
 
     if (formData.users.length === 0) {
-      this.error.set('ref_tests.create.form.no_participants');
+      this._bannerService.error(this._translate.instant('ref_tests.create.form.no_participants'));
       return;
     }
 
@@ -349,11 +347,6 @@ export class CreateRefTests {
       .split(',')
       .map((q) => q.trim())
       .filter((q) => q.length > 0);
-
-    this.error.set(null);
-    this.successCount.set(0);
-    this.failedCount.set(0);
-    this.errors.set([]);
 
     this._createRefTestsGQL
       .mutate({
@@ -377,19 +370,25 @@ export class CreateRefTests {
         map((result) => result.data?.createRefTests?.createRefTestsResult),
         tap((data) => {
           if (data) {
-            this.successCount.set(data.successfullyCreated);
-            this.failedCount.set(data.failed);
-
             if (data.errors.length > 0) {
-              this.errors.set(
-                data.errors.map((e) => ({
-                  email: e.user.email,
-                  message: e.errorMessage,
-                })),
+              // Show error banner with failed count
+              this._bannerService.error(
+                this._translate.instant('ref_tests.create.success.failed_info', {
+                  count: data.failed,
+                }),
               );
             }
 
             if (data.successfullyCreated > 0) {
+              // Show success banner
+              const successKey =
+                data.successfullyCreated === 1
+                  ? 'ref_tests.create.success.created_one'
+                  : 'ref_tests.create.success.created_other';
+              this._bannerService.success(
+                this._translate.instant(successKey, { count: data.successfullyCreated }),
+              );
+
               // Reset form to initial state
               this.refTestModel.set({
                 users: [{ firstName: '', lastName: '', email: '' }],
@@ -405,14 +404,6 @@ export class CreateRefTests {
               this.refTestForm().reset();
             }
 
-            // Scroll to messages
-            setTimeout(() => {
-              this.messagesContainer()?.nativeElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-              });
-            }, 100);
-
             if (data.successfullyCreated > 0 && data.failed === 0) {
               of(null)
                 .pipe(delay(2000), takeUntilDestroyed(this._destroyRef))
@@ -422,14 +413,9 @@ export class CreateRefTests {
         }),
         catchError((err) => {
           this.loading.set(false);
-          this.error.set(err.message || 'ref_tests.create.form.submit_error');
-          // Scroll to error message
-          setTimeout(() => {
-            this.messagesContainer()?.nativeElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
-          }, 100);
+          this._bannerService.error(
+            err.message || this._translate.instant('ref_tests.create.form.submit_error'),
+          );
           return of(null);
         }),
         takeUntilDestroyed(this._destroyRef),

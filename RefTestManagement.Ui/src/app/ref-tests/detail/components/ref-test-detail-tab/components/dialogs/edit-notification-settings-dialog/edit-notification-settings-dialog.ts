@@ -18,7 +18,7 @@ import {
   RefTestStatus,
   UpdateRefTestNotificationSettingsGQL,
 } from '../../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../../services/toast';
+import { Banner } from '../../../../../../../services/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 interface INotificationSettings {
@@ -37,7 +37,7 @@ export class EditNotificationSettingsDialog {
     UpdateRefTestNotificationSettingsGQL,
   );
   private readonly _translateService = inject(TranslateService);
-  private readonly _toast = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly settingsModel = signal<INotificationSettings>({
@@ -126,7 +126,7 @@ export class EditNotificationSettingsDialog {
             return;
           }
           if (data?.refTest) {
-            this._toast.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.edit_notification_settings.success'),
             );
             this.closeDialog.emit();

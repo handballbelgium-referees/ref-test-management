@@ -12,7 +12,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { RegenerateRefTestTokenGQL } from '../../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../../services/toast';
+import { Banner } from '../../../../../../../services/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 @Component({
@@ -24,7 +24,7 @@ import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 export class RegenerateTokenDialog {
   private readonly _regenerateRefTestTokenGQL = inject(RegenerateRefTestTokenGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _toast = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
 
   protected readonly loading = signal(false);
@@ -74,7 +74,7 @@ export class RegenerateTokenDialog {
           }
 
           if (data?.refTest) {
-            this._toast.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.regenerate_token.success'),
             );
             this.closeDialog.emit();

@@ -14,7 +14,7 @@ import { form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { ExtendRefTestTimeGQL } from '../../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../../services/toast';
+import { Banner } from '../../../../../../../services/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 interface IExtendTimeData {
@@ -30,7 +30,7 @@ interface IExtendTimeData {
 export class ExtendTimeDialog {
   private readonly _extendRefTestTimeGQL = inject(ExtendRefTestTimeGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _toast = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
 
   protected readonly extendTimeModel = signal<IExtendTimeData>({
@@ -111,7 +111,7 @@ export class ExtendTimeDialog {
           }
 
           if (data?.refTest) {
-            this._toast.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.extend_time.success'),
             );
             this.closeDialog.emit();
