@@ -16,7 +16,8 @@
     "refreshing": "Refreshing...",
     "yes": "Yes",
     "no": "No",
-    "save": "Save"
+    "saving": "Saving...",
+    "processing": "Processing..."
   },
   "nav": {
     "language": "Language",

@@ -13,7 +13,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, EMPTY, finalize, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { RefTestResetType, ResetRefTestsGQL } from '../../../../../../../../../graphql/generated';
 import { Toast } from '../../../../../../../services/toast';
 
@@ -108,8 +108,9 @@ export class ResetRefTestDialog {
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
-        tap((result) => {
-          const resetResult = result.data?.resetRefTests.resetRefTestsResult;
+        map((result) => result.data?.resetRefTests),
+        tap((data) => {
+          const resetResult = data?.resetRefTestsResult;
           if (resetResult?.errors && resetResult.errors.length > 0) {
             const error = resetResult.errors[0];
             this.error.set(error.errorMessage);

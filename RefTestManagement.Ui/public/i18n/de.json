@@ -16,7 +16,8 @@
     "refreshing": "Aktualisierung...",
     "yes": "Ja",
     "no": "Nein",
-    "save": "Speichern"
+    "saving": "Speichern...",
+    "processing": "Verarbeitung..."
   },
   "nav": {
     "language": "Sprache",

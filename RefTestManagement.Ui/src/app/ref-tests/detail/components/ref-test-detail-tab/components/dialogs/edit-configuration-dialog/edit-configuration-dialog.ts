@@ -16,6 +16,7 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { UpdateRefTestConfigurationGQL } from '../../../../../../../../../graphql/generated';
 import { Toast } from '../../../../../../../services/toast';
+import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 import { QuestionSearchAutocomplete } from '../../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
 import { TitleAutocomplete } from '../../../../../../create/components/title-autocomplete/title-autocomplete';
 
@@ -214,11 +215,17 @@ export class EditConfigurationDialog {
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
-        tap((result) => {
-          if (result.data?.updateRefTestConfiguration.errors?.length) {
-            const error = result.data.updateRefTestConfiguration.errors[0];
-            this.error.set(this._translate.instant(error.message));
-          } else if (result.data?.updateRefTestConfiguration.refTest) {
+        map((result) => result.data?.updateRefTestConfiguration),
+        tap((data) => {
+          if (data?.errors && data.errors.length > 0) {
+            const error = data.errors[0];
+            if ('__typename' in error && error.__typename) {
+              this.error.set(toSnakeCase(error.__typename));
+            }
+            return;
+          }
+
+          if (data?.refTest) {
             this._toast.success(
               this._translate.instant('ref_tests.detail.edit_configuration.success'),
             );

@@ -685,6 +685,7 @@ export type ResetRefTestsResult = {
   __typename?: 'ResetRefTestsResult';
   errors: Array<ResetRefTestsError>;
   failed: Scalars['Int']['output'];
+  resetRefTests: Array<RefTest>;
   successfullyReset: Scalars['Int']['output'];
   totalRequested: Scalars['Int']['output'];
 };
@@ -708,6 +709,7 @@ export type ReviveRefTestsResult = {
   __typename?: 'ReviveRefTestsResult';
   errors: Array<ReviveRefTestsError>;
   failed: Scalars['Int']['output'];
+  revivedRefTests: Array<RefTest>;
   successfullyRevived: Scalars['Int']['output'];
   totalRequested: Scalars['Int']['output'];
 };
@@ -1018,14 +1020,14 @@ export type ResetRefTestsMutationVariables = Exact<{
 }>;
 
 
-export type ResetRefTestsMutation = { __typename?: 'Mutation', resetRefTests: { __typename?: 'ResetRefTestsPayload', resetRefTestsResult?: { __typename?: 'ResetRefTestsResult', totalRequested: number, successfullyReset: number, failed: number, errors: Array<{ __typename?: 'ResetRefTestsError', refTestId: string, errorMessage: string }> } | null } };
+export type ResetRefTestsMutation = { __typename?: 'Mutation', resetRefTests: { __typename?: 'ResetRefTestsPayload', resetRefTestsResult?: { __typename?: 'ResetRefTestsResult', totalRequested: number, successfullyReset: number, failed: number, resetRefTests: Array<{ __typename?: 'RefTest', id: string, status: RefTestStatus, createdAt: string, invitationSent: boolean, resultsSent: boolean, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string> }>, errors: Array<{ __typename?: 'ResetRefTestsError', refTestId: string, errorMessage: string }> } | null } };
 
 export type ReviveRefTestsMutationVariables = Exact<{
   input: ReviveRefTestsInput;
 }>;
 
 
-export type ReviveRefTestsMutation = { __typename?: 'Mutation', reviveRefTests: { __typename?: 'ReviveRefTestsPayload', reviveRefTestsResult?: { __typename?: 'ReviveRefTestsResult', totalRequested: number, successfullyRevived: number, failed: number, errors: Array<{ __typename?: 'ReviveRefTestsError', refTestId: string, errorMessage: string }> } | null } };
+export type ReviveRefTestsMutation = { __typename?: 'Mutation', reviveRefTests: { __typename?: 'ReviveRefTestsPayload', reviveRefTestsResult?: { __typename?: 'ReviveRefTestsResult', totalRequested: number, successfullyRevived: number, failed: number, revivedRefTests: Array<{ __typename?: 'RefTest', id: string, status: RefTestStatus, createdAt: string, invitationSent: boolean }>, errors: Array<{ __typename?: 'ReviveRefTestsError', refTestId: string, errorMessage: string }> } | null } };
 
 export type SendRefTestInvitationsMutationVariables = Exact<{
   input: SendInvitationsInput;
@@ -1433,6 +1435,21 @@ export const ResetRefTestsDocument = gql`
       totalRequested
       successfullyReset
       failed
+      resetRefTests {
+        id
+        status
+        createdAt
+        invitationSent
+        resultsSent
+        startedAt
+        completedAt
+        questionScore
+        answerScore
+        questionTotal
+        answerTotal
+        percentage
+        selectedAnswerIds
+      }
       errors {
         refTestId
         errorMessage
@@ -1459,6 +1476,12 @@ export const ReviveRefTestsDocument = gql`
       totalRequested
       successfullyRevived
       failed
+      revivedRefTests {
+        id
+        status
+        createdAt
+        invitationSent
+      }
       errors {
         refTestId
         errorMessage

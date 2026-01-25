@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -30,7 +31,9 @@ public static class RefTestResetMutations
     {
         var result = new ResetRefTestsResult
         {
-            TotalRequested = input.Ids.Count
+            TotalRequested = input.Ids.Count,
+            ResetRefTests = [],
+            Errors = []
         };
 
         var refTests = await context.RefTests
@@ -83,6 +86,8 @@ public static class RefTestResetMutations
                 }
 
                 successCount++;
+                result.ResetRefTests.Add(refTest.ToDto());
+                
             }
             catch (Exception ex)
             {
@@ -122,7 +127,9 @@ public static class RefTestResetMutations
     {
         var result = new ReviveRefTestsResult
         {
-            TotalRequested = ids.Count
+            TotalRequested = ids.Count,
+            RevivedRefTests = [],
+            Errors = []
         };
 
         var refTests = await context.RefTests
@@ -165,6 +172,7 @@ public static class RefTestResetMutations
                 }
 
                 successCount++;
+                result.RevivedRefTests.Add(refTest.ToDto());
             }
             catch (Exception ex)
             {

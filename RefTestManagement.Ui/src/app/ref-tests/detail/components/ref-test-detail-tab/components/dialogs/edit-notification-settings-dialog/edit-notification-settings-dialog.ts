@@ -13,12 +13,13 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, EMPTY, finalize, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import {
   RefTestStatus,
   UpdateRefTestNotificationSettingsGQL,
 } from '../../../../../../../../../graphql/generated';
 import { Toast } from '../../../../../../../services/toast';
+import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 interface INotificationSettings {
   sendInvitationsAutomatically: boolean;
@@ -115,11 +116,16 @@ export class EditNotificationSettingsDialog {
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
-        tap((result) => {
-          if (result.data?.updateRefTestNotificationSettings.errors?.length) {
-            const error = result.data.updateRefTestNotificationSettings.errors[0];
-            this.error.set(this._translateService.instant(error.message));
-          } else if (result.data?.updateRefTestNotificationSettings.refTest) {
+        map((result) => result.data?.updateRefTestNotificationSettings),
+        tap((data) => {
+          if (data?.errors && data.errors.length > 0) {
+            const error = data.errors[0];
+            if ('__typename' in error && error.__typename) {
+              this.error.set(toSnakeCase(error.__typename));
+            }
+            return;
+          }
+          if (data?.refTest) {
             this._toast.success(
               this._translateService.instant('ref_tests.detail.edit_notification_settings.success'),
             );

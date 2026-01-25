@@ -14,10 +14,13 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 
 import { provideServiceWorker } from '@angular/service-worker';
 import { InMemoryCache } from '@apollo/client';
-import { relayStylePagination } from '@apollo/client/utilities';
+import { split } from '@apollo/client/core';
+import { getMainDefinition, relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
-import { forkJoin, from, of, switchMap, tap } from 'rxjs';
+import { Kind, OperationTypeNode } from 'graphql';
+import { createClient } from 'graphql-sse';
+import { forkJoin, from, Observable, of, switchMap, tap } from 'rxjs';
 import { routes } from './app.routes';
 import { LanguageConfig } from './services/language-config';
 
@@ -39,14 +42,14 @@ function registerDynamicLocales() {
           const langCode = langInfo.code;
           return localeMap[langCode as keyof typeof localeMap]
             ? localeMap[langCode as keyof typeof localeMap]().pipe(
-                tap((localeModule) => registerLocaleData(localeModule.default, `${langCode}-BE`))
+                tap((localeModule) => registerLocaleData(localeModule.default, `${langCode}-BE`)),
               )
             : null;
         })
         .filter((obs) => obs !== null);
 
       return imports.length > 0 ? forkJoin(imports) : of([]);
-    })
+    }),
   );
 }
 
@@ -58,7 +61,7 @@ export const appConfig: ApplicationConfig = {
     provideAppInitializer(() => {
       const languageConfigService = inject(LanguageConfig);
       return registerDynamicLocales().pipe(
-        switchMap(() => languageConfigService.initializeLanguages())
+        switchMap(() => languageConfigService.initializeLanguages()),
       );
     }),
     {
@@ -82,11 +85,61 @@ export const appConfig: ApplicationConfig = {
       () => {
         const httpLink = inject(HttpLink);
 
+        // HTTP link for queries and mutations
+        const http = httpLink.create({
+          uri: '/graphql',
+          withCredentials: true,
+        });
+
+        // Create a custom link for SSE subscriptions
+        const sseLink = {
+          request: (operation: any) => {
+            // Return an Observable, not a Promise (Apollo requires Observable)
+            return new Observable((observer) => {
+              const client = createClient({
+                url: '/graphql',
+                credentials: 'include',
+              });
+
+              const unsubscribe = client.subscribe(
+                {
+                  query: operation.query.loc?.source.body || '',
+                  variables: operation.variables,
+                },
+                {
+                  next: (data) => {
+                    observer.next(data);
+                  },
+                  error: (err) => {
+                    observer.error(err);
+                  },
+                  complete: () => {
+                    observer.complete();
+                  },
+                },
+              );
+
+              // Return cleanup function
+              return () => unsubscribe();
+            });
+          },
+        };
+
+        // Split link: use SSE for subscriptions, http for everything else
+        const link = split(
+          ({ query }) => {
+            const definition = getMainDefinition(query);
+            return (
+              definition.kind === Kind.OPERATION_DEFINITION &&
+              definition.operation === OperationTypeNode.SUBSCRIPTION
+            );
+          },
+          sseLink as any,
+          http,
+        );
+
         return {
-          link: httpLink.create({
-            uri: '/graphql',
-            withCredentials: true,
-          }),
+          link,
           cache: new InMemoryCache({
             typePolicies: {
               Query: {
@@ -100,7 +153,7 @@ export const appConfig: ApplicationConfig = {
       },
       {
         useMutationLoading: true,
-      }
+      },
     ),
     provideServiceWorker('ngsw-worker.js', {
       enabled: !isDevMode(),

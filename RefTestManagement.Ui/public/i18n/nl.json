@@ -16,7 +16,8 @@
     "refreshing": "Vernieuwen...",
     "yes": "Ja",
     "no": "Nee",
-    "save": "Opslaan"
+    "saving": "Opslaan...",
+    "processing": "Bezig..."
   },
   "nav": {
     "language": "Taal",

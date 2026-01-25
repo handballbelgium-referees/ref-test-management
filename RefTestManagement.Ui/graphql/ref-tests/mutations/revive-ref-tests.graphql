@@ -4,6 +4,12 @@ mutation ReviveRefTests($input: ReviveRefTestsInput!) {
       totalRequested
       successfullyRevived
       failed
+      revivedRefTests {
+        id
+        status
+        createdAt
+        invitationSent
+      }
       errors {
         refTestId
         errorMessage

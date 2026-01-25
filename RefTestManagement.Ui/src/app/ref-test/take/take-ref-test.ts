@@ -7,11 +7,11 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
-import { catchError, EMPTY, map, of, tap } from 'rxjs';
+import { catchError, EMPTY, map, of, switchMap, tap } from 'rxjs';
 import {
   CompleteRefTestGQL,
   GetResultsEmailDelayMinutesGQL,
@@ -20,6 +20,7 @@ import {
   SaveRefTestProgressGQL,
   StartRefTestGQL,
 } from '../../../../graphql/generated';
+import { toSnakeCase } from '../../shared/utils/string-utils';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
 import { LeaveRefTestDialog } from './components/leave-ref-test-dialog/leave-ref-test-dialog';
 import { QuestionCard } from './components/question-card/question-card';
@@ -94,7 +95,6 @@ export class TakeRefTest {
   protected readonly showLeaveDialog = signal(false);
   private _leaveConfirmed = false;
   private _tempLeaveHandlers?: { handleConfirm: () => void; handleCancel: () => void };
-  private _refTestStarted = false;
 
   protected readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
@@ -162,14 +162,46 @@ export class TakeRefTest {
   );
 
   constructor() {
-    // Start the RefTest when component initializes
-    effect(() => {
-      const token = this._token();
-      if (token && !this._refTestStarted) {
-        this._refTestStarted = true;
-        this.startRefTest(token);
-      }
-    });
+    // Start the RefTest when token becomes available (reactive)
+    toObservable(this._token)
+      .pipe(
+        switchMap((token) => {
+          if (!token) return EMPTY;
+          this.startRefTest(token);
+          return EMPTY; // Complete after starting once
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+
+    // Subscribe to time extension updates when refTestId is set
+    toObservable(this.refTestId)
+      .pipe(
+        switchMap((refTestId) => {
+          if (!refTestId) return EMPTY;
+
+          return this._refTestTimeExtendedGQL.subscribe({ variables: { id: refTestId } }).pipe(
+            map((result) => result.data?.refTestTimeExtended),
+            tap((timeExtendedData) => {
+              if (timeExtendedData?.newMaxTimeInMinutes) {
+                this.maxTimeInMinutes.set(timeExtendedData.newMaxTimeInMinutes);
+
+                // Recalculate remaining time with new max time
+                const startTime = this.startTime();
+                if (startTime) {
+                  const now = new Date();
+                  const elapsedSeconds = Math.floor((now.getTime() - startTime.getTime()) / 1000);
+                  const totalSeconds = timeExtendedData.newMaxTimeInMinutes * 60;
+                  const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+                  this.timeRemainingSeconds.set(remaining);
+                }
+              }
+            }),
+          );
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
 
     // Timer effect
     effect(() => {
@@ -211,44 +243,14 @@ export class TakeRefTest {
           if (data?.errors && data.errors.length > 0) {
             const error = data.errors[0];
             if ('__typename' in error && error.__typename) {
-              const snakeCaseValue = error.__typename
-                .replace(/([A-Z])/g, '_$1')
-                .toLowerCase()
-                .replace(/^_/, '');
-              this.error.set(snakeCaseValue);
+              this.error.set(toSnakeCase(error.__typename));
             }
             return;
           }
 
           if (data?.refTest && data.refTest.questions) {
-            // Store the ref test ID and subscribe to time extension updates
-            const refTestId = data.refTest.id;
-            this.refTestId.set(refTestId);
-
-            this._refTestTimeExtendedGQL
-              .subscribe({ variables: { id: refTestId } })
-              .pipe(
-                map((result) => result.data?.refTestTimeExtended),
-                tap((timeExtendedData) => {
-                  if (timeExtendedData?.newMaxTimeInMinutes) {
-                    this.maxTimeInMinutes.set(timeExtendedData.newMaxTimeInMinutes);
-
-                    // Recalculate remaining time with new max time
-                    const startTime = this.startTime();
-                    if (startTime) {
-                      const now = new Date();
-                      const elapsedSeconds = Math.floor(
-                        (now.getTime() - startTime.getTime()) / 1000,
-                      );
-                      const totalSeconds = timeExtendedData.newMaxTimeInMinutes * 60;
-                      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
-                      this.timeRemainingSeconds.set(remaining);
-                    }
-                  }
-                }),
-                takeUntilDestroyed(this._destroyRef),
-              )
-              .subscribe();
+            // Store the ref test ID for subscription
+            this.refTestId.set(data.refTest.id);
 
             const questions = data.refTest.questions
               .filter((q) => q && q.phrase && q.answers)

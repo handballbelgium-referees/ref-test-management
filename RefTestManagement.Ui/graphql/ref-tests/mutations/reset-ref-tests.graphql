@@ -4,6 +4,21 @@ mutation ResetRefTests($input: ResetRefTestsInput!) {
       totalRequested
       successfullyReset
       failed
+      resetRefTests {
+        id
+        status
+        createdAt
+        invitationSent
+        resultsSent
+        startedAt
+        completedAt
+        questionScore
+        answerScore
+        questionTotal
+        answerTotal
+        percentage
+        selectedAnswerIds
+      }
       errors {
         refTestId
         errorMessage

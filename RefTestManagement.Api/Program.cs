@@ -23,6 +23,18 @@ var configuration = builder.Configuration;
 services.AddSecurityConfiguration(configuration);
 services.AddControllersWithViews();
 
+// Add CORS for development (allows WebSocket connections from Angular dev server)
+services.AddCors(options =>
+{
+    options.AddPolicy("DevelopmentCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
 services.AddDbContextFactory<RefTestManagementContext>(options =>
 {
     options.UseSqlServer(configuration.GetConnectionString("RefTestManagement"),
@@ -140,12 +152,17 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Enable CORS for development
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("DevelopmentCors");
+}
+
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
-
-app.UseWebSockets();
 
 app.MapControllerRoute(
     "default",
