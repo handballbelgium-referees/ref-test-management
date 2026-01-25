@@ -1,0 +1,19 @@
+mutation ReviveRefTests($input: ReviveRefTestsInput!) {
+  reviveRefTests(input: $input) {
+    reviveRefTestsResult {
+      totalRequested
+      successfullyRevived
+      failed
+      revivedRefTests {
+        id
+        status
+        createdAt
+        invitationSent
+      }
+      errors {
+        refTestId
+        errorMessage
+      }
+    }
+  }
+}

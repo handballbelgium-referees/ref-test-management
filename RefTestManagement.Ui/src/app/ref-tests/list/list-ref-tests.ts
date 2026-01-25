@@ -6,23 +6,26 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
-import { map } from 'rxjs';
+import { filter, map, take } from 'rxjs';
 import {
   GetScoreConfigurationGQL,
   RefTestStatus,
   SortEnumType,
 } from '../../../../graphql/generated';
+import { Banner } from '../../shared/components/banner/banner';
 import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
 import { DeleteRefTestsDialog } from './components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { GenerateReportDialog } from './components/dialogs/generate-report-dialog/generate-report-dialog';
+import { ResetRefTestsDialog } from './components/dialogs/reset-ref-tests-dialog/reset-ref-tests-dialog';
+import { ReviveRefTestsDialog } from './components/dialogs/revive-ref-tests-dialog/revive-ref-tests-dialog';
 import { SendInvitationsDialog } from './components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from './components/dialogs/send-results-dialog/send-results-dialog';
 import { RefTestFiltersCard } from './components/filters/ref-test-filters-card/ref-test-filters-card';
-import { RefTestBulkActions } from './components/ref-test-bulk-actions/ref-test-bulk-actions';
+import { RefTestActions } from './components/ref-test-actions/ref-test-actions';
 import { RefTestEmptyState } from './components/ref-test-empty-state/ref-test-empty-state';
 import { RefTestListHero } from './components/ref-test-list-hero/ref-test-list-hero';
 import { RefTestListToolbar } from './components/ref-test-list-toolbar/ref-test-list-toolbar';
@@ -41,22 +44,24 @@ import { RefTestOperationManager } from './services/ref-test-operation-manager';
 import { RefTestQueryBuilder } from './services/ref-test-query-builder';
 import { RefTestSelectionManager } from './services/ref-test-selection-manager';
 import { RefTestUIHelpers } from './services/ref-test-ui-helpers';
-import { RefTestNode, SortField } from './services/types';
+import { IResetOptions, RefTestNode, SortField } from './services/types';
 
 /**
  * Main component for listing and managing reference tests.
- * Provides filtering, sorting, selection, and bulk operations.
+ * Provides filtering, sorting, selection, and operations.
  */
 @Component({
   selector: 'app-list-ref-tests',
   imports: [
     TranslatePipe,
     RefTestFiltersCard,
-    RefTestBulkActions,
+    RefTestActions,
     SendInvitationsDialog,
     SendResultsDialog,
     DeleteRefTestsDialog,
     GenerateReportDialog,
+    ResetRefTestsDialog,
+    ReviveRefTestsDialog,
     PullToRefresh,
     RefTestListHero,
     RefTestListToolbar,
@@ -66,6 +71,7 @@ import { RefTestNode, SortField } from './services/types';
     RefTestMobileList,
     RefTestPerformanceWarning,
     RefTestPagination,
+    Banner,
   ],
   providers: [
     RefTestFilterState,
@@ -177,6 +183,14 @@ export class ListRefTests {
     this.allLoadedRefTests(),
   );
 
+  protected readonly refTestsToReset = this.selectionManager.createRefTestsToResetComputed(() =>
+    this.allLoadedRefTests(),
+  );
+
+  protected readonly refTestsToRevive = this.selectionManager.createRefTestsToReviveComputed(() =>
+    this.allLoadedRefTests(),
+  );
+
   // ========================================================================
   // COMPUTED VALUES - Selection State (delegated to selection manager)
   // ========================================================================
@@ -186,6 +200,27 @@ export class ListRefTests {
 
   protected readonly hasPendingRefTestsSelected =
     this.selectionManager.createHasPendingSelectedComputed(() => this.allLoadedRefTests());
+
+  protected readonly hasInProgressOrCompletedRefTestsSelected = computed(() => {
+    const selectedIds = this.selectionManager.selectedIds();
+    const allRefTests = this.allLoadedRefTests();
+    return Array.from(selectedIds).some((id) => {
+      const refTest = allRefTests.find((rt) => rt.id === id);
+      return (
+        refTest &&
+        (refTest.status === RefTestStatus.InProgress || refTest.status === RefTestStatus.Completed)
+      );
+    });
+  });
+
+  protected readonly hasExpiredRefTestsSelected = computed(() => {
+    const selectedIds = this.selectionManager.selectedIds();
+    const allRefTests = this.allLoadedRefTests();
+    return Array.from(selectedIds).some((id) => {
+      const refTest = allRefTests.find((rt) => rt.id === id);
+      return refTest && refTest.status === RefTestStatus.Expired;
+    });
+  });
 
   protected readonly allSelected = this.selectionManager.createAllSelectedComputed(
     () => this.refTests(),
@@ -230,6 +265,29 @@ export class ListRefTests {
         this.isRefreshing.set(false);
       }
     });
+
+    // Read navigation state - only available during actual navigation, not on page refresh
+    const navigation = this._router.currentNavigation();
+
+    // Only proceed if there's an active navigation with fromCreate state
+    if (navigation?.extras?.state) {
+      const state = navigation.extras.state as { fromCreate?: boolean };
+
+      if (state.fromCreate) {
+        // Clear the state immediately using window.history to prevent re-triggering
+        window.history.replaceState({}, '', window.location.href);
+
+        // Wait for data to be available, then reset filters
+        toObservable(this.dataService.hasData)
+          .pipe(
+            filter((hasData) => hasData),
+            take(1),
+          )
+          .subscribe(() => {
+            this.dataService.reset();
+          });
+      }
+    }
   }
 
   // ========================================================================
@@ -371,7 +429,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected navigateToCreate(): void {
-    this._router.navigate(['/ref-tests/create']);
+    void this._router.navigate(['/ref-tests/create']);
   }
 
   // ========================================================================
@@ -494,5 +552,37 @@ export class ListRefTests {
 
   protected dismissReportResult(): void {
     this.operationManager.dismissReportResult();
+  }
+
+  // ========================================================================
+  // RESET OPERATIONS (delegated to operation manager)
+  // ========================================================================
+
+  protected resetSelectedRefTests(): void {
+    this.operationManager.initiateReset();
+  }
+
+  protected confirmReset(options: IResetOptions): void {
+    this.operationManager.confirmReset(options);
+  }
+
+  protected cancelReset(): void {
+    this.operationManager.cancelReset();
+  }
+
+  // ========================================================================
+  // REVIVE OPERATIONS (delegated to operation manager)
+  // ========================================================================
+
+  protected reviveSelectedRefTests(): void {
+    this.operationManager.initiateRevive();
+  }
+
+  protected confirmRevive(): void {
+    this.operationManager.confirmRevive();
+  }
+
+  protected cancelRevive(): void {
+    this.operationManager.cancelRevive();
   }
 }

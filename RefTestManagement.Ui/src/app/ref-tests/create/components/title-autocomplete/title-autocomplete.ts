@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
 import { QueryRef } from 'apollo-angular';
@@ -35,6 +43,7 @@ interface ISearchResult {
 export class TitleAutocomplete {
   private readonly _getRefTestTitlesGQL = inject(GetRefTestTitlesGQL);
 
+  readonly initialTitle = input<{ id?: string; name: string } | null>(null);
   readonly selectTitle = output<{ id?: string; name: string }>();
 
   protected readonly currentDate = new Date();
@@ -45,6 +54,7 @@ export class TitleAutocomplete {
   protected readonly showDropdown = signal(false);
   protected readonly highlightedIndex = signal(-1);
   protected readonly selectedTitle = signal<{ id?: string; name: string } | null>(null);
+  private readonly isFocused = signal(false);
   protected readonly hasNextPage = signal(false);
   protected readonly loadingMore = signal(false);
   private _endCursor = signal<string | undefined>(undefined);
@@ -85,16 +95,25 @@ export class TitleAutocomplete {
             };
           }),
           catchError(() =>
-            of<ISearchResult>({ titles: [], isSearching: false, hasNextPage: false })
-          )
+            of<ISearchResult>({ titles: [], isSearching: false, hasNextPage: false }),
+          ),
         );
       }),
-      finalize(() => this.searching.set(false))
+      finalize(() => this.searching.set(false)),
     ),
-    { initialValue: { titles: [], isSearching: false, hasNextPage: false } }
+    { initialValue: { titles: [], isSearching: false, hasNextPage: false } },
   );
 
   constructor() {
+    // Initialize from initialTitle input
+    effect(() => {
+      const initial = this.initialTitle();
+      if (initial) {
+        this.searchTerm.set(initial.name);
+        this.selectedTitle.set(initial);
+      }
+    });
+
     effect(() => {
       const result = this._searchResult();
       if (!result) return;
@@ -108,7 +127,8 @@ export class TitleAutocomplete {
       this.searching.set(result.isSearching);
       this.hasNextPage.set(result.hasNextPage);
       this._endCursor.set(result.endCursor);
-      this.showDropdown.set(result.titles.length > 0);
+      // Only show dropdown if input is focused and we have results
+      this.showDropdown.set(result.titles.length > 0 && this.isFocused());
 
       // Auto-select first suggestion when results arrive
       if (result.titles.length > 0 && !this.loadingMore()) {
@@ -122,9 +142,16 @@ export class TitleAutocomplete {
     this.searchTerm.set(value);
     this._searchSubject.next(value);
     this.highlightedIndex.set(-1);
+
+    // Clear selection when user types - they're either searching or creating new
+    const currentSelection = this.selectedTitle();
+    if (currentSelection && currentSelection.name !== value) {
+      this.selectedTitle.set(null);
+    }
   }
 
   protected onFocus(): void {
+    this.isFocused.set(true);
     // Show dropdown immediately if we have suggestions
     if (this.suggestions().length > 0) {
       this.showDropdown.set(true);
@@ -156,13 +183,13 @@ export class TitleAutocomplete {
       case 'ArrowDown':
         event.preventDefault();
         this.highlightedIndex.update((current) =>
-          current < suggestions.length - 1 ? current + 1 : 0
+          current < suggestions.length - 1 ? current + 1 : 0,
         );
         break;
       case 'ArrowUp':
         event.preventDefault();
         this.highlightedIndex.update((current) =>
-          current > 0 ? current - 1 : suggestions.length - 1
+          current > 0 ? current - 1 : suggestions.length - 1,
         );
         break;
       case 'Enter':
@@ -202,11 +229,29 @@ export class TitleAutocomplete {
   }
 
   protected onBlur(): void {
-    // If there's a search term but no selection, treat it as manual entry
-    if (this.searchTerm().trim() && !this.selectedTitle()) {
-      this.onManualEntry();
-    }
-    this.closeDropdown();
+    this.isFocused.set(false);
+    // Use setTimeout to ensure mousedown events on dropdown items complete first
+    // and wait longer than the debounce time to allow search to complete
+    setTimeout(() => {
+      // If there's a search term but no selection
+      if (this.searchTerm().trim() && !this.selectedTitle()) {
+        // Check if the search term matches any suggestion exactly
+        const term = this.searchTerm().trim();
+        const matchingSuggestion = this.suggestions().find(
+          (s) => s.value.toLowerCase() === term.toLowerCase(),
+        );
+
+        if (matchingSuggestion) {
+          // Select the matching suggestion
+          this.onSelectTitle(matchingSuggestion);
+        } else {
+          // Treat as manual entry for new title
+          this.onManualEntry();
+        }
+      } else {
+        this.closeDropdown();
+      }
+    }, 400); // Increased from 150ms to 400ms to allow debounced search (300ms) to complete
   }
 
   protected closeDropdown(): void {

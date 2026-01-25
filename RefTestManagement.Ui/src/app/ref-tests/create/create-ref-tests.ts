@@ -13,12 +13,13 @@ import { applyEach, disabled, email, form, FormField, min, required } from '@ang
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, delay, map, of, tap } from 'rxjs';
-import { CreateBulkRefTestsGQL, GetQuestionsByNumberGQL } from '../../../../graphql/generated';
-import { BulkQuestionImportModal } from './components/bulk-question-import-modal/bulk-question-import-modal';
-import { BulkUserImportModal } from './components/bulk-user-import-modal/bulk-user-import-modal';
+import { CreateRefTestsGQL, GetQuestionsByNumberGQL } from '../../../../graphql/generated';
+import { Banner } from '../../services/banner';
+import { QuestionImportModal } from './components/question-import-modal/question-import-modal';
 import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
 import { RefTestUserListItem } from './components/ref-test-user-list-item/ref-test-user-list-item';
 import { TitleAutocomplete } from './components/title-autocomplete/title-autocomplete';
+import { UserImportModal } from './components/user-import-modal/user-import-modal';
 
 interface IUserData {
   firstName: string;
@@ -43,9 +44,9 @@ interface IRefTestFormData {
     TranslatePipe,
     FormField,
     RefTestUserListItem,
-    BulkUserImportModal,
+    UserImportModal,
     QuestionSearchAutocomplete,
-    BulkQuestionImportModal,
+    QuestionImportModal,
     TitleAutocomplete,
   ],
   templateUrl: './create-ref-tests.html',
@@ -56,10 +57,11 @@ interface IRefTestFormData {
 })
 export class CreateRefTests {
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _createBulkRefTestsGQL = inject(CreateBulkRefTestsGQL);
+  private readonly _createRefTestsGQL = inject(CreateRefTestsGQL);
   private readonly _getQuestionsByNumberGQL = inject(GetQuestionsByNumberGQL);
   private readonly _router = inject(Router);
   private readonly _translate = inject(TranslateService);
+  private readonly _bannerService = inject(Banner);
 
   protected readonly messagesContainer = viewChild<ElementRef>('messagesContainer');
 
@@ -125,16 +127,12 @@ export class CreateRefTests {
 
   // Additional state signals
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
-  protected readonly successCount = signal(0);
-  protected readonly failedCount = signal(0);
-  protected readonly errors = signal<Array<{ email: string; message: string }>>([]);
-  protected readonly showBulkImport = signal(false);
+  protected readonly showImport = signal(false);
   protected readonly selectedQuestions = signal<
     Array<{ number: string; phrase: Record<string, string> }>
   >([]);
-  protected readonly showBulkQuestionImport = signal(false);
-  protected readonly loadingBulkQuestions = signal(false);
+  protected readonly showQuestionImport = signal(false);
+  protected readonly loadingQuestions = signal(false);
   readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
     {
@@ -168,12 +166,12 @@ export class CreateRefTests {
     });
   }
 
-  protected toggleBulkImport(): void {
-    this.showBulkImport.update((v) => !v);
+  protected toggleImport(): void {
+    this.showImport.update((v) => !v);
   }
 
-  protected toggleBulkQuestionImport(): void {
-    this.showBulkQuestionImport.update((v) => !v);
+  protected toggleQuestionImport(): void {
+    this.showQuestionImport.update((v) => !v);
   }
 
   protected onTitleSelect(title: { id?: string; name: string }): void {
@@ -228,7 +226,7 @@ export class CreateRefTests {
     });
   }
 
-  protected onBulkQuestionImport(text: string): void {
+  protected onQuestionImport(text: string): void {
     const lines = text
       .split('\n')
       .map((line) => line.trim())
@@ -240,11 +238,11 @@ export class CreateRefTests {
       .filter((num) => num.length > 0);
 
     if (questionNumbers.length === 0) {
-      this.showBulkQuestionImport.set(false);
+      this.showQuestionImport.set(false);
       return;
     }
 
-    this.loadingBulkQuestions.set(true);
+    this.loadingQuestions.set(true);
 
     // Validate and add questions
     this._getQuestionsByNumberGQL
@@ -264,12 +262,12 @@ export class CreateRefTests {
           }
         }),
         tap(() => {
-          this.loadingBulkQuestions.set(false);
-          this.showBulkQuestionImport.set(false);
+          this.loadingQuestions.set(false);
+          this.showQuestionImport.set(false);
           this.resetQuestionCount();
         }),
         catchError(() => {
-          this.loadingBulkQuestions.set(false);
+          this.loadingQuestions.set(false);
           return of([]);
         }),
         takeUntilDestroyed(this._destroyRef),
@@ -277,7 +275,7 @@ export class CreateRefTests {
       .subscribe();
   }
 
-  protected onBulkUserImport(text: string): void {
+  protected onUserImport(text: string): void {
     const lines = text
       .split('\n')
       .map((line) => line.trim())
@@ -318,15 +316,15 @@ export class CreateRefTests {
       });
     }
 
-    this.showBulkImport.set(false);
+    this.showImport.set(false);
   }
 
-  protected onBulkUserCancel(): void {
-    this.showBulkImport.set(false);
+  protected onUserCancel(): void {
+    this.showImport.set(false);
   }
 
-  protected onBulkQuestionCancel(): void {
-    this.showBulkQuestionImport.set(false);
+  protected onQuestionCancel(): void {
+    this.showQuestionImport.set(false);
   }
 
   protected onSubmit(): void {
@@ -334,14 +332,14 @@ export class CreateRefTests {
     if (this.refTestForm().invalid()) {
       // Mark all fields as touched to reveal validation errors
       this.refTestForm().markAsTouched();
-      this.error.set('ref_tests.create.form.validation_error');
+      this._bannerService.error(this._translate.instant('ref_tests.create.form.validation_error'));
       return;
     }
 
     const formData = this.refTestModel();
 
     if (formData.users.length === 0) {
-      this.error.set('ref_tests.create.form.no_participants');
+      this._bannerService.error(this._translate.instant('ref_tests.create.form.no_participants'));
       return;
     }
 
@@ -350,12 +348,7 @@ export class CreateRefTests {
       .map((q) => q.trim())
       .filter((q) => q.length > 0);
 
-    this.error.set(null);
-    this.successCount.set(0);
-    this.failedCount.set(0);
-    this.errors.set([]);
-
-    this._createBulkRefTestsGQL
+    this._createRefTestsGQL
       .mutate({
         variables: {
           input: {
@@ -374,22 +367,28 @@ export class CreateRefTests {
       })
       .pipe(
         tap((result) => this.loading.set(result.loading ?? false)),
-        map((result) => result.data?.createBulkRefTests?.bulkRefTestsResult),
+        map((result) => result.data?.createRefTests?.createRefTestsResult),
         tap((data) => {
           if (data) {
-            this.successCount.set(data.successfullyCreated);
-            this.failedCount.set(data.failed);
-
             if (data.errors.length > 0) {
-              this.errors.set(
-                data.errors.map((e) => ({
-                  email: e.user.email,
-                  message: e.errorMessage,
-                })),
+              // Show error banner with failed count
+              this._bannerService.error(
+                this._translate.instant('ref_tests.create.success.failed_info', {
+                  count: data.failed,
+                }),
               );
             }
 
             if (data.successfullyCreated > 0) {
+              // Show success banner
+              const successKey =
+                data.successfullyCreated === 1
+                  ? 'ref_tests.create.success.created_one'
+                  : 'ref_tests.create.success.created_other';
+              this._bannerService.success(
+                this._translate.instant(successKey, { count: data.successfullyCreated }),
+              );
+
               // Reset form to initial state
               this.refTestModel.set({
                 users: [{ firstName: '', lastName: '', email: '' }],
@@ -405,31 +404,22 @@ export class CreateRefTests {
               this.refTestForm().reset();
             }
 
-            // Scroll to messages
-            setTimeout(() => {
-              this.messagesContainer()?.nativeElement.scrollIntoView({
-                behavior: 'smooth',
-                block: 'center',
-              });
-            }, 100);
-
             if (data.successfullyCreated > 0 && data.failed === 0) {
               of(null)
                 .pipe(delay(2000), takeUntilDestroyed(this._destroyRef))
-                .subscribe(() => this._router.navigate(['/ref-tests']));
+                .subscribe(() =>
+                  this._router.navigate(['/ref-tests'], {
+                    state: { fromCreate: true },
+                  }),
+                );
             }
           }
         }),
         catchError((err) => {
           this.loading.set(false);
-          this.error.set(err.message || 'ref_tests.create.form.submit_error');
-          // Scroll to error message
-          setTimeout(() => {
-            this.messagesContainer()?.nativeElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
-          }, 100);
+          this._bannerService.error(
+            err.message || this._translate.instant('ref_tests.create.form.submit_error'),
+          );
           return of(null);
         }),
         takeUntilDestroyed(this._destroyRef),

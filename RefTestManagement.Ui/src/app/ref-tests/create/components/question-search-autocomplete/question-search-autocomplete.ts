@@ -40,7 +40,7 @@ export class QuestionSearchAutocomplete {
 
   readonly selectQuestion = output<IQuestion>();
   readonly removeQuestion = output<string>();
-  readonly bulkImport = output<void>();
+  readonly import = output<void>();
 
   protected readonly searchTerm = signal('');
   protected readonly suggestions = signal<Array<IQuestion & { id: string }>>([]);
@@ -75,11 +75,11 @@ export class QuestionSearchAutocomplete {
                 isSearching: result.loading,
               } as ISearchResult;
             }),
-            catchError(() => of({ questions: [], isSearching: false } as ISearchResult))
+            catchError(() => of({ questions: [], isSearching: false } as ISearchResult)),
           );
-      })
+      }),
     ),
-    { initialValue: { questions: [], isSearching: false } }
+    { initialValue: { questions: [], isSearching: false } },
   );
 
   constructor() {
@@ -109,7 +109,7 @@ export class QuestionSearchAutocomplete {
         if (this.showDropdown() && this.suggestions().length > 0) {
           event.preventDefault();
           this.highlightedIndex.update((current) =>
-            current < this.suggestions().length - 1 ? current + 1 : 0
+            current < this.suggestions().length - 1 ? current + 1 : 0,
           );
         }
         break;
@@ -117,7 +117,7 @@ export class QuestionSearchAutocomplete {
         if (this.showDropdown() && this.suggestions().length > 0) {
           event.preventDefault();
           this.highlightedIndex.update((current) =>
-            current > 0 ? current - 1 : this.suggestions().length - 1
+            current > 0 ? current - 1 : this.suggestions().length - 1,
           );
         }
         break;

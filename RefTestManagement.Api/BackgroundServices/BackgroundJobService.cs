@@ -1,6 +1,5 @@
 ﻿using System.Text.Json;
-using Handball.Belgium.RefTestManagement.Api.Graphql;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Models;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -30,7 +29,7 @@ public class BackgroundJobService : BackgroundService
     private readonly TimeSpan _retainCompletedJobs;
     private readonly TimeSpan _retainFailedJobs;
     private DateTime _lastCleanupTime;
-    
+
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -102,6 +101,7 @@ public class BackgroundJobService : BackgroundService
         var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
 
         // Find jobs that are ready to be processed
+        // Note: This query mirrors the logic in Job.IsReadyToProcess() for database-level filtering
         var now = DateTime.UtcNow;
         var jobs = await context.Jobs
             .Where(j => j.Status == JobStatus.Pending
@@ -119,7 +119,9 @@ public class BackgroundJobService : BackgroundService
 
         ServiceLoggerMessages.LogJobsFound(_logger, jobs.Count);
 
-        foreach (var job in jobs.TakeWhile(_ => !cancellationToken.IsCancellationRequested))
+        // Process only jobs that are ready (defensive check using domain method)
+        foreach (var job in jobs.Where(j => j.IsReadyToProcess())
+                     .TakeWhile(_ => !cancellationToken.IsCancellationRequested))
         {
             await ProcessJobAsync(job, scope.ServiceProvider, context, cancellationToken);
         }
@@ -181,7 +183,8 @@ public class BackgroundJobService : BackgroundService
             }
             else
             {
-                ServiceLoggerMessages.LogJobFailed(_logger, job.Id, job.JobType, job.Attempts, _maxAttempts, errorMessage);
+                ServiceLoggerMessages.LogJobFailed(_logger, job.Id, job.JobType, job.Attempts, _maxAttempts,
+                    errorMessage);
             }
         }
     }
@@ -194,6 +197,7 @@ public class BackgroundJobService : BackgroundService
         var payload = DeserializePayload<InvitationEmailPayload>(job);
         var emailService = serviceProvider.GetRequiredService<IEmailService>();
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
+        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
         ServiceLoggerMessages.LogSendingInvitationEmail(_logger, payload.Email);
 
@@ -208,11 +212,17 @@ public class BackgroundJobService : BackgroundService
         // Mark the RefTest invitation as sent
         var refTest = await context.RefTests
             .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
-        
+
         if (refTest != null)
         {
             refTest.SendInvitation();
             await context.SaveChangesAsync(cancellationToken);
+            
+            // Publish subscription event
+            await subscriptionService.PublishInvitationSentAsync(
+                refTest.Id,
+                refTest.InvitationSentAt!.Value,
+                cancellationToken);
         }
     }
 
@@ -225,13 +235,14 @@ public class BackgroundJobService : BackgroundService
         var emailService = serviceProvider.GetRequiredService<IEmailService>();
         var questionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
+        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
         ServiceLoggerMessages.LogSendingResultEmail(_logger, payload.Email);
 
         // Get the RefTest to retrieve all question IDs
         var refTest = await context.RefTests
             .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
-        
+
         if (refTest == null)
         {
             throw new InvalidOperationException($"RefTest {payload.RefTestId} not found");
@@ -263,6 +274,12 @@ public class BackgroundJobService : BackgroundService
         // Mark the RefTest results as sent
         refTest.SendResults();
         await context.SaveChangesAsync(cancellationToken);
+        
+        // Publish subscription event
+        await subscriptionService.PublishResultSentAsync(
+            refTest.Id,
+            refTest.ResultsSentAt!.Value,
+            cancellationToken);
     }
 
     private async Task ProcessReportEmailJobAsync(
@@ -300,9 +317,10 @@ public class BackgroundJobService : BackgroundService
         CancellationToken cancellationToken)
     {
         var payload = DeserializePayload<RefTestExpirationPayload>(job);
-        
+
         var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
         // Load the specific RefTest
         var refTest = await context.RefTests
@@ -310,14 +328,14 @@ public class BackgroundJobService : BackgroundService
 
         if (refTest == null)
         {
-            _logger.LogWarning("RefTest {RefTestId} not found for expiration job", payload.RefTestId);
+            _logger.LogWarning("RefTest {Id} not found for expiration job", payload.RefTestId);
             return;
         }
 
         // Skip if already completed or expired
         if (refTest.Status == RefTestStatus.Completed || refTest.Status == RefTestStatus.Expired)
         {
-            _logger.LogDebug("RefTest {RefTestId} already in status {Status}, skipping", refTest.Id, refTest.Status);
+            _logger.LogDebug("RefTest {Id} already in status {Status}, skipping", refTest.Id, refTest.Status);
             return;
         }
 
@@ -325,30 +343,41 @@ public class BackgroundJobService : BackgroundService
 
         try
         {
-            if (payload.Action == RefTestExpirationAction.AutoComplete && refTest.Status == RefTestStatus.InProgress)
+            switch (payload.Action)
             {
-                // Auto-complete the in-progress test
-                var ihfRulesQuestionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
-                var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
-                var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
-                
-                await RefTestMutations.CompleteRefTestAsync(
-                    new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
-                    context,
-                    ihfRulesQuestionsService,
-                    jobEnqueueService,
-                    emailConfiguration,
-                    cancellationToken);
+                case RefTestExpirationAction.AutoComplete when refTest.Status == RefTestStatus.InProgress:
+                {
+                    // Auto-complete the in-progress test
+                    var ihfRulesQuestionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
+                    var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
+                    var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
 
-                ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
-            }
-            else if (payload.Action == RefTestExpirationAction.MarkAsExpired)
-            {
-                // Mark as expired (for pending tests)
-                refTest.Expire();
-                await context.SaveChangesAsync(cancellationToken);
-                
-                ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
+                    await RefTestLifecycleMutations.CompleteRefTestAsync(
+                        new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
+                        context,
+                        ihfRulesQuestionsService,
+                        jobEnqueueService,
+                        emailConfiguration,
+                        subscriptionService,
+                        cancellationToken);
+
+                    ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
+                    break;
+                }
+                case RefTestExpirationAction.MarkAsExpired:
+                    // Mark as expired (for pending tests)
+                    refTest.Expire();
+                    await context.SaveChangesAsync(cancellationToken);
+                    
+                    // Publish subscription event
+                    await subscriptionService.PublishRefTestExpiredAsync(
+                        refTest.Id,
+                        refTest.Status,
+                        DateTime.UtcNow,
+                        cancellationToken);
+
+                    ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
+                    break;
             }
         }
         catch (Exception ex)

@@ -1,0 +1,30 @@
+subscription RefTestUpdated($id: ID!) {
+  refTestUpdated(id: $id) {
+    __typename
+    ... on RefTestStarted {
+      id
+      status
+      startedAt
+    }
+    ... on RefTestCompleted {
+      id
+      status
+      completedAt
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
+      percentage
+    }
+    ... on RefTestExpired {
+      id
+      status
+    }
+    ... on RefTestInvitationSent {
+      id
+    }
+    ... on RefTestResultSent {
+      id
+    }
+  }
+}

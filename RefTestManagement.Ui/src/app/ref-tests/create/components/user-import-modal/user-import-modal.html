@@ -1,0 +1,41 @@
+@if (show()) {
+  <div class="mb-6 p-4 bg-secondary-50 rounded-xl border border-secondary-200">
+    <div class="mb-3">
+      <label for="text" class="block text-sm font-semibold text-neutral-900 mb-2">
+        {{ 'ref_tests.create.form.users.import_label' | translate }}
+      </label>
+      <textarea
+        id="text"
+        tabindex="2"
+        [value]="text()"
+        (input)="text.set($any($event.target).value)"
+        rows="6"
+        [title]="'ref_tests.create.form.users.import_label' | translate"
+        [attr.aria-label]="'ref_tests.create.form.users.import_label' | translate"
+        class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 font-mono text-sm bg-white"
+        placeholder="John Doe john.doe@example.com&#10;Jane Smith jane.smith@example.com"
+      ></textarea>
+      <p class="mt-2 text-xs text-neutral-600">
+        {{ 'ref_tests.create.form.users.import_hint' | translate }}
+      </p>
+    </div>
+    <div class="flex gap-2">
+      <button
+        type="button"
+        tabindex="3"
+        (click)="onImport()"
+        class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors"
+      >
+        {{ 'ref_tests.create.form.users.import_button' | translate }}
+      </button>
+      <button
+        type="button"
+        tabindex="4"
+        (click)="onCancel()"
+        class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium text-sm transition-colors"
+      >
+        {{ 'ref_tests.create.form.cancel' | translate }}
+      </button>
+    </div>
+  </div>
+}

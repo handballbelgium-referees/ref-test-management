@@ -17,16 +17,19 @@ import {
 } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
-import { catchError, EMPTY, finalize, map, switchMap, tap } from 'rxjs';
+import { catchError, EMPTY, filter, finalize, map, switchMap, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
   GetRefTestByIdGQL,
   GetRefTestsAllCountsDocument,
   RefTestStatus,
+  RefTestUpdatedGQL,
+  RefTestUpdatedSubscription,
   SendRefTestInvitationsGQL,
   SendRefTestResultsGQL,
 } from '../../../../graphql/generated';
-import { Toast } from '../../services/toast';
+import { Banner as BannerService } from '../../services/banner';
+import { Banner } from '../../shared/components/banner/banner';
 import { DeleteRefTestsDialog } from '../list/components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { SendInvitationsDialog } from '../list/components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from '../list/components/dialogs/send-results-dialog/send-results-dialog';
@@ -42,6 +45,7 @@ import { RefTestDetailDataService } from './services/ref-test-detail-data.servic
     SendInvitationsDialog,
     SendResultsDialog,
     DeleteRefTestsDialog,
+    Banner,
   ],
   providers: [RefTestDetailDataService],
   templateUrl: './ref-test-detail.html',
@@ -56,8 +60,11 @@ export class RefTestDetail {
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
   private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
   private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
-  private readonly _toastService = inject(Toast);
+  private readonly _refTestUpdatedGQL = inject(RefTestUpdatedGQL);
+  private readonly _bannerService = inject(BannerService);
   private readonly _translateService = inject(TranslateService);
+
+  private _queryRef?: ReturnType<typeof this._getRefTestByIdGQL.watch>;
 
   protected readonly RefTestStatus = RefTestStatus;
 
@@ -80,7 +87,8 @@ export class RefTestDetail {
           return EMPTY;
         }
 
-        return this._getRefTestByIdGQL.watch({ variables: { id } }).valueChanges.pipe(
+        this._queryRef = this._getRefTestByIdGQL.watch({ variables: { id } });
+        return this._queryRef.valueChanges.pipe(
           onlyCompleteData(),
           map((result) => {
             if (!result.data.refTest) {
@@ -106,6 +114,48 @@ export class RefTestDetail {
       if (data) {
         this._dataService.setRefTest(data);
       }
+    });
+
+    // Subscribe to ref test updates for the current ref test
+    this._route.paramMap
+      .pipe(
+        map((params) => params.get('id')),
+        filter((id): id is string => !!id),
+        switchMap((currentId) =>
+          this._refTestUpdatedGQL.subscribe({ variables: { id: currentId } }).pipe(
+            map((result) => result.data?.refTestUpdated),
+            filter((event): event is NonNullable<typeof event> => !!event),
+            tap((event) => this.updateRefTestData(event)),
+          ),
+        ),
+        catchError(() => {
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  private updateRefTestData(
+    event: NonNullable<RefTestUpdatedSubscription['refTestUpdated']>,
+  ): void {
+    if (!this._queryRef) return;
+
+    // Extract only the properties that should be merged, excluding __typename
+    const { __typename, ...updates } = event;
+
+    // Update Apollo cache
+    // @ts-expect-error - Apollo's updateQuery has complex typing that doesn't match our return
+    this._queryRef.updateQuery((prev) => {
+      if (!prev?.refTest) return prev;
+
+      return {
+        ...prev,
+        refTest: {
+          ...prev.refTest,
+          ...updates,
+        },
+      };
     });
   }
 
@@ -188,13 +238,13 @@ export class RefTestDetail {
       .pipe(
         tap((result) => {
           if (result.data?.sendInvitations) {
-            this._toastService.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.invitation_sent'),
             );
           }
         }),
         catchError(() => {
-          this._toastService.error(
+          this._bannerService.error(
             this._translateService.instant('ref_tests.detail.invitation_error'),
           );
           return EMPTY;
@@ -228,13 +278,13 @@ export class RefTestDetail {
       .pipe(
         tap((result) => {
           if (result.data?.sendResults) {
-            this._toastService.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.results_sent'),
             );
           }
         }),
         catchError(() => {
-          this._toastService.error(
+          this._bannerService.error(
             this._translateService.instant('ref_tests.detail.results_error'),
           );
           return EMPTY;
@@ -271,7 +321,7 @@ export class RefTestDetail {
       .pipe(
         tap((result) => {
           if (result.data?.deleteRefTests) {
-            this._toastService.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.delete_success'),
             );
             // Navigate back to list after successful delete
@@ -279,7 +329,9 @@ export class RefTestDetail {
           }
         }),
         catchError(() => {
-          this._toastService.error(this._translateService.instant('ref_tests.detail.delete_error'));
+          this._bannerService.error(
+            this._translateService.instant('ref_tests.detail.delete_error'),
+          );
           return EMPTY;
         }),
         finalize(() => this.deletingRefTest.set(false)),

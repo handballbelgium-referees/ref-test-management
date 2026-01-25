@@ -23,6 +23,18 @@ var configuration = builder.Configuration;
 services.AddSecurityConfiguration(configuration);
 services.AddControllersWithViews();
 
+// Add CORS for development (allows WebSocket connections from Angular dev server)
+services.AddCors(options =>
+{
+    options.AddPolicy("DevelopmentCors", policy =>
+    {
+        policy.WithOrigins("http://localhost:4200", "https://localhost:4200")
+            .AllowAnyMethod()
+            .AllowAnyHeader()
+            .AllowCredentials();
+    });
+});
+
 services.AddDbContextFactory<RefTestManagementContext>(options =>
 {
     options.UseSqlServer(configuration.GetConnectionString("RefTestManagement"),
@@ -82,6 +94,7 @@ services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 services.AddScoped<IJobEnqueueService, JobEnqueueService>();
+services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
 
 // Add background services
 services.AddHostedService<RefTestExpirationService>();
@@ -99,9 +112,11 @@ services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
 services.AddGraphQLServer()
     .AddQueryType()
     .AddMutationType()
+    .AddSubscriptionType()
     .AddApiTypes()
     .AddQueryConventions()
     .AddMutationConventions()
+    .AddInMemorySubscriptions()
     .ModifyPagingOptions(options =>
     {
         options.DefaultPageSize = 20;
@@ -138,6 +153,13 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+
+// Enable CORS for development
+if (app.Environment.IsDevelopment())
+{
+    app.UseCors("DevelopmentCors");
+}
+
 app.UseRouting();
 
 app.UseAuthentication();
