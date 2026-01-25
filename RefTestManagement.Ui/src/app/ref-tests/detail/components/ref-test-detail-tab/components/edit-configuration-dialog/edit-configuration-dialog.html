@@ -1,0 +1,167 @@
+@if (show()) {
+  <div
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+    (click)="cancel.emit()"
+  >
+    <div
+      class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-labelledby="dialog-title"
+      aria-modal="true"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-neutral-200">
+        <h2 id="dialog-title" class="text-xl font-bold text-neutral-900">
+          {{ 'ref_tests.detail.edit_configuration.title' | translate }}
+        </h2>
+        <p class="text-sm text-neutral-600 mt-1">
+          {{ 'ref_tests.detail.edit_configuration.subtitle' | translate }}
+        </p>
+      </div>
+
+      <!-- Form Content -->
+      <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
+        <div class="space-y-6">
+          @if (error()) {
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p class="text-sm text-red-800">{{ error() | translate }}</p>
+            </div>
+          }
+
+          <!-- Title Field -->
+          <div>
+            <app-title-autocomplete
+              [initialTitle]="configurationModel().title"
+              (selectTitle)="onTitleSelect($event)"
+            />
+            @if (configurationForm.title().touched() && configurationForm.title().invalid()) {
+              <p class="text-xs text-red-600 mt-1">
+                {{ configurationForm.title().errors()[0]?.message | translate }}
+              </p>
+            }
+          </div>
+
+          <!-- Question Selection -->
+          <div>
+            <label class="block text-sm font-medium text-neutral-700 mb-2">
+              {{ 'ref_tests.detail.edit_configuration.specific_questions' | translate }}
+            </label>
+            <app-question-search-autocomplete
+              [selectedQuestions]="selectedQuestions()"
+              [currentLanguage]="currentLanguage()"
+              (selectQuestion)="onQuestionSelect($event)"
+              (removeQuestion)="onQuestionRemove($event)"
+            />
+            @if (selectedQuestions().length > 0) {
+              <p class="text-xs text-neutral-600 mt-2">
+                {{
+                  'ref_tests.detail.edit_configuration.selected_questions_count'
+                    | translate: { count: selectedQuestions().length }
+                }}
+              </p>
+            }
+          </div>
+
+          <!-- Number of Questions -->
+          <div>
+            <label for="numberOfQuestions" class="block text-sm font-medium text-neutral-700 mb-2">
+              {{ 'ref_tests.detail.edit_configuration.number_of_questions' | translate }} *
+            </label>
+            <input
+              id="numberOfQuestions"
+              type="number"
+              [formField]="configurationForm.numberOfQuestions"
+              [class.border-red-500]="
+                configurationForm.numberOfQuestions().touched() &&
+                configurationForm.numberOfQuestions().invalid()
+              "
+              class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:text-neutral-500"
+              placeholder="{{
+                'ref_tests.detail.edit_configuration.number_of_questions_placeholder' | translate
+              }}"
+            />
+            @if (
+              configurationForm.numberOfQuestions().touched() &&
+              configurationForm.numberOfQuestions().invalid()
+            ) {
+              <p class="text-xs text-red-600 mt-1">
+                {{ configurationForm.numberOfQuestions().errors()[0]?.message | translate }}
+              </p>
+            }
+            @if (selectedQuestions().length > 0) {
+              <p class="text-xs text-neutral-600 mt-1">
+                {{ 'ref_tests.detail.edit_configuration.questions_disabled_hint' | translate }}
+              </p>
+            }
+          </div>
+
+          <!-- Random Questions Checkbox -->
+          <div class="flex items-start gap-3">
+            <input
+              id="randomQuestionsForEachUser"
+              type="checkbox"
+              [formField]="configurationForm.randomQuestionsForEachUser"
+              class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+            />
+            <label for="randomQuestionsForEachUser" class="text-sm text-neutral-700 flex-1">
+              <div class="font-medium mb-0.5">
+                {{ 'ref_tests.detail.edit_configuration.random_questions_label' | translate }}
+              </div>
+              <p class="text-xs text-neutral-500">
+                {{ 'ref_tests.detail.edit_configuration.random_questions_description' | translate }}
+              </p>
+            </label>
+          </div>
+
+          <!-- Max Time -->
+          <div>
+            <label for="maxTimeInMinutes" class="block text-sm font-medium text-neutral-700 mb-2">
+              {{ 'ref_tests.detail.edit_configuration.max_time' | translate }} *
+            </label>
+            <input
+              id="maxTimeInMinutes"
+              type="number"
+              [formField]="configurationForm.maxTimeInMinutes"
+              [class.border-red-500]="
+                configurationForm.maxTimeInMinutes().touched() &&
+                configurationForm.maxTimeInMinutes().invalid()
+              "
+              class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="{{
+                'ref_tests.detail.edit_configuration.max_time_placeholder' | translate
+              }}"
+            />
+            @if (
+              configurationForm.maxTimeInMinutes().touched() &&
+              configurationForm.maxTimeInMinutes().invalid()
+            ) {
+              <p class="text-xs text-red-600 mt-1">
+                {{ configurationForm.maxTimeInMinutes().errors()[0]?.message | translate }}
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="cancel.emit()"
+          class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
+        >
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          (click)="onSave()"
+          [disabled]="!canSave()"
+          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ 'common.save' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

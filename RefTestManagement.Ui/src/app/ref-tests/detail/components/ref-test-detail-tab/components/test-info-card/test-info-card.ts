@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus, RefTestTitle } from '../../../../../../../../graphql/generated';
 
@@ -10,8 +10,11 @@ import { RefTestStatus, RefTestTitle } from '../../../../../../../../graphql/gen
   host: { class: 'block' },
 })
 export class TestInfoCard {
-  title = input<RefTestTitle | undefined>(undefined);
+  title = input<RefTestTitle>();
   numberOfQuestions = input.required<number>();
   maxTimeInMinutes = input<number>();
   status = input.required<RefTestStatus>();
+  edit = output<void>();
+
+  protected readonly RefTestStatus = RefTestStatus;
 }

@@ -11,6 +11,7 @@ import { onlyCompleteData } from 'apollo-angular';
 import { map } from 'rxjs';
 import { GetScoreConfigurationGQL, RefTestStatus } from '../../../../../../graphql/generated';
 import { RefTestDetailDataService } from '../../services/ref-test-detail-data.service';
+import { EditConfigurationDialog } from './components/edit-configuration-dialog/edit-configuration-dialog';
 import { EditParticipantDialog } from './components/edit-participant-dialog/edit-participant-dialog';
 import { ParticipantInfoCard } from './components/participant-info-card/participant-info-card';
 import { ScoresCard } from './components/scores-card/scores-card';
@@ -27,6 +28,7 @@ import { TimelineCard } from './components/timeline-card/timeline-card';
     TimelineCard,
     ScoresCard,
     EditParticipantDialog,
+    EditConfigurationDialog,
   ],
   templateUrl: './ref-test-detail-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -39,6 +41,9 @@ export class RefTestDetailTab {
 
   protected readonly editDialog = viewChild(EditParticipantDialog);
   protected readonly showEditDialog = signal(false);
+
+  protected readonly editConfigDialog = viewChild(EditConfigurationDialog);
+  protected readonly showEditConfigDialog = signal(false);
 
   private readonly _passingPercentage = toSignal(
     inject(GetScoreConfigurationGQL)
@@ -77,5 +82,26 @@ export class RefTestDetailTab {
 
   protected onEditDialogClose(): void {
     this.showEditDialog.set(false);
+  }
+
+  protected onEditConfiguration(): void {
+    const refTest = this.refTest();
+    if (!refTest) return;
+
+    this.showEditConfigDialog.set(true);
+    const dialog = this.editConfigDialog();
+    if (dialog) {
+      dialog.initialize(
+        refTest.id,
+        refTest.title ?? null,
+        refTest.numberOfQuestions,
+        refTest.maxTimeInMinutes,
+        refTest.questions?.map((q) => ({ number: q!.number, phrase: q!.phrase! })) ?? [],
+      );
+    }
+  }
+
+  protected onEditConfigDialogClose(): void {
+    this.showEditConfigDialog.set(false);
   }
 }
