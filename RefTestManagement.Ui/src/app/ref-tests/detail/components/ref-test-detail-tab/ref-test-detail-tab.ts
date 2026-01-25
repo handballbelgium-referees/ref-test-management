@@ -4,12 +4,22 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
 import { map } from 'rxjs';
 import { GetScoreConfigurationGQL, RefTestStatus } from '../../../../../../graphql/generated';
-import { LocalizedDate } from '../../../../shared/pipes/localized-date';
 import { RefTestDetailDataService } from '../../services/ref-test-detail-data.service';
+import { ParticipantInfoCard } from './components/participant-info-card/participant-info-card';
+import { ScoresCard } from './components/scores-card/scores-card';
+import { StatusInfoCard } from './components/status-info-card/status-info-card';
+import { TestInfoCard } from './components/test-info-card/test-info-card';
+import { TimelineCard } from './components/timeline-card/timeline-card';
 
 @Component({
   selector: 'app-ref-test-detail-tab',
-  imports: [TranslatePipe, LocalizedDate],
+  imports: [
+    ParticipantInfoCard,
+    TestInfoCard,
+    StatusInfoCard,
+    TimelineCard,
+    ScoresCard,
+  ],
   templateUrl: './ref-test-detail-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -1,0 +1,47 @@
+<div class="h-full bg-neutral-50 rounded-lg p-6 border border-neutral-200">
+  <h2 class="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+    <svg
+      class="w-5 h-5 text-primary-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+      />
+    </svg>
+    {{ 'ref_tests.detail.test_info' | translate }}
+  </h2>
+  <dl class="space-y-3">
+    <div>
+      <dt class="text-sm font-medium text-neutral-500">
+        {{ 'ref_tests.detail.title' | translate }}
+      </dt>
+      <dd class="mt-1 text-sm text-neutral-900">
+        {{ title()?.value || ('ref_tests.detail.no_title' | translate) }}
+      </dd>
+    </div>
+    <div>
+      <dt class="text-sm font-medium text-neutral-500">
+        {{ 'ref_tests.detail.number_of_questions' | translate }}
+      </dt>
+      <dd class="mt-1 text-sm text-neutral-900">{{ numberOfQuestions() }}</dd>
+    </div>
+    <div>
+      <dt class="text-sm font-medium text-neutral-500">
+        {{ 'ref_tests.detail.max_time' | translate }}
+      </dt>
+      <dd class="mt-1 text-sm text-neutral-900">
+        @if (maxTimeInMinutes()) {
+          {{ maxTimeInMinutes() }} {{ 'ref_tests.detail.minutes' | translate }}
+        } @else {
+          <span class="text-neutral-400">-</span>
+        }
+      </dd>
+    </div>
+  </dl>
+</div>

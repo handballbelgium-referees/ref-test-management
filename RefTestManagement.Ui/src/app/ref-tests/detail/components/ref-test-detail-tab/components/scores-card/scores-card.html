@@ -1,0 +1,110 @@
+<div class="bg-neutral-50 rounded-lg p-6 border border-neutral-200">
+  <h2 class="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
+    <svg
+      class="w-5 h-5 text-primary-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+      />
+    </svg>
+    {{ 'ref_tests.detail.scores' | translate }}
+  </h2>
+
+  <!-- Overall Score -->
+  <div class="mb-6">
+    <div class="flex items-center justify-between mb-2">
+      <span class="text-sm font-medium text-neutral-700">{{
+        'ref_tests.detail.overall_score' | translate
+      }}</span>
+      <span [class]="isPassed() ? 'text-success-700' : 'text-red-700'" class="text-2xl font-bold">
+        {{ percentage() }}%
+      </span>
+    </div>
+    <div class="w-full bg-neutral-200 rounded-full h-3 overflow-hidden">
+      <div
+        [class]="isPassed() ? 'bg-success-600' : 'bg-red-600'"
+        [style.width.%]="percentage()"
+        class="h-3 rounded-full transition-all duration-500"
+      ></div>
+    </div>
+    <div class="mt-2 flex items-center gap-2">
+      @if (isPassed()) {
+        <svg
+          class="w-5 h-5 text-success-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <span class="text-sm font-medium text-success-700">{{
+          'ref_tests.detail.passed' | translate
+        }}</span>
+      } @else {
+        <svg
+          class="w-5 h-5 text-red-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+          aria-hidden="true"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+        <span class="text-sm font-medium text-red-700">{{
+          'ref_tests.detail.failed' | translate
+        }}</span>
+      }
+    </div>
+  </div>
+
+  <!-- Detailed Scores -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+    <div class="bg-white rounded-lg p-4 border border-neutral-200">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-neutral-600">{{
+          'ref_tests.detail.question_score' | translate
+        }}</span>
+        <span class="text-lg font-bold text-neutral-900">
+          {{ questionScore() }}/{{ questionTotal() }}
+        </span>
+      </div>
+      <div class="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
+        <div
+          [style.width.%]="(questionScore()! / questionTotal()) * 100"
+          class="h-2 bg-primary-600 rounded-full transition-all duration-500"
+        ></div>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-lg p-4 border border-neutral-200">
+      <div class="flex items-center justify-between mb-2">
+        <span class="text-sm font-medium text-neutral-600">{{
+          'ref_tests.detail.answer_score' | translate
+        }}</span>
+        <span class="text-lg font-bold text-neutral-900">
+          {{ answerScore() }}/{{ answerTotal() }}
+        </span>
+      </div>
+      <div class="w-full bg-neutral-200 rounded-full h-2 overflow-hidden">
+        <div
+          [style.width.%]="(answerScore()! / answerTotal()!) * 100"
+          class="h-2 bg-primary-600 rounded-full transition-all duration-500"
+        ></div>
+      </div>
+    </div>
+  </div>
+</div>
