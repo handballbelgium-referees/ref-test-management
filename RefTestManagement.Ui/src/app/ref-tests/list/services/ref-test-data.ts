@@ -97,6 +97,10 @@ export class RefTestData {
     ),
   );
 
+  readonly hasData = computed(() => {
+    return (this.queryResult()?.data?.refTests?.edges?.length ?? 0) > 0;
+  });
+
   readonly loading = computed(() => {
     return this.queryResult()?.loading ?? false;
   });
@@ -176,6 +180,45 @@ export class RefTestData {
         where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
         order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
       },
+    });
+  }
+
+  reset(): void {
+    this._queryRef.refetch({
+      first: this._filterState.filter().pagingInfo.first,
+      after: this._filterState.filter().pagingInfo.after,
+      where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
+      order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
+    });
+
+    this._countsQueryRef.refetch({
+      allWhere: this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+        excludeStatus: true,
+      }),
+      pendingWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Pending } },
+      ),
+      inProgressWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.InProgress } },
+      ),
+      completedWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Completed } },
+      ),
+      expiredWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Expired } },
+      ),
     });
   }
 

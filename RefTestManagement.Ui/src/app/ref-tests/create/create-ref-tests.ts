@@ -407,7 +407,11 @@ export class CreateRefTests {
             if (data.successfullyCreated > 0 && data.failed === 0) {
               of(null)
                 .pipe(delay(2000), takeUntilDestroyed(this._destroyRef))
-                .subscribe(() => this._router.navigate(['/ref-tests']));
+                .subscribe(() =>
+                  this._router.navigate(['/ref-tests'], {
+                    state: { fromCreate: true },
+                  }),
+                );
             }
           }
         }),

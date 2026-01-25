@@ -2,6 +2,7 @@ import { registerLocaleData } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import {
   ApplicationConfig,
+  ErrorHandler,
   inject,
   isDevMode,
   LOCALE_ID,
@@ -11,6 +12,7 @@ import {
 import { provideRouter } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
+import { GlobalErrorHandler } from './services/global-error-handler';
 
 import { provideServiceWorker } from '@angular/service-worker';
 import { InMemoryCache } from '@apollo/client';
@@ -55,6 +57,7 @@ function registerDynamicLocales() {
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
     provideHttpClient(),
