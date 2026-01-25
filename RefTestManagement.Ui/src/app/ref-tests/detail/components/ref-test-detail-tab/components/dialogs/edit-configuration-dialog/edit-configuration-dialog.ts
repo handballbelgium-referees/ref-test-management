@@ -14,10 +14,10 @@ import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
-import { UpdateRefTestConfigurationGQL } from '../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../services/toast';
-import { QuestionSearchAutocomplete } from '../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
-import { TitleAutocomplete } from '../../../../../create/components/title-autocomplete/title-autocomplete';
+import { UpdateRefTestConfigurationGQL } from '../../../../../../../../../graphql/generated';
+import { Toast } from '../../../../../../../services/toast';
+import { QuestionSearchAutocomplete } from '../../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
+import { TitleAutocomplete } from '../../../../../../create/components/title-autocomplete/title-autocomplete';
 
 interface IConfigurationData {
   title: { id?: string; name: string } | null;

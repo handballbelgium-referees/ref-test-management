@@ -13,8 +13,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { email, form, FormField, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, tap } from 'rxjs';
-import { UpdateRefTestDetailsGQL } from '../../../../../../../../graphql/generated';
-import { Toast } from '../../../../../../services/toast';
+import { UpdateRefTestDetailsGQL } from '../../../../../../../../../graphql/generated';
+import { Toast } from '../../../../../../../services/toast';
 
 interface IParticipantData {
   firstName: string;
