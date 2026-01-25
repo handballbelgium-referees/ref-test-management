@@ -1,6 +1,234 @@
 @if (selectedCount() > 0) {
-  <div class="mb-6 bg-primary-50 border border-primary-200 rounded-lg p-4">
-    <div class="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
+  <!-- Mobile: Floating Action Button Menu (< 640px) -->
+  <div class="sm:hidden">
+    <!-- Backdrop -->
+    @if (menuOpen()) {
+      <div
+        class="fixed inset-0 bg-black/60 z-40 animate-in fade-in duration-200"
+        (click)="toggleMenu()"
+      ></div>
+    }
+
+    <!-- FAB Menu Container -->
+    <div class="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
+      <!-- Action Buttons (shown when menu is open) -->
+      @if (menuOpen()) {
+        <div class="flex flex-col gap-3">
+          <button
+            type="button"
+            [disabled]="!hasPendingRefTestsSelected() || sendingInvitations() || deletingRefTests()"
+            (click)="onSendInvitations($event)"
+            class="fab-button-1 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+            [attr.aria-label]="
+              selectedCount() === 1
+                ? ('ref_tests.list.actions.send_invitation' | translate)
+                : ('ref_tests.list.actions.send_invitations' | translate)
+            "
+          >
+            @if (sendingInvitations()) {
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            } @else {
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                />
+              </svg>
+            }
+            <span class="text-sm font-medium">
+              {{
+                selectedCount() === 1
+                  ? ('ref_tests.list.actions.send_invitation' | translate)
+                  : ('ref_tests.list.actions.send_invitations' | translate)
+              }}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            [disabled]="!hasCompletedRefTestsSelected() || sendingResults() || deletingRefTests()"
+            (click)="onSendResults($event)"
+            class="fab-button-2 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+            [attr.aria-label]="
+              selectedCount() === 1
+                ? ('ref_tests.list.actions.send_result' | translate)
+                : ('ref_tests.list.actions.send_results' | translate)
+            "
+          >
+            @if (sendingResults()) {
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            } @else {
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+            }
+            <span class="text-sm font-medium">
+              {{
+                selectedCount() === 1
+                  ? ('ref_tests.list.actions.send_result' | translate)
+                  : ('ref_tests.list.actions.send_results' | translate)
+              }}
+            </span>
+          </button>
+
+          @if (selectedCount() > 1) {
+            <button
+              type="button"
+              [disabled]="generatingReport()"
+              (click)="onGenerateReport($event)"
+              class="fab-button-3 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-success-600 hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+              [attr.aria-label]="'ref_tests.list.actions.generate_report' | translate"
+            >
+              @if (generatingReport()) {
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              } @else {
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                  />
+                </svg>
+              }
+              <span class="text-sm font-medium">
+                {{ 'ref_tests.list.actions.generate_report' | translate }}
+              </span>
+            </button>
+          }
+
+          <button
+            type="button"
+            [disabled]="
+              !hasInProgressOrCompletedRefTestsSelected() ||
+              resettingRefTests() ||
+              deletingRefTests()
+            "
+            (click)="onResetSelected($event)"
+            class="fab-button-4 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-warning-600 hover:bg-warning-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+            [attr.aria-label]="
+              selectedCount() === 1
+                ? ('ref_tests.list.actions.reset_test' | translate)
+                : ('ref_tests.list.actions.reset_tests' | translate)
+            "
+          >
+            @if (resettingRefTests()) {
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            } @else {
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            }
+            <span class="text-sm font-medium">
+              {{
+                selectedCount() === 1
+                  ? ('ref_tests.list.actions.reset_test' | translate)
+                  : ('ref_tests.list.actions.reset_tests' | translate)
+              }}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            [disabled]="!hasExpiredRefTestsSelected() || revivingRefTests() || deletingRefTests()"
+            (click)="onReviveSelected($event)"
+            class="fab-button-5 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-info-600 hover:bg-info-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+            [attr.aria-label]="
+              selectedCount() === 1
+                ? ('ref_tests.list.actions.revive_test' | translate)
+                : ('ref_tests.list.actions.revive_tests' | translate)
+            "
+          >
+            @if (revivingRefTests()) {
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            } @else {
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                />
+              </svg>
+            }
+            <span class="text-sm font-medium">
+              {{
+                selectedCount() === 1
+                  ? ('ref_tests.list.actions.revive_test' | translate)
+                  : ('ref_tests.list.actions.revive_tests' | translate)
+              }}
+            </span>
+          </button>
+
+          <button
+            type="button"
+            [disabled]="deletingRefTests()"
+            (click)="onDeleteSelected($event)"
+            class="fab-button-6 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-red-600 hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+            [attr.aria-label]="'ref_tests.list.actions.delete' | translate"
+          >
+            @if (deletingRefTests()) {
+              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+            } @else {
+              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                />
+              </svg>
+            }
+            <span class="text-sm font-medium">
+              {{ 'ref_tests.list.actions.delete' | translate }}
+            </span>
+          </button>
+        </div>
+      }
+
+      <!-- Main FAB Button -->
+      <button
+        type="button"
+        (click)="toggleMenu()"
+        class="flex items-center justify-center w-14 h-14 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 transition-transform duration-200"
+        [class.rotate-45]="menuOpen()"
+        [attr.aria-label]="'Actions'"
+        [attr.aria-expanded]="menuOpen()"
+      >
+        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+          />
+        </svg>
+        <!-- Selection Badge -->
+        <span
+          class="absolute -top-1 -right-1 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full transition-transform duration-200"
+          [class.-rotate-45]="menuOpen()"
+        >
+          {{ selectedCount() }}
+        </span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Desktop Design (≥ 640px) -->
+  <div class="mb-6 bg-primary-50 border border-primary-200 rounded-lg p-4 hidden sm:block">
+    <div class="flex flex-col xl:flex-row gap-4 xl:items-center xl:justify-between">
       <div class="text-sm font-medium text-primary-900">
         {{ selectedCount() }}
         {{
@@ -9,12 +237,12 @@
             : ('ref_tests.list.actions.reftests_selected' | translate)
         }}
       </div>
-      <div class="flex gap-2 w-full sm:w-auto flex-wrap">
+      <div class="grid grid-cols-2 lg:grid-cols-3 xl:flex xl:flex-wrap gap-2">
         <button
           type="button"
           [disabled]="!hasPendingRefTestsSelected() || sendingInvitations() || deletingRefTests()"
           (click)="onSendInvitations($event)"
-          class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           @if (sendingInvitations()) {
             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>
@@ -38,7 +266,7 @@
           type="button"
           [disabled]="!hasCompletedRefTestsSelected() || sendingResults() || deletingRefTests()"
           (click)="onSendResults($event)"
-          class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           @if (sendingResults()) {
             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>
@@ -63,7 +291,7 @@
             type="button"
             [disabled]="generatingReport()"
             (click)="onGenerateReport($event)"
-            class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             @if (generatingReport()) {
               <div
@@ -84,9 +312,59 @@
         }
         <button
           type="button"
+          [disabled]="
+            !hasInProgressOrCompletedRefTestsSelected() || resettingRefTests() || deletingRefTests()
+          "
+          (click)="onResetSelected($event)"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-warning-600 hover:bg-warning-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warning-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (resettingRefTests()) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>
+          } @else {
+            <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          }
+          {{
+            selectedCount() === 1
+              ? ('ref_tests.list.actions.reset_test' | translate)
+              : ('ref_tests.list.actions.reset_tests' | translate)
+          }}
+        </button>
+        <button
+          type="button"
+          [disabled]="!hasExpiredRefTestsSelected() || revivingRefTests() || deletingRefTests()"
+          (click)="onReviveSelected($event)"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-info-600 hover:bg-info-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-info-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (revivingRefTests()) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>
+          } @else {
+            <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+          }
+          {{
+            selectedCount() === 1
+              ? ('ref_tests.list.actions.revive_test' | translate)
+              : ('ref_tests.list.actions.revive_tests' | translate)
+          }}
+        </button>
+        <button
+          type="button"
           [disabled]="deletingRefTests()"
           (click)="onDeleteSelected($event)"
-          class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           @if (deletingRefTests()) {
             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>

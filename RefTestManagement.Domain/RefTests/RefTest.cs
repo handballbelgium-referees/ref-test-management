@@ -229,16 +229,16 @@ public class RefTest
         bool? sendResultsAutomatically = null)
     {
         // Can update sendInvitationsAutomatically only if pending and invitation not yet sent
-        if (sendInvitationsAutomatically.HasValue && 
-            Status == RefTestStatus.Pending && 
+        if (sendInvitationsAutomatically.HasValue &&
+            Status == RefTestStatus.Pending &&
             !InvitationSentAt.HasValue)
         {
             SendInvitationsAutomatically = sendInvitationsAutomatically.Value;
         }
 
         // Can update sendResultsAutomatically only if results not yet sent and not expired
-        if (sendResultsAutomatically.HasValue && 
-            Status != RefTestStatus.Expired && 
+        if (sendResultsAutomatically.HasValue &&
+            Status != RefTestStatus.Expired &&
             !ResultsSentAt.HasValue)
         {
             SendResultsAutomatically = sendResultsAutomatically.Value;
@@ -252,7 +252,7 @@ public class RefTest
                 "Can only regenerate token for pending or expired tests");
 
         Token = Guid.NewGuid().ToString("N");
-        
+
         // Clear invitation sent flag so a new invitation will be sent with the new token
         if (InvitationSentAt.HasValue)
         {
@@ -266,8 +266,9 @@ public class RefTest
 
     public void SoftReset(bool regenerateToken = false)
     {
-        if (Status == RefTestStatus.Pending)
-            throw new InvalidRefTestStatusException("Cannot reset a pending test - it's already in initial state");
+        if (Status != RefTestStatus.InProgress && Status != RefTestStatus.Completed)
+            throw new InvalidRefTestStatusException(
+                "Cannot reset a pending or expired test - it's already in initial state when state is pending, when expired use revive instead");
 
         // Clear progress data
         Status = RefTestStatus.Pending;
@@ -286,23 +287,24 @@ public class RefTest
         ResultsSentAt = null;
         Language = null;
 
+        if (!regenerateToken)
+            return;
+
         // Optionally regenerate token
-        if (regenerateToken)
-        {
-            Token = Guid.NewGuid().ToString("N");
-            
-            // Clear invitation sent flag so a new invitation will be sent with the new token
-            InvitationSentAt = null;
-        }
+        Token = Guid.NewGuid().ToString("N");
+
+        // Clear invitation sent flag so a new invitation will be sent with the new token
+        InvitationSentAt = null;
 
         // Keep: CreatedAt (for audit trail)
-        // Note: InvitationSentAt is cleared if token is regenerated, preserved otherwise
+        // Note: InvitationSentAt is cleared if the token is regenerated, preserved otherwise
     }
 
     public void HardReset()
     {
-        if (Status == RefTestStatus.Pending)
-            throw new InvalidRefTestStatusException("Cannot hard reset a pending test - use update operations instead");
+        if (Status != RefTestStatus.InProgress && Status != RefTestStatus.Completed)
+            throw new InvalidRefTestStatusException(
+                "Cannot hard reset a pending or expired test - use update operations instead when status is pending, when expired use revive instead");
 
         // Clear all progress and history
         Status = RefTestStatus.Pending;
@@ -327,7 +329,7 @@ public class RefTest
 
         // Always regenerate token for security
         Token = Guid.NewGuid().ToString("N");
-    }
+ }
 
     public void Revive()
     {
@@ -336,10 +338,10 @@ public class RefTest
 
         Status = RefTestStatus.Pending;
         Token = Guid.NewGuid().ToString("N");
-        
+
         // Reset CreatedAt so the expiration timer starts fresh
         CreatedAt = DateTime.UtcNow;
-        
+
         // Clear invitation sent flag so a new invitation will be sent with the new token
         InvitationSentAt = null;
     }
@@ -353,7 +355,7 @@ public class RefTest
 
     private bool CanUpdateTestConfiguration() =>
         Status != RefTestStatus.InProgress && Status != RefTestStatus.Completed;
-    
+
     private bool CanExtendTime() =>
         Status == RefTestStatus.InProgress;
 

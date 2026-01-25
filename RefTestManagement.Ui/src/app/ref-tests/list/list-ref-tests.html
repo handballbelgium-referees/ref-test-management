@@ -42,14 +42,20 @@
       [selectedCount]="selectionManager.selectedCount()"
       [hasCompletedRefTestsSelected]="hasCompletedRefTestsSelected()"
       [hasPendingRefTestsSelected]="hasPendingRefTestsSelected()"
+      [hasInProgressOrCompletedRefTestsSelected]="hasInProgressOrCompletedRefTestsSelected()"
+      [hasExpiredRefTestsSelected]="hasExpiredRefTestsSelected()"
       [sendingInvitations]="operationManager.sendingInvitations()"
       [sendingResults]="operationManager.sendingResults()"
       [deletingRefTests]="operationManager.deletingRefTests()"
       [generatingReport]="operationManager.generatingReport()"
+      [resettingRefTests]="operationManager.resettingRefTests()"
+      [revivingRefTests]="operationManager.revivingRefTests()"
       (sendInvitations)="sendInvitationsToSelected()"
       (sendResults)="sendResultsToSelected()"
       (deleteSelected)="deleteSelectedRefTests()"
       (generateReport)="generateReportForSelected()"
+      (resetSelected)="resetSelectedRefTests()"
+      (reviveSelected)="reviveSelectedRefTests()"
     />
 
     <!-- Loading State -->
@@ -149,4 +155,22 @@
     (cancel)="cancelGenerateReport()"
   >
   </app-generate-report-dialog>
+
+  <!-- Reset Dialog -->
+  <app-reset-ref-tests-dialog
+    [show]="operationManager.showResetDialog()"
+    [refTests]="refTestsToReset()"
+    (confirm)="confirmReset($event)"
+    (cancel)="cancelReset()"
+  >
+  </app-reset-ref-tests-dialog>
+
+  <!-- Revive Dialog -->
+  <app-revive-ref-tests-dialog
+    [show]="operationManager.showReviveDialog()"
+    [refTests]="refTestsToRevive()"
+    (confirm)="confirmRevive()"
+    (cancel)="cancelRevive()"
+  >
+  </app-revive-ref-tests-dialog>
 </app-pull-to-refresh>

@@ -173,6 +173,10 @@
         "send_result": "Ergebnis Senden",
         "send_results": "Ergebnisse Senden",
         "generate_report": "Bericht Senden",
+        "reset_test": "Test Zurücksetzen",
+        "reset_tests": "Tests Zurücksetzen",
+        "revive_test": "Test Wiederherstellen",
+        "revive_tests": "Tests Wiederherstellen",
         "delete": "Löschen"
       },
       "dialogs": {
@@ -209,6 +213,29 @@
           "info": "Ein Bericht wird erstellt und per E-Mail mit den Details aller ausgewählten RefTests versendet.",
           "confirm": "Bericht Erstellen und Senden",
           "cancel": "Abbrechen"
+        },
+        "reset": {
+          "title": "RefTests Zurücksetzen",
+          "message": "{{count}} RefTest(s) zurücksetzen?",
+          "warning": "Dies setzt den RefTest-Fortschritt zurück. Beantwortete Fragen werden gelöscht.",
+          "options": "Reset-Optionen",
+          "soft_reset": "Weiches Zurücksetzen",
+          "soft_reset_description": "Antworten löschen, aber den Test mit demselben Token zugänglich halten",
+          "hard_reset": "Hartes Zurücksetzen",
+          "hard_reset_description": "Antworten löschen und ein neues Zugriffstoken generieren (altes Token wird ungültig)",
+          "regenerate_token": "Zugriffstoken Neu Generieren",
+          "regenerate_token_description": "Ein neues Token generieren (nur bei Weichem Zurücksetzen verfügbar)",
+          "ref_tests": "Zurückzusetzende RefTests:",
+          "confirm": "RefTests Zurücksetzen",
+          "cancel": "Abbrechen"
+        },
+        "revive": {
+          "title": "RefTests Wiederbeleben",
+          "message": "{{count}} abgelaufene RefTest(s) wiederbeleben?",
+          "info": "Dies macht die abgelaufenen RefTests wieder mit ihren aktuellen Tokens zugänglich.",
+          "ref_tests": "Wiederzubelebende RefTests:",
+          "confirm": "RefTests Wiederbeleben",
+          "cancel": "Abbrechen"
         }
       },
       "report": {
@@ -220,6 +247,12 @@
       },
       "delete_success": "RefTests erfolgreich gelöscht",
       "delete_error": "Fehler beim Löschen der RefTests",
+      "reset_success": "{{count}} RefTest(s) erfolgreich zurückgesetzt",
+      "reset_error": "Fehler beim Zurücksetzen der RefTests",
+      "reset_partial_error": "{{count}} RefTest(s) konnten nicht zurückgesetzt werden",
+      "revive_success": "{{count}} RefTest(s) erfolgreich wiederbelebt",
+      "revive_error": "Fehler beim Wiederbeleben der RefTests",
+      "revive_partial_error": "{{count}} RefTest(s) konnten nicht wiederbelebt werden",
       "invitations_sent": "Einladungen erfolgreich gesendet",
       "invitations_error": "Fehler beim Senden der Einladungen",
       "results_sent": "Ergebnisse erfolgreich gesendet",

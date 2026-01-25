@@ -10,6 +10,8 @@ import {
   GetRefTestsGQL,
   GetRefTestsQuery,
   RefTestStatus,
+  ResetRefTestsGQL,
+  ReviveRefTestsGQL,
   SendRefTestInvitationsGQL,
   SendRefTestResultsGQL,
   SendReportGQL,
@@ -27,6 +29,8 @@ export class RefTestData {
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
   private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
   private readonly _sendReportGQL = inject(SendReportGQL);
+  private readonly _resetRefTestsGQL = inject(ResetRefTestsGQL);
+  private readonly _reviveRefTestsGQL = inject(ReviveRefTestsGQL);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _filterState = inject(RefTestFilterState);
   private readonly _queryBuilder = inject(RefTestQueryBuilder);
@@ -379,6 +383,86 @@ export class RefTestData {
               success: sendResult.success,
               refTestCount: sendResult.refTestCount || 0,
             });
+          }
+        }),
+        catchError((error) => {
+          if (callbacks.onError) callbacks.onError(error);
+          return of(null);
+        }),
+        finalize(() => {
+          if (callbacks.onComplete) callbacks.onComplete();
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  resetRefTests(
+    ids: string[],
+    resetType: any,
+    regenerateToken: boolean,
+    callbacks: {
+      onStart?: () => void;
+      onSuccess?: (successCount: number, failedCount: number) => void;
+      onError?: (error: any) => void;
+      onComplete?: () => void;
+    } = {},
+  ): void {
+    if (callbacks.onStart) callbacks.onStart();
+
+    this._resetRefTestsGQL
+      .mutate({
+        variables: {
+          input: {
+            ids,
+            resetType,
+            regenerateToken,
+          },
+        },
+      })
+      .pipe(
+        tap((result) => {
+          const resetResult = result.data?.resetRefTests?.resetRefTestsResult;
+          if (resetResult && callbacks.onSuccess) {
+            callbacks.onSuccess(resetResult.successfullyReset, resetResult.failed);
+          }
+        }),
+        catchError((error) => {
+          if (callbacks.onError) callbacks.onError(error);
+          return of(null);
+        }),
+        finalize(() => {
+          if (callbacks.onComplete) callbacks.onComplete();
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  reviveRefTests(
+    ids: string[],
+    callbacks: {
+      onStart?: () => void;
+      onSuccess?: (successCount: number, failedCount: number) => void;
+      onError?: (error: any) => void;
+      onComplete?: () => void;
+    } = {},
+  ): void {
+    if (callbacks.onStart) callbacks.onStart();
+
+    this._reviveRefTestsGQL
+      .mutate({
+        variables: {
+          input: {
+            ids,
+          },
+        },
+      })
+      .pipe(
+        tap((result) => {
+          const reviveResult = result.data?.reviveRefTests?.reviveRefTestsResult;
+          if (reviveResult && callbacks.onSuccess) {
+            callbacks.onSuccess(reviveResult.successfullyRevived, reviveResult.failed);
           }
         }),
         catchError((error) => {

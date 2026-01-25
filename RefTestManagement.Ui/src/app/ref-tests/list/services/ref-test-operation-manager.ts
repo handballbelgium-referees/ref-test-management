@@ -5,7 +5,7 @@ import { Toast } from '../../../services/toast';
 import { REF_TEST_CONFIG } from './constants';
 import { RefTestData } from './ref-test-data';
 import { RefTestSelectionManager } from './ref-test-selection-manager';
-import { IReportResult, RefTestNode } from './types';
+import { IReportResult, IResetOptions, RefTestNode } from './types';
 
 /**
  * Service responsible for managing operations on ref tests
@@ -25,6 +25,8 @@ export class RefTestOperationManager {
   readonly deletingRefTestIds = signal<Set<string>>(new Set());
   readonly sendingInvitationIds = signal<Set<string>>(new Set());
   readonly sendingResultsIds = signal<Set<string>>(new Set());
+  readonly resettingRefTestIds = signal<Set<string>>(new Set());
+  readonly revivingRefTestIds = signal<Set<string>>(new Set());
 
   // ========================================================================
   // LOADING STATE
@@ -34,6 +36,8 @@ export class RefTestOperationManager {
   readonly sendingResults = signal(false);
   readonly deletingRefTests = signal(false);
   readonly generatingReport = signal(false);
+  readonly resettingRefTests = signal(false);
+  readonly revivingRefTests = signal(false);
 
   // ========================================================================
   // RESULT STATE
@@ -49,6 +53,8 @@ export class RefTestOperationManager {
   readonly showSendResultsDialog = signal(false);
   readonly showDeleteDialog = signal(false);
   readonly showGenerateReportDialog = signal(false);
+  readonly showResetDialog = signal(false);
+  readonly showReviveDialog = signal(false);
 
   // ========================================================================
   // OPERATION STATUS CHECKS
@@ -64,6 +70,14 @@ export class RefTestOperationManager {
 
   isSendingResults(refTestId: string): boolean {
     return this.sendingResultsIds().has(refTestId);
+  }
+
+  isResetting(refTestId: string): boolean {
+    return this.resettingRefTestIds().has(refTestId);
+  }
+
+  isReviving(refTestId: string): boolean {
+    return this.revivingRefTestIds().has(refTestId);
   }
 
   // ========================================================================
@@ -259,6 +273,110 @@ export class RefTestOperationManager {
     setTimeout(() => {
       this.dismissReportResult();
     }, REF_TEST_CONFIG.REPORT_BANNER_TIMEOUT_MS);
+  }
+
+  // ========================================================================
+  // RESET OPERATIONS
+  // ========================================================================
+
+  initiateReset(): void {
+    const selectedIds = Array.from(this._selectionManager.selectedIds());
+    if (selectedIds.length === 0) {
+      return;
+    }
+    this.showResetDialog.set(true);
+  }
+
+  confirmReset(options: IResetOptions): void {
+    this.showResetDialog.set(false);
+    const refTestIds = Array.from(this._selectionManager.selectedIds());
+
+    // Mark as resetting
+    this.addIds(this.resettingRefTestIds, refTestIds);
+
+    this._dataService.resetRefTests(refTestIds, options.resetType, options.regenerateToken, {
+      onStart: () => this.resettingRefTests.set(true),
+      onSuccess: (successCount, failedCount) => {
+        if (successCount > 0) {
+          this._selectionManager.clearSelection();
+          this._toastService.success(
+            this._translateService.instant('ref_tests.list.reset_success', {
+              count: successCount,
+            }),
+          );
+        }
+        if (failedCount > 0) {
+          this._toastService.error(
+            this._translateService.instant('ref_tests.list.reset_partial_error', {
+              count: failedCount,
+            }),
+          );
+        }
+      },
+      onError: () => {
+        this._toastService.error(this._translateService.instant('ref_tests.list.reset_error'));
+      },
+      onComplete: () => {
+        this.removeIds(this.resettingRefTestIds, refTestIds);
+        this.resettingRefTests.set(false);
+      },
+    });
+  }
+
+  cancelReset(): void {
+    this.showResetDialog.set(false);
+  }
+
+  // ========================================================================
+  // REVIVE OPERATIONS
+  // ========================================================================
+
+  initiateRevive(): void {
+    const selectedIds = Array.from(this._selectionManager.selectedIds());
+    if (selectedIds.length === 0) {
+      return;
+    }
+    this.showReviveDialog.set(true);
+  }
+
+  confirmRevive(): void {
+    this.showReviveDialog.set(false);
+    const refTestIds = Array.from(this._selectionManager.selectedIds());
+
+    // Mark as reviving
+    this.addIds(this.revivingRefTestIds, refTestIds);
+
+    this._dataService.reviveRefTests(refTestIds, {
+      onStart: () => this.revivingRefTests.set(true),
+      onSuccess: (successCount, failedCount) => {
+        if (successCount > 0) {
+          this._selectionManager.clearSelection();
+          this._toastService.success(
+            this._translateService.instant('ref_tests.list.revive_success', {
+              count: successCount,
+            }),
+          );
+        }
+        if (failedCount > 0) {
+          this._toastService.error(
+            this._translateService.instant('ref_tests.list.revive_partial_error', {
+              count: failedCount,
+            }),
+          );
+        }
+      },
+      onError: () => {
+        this._toastService.error(this._translateService.instant('ref_tests.list.revive_error'));
+      },
+      onComplete: () => {
+        this.removeIds(this.revivingRefTestIds, refTestIds);
+        this.revivingRefTests.set(false);
+      },
+    });
+  }
+
+  cancelRevive(): void {
+    this.showReviveDialog.set(false);
   }
 
   // ========================================================================

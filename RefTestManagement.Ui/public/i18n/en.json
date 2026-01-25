@@ -169,6 +169,10 @@
         "send_result": "Send Result",
         "send_results": "Send Results",
         "generate_report": "Send Report",
+        "reset_test": "Reset Test",
+        "reset_tests": "Reset Tests",
+        "revive_test": "Revive Test",
+        "revive_tests": "Revive Tests",
         "delete": "Delete"
       },
       "dialogs": {
@@ -205,6 +209,29 @@
           "info": "A report will be generated and sent by email with the details of all selected RefTests.",
           "confirm": "Generate and Send Report",
           "cancel": "Cancel"
+        },
+        "reset": {
+          "title": "Reset RefTests",
+          "message": "Reset {{count}} RefTest(s)?",
+          "warning": "This will reset the RefTest progress. Answered questions will be cleared.",
+          "options": "Reset Options",
+          "soft_reset": "Soft Reset",
+          "soft_reset_description": "Clear answers but keep the test accessible with the same token",
+          "hard_reset": "Hard Reset",
+          "hard_reset_description": "Clear answers and generate a new access token (old token becomes invalid)",
+          "regenerate_token": "Regenerate Access Token",
+          "regenerate_token_description": "Generate a new token (only available with Soft Reset)",
+          "ref_tests": "RefTests to be reset:",
+          "confirm": "Reset RefTests",
+          "cancel": "Cancel"
+        },
+        "revive": {
+          "title": "Revive RefTests",
+          "message": "Revive {{count}} expired RefTest(s)?",
+          "info": "This will make the expired RefTests accessible again with their current tokens.",
+          "ref_tests": "RefTests to be revived:",
+          "confirm": "Revive RefTests",
+          "cancel": "Cancel"
         }
       },
       "report": {
@@ -216,6 +243,12 @@
       },
       "delete_success": "RefTests deleted successfully",
       "delete_error": "Failed to delete RefTests",
+      "reset_success": "{{count}} RefTest(s) reset successfully",
+      "reset_error": "Failed to reset RefTests",
+      "reset_partial_error": "{{count}} RefTest(s) failed to reset",
+      "revive_success": "{{count}} RefTest(s) revived successfully",
+      "revive_error": "Failed to revive RefTests",
+      "revive_partial_error": "{{count}} RefTest(s) failed to revive",
       "invitations_sent": "Invitations sent successfully",
       "invitations_error": "Failed to send invitations",
       "results_sent": "Results sent successfully",

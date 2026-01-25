@@ -169,6 +169,10 @@
         "send_result": "Resultaat Versturen",
         "send_results": "Resultaten Versturen",
         "generate_report": "Rapport Versturen",
+        "reset_test": "Test Resetten",
+        "reset_tests": "Tests Resetten",
+        "revive_test": "Test Herstellen",
+        "revive_tests": "Tests Herstellen",
         "delete": "Verwijderen"
       },
       "dialogs": {
@@ -205,6 +209,29 @@
           "info": "Er wordt een rapport gegenereerd en per e-mail verstuurd met de details van alle geselecteerde RefTests.",
           "confirm": "Rapport Genereren en Versturen",
           "cancel": "Annuleren"
+        },
+        "reset": {
+          "title": "RefTests Resetten",
+          "message": "{{count}} RefTest(s) resetten?",
+          "warning": "Dit zal de RefTest-voortgang resetten. Beantwoorde vragen worden gewist.",
+          "options": "Reset Opties",
+          "soft_reset": "Zachte Reset",
+          "soft_reset_description": "Antwoorden wissen maar de test toegankelijk houden met hetzelfde token",
+          "hard_reset": "Harde Reset",
+          "hard_reset_description": "Antwoorden wissen en een nieuw toegangstoken genereren (oud token wordt ongeldig)",
+          "regenerate_token": "Toegangstoken Opnieuw Genereren",
+          "regenerate_token_description": "Genereer een nieuw token (alleen beschikbaar bij Zachte Reset)",
+          "ref_tests": "RefTests die gereset worden:",
+          "confirm": "RefTests Resetten",
+          "cancel": "Annuleren"
+        },
+        "revive": {
+          "title": "RefTests Herstellen",
+          "message": "{{count}} verlopen RefTest(s) herstellen?",
+          "info": "Dit zal de verlopen RefTests opnieuw toegankelijk maken met hun huidige tokens.",
+          "ref_tests": "RefTests die hersteld worden:",
+          "confirm": "RefTests Herstellen",
+          "cancel": "Annuleren"
         }
       },
       "report": {
@@ -216,6 +243,12 @@
       },
       "delete_success": "RefTests succesvol verwijderd",
       "delete_error": "Fout bij verwijderen van RefTests",
+      "reset_success": "{{count}} RefTest(s) succesvol gereset",
+      "reset_error": "Fout bij resetten van RefTests",
+      "reset_partial_error": "{{count}} RefTest(s) konden niet worden gereset",
+      "revive_success": "{{count}} RefTest(s) succesvol hersteld",
+      "revive_error": "Fout bij herstellen van RefTests",
+      "revive_partial_error": "{{count}} RefTest(s) konden niet worden hersteld",
       "invitations_sent": "Uitnodigingen succesvol verstuurd",
       "invitations_error": "Fout bij versturen van uitnodigingen",
       "results_sent": "Resultaten succesvol verstuurd",

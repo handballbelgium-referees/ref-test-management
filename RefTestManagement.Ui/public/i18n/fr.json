@@ -169,6 +169,10 @@
         "send_result": "Envoyer le Résultat",
         "send_results": "Envoyer les Résultats",
         "generate_report": "Envoyer le Rapport",
+        "reset_test": "Réinitialiser le Test",
+        "reset_tests": "Réinitialiser les Tests",
+        "revive_test": "Réactiver le Test",
+        "revive_tests": "Réactiver les Tests",
         "delete": "Supprimer"
       },
       "dialogs": {
@@ -205,6 +209,29 @@
           "info": "Un rapport sera généré et envoyé par e-mail avec les détails de tous les RefTests sélectionnés.",
           "confirm": "Générer et Envoyer le Rapport",
           "cancel": "Annuler"
+        },
+        "reset": {
+          "title": "Réinitialiser les RefTests",
+          "message": "Réinitialiser {{count}} RefTest(s)?",
+          "warning": "Ceci réinitialisera la progression du RefTest. Les réponses seront supprimées.",
+          "options": "Options de Réinitialisation",
+          "soft_reset": "Réinitialisation Douce",
+          "soft_reset_description": "Supprimer les réponses mais garder le test accessible avec le même jeton",
+          "hard_reset": "Réinitialisation Dure",
+          "hard_reset_description": "Supprimer les réponses et générer un nouveau jeton d'accès (l'ancien jeton sera invalidé)",
+          "regenerate_token": "Régénérer le Jeton d'Accès",
+          "regenerate_token_description": "Générer un nouveau jeton (disponible uniquement pour la Réinitialisation Douce)",
+          "ref_tests": "RefTests à réinitialiser:",
+          "confirm": "Réinitialiser les RefTests",
+          "cancel": "Annuler"
+        },
+        "revive": {
+          "title": "Réactiver les RefTests",
+          "message": "Réactiver {{count}} RefTest(s) expirée(s)?",
+          "info": "Ceci rendra les RefTests expirés à nouveau accessibles avec leurs jetons actuels.",
+          "ref_tests": "RefTests à réactiver:",
+          "confirm": "Réactiver les RefTests",
+          "cancel": "Annuler"
         }
       },
       "report": {
@@ -216,6 +243,12 @@
       },
       "delete_success": "RefTests supprimés avec succès",
       "delete_error": "Échec de la suppression des RefTests",
+      "reset_success": "{{count}} RefTest(s) réinitialisé(s) avec succès",
+      "reset_error": "Échec de la réinitialisation des RefTests",
+      "reset_partial_error": "{{count}} RefTest(s) n'ont pas pu être réinitialisé(s)",
+      "revive_success": "{{count}} RefTest(s) réactivé(s) avec succès",
+      "revive_error": "Échec de la réactivation des RefTests",
+      "revive_partial_error": "{{count}} RefTest(s) n'ont pas pu être réactivé(s)",
       "invitations_sent": "Invitations envoyées avec succès",
       "invitations_error": "Échec de l'envoi des invitations",
       "results_sent": "Résultats envoyés avec succès",
