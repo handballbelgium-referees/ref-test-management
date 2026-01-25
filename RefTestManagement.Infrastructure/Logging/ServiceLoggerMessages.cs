@@ -1,6 +1,7 @@
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Logging;
@@ -143,6 +144,12 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Debug, "Enqueued {action} job for RefTest {refTestId}")]
     public static partial void LogEnqueuedExpirationJob(ILogger logger, RefTestExpirationAction action, Guid refTestId);
 
+    [LoggerMessage(LogLevel.Information, "Canceled {count} pending job(s) for RefTest {refTestId}")]
+    public static partial void LogCanceledCountPendingJobsForRefTestRefTestId(ILogger logger, int count, Guid refTestId);
+
+    [LoggerMessage(LogLevel.Information, "Canceled {count} pending result email job(s) for RefTest {refTestId}")]
+    public static partial void LogCanceledCountPendingResultEmailJobsForRefTestRefTestId(ILogger logger, int count, Guid refTestId);
+    
     // ========================================
     // Database Operations
     // ========================================

@@ -62,26 +62,21 @@ public class Job
     {
         Attempts++;
         ErrorMessage = errorMessage;
-        
-        if (Attempts >= maxAttempts)
-        {
-            Status = JobStatus.Failed;
-            LockedUntil = null;
-        }
-        else
-        {
-            Status = JobStatus.Pending;
-            LockedUntil = null;
-        }
+
+        Status = Attempts >= maxAttempts ? JobStatus.Failed : JobStatus.Pending;
+
+        LockedUntil = null;
     }
 
     /// <summary>
-    /// Releases the lock on the job
+    /// Cancels the job by marking it as failed
     /// </summary>
-    public void ReleaseLock()
+    public void Cancel(string reason)
     {
+        Status = JobStatus.Failed;
+        ErrorMessage = reason;
         LockedUntil = null;
-        Status = JobStatus.Pending;
+        CompletedAt = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -89,8 +84,9 @@ public class Job
     /// </summary>
     public bool IsReadyToProcess()
     {
-        return Status == JobStatus.Pending 
+        return Status == JobStatus.Pending
                && ExecuteAfter <= DateTime.UtcNow
                && (LockedUntil == null || LockedUntil <= DateTime.UtcNow);
     }
 }
+

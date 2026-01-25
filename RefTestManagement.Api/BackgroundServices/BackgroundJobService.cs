@@ -29,7 +29,7 @@ public class BackgroundJobService : BackgroundService
     private readonly TimeSpan _retainCompletedJobs;
     private readonly TimeSpan _retainFailedJobs;
     private DateTime _lastCleanupTime;
-    
+
     private readonly JsonSerializerOptions _jsonSerializerOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -101,6 +101,7 @@ public class BackgroundJobService : BackgroundService
         var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
 
         // Find jobs that are ready to be processed
+        // Note: This query mirrors the logic in Job.IsReadyToProcess() for database-level filtering
         var now = DateTime.UtcNow;
         var jobs = await context.Jobs
             .Where(j => j.Status == JobStatus.Pending
@@ -118,7 +119,9 @@ public class BackgroundJobService : BackgroundService
 
         ServiceLoggerMessages.LogJobsFound(_logger, jobs.Count);
 
-        foreach (var job in jobs.TakeWhile(_ => !cancellationToken.IsCancellationRequested))
+        // Process only jobs that are ready (defensive check using domain method)
+        foreach (var job in jobs.Where(j => j.IsReadyToProcess())
+                     .TakeWhile(_ => !cancellationToken.IsCancellationRequested))
         {
             await ProcessJobAsync(job, scope.ServiceProvider, context, cancellationToken);
         }
@@ -180,7 +183,8 @@ public class BackgroundJobService : BackgroundService
             }
             else
             {
-                ServiceLoggerMessages.LogJobFailed(_logger, job.Id, job.JobType, job.Attempts, _maxAttempts, errorMessage);
+                ServiceLoggerMessages.LogJobFailed(_logger, job.Id, job.JobType, job.Attempts, _maxAttempts,
+                    errorMessage);
             }
         }
     }
@@ -207,7 +211,7 @@ public class BackgroundJobService : BackgroundService
         // Mark the RefTest invitation as sent
         var refTest = await context.RefTests
             .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
-        
+
         if (refTest != null)
         {
             refTest.SendInvitation();
@@ -230,7 +234,7 @@ public class BackgroundJobService : BackgroundService
         // Get the RefTest to retrieve all question IDs
         var refTest = await context.RefTests
             .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
-        
+
         if (refTest == null)
         {
             throw new InvalidOperationException($"RefTest {payload.RefTestId} not found");
@@ -299,7 +303,7 @@ public class BackgroundJobService : BackgroundService
         CancellationToken cancellationToken)
     {
         var payload = DeserializePayload<RefTestExpirationPayload>(job);
-        
+
         var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
@@ -332,8 +336,8 @@ public class BackgroundJobService : BackgroundService
                     var ihfRulesQuestionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
                     var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
                     var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
-                
-                await RefTestLifecycleMutations.CompleteRefTestAsync(
+
+                    await RefTestLifecycleMutations.CompleteRefTestAsync(
                         new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
                         context,
                         ihfRulesQuestionsService,
@@ -348,7 +352,7 @@ public class BackgroundJobService : BackgroundService
                     // Mark as expired (for pending tests)
                     refTest.Expire();
                     await context.SaveChangesAsync(cancellationToken);
-                
+
                     ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
                     break;
             }

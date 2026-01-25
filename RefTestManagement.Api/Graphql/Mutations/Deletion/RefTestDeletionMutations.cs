@@ -1,6 +1,7 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,7 @@ public static class RefTestDeletionMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
+    /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -24,6 +26,7 @@ public static class RefTestDeletionMutations
     public static async Task<DeleteRefTestsResult> DeleteRefTestsAsync(
         DeleteRefTestsInput input,
         RefTestManagementContext context,
+        [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
         var refTests = await context.RefTests
@@ -45,6 +48,9 @@ public static class RefTestDeletionMutations
             {
                 if (refTest is null)
                     throw new RefTestNotFoundException(id.ToString());
+
+                // Cancel any pending jobs for this RefTest before deletion
+                await jobEnqueueService.CancelPendingJobsForRefTestAsync(id, cancellationToken);
 
                 context.RefTests.Remove(refTest);
                 result.SuccessfullyDeleted++;

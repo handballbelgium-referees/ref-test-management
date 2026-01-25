@@ -53,6 +53,24 @@ public static class RefTestResetMutations
                 if (refTest == null)
                     throw new RefTestNotFoundException(id);
 
+                // Determine if the token will be regenerated
+                var willRegenerateToken = input.ResetType == RefTestResetType.Hard ||
+                                         (input.ResetType == RefTestResetType.Soft && input.RegenerateToken);
+
+                // Always cancel result email jobs (results are being cleared in both soft and hard reset)
+                // For invitation and expiration jobs, only cancel if the token will be regenerated
+                if (willRegenerateToken)
+                {
+                    // Cancel all pending jobs (invitations with old token, results, expiration checks)
+                    await jobEnqueueService.CancelPendingJobsForRefTestAsync(id, cancellationToken);
+                }
+                else
+                {
+                    // Soft reset without token regeneration: only cancel result emails
+                    // Keep pending invitation emails (token is still valid) and expiration jobs
+                    await jobEnqueueService.CancelPendingResultEmailsAsync(id, cancellationToken);
+                }
+
                 // Check if the invitation was previously sent
                 var invitationWasSent = refTest.InvitationSentAt.HasValue;
 
@@ -148,6 +166,10 @@ public static class RefTestResetMutations
 
                 if (refTest == null)
                     throw new RefTestNotFoundException(id);
+
+                // Cancel any pending jobs for this RefTest to prevent outdated operations
+                // (invitations with old token, results with old scores, expiration checks)
+                await jobEnqueueService.CancelPendingJobsForRefTestAsync(id, cancellationToken);
 
                 // Check if the invitation was previously sent
                 var invitationWasSent = refTest.InvitationSentAt.HasValue;
