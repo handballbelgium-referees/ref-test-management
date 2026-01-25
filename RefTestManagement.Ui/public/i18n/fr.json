@@ -308,6 +308,33 @@
         "success": "Jeton du test regénéré avec succès",
         "error": "Échec de la regénération du jeton du test"
       },
+      "reset": {
+        "title": "Réinitialiser le RefTest",
+        "subtitle": "Réinitialiser la progression du test et régénérer le jeton en option",
+        "reset_button": "Réinitialiser le test",
+        "warning_title": "Avertissement",
+        "warning_message": "La réinitialisation effacera la progression du participant. Cette action ne peut pas être annulée.",
+        "reset_type_label": "Type de Réinitialisation",
+        "soft_reset_label": "Réinitialisation Douce",
+        "soft_reset_description": "Effacer la progression et les résultats, en conservant la date de création",
+        "hard_reset_label": "Réinitialisation Complète",
+        "hard_reset_description": "Effacer toutes les données et réinitialiser la date de création (redémarre le minuteur d'expiration)",
+        "regenerate_token_label": "Regénérer le Jeton",
+        "regenerate_token_description": "Générer un nouveau lien de test (invalide le lien actuel). Si une invitation a été envoyée précédemment, une nouvelle sera envoyée automatiquement. La réinitialisation complète régénère toujours le jeton.",
+        "confirm_button": "Réinitialiser le Test",
+        "success": "RefTest réinitialisé avec succès",
+        "error": "Échec de la réinitialisation du RefTest"
+      },
+      "revive": {
+        "title": "Réactiver le RefTest Expiré",
+        "subtitle": "Réactiver un test expiré",
+        "revive_button": "Réactiver le test",
+        "info_title": "Information",
+        "info_message": "La réactivation de ce test générera un nouveau jeton et réinitialisera le test au statut En Attente. Si une invitation a été envoyée précédemment, une nouvelle invitation sera envoyée automatiquement avec le lien mis à jour.",
+        "confirm_button": "Réactiver le Test",
+        "success": "RefTest réactivé avec succès",
+        "error": "Échec de la réactivation du RefTest"
+      },
       "test_info": "Informations sur le Test",
       "title": "Titre",
       "number_of_questions": "Nombre de Questions",

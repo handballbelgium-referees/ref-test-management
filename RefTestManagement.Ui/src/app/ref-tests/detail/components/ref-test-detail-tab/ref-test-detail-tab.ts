@@ -16,6 +16,8 @@ import { EditNotificationSettingsDialog } from './components/dialogs/edit-notifi
 import { EditParticipantDialog } from './components/dialogs/edit-participant-dialog/edit-participant-dialog';
 import { ExtendTimeDialog } from './components/dialogs/extend-time-dialog/extend-time-dialog';
 import { RegenerateTokenDialog } from './components/dialogs/regenerate-token-dialog/regenerate-token-dialog';
+import { ResetRefTestDialog } from './components/dialogs/reset-ref-test-dialog/reset-ref-test-dialog';
+import { ReviveRefTestDialog } from './components/dialogs/revive-ref-test-dialog/revive-ref-test-dialog';
 import { ParticipantInfoCard } from './components/participant-info-card/participant-info-card';
 import { ScoresCard } from './components/scores-card/scores-card';
 import { StatusInfoCard } from './components/status-info-card/status-info-card';
@@ -35,6 +37,8 @@ import { TimelineCard } from './components/timeline-card/timeline-card';
     EditNotificationSettingsDialog,
     ExtendTimeDialog,
     RegenerateTokenDialog,
+    ResetRefTestDialog,
+    ReviveRefTestDialog,
   ],
   templateUrl: './ref-test-detail-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -59,6 +63,12 @@ export class RefTestDetailTab {
 
   protected readonly regenerateTokenDialog = viewChild(RegenerateTokenDialog);
   protected readonly showRegenerateTokenDialog = signal(false);
+
+  protected readonly resetDialog = viewChild(ResetRefTestDialog);
+  protected readonly showResetDialog = signal(false);
+
+  protected readonly reviveDialog = viewChild(ReviveRefTestDialog);
+  protected readonly showReviveDialog = signal(false);
 
   private readonly _passingPercentage = toSignal(
     inject(GetScoreConfigurationGQL)
@@ -170,5 +180,35 @@ export class RefTestDetailTab {
 
   protected onRegenerateTokenDialogClose(): void {
     this.showRegenerateTokenDialog.set(false);
+  }
+
+  protected onReset(): void {
+    const refTest = this.refTest();
+    if (!refTest) return;
+
+    this.showResetDialog.set(true);
+    const dialog = this.resetDialog();
+    if (dialog) {
+      dialog.initialize(refTest.id);
+    }
+  }
+
+  protected onResetDialogClose(): void {
+    this.showResetDialog.set(false);
+  }
+
+  protected onRevive(): void {
+    const refTest = this.refTest();
+    if (!refTest) return;
+
+    this.showReviveDialog.set(true);
+    const dialog = this.reviveDialog();
+    if (dialog) {
+      dialog.initialize(refTest.id);
+    }
+  }
+
+  protected onReviveDialogClose(): void {
+    this.showReviveDialog.set(false);
   }
 }

@@ -15,6 +15,8 @@ export class ParticipantInfoCard {
   status = input.required<RefTestStatus>();
 
   readonly edit = output<void>();
+  readonly reset = output<void>();
+  readonly revive = output<void>();
 
   protected readonly RefTestStatus = RefTestStatus;
 }

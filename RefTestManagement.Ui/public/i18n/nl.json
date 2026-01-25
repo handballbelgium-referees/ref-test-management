@@ -308,6 +308,33 @@
         "success": "Testtoken succesvol opnieuw gegenereerd",
         "error": "Kan testtoken niet opnieuw genereren"
       },
+      "reset": {
+        "title": "RefTest Resetten",
+        "subtitle": "Reset testvoortgang en genereer optioneel nieuwe token",
+        "reset_button": "Test resetten",
+        "warning_title": "Waarschuwing",
+        "warning_message": "Resetten zal de voortgang van de deelnemer wissen. Deze actie kan niet ongedaan worden gemaakt.",
+        "reset_type_label": "Reset Type",
+        "soft_reset_label": "Zachte Reset",
+        "soft_reset_description": "Wis voortgang en resultaten, behoud de aanmaakdatum",
+        "hard_reset_label": "Harde Reset",
+        "hard_reset_description": "Wis alle gegevens en reset de aanmaakdatum (herstart de vervaltimer)",
+        "regenerate_token_label": "Token Opnieuw Genereren",
+        "regenerate_token_description": "Genereer een nieuwe testlink (maakt huidige link ongeldig). Als er eerder een uitnodiging is verzonden, wordt automatisch een nieuwe verzonden. Harde reset genereert altijd een nieuwe token.",
+        "confirm_button": "Test Resetten",
+        "success": "RefTest succesvol gereset",
+        "error": "Kan RefTest niet resetten"
+      },
+      "revive": {
+        "title": "Verlopen RefTest Herstellen",
+        "subtitle": "Heractiveer een verlopen test",
+        "revive_button": "Test herstellen",
+        "info_title": "Informatie",
+        "info_message": "Het herstellen van deze test genereert een nieuwe token en zet de test terug naar de status In Behandeling. Als er eerder een uitnodiging is verzonden, wordt automatisch een nieuwe uitnodiging verzonden met de bijgewerkte link.",
+        "confirm_button": "Test Herstellen",
+        "success": "RefTest succesvol hersteld",
+        "error": "Kan RefTest niet herstellen"
+      },
       "test_info": "Test Informatie",
       "title": "Titel",
       "number_of_questions": "Aantal Vragen",

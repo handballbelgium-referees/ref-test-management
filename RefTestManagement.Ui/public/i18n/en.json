@@ -308,6 +308,33 @@
         "success": "Test token regenerated successfully",
         "error": "Failed to regenerate test token"
       },
+      "reset": {
+        "title": "Reset RefTest",
+        "subtitle": "Reset test progress and optionally regenerate token",
+        "reset_button": "Reset test",
+        "warning_title": "Warning",
+        "warning_message": "Resetting will clear the participant's progress. This action cannot be undone.",
+        "reset_type_label": "Reset Type",
+        "soft_reset_label": "Soft Reset",
+        "soft_reset_description": "Clear progress and results, preserving the creation date",
+        "hard_reset_label": "Hard Reset",
+        "hard_reset_description": "Clear all data and reset creation date (restarts expiration timer)",
+        "regenerate_token_label": "Regenerate Token",
+        "regenerate_token_description": "Generate a new test link (invalidates current link). If an invitation was previously sent, a new one will be sent automatically. Hard reset always regenerates the token.",
+        "confirm_button": "Reset Test",
+        "success": "RefTest reset successfully",
+        "error": "Failed to reset RefTest"
+      },
+      "revive": {
+        "title": "Revive Expired RefTest",
+        "subtitle": "Reactivate an expired test",
+        "revive_button": "Revive test",
+        "info_title": "Information",
+        "info_message": "Reviving this test will generate a new token and reset the test to Pending status. If an invitation was previously sent, a new invitation will be sent automatically with the updated link.",
+        "confirm_button": "Revive Test",
+        "success": "RefTest revived successfully",
+        "error": "Failed to revive RefTest"
+      },
       "test_info": "Test Information",
       "title": "Title",
       "number_of_questions": "Number of Questions",

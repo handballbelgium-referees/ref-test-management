@@ -7,6 +7,8 @@
         [email]="test.email"
         [status]="test.status"
         (edit)="onEditParticipant()"
+        (reset)="onReset()"
+        (revive)="onRevive()"
       />
 
       <!-- Test Info -->
@@ -86,5 +88,19 @@
     [show]="showRegenerateTokenDialog()"
     (closeDialog)="onRegenerateTokenDialogClose()"
     (cancel)="onRegenerateTokenDialogClose()"
+  />
+
+  <!-- Reset Ref Test Dialog -->
+  <app-reset-ref-test-dialog
+    [show]="showResetDialog()"
+    (closeDialog)="onResetDialogClose()"
+    (cancel)="onResetDialogClose()"
+  />
+
+  <!-- Revive Ref Test Dialog -->
+  <app-revive-ref-test-dialog
+    [show]="showReviveDialog()"
+    (closeDialog)="onReviveDialogClose()"
+    (cancel)="onReviveDialogClose()"
   />
 </div>

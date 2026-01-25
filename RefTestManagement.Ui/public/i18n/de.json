@@ -312,6 +312,33 @@
         "success": "Test-Token erfolgreich neu generiert",
         "error": "Test-Token konnte nicht neu generiert werden"
       },
+      "reset": {
+        "title": "RefTest Zurücksetzen",
+        "subtitle": "Testfortschritt zurücksetzen und optional Token neu generieren",
+        "reset_button": "Test zurücksetzen",
+        "warning_title": "Warnung",
+        "warning_message": "Durch das Zurücksetzen wird der Fortschritt des Teilnehmers gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "reset_type_label": "Reset-Typ",
+        "soft_reset_label": "Weicher Reset",
+        "soft_reset_description": "Fortschritt und Ergebnisse löschen, Erstellungsdatum beibehalten",
+        "hard_reset_label": "Harter Reset",
+        "hard_reset_description": "Alle Daten löschen und Erstellungsdatum zurücksetzen (Ablauf-Timer neu starten)",
+        "regenerate_token_label": "Token Neu Generieren",
+        "regenerate_token_description": "Neuen Testlink generieren (macht aktuellen Link ungültig). Wenn zuvor eine Einladung gesendet wurde, wird automatisch eine neue gesendet. Harter Reset generiert immer ein neues Token.",
+        "confirm_button": "Test Zurücksetzen",
+        "success": "RefTest erfolgreich zurückgesetzt",
+        "error": "RefTest konnte nicht zurückgesetzt werden"
+      },
+      "revive": {
+        "title": "Abgelaufenen RefTest Wiederherstellen",
+        "subtitle": "Einen abgelaufenen Test reaktivieren",
+        "revive_button": "Test wiederherstellen",
+        "info_title": "Information",
+        "info_message": "Durch das Wiederherstellen dieses Tests wird ein neues Token generiert und der Test auf den Status 'Ausstehend' zurückgesetzt. Wenn zuvor eine Einladung gesendet wurde, wird automatisch eine neue Einladung mit dem aktualisierten Link gesendet.",
+        "confirm_button": "Test Wiederherstellen",
+        "success": "RefTest erfolgreich wiederhergestellt",
+        "error": "RefTest konnte nicht wiederhergestellt werden"
+      },
       "test_info": "Testinformationen",
       "title": "Titel",
       "number_of_questions": "Anzahl der Fragen",
