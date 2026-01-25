@@ -1,0 +1,16 @@
+mutation ExtendRefTestTime($input: ExtendRefTestTimeInput!) {
+  extendRefTestTime(input: $input) {
+    refTest {
+      id
+      maxTimeInMinutes
+    }
+    errors {
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on InvalidRefTestStatusError {
+        message
+      }
+    }
+  }
+}

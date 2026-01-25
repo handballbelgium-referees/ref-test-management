@@ -1,0 +1,32 @@
+mutation UpdateRefTestConfiguration($input: UpdateRefTestConfigurationInput!) {
+  updateRefTestConfiguration(input: $input) {
+    refTest {
+      id
+      title {
+        id
+        value
+      }
+      numberOfQuestions
+      maxTimeInMinutes
+      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
+        id
+        number
+        phrase
+        answers {
+          id
+          number
+          phrase
+          isCorrect
+        }
+      }
+    }
+    errors {
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on InvalidRefTestStatusError {
+        message
+      }
+    }
+  }
+}

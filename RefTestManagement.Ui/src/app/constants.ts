@@ -11,8 +11,8 @@ export const TOAST_DURATION = {
   ERROR: 5000,
   /** Warning messages */
   WARNING: 5000,
-  /** Success messages - shorter display */
-  SUCCESS: 3000,
+  /** Success messages - longer display to allow for page navigation */
+  SUCCESS: 6000,
   /** Info messages - shorter display */
   INFO: 3000,
 } as const;

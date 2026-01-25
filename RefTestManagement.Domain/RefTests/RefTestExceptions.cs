@@ -12,6 +12,10 @@ public class RefTestNotFoundException : Exception
     public RefTestNotFoundException(string token) : base($"RefTest with token '{token}' not found")
     {
     }
+
+    public RefTestNotFoundException(Guid id) : base($"RefTest with ID '{id}' not found")
+    {
+    }
 }
 
 /// <summary>

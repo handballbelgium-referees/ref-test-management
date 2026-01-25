@@ -178,6 +178,36 @@ export class RefTestSelectionManager {
   }
 
   /**
+   * Create computed for ref tests to reset (any status except Pending)
+   */
+  createRefTestsToResetComputed(allRefTests: () => RefTestNode[]) {
+    return computed(() => {
+      const selected = this.selectedIds();
+      const allTests = allRefTests();
+      return this.mapToParticipantInfo(
+        allTests.filter(
+          (t) =>
+            selected.has(t.id) &&
+            (t.status === RefTestStatus.InProgress || t.status === RefTestStatus.Completed),
+        ),
+      );
+    });
+  }
+
+  /**
+   * Create computed for ref tests to revive (Expired only)
+   */
+  createRefTestsToReviveComputed(allRefTests: () => RefTestNode[]) {
+    return computed(() => {
+      const selected = this.selectedIds();
+      const allTests = allRefTests();
+      return this.mapToParticipantInfo(
+        allTests.filter((t) => selected.has(t.id) && t.status === RefTestStatus.Expired),
+      );
+    });
+  }
+
+  /**
    * Create computed for report summary
    */
   createReportSummaryComputed(allRefTests: () => RefTestNode[]) {

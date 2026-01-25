@@ -2,17 +2,20 @@ import { computed, DestroyRef, inject, Injectable } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApolloClient } from '@apollo/client';
 import { onlyCompleteData } from 'apollo-angular';
-import { catchError, finalize, map, of, switchMap, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, map, of, switchMap, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
-  GenerateReportGQL,
   GetRefTestsAllCountsGQL,
   GetRefTestsAllCountsQuery,
   GetRefTestsGQL,
   GetRefTestsQuery,
   RefTestStatus,
+  RefTestsUpdatedGQL,
+  ResetRefTestsGQL,
+  ReviveRefTestsGQL,
   SendRefTestInvitationsGQL,
   SendRefTestResultsGQL,
+  SendReportGQL,
 } from '../../../../../graphql/generated';
 import { REF_TEST_CONFIG } from './constants';
 import { RefTestFilterState } from './ref-test-filter-state';
@@ -26,7 +29,10 @@ export class RefTestData {
   private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
   private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
-  private readonly _generateReportGQL = inject(GenerateReportGQL);
+  private readonly _sendReportGQL = inject(SendReportGQL);
+  private readonly _resetRefTestsGQL = inject(ResetRefTestsGQL);
+  private readonly _reviveRefTestsGQL = inject(ReviveRefTestsGQL);
+  private readonly _refTestsUpdatedGQL = inject(RefTestsUpdatedGQL);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _filterState = inject(RefTestFilterState);
   private readonly _queryBuilder = inject(RefTestQueryBuilder);
@@ -92,6 +98,10 @@ export class RefTestData {
       }),
     ),
   );
+
+  readonly hasData = computed(() => {
+    return (this.queryResult()?.data?.refTests?.edges?.length ?? 0) > 0;
+  });
 
   readonly loading = computed(() => {
     return this.queryResult()?.loading ?? false;
@@ -164,6 +174,122 @@ export class RefTestData {
     },
   );
 
+  constructor() {
+    // Subscribe to all ref test updates - single subscription for all events
+    this._refTestsUpdatedGQL
+      .subscribe()
+      .pipe(
+        map((result) => result.data?.refTestsUpdated),
+        tap((event) => {
+          if (!event) return;
+
+          // Only update if this ref test is currently loaded
+          const currentData = this._queryRef.getCurrentResult();
+          const isLoaded = currentData?.data?.refTests?.edges?.some(
+            (edge) => edge?.node?.id === event.id,
+          );
+
+          if (isLoaded) {
+            this.updateRefTestInCache(event.id, event);
+          }
+        }),
+        catchError(() => {
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  private updateRefTestInCache(id: string, updates: Record<string, unknown>): void {
+    const currentData = this._queryRef.getCurrentResult();
+    if (!currentData?.data?.refTests) return;
+
+    // Track old status if we're updating the status
+    let oldStatus: RefTestStatus | undefined;
+    if ('status' in updates) {
+      const edge = currentData.data.refTests.edges?.find((e) => e?.node?.id === id);
+      oldStatus = edge?.node?.status;
+    }
+
+    // Update using updateQuery - Apollo will merge the changes
+    // TypeScript doesn't like the deep partial typing from Apollo, but the update is safe
+    // @ts-expect-error - Apollo's updateQuery has complex typing that doesn't match our return
+    this._queryRef.updateQuery((prev) => {
+      if (!prev?.refTests?.edges) return prev;
+
+      return {
+        ...prev,
+        refTests: {
+          ...prev.refTests,
+          edges: prev.refTests.edges.map((edge) => {
+            if (!edge || edge.node?.id !== id) return edge;
+            return {
+              ...edge,
+              node: {
+                ...edge.node!,
+                ...updates,
+              },
+            };
+          }),
+        },
+      };
+    });
+
+    // Update status counts if status changed
+    if ('status' in updates && oldStatus !== updates['status']) {
+      this.updateStatusCounts(oldStatus, updates['status'] as RefTestStatus);
+    }
+  }
+
+  private updateStatusCounts(oldStatus: RefTestStatus | undefined, newStatus: RefTestStatus): void {
+    const currentCounts = this._countsQueryRef.getCurrentResult();
+    if (!currentCounts?.data) return;
+
+    // @ts-expect-error - Apollo's updateQuery has complex typing
+    this._countsQueryRef.updateQuery((prev) => {
+      if (!prev) return prev;
+
+      const result = { ...prev };
+
+      // Decrease old status count
+      if (oldStatus === RefTestStatus.Pending && result.pending?.totalCount) {
+        result.pending = { ...result.pending, totalCount: result.pending.totalCount - 1 };
+      } else if (oldStatus === RefTestStatus.InProgress && result.inProgress?.totalCount) {
+        result.inProgress = {
+          ...result.inProgress,
+          totalCount: result.inProgress.totalCount - 1,
+        };
+      } else if (oldStatus === RefTestStatus.Completed && result.completed?.totalCount) {
+        result.completed = { ...result.completed, totalCount: result.completed.totalCount - 1 };
+      } else if (oldStatus === RefTestStatus.Expired && result.expired?.totalCount) {
+        result.expired = { ...result.expired, totalCount: result.expired.totalCount - 1 };
+      }
+
+      // Increase new status count
+      if (newStatus === RefTestStatus.Pending && result.pending?.totalCount !== undefined) {
+        result.pending = { ...result.pending, totalCount: result.pending.totalCount + 1 };
+      } else if (
+        newStatus === RefTestStatus.InProgress &&
+        result.inProgress?.totalCount !== undefined
+      ) {
+        result.inProgress = {
+          ...result.inProgress,
+          totalCount: result.inProgress.totalCount + 1,
+        };
+      } else if (
+        newStatus === RefTestStatus.Completed &&
+        result.completed?.totalCount !== undefined
+      ) {
+        result.completed = { ...result.completed, totalCount: result.completed.totalCount + 1 };
+      } else if (newStatus === RefTestStatus.Expired && result.expired?.totalCount !== undefined) {
+        result.expired = { ...result.expired, totalCount: result.expired.totalCount + 1 };
+      }
+
+      return result;
+    });
+  }
+
   fetchMore(): Promise<ApolloClient.QueryResult<GetRefTestsQuery>> {
     return this._queryRef.fetchMore({
       variables: {
@@ -172,6 +298,45 @@ export class RefTestData {
         where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
         order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
       },
+    });
+  }
+
+  reset(): void {
+    this._queryRef.refetch({
+      first: this._filterState.filter().pagingInfo.first,
+      after: this._filterState.filter().pagingInfo.after,
+      where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
+      order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
+    });
+
+    this._countsQueryRef.refetch({
+      allWhere: this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+        excludeStatus: true,
+      }),
+      pendingWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Pending } },
+      ),
+      inProgressWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.InProgress } },
+      ),
+      completedWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Completed } },
+      ),
+      expiredWhere: this._queryBuilder.mergeFilters(
+        this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
+          excludeStatus: true,
+        }),
+        { status: { eq: RefTestStatus.Expired } },
+      ),
     });
   }
 
@@ -367,18 +532,98 @@ export class RefTestData {
   ): void {
     if (callbacks.onStart) callbacks.onStart();
 
-    this._generateReportGQL
+    this._sendReportGQL
       .mutate({
         variables: { input: { ids } },
       })
       .pipe(
         tap((result) => {
-          const generateResult = result.data?.generateRefTestsReport?.generateReportResult;
-          if (generateResult && callbacks.onSuccess) {
+          const sendResult = result.data?.sendReport?.sendReportResult;
+          if (sendResult && callbacks.onSuccess) {
             callbacks.onSuccess({
-              success: generateResult.success,
-              refTestCount: generateResult.refTestCount || 0,
+              success: sendResult.success,
+              refTestCount: sendResult.refTestCount || 0,
             });
+          }
+        }),
+        catchError((error) => {
+          if (callbacks.onError) callbacks.onError(error);
+          return of(null);
+        }),
+        finalize(() => {
+          if (callbacks.onComplete) callbacks.onComplete();
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  resetRefTests(
+    ids: string[],
+    resetType: any,
+    regenerateToken: boolean,
+    callbacks: {
+      onStart?: () => void;
+      onSuccess?: (successCount: number, failedCount: number) => void;
+      onError?: (error: any) => void;
+      onComplete?: () => void;
+    } = {},
+  ): void {
+    if (callbacks.onStart) callbacks.onStart();
+
+    this._resetRefTestsGQL
+      .mutate({
+        variables: {
+          input: {
+            ids,
+            resetType,
+            regenerateToken,
+          },
+        },
+      })
+      .pipe(
+        tap((result) => {
+          const resetResult = result.data?.resetRefTests?.resetRefTestsResult;
+          if (resetResult && callbacks.onSuccess) {
+            callbacks.onSuccess(resetResult.successfullyReset, resetResult.failed);
+          }
+        }),
+        catchError((error) => {
+          if (callbacks.onError) callbacks.onError(error);
+          return of(null);
+        }),
+        finalize(() => {
+          if (callbacks.onComplete) callbacks.onComplete();
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  reviveRefTests(
+    ids: string[],
+    callbacks: {
+      onStart?: () => void;
+      onSuccess?: (successCount: number, failedCount: number) => void;
+      onError?: (error: any) => void;
+      onComplete?: () => void;
+    } = {},
+  ): void {
+    if (callbacks.onStart) callbacks.onStart();
+
+    this._reviveRefTestsGQL
+      .mutate({
+        variables: {
+          input: {
+            ids,
+          },
+        },
+      })
+      .pipe(
+        tap((result) => {
+          const reviveResult = result.data?.reviveRefTests?.reviveRefTestsResult;
+          if (reviveResult && callbacks.onSuccess) {
+            callbacks.onSuccess(reviveResult.successfullyRevived, reviveResult.failed);
           }
         }),
         catchError((error) => {

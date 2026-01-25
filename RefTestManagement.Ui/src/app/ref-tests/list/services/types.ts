@@ -1,4 +1,9 @@
-import { GetRefTestsQuery, RefTestStatus, SortEnumType } from '../../../../../graphql/generated';
+import {
+  GetRefTestsQuery,
+  RefTestResetType,
+  RefTestStatus,
+  SortEnumType,
+} from '../../../../../graphql/generated';
 
 export type SortField =
   | 'title'
@@ -55,4 +60,9 @@ export interface IParticipantInfo {
 export interface IPagingInfo {
   first: number;
   after?: string;
+}
+
+export interface IResetOptions {
+  resetType: RefTestResetType;
+  regenerateToken: boolean;
 }

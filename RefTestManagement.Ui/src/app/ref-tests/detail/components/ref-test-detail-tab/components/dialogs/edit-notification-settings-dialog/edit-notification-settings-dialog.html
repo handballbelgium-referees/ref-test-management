@@ -1,0 +1,105 @@
+@if (show()) {
+  <div
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+    (click)="cancel.emit()"
+  >
+    <div
+      class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-labelledby="dialog-title"
+      aria-modal="true"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-neutral-200">
+        <h2 id="dialog-title" class="text-xl font-bold text-neutral-900">
+          {{ 'ref_tests.detail.edit_notification_settings.title' | translate }}
+        </h2>
+        <p class="text-sm text-neutral-600 mt-1">
+          {{ 'ref_tests.detail.edit_notification_settings.subtitle' | translate }}
+        </p>
+      </div>
+
+      <!-- Banner Container -->
+      <div class="px-6 pt-4">
+        <app-banner [bannerManager]="bannerManager" />
+      </div>
+
+      <!-- Form Content -->
+      <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
+        <div class="space-y-6">
+
+          <!-- Send Invitations Automatically -->
+          <div class="flex items-start gap-3">
+            <input
+              id="sendInvitationsAutomatically"
+              type="checkbox"
+              [formField]="settingsForm.sendInvitationsAutomatically"
+              class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+            />
+            <label for="sendInvitationsAutomatically" class="text-sm text-neutral-700 flex-1">
+              <div class="font-medium mb-0.5">
+                {{
+                  'ref_tests.detail.edit_notification_settings.send_invitations_label' | translate
+                }}
+              </div>
+              <p class="text-xs text-neutral-500">
+                {{
+                  'ref_tests.detail.edit_notification_settings.send_invitations_description'
+                    | translate
+                }}
+              </p>
+            </label>
+          </div>
+
+          <!-- Send Results Automatically -->
+          <div class="flex items-start gap-3">
+            <input
+              id="sendResultsAutomatically"
+              type="checkbox"
+              [formField]="settingsForm.sendResultsAutomatically"
+              class="w-4 h-4 text-primary-600 border-2 border-neutral-300 rounded focus:ring-primary-500 mt-0.5"
+            />
+            <label for="sendResultsAutomatically" class="text-sm text-neutral-700 flex-1">
+              <div class="font-medium mb-0.5">
+                {{ 'ref_tests.detail.edit_notification_settings.send_results_label' | translate }}
+              </div>
+              <p class="text-xs text-neutral-500">
+                {{
+                  'ref_tests.detail.edit_notification_settings.send_results_description' | translate
+                }}
+              </p>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-neutral-200 flex justify-end gap-3">
+        <button
+          type="button"
+          (click)="onCancel()"
+          class="px-4 py-2 border border-neutral-300 rounded-lg text-sm font-medium text-neutral-700 hover:bg-neutral-50 transition-colors"
+          [disabled]="loading()"
+        >
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          (click)="onSave()"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          [disabled]="loading()"
+        >
+          @if (loading()) {
+            <span class="flex items-center gap-2">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              {{ 'common.saving' | translate }}
+            </span>
+          } @else {
+            {{ 'common.save' | translate }}
+          }
+        </button>
+      </div>
+    </div>
+  </div>
+}

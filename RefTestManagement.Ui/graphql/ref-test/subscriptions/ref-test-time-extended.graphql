@@ -1,0 +1,6 @@
+subscription RefTestTimeExtended($id: ID!) {
+  refTestTimeExtended(id: $id) {
+    id
+    newMaxTimeInMinutes
+  }
+}

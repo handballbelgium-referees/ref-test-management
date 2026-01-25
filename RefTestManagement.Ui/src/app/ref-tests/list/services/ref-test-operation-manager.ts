@@ -1,19 +1,19 @@
 import { inject, Injectable, signal, WritableSignal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../graphql/generated';
-import { Toast } from '../../../services/toast';
+import { Banner } from '../../../services/banner';
 import { REF_TEST_CONFIG } from './constants';
 import { RefTestData } from './ref-test-data';
 import { RefTestSelectionManager } from './ref-test-selection-manager';
-import { IReportResult, RefTestNode } from './types';
+import { IReportResult, IResetOptions, RefTestNode } from './types';
 
 /**
- * Service responsible for managing bulk operations on ref tests
+ * Service responsible for managing operations on ref tests
  * (delete, send invitations, send results, generate report)
  */
 @Injectable()
 export class RefTestOperationManager {
-  private readonly _toastService = inject(Toast);
+  private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
   private readonly _dataService = inject(RefTestData);
   private readonly _selectionManager = inject(RefTestSelectionManager);
@@ -25,6 +25,8 @@ export class RefTestOperationManager {
   readonly deletingRefTestIds = signal<Set<string>>(new Set());
   readonly sendingInvitationIds = signal<Set<string>>(new Set());
   readonly sendingResultsIds = signal<Set<string>>(new Set());
+  readonly resettingRefTestIds = signal<Set<string>>(new Set());
+  readonly revivingRefTestIds = signal<Set<string>>(new Set());
 
   // ========================================================================
   // LOADING STATE
@@ -34,6 +36,8 @@ export class RefTestOperationManager {
   readonly sendingResults = signal(false);
   readonly deletingRefTests = signal(false);
   readonly generatingReport = signal(false);
+  readonly resettingRefTests = signal(false);
+  readonly revivingRefTests = signal(false);
 
   // ========================================================================
   // RESULT STATE
@@ -49,6 +53,8 @@ export class RefTestOperationManager {
   readonly showSendResultsDialog = signal(false);
   readonly showDeleteDialog = signal(false);
   readonly showGenerateReportDialog = signal(false);
+  readonly showResetDialog = signal(false);
+  readonly showReviveDialog = signal(false);
 
   // ========================================================================
   // OPERATION STATUS CHECKS
@@ -64,6 +70,14 @@ export class RefTestOperationManager {
 
   isSendingResults(refTestId: string): boolean {
     return this.sendingResultsIds().has(refTestId);
+  }
+
+  isResetting(refTestId: string): boolean {
+    return this.resettingRefTestIds().has(refTestId);
+  }
+
+  isReviving(refTestId: string): boolean {
+    return this.revivingRefTestIds().has(refTestId);
   }
 
   // ========================================================================
@@ -90,10 +104,12 @@ export class RefTestOperationManager {
       onSuccess: (deletedIds) => {
         onDeleteSuccess(deletedIds);
         this._selectionManager.clearSelection();
-        this._toastService.success(this._translateService.instant('ref_tests.list.delete_success'));
+        this._bannerService.success(
+          this._translateService.instant('ref_tests.list.delete_success'),
+        );
       },
       onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.delete_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.delete_error'));
       },
       onComplete: () => {
         this.removeIds(this.deletingRefTestIds, refTestIds);
@@ -139,12 +155,12 @@ export class RefTestOperationManager {
       onSuccess: (sentIds) => {
         onInvitationsSent(sentIds);
         this._selectionManager.clearSelection();
-        this._toastService.success(
+        this._bannerService.success(
           this._translateService.instant('ref_tests.list.invitations_sent'),
         );
       },
       onError: () => {
-        this._toastService.error(
+        this._bannerService.error(
           this._translateService.instant('ref_tests.list.invitations_error'),
         );
       },
@@ -189,10 +205,10 @@ export class RefTestOperationManager {
       onSuccess: (sentIds) => {
         onResultsSent(sentIds);
         this._selectionManager.clearSelection();
-        this._toastService.success(this._translateService.instant('ref_tests.list.results_sent'));
+        this._bannerService.success(this._translateService.instant('ref_tests.list.results_sent'));
       },
       onError: () => {
-        this._toastService.error(this._translateService.instant('ref_tests.list.results_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.results_error'));
       },
       onComplete: () => {
         this.removeIds(this.sendingResultsIds, refTestIds);
@@ -229,17 +245,17 @@ export class RefTestOperationManager {
         this.scheduleReportDismissal();
         if (result.success) {
           this._selectionManager.clearSelection();
-          this._toastService.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.list.report_success'),
           );
         } else {
-          this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
+          this._bannerService.error(this._translateService.instant('ref_tests.list.report_error'));
         }
       },
       onError: () => {
         this.reportResult.set({ success: false, refTestCount: 0 });
         this.scheduleReportDismissal();
-        this._toastService.error(this._translateService.instant('ref_tests.list.report_error'));
+        this._bannerService.error(this._translateService.instant('ref_tests.list.report_error'));
       },
       onComplete: () => {
         this.generatingReport.set(false);
@@ -259,6 +275,110 @@ export class RefTestOperationManager {
     setTimeout(() => {
       this.dismissReportResult();
     }, REF_TEST_CONFIG.REPORT_BANNER_TIMEOUT_MS);
+  }
+
+  // ========================================================================
+  // RESET OPERATIONS
+  // ========================================================================
+
+  initiateReset(): void {
+    const selectedIds = Array.from(this._selectionManager.selectedIds());
+    if (selectedIds.length === 0) {
+      return;
+    }
+    this.showResetDialog.set(true);
+  }
+
+  confirmReset(options: IResetOptions): void {
+    this.showResetDialog.set(false);
+    const refTestIds = Array.from(this._selectionManager.selectedIds());
+
+    // Mark as resetting
+    this.addIds(this.resettingRefTestIds, refTestIds);
+
+    this._dataService.resetRefTests(refTestIds, options.resetType, options.regenerateToken, {
+      onStart: () => this.resettingRefTests.set(true),
+      onSuccess: (successCount, failedCount) => {
+        if (successCount > 0) {
+          this._selectionManager.clearSelection();
+          this._bannerService.success(
+            this._translateService.instant('ref_tests.list.reset_success', {
+              count: successCount,
+            }),
+          );
+        }
+        if (failedCount > 0) {
+          this._bannerService.error(
+            this._translateService.instant('ref_tests.list.reset_partial_error', {
+              count: failedCount,
+            }),
+          );
+        }
+      },
+      onError: () => {
+        this._bannerService.error(this._translateService.instant('ref_tests.list.reset_error'));
+      },
+      onComplete: () => {
+        this.removeIds(this.resettingRefTestIds, refTestIds);
+        this.resettingRefTests.set(false);
+      },
+    });
+  }
+
+  cancelReset(): void {
+    this.showResetDialog.set(false);
+  }
+
+  // ========================================================================
+  // REVIVE OPERATIONS
+  // ========================================================================
+
+  initiateRevive(): void {
+    const selectedIds = Array.from(this._selectionManager.selectedIds());
+    if (selectedIds.length === 0) {
+      return;
+    }
+    this.showReviveDialog.set(true);
+  }
+
+  confirmRevive(): void {
+    this.showReviveDialog.set(false);
+    const refTestIds = Array.from(this._selectionManager.selectedIds());
+
+    // Mark as reviving
+    this.addIds(this.revivingRefTestIds, refTestIds);
+
+    this._dataService.reviveRefTests(refTestIds, {
+      onStart: () => this.revivingRefTests.set(true),
+      onSuccess: (successCount, failedCount) => {
+        if (successCount > 0) {
+          this._selectionManager.clearSelection();
+          this._bannerService.success(
+            this._translateService.instant('ref_tests.list.revive_success', {
+              count: successCount,
+            }),
+          );
+        }
+        if (failedCount > 0) {
+          this._bannerService.error(
+            this._translateService.instant('ref_tests.list.revive_partial_error', {
+              count: failedCount,
+            }),
+          );
+        }
+      },
+      onError: () => {
+        this._bannerService.error(this._translateService.instant('ref_tests.list.revive_error'));
+      },
+      onComplete: () => {
+        this.removeIds(this.revivingRefTestIds, refTestIds);
+        this.revivingRefTests.set(false);
+      },
+    });
+  }
+
+  cancelRevive(): void {
+    this.showReviveDialog.set(false);
   }
 
   // ========================================================================

@@ -2,6 +2,11 @@
   <!-- Hero Section -->
   <app-ref-test-list-hero />
 
+  <!-- Banner Container -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
+    <app-banner />
+  </div>
+
   <!-- Main Content with Pull-to-Refresh -->
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
     <!-- Top Actions Bar -->
@@ -37,19 +42,25 @@
       />
     }
 
-    <!-- Bulk Actions Bar -->
-    <app-ref-test-bulk-actions
+    <!-- Actions Bar -->
+    <app-ref-test-actions
       [selectedCount]="selectionManager.selectedCount()"
       [hasCompletedRefTestsSelected]="hasCompletedRefTestsSelected()"
       [hasPendingRefTestsSelected]="hasPendingRefTestsSelected()"
+      [hasInProgressOrCompletedRefTestsSelected]="hasInProgressOrCompletedRefTestsSelected()"
+      [hasExpiredRefTestsSelected]="hasExpiredRefTestsSelected()"
       [sendingInvitations]="operationManager.sendingInvitations()"
       [sendingResults]="operationManager.sendingResults()"
       [deletingRefTests]="operationManager.deletingRefTests()"
       [generatingReport]="operationManager.generatingReport()"
+      [resettingRefTests]="operationManager.resettingRefTests()"
+      [revivingRefTests]="operationManager.revivingRefTests()"
       (sendInvitations)="sendInvitationsToSelected()"
       (sendResults)="sendResultsToSelected()"
       (deleteSelected)="deleteSelectedRefTests()"
       (generateReport)="generateReportForSelected()"
+      (resetSelected)="resetSelectedRefTests()"
+      (reviveSelected)="reviveSelectedRefTests()"
     />
 
     <!-- Loading State -->
@@ -149,4 +160,22 @@
     (cancel)="cancelGenerateReport()"
   >
   </app-generate-report-dialog>
+
+  <!-- Reset Dialog -->
+  <app-reset-ref-tests-dialog
+    [show]="operationManager.showResetDialog()"
+    [refTests]="refTestsToReset()"
+    (confirm)="confirmReset($event)"
+    (cancel)="cancelReset()"
+  >
+  </app-reset-ref-tests-dialog>
+
+  <!-- Revive Dialog -->
+  <app-revive-ref-tests-dialog
+    [show]="operationManager.showReviveDialog()"
+    [refTests]="refTestsToRevive()"
+    (confirm)="confirmRevive()"
+    (cancel)="cancelRevive()"
+  >
+  </app-revive-ref-tests-dialog>
 </app-pull-to-refresh>

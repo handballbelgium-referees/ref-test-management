@@ -1,0 +1,15 @@
+mutation RegenerateRefTestToken($input: RegenerateRefTestTokenInput!) {
+  regenerateRefTestToken(input: $input) {
+    refTest {
+      id
+    }
+    errors {
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on InvalidRefTestStatusError {
+        message
+      }
+    }
+  }
+}

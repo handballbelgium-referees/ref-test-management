@@ -1,0 +1,19 @@
+mutation UpdateRefTestDetails($input: UpdateRefTestDetailsInput!) {
+  updateRefTestDetails(input: $input) {
+    refTest {
+      id
+      firstName
+      lastName
+      name
+      email
+    }
+    errors {
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on InvalidRefTestStatusError {
+        message
+      }
+    }
+  }
+}

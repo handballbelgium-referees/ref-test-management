@@ -1,0 +1,41 @@
+@if (question(); as question) {
+  <div class="bg-neutral-50 rounded-lg border border-neutral-200 overflow-hidden">
+    <!-- Question Header -->
+    <div class="bg-white border-b border-neutral-200 px-6 py-4">
+      <div class="flex items-start gap-3">
+        @if (question.number) {
+          <div class="shrink-0 px-3 py-1 bg-primary-600 text-white rounded-md font-bold text-sm">
+            {{ question.number }}
+          </div>
+        } @else {
+          <div
+            class="shrink-0 w-8 h-8 bg-primary-600 text-white rounded-full flex items-center justify-center font-semibold text-sm"
+          >
+            {{ questionIndex() + 1 }}
+          </div>
+        }
+        <div class="flex-1 min-w-0">
+          @if (question.phrase) {
+            <p class="text-base font-medium text-neutral-900 whitespace-pre-wrap">
+              {{ question.phrase | appTranslation: currentLanguage() }}
+            </p>
+          }
+        </div>
+      </div>
+    </div>
+
+    <!-- Answers -->
+    <div class="px-6 py-4">
+      <div class="space-y-3">
+        @for (answer of question.answers; track answer.id) {
+          <app-answer-item
+            [answerNumber]="answer.number"
+            [answerText]="(answer.phrase ?? {} | appTranslation: currentLanguage()) ?? ''"
+            [isCorrect]="answer.isCorrect"
+            [isSelected]="selectedAnswerIds().has(answer.id)"
+          />
+        }
+      </div>
+    </div>
+  </div>
+}

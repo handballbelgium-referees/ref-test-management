@@ -1,0 +1,65 @@
+<div class="h-full bg-neutral-50 rounded-lg p-6 border border-neutral-200">
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-neutral-900 flex items-center gap-2">
+      <svg
+        class="w-5 h-5 text-primary-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      {{ 'ref_tests.detail.timeline' | translate }}
+    </h2>
+    @if (status() === RefTestStatus.InProgress) {
+      <button
+        type="button"
+        (click)="extendTime.emit()"
+        class="text-primary-600 hover:text-primary-700 transition-colors p-1"
+        [attr.aria-label]="'ref_tests.detail.extend_time.button' | translate"
+        title="{{ 'ref_tests.detail.extend_time.button' | translate }}"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M6 4h12M6 20h12M7 4v4l5 4 5-4V4M7 20v-4l5-4 5 4v4"
+          />
+        </svg>
+      </button>
+    }
+  </div>
+  <dl class="space-y-3">
+    <div>
+      <dt class="text-sm font-medium text-neutral-500">
+        {{ 'ref_tests.detail.started_at' | translate }}
+      </dt>
+      <dd class="mt-1 text-sm text-neutral-900">
+        @if (startedAt()) {
+          {{ startedAt() | localizedDate: 'short' }}
+        } @else {
+          <span class="text-neutral-400">-</span>
+        }
+      </dd>
+    </div>
+    <div>
+      <dt class="text-sm font-medium text-neutral-500">
+        {{ 'ref_tests.detail.completed_at' | translate }}
+      </dt>
+      <dd class="mt-1 text-sm text-neutral-900">
+        @if (completedAt()) {
+          {{ completedAt() | localizedDate: 'short' }}
+        } @else {
+          <span class="text-neutral-400">-</span>
+        }
+      </dd>
+    </div>
+  </dl>
+</div>

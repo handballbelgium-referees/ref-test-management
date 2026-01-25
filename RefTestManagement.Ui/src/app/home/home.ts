@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { Auth } from '../auth/services/auth';
 import { LANGUAGE_NAMES } from '../services/language-config';
+import { Banner } from '../shared/components/banner/banner';
 
 @Component({
   selector: 'app-home',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, Banner],
   templateUrl: './home.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

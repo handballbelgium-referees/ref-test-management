@@ -1,0 +1,17 @@
+mutation CreateRefTests($input: CreateRefTestsInput!) {
+  createRefTests(input: $input) {
+    createRefTestsResult {
+      totalRequested
+      successfullyCreated
+      failed
+      errors {
+        user {
+          firstName
+          lastName
+          email
+        }
+        errorMessage
+      }
+    }
+  }
+}

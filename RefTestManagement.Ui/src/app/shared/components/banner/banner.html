@@ -1,0 +1,57 @@
+﻿<div class="space-y-2">
+  @for (banner of banners(); track banner.id) {
+    <div
+      [class]="getColorClasses(banner.type)"
+      class="border rounded-xl p-4 shadow-lg transition-all duration-300 ease-in-out animate-slide-down"
+      role="alert"
+      [attr.aria-live]="banner.type === 'error' ? 'assertive' : 'polite'"
+    >
+      <div class="flex items-start">
+        <svg
+          [class]="getIconColorClass(banner.type)"
+          class="w-5 h-5 mr-3 shrink-0 mt-0.5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            [attr.d]="getIcon(banner.type)"
+          />
+        </svg>
+        <div class="flex-1">
+          <p class="text-sm font-medium">{{ banner.message }}</p>
+          @if (banner.action) {
+            <button
+              type="button"
+              (click)="executeAction(banner.id, banner.action.callback)"
+              class="mt-2 text-sm font-semibold underline hover:no-underline"
+            >
+              {{ banner.action.label }}
+            </button>
+          }
+        </div>
+        @if (banner.dismissible) {
+          <button
+            type="button"
+            (click)="dismiss(banner.id)"
+            class="ml-3 inline-flex shrink-0 hover:opacity-70"
+            [attr.aria-label]="'common.close' | translate"
+            title="{{ 'common.close' | translate }}"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        }
+      </div>
+    </div>
+  }
+</div>

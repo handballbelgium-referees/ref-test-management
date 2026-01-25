@@ -1,0 +1,40 @@
+query GetRefTests(
+  $first: Int
+  $after: String
+  $where: RefTestFilterInput
+  $order: [RefTestSortInput!]
+) {
+  refTests(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        title {
+          id
+          value
+        }
+        name
+        email
+        invitationSent
+        resultsSent
+        sendInvitationsAutomatically
+        sendResultsAutomatically
+        status
+        numberOfQuestions
+        maxTimeInMinutes
+        startedAt
+        completedAt
+        questionScore
+        answerScore
+        questionTotal
+        answerTotal
+        percentage
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
