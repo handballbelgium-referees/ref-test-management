@@ -197,6 +197,7 @@ public class BackgroundJobService : BackgroundService
         var payload = DeserializePayload<InvitationEmailPayload>(job);
         var emailService = serviceProvider.GetRequiredService<IEmailService>();
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
+        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
         ServiceLoggerMessages.LogSendingInvitationEmail(_logger, payload.Email);
 
@@ -216,6 +217,12 @@ public class BackgroundJobService : BackgroundService
         {
             refTest.SendInvitation();
             await context.SaveChangesAsync(cancellationToken);
+            
+            // Publish subscription event
+            await subscriptionService.PublishInvitationSentAsync(
+                refTest.Id,
+                refTest.InvitationSentAt!.Value,
+                cancellationToken);
         }
     }
 
@@ -228,6 +235,7 @@ public class BackgroundJobService : BackgroundService
         var emailService = serviceProvider.GetRequiredService<IEmailService>();
         var questionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
+        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
         ServiceLoggerMessages.LogSendingResultEmail(_logger, payload.Email);
 
@@ -266,6 +274,12 @@ public class BackgroundJobService : BackgroundService
         // Mark the RefTest results as sent
         refTest.SendResults();
         await context.SaveChangesAsync(cancellationToken);
+        
+        // Publish subscription event
+        await subscriptionService.PublishResultSentAsync(
+            refTest.Id,
+            refTest.ResultsSentAt!.Value,
+            cancellationToken);
     }
 
     private async Task ProcessReportEmailJobAsync(
@@ -306,6 +320,7 @@ public class BackgroundJobService : BackgroundService
 
         var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
+        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
         // Load the specific RefTest
         var refTest = await context.RefTests
@@ -343,6 +358,7 @@ public class BackgroundJobService : BackgroundService
                         ihfRulesQuestionsService,
                         jobEnqueueService,
                         emailConfiguration,
+                        subscriptionService,
                         cancellationToken);
 
                     ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
@@ -352,6 +368,13 @@ public class BackgroundJobService : BackgroundService
                     // Mark as expired (for pending tests)
                     refTest.Expire();
                     await context.SaveChangesAsync(cancellationToken);
+                    
+                    // Publish subscription event
+                    await subscriptionService.PublishRefTestExpiredAsync(
+                        refTest.Id,
+                        refTest.Status,
+                        DateTime.UtcNow,
+                        cancellationToken);
 
                     ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
                     break;

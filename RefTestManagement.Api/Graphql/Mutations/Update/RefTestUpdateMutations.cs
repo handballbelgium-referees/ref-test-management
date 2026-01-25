@@ -1,5 +1,4 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
@@ -7,7 +6,6 @@ using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Authorization;
-using HotChocolate.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Update;
@@ -152,7 +150,7 @@ public static class RefTestUpdateMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
-    /// <param name="eventSender"></param>
+    /// <param name="subscriptionService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -163,7 +161,7 @@ public static class RefTestUpdateMutations
     public static async Task<RefTestDto> ExtendRefTestTimeAsync(
         ExtendRefTestTimeInput input,
         RefTestManagementContext context,
-        [Service] ITopicEventSender eventSender,
+        [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -176,14 +174,11 @@ public static class RefTestUpdateMutations
         await context.SaveChangesAsync(cancellationToken);
 
         // Publish subscription event for real-time UI updates
-        await eventSender.SendAsync(
-            refTest.Id.ToString(),
-            new RefTestTimeExtended(
-                refTest.Id,
-                refTest.MaxTimeInMinutes,
-                input.AdditionalMinutes,
-                DateTime.UtcNow
-            ),
+        await subscriptionService.PublishTimeExtendedAsync(
+            refTest.Id,
+            refTest.MaxTimeInMinutes,
+            input.AdditionalMinutes,
+            DateTime.UtcNow,
             cancellationToken);
 
         return refTest.ToDto();

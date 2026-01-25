@@ -21,6 +21,7 @@ public static class RefTestLifecycleMutations
     /// <param name="token"></param>
     /// <param name="context"></param>
     /// <param name="configuration"></param>
+    /// <param name="subscriptionService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -33,6 +34,7 @@ public static class RefTestLifecycleMutations
         string token,
         RefTestManagementContext context,
         [Service] RefTestExpirationConfiguration configuration,
+        [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -45,6 +47,14 @@ public static class RefTestLifecycleMutations
         {
             refTest.Expire();
             await context.SaveChangesAsync(cancellationToken);
+            
+            // Publish subscription event
+            await subscriptionService.PublishRefTestExpiredAsync(
+                refTest.Id,
+                refTest.Status,
+                DateTime.UtcNow,
+                cancellationToken);
+            
             throw new RefTestExpiredException(token);
         }
 
@@ -53,6 +63,13 @@ public static class RefTestLifecycleMutations
 
         refTest.Start();
         await context.SaveChangesAsync(cancellationToken);
+        
+        // Publish subscription event
+        await subscriptionService.PublishRefTestStartedAsync(
+            refTest.Id,
+            refTest.Status,
+            refTest.StartedAt!.Value,
+            cancellationToken);
 
         return refTest.ToDto();
     }
@@ -88,7 +105,7 @@ public static class RefTestLifecycleMutations
         return refTest.ToDto();
     }
     
-        /// <summary>
+    /// <summary>
     /// Complete a RefTest and (optional) send results email
     /// </summary>
     /// <param name="input"></param>
@@ -96,6 +113,7 @@ public static class RefTestLifecycleMutations
     /// <param name="ihfRulesQuestionsService"></param>
     /// <param name="jobEnqueueService"></param>
     /// <param name="emailConfiguration"></param>
+    /// <param name="subscriptionService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -108,6 +126,7 @@ public static class RefTestLifecycleMutations
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] EmailConfiguration emailConfiguration,
+        [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
@@ -139,6 +158,13 @@ public static class RefTestLifecycleMutations
         );
 
         await context.SaveChangesAsync(cancellationToken);
+        
+        // Publish subscription event
+        await subscriptionService.PublishRefTestCompletedAsync(
+            refTest.Id,
+            refTest.Status,
+            refTest.CompletedAt!.Value,
+            cancellationToken);
 
         if (!refTest.SendResultsAutomatically)
             return refTest.ToDto();
