@@ -283,6 +283,31 @@
         "success": "Notification settings updated successfully",
         "error": "Failed to update notification settings"
       },
+      "extend_time": {
+        "title": "Extend Test Time",
+        "subtitle": "Add additional time to the test time limit",
+        "button": "Extend time",
+        "current_max_time": "Current time limit",
+        "new_max_time": "New time limit",
+        "additional_minutes": "Additional Minutes",
+        "additional_minutes_placeholder": "Enter additional minutes",
+        "additional_minutes_required": "Additional minutes is required",
+        "additional_minutes_min": "Minimum 1 minute required",
+        "minutes": "minutes",
+        "extend_button": "Extend Time",
+        "success": "Test time extended successfully",
+        "error": "Failed to extend test time"
+      },
+      "regenerate_token": {
+        "title": "Regenerate Test Token",
+        "subtitle": "Generate a new test link",
+        "button": "Regenerate token",
+        "warning_title": "Warning",
+        "warning_message": "Regenerating the token will invalidate the current test link. The participant will need to use the new link to access the test.",
+        "confirm_button": "Regenerate Token",
+        "success": "Test token regenerated successfully",
+        "error": "Failed to regenerate test token"
+      },
       "test_info": "Test Information",
       "title": "Title",
       "number_of_questions": "Number of Questions",

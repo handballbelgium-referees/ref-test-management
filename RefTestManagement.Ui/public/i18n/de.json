@@ -287,6 +287,31 @@
         "success": "Benachrichtigungseinstellungen erfolgreich aktualisiert",
         "error": "Benachrichtigungseinstellungen konnten nicht aktualisiert werden"
       },
+      "extend_time": {
+        "title": "Testzeit Verlängern",
+        "subtitle": "Zusätzliche Zeit zum Zeitlimit des Tests hinzufügen",
+        "button": "Zeit verlängern",
+        "current_max_time": "Aktuelles Zeitlimit",
+        "new_max_time": "Neues Zeitlimit",
+        "additional_minutes": "Zusätzliche Minuten",
+        "additional_minutes_placeholder": "Zusätzliche Minuten eingeben",
+        "additional_minutes_required": "Zusätzliche Minuten sind erforderlich",
+        "additional_minutes_min": "Mindestens 1 Minute erforderlich",
+        "minutes": "Minuten",
+        "extend_button": "Zeit Verlängern",
+        "success": "Testzeit erfolgreich verlängert",
+        "error": "Testzeit konnte nicht verlängert werden"
+      },
+      "regenerate_token": {
+        "title": "Test-Token Neu Generieren",
+        "subtitle": "Einen neuen Testlink generieren",
+        "button": "Token neu generieren",
+        "warning_title": "Warnung",
+        "warning_message": "Das Neugenerieren des Tokens macht den aktuellen Testlink ungültig. Der Teilnehmer muss den neuen Link verwenden, um auf den Test zuzugreifen.",
+        "confirm_button": "Token Neu Generieren",
+        "success": "Test-Token erfolgreich neu generiert",
+        "error": "Test-Token konnte nicht neu generiert werden"
+      },
       "test_info": "Testinformationen",
       "title": "Titel",
       "number_of_questions": "Anzahl der Fragen",

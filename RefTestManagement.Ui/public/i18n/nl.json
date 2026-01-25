@@ -283,6 +283,31 @@
         "success": "Meldingsinstellingen succesvol bijgewerkt",
         "error": "Kan meldingsinstellingen niet bijwerken"
       },
+      "extend_time": {
+        "title": "Testtijd Verlengen",
+        "subtitle": "Voeg extra tijd toe aan de tijdslimiet van de test",
+        "button": "Tijd verlengen",
+        "current_max_time": "Huidige tijdslimiet",
+        "new_max_time": "Nieuwe tijdslimiet",
+        "additional_minutes": "Extra Minuten",
+        "additional_minutes_placeholder": "Voer extra minuten in",
+        "additional_minutes_required": "Extra minuten is verplicht",
+        "additional_minutes_min": "Minimaal 1 minuut vereist",
+        "minutes": "minuten",
+        "extend_button": "Tijd Verlengen",
+        "success": "Testtijd succesvol verlengd",
+        "error": "Kan testtijd niet verlengen"
+      },
+      "regenerate_token": {
+        "title": "Testtoken Opnieuw Genereren",
+        "subtitle": "Genereer een nieuwe testlink",
+        "button": "Token opnieuw genereren",
+        "warning_title": "Waarschuwing",
+        "warning_message": "Het opnieuw genereren van de token zal de huidige testlink ongeldig maken. De deelnemer moet de nieuwe link gebruiken om toegang te krijgen tot de test.",
+        "confirm_button": "Token Opnieuw Genereren",
+        "success": "Testtoken succesvol opnieuw gegenereerd",
+        "error": "Kan testtoken niet opnieuw genereren"
+      },
       "test_info": "Test Informatie",
       "title": "Titel",
       "number_of_questions": "Aantal Vragen",

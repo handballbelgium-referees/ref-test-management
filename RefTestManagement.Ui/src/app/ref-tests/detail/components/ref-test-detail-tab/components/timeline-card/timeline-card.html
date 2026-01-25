@@ -1,21 +1,47 @@
 <div class="h-full bg-neutral-50 rounded-lg p-6 border border-neutral-200">
-  <h2 class="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-    <svg
-      class="w-5 h-5 text-primary-600"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        stroke-linecap="round"
-        stroke-linejoin="round"
-        stroke-width="2"
-        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-      />
-    </svg>
-    {{ 'ref_tests.detail.timeline' | translate }}
-  </h2>
+  <div class="flex items-center justify-between mb-4">
+    <h2 class="text-lg font-semibold text-neutral-900 flex items-center gap-2">
+      <svg
+        class="w-5 h-5 text-primary-600"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+        />
+      </svg>
+      {{ 'ref_tests.detail.timeline' | translate }}
+    </h2>
+    @if (status() === RefTestStatus.InProgress) {
+      <button
+        type="button"
+        (click)="extendTime.emit()"
+        class="text-primary-600 hover:text-primary-700 transition-colors p-1"
+        [attr.aria-label]="'ref_tests.detail.extend_time.button' | translate"
+        title="{{ 'ref_tests.detail.extend_time.button' | translate }}"
+      >
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v1m4.22 1.22l.707-.707M20 12h-1m-1.22 4.22l.707.707"
+          />
+        </svg>
+      </button>
+    }
+  </div>
   <dl class="space-y-3">
     <div>
       <dt class="text-sm font-medium text-neutral-500">

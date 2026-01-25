@@ -14,6 +14,8 @@ import { RefTestDetailDataService } from '../../services/ref-test-detail-data.se
 import { EditConfigurationDialog } from './components/dialogs/edit-configuration-dialog/edit-configuration-dialog';
 import { EditNotificationSettingsDialog } from './components/dialogs/edit-notification-settings-dialog/edit-notification-settings-dialog';
 import { EditParticipantDialog } from './components/dialogs/edit-participant-dialog/edit-participant-dialog';
+import { ExtendTimeDialog } from './components/dialogs/extend-time-dialog/extend-time-dialog';
+import { RegenerateTokenDialog } from './components/dialogs/regenerate-token-dialog/regenerate-token-dialog';
 import { ParticipantInfoCard } from './components/participant-info-card/participant-info-card';
 import { ScoresCard } from './components/scores-card/scores-card';
 import { StatusInfoCard } from './components/status-info-card/status-info-card';
@@ -31,6 +33,8 @@ import { TimelineCard } from './components/timeline-card/timeline-card';
     EditParticipantDialog,
     EditConfigurationDialog,
     EditNotificationSettingsDialog,
+    ExtendTimeDialog,
+    RegenerateTokenDialog,
   ],
   templateUrl: './ref-test-detail-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -49,6 +53,12 @@ export class RefTestDetailTab {
 
   protected readonly editNotificationDialog = viewChild(EditNotificationSettingsDialog);
   protected readonly showEditNotificationDialog = signal(false);
+
+  protected readonly extendTimeDialog = viewChild(ExtendTimeDialog);
+  protected readonly showExtendTimeDialog = signal(false);
+
+  protected readonly regenerateTokenDialog = viewChild(RegenerateTokenDialog);
+  protected readonly showRegenerateTokenDialog = signal(false);
 
   private readonly _passingPercentage = toSignal(
     inject(GetScoreConfigurationGQL)
@@ -130,5 +140,35 @@ export class RefTestDetailTab {
 
   protected onEditNotificationDialogClose(): void {
     this.showEditNotificationDialog.set(false);
+  }
+
+  protected onExtendTime(): void {
+    const refTest = this.refTest();
+    if (!refTest) return;
+
+    this.showExtendTimeDialog.set(true);
+    const dialog = this.extendTimeDialog();
+    if (dialog) {
+      dialog.initialize(refTest.id, refTest.maxTimeInMinutes);
+    }
+  }
+
+  protected onExtendTimeDialogClose(): void {
+    this.showExtendTimeDialog.set(false);
+  }
+
+  protected onRegenerateToken(): void {
+    const refTest = this.refTest();
+    if (!refTest) return;
+
+    this.showRegenerateTokenDialog.set(true);
+    const dialog = this.regenerateTokenDialog();
+    if (dialog) {
+      dialog.initialize(refTest.id);
+    }
+  }
+
+  protected onRegenerateTokenDialogClose(): void {
+    this.showRegenerateTokenDialog.set(false);
   }
 }

@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { RefTestStatus } from '../../../../../../../../graphql/generated';
 import { LocalizedDate } from './../../../../../../shared/pipes/localized-date';
 
 @Component({
@@ -10,6 +11,11 @@ import { LocalizedDate } from './../../../../../../shared/pipes/localized-date';
   host: { class: 'block' },
 })
 export class TimelineCard {
-  startedAt = input<string | undefined>(undefined);
-  completedAt = input<string | undefined>(undefined);
+  readonly startedAt = input<string | undefined>(undefined);
+  readonly completedAt = input<string | undefined>(undefined);
+  readonly status = input.required<RefTestStatus>();
+
+  readonly extendTime = output<void>();
+
+  readonly RefTestStatus = RefTestStatus;
 }

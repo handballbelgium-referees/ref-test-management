@@ -16,6 +16,7 @@
         [maxTimeInMinutes]="test.maxTimeInMinutes"
         [status]="test.status"
         (edit)="onEditConfiguration()"
+        (regenerateToken)="onRegenerateToken()"
       />
 
       <!-- Status Info -->
@@ -32,6 +33,8 @@
       <app-timeline-card
         [startedAt]="test.startedAt ?? undefined"
         [completedAt]="test.completedAt ?? undefined"
+        [status]="test.status"
+        (extendTime)="onExtendTime()"
       />
     </div>
 
@@ -69,5 +72,19 @@
     [show]="showEditNotificationDialog()"
     (closeDialog)="onEditNotificationDialogClose()"
     (cancel)="onEditNotificationDialogClose()"
+  />
+
+  <!-- Extend Time Dialog -->
+  <app-extend-time-dialog
+    [show]="showExtendTimeDialog()"
+    (closeDialog)="onExtendTimeDialogClose()"
+    (cancel)="onExtendTimeDialogClose()"
+  />
+
+  <!-- Regenerate Token Dialog -->
+  <app-regenerate-token-dialog
+    [show]="showRegenerateTokenDialog()"
+    (closeDialog)="onRegenerateTokenDialogClose()"
+    (cancel)="onRegenerateTokenDialogClose()"
   />
 </div>

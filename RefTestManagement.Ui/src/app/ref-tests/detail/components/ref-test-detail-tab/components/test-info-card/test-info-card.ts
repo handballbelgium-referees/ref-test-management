@@ -15,6 +15,7 @@ export class TestInfoCard {
   maxTimeInMinutes = input<number>();
   status = input.required<RefTestStatus>();
   edit = output<void>();
+  regenerateToken = output<void>();
 
   protected readonly RefTestStatus = RefTestStatus;
 }

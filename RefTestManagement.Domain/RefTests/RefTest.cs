@@ -358,7 +358,7 @@ public class RefTest
         Status == RefTestStatus.InProgress;
 
     private bool CanRegenerateToken() =>
-        Status is RefTestStatus.Pending or RefTestStatus.Expired;
+        Status == RefTestStatus.Pending;
 
     #endregion
 }
