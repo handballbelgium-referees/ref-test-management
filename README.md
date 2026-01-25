@@ -891,6 +891,13 @@ ref-test-management/
 │   │   │   │   │   │   └── ref-test-detail-data.service.ts
 │   │   │   │   │   └── components/
 │   │   │   │   │       ├── ref-test-detail-tab/         # Participant & test info tab
+│   │   │   │   │       │   ├── ref-test-detail-tab.ts
+│   │   │   │   │       │   └── components/              # Card components
+│   │   │   │   │       │       ├── participant-info-card/
+│   │   │   │   │       │       ├── scores-card/
+│   │   │   │   │       │       ├── status-info-card/
+│   │   │   │   │       │       ├── test-info-card/
+│   │   │   │   │       │       └── timeline-card/
 │   │   │   │   │       └── ref-test-questions-tab/      # Questions & answers tab
 │   │   │   │   └── list/                 # RefTests list page
 │   │   │   │       ├── list-ref-tests.ts         # Main list component
