@@ -1,5 +1,6 @@
 ﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using HotChocolate.Authorization;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 
@@ -9,45 +10,6 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 [SubscriptionType]
 public static class RefTestSubscriptions
 {
-    /// <summary>
-    /// Subscribe to start events for a specific RefTest
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    [Subscribe]
-    [Topic("{id}")]
-    public static RefTestStarted RefTestStarted(
-        [ID<RefTest>] Guid id,
-        [EventMessage] RefTestStartedEvent message) => 
-        new RefTestStarted(message.Id, message.Status, message.StartedAt);
-    
-    /// <summary>
-    /// Subscribe to completion events for a specific RefTest
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    [Subscribe]
-    [Topic("{id}")]
-    public static RefTestCompleted RefTestCompleted(
-        [ID<RefTest>] Guid id,
-        [EventMessage] RefTestCompletedEvent message) => 
-        new RefTestCompleted(message.Id, message.Status, message.CompletedAt);
-    
-    /// <summary>
-    /// Subscribe to expiration events for a specific RefTest
-    /// </summary>
-    /// <param name="id"></param>
-    /// <param name="message"></param>
-    /// <returns></returns>
-    [Subscribe]
-    [Topic("{id}")]
-    public static RefTestExpired RefTestExpired(
-        [ID<RefTest>] Guid id,
-        [EventMessage] RefTestExpiredEvent message) => 
-        new RefTestExpired(message.Id, message.Status, message.ExpiredAt);
-    
     /// <summary>
     /// Subscribe to time extension events for a specific RefTest
     /// </summary>
@@ -62,12 +24,55 @@ public static class RefTestSubscriptions
         new RefTestTimeExtended(message.Id, message.NewMaxTimeInMinutes, message.AdditionalMinutes, message.ExtendedAt);
 
     /// <summary>
+    /// Subscribe to start events for a specific RefTest
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    [Subscribe]
+    [Authorize]
+    [Topic("{id}")]
+    public static RefTestStarted RefTestStarted(
+        [ID<RefTest>] Guid id,
+        [EventMessage] RefTestStartedEvent message) => 
+        new RefTestStarted(message.Id, message.Status, message.StartedAt);
+    
+    /// <summary>
+    /// Subscribe to completion events for a specific RefTest
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    [Subscribe]
+    [Authorize]
+    [Topic("{id}")]
+    public static RefTestCompleted RefTestCompleted(
+        [ID<RefTest>] Guid id,
+        [EventMessage] RefTestCompletedEvent message) => 
+        new RefTestCompleted(message.Id, message.Status, message.CompletedAt);
+    
+    /// <summary>
+    /// Subscribe to expiration events for a specific RefTest
+    /// </summary>
+    /// <param name="id"></param>
+    /// <param name="message"></param>
+    /// <returns></returns>
+    [Subscribe]
+    [Authorize]
+    [Topic("{id}")]
+    public static RefTestExpired RefTestExpired(
+        [ID<RefTest>] Guid id,
+        [EventMessage] RefTestExpiredEvent message) => 
+        new RefTestExpired(message.Id, message.Status, message.ExpiredAt);
+
+    /// <summary>
     /// Subscribe to invitation sent events for a specific RefTest
     /// </summary>
     /// <param name="id"></param>
     /// <param name="message"></param>
     /// <returns></returns>
     [Subscribe]
+    [Authorize]
     [Topic("{id}")]
     public static RefTestInvitationSent RefTestInvitationSent(
         [ID<RefTest>] Guid id,
@@ -81,6 +86,7 @@ public static class RefTestSubscriptions
     /// <param name="message"></param>
     /// <returns></returns>
     [Subscribe]
+    [Authorize]
     [Topic("{id}")]
     public static RefTestResultSent RefTestResultSent(
         [ID<RefTest>] Guid id,
