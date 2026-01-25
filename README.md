@@ -899,6 +899,12 @@ ref-test-management/
 │   │   │   │   │       │       ├── test-info-card/
 │   │   │   │   │       │       └── timeline-card/
 │   │   │   │   │       └── ref-test-questions-tab/      # Questions & answers tab
+│   │   │   │   │           ├── ref-test-questions-tab.ts
+│   │   │   │   │           └── components/
+│   │   │   │   │               ├── answer-item/
+│   │   │   │   │               ├── answers-summary/
+│   │   │   │   │               ├── empty-questions-state/
+│   │   │   │   │               └── question-card/
 │   │   │   │   └── list/                 # RefTests list page
 │   │   │   │       ├── list-ref-tests.ts         # Main list component
 │   │   │   │       ├── services/                 # 🎯 Business Logic Services

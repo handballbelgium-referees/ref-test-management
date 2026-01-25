@@ -1,13 +1,15 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
+import { TranslateService } from '@ngx-translate/core';
 import { map } from 'rxjs';
-import { TranslationPipe } from '../../../../pipes/translation-pipe';
 import { RefTestDetailDataService } from '../../services/ref-test-detail-data.service';
+import { AnswersSummary } from './components/answers-summary/answers-summary';
+import { EmptyQuestionsState } from './components/empty-questions-state/empty-questions-state';
+import { QuestionCard } from './components/question-card/question-card';
 
 @Component({
   selector: 'app-ref-test-questions-tab',
-  imports: [TranslatePipe, TranslationPipe],
+  imports: [EmptyQuestionsState, QuestionCard, AnswersSummary],
   templateUrl: './ref-test-questions-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -24,14 +26,10 @@ export class RefTestQuestionsTab {
     },
   );
 
-  protected readonly selectedAnswerIdsSet = computed(() => {
+  protected readonly selectedAnswerIdsSet = computed<Set<string>>(() => {
     const test = this.refTest();
-    return test ? new Set(test.selectedAnswerIds) : new Set();
+    return test ? new Set<string>(test.selectedAnswerIds) : new Set<string>();
   });
-
-  protected isAnswerSelected(answerId: string): boolean {
-    return this.selectedAnswerIdsSet().has(answerId);
-  }
 
   protected hasQuestions = computed(() => {
     const test = this.refTest();
