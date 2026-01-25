@@ -11,7 +11,7 @@ public enum RefTestResetType
 public record ResetRefTestsInput(
     [property: ID<RefTest>] List<Guid> Ids,
     RefTestResetType ResetType,
-    bool RegenerateToken = true
+    bool RegenerateToken
 );
 
 

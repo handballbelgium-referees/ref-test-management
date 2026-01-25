@@ -452,6 +452,27 @@ export type RefTestQuestionsArgs = {
 
 export type RefTestByTokenResult = InvalidRefTestStatusError | RefTest | RefTestExpiredError | RefTestNotFoundError;
 
+export type RefTestCompleted = {
+  __typename?: 'RefTestCompleted';
+  answerScore: Scalars['Int']['output'];
+  answerTotal: Scalars['Int']['output'];
+  completedAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  percentage: Scalars['Float']['output'];
+  questionScore: Scalars['Int']['output'];
+  questionTotal: Scalars['Int']['output'];
+  status: RefTestStatus;
+};
+
+export type RefTestEvent = RefTestCompleted | RefTestExpired | RefTestInvitationSent | RefTestResultSent | RefTestStarted;
+
+export type RefTestExpired = {
+  __typename?: 'RefTestExpired';
+  expiredAt: Scalars['DateTime']['output'];
+  id: Scalars['ID']['output'];
+  status: RefTestStatus;
+};
+
 export type RefTestExpiredError = Error & {
   __typename?: 'RefTestExpiredError';
   message: Scalars['String']['output'];
@@ -505,6 +526,12 @@ export type RefTestFilterInput = {
   title?: InputMaybe<RefTestTitleFilterInput>;
 };
 
+export type RefTestInvitationSent = {
+  __typename?: 'RefTestInvitationSent';
+  id: Scalars['ID']['output'];
+  sentAt: Scalars['DateTime']['output'];
+};
+
 export type RefTestNotFoundError = Error & {
   __typename?: 'RefTestNotFoundError';
   message: Scalars['String']['output'];
@@ -514,6 +541,12 @@ export enum RefTestResetType {
   Hard = 'HARD',
   Soft = 'SOFT'
 }
+
+export type RefTestResultSent = {
+  __typename?: 'RefTestResultSent';
+  id: Scalars['ID']['output'];
+  sentAt: Scalars['DateTime']['output'];
+};
 
 /** Sort RefTests by Id, Email, Status, Creation Date, Start Date, Completion Date, Percentage, QuestionScore, Number of Questions and Maximum Time */
 export type RefTestSortInput = {
@@ -557,6 +590,13 @@ export type RefTestSortInput = {
   startedAt?: InputMaybe<SortEnumType>;
   /** Sort on status of the RefTest (e.g., InProgress, Completed, Expired) */
   status?: InputMaybe<SortEnumType>;
+};
+
+export type RefTestStarted = {
+  __typename?: 'RefTestStarted';
+  id: Scalars['ID']['output'];
+  startedAt: Scalars['DateTime']['output'];
+  status: RefTestStatus;
 };
 
 export enum RefTestStatus {
@@ -672,7 +712,7 @@ export type ResetRefTestsError = {
 
 export type ResetRefTestsInput = {
   ids: Array<Scalars['ID']['input']>;
-  regenerateToken?: Scalars['Boolean']['input'];
+  regenerateToken: Scalars['Boolean']['input'];
   resetType: RefTestResetType;
 };
 
@@ -840,10 +880,17 @@ export type StringOperationFilterInput = {
 export type Subscription = {
   __typename?: 'Subscription';
   refTestTimeExtended: RefTestTimeExtended;
+  refTestUpdated: RefTestEvent;
+  refTestsUpdated: RefTestEvent;
 };
 
 
 export type SubscriptionRefTestTimeExtendedArgs = {
+  id: Scalars['ID']['input'];
+};
+
+
+export type SubscriptionRefTestUpdatedArgs = {
   id: Scalars['ID']['input'];
 };
 
@@ -1133,6 +1180,30 @@ export type SearchQuestionsByNumberQueryVariables = Exact<{
 
 
 export type SearchQuestionsByNumberQuery = { __typename?: 'Query', searchQuestionsByNumber: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null }> };
+
+export type RefTestUpdatedSubscriptionVariables = Exact<{
+  id: Scalars['ID']['input'];
+}>;
+
+
+export type RefTestUpdatedSubscription = { __typename?: 'Subscription', refTestUpdated:
+    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number }
+    | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
+    | { __typename: 'RefTestInvitationSent', id: string }
+    | { __typename: 'RefTestResultSent', id: string }
+    | { __typename: 'RefTestStarted', id: string, status: RefTestStatus, startedAt: string }
+   };
+
+export type RefTestsUpdatedSubscriptionVariables = Exact<{ [key: string]: never; }>;
+
+
+export type RefTestsUpdatedSubscription = { __typename?: 'Subscription', refTestsUpdated:
+    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number }
+    | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
+    | { __typename: 'RefTestInvitationSent', id: string }
+    | { __typename: 'RefTestResultSent', id: string }
+    | { __typename: 'RefTestStarted', id: string, status: RefTestStatus, startedAt: string }
+   };
 
 export const CompleteRefTestDocument = gql`
     mutation CompleteRefTest($input: CompleteRefTestInput!) {
@@ -1907,6 +1978,92 @@ export const SearchQuestionsByNumberDocument = gql`
   })
   export class SearchQuestionsByNumberGQL extends Apollo.Query<SearchQuestionsByNumberQuery, SearchQuestionsByNumberQueryVariables> {
     override document = SearchQuestionsByNumberDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RefTestUpdatedDocument = gql`
+    subscription RefTestUpdated($id: ID!) {
+  refTestUpdated(id: $id) {
+    __typename
+    ... on RefTestStarted {
+      id
+      status
+      startedAt
+    }
+    ... on RefTestCompleted {
+      id
+      status
+      completedAt
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
+      percentage
+    }
+    ... on RefTestExpired {
+      id
+      status
+    }
+    ... on RefTestInvitationSent {
+      id
+    }
+    ... on RefTestResultSent {
+      id
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RefTestUpdatedGQL extends Apollo.Subscription<RefTestUpdatedSubscription, RefTestUpdatedSubscriptionVariables> {
+    override document = RefTestUpdatedDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RefTestsUpdatedDocument = gql`
+    subscription RefTestsUpdated {
+  refTestsUpdated {
+    __typename
+    ... on RefTestStarted {
+      id
+      status
+      startedAt
+    }
+    ... on RefTestCompleted {
+      id
+      status
+      completedAt
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
+      percentage
+    }
+    ... on RefTestExpired {
+      id
+      status
+    }
+    ... on RefTestInvitationSent {
+      id
+    }
+    ... on RefTestResultSent {
+      id
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RefTestsUpdatedGQL extends Apollo.Subscription<RefTestsUpdatedSubscription, RefTestsUpdatedSubscriptionVariables> {
+    override document = RefTestsUpdatedDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

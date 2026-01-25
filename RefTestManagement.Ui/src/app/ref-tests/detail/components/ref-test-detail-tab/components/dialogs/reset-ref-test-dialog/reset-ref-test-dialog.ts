@@ -43,6 +43,8 @@ export class ResetRefTestDialog {
     regenerateToken: false,
   });
 
+  private readonly _previousResetType = signal<RefTestResetType>(RefTestResetType.Soft);
+
   protected readonly isHardReset = computed(() => {
     return this.resetOptionsModel().resetType === RefTestResetType.Hard;
   });
@@ -66,6 +68,7 @@ export class ResetRefTestDialog {
       resetType: RefTestResetType.Soft,
       regenerateToken: false,
     });
+    this._previousResetType.set(RefTestResetType.Soft);
   }
 
   constructor() {
@@ -77,19 +80,26 @@ export class ResetRefTestDialog {
       }
     });
 
-    // Auto-check regenerateToken when Hard Reset is selected, uncheck when Soft Reset is selected
+    // Auto-check regenerateToken when Hard Reset is selected, uncheck when switching to Soft Reset
     effect(() => {
       const currentModel = this.resetOptionsModel();
-      if (currentModel.resetType === RefTestResetType.Hard && !currentModel.regenerateToken) {
-        this.resetOptionsModel.set({
-          ...currentModel,
-          regenerateToken: true,
-        });
-      } else if (currentModel.resetType === RefTestResetType.Soft && currentModel.regenerateToken) {
-        this.resetOptionsModel.set({
-          ...currentModel,
-          regenerateToken: false,
-        });
+      const previousType = this._previousResetType();
+
+      // Only act when reset type actually changes
+      if (currentModel.resetType !== previousType) {
+        this._previousResetType.set(currentModel.resetType);
+
+        if (currentModel.resetType === RefTestResetType.Hard) {
+          this.resetOptionsModel.set({
+            ...currentModel,
+            regenerateToken: true,
+          });
+        } else if (currentModel.resetType === RefTestResetType.Soft) {
+          this.resetOptionsModel.set({
+            ...currentModel,
+            regenerateToken: false,
+          });
+        }
       }
     });
   }
@@ -103,7 +113,7 @@ export class ResetRefTestDialog {
           input: {
             ids: [this.refTestId()],
             resetType: options.resetType,
-            regenerateToken: options.regenerateToken || undefined,
+            regenerateToken: options.regenerateToken,
           },
         },
       })

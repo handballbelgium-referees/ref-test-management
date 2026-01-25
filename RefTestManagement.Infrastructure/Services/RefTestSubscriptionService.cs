@@ -50,6 +50,11 @@ public interface IRefTestSubscriptionService
         Guid refTestId,
         RefTestStatus status,
         DateTime completedAt,
+        int questionScore,
+        int questionTotal,
+        int answerScore,
+        int answerTotal,
+        double percentage,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -64,6 +69,9 @@ public interface IRefTestSubscriptionService
 
 public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTestSubscriptionService
 {
+    public const string GlobalTopic = "RefTestEvents";
+    public const string TimeExtendedTopic = "RefTestTimeExtended-{id}";
+
     public async Task PublishTimeExtendedAsync(
         Guid refTestId,
         int newMaxTimeInMinutes,
@@ -71,10 +79,9 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         DateTime extendedAt,
         CancellationToken cancellationToken = default)
     {
-        await eventSender.SendAsync(
-            refTestId.ToString(),
-            new RefTestTimeExtendedEvent(refTestId, newMaxTimeInMinutes, additionalMinutes, extendedAt),
-            cancellationToken);
+        var evt = new RefTestTimeExtendedEvent(refTestId, newMaxTimeInMinutes, additionalMinutes, extendedAt);
+
+        await eventSender.SendAsync(TimeExtendedTopic.Replace("{id}", refTestId.ToString()), evt, cancellationToken);
     }
 
     public async Task PublishInvitationSentAsync(
@@ -82,10 +89,12 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         DateTime sentAt,
         CancellationToken cancellationToken = default)
     {
-        await eventSender.SendAsync(
-            refTestId.ToString(),
-            new RefTestInvitationSentEvent(refTestId, sentAt),
-            cancellationToken);
+        var evt = new RefTestInvitationSentEvent(refTestId, sentAt);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
     }
 
     public async Task PublishResultSentAsync(
@@ -93,10 +102,12 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         DateTime sentAt,
         CancellationToken cancellationToken = default)
     {
-        await eventSender.SendAsync(
-            refTestId.ToString(),
-            new RefTestResultSentEvent(refTestId, sentAt),
-            cancellationToken);
+        var evt = new RefTestResultSentEvent(refTestId, sentAt);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
     }
 
     public async Task PublishRefTestStartedAsync(
@@ -105,22 +116,32 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         DateTime startedAt,
         CancellationToken cancellationToken = default)
     {
-        await eventSender.SendAsync(
-            refTestId.ToString(),
-            new RefTestStartedEvent(refTestId, status, startedAt),
-            cancellationToken);
+        var evt = new RefTestStartedEvent(refTestId, status, startedAt);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
     }
 
     public async Task PublishRefTestCompletedAsync(
         Guid refTestId,
         RefTestStatus status,
         DateTime completedAt,
+        int questionScore,
+        int questionTotal,
+        int answerScore,
+        int answerTotal,
+        double percentage,
         CancellationToken cancellationToken = default)
     {
-        await eventSender.SendAsync(
-            refTestId.ToString(),
-            new RefTestCompletedEvent(refTestId, status, completedAt),
-            cancellationToken);
+        var evt = new RefTestCompletedEvent(refTestId, status, completedAt, questionScore, questionTotal, answerScore,
+            answerTotal, percentage);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
     }
 
     public async Task PublishRefTestExpiredAsync(
@@ -129,17 +150,32 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         DateTime expiredAt,
         CancellationToken cancellationToken = default)
     {
-        await eventSender.SendAsync(
-            refTestId.ToString(),
-            new RefTestExpiredEvent(refTestId, status, expiredAt),
-            cancellationToken);
+        var evt = new RefTestExpiredEvent(refTestId, status, expiredAt);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
     }
 }
 
 // Internal event records used for publishing
 public record RefTestTimeExtendedEvent(Guid Id, int NewMaxTimeInMinutes, int AdditionalMinutes, DateTime ExtendedAt);
+
 public record RefTestInvitationSentEvent(Guid Id, DateTime SentAt);
+
 public record RefTestResultSentEvent(Guid Id, DateTime SentAt);
+
 public record RefTestStartedEvent(Guid Id, RefTestStatus Status, DateTime StartedAt);
-public record RefTestCompletedEvent(Guid Id, RefTestStatus Status, DateTime CompletedAt);
+
+public record RefTestCompletedEvent(
+    Guid Id,
+    RefTestStatus Status,
+    DateTime CompletedAt,
+    int QuestionScore,
+    int QuestionTotal,
+    int AnswerScore,
+    int AnswerTotal,
+    double Percentage);
+
 public record RefTestExpiredEvent(Guid Id, RefTestStatus Status, DateTime ExpiredAt);

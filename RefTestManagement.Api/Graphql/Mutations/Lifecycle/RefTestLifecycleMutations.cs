@@ -164,6 +164,11 @@ public static class RefTestLifecycleMutations
             refTest.Id,
             refTest.Status,
             refTest.CompletedAt!.Value,
+            refTest.QuestionScore ?? 0,
+            refTest.QuestionTotal,
+            refTest.AnswerScore ?? 0,
+            refTest.AnswerTotal ?? 0,
+            refTest.Percentage ?? 0,
             cancellationToken);
 
         if (!refTest.SendResultsAutomatically)

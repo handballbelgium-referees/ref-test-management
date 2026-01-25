@@ -429,7 +429,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected navigateToCreate(): void {
-    this._router.navigate(['/ref-tests/create']);
+    void this._router.navigate(['/ref-tests/create']);
   }
 
   // ========================================================================

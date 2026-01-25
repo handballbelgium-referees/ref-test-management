@@ -55,7 +55,7 @@ public static class RefTestResetMutations
 
                 // Determine if the token will be regenerated
                 var willRegenerateToken = input.ResetType == RefTestResetType.Hard ||
-                                         (input.ResetType == RefTestResetType.Soft && input.RegenerateToken);
+                                         input is { ResetType: RefTestResetType.Soft, RegenerateToken: true };
 
                 // Always cancel result email jobs (results are being cleared in both soft and hard reset)
                 // For invitation and expiration jobs, only cancel if the token will be regenerated
