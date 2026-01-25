@@ -15,6 +15,7 @@ public class RefTestSortType : SortInputType<RefTestDto>
         descriptor.Field(x => x.Id).Description("Sort on RefTest id");
         descriptor.Field(x => x.FirstName).Description("Sort on first name of the user who started the RefTest");
         descriptor.Field(x => x.LastName).Description("Sort on last name of the user who started the RefTest");
+        descriptor.Field(x => x.FullName).Name("name").Description("Sort on name of the user who started the RefTest (e.g., )");
         descriptor.Field(x => x.Email).Description("Sort on email of the user who started the RefTest");
         descriptor.Field(x => x.InvitationSent).Description("Sort on invitation was sent for the RefTest");
         descriptor.Field(x => x.SendInvitationsAutomatically).Description("Sort on whether invitations are sent automatically");

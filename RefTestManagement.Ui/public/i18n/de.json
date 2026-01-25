@@ -15,7 +15,8 @@
     "next": "Weiter",
     "refreshing": "Aktualisierung...",
     "yes": "Ja",
-    "no": "Nein"
+    "no": "Nein",
+    "save": "Speichern"
   },
   "nav": {
     "language": "Sprache",
@@ -238,6 +239,23 @@
       "participant_info": "Teilnehmerinformationen",
       "name": "Name",
       "email": "E-Mail",
+      "edit_participant": {
+        "title": "Teilnehmer bearbeiten",
+        "subtitle": "Name und E-Mail-Adresse des Teilnehmers aktualisieren",
+        "edit_button": "Teilnehmerdaten bearbeiten",
+        "first_name": "Vorname",
+        "first_name_placeholder": "Vornamen eingeben",
+        "first_name_required": "Vorname ist erforderlich",
+        "last_name": "Nachname",
+        "last_name_placeholder": "Nachnamen eingeben",
+        "last_name_required": "Nachname ist erforderlich",
+        "email": "E-Mail",
+        "email_placeholder": "E-Mail-Adresse des Teilnehmers eingeben",
+        "email_required": "E-Mail ist erforderlich",
+        "email_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "success": "Teilnehmerdaten erfolgreich aktualisiert",
+        "error": "Teilnehmerdaten konnten nicht aktualisiert werden"
+      },
       "test_info": "Testinformationen",
       "title": "Titel",
       "number_of_questions": "Anzahl der Fragen",

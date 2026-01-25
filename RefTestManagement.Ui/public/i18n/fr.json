@@ -15,7 +15,8 @@
     "next": "Suivant",
     "refreshing": "Actualisation...",
     "yes": "Oui",
-    "no": "Non"
+    "no": "Non",
+    "save": "Enregistrer"
   },
   "nav": {
     "language": "Langue",
@@ -234,6 +235,23 @@
       "participant_info": "Informations sur le Participant",
       "name": "Nom",
       "email": "E-mail",
+      "edit_participant": {
+        "title": "Modifier le participant",
+        "subtitle": "Mettre à jour le nom et l'adresse e-mail du participant",
+        "edit_button": "Modifier les détails du participant",
+        "first_name": "Prénom",
+        "first_name_placeholder": "Entrer le prénom",
+        "first_name_required": "Le prénom est requis",
+        "last_name": "Nom de famille",
+        "last_name_placeholder": "Entrer le nom de famille",
+        "last_name_required": "Le nom de famille est requis",
+        "email": "E-mail",
+        "email_placeholder": "Entrer l'adresse e-mail du participant",
+        "email_required": "L'e-mail est requis",
+        "email_invalid": "Veuillez entrer une adresse e-mail valide",
+        "success": "Détails du participant mis à jour avec succès",
+        "error": "Échec de la mise à jour des détails du participant"
+      },
       "test_info": "Informations sur le Test",
       "title": "Titre",
       "number_of_questions": "Nombre de Questions",

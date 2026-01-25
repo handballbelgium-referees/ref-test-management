@@ -26,6 +26,8 @@ public class RefTestType : ObjectType<RefTestDto>
         descriptor.Field(x => x.Title)
             .Description("Title of the RefTest");
 
+        descriptor.Field(x => x.FirstName).Description("First name of the user who started the RefTest").Authorize();
+        descriptor.Field(x => x.LastName).Description("Last name of the user who started the RefTest").Authorize();
         descriptor.Field(x => x.FullName).Name("name").Description("Name of the user who started the RefTest (e.g., )");
         descriptor.Field(x => x.Email).Description("Email of the user who started the RefTest");
         descriptor.Field(x => x.InvitationSent).Description("Indication of invitation was sent").Authorize();

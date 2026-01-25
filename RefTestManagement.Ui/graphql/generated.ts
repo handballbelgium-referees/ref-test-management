@@ -400,10 +400,14 @@ export type RefTest = Node & {
   currentQuestionIndex?: Maybe<Scalars['Int']['output']>;
   /** Email of the user who started the RefTest */
   email: Scalars['String']['output'];
+  /** First name of the user who started the RefTest */
+  firstName: Scalars['String']['output'];
   /** The RefTest id */
   id: Scalars['ID']['output'];
   /** Indication of invitation was sent */
   invitationSent: Scalars['Boolean']['output'];
+  /** Last name of the user who started the RefTest */
+  lastName: Scalars['String']['output'];
   /** Maximum time in minutes for the RefTest */
   maxTimeInMinutes: Scalars['Int']['output'];
   /** Name of the user who started the RefTest (e.g., ) */
@@ -476,6 +480,8 @@ export type RefTestFilterInput = {
   lastName?: InputMaybe<StringOperationFilterInput>;
   /** Filter on maximum time in minutes for the RefTest */
   maxTimeInMinutes?: InputMaybe<IntOperationFilterInput>;
+  /** Filter on name of the user who started the RefTest (e.g., ) */
+  name?: InputMaybe<StringOperationFilterInput>;
   /** Filter on number of questions in the RefTest */
   numberOfQuestions?: InputMaybe<IntOperationFilterInput>;
   or?: InputMaybe<Array<RefTestFilterInput>>;
@@ -531,6 +537,8 @@ export type RefTestSortInput = {
   lastName?: InputMaybe<SortEnumType>;
   /** Sort on maximum time in minutes for the RefTest */
   maxTimeInMinutes?: InputMaybe<SortEnumType>;
+  /** Sort on name of the user who started the RefTest (e.g., ) */
+  name?: InputMaybe<SortEnumType>;
   /** Sort on number of questions in the RefTest */
   numberOfQuestions?: InputMaybe<SortEnumType>;
   /** Sort on percentage of correct answers */
@@ -1055,7 +1063,7 @@ export type UpdateRefTestDetailsMutationVariables = Exact<{
 }>;
 
 
-export type UpdateRefTestDetailsMutation = { __typename?: 'Mutation', updateRefTestDetails: { __typename?: 'UpdateRefTestDetailsPayload', refTest?: { __typename?: 'RefTest', id: string, name: string, email: string } | null, errors?: Array<
+export type UpdateRefTestDetailsMutation = { __typename?: 'Mutation', updateRefTestDetails: { __typename?: 'UpdateRefTestDetailsPayload', refTest?: { __typename?: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string } | null, errors?: Array<
       | { __typename?: 'InvalidRefTestStatusError', message: string }
       | { __typename?: 'RefTestNotFoundError', message: string }
     > | null } };
@@ -1084,7 +1092,7 @@ export type GetRefTestByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetRefTestByIdQuery = { __typename?: 'Query', refTest?: { __typename?: 'RefTest', id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null } | null };
+export type GetRefTestByIdQuery = { __typename?: 'Query', refTest?: { __typename?: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null } | null };
 
 export type GetRefTestsAllCountsQueryVariables = Exact<{
   allWhere?: InputMaybe<RefTestFilterInput>;
@@ -1612,6 +1620,8 @@ export const UpdateRefTestDetailsDocument = gql`
   updateRefTestDetails(input: $input) {
     refTest {
       id
+      firstName
+      lastName
       name
       email
     }
@@ -1708,6 +1718,8 @@ export const GetRefTestByIdDocument = gql`
       id
       value
     }
+    firstName
+    lastName
     name
     email
     invitationSent

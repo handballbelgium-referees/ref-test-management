@@ -1,0 +1,123 @@
+@if (show()) {
+  <div
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+    (click)="cancel.emit()"
+  >
+    <div
+      class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      (click)="$event.stopPropagation()"
+      role="dialog"
+      aria-labelledby="dialog-title"
+      aria-modal="true"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-neutral-200">
+        <h2 id="dialog-title" class="text-xl font-bold text-neutral-900">
+          {{ 'ref_tests.detail.edit_participant.title' | translate }}
+        </h2>
+        <p class="text-sm text-neutral-600 mt-1">
+          {{ 'ref_tests.detail.edit_participant.subtitle' | translate }}
+        </p>
+      </div>
+
+      <!-- Form Content -->
+      <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
+        <div class="space-y-6">
+          @if (error()) {
+            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p class="text-sm text-red-800">{{ error() | translate }}</p>
+            </div>
+          }
+
+          <div>
+            <label
+              for="participantFirstName"
+              class="block text-sm font-medium text-neutral-700 mb-2"
+            >
+              {{ 'ref_tests.detail.edit_participant.first_name' | translate }} *
+            </label>
+            <input
+              id="participantFirstName"
+              type="text"
+              [formField]="participantForm.firstName"
+              [class.border-red-500]="
+                participantForm.firstName().touched() && participantForm.firstName().invalid()
+              "
+              class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:text-neutral-500"
+              [placeholder]="'ref_tests.detail.edit_participant.first_name_placeholder' | translate"
+            />
+            @if (participantForm.firstName().touched() && participantForm.firstName().invalid()) {
+              <p class="text-xs text-red-600 mt-1">
+                {{ participantForm.firstName().errors()[0]?.message | translate }}
+              </p>
+            }
+          </div>
+
+          <div>
+            <label
+              for="participantLastName"
+              class="block text-sm font-medium text-neutral-700 mb-2"
+            >
+              {{ 'ref_tests.detail.edit_participant.last_name' | translate }} *
+            </label>
+            <input
+              id="participantLastName"
+              type="text"
+              [formField]="participantForm.lastName"
+              [class.border-red-500]="
+                participantForm.lastName().touched() && participantForm.lastName().invalid()
+              "
+              class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:text-neutral-500"
+              [placeholder]="'ref_tests.detail.edit_participant.last_name_placeholder' | translate"
+            />
+            @if (participantForm.lastName().touched() && participantForm.lastName().invalid()) {
+              <p class="text-xs text-red-600 mt-1">
+                {{ participantForm.lastName().errors()[0]?.message | translate }}
+              </p>
+            }
+          </div>
+
+          <div>
+            <label for="participantEmail" class="block text-sm font-medium text-neutral-700 mb-2">
+              {{ 'ref_tests.detail.edit_participant.email' | translate }} *
+            </label>
+            <input
+              id="participantEmail"
+              type="email"
+              [formField]="participantForm.email"
+              [class.border-red-500]="
+                participantForm.email().touched() && participantForm.email().invalid()
+              "
+              class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 disabled:bg-neutral-50 disabled:text-neutral-500"
+              [placeholder]="'ref_tests.detail.edit_participant.email_placeholder' | translate"
+            />
+            @if (participantForm.email().touched() && participantForm.email().invalid()) {
+              <p class="text-xs text-red-600 mt-1">
+                {{ participantForm.email().errors()[0]?.message | translate }}
+              </p>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="cancel.emit()"
+          class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
+        >
+          {{ 'common.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          (click)="onSave()"
+          [disabled]="!canSave()"
+          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          {{ 'common.save' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

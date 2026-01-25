@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { RefTestStatus } from '../../../../../../../../graphql/generated';
 
 @Component({
   selector: 'app-participant-info-card',
@@ -11,4 +12,9 @@ import { TranslatePipe } from '@ngx-translate/core';
 export class ParticipantInfoCard {
   name = input.required<string>();
   email = input.required<string>();
+  status = input.required<RefTestStatus>();
+
+  readonly edit = output<void>();
+
+  protected readonly RefTestStatus = RefTestStatus;
 }

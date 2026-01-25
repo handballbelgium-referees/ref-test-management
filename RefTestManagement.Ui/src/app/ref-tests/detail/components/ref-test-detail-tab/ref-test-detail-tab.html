@@ -2,7 +2,12 @@
   @if (refTest(); as test) {
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <!-- Participant Info -->
-      <app-participant-info-card [name]="test.name" [email]="test.email" />
+      <app-participant-info-card
+        [name]="test.name"
+        [email]="test.email"
+        [status]="test.status"
+        (edit)="onEditParticipant()"
+      />
 
       <!-- Test Info -->
       <app-test-info-card
@@ -42,4 +47,11 @@
       </div>
     }
   }
+
+  <!-- Edit Participant Dialog -->
+  <app-edit-participant-dialog
+    [show]="showEditDialog()"
+    (closeDialog)="onEditDialogClose()"
+    (cancel)="onEditDialogClose()"
+  />
 </div>

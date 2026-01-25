@@ -15,7 +15,8 @@
     "next": "Volgende",
     "refreshing": "Vernieuwen...",
     "yes": "Ja",
-    "no": "Nee"
+    "no": "Nee",
+    "save": "Opslaan"
   },
   "nav": {
     "language": "Taal",
@@ -234,6 +235,23 @@
       "participant_info": "Deelnemer Informatie",
       "name": "Naam",
       "email": "E-mail",
+      "edit_participant": {
+        "title": "Deelnemer Bewerken",
+        "subtitle": "Werk naam en e-mailadres van deelnemer bij",
+        "edit_button": "Deelnemer gegevens bewerken",
+        "first_name": "Voornaam",
+        "first_name_placeholder": "Voer voornaam in",
+        "first_name_required": "Voornaam is verplicht",
+        "last_name": "Achternaam",
+        "last_name_placeholder": "Voer achternaam in",
+        "last_name_required": "Achternaam is verplicht",
+        "email": "E-mail",
+        "email_placeholder": "Voer e-mailadres van deelnemer in",
+        "email_required": "E-mail is verplicht",
+        "email_invalid": "Voer een geldig e-mailadres in",
+        "success": "Deelnemersgegevens succesvol bijgewerkt",
+        "error": "Kan deelnemergegevens niet bijwerken"
+      },
       "test_info": "Test Informatie",
       "title": "Titel",
       "number_of_questions": "Aantal Vragen",

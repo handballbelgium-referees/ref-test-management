@@ -5,6 +5,8 @@ query GetRefTestById($id: ID!) {
       id
       value
     }
+    firstName
+    lastName
     name
     email
     invitationSent

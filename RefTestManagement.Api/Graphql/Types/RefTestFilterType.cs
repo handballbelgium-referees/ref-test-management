@@ -15,6 +15,7 @@ public class RefTestFilterType : FilterInputType<RefTestDto>
         descriptor.Field(x => x.Title).Description("Filter on RefTest title");
         descriptor.Field(x => x.FirstName).Description("Filter on first name of the user who started the RefTest");
         descriptor.Field(x => x.LastName).Description("Filter on last name of the user who started the RefTest");
+        descriptor.Field(x => x.FullName).Name("name").Description("Filter on name of the user who started the RefTest (e.g., )");
         descriptor.Field(x => x.Email).Description("Filter on email of the user who started the RefTest");
         descriptor.Field(x => x.InvitationSent).Description("Filter on invitation was sent for the RefTest");
         descriptor.Field(x => x.SendInvitationsAutomatically).Description("Filter on whether invitations are sent automatically");

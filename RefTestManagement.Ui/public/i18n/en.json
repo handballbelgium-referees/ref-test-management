@@ -15,7 +15,8 @@
     "next": "Next",
     "refreshing": "Refreshing...",
     "yes": "Yes",
-    "no": "No"
+    "no": "No",
+    "save": "Save"
   },
   "nav": {
     "language": "Language",
@@ -234,6 +235,23 @@
       "participant_info": "Participant Information",
       "name": "Name",
       "email": "Email",
+      "edit_participant": {
+        "title": "Edit Participant",
+        "subtitle": "Update participant name and email address",
+        "edit_button": "Edit participant details",
+        "first_name": "First Name",
+        "first_name_placeholder": "Enter first name",
+        "first_name_required": "First name is required",
+        "last_name": "Last Name",
+        "last_name_placeholder": "Enter last name",
+        "last_name_required": "Last name is required",
+        "email": "Email",
+        "email_placeholder": "Enter participant email",
+        "email_required": "Email is required",
+        "email_invalid": "Please enter a valid email address",
+        "success": "Participant details updated successfully",
+        "error": "Failed to update participant details"
+      },
       "test_info": "Test Information",
       "title": "Title",
       "number_of_questions": "Number of Questions",
