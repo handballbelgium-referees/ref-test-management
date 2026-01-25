@@ -309,14 +309,14 @@ public class BackgroundJobService : BackgroundService
 
         if (refTest == null)
         {
-            _logger.LogWarning("RefTest {RefTestId} not found for expiration job", payload.RefTestId);
+            _logger.LogWarning("RefTest {Id} not found for expiration job", payload.RefTestId);
             return;
         }
 
         // Skip if already completed or expired
         if (refTest.Status == RefTestStatus.Completed || refTest.Status == RefTestStatus.Expired)
         {
-            _logger.LogDebug("RefTest {RefTestId} already in status {Status}, skipping", refTest.Id, refTest.Status);
+            _logger.LogDebug("RefTest {Id} already in status {Status}, skipping", refTest.Id, refTest.Status);
             return;
         }
 

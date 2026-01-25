@@ -1,0 +1,14 @@
+mutation UpdateRefTestNotificationSettings($input: UpdateRefTestNotificationSettingsInput!) {
+  updateRefTestNotificationSettings(input: $input) {
+    refTest {
+      id
+      sendInvitationsAutomatically
+      sendResultsAutomatically
+    }
+    errors {
+      ... on RefTestNotFoundError {
+        message
+      }
+    }
+  }
+}

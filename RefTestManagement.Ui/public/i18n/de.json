@@ -244,6 +244,8 @@
       "max_time": "Zeitlimit",
       "minutes": "Minuten",
       "status_info": "Statusinformationen",
+      "send_invitations_automatically": "Einladungen Automatisch Senden",
+      "send_results_automatically": "Ergebnisse Automatisch Senden",
       "timeline": "Zeitachse",
       "started_at": "Gestartet Am",
       "completed_at": "Abgeschlossen Am",

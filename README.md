@@ -63,6 +63,8 @@ A comprehensive web application for managing and taking IHF (International Handb
     - Optional `ResendInvitation` flag to send invitation to updated email
   - **Update Configuration**: Modify test title, questions, and time limits (Pending/Expired only)
   - **Extend Time**: Add additional time for in-progress tests (InProgress only)
+    - **Real-Time Notifications**: GraphQL subscription pushes time extension events to test takers instantly
+    - UI countdown timer recalculates automatically without page refresh
   - **Update Notifications**: Enable/disable automatic invitation and result emails
   - **Regenerate Token**: Create new access token with automatic invitation resend
 - **Reset Operations**: Allow test retakes with flexible options (handles multiple tests)
@@ -111,6 +113,14 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Complete Localization**: All UI elements, emails, and PDF reports translated
 - **Dynamic Switching**: Change language instantly without a page reload
 - **Fallback Support**: Default to English if translation missing
+
+### ⚡ Real-Time Features
+
+- **GraphQL Subscriptions**: WebSocket-based real-time communication
+- **Time Extension Notifications**: Test takers receive instant updates when admins extend test time
+- **Automatic Timer Recalculation**: UI countdown updates without page refresh
+- **In-Memory Pub/Sub**: Efficient event distribution for subscriptions
+- **Topic Isolation**: Each RefTest has its own subscription topic for security
 
 ## 🏗️ Architecture
 
@@ -234,6 +244,7 @@ Graphql/
 │   ├── Deletion/                 (3 files) - Delete + input/output
 │   └── Shared/                   (1 file)  - Shared User DTO
 ├── Queries/                      (2 files) - Queries + DataLoaders
+├── Subscriptions/                (2 files) - Real-time event subscriptions
 ├── Types/                        (8 files) - Type definitions + filters/sorts
 └── ReadModels/                   - Response DTOs
 ```
@@ -241,7 +252,7 @@ Graphql/
 #### ✅ Key Benefits
 
 - **From**: 1 monolithic 860-line mutation file
-- **To**: 7 organized subfolders with 26 well-organized files
+- **To**: 7 organized subfolders with 28 well-organized files
 - **Average file size**: ~180 lines (highly maintainable)
 - **Perfect co-location**: Each mutation with its input/output models
 - **Shared DTOs**: Common models in dedicated Shared folder
@@ -786,10 +797,14 @@ ref-test-management/
 │   │   │   │   ├── DeleteRefTestsInput.cs
 │   │   │   │   └── DeleteRefTestsResult.cs
 │   │   │   └── Shared/                   # Shared DTOs used across mutations
+│   │   │       └── Title.cs              # Title DTO (Title Id, or string)
 │   │   │       └── User.cs               # User DTO (FirstName, LastName, Email)
 │   │   ├── Queries/                      # 🔷 All GraphQL Queries
 │   │   │   ├── RefTestQueries.cs         # RefTest queries (list, detail, titles)
 │   │   │   └── DataLoaders.cs            # Batch loading for N+1 optimization
+│   │   ├── Subscriptions/                # 🔷 Real-time event subscriptions
+│   │   │   ├── RefTestSubscriptions.cs   # Subscription definitions (time extension)
+│   │   │   └── RefTestTimeExtended.cs    # Time extension event payload
 │   │   ├── Types/                        # 🔷 GraphQL Type Definitions
 │   │   │   ├── RefTestType.cs            # RefTest GraphQL type
 │   │   │   ├── RefTestTitleType.cs       # RefTestTitle GraphQL type

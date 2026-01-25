@@ -9,6 +9,8 @@ query GetRefTestById($id: ID!) {
     email
     invitationSent
     resultsSent
+    sendInvitationsAutomatically
+    sendResultsAutomatically
     status
     numberOfQuestions
     maxTimeInMinutes

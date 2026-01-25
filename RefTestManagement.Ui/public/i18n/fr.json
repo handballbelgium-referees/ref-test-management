@@ -240,6 +240,8 @@
       "max_time": "Limite de Temps",
       "minutes": "minutes",
       "status_info": "Informations sur le Statut",
+      "send_invitations_automatically": "Envoyer les Invitations Automatiquement",
+      "send_results_automatically": "Envoyer les Résultats Automatiquement",
       "timeline": "Chronologie",
       "started_at": "Commencé Le",
       "completed_at": "Terminé Le",

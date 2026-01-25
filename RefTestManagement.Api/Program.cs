@@ -99,9 +99,11 @@ services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
 services.AddGraphQLServer()
     .AddQueryType()
     .AddMutationType()
+    .AddSubscriptionType()
     .AddApiTypes()
     .AddQueryConventions()
     .AddMutationConventions()
+    .AddInMemorySubscriptions()
     .ModifyPagingOptions(options =>
     {
         options.DefaultPageSize = 20;
@@ -142,6 +144,8 @@ app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseWebSockets();
 
 app.MapControllerRoute(
     "default",

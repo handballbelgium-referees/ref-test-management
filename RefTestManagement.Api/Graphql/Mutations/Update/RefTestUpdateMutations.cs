@@ -1,10 +1,13 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Authorization;
+using HotChocolate.Subscriptions;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Update;
@@ -35,10 +38,10 @@ public static class RefTestUpdateMutations
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(rt => rt.Id == input.RefTestId, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.Id == input.Id, cancellationToken);
 
         if (refTest == null)
-            throw new RefTestNotFoundException(input.RefTestId);
+            throw new RefTestNotFoundException(input.Id);
 
         var emailChanged = refTest.Email != input.Email;
         var invitationWasSent = refTest.InvitationSentAt.HasValue;
@@ -85,10 +88,10 @@ public static class RefTestUpdateMutations
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(rt => rt.Id == input.RefTestId, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.Id == input.Id, cancellationToken);
 
         if (refTest == null)
-            throw new RefTestNotFoundException(input.RefTestId);
+            throw new RefTestNotFoundException(input.Id);
 
         // Get questionIds based on input parameters (similar to CreateBulkRefTestsAsync)
         List<string> questionIds;
@@ -112,9 +115,29 @@ public static class RefTestUpdateMutations
             // Keep existing question IDs if neither specific nor random is specified
             questionIds = refTest.QuestionIds;
         }
+        
+        Guid titleId;
+
+        switch (input.Title.Id)
+        {
+            case not null:
+                titleId = input.Title.Id.Value;
+                break;
+            case null when input.Title.Name is not null:
+            {
+                var title = RefTestTitle.Create(input.Title.Name);
+                context.RefTestTitles.Add(title);
+                await context.SaveChangesAsync(cancellationToken);
+
+                titleId = title.Id;
+                break;
+            }
+            default:
+                throw new ArgumentException("Either Title.Id or Title.Name must be provided.");
+        }
 
         refTest.UpdateTestConfiguration(
-            input.TitleId,
+            titleId,
             input.NumberOfQuestions,
             input.MaxTimeInMinutes,
             questionIds);
@@ -129,6 +152,7 @@ public static class RefTestUpdateMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
+    /// <param name="eventSender"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -139,16 +163,28 @@ public static class RefTestUpdateMutations
     public static async Task<RefTestDto> ExtendRefTestTimeAsync(
         ExtendRefTestTimeInput input,
         RefTestManagementContext context,
+        [Service] ITopicEventSender eventSender,
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(rt => rt.Id == input.RefTestId, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.Id == input.Id, cancellationToken);
 
         if (refTest == null)
-            throw new RefTestNotFoundException(input.RefTestId);
+            throw new RefTestNotFoundException(input.Id);
 
         refTest.ExtendTime(input.AdditionalMinutes);
         await context.SaveChangesAsync(cancellationToken);
+
+        // Publish subscription event for real-time UI updates
+        await eventSender.SendAsync(
+            refTest.Id.ToString(),
+            new RefTestTimeExtended(
+                refTest.Id,
+                refTest.MaxTimeInMinutes,
+                input.AdditionalMinutes,
+                DateTime.UtcNow
+            ),
+            cancellationToken);
 
         return refTest.ToDto();
     }
@@ -171,10 +207,10 @@ public static class RefTestUpdateMutations
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(rt => rt.Id == input.RefTestId, cancellationToken);
+            .FirstOrDefaultAsync(rt => rt.Id == input.Id, cancellationToken);
 
         if (refTest == null)
-            throw new RefTestNotFoundException(input.RefTestId);
+            throw new RefTestNotFoundException(input.Id);
 
         // Track the current state before update
         var wasInvitationAutoSendEnabled = refTest.SendInvitationsAutomatically;
@@ -251,7 +287,7 @@ public static class RefTestUpdateMutations
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> RegenerateRefTestTokenAsync(
-        Guid refTestId,
+        [ID<RefTest>] Guid refTestId,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)

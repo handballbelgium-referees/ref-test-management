@@ -1,0 +1,13 @@
+mutation ResetRefTests($input: ResetRefTestsInput!) {
+  resetRefTests(input: $input) {
+    resetRefTestsResult {
+      totalRequested
+      successfullyReset
+      failed
+      errors {
+        refTestId
+        errorMessage
+      }
+    }
+  }
+}

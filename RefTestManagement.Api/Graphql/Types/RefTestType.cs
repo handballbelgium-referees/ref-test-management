@@ -29,6 +29,8 @@ public class RefTestType : ObjectType<RefTestDto>
         descriptor.Field(x => x.FullName).Name("name").Description("Name of the user who started the RefTest (e.g., )");
         descriptor.Field(x => x.Email).Description("Email of the user who started the RefTest");
         descriptor.Field(x => x.InvitationSent).Description("Indication of invitation was sent").Authorize();
+        descriptor.Field(x => x.SendInvitationsAutomatically)
+            .Description("Indication of whether invitations are sent automatically").Authorize();
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Maximum time in minutes for the RefTest");
         descriptor.Field(x => x.NumberOfQuestions).Description("Number of questions in the RefTest");
         descriptor.Field(x => x.CreatedAt).Description("Creation date and time of the RefTest").Authorize();
@@ -42,6 +44,8 @@ public class RefTestType : ObjectType<RefTestDto>
         descriptor.Field(x => x.WrongQuestionIds).Description("List of question IDs that were answered incorrectly");
         descriptor.Field(x => x.WrongAnswerIds).Description("List of answer IDs that were answered incorrectly");
         descriptor.Field(x => x.ResultsSent).Description("Indication of results were sent").Authorize();
+        descriptor.Field(x => x.SendResultsAutomatically)
+            .Description("Indication of whether results are sent automatically").Authorize();
         descriptor.Field(x => x.Status)
             .Description(
                 "Status of the RefTest (e.g., InProgress, Completed, Expired). Expired tests are automatically processed by a background service.")

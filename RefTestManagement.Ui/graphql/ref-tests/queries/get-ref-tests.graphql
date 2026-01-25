@@ -17,6 +17,8 @@ query GetRefTests(
         email
         invitationSent
         resultsSent
+        sendInvitationsAutomatically
+        sendResultsAutomatically
         status
         numberOfQuestions
         maxTimeInMinutes

@@ -30,18 +30,18 @@ public static class RefTestResetMutations
     {
         var result = new ResetRefTestsResult
         {
-            TotalRequested = input.RefTestIds.Count
+            TotalRequested = input.Ids.Count
         };
 
         var refTests = await context.RefTests
-            .Where(rt => input.RefTestIds.Contains(rt.Id))
+            .Where(rt => input.Ids.Contains(rt.Id))
             .ToListAsync(cancellationToken);
 
         var successCount = 0;
         var failedCount = 0;
         var errors = new List<ResetRefTestsError>();
 
-        foreach (var id in input.RefTestIds)
+        foreach (var id in input.Ids)
         {
             try
             {
@@ -108,32 +108,32 @@ public static class RefTestResetMutations
     /// <summary>
     /// Revive one or more expired RefTests by resetting them to Pending status with a new token and fresh expiration timer
     /// </summary>
-    /// <param name="refTestIds"></param>
+    /// <param name="ids"></param>
     /// <param name="context"></param>
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize]
-    public static async Task<ReviveRefTestsResult> ReviveExpiredRefTestsAsync(
-        List<Guid> refTestIds,
+    public static async Task<ReviveRefTestsResult> ReviveRefTestsAsync(
+        [ID<RefTest>] List<Guid> ids,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
         var result = new ReviveRefTestsResult
         {
-            TotalRequested = refTestIds.Count
+            TotalRequested = ids.Count
         };
 
         var refTests = await context.RefTests
-            .Where(rt => refTestIds.Contains(rt.Id))
+            .Where(rt => ids.Contains(rt.Id))
             .ToListAsync(cancellationToken);
 
         var successCount = 0;
         var failedCount = 0;
         var errors = new List<ReviveRefTestsError>();
 
-        foreach (var id in refTestIds)
+        foreach (var id in ids)
         {
             try
             {

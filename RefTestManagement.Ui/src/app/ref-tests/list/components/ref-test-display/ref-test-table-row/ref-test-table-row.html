@@ -8,120 +8,166 @@
   />
 </td>
 @if (isColumnVisible('title')) {
-<td class="px-4 py-3 whitespace-nowrap">
-  <div class="text-sm text-neutral-900">{{ refTest().title?.value || '-' }}</div>
-</td>
-} @if (isColumnVisible('participant')) {
-<td class="px-4 py-3 whitespace-nowrap">
-  <div class="flex flex-col">
-    <div class="text-sm font-medium text-neutral-900">{{ refTest().name }}</div>
-    <div class="text-sm text-neutral-500">{{ refTest().email }}</div>
-  </div>
-</td>
-} @if (isColumnVisible('status')) {
-<td class="px-4 py-3 whitespace-nowrap">
-  <span
-    [class]="getStatusClass(refTest().status)"
-    class="px-2 py-1 inline-flex text-xs font-medium rounded-md"
-  >
-    {{ 'ref_tests.list.status.' + refTest().status | translate }}
-  </span>
-</td>
-} @if (isColumnVisible('questions')) {
-<td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-600 font-medium">
-  {{ refTest().numberOfQuestions }}
-</td>
-} @if (isColumnVisible('maxTimeInMinutes')) {
-<td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-600">
-  @if (refTest().maxTimeInMinutes) {
-  {{ refTest().maxTimeInMinutes }} {{ 'ref_tests.list.table.minutes_short' | translate }}
-  } @else {
-  <span class="text-neutral-400">-</span>
-  }
-</td>
-} @if (isColumnVisible('score')) {
-<td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">
-  @if (refTest().questionScore !== null) {
-  <div class="space-y-1">
-    <div
-      class="text-base font-semibold"
-      [class]="
-        (refTest().percentage ?? 0) >= passingPercentage() ? 'text-success-600' : 'text-red-600'
-      "
+  <td class="px-4 py-3 whitespace-nowrap">
+    <div class="text-sm text-neutral-900">{{ refTest().title?.value || '-' }}</div>
+  </td>
+}
+@if (isColumnVisible('participant')) {
+  <td class="px-4 py-3 whitespace-nowrap">
+    <div class="flex flex-col">
+      <div class="text-sm font-medium text-neutral-900">{{ refTest().name }}</div>
+      <div class="text-sm text-neutral-500">{{ refTest().email }}</div>
+    </div>
+  </td>
+}
+@if (isColumnVisible('status')) {
+  <td class="px-4 py-3 whitespace-nowrap">
+    <span
+      [class]="getStatusClass(refTest().status)"
+      class="px-2 py-1 inline-flex text-xs font-medium rounded-md"
     >
-      {{ refTest().percentage }}%
+      {{ 'ref_tests.list.status.' + refTest().status | translate }}
+    </span>
+  </td>
+}
+@if (isColumnVisible('questions')) {
+  <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-600 font-medium">
+    {{ refTest().numberOfQuestions }}
+  </td>
+}
+@if (isColumnVisible('maxTimeInMinutes')) {
+  <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-600">
+    @if (refTest().maxTimeInMinutes) {
+      {{ refTest().maxTimeInMinutes }} {{ 'ref_tests.list.table.minutes_short' | translate }}
+    } @else {
+      <span class="text-neutral-400">-</span>
+    }
+  </td>
+}
+@if (isColumnVisible('score')) {
+  <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-900">
+    @if (refTest().questionScore !== null) {
+      <div class="space-y-1">
+        <div
+          class="text-base font-semibold"
+          [class]="
+            (refTest().percentage ?? 0) >= passingPercentage() ? 'text-success-600' : 'text-red-600'
+          "
+        >
+          {{ refTest().percentage }}%
+        </div>
+        <div class="flex items-center gap-3 text-xs text-neutral-500">
+          <span
+            >{{ 'ref_test.results.question_score_short' | translate }}:
+            {{ refTest().questionScore }}/{{ refTest().questionTotal }}</span
+          >
+          <span
+            >{{ 'ref_test.results.answer_score_short' | translate }}: {{ refTest().answerScore }}/{{
+              refTest().answerTotal
+            }}</span
+          >
+        </div>
+      </div>
+    } @else {
+      <span class="text-neutral-400">-</span>
+    }
+  </td>
+}
+@if (isColumnVisible('invitation')) {
+  <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-500">
+    <div class="flex items-center gap-1.5">
+      @if (refTest().invitationSent) {
+        <svg class="h-5 w-5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      } @else {
+        <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      }
+      @if (refTest().sendInvitationsAutomatically) {
+        <svg
+          class="h-4 w-4 text-primary-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          [attr.aria-label]="'ref_tests.detail.send_invitations_automatically' | translate"
+          [title]="'ref_tests.detail.send_invitations_automatically' | translate"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
+        </svg>
+      }
     </div>
-    <div class="flex items-center gap-3 text-xs text-neutral-500">
-      <span
-        >{{ 'ref_test.results.question_score_short' | translate }}: {{ refTest().questionScore }}/{{
-          refTest().questionTotal
-        }}</span
-      >
-      <span
-        >{{ 'ref_test.results.answer_score_short' | translate }}: {{ refTest().answerScore }}/{{
-          refTest().answerTotal
-        }}</span
-      >
+  </td>
+}
+@if (isColumnVisible('results')) {
+  <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-500">
+    <div class="flex items-center gap-1.5">
+      @if (refTest().resultsSent) {
+        <svg class="h-5 w-5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      } @else {
+        <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
+          <path
+            fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      }
+      @if (refTest().sendResultsAutomatically) {
+        <svg
+          class="h-4 w-4 text-primary-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          [attr.aria-label]="'ref_tests.detail.send_results_automatically' | translate"
+          [title]="'ref_tests.detail.send_results_automatically' | translate"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M13 10V3L4 14h7v7l9-11h-7z"
+          />
+        </svg>
+      }
     </div>
-  </div>
-  } @else {
-  <span class="text-neutral-400">-</span>
-  }
-</td>
-} @if (isColumnVisible('invitation')) {
-<td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-500">
-  @if (refTest().invitationSent) {
-  <svg class="h-5 w-5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
-    <path
-      fill-rule="evenodd"
-      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-      clip-rule="evenodd"
-    />
-  </svg>
-  } @else {
-  <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
-    <path
-      fill-rule="evenodd"
-      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-      clip-rule="evenodd"
-    />
-  </svg>
-  }
-</td>
-} @if (isColumnVisible('results')) {
-<td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-500">
-  @if (refTest().resultsSent) {
-  <svg class="h-5 w-5 text-success-600" fill="currentColor" viewBox="0 0 20 20">
-    <path
-      fill-rule="evenodd"
-      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-      clip-rule="evenodd"
-    />
-  </svg>
-  } @else {
-  <svg class="h-5 w-5 text-neutral-400" fill="currentColor" viewBox="0 0 20 20">
-    <path
-      fill-rule="evenodd"
-      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-      clip-rule="evenodd"
-    />
-  </svg>
-  }
-</td>
-} @if (isColumnVisible('started')) {
-<td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-600">
-  @if (refTest().startedAt) {
-  {{ refTest().startedAt | localizedDate : 'short' }}
-  } @else {
-  <span class="text-neutral-400">-</span>
-  }
-</td>
-} @if (isColumnVisible('completed')) {
-<td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-600">
-  @if (refTest().completedAt) {
-  {{ refTest().completedAt | localizedDate : 'short' }}
-  } @else {
-  <span class="text-neutral-400">-</span>
-  }
-</td>
+  </td>
+}
+@if (isColumnVisible('started')) {
+  <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-600">
+    @if (refTest().startedAt) {
+      {{ refTest().startedAt | localizedDate: 'short' }}
+    } @else {
+      <span class="text-neutral-400">-</span>
+    }
+  </td>
+}
+@if (isColumnVisible('completed')) {
+  <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-600">
+    @if (refTest().completedAt) {
+      {{ refTest().completedAt | localizedDate: 'short' }}
+    } @else {
+      <span class="text-neutral-400">-</span>
+    }
+  </td>
 }

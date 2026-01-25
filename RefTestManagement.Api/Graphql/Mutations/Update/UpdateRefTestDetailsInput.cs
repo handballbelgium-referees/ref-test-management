@@ -1,7 +1,9 @@
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
+
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Update;
 
 public record UpdateRefTestDetailsInput(
-    Guid RefTestId,
+    [property: ID<RefTest>] Guid Id,
     string FirstName,
     string LastName,
     string Email,

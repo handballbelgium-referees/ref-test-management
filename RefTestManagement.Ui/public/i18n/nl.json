@@ -240,6 +240,8 @@
       "max_time": "Tijdslimiet",
       "minutes": "minuten",
       "status_info": "Status Informatie",
+      "send_invitations_automatically": "Automatisch Uitnodigingen Versturen",
+      "send_results_automatically": "Automatisch Resultaten Versturen",
       "timeline": "Tijdlijn",
       "started_at": "Gestart Op",
       "completed_at": "Voltooid Op",

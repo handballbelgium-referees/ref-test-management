@@ -228,14 +228,18 @@ public class RefTest
         bool? sendInvitationsAutomatically = null,
         bool? sendResultsAutomatically = null)
     {
-        // Can update sendInvitationsAutomatically only if not yet started
-        if (sendInvitationsAutomatically.HasValue && Status == RefTestStatus.Pending)
+        // Can update sendInvitationsAutomatically only if pending and invitation not yet sent
+        if (sendInvitationsAutomatically.HasValue && 
+            Status == RefTestStatus.Pending && 
+            !InvitationSentAt.HasValue)
         {
             SendInvitationsAutomatically = sendInvitationsAutomatically.Value;
         }
 
-        // Can update sendResultsAutomatically for any status except expired
-        if (sendResultsAutomatically.HasValue && Status != RefTestStatus.Expired)
+        // Can update sendResultsAutomatically only if results not yet sent and not expired
+        if (sendResultsAutomatically.HasValue && 
+            Status != RefTestStatus.Expired && 
+            !ResultsSentAt.HasValue)
         {
             SendResultsAutomatically = sendResultsAutomatically.Value;
         }

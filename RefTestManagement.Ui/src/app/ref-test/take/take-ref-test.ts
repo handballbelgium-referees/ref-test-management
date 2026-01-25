@@ -16,6 +16,7 @@ import {
   CompleteRefTestGQL,
   GetResultsEmailDelayMinutesGQL,
   GetScoreConfigurationGQL,
+  RefTestTimeExtendedGQL,
   SaveRefTestProgressGQL,
   StartRefTestGQL,
 } from '../../../../graphql/generated';
@@ -65,15 +66,17 @@ export class TakeRefTest {
   private readonly _startRefTestGQL = inject(StartRefTestGQL);
   private readonly _completeRefTestGQL = inject(CompleteRefTestGQL);
   private readonly _saveRefTestProgressGQL = inject(SaveRefTestProgressGQL);
+  private readonly _refTestTimeExtendedGQL = inject(RefTestTimeExtendedGQL);
   private readonly _translate = inject(TranslateService);
 
   private readonly _token = toSignal(
-    this._route.paramMap.pipe(map((params) => params.get('token') ?? ''))
+    this._route.paramMap.pipe(map((params) => params.get('token') ?? '')),
   );
 
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly showProgressRestored = signal(false);
+  protected readonly refTestId = signal<string | null>(null);
   protected readonly questions = signal<IQuestion[]>([]);
   protected readonly currentQuestionIndex = signal(0);
   protected readonly visitedQuestions = signal<Set<number>>(new Set([0]));
@@ -97,7 +100,7 @@ export class TakeRefTest {
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
     {
       initialValue: this._translate.getCurrentLang(),
-    }
+    },
   );
 
   protected readonly currentQuestion = computed(() => {
@@ -143,9 +146,9 @@ export class TakeRefTest {
       .watch()
       .valueChanges.pipe(
         onlyCompleteData(),
-        map((result) => result.data.scoreConfiguration.passingPercentage)
+        map((result) => result.data.scoreConfiguration.passingPercentage),
       ),
-    { initialValue: 0 }
+    { initialValue: 0 },
   );
 
   protected readonly emailDelayMinutes = toSignal(
@@ -153,9 +156,9 @@ export class TakeRefTest {
       .watch()
       .valueChanges.pipe(
         onlyCompleteData(),
-        map((result) => result.data.resultsEmailDelayMinutes)
+        map((result) => result.data.resultsEmailDelayMinutes),
       ),
-    { initialValue: 0 }
+    { initialValue: 0 },
   );
 
   constructor() {
@@ -218,6 +221,35 @@ export class TakeRefTest {
           }
 
           if (data?.refTest && data.refTest.questions) {
+            // Store the ref test ID and subscribe to time extension updates
+            const refTestId = data.refTest.id;
+            this.refTestId.set(refTestId);
+
+            this._refTestTimeExtendedGQL
+              .subscribe({ variables: { id: refTestId } })
+              .pipe(
+                map((result) => result.data?.refTestTimeExtended),
+                tap((timeExtendedData) => {
+                  if (timeExtendedData?.newMaxTimeInMinutes) {
+                    this.maxTimeInMinutes.set(timeExtendedData.newMaxTimeInMinutes);
+
+                    // Recalculate remaining time with new max time
+                    const startTime = this.startTime();
+                    if (startTime) {
+                      const now = new Date();
+                      const elapsedSeconds = Math.floor(
+                        (now.getTime() - startTime.getTime()) / 1000,
+                      );
+                      const totalSeconds = timeExtendedData.newMaxTimeInMinutes * 60;
+                      const remaining = Math.max(0, totalSeconds - elapsedSeconds);
+                      this.timeRemainingSeconds.set(remaining);
+                    }
+                  }
+                }),
+                takeUntilDestroyed(this._destroyRef),
+              )
+              .subscribe();
+
             const questions = data.refTest.questions
               .filter((q) => q && q.phrase && q.answers)
               .map((q) => ({
@@ -300,7 +332,7 @@ export class TakeRefTest {
 
           return of(EMPTY);
         }),
-        takeUntilDestroyed(this._destroyRef)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }
@@ -400,7 +432,7 @@ export class TakeRefTest {
 
           return of(EMPTY);
         }),
-        takeUntilDestroyed(this._destroyRef)
+        takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
   }
