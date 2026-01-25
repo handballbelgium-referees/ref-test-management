@@ -14,7 +14,8 @@ import { email, form, FormField, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { UpdateRefTestDetailsGQL } from '../../../../../../../../../graphql/generated';
-import { Banner } from '../../../../../../../services/banner';
+import { Banner as BannerService } from '../../../../../../../services/banner';
+import { Banner } from '../../../../../../../shared/components/banner/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 interface IParticipantData {
@@ -25,15 +26,18 @@ interface IParticipantData {
 
 @Component({
   selector: 'app-edit-participant-dialog',
-  imports: [TranslatePipe, FormField],
+  imports: [TranslatePipe, FormField, Banner],
   templateUrl: './edit-participant-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditParticipantDialog {
   private readonly _updateRefTestDetailsGQL = inject(UpdateRefTestDetailsGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _bannerService = inject(Banner);
+  private readonly _bannerServiceRoot = inject(BannerService);
   private readonly _translateService = inject(TranslateService);
+
+  // Create isolated banner manager for this dialog
+  protected readonly bannerManager = this._bannerServiceRoot.createIsolated();
 
   protected readonly participantModel = signal<IParticipantData>({
     firstName: '',
@@ -57,7 +61,6 @@ export class EditParticipantDialog {
   });
 
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
 
   readonly show = input.required<boolean>();
   readonly refTestId = signal<string>('');
@@ -90,7 +93,6 @@ export class EditParticipantDialog {
     }
 
     const data = this.participantModel();
-    this.error.set(null);
 
     this._updateRefTestDetailsGQL
       .mutate({
@@ -110,20 +112,24 @@ export class EditParticipantDialog {
           if (data?.errors && data.errors.length > 0) {
             const error = data.errors[0];
             if ('__typename' in error && error.__typename) {
-              this.error.set(toSnakeCase(error.__typename));
+              this.bannerManager.error(
+                this._translateService.instant(toSnakeCase(error.__typename)),
+              );
             }
             return;
           }
 
           if (data?.refTest) {
-            this._bannerService.success(
+            this.bannerManager.success(
               this._translateService.instant('ref_tests.detail.edit_participant.success'),
             );
             this.closeDialog.emit();
           }
         }),
         catchError(() => {
-          this.error.set(this._translateService.instant('ref_tests.detail.edit_participant.error'));
+          this.bannerManager.error(
+            this._translateService.instant('ref_tests.detail.edit_participant.error'),
+          );
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),

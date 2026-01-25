@@ -10,7 +10,6 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
@@ -18,7 +17,8 @@ import {
   RefTestStatus,
   UpdateRefTestNotificationSettingsGQL,
 } from '../../../../../../../../../graphql/generated';
-import { Banner } from '../../../../../../../services/banner';
+import { Banner as BannerService } from '../../../../../../../services/banner';
+import { Banner } from '../../../../../../../shared/components/banner/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 interface INotificationSettings {
@@ -28,7 +28,7 @@ interface INotificationSettings {
 
 @Component({
   selector: 'app-edit-notification-settings-dialog',
-  imports: [TranslatePipe, FormField, FormsModule],
+  imports: [TranslatePipe, FormField, Banner],
   templateUrl: './edit-notification-settings-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -37,8 +37,11 @@ export class EditNotificationSettingsDialog {
     UpdateRefTestNotificationSettingsGQL,
   );
   private readonly _translateService = inject(TranslateService);
-  private readonly _bannerService = inject(Banner);
+  private readonly _bannerServiceRoot = inject(BannerService);
   private readonly _destroyRef = inject(DestroyRef);
+
+  // Create isolated banner manager for this dialog
+  protected readonly bannerManager = this._bannerServiceRoot.createIsolated();
 
   protected readonly settingsModel = signal<INotificationSettings>({
     sendInvitationsAutomatically: false,
@@ -51,7 +54,6 @@ export class EditNotificationSettingsDialog {
   });
 
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
 
   readonly show = input.required<boolean>();
   readonly refTestId = signal<string>('');
@@ -97,12 +99,10 @@ export class EditNotificationSettingsDialog {
       sendInvitationsAutomatically,
       sendResultsAutomatically,
     });
-    this.error.set(null);
   }
 
   protected onSave(): void {
     const data = this.settingsModel();
-    this.error.set(null);
 
     this._updateRefTestNotificationSettingsGQL
       .mutate({
@@ -121,19 +121,21 @@ export class EditNotificationSettingsDialog {
           if (data?.errors && data.errors.length > 0) {
             const error = data.errors[0];
             if ('__typename' in error && error.__typename) {
-              this.error.set(toSnakeCase(error.__typename));
+              this.bannerManager.error(
+                this._translateService.instant(toSnakeCase(error.__typename)),
+              );
             }
             return;
           }
           if (data?.refTest) {
-            this._bannerService.success(
+            this.bannerManager.success(
               this._translateService.instant('ref_tests.detail.edit_notification_settings.success'),
             );
             this.closeDialog.emit();
           }
         }),
         catchError(() => {
-          this.error.set(
+          this.bannerManager.error(
             this._translateService.instant('ref_tests.detail.edit_notification_settings.error'),
           );
           return EMPTY;

@@ -14,7 +14,8 @@ import { form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { ExtendRefTestTimeGQL } from '../../../../../../../../../graphql/generated';
-import { Banner } from '../../../../../../../services/banner';
+import { Banner as BannerService } from '../../../../../../../services/banner';
+import { Banner } from '../../../../../../../shared/components/banner/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 
 interface IExtendTimeData {
@@ -23,15 +24,18 @@ interface IExtendTimeData {
 
 @Component({
   selector: 'app-extend-time-dialog',
-  imports: [TranslatePipe, FormField],
+  imports: [TranslatePipe, FormField, Banner],
   templateUrl: './extend-time-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExtendTimeDialog {
   private readonly _extendRefTestTimeGQL = inject(ExtendRefTestTimeGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _bannerService = inject(Banner);
+  private readonly _bannerServiceRoot = inject(BannerService);
   private readonly _translateService = inject(TranslateService);
+
+  // Create isolated banner manager for this dialog
+  protected readonly bannerManager = this._bannerServiceRoot.createIsolated();
 
   protected readonly extendTimeModel = signal<IExtendTimeData>({
     additionalMinutes: 15,
@@ -47,7 +51,6 @@ export class ExtendTimeDialog {
   });
 
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
 
   readonly show = input.required<boolean>();
   readonly refTestId = signal<string>('');
@@ -67,7 +70,6 @@ export class ExtendTimeDialog {
     this.refTestId.set(refTestId);
     this.currentMaxTime.set(currentMaxTime);
     this.extendTimeModel.set({ additionalMinutes: 15 });
-    this.error.set(null);
   }
 
   constructor() {
@@ -87,7 +89,6 @@ export class ExtendTimeDialog {
     }
 
     const data = this.extendTimeModel();
-    this.error.set(null);
 
     this._extendRefTestTimeGQL
       .mutate({
@@ -105,20 +106,24 @@ export class ExtendTimeDialog {
           if (data?.errors && data.errors.length > 0) {
             const error = data.errors[0];
             if ('__typename' in error && error.__typename) {
-              this.error.set(toSnakeCase(error.__typename));
+              this.bannerManager.error(
+                this._translateService.instant(toSnakeCase(error.__typename)),
+              );
             }
             return;
           }
 
           if (data?.refTest) {
-            this._bannerService.success(
+            this.bannerManager.success(
               this._translateService.instant('ref_tests.detail.extend_time.success'),
             );
             this.closeDialog.emit();
           }
         }),
         catchError(() => {
-          this.error.set(this._translateService.instant('ref_tests.detail.extend_time.error'));
+          this.bannerManager.error(
+            this._translateService.instant('ref_tests.detail.extend_time.error'),
+          );
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),

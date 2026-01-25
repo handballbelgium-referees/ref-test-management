@@ -10,12 +10,12 @@ import {
   signal,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { UpdateRefTestConfigurationGQL } from '../../../../../../../../../graphql/generated';
-import { Banner } from '../../../../../../../services/banner';
+import { Banner as BannerService } from '../../../../../../../services/banner';
+import { Banner } from '../../../../../../../shared/components/banner/banner';
 import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 import { QuestionSearchAutocomplete } from '../../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
 import { TitleAutocomplete } from '../../../../../../create/components/title-autocomplete/title-autocomplete';
@@ -29,15 +29,18 @@ interface IConfigurationData {
 
 @Component({
   selector: 'app-edit-configuration-dialog',
-  imports: [TranslatePipe, FormField, QuestionSearchAutocomplete, TitleAutocomplete, FormsModule],
+  imports: [TranslatePipe, FormField, TitleAutocomplete, QuestionSearchAutocomplete, Banner],
   templateUrl: './edit-configuration-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class EditConfigurationDialog {
   private readonly _updateRefTestConfigurationGQL = inject(UpdateRefTestConfigurationGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _bannerService = inject(Banner);
+  private readonly _bannerServiceRoot = inject(BannerService);
   private readonly _translate = inject(TranslateService);
+
+  // Create isolated banner manager for this dialog
+  protected readonly bannerManager = this._bannerServiceRoot.createIsolated();
 
   protected readonly configurationModel = signal<IConfigurationData>({
     title: null,
@@ -67,7 +70,6 @@ export class EditConfigurationDialog {
   });
 
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
   protected readonly selectedQuestions = signal<
     Array<{ number: string; phrase: Record<string, string> }>
   >([]);
@@ -192,7 +194,6 @@ export class EditConfigurationDialog {
     }
 
     const data = this.configurationModel();
-    this.error.set(null);
 
     const questionNumbers =
       this.selectedQuestions().length > 0 ? this.selectedQuestions().map((q) => q.number) : null;
@@ -220,20 +221,22 @@ export class EditConfigurationDialog {
           if (data?.errors && data.errors.length > 0) {
             const error = data.errors[0];
             if ('__typename' in error && error.__typename) {
-              this.error.set(toSnakeCase(error.__typename));
+              this.bannerManager.error(this._translate.instant(toSnakeCase(error.__typename)));
             }
             return;
           }
 
           if (data?.refTest) {
-            this._bannerService.success(
+            this.bannerManager.success(
               this._translate.instant('ref_tests.detail.edit_configuration.success'),
             );
             this.closeDialog.emit();
           }
         }),
         catchError(() => {
-          this.error.set(this._translate.instant('ref_tests.detail.edit_configuration.error'));
+          this.bannerManager.error(
+            this._translate.instant('ref_tests.detail.edit_configuration.error'),
+          );
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),

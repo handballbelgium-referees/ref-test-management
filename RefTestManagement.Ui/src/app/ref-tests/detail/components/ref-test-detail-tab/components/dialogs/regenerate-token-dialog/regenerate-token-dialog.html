@@ -20,13 +20,13 @@
         </p>
       </div>
 
+      <!-- Banner Container -->
+      <div class="px-6 pt-4">
+        <app-banner [bannerManager]="bannerManager" />
+      </div>
+
       <!-- Content -->
       <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
-        @if (error()) {
-          <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-            <p class="text-sm text-red-800">{{ error() | translate }}</p>
-          </div>
-        }
 
         <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
           <div class="flex items-start gap-3">

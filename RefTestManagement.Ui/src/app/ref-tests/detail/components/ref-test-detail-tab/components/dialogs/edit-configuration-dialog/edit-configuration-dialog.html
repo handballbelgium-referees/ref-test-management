@@ -20,14 +20,14 @@
         </p>
       </div>
 
+      <!-- Banner Container -->
+      <div class="px-6 pt-4">
+        <app-banner [bannerManager]="bannerManager" />
+      </div>
+
       <!-- Form Content -->
       <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
         <div class="space-y-6">
-          @if (error()) {
-            <div class="bg-red-50 border border-red-200 rounded-lg p-4">
-              <p class="text-sm text-red-800">{{ error() | translate }}</p>
-            </div>
-          }
 
           <!-- Title Field -->
           <div>

@@ -15,7 +15,8 @@ import { disabled, form, FormField } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
 import { RefTestResetType, ResetRefTestsGQL } from '../../../../../../../../../graphql/generated';
-import { Banner } from '../../../../../../../services/banner';
+import { Banner as BannerService } from '../../../../../../../services/banner';
+import { Banner } from '../../../../../../../shared/components/banner/banner';
 
 interface IResetOptions {
   resetType: RefTestResetType;
@@ -24,15 +25,18 @@ interface IResetOptions {
 
 @Component({
   selector: 'app-reset-ref-test-dialog',
-  imports: [TranslatePipe, FormField, FormsModule],
+  imports: [TranslatePipe, FormField, FormsModule, Banner],
   templateUrl: './reset-ref-test-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResetRefTestDialog {
   private readonly _resetRefTestsGQL = inject(ResetRefTestsGQL);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _bannerService = inject(Banner);
+  private readonly _bannerServiceRoot = inject(BannerService);
   private readonly _translateService = inject(TranslateService);
+
+  // Create isolated banner manager for this dialog
+  protected readonly bannerManager = this._bannerServiceRoot.createIsolated();
 
   protected readonly resetOptionsModel = signal<IResetOptions>({
     resetType: RefTestResetType.Soft,
@@ -48,7 +52,6 @@ export class ResetRefTestDialog {
   });
 
   protected readonly loading = signal(false);
-  protected readonly error = signal<string | null>(null);
 
   readonly show = input.required<boolean>();
   readonly refTestId = signal<string>('');
@@ -63,7 +66,6 @@ export class ResetRefTestDialog {
       resetType: RefTestResetType.Soft,
       regenerateToken: false,
     });
-    this.error.set(null);
   }
 
   constructor() {
@@ -94,7 +96,6 @@ export class ResetRefTestDialog {
 
   protected onConfirm(): void {
     const options = this.resetOptionsModel();
-    this.error.set(null);
 
     this._resetRefTestsGQL
       .mutate({
@@ -113,16 +114,16 @@ export class ResetRefTestDialog {
           const resetResult = data?.resetRefTestsResult;
           if (resetResult?.errors && resetResult.errors.length > 0) {
             const error = resetResult.errors[0];
-            this.error.set(error.errorMessage);
+            this.bannerManager.error(error.errorMessage);
           } else if (resetResult?.successfullyReset === 1) {
-            this._bannerService.success(
+            this.bannerManager.success(
               this._translateService.instant('ref_tests.detail.reset.success'),
             );
             this.closeDialog.emit();
           }
         }),
         catchError(() => {
-          this.error.set(this._translateService.instant('ref_tests.detail.reset.error'));
+          this.bannerManager.error(this._translateService.instant('ref_tests.detail.reset.error'));
           return EMPTY;
         }),
         finalize(() => this.loading.set(false)),

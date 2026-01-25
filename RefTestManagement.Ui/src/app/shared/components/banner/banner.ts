@@ -1,10 +1,14 @@
-﻿import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+﻿import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { Banner as BannerService, BannerType } from '../../../services/banner';
+import {
+  Banner as BannerService,
+  BannerType,
+  IsolatedBannerManager,
+} from '../../../services/banner';
 
 /**
  * Displays banner messages in the page flow
- * Reads banner state from the global BannerService
+ * Reads banner state from the global BannerService or an isolated manager
  */
 @Component({
   selector: 'app-banner',
@@ -33,21 +37,37 @@ import { Banner as BannerService, BannerType } from '../../../services/banner';
 export class Banner {
   private readonly _bannerService = inject(BannerService);
 
-  // Read banners from the service
-  readonly banners = this._bannerService.banners;
+  // Optional isolated banner manager for dialogs
+  readonly bannerManager = input<IsolatedBannerManager | null>(null);
+
+  // Read banners from either the isolated manager or the global service
+  readonly banners = () => {
+    const manager = this.bannerManager();
+    return manager ? manager.banners() : this._bannerService.banners();
+  };
 
   /**
    * Execute action and dismiss banner
    */
   executeAction(id: number, action: () => void): void {
-    this._bannerService.executeAction(id, action);
+    const manager = this.bannerManager();
+    if (manager) {
+      manager.executeAction(id, action);
+    } else {
+      this._bannerService.executeAction(id, action);
+    }
   }
 
   /**
    * Remove a banner by ID
    */
   dismiss(id: number): void {
-    this._bannerService.dismiss(id);
+    const manager = this.bannerManager();
+    if (manager) {
+      manager.dismiss(id);
+    } else {
+      this._bannerService.dismiss(id);
+    }
   }
 
   /**
