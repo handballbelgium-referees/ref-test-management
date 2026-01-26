@@ -44,15 +44,15 @@ export class PwaUpdate {
         this._updateNotificationShown = true;
 
         // Show update notification with action button
-        this._bannerService.show(this._translateService.instant('pwa.update_available'), {
-          type: 'info',
-          duration: 0,
-          dismissible: true,
-          action: {
+        this._bannerService.info(
+          this._translateService.instant('pwa.update_available'),
+          0,
+          undefined,
+          {
             label: this._translateService.instant('pwa.update_now'),
             callback: () => this.activateUpdate(),
           },
-        });
+        );
       }
     });
   }

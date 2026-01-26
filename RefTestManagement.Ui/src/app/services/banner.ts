@@ -1,4 +1,4 @@
-﻿import { Injectable, signal, Signal } from '@angular/core';
+﻿import { Injectable, signal } from '@angular/core';
 import { TOAST_DURATION } from '../constants';
 
 export type BannerType = 'error' | 'warning' | 'success' | 'info';
@@ -7,6 +7,7 @@ export type BannerDuration = number; // milliseconds
 export interface IBanner {
   id: number;
   message: string;
+  submessage: string;
   type: BannerType;
   dismissible: boolean;
   action?: {
@@ -19,6 +20,7 @@ export interface BannerOptions {
   type?: BannerType;
   duration?: BannerDuration;
   dismissible?: boolean;
+  submessage?: string;
   action?: {
     label: string;
     callback: () => void;
@@ -51,42 +53,66 @@ export class Banner {
   /**
    * Show an error banner
    */
-  error(message: string, duration: BannerDuration = TOAST_DURATION.ERROR): void {
-    this.show(message, { type: 'error', duration });
+  error(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = TOAST_DURATION.ERROR,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'error', duration, submessage, action });
   }
 
   /**
    * Show a warning banner
    */
-  warning(message: string, duration: BannerDuration = TOAST_DURATION.WARNING): void {
-    this.show(message, { type: 'warning', duration });
+  warning(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = TOAST_DURATION.WARNING,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'warning', duration, submessage, action });
   }
 
   /**
    * Show a success banner
    */
-  success(message: string, duration: BannerDuration = TOAST_DURATION.SUCCESS): void {
-    this.show(message, { type: 'success', duration });
+  success(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = TOAST_DURATION.SUCCESS,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'success', duration, submessage, action });
   }
 
   /**
    * Show an info banner
    */
-  info(message: string, duration: BannerDuration = TOAST_DURATION.INFO): void {
-    this.show(message, { type: 'info', duration });
+  info(
+    message: string,
+    duration: BannerDuration = TOAST_DURATION.INFO,
+    submessage = '',
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'info', duration, submessage, action });
   }
 
   /**
    * Show a banner notification
    * Prevents duplicate messages of the same type from being shown simultaneously
    */
-  show(message: string, options: BannerOptions = {}): void {
-    const { type = 'info', duration = TOAST_DURATION.INFO, dismissible = true, action } = options;
+  private show(message: string, options: BannerOptions = {}): void {
+    const {
+      type = 'info',
+      duration = TOAST_DURATION.INFO,
+      dismissible = true,
+      action,
+      submessage = '',
+    } = options;
 
     // Check if the same message with the same type already exists
-    const existingBanner = this.banners().find(
-      (b) => b.message === message && b.type === type
-    );
+    const existingBanner = this.banners().find((b) => b.message === message && b.type === type);
 
     // If duplicate found, don't add a new banner
     if (existingBanner) {
@@ -94,7 +120,7 @@ export class Banner {
     }
 
     const id = this._nextId++;
-    const banner: IBanner = { id, message, type, dismissible, action };
+    const banner: IBanner = { id, message, type, dismissible, action, submessage };
 
     // Add banner to the global state
     this.banners.update((banners) => [...banners, banner]);
@@ -131,36 +157,59 @@ export class IsolatedBannerManager {
   private _nextId = 1;
   readonly banners = signal<IBanner[]>([]);
 
-  error(message: string, duration: BannerDuration = TOAST_DURATION.ERROR): void {
-    this.show(message, { type: 'error', duration });
+  error(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = TOAST_DURATION.ERROR,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'error', duration, submessage, action });
   }
 
-  warning(message: string, duration: BannerDuration = TOAST_DURATION.WARNING): void {
-    this.show(message, { type: 'warning', duration });
+  warning(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = TOAST_DURATION.WARNING,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'warning', duration, submessage, action });
   }
 
-  success(message: string, duration: BannerDuration = TOAST_DURATION.SUCCESS): void {
-    this.show(message, { type: 'success', duration });
+  success(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = TOAST_DURATION.SUCCESS,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'success', duration, submessage, action });
   }
 
-  info(message: string, duration: BannerDuration = TOAST_DURATION.INFO): void {
-    this.show(message, { type: 'info', duration });
+  info(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = TOAST_DURATION.INFO,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'info', duration, submessage, action });
   }
 
-  show(message: string, options: BannerOptions = {}): void {
-    const { type = 'info', duration = TOAST_DURATION.INFO, dismissible = true, action } = options;
-
+  private show(message: string, options: BannerOptions = {}): void {
+    const {
+      type = 'info',
+      duration = TOAST_DURATION.INFO,
+      dismissible = true,
+      action,
+      submessage = '',
+    } = options;
     // Check for duplicates
-    const existingBanner = this.banners().find(
-      (b) => b.message === message && b.type === type
-    );
+    const existingBanner = this.banners().find((b) => b.message === message && b.type === type);
 
     if (existingBanner) {
       return;
     }
 
     const id = this._nextId++;
-    const banner: IBanner = { id, message, type, dismissible, action };
+    const banner: IBanner = { id, message, type, dismissible, action, submessage };
 
     this.banners.update((banners) => [...banners, banner]);
 
@@ -180,5 +229,3 @@ export class IsolatedBannerManager {
     this.dismiss(id);
   }
 }
-
-
