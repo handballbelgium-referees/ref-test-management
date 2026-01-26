@@ -34,14 +34,6 @@
       />
     </div>
 
-    <!-- Report Result Banner -->
-    @if (operationManager.reportResult()) {
-      <app-ref-test-report-banner
-        [result]="operationManager.reportResult()!"
-        (dismiss)="dismissReportResult()"
-      />
-    }
-
     <!-- Actions Bar -->
     <app-ref-test-actions
       [selectedCount]="selectionManager.selectedCount()"
@@ -55,12 +47,12 @@
       [generatingReport]="operationManager.generatingReport()"
       [resettingRefTests]="operationManager.resettingRefTests()"
       [revivingRefTests]="operationManager.revivingRefTests()"
-      (sendInvitations)="sendInvitationsToSelected()"
-      (sendResults)="sendResultsToSelected()"
-      (deleteSelected)="deleteSelectedRefTests()"
-      (generateReport)="generateReportForSelected()"
-      (resetSelected)="resetSelectedRefTests()"
-      (reviveSelected)="reviveSelectedRefTests()"
+      (sendInvitations)="operationManager.sendInvitationsDialog.initiate()"
+      (sendResults)="operationManager.sendResultsDialog.initiate()"
+      (deleteSelected)="operationManager.deleteDialog.initiate()"
+      (generateReport)="operationManager.generateReportDialog.initiate()"
+      (resetSelected)="operationManager.resetDialog.initiate()"
+      (reviveSelected)="operationManager.reviveDialog.initiate()"
     />
 
     <!-- Loading State -->
@@ -130,7 +122,7 @@
     [show]="operationManager.showSendInvitationsDialog()"
     [summary]="invitationSummary()"
     (confirm)="confirmSendInvitations()"
-    (cancel)="cancelSendInvitations()"
+    (cancel)="operationManager.sendInvitationsDialog.cancel()"
   >
   </app-send-invitations-dialog>
 
@@ -139,7 +131,7 @@
     [show]="operationManager.showSendResultsDialog()"
     [summary]="resultsSummary()"
     (confirm)="confirmSendResults()"
-    (cancel)="cancelSendResults()"
+    (cancel)="operationManager.sendResultsDialog.cancel()"
   >
   </app-send-results-dialog>
 
@@ -148,7 +140,7 @@
     [show]="operationManager.showDeleteDialog()"
     [refTests]="refTestsToDelete()"
     (confirm)="confirmDelete()"
-    (cancel)="cancelDelete()"
+    (cancel)="operationManager.deleteDialog.cancel()"
   >
   </app-delete-ref-tests-dialog>
 
@@ -157,7 +149,7 @@
     [show]="operationManager.showGenerateReportDialog()"
     [summary]="reportSummary()"
     (confirm)="confirmGenerateReport()"
-    (cancel)="cancelGenerateReport()"
+    (cancel)="operationManager.generateReportDialog.cancel()"
   >
   </app-generate-report-dialog>
 
@@ -166,7 +158,7 @@
     [show]="operationManager.showResetDialog()"
     [refTests]="refTestsToReset()"
     (confirm)="confirmReset($event)"
-    (cancel)="cancelReset()"
+    (cancel)="operationManager.resetDialog.cancel()"
   >
   </app-reset-ref-tests-dialog>
 
@@ -175,7 +167,7 @@
     [show]="operationManager.showReviveDialog()"
     [refTests]="refTestsToRevive()"
     (confirm)="confirmRevive()"
-    (cancel)="cancelRevive()"
+    (cancel)="operationManager.reviveDialog.cancel()"
   >
   </app-revive-ref-tests-dialog>
 </app-pull-to-refresh>

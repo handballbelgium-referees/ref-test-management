@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   inject,
   signal,
@@ -18,6 +19,7 @@ import {
 } from '../../../../graphql/generated';
 import { Banner } from '../../shared/components/banner/banner';
 import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
+import { RefTestData } from '../services/ref-test-data';
 import { DeleteRefTestsDialog } from './components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { GenerateReportDialog } from './components/dialogs/generate-report-dialog/generate-report-dialog';
 import { ResetRefTestsDialog } from './components/dialogs/reset-ref-tests-dialog/reset-ref-tests-dialog';
@@ -32,11 +34,9 @@ import { RefTestListToolbar } from './components/ref-test-list-toolbar/ref-test-
 import { RefTestMobileList } from './components/ref-test-mobile-list/ref-test-mobile-list';
 import { RefTestPagination } from './components/ref-test-pagination/ref-test-pagination';
 import { RefTestPerformanceWarning } from './components/ref-test-performance-warning/ref-test-performance-warning';
-import { RefTestReportBanner } from './components/ref-test-report-banner/ref-test-report-banner';
 import { RefTestTable } from './components/ref-test-table/ref-test-table';
 import { ColumnVisibilityManager } from './services/column-visibility-manager';
 import { COLUMNS, REF_TEST_CONFIG } from './services/constants';
-import { RefTestData } from './services/ref-test-data';
 import { RefTestFilterActions } from './services/ref-test-filter-actions';
 import { RefTestFilterState } from './services/ref-test-filter-state';
 import { RefTestLocalStateManager } from './services/ref-test-local-state-manager';
@@ -65,7 +65,6 @@ import { IResetOptions, RefTestNode, SortField } from './services/types';
     PullToRefresh,
     RefTestListHero,
     RefTestListToolbar,
-    RefTestReportBanner,
     RefTestEmptyState,
     RefTestTable,
     RefTestMobileList,
@@ -96,6 +95,7 @@ export class ListRefTests {
   // ========================================================================
   private readonly _router = inject(Router);
   private readonly _scoreConfigGQL = inject(GetScoreConfigurationGQL);
+  private readonly _destroyRef = inject(DestroyRef);
 
   // Services
   protected readonly filterState = inject(RefTestFilterState);
@@ -257,6 +257,9 @@ export class ListRefTests {
   // ========================================================================
 
   constructor() {
+    // Subscribe to real-time updates
+    this.dataService.subscribeToRefTestUpdates(this._destroyRef);
+
     // Set callback for filter changes to reset pagination
     this.filterActions.setOnFilterChangeCallback(() => this.handleFilterChange());
 
@@ -476,113 +479,47 @@ export class ListRefTests {
   // DELETE OPERATIONS (delegated to operation manager)
   // ========================================================================
 
-  protected deleteSelectedRefTests(): void {
-    this.operationManager.initiateDelete();
-  }
-
   protected confirmDelete(): void {
-    this.operationManager.confirmDelete((deletedIds) => {
-      this.localStateManager.markAsDeleted(deletedIds);
-    });
-  }
-
-  protected cancelDelete(): void {
-    this.operationManager.cancelDelete();
-  }
-
-  protected isDeleting(refTestId: string): boolean {
-    return this.operationManager.isDeleting(refTestId);
+    this.operationManager.deleteDialog.confirm(this._destroyRef);
   }
 
   // ========================================================================
   // INVITATION OPERATIONS (delegated to operation manager)
   // ========================================================================
 
-  protected sendInvitationsToSelected(): void {
-    this.operationManager.initiateSendInvitations();
-  }
-
   protected confirmSendInvitations(): void {
-    this.operationManager.confirmSendInvitations(this.allLoadedRefTests(), (sentIds) => {
-      this.localStateManager.markInvitationsSent(sentIds);
-    });
-  }
-
-  protected cancelSendInvitations(): void {
-    this.operationManager.cancelSendInvitations();
-  }
-
-  protected isSendingInvitation(refTestId: string): boolean {
-    return this.operationManager.isSendingInvitation(refTestId);
+    this.operationManager.sendInvitationsDialog.confirm(this._destroyRef, this.allLoadedRefTests());
   }
 
   // ========================================================================
   // RESULTS OPERATIONS (delegated to operation manager)
   // ========================================================================
 
-  protected sendResultsToSelected(): void {
-    this.operationManager.initiateSendResults();
-  }
-
   protected confirmSendResults(): void {
-    this.operationManager.confirmSendResults(this.allLoadedRefTests(), (sentIds) => {
-      this.localStateManager.markResultsSent(sentIds);
-    });
-  }
-
-  protected cancelSendResults(): void {
-    this.operationManager.cancelSendResults();
+    this.operationManager.sendResultsDialog.confirm(this._destroyRef, this.allLoadedRefTests());
   }
 
   // ========================================================================
   // REPORT OPERATIONS (delegated to operation manager)
   // ========================================================================
 
-  protected generateReportForSelected(): void {
-    this.operationManager.initiateGenerateReport();
-  }
-
   protected confirmGenerateReport(): void {
-    this.operationManager.confirmGenerateReport();
-  }
-
-  protected cancelGenerateReport(): void {
-    this.operationManager.cancelGenerateReport();
-  }
-
-  protected dismissReportResult(): void {
-    this.operationManager.dismissReportResult();
+    this.operationManager.generateReportDialog.confirm(this._destroyRef);
   }
 
   // ========================================================================
   // RESET OPERATIONS (delegated to operation manager)
   // ========================================================================
 
-  protected resetSelectedRefTests(): void {
-    this.operationManager.initiateReset();
-  }
-
   protected confirmReset(options: IResetOptions): void {
-    this.operationManager.confirmReset(options);
-  }
-
-  protected cancelReset(): void {
-    this.operationManager.cancelReset();
+    this.operationManager.resetDialog.confirm(this._destroyRef, options);
   }
 
   // ========================================================================
   // REVIVE OPERATIONS (delegated to operation manager)
   // ========================================================================
 
-  protected reviveSelectedRefTests(): void {
-    this.operationManager.initiateRevive();
-  }
-
   protected confirmRevive(): void {
-    this.operationManager.confirmRevive();
-  }
-
-  protected cancelRevive(): void {
-    this.operationManager.cancelRevive();
+    this.operationManager.reviveDialog.confirm(this._destroyRef);
   }
 }
