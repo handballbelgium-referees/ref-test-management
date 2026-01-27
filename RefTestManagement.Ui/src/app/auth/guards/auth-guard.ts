@@ -16,6 +16,6 @@ export const authGuard: CanActivateFn = (_route, _state) => {
       // Only redirect if not authenticated
       authService.login();
       return false;
-    })
+    }),
   );
 };

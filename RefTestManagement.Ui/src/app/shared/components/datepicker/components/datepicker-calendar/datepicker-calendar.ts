@@ -217,7 +217,7 @@ export class DatepickerCalendar {
       let left = inputRect.left + offsetLeft;
       left = Math.max(
         margin,
-        Math.min(left, viewportWidth + offsetLeft - calendarRect.width - margin)
+        Math.min(left, viewportWidth + offsetLeft - calendarRect.width - margin),
       );
 
       calendarEl.style.top = `${top}px`;

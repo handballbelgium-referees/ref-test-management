@@ -1,12 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { GetRefTestsQuery, RefTestStatus } from '../../../../../../../graphql/generated';
+import { RefTestStatus } from '../../../../../../../graphql/generated';
 import { LocalizedDate } from '../../../../../shared/pipes/localized-date';
-
-type RefTestNode = NonNullable<
-  NonNullable<NonNullable<GetRefTestsQuery['refTests']>['edges']>[number]
->['node'];
+import { RefTestNode } from '../../../services/types';
 
 @Component({
   selector: 'tr[app-ref-test-table-row]',
