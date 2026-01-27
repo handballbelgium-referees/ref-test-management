@@ -15,8 +15,7 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { GlobalErrorHandler } from './services/global-error-handler';
 
 import { provideServiceWorker } from '@angular/service-worker';
-import { InMemoryCache } from '@apollo/client';
-import { split } from '@apollo/client/core';
+import { ApolloLink, InMemoryCache } from '@apollo/client';
 import { getMainDefinition, relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
@@ -129,7 +128,7 @@ export const appConfig: ApplicationConfig = {
         };
 
         // Split link: use SSE for subscriptions, http for everything else
-        const link = split(
+        const link = ApolloLink.split(
           ({ query }) => {
             const definition = getMainDefinition(query);
             return (
