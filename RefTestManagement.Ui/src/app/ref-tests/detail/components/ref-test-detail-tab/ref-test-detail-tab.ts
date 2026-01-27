@@ -23,6 +23,7 @@ import { IsolatedBannerManager } from '../../../../services/banner';
 import { IResetOptions } from '../../../list/services/types';
 import { RefTestDetailData } from '../../services/ref-test-detail-data';
 import { RefTestDetailOperationManager } from '../../services/ref-test-detail-operation-manager';
+import { DetailsCard } from './components/details-card/details-card';
 import { ExtendTimeDialog } from './components/dialogs/extend-time-dialog/extend-time-dialog';
 import { RegenerateTokenDialog } from './components/dialogs/regenerate-token-dialog/regenerate-token-dialog';
 import { ResetRefTestDialog } from './components/dialogs/reset-ref-test-dialog/reset-ref-test-dialog';
@@ -30,7 +31,6 @@ import { ReviveRefTestDialog } from './components/dialogs/revive-ref-test-dialog
 import { UpdateConfigurationDialog } from './components/dialogs/update-configuration-dialog/update-configuration-dialog';
 import { UpdateDetailsDialog } from './components/dialogs/update-details-dialog/update-details-dialog';
 import { UpdateNotificationSettingsDialog } from './components/dialogs/update-notification-settings-dialog/update-notification-settings-dialog';
-import { ParticipantInfoCard } from './components/participant-info-card/participant-info-card';
 import { ScoresCard } from './components/scores-card/scores-card';
 import { StatusInfoCard } from './components/status-info-card/status-info-card';
 import { TestInfoCard } from './components/test-info-card/test-info-card';
@@ -39,7 +39,7 @@ import { TimelineCard } from './components/timeline-card/timeline-card';
 @Component({
   selector: 'app-ref-test-detail-tab',
   imports: [
-    ParticipantInfoCard,
+    DetailsCard,
     TestInfoCard,
     StatusInfoCard,
     TimelineCard,
