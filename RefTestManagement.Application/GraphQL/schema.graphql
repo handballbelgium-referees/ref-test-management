@@ -2,33 +2,277 @@ schema {
   query: Query
 }
 
+"The node interface is implemented by entities that have a global unique identifier."
+interface Node {
+  id: ID!
+}
+
+"IHF rule"
+type Answer implements Node {
+  "The answer id"
+  id: ID!
+  "The answer number"
+  number: String
+  "The answer phrase based on the \"Accept-Language\" HTTP header"
+  phrase: String @cost(weight: "10")
+  "The question of this answer"
+  question: Question @cost(weight: "10")
+  "The id the the rule"
+  questionId: ID!
+  "True if this is a correct answer, false if not"
+  isCorrect: Boolean! @cost(weight: "10")
+  "Answer translations"
+  translations: JSON @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type AnswersConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [AnswersEdge!]
+  "A flattened list of the nodes."
+  nodes: [Answer]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type AnswersEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Answer
+}
+
+"Information about pagination in a connection."
+type PageInfo {
+  "Indicates whether more edges exist following the set defined by the clients arguments."
+  hasNextPage: Boolean!
+  "Indicates whether more edges exist prior the set defined by the clients arguments."
+  hasPreviousPage: Boolean!
+  "When paginating backwards, the cursor to continue."
+  startCursor: String
+  "When paginating forwards, the cursor to continue."
+  endCursor: String
+}
+
 type Query {
   "Fetches an object given its ID."
-  node("ID of the object." id: ID!): Node
+  node("ID of the object." id: ID!): Node @cost(weight: "10")
   "Lookup nodes by a list of IDs."
-  nodes("The list of node IDs." ids: [ID!]!): [Node]!
+  nodes("The list of node IDs." ids: [ID!]!): [Node]! @cost(weight: "10")
   "IHF answers of the game"
-  answers("Get answers in random order" random: Boolean! = false "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: AnswerFilterInput order: [AnswerSortInput!]): AnswersConnection
+  answers(
+    "Get answers in random order"
+    random: Boolean! = false
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: AnswerFilterInput @cost(weight: "10")
+    order: [AnswerSortInput!] @cost(weight: "10")
+  ): AnswersConnection
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
   "IHF answer by id"
-  answerById(id: ID!): Answer
+  answerById(id: ID!): Answer @cost(weight: "10")
   "IHF answers by ids"
-  answersById(ids: [ID!]!): [Answer]
-  languages: [String!]!
+  answersById(ids: [ID!]!): [Answer] @cost(weight: "10")
+  languages: [String!]! @cost(weight: "10")
   "IHF questions of the game"
-  questions("Get questions in random order" random: Boolean! = false "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: QuestionFilterInput order: [QuestionSortInput!]): QuestionsConnection
+  questions(
+    "Get questions in random order"
+    random: Boolean! = false
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: QuestionFilterInput @cost(weight: "10")
+    order: [QuestionSortInput!] @cost(weight: "10")
+  ): QuestionsConnection
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
   "IHF question by id"
-  questionById(id: ID!): Question
+  questionById(id: ID!): Question @cost(weight: "10")
   "IHF questions by ids"
   questionsById(ids: [ID!]!): [Question]
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
+  "IHF question by number"
+  questionByNumber(number: String!): Question @cost(weight: "10")
+  "IHF questions by numbers"
+  questionsByNumber(numbers: [String!]!): [Question]
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
   "IHF Rules of the game"
-  rules("Get rules in random order" random: Boolean! = false "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: RuleFilterInput order: [RuleSortInput!]): RulesConnection
+  rules(
+    "Get rules in random order"
+    random: Boolean! = false
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: RuleFilterInput @cost(weight: "10")
+    order: [RuleSortInput!] @cost(weight: "10")
+  ): RulesConnection
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
   "IHF rule by id"
-  ruleById(id: ID!): Rule
+  ruleById(id: ID!): Rule @cost(weight: "10")
   "IHF rules by ids"
-  rulesById(ids: [ID!]!): [Rule]
+  rulesById(ids: [ID!]!): [Rule] @cost(weight: "10")
+  "IHF rule by number"
+  ruleByNumber(number: String!): Rule @cost(weight: "10")
+  "IHF rules by numbers"
+  rulesByNumber(numbers: [String!]!): [Rule]
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
   "Count the score for your questions based on the given answers"
-  calculateScore("Answered questions" questionIds: [ID] "Selected answers" selectedAnswerIds: [ID] "Optional score configuration overrides" scoreConfigurationInput: ScoreConfigurationInput): Score
-  version: String
+  calculateScore(
+    "Answered questions"
+    questionIds: [ID]
+    "Selected answers"
+    selectedAnswerIds: [ID]
+    "Optional score configuration overrides"
+    scoreConfigurationInput: ScoreConfigurationInput
+  ): Score @cost(weight: "10")
+  version: String @cost(weight: "10")
+}
+
+"IHF question"
+type Question implements Node {
+  "The question id"
+  id: ID!
+  "The question number"
+  number: String
+  "The question phrase based on the \"Accept-Language\" HTTP header"
+  phrase: String @cost(weight: "10")
+  "Question answers"
+  answers(
+    "Get answers in random order"
+    random: Boolean
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: AnswerFilterInput @cost(weight: "10")
+    order: [AnswerSortInput!] @cost(weight: "10")
+  ): AnswersConnection
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
+  "The rule of this question"
+  rule: Rule @cost(weight: "10")
+  "The id the the rule"
+  ruleId: ID!
+  "Question translations"
+  translations: JSON @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type QuestionsConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [QuestionsEdge!]
+  "A flattened list of the nodes."
+  nodes: [Question]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type QuestionsEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Question
+}
+
+"IHF rule"
+type Rule implements Node {
+  "The rule id"
+  id: ID!
+  "The rule number"
+  number: String
+  "The name of the rule based on the \"Accept-Language\" HTTP header"
+  name: String @cost(weight: "10")
+  "Rule questions"
+  questions(
+    "Get questions in random order"
+    random: Boolean
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    where: QuestionFilterInput @cost(weight: "10")
+    order: [QuestionSortInput!] @cost(weight: "10")
+  ): QuestionsConnection
+  @listSize(requireOneSlicingArgument: false)
+  @cost(weight: "10")
+  "Rule translations"
+  translations: JSON @cost(weight: "10")
+}
+
+"A connection to a list of items."
+type RulesConnection {
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "A list of edges."
+  edges: [RulesEdge!]
+  "A flattened list of the nodes."
+  nodes: [Rule]
+  "Identifies the total count of items in the connection."
+  totalCount: Int! @cost(weight: "10")
+}
+
+"An edge in a connection."
+type RulesEdge {
+  "A cursor for use in pagination."
+  cursor: String!
+  "The item at the end of the edge."
+  node: Rule
+}
+
+"""
+Score calculation based on following configuration:
+Correct: 1,
+Incorrect: -1,
+Not answered: 0,
+Negative score: False,
+Penalize guessing strategy: True
+"""
+type Score {
+  "Your score"
+  score: Int
+  "Total"
+  total: Int
+  "Your percentage score"
+  percentage: String @cost(weight: "10")
+  "The question ids that are not fully correct"
+  wrongQuestionsIds: [ID!]!
+  "The answer ids that are not correct answered"
+  wrongAnswerIds: [ID!]!
 }
 
 "Filter answers based on Id, Name, Number or if the answer is correct"
@@ -44,27 +288,24 @@ input AnswerFilterInput {
 "Sort answers based on Id, Name, Number or if the answer is correct"
 input AnswerSortInput {
   "Sort on answer id"
-  id: SortEnumType
+  id: SortEnumType @cost(weight: "10")
   "Sort on answer number"
-  number: SortEnumType
+  number: SortEnumType @cost(weight: "10")
 }
 
-"IHF rule"
-type Answer implements Node {
-  "The answer id"
-  id: ID!
-  "The answer number"
-  number: String
-  "The answer phrase based on the \"Accept-Language\" HTTP header"
-  phrase: String
-  "The question of this answer"
-  question: Question
-  "The id the the rule"
-  questionId: ID!
-  "True if this is a correct answer, false if not"
-  isCorrect: Boolean!
-  "Answer translations"
-  translations: JSON
+input IntOperationFilterInput {
+  eq: Int @cost(weight: "10")
+  neq: Int @cost(weight: "10")
+  in: [Int] @cost(weight: "10")
+  nin: [Int] @cost(weight: "10")
+  gt: Int @cost(weight: "10")
+  ngt: Int @cost(weight: "10")
+  gte: Int @cost(weight: "10")
+  ngte: Int @cost(weight: "10")
+  lt: Int @cost(weight: "10")
+  nlt: Int @cost(weight: "10")
+  lte: Int @cost(weight: "10")
+  nlte: Int @cost(weight: "10")
 }
 
 "Filter questions based on Id, Name or Number"
@@ -80,27 +321,9 @@ input QuestionFilterInput {
 "Sort questions based on Id, Phrase or Number"
 input QuestionSortInput {
   "Sort on question id"
-  id: SortEnumType
+  id: SortEnumType @cost(weight: "10")
   "Sort on question number"
-  number: SortEnumType
-}
-
-"IHF question"
-type Question implements Node {
-  "The question id"
-  id: ID!
-  "The question number"
-  number: String
-  "The question phrase based on the \"Accept-Language\" HTTP header"
-  phrase: String
-  "Question answers"
-  answers("Get answers in random order" random: Boolean "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: AnswerFilterInput order: [AnswerSortInput!]): AnswersConnection
-  "The rule of this question"
-  rule: Rule
-  "The id the the rule"
-  ruleId: ID!
-  "Question translations"
-  translations: JSON
+  number: SortEnumType @cost(weight: "10")
 }
 
 "Filter rules based on Id, Name or Number"
@@ -116,168 +339,9 @@ input RuleFilterInput {
 "Sort rules based on Id, Name or Number"
 input RuleSortInput {
   "Sort on rule id"
-  id: SortEnumType
+  id: SortEnumType @cost(weight: "10")
   "Sort on rule number"
-  number: SortEnumType
-}
-
-"IHF rule"
-type Rule implements Node {
-  "The rule id"
-  id: ID!
-  "The rule number"
-  number: String
-  "The name of the rule based on the \"Accept-Language\" HTTP header"
-  name: String
-  "Rule questions"
-  questions("Get questions in random order" random: Boolean "Returns the first _n_ elements from the list." first: Int "Returns the elements in the list that come after the specified cursor." after: String "Returns the last _n_ elements from the list." last: Int "Returns the elements in the list that come before the specified cursor." before: String where: QuestionFilterInput order: [QuestionSortInput!]): QuestionsConnection
-  "Rule translations"
-  translations: JSON
-}
-
-"Score calculation based on following configuration:\r\n                Correct: 1,\r\n                Incorrect: -1,\r\n                Not answered: 0,\r\n                Negative score: False,\r\n                Penalize guessing strategy: True"
-type Score {
-  "Your score"
-  score: Int
-  "Total"
-  total: Int
-  "Your percentage score"
-  percentage: String
-  "The question ids that are not fully correct"
-  wrongQuestionsIds: [ID!]!
-  "The answer ids that are not correct answered"
-  wrongAnswerIds: [ID!]!
-}
-
-"The node interface is implemented by entities that have a global unique identifier."
-interface Node {
-  id: ID!
-}
-
-input UuidOperationFilterInput {
-  eq: UUID
-  neq: UUID
-  in: [UUID]
-  nin: [UUID]
-  gt: UUID
-  ngt: UUID
-  gte: UUID
-  ngte: UUID
-  lt: UUID
-  nlt: UUID
-  lte: UUID
-  nlte: UUID
-}
-
-input StringOperationFilterInput {
-  and: [StringOperationFilterInput!]
-  or: [StringOperationFilterInput!]
-  eq: String
-  neq: String
-  contains: String
-  ncontains: String
-  in: [String]
-  nin: [String]
-  startsWith: String
-  nstartsWith: String
-  endsWith: String
-  nendsWith: String
-}
-
-enum SortEnumType {
-  ASC
-  DESC
-}
-
-scalar JSON
-
-"A connection to a list of items."
-type AnswersConnection {
-  "Information to aid in pagination."
-  pageInfo: PageInfo!
-  "A list of edges."
-  edges: [AnswersEdge!]
-  "A flattened list of the nodes."
-  nodes: [Answer]
-  "Identifies the total count of items in the connection."
-  totalCount: Int!
-}
-
-input IntOperationFilterInput {
-  eq: Int
-  neq: Int
-  in: [Int]
-  nin: [Int]
-  gt: Int
-  ngt: Int
-  gte: Int
-  ngte: Int
-  lt: Int
-  nlt: Int
-  lte: Int
-  nlte: Int
-}
-
-"A connection to a list of items."
-type QuestionsConnection {
-  "Information to aid in pagination."
-  pageInfo: PageInfo!
-  "A list of edges."
-  edges: [QuestionsEdge!]
-  "A flattened list of the nodes."
-  nodes: [Question]
-  "Identifies the total count of items in the connection."
-  totalCount: Int!
-}
-
-scalar UUID
-
-"Information about pagination in a connection."
-type PageInfo {
-  "Indicates whether more edges exist following the set defined by the clients arguments."
-  hasNextPage: Boolean!
-  "Indicates whether more edges exist prior the set defined by the clients arguments."
-  hasPreviousPage: Boolean!
-  "When paginating backwards, the cursor to continue."
-  startCursor: String
-  "When paginating forwards, the cursor to continue."
-  endCursor: String
-}
-
-"An edge in a connection."
-type AnswersEdge {
-  "A cursor for use in pagination."
-  cursor: String!
-  "The item at the end of the edge."
-  node: Answer
-}
-
-"An edge in a connection."
-type QuestionsEdge {
-  "A cursor for use in pagination."
-  cursor: String!
-  "The item at the end of the edge."
-  node: Question
-}
-
-"A connection to a list of items."
-type RulesConnection {
-  "Information to aid in pagination."
-  pageInfo: PageInfo!
-  "A list of edges."
-  edges: [RulesEdge!]
-  "A flattened list of the nodes."
-  nodes: [Rule]
-  "Identifies the total count of items in the connection."
-  totalCount: Int!
-}
-
-"An edge in a connection."
-type RulesEdge {
-  "A cursor for use in pagination."
-  cursor: String!
-  "The item at the end of the edge."
-  node: Rule
+  number: SortEnumType @cost(weight: "10")
 }
 
 input ScoreConfigurationInput {
@@ -288,8 +352,67 @@ input ScoreConfigurationInput {
   penalizeGuessingStrategy: Boolean
 }
 
+input StringOperationFilterInput {
+  and: [StringOperationFilterInput!]
+  or: [StringOperationFilterInput!]
+  eq: String @cost(weight: "10")
+  neq: String @cost(weight: "10")
+  contains: String @cost(weight: "20")
+  ncontains: String @cost(weight: "20")
+  in: [String] @cost(weight: "10")
+  nin: [String] @cost(weight: "10")
+  startsWith: String @cost(weight: "20")
+  nstartsWith: String @cost(weight: "20")
+  endsWith: String @cost(weight: "20")
+  nendsWith: String @cost(weight: "20")
+}
+
+input UuidOperationFilterInput {
+  eq: UUID @cost(weight: "10")
+  neq: UUID @cost(weight: "10")
+  in: [UUID] @cost(weight: "10")
+  nin: [UUID] @cost(weight: "10")
+  gt: UUID @cost(weight: "10")
+  ngt: UUID @cost(weight: "10")
+  gte: UUID @cost(weight: "10")
+  ngte: UUID @cost(weight: "10")
+  lt: UUID @cost(weight: "10")
+  nlt: UUID @cost(weight: "10")
+  lte: UUID @cost(weight: "10")
+  nlte: UUID @cost(weight: "10")
+}
+
+enum SortEnumType {
+  ASC
+  DESC
+}
+
 "The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
-directive @cost("The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc." weight: String!) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM | INPUT_FIELD_DEFINITION
+directive @cost(
+  "The `weight` argument defines what value to add to the overall cost for every appearance, or possible appearance, of a type, field, argument, etc."
+  weight: String!
+) on SCALAR | OBJECT | FIELD_DEFINITION | ARGUMENT_DEFINITION | ENUM | INPUT_FIELD_DEFINITION
 
 "The purpose of the `@listSize` directive is to either inform the static analysis about the size of returned lists (if that information is statically available), or to point the analysis to where to find that information."
-directive @listSize("The `assumedSize` argument can be used to statically define the maximum length of a list returned by a field." assumedSize: Int "The `slicingArguments` argument can be used to define which of the field's arguments with numeric type are slicing arguments, so that their value determines the size of the list returned by that field. It may specify a list of multiple slicing arguments." slicingArguments: [String!] "The `slicingArgumentDefaultValue` argument can be used to define a default value for a slicing argument, which is used if the argument is not present in a query." slicingArgumentDefaultValue: Int "The `sizedFields` argument can be used to define that the value of the `assumedSize` argument or of a slicing argument does not affect the size of a list returned by a field itself, but that of a list returned by one of its sub-fields." sizedFields: [String!] "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error." requireOneSlicingArgument: Boolean! = true) on FIELD_DEFINITION
+directive @listSize(
+  "The `assumedSize` argument can be used to statically define the maximum length of a list returned by a field."
+  assumedSize: Int
+  "The `slicingArguments` argument can be used to define which of the field's arguments with numeric type are slicing arguments, so that their value determines the size of the list returned by that field. It may specify a list of multiple slicing arguments."
+  slicingArguments: [String!]
+  "The `slicingArgumentDefaultValue` argument can be used to define a default value for a slicing argument, which is used if the argument is not present in a query."
+  slicingArgumentDefaultValue: Int
+  "The `sizedFields` argument can be used to define that the value of the `assumedSize` argument or of a slicing argument does not affect the size of a list returned by a field itself, but that of a list returned by one of its sub-fields."
+  sizedFields: [String!]
+  "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error."
+  requireOneSlicingArgument: Boolean! = true
+) on FIELD_DEFINITION
+
+"The `@specifiedBy` directive is used within the type system definition language to provide a URL for specifying the behavior of custom scalar definitions."
+directive @specifiedBy(
+  "The specifiedBy URL points to a human-readable specification. This field will only read a result for scalar types."
+  url: String!
+) on SCALAR
+
+scalar JSON
+
+scalar UUID @specifiedBy(url: "https://tools.ietf.org/html/rfc4122")
