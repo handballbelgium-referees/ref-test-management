@@ -57,7 +57,7 @@ export class UpdateNotificationSettingsDialog {
 
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly initialData = input.required<RefTest>();
+  readonly initialData = input.required<RefTest | undefined>();
   protected readonly confirm = output<{
     input: UpdateRefTestNotificationSettingsInput;
     bannerManager: IsolatedBannerManager;
@@ -76,8 +76,6 @@ export class UpdateNotificationSettingsDialog {
       this.settingsModel().status !== RefTestStatus.Expired && !this.settingsModel().resultsSent
     );
   });
-  readonly closeDialog = output<void>();
-  readonly cancel = output<void>();
 
   constructor() {
     effect(() => {
@@ -90,6 +88,7 @@ export class UpdateNotificationSettingsDialog {
 
     effect(() => {
       const data = this.initialData();
+      if (!data) return;
       this.settingsModel.set({
         id: data.id,
         sendInvitationsAutomatically: data.sendInvitationsAutomatically,
@@ -117,10 +116,6 @@ export class UpdateNotificationSettingsDialog {
       },
       bannerManager: this.bannerManager,
     });
-  }
-
-  protected onCancel(): void {
-    this.cancel.emit();
   }
 
   protected onBackdropClick(event: MouseEvent): void {

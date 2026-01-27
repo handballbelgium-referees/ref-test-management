@@ -50,7 +50,6 @@ export class ExtendTimeDialog {
 
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly initialData = input.required<RefTest>();
   protected readonly confirm = output<{
     input: ExtendRefTestTimeInput;
     bannerManager: IsolatedBannerManager;
@@ -62,7 +61,7 @@ export class ExtendTimeDialog {
   });
 
   protected readonly newMaxTime = computed(() => {
-    return this.initialData().maxTimeInMinutes + this.extendTimeModel().additionalMinutes;
+    return (this.initialData()?.maxTimeInMinutes ?? 0) + this.extendTimeModel().additionalMinutes;
   });
 
   constructor() {
@@ -76,15 +75,16 @@ export class ExtendTimeDialog {
 
     effect(() => {
       const data = this.initialData();
+      if (!data) return;
       this.extendTimeModel.set({
         id: data.id,
         additionalMinutes: 15,
-        currentMaxTime: this.initialData().maxTimeInMinutes,
+        currentMaxTime: data.maxTimeInMinutes,
       });
     });
   }
 
-  protected onSave(): void {
+  protected onConfirm(): void {
     if (this.extendTimeForm().invalid()) {
       this.extendTimeForm().markAsTouched();
       return;
