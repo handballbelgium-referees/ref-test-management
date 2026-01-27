@@ -1,7 +1,6 @@
 import { computed, DestroyRef, inject, Injectable, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApolloCache, ApolloClient, FetchResult } from '@apollo/client';
-import { onlyCompleteData } from 'apollo-angular';
 import { catchError, EMPTY, map, switchMap, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
@@ -45,7 +44,7 @@ type DeletionCounts = {
 /* Service                                                                    */
 /* -------------------------------------------------------------------------- */
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class RefTestData {
   private readonly _getRefTestsGQL = inject(GetRefTestsGQL);
   private readonly _getRefTestsAllCountsGQL = inject(GetRefTestsAllCountsGQL);
@@ -123,7 +122,6 @@ export class RefTestData {
         this._countsQueryRef.setVariables(this.buildCountsVariables());
         return this._countsQueryRef.valueChanges;
       }),
-      onlyCompleteData(),
       map((r) => ({
         all: r.data?.all?.totalCount ?? 0,
         pending: r.data?.pending?.totalCount ?? 0,
