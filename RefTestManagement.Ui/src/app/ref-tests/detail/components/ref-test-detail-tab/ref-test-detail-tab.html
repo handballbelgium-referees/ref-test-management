@@ -6,9 +6,9 @@
         [name]="test.name"
         [email]="test.email"
         [status]="test.status"
-        (edit)="onEditParticipant()"
-        (reset)="onReset()"
-        (revive)="onRevive()"
+        (edit)="operationManager.updateRefTestDetailsDialog.initiate(test)"
+        (reset)="operationManager.resetDialog.initiate()"
+        (revive)="operationManager.reviveDialog.initiate()"
       />
 
       <!-- Test Info -->
@@ -17,8 +17,8 @@
         [numberOfQuestions]="test.numberOfQuestions"
         [maxTimeInMinutes]="test.maxTimeInMinutes"
         [status]="test.status"
-        (edit)="onEditConfiguration()"
-        (regenerateToken)="onRegenerateToken()"
+        (edit)="operationManager.updateRefTestConfigurationDialog.initiate(test)"
+        (regenerateToken)="operationManager.regenerateRefTestTokenDialog.initiate()"
       />
 
       <!-- Status Info -->
@@ -28,7 +28,7 @@
         [sendInvitationsAutomatically]="test.sendInvitationsAutomatically"
         [sendResultsAutomatically]="test.sendResultsAutomatically"
         [status]="test.status"
-        (edit)="onEditNotificationSettings()"
+        (edit)="operationManager.updateRefTestNotificationSettingsDialog.initiate(test)"
       />
 
       <!-- Timeline -->
@@ -36,7 +36,7 @@
         [startedAt]="test.startedAt ?? undefined"
         [completedAt]="test.completedAt ?? undefined"
         [status]="test.status"
-        (extendTime)="onExtendTime()"
+        (extendTime)="operationManager.extendRefTestTimeDialog.initiate(test)"
       />
     </div>
 
@@ -55,52 +55,64 @@
     }
   }
 
-  <!-- Edit Participant Dialog -->
-  <app-edit-participant-dialog
-    [show]="showEditDialog()"
-    (closeDialog)="onEditDialogClose()"
-    (cancel)="onEditDialogClose()"
+  <!-- Update Details Dialog -->
+  <app-update-details-dialog
+    [loading]="operationManager.updateRefTestDetailsDialog.loading()"
+    [show]="operationManager.updateRefTestDetailsDialog.show()"
+    [initialData]="operationManager.updateRefTestDetailsDialog.initialData()!"
+    (confirm)="confirmUpdateParticipantDetails($event.input, $event.bannerManager)"
+    (cancel)="operationManager.updateRefTestDetailsDialog.cancel()"
   />
 
-  <!-- Edit Configuration Dialog -->
-  <app-edit-configuration-dialog
-    [show]="showEditConfigDialog()"
-    (closeDialog)="onEditConfigDialogClose()"
-    (cancel)="onEditConfigDialogClose()"
+  <!-- Update Configuration Dialog -->
+  <app-update-configuration-dialog
+    [loading]="operationManager.updateRefTestConfigurationDialog.loading()"
+    [show]="operationManager.updateRefTestConfigurationDialog.show()"
+    [initialData]="operationManager.updateRefTestConfigurationDialog.initialData()!"
+    (confirm)="confirmUpdateConfiguration($event.input, $event.bannerManager)"
+    (cancel)="operationManager.updateRefTestConfigurationDialog.cancel()"
   />
 
-  <!-- Edit Notification Settings Dialog -->
-  <app-edit-notification-settings-dialog
-    [show]="showEditNotificationDialog()"
-    (closeDialog)="onEditNotificationDialogClose()"
-    (cancel)="onEditNotificationDialogClose()"
+  <!-- Update Notification Settings Dialog -->
+  <app-update-notification-settings-dialog
+    [loading]="operationManager.updateRefTestNotificationSettingsDialog.loading()"
+    [show]="operationManager.updateRefTestNotificationSettingsDialog.show()"
+    [initialData]="operationManager.updateRefTestNotificationSettingsDialog.initialData()!"
+    (confirm)="confirmUpdateNotificationSettings($event.input, $event.bannerManager)"
+    (cancel)="operationManager.updateRefTestNotificationSettingsDialog.cancel()"
   />
 
   <!-- Extend Time Dialog -->
   <app-extend-time-dialog
-    [show]="showExtendTimeDialog()"
-    (closeDialog)="onExtendTimeDialogClose()"
-    (cancel)="onExtendTimeDialogClose()"
+    [loading]="operationManager.extendRefTestTimeDialog.loading()"
+    [show]="operationManager.extendRefTestTimeDialog.show()"
+    [initialData]="operationManager.extendRefTestTimeDialog.initialData()!"
+    (confirm)="extendTime($event.input, $event.bannerManager)"
+    (cancel)="operationManager.extendRefTestTimeDialog.cancel()"
   />
 
   <!-- Regenerate Token Dialog -->
   <app-regenerate-token-dialog
-    [show]="showRegenerateTokenDialog()"
-    (closeDialog)="onRegenerateTokenDialogClose()"
-    (cancel)="onRegenerateTokenDialogClose()"
+    [loading]="operationManager.regenerateRefTestTokenDialog.loading()"
+    [show]="operationManager.regenerateRefTestTokenDialog.show()"
+    [initialData]="operationManager.regenerateRefTestTokenDialog.initialData()!"
+    (confirm)="confirmRegenerateToken($event.input, $event.bannerManager)"
+    (cancel)="operationManager.regenerateRefTestTokenDialog.cancel()"
   />
 
   <!-- Reset Ref Test Dialog -->
   <app-reset-ref-test-dialog
-    [show]="showResetDialog()"
-    (closeDialog)="onResetDialogClose()"
-    (cancel)="onResetDialogClose()"
+    [show]="operationManager.resetDialog.show()"
+    [loading]="operationManager.resetDialog.loading()"
+    (confirm)="confirmReset($event.options, $event.bannerManager)"
+    (cancel)="operationManager.resetDialog.cancel()"
   />
 
   <!-- Revive Ref Test Dialog -->
   <app-revive-ref-test-dialog
-    [show]="showReviveDialog()"
-    (closeDialog)="onReviveDialogClose()"
-    (cancel)="onReviveDialogClose()"
+    [show]="operationManager.reviveDialog.show()"
+    [loading]="operationManager.reviveDialog.loading()"
+    (confirm)="confirmRevive()"
+    (cancel)="operationManager.reviveDialog.cancel()"
   />
 </div>
