@@ -2,7 +2,6 @@ import { DestroyRef, WritableSignal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Apollo } from 'apollo-angular';
 import { catchError, EMPTY, finalize, Observable, tap } from 'rxjs';
-import { IsolatedBannerManager } from '../../services/banner';
 
 export type MutationCallbacks<T = unknown> = {
   /** Called immediately when the mutation starts */
@@ -25,17 +24,25 @@ export function runMutation<TData, TResult>(
   loadingSignal: WritableSignal<boolean>,
   mapResult?: (result: Apollo.MutateResult<TData>) => TResult,
 ): void {
-  const { onSuccess = () => {}, onError = () => {}, onComplete = () => {} } = callbacks;
+  const {
+    onStart = () => {},
+    onSuccess = () => {},
+    onError = () => {},
+    onComplete = () => {},
+  } = callbacks;
+
+  onStart();
+  loadingSignal.set(true);
 
   mutation$
     .pipe(
-      tap((result: Apollo.MutateResult<TData>) => {
-        // Only call onSuccess when loading is finished
-        loadingSignal.set(result.loading ?? false);
-        if (!result.loading) {
-          const mapped = mapResult ? mapResult(result) : (result as unknown as TResult);
-          onSuccess(mapped);
-        }
+      tap((result) => {
+        // Ignore the initial loading emission
+        if (result.loading) return;
+
+        const mapped = mapResult ? mapResult(result) : (result as unknown as TResult);
+
+        onSuccess(mapped);
       }),
       catchError((error) => {
         onError(error);
@@ -51,7 +58,7 @@ export function runMutation<TData, TResult>(
 }
 
 export function decrement<T extends { totalCount?: number }>(
-  value: T | null | undefined,
+  value?: T | null,
   amount: number = 1,
 ): T | null | undefined {
   if (!value || value.totalCount === undefined) return value;
@@ -59,40 +66,9 @@ export function decrement<T extends { totalCount?: number }>(
 }
 
 export function increment<T extends { totalCount?: number }>(
-  value: T | null | undefined,
+  value?: T | null,
   amount: number = 1,
 ): T | null | undefined {
   if (!value || value.totalCount === undefined) return value;
   return { ...value, totalCount: value.totalCount + amount };
-}
-
-export type DialogOperationCallback<TParams = void> = (
-  ids: string[],
-  destroyRef: DestroyRef,
-  params: TParams,
-  bannerManager?: IsolatedBannerManager,
-) => void;
-
-export function createDialogOperation<TParams = void>(
-  isOpen: WritableSignal<boolean>,
-  getSelectedIds: () => string[],
-  callback: DialogOperationCallback<TParams>,
-) {
-  return {
-    initiate(): void {
-      if (getSelectedIds().length === 0) return;
-      isOpen.set(true);
-    },
-    confirm(destroyRef: DestroyRef, params: TParams, bannerManager?: IsolatedBannerManager): void {
-      // params must be provided if TParams is not void
-      const ids = getSelectedIds();
-      if (ids.length === 0) return;
-
-      isOpen.set(false);
-      callback(ids, destroyRef, params, bannerManager);
-    },
-    cancel(): void {
-      isOpen.set(false);
-    },
-  };
 }
