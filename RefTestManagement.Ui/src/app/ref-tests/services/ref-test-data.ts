@@ -1,4 +1,4 @@
-import { computed, DestroyRef, inject, Injectable, WritableSignal } from '@angular/core';
+import { computed, DestroyRef, inject, Injectable, Signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApolloCache, ApolloClient, FetchResult } from '@apollo/client';
 import { catchError, EMPTY, map, switchMap, tap } from 'rxjs';
@@ -161,63 +161,55 @@ export class RefTestData {
 
   deleteRefTests(
     ids: string[],
-    loadingSignal: WritableSignal<boolean>,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): void {
-    runMutation(
+  ): Signal<boolean> {
+    return runMutation(
       this._deleteRefTestsGQL.mutate({
         variables: { input: { ids } },
         update: this.updateDeleteCache.bind(this),
       }),
       callbacks,
       destroyRef,
-      loadingSignal,
       (r) => r.data?.deleteRefTests?.deleteRefTestsResult?.deletedRefTests.map((d) => d.id) ?? [],
     );
   }
 
   sendInvitations(
     ids: string[],
-    loadingSignal: WritableSignal<boolean>,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): void {
-    runMutation(
+  ): Signal<boolean> {
+    return runMutation(
       this._sendInvitationsGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
       destroyRef,
-      loadingSignal,
       (r) => r.data?.sendInvitations?.sendInvitationsResult?.sentRefTests.map((s) => s.id) ?? [],
     );
   }
 
   sendResults(
     ids: string[],
-    loadingSignal: WritableSignal<boolean>,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): void {
-    runMutation(
+  ): Signal<boolean> {
+    return runMutation(
       this._sendResultsGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
       destroyRef,
-      loadingSignal,
       (r) => r.data?.sendResults?.sendResultsResult?.sentRefTests.map((s) => s.id) ?? [],
     );
   }
 
   generateReport(
     ids: string[],
-    loadingSignal: WritableSignal<boolean>,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<IReportResult> = {},
-  ): void {
-    runMutation(
+  ): Signal<boolean> {
+    return runMutation(
       this._sendReportGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
       destroyRef,
-      loadingSignal,
       (r) => {
         const res = r.data?.sendReport?.sendReportResult;
         return {
@@ -234,17 +226,15 @@ export class RefTestData {
       resetType: RefTestResetType;
       regenerateToken: boolean;
     },
-    loadingSignal: WritableSignal<boolean>,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
-  ): void {
-    runMutation(
+  ): Signal<boolean> {
+    return runMutation(
       this._resetRefTestsGQL.mutate({
         variables: { input },
       }),
       callbacks,
       destroyRef,
-      loadingSignal,
       (r) => {
         const res = r.data?.resetRefTests?.resetRefTestsResult;
         return {
@@ -257,15 +247,13 @@ export class RefTestData {
 
   reviveRefTests(
     ids: string[],
-    loadingSignal: WritableSignal<boolean>,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
-  ): void {
-    runMutation(
+  ): Signal<boolean> {
+    return runMutation(
       this._reviveRefTestsGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
       destroyRef,
-      loadingSignal,
       (r) => {
         const res = r.data?.reviveRefTests?.reviveRefTestsResult;
         return {

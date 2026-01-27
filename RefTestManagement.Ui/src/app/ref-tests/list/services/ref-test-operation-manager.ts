@@ -52,9 +52,9 @@ export class RefTestOperationManager {
   // DIALOG OPERATIONS
   // ========================================================================
 
-  readonly deleteDialog = createDialogOperation((ids, destroyRef, _, loading) => {
+  readonly deleteDialog = createDialogOperation((ids, destroyRef) => {
     this.addIds(this._deletingRefTestIds, ids);
-    this._dataService.deleteRefTests(ids, loading, destroyRef, {
+    this._dataService.deleteRefTests(ids, destroyRef, {
       onSuccess: (deletedIds) => {
         this._localStateManager.markAsDeleted(deletedIds);
         this._selectionManager.clearSelection();
@@ -69,12 +69,12 @@ export class RefTestOperationManager {
   }, this.getSelectedIds);
 
   readonly sendInvitationsDialog = createDialogOperation<RefTestNode[]>(
-    (ids, destroyRef, allRefTests, loading) => {
+    (ids, destroyRef, allRefTests) => {
       const filtered = ids.filter(
         (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Pending,
       );
       this.addIds(this._sendingInvitationIds, filtered);
-      this._dataService.sendInvitations(filtered, loading, destroyRef, {
+      this._dataService.sendInvitations(filtered, destroyRef, {
         onSuccess: (sendIds) => {
           this._localStateManager.markInvitationsSent(sendIds);
           this._selectionManager.clearSelection();
@@ -93,12 +93,12 @@ export class RefTestOperationManager {
   );
 
   readonly sendResultsDialog = createDialogOperation<RefTestNode[]>(
-    (ids, destroyRef, allRefTests, loading) => {
+    (ids, destroyRef, allRefTests) => {
       const filtered = ids.filter(
         (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Completed,
       );
       this.addIds(this._sendingResultsIds, filtered);
-      this._dataService.sendResults(filtered, loading, destroyRef, {
+      this._dataService.sendResults(filtered, destroyRef, {
         onSuccess: () => {
           this._selectionManager.clearSelection();
           this._bannerService.success(
@@ -113,8 +113,8 @@ export class RefTestOperationManager {
     this.getSelectedIds,
   );
 
-  readonly generateReportDialog = createDialogOperation((ids, destroyRef, _, loading) => {
-    this._dataService.generateReport(ids, loading, destroyRef, {
+  readonly generateReportDialog = createDialogOperation((ids, destroyRef) => {
+    this._dataService.generateReport(ids, destroyRef, {
       onSuccess: (result) => {
         if (result.success) {
           this._selectionManager.clearSelection();
@@ -134,43 +134,39 @@ export class RefTestOperationManager {
     });
   }, this.getSelectedIds);
 
-  readonly resetDialog = createDialogOperation<IResetOptions>(
-    (ids, destroyRef, options, loading) => {
-      this.addIds(this._resettingRefTestIds, ids);
-      this._dataService.resetRefTests(
-        { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
-        loading,
-        destroyRef,
-        {
-          onSuccess: ({ successCount, failedCount }) => {
-            if (successCount > 0) {
-              this._selectionManager.clearSelection();
-              this._bannerService.success(
-                this._translateService.instant('ref_tests.list.reset_success', {
-                  count: successCount,
-                }),
-              );
-            }
-            if (failedCount > 0) {
-              this._bannerService.error(
-                this._translateService.instant('ref_tests.list.reset_partial_error', {
-                  count: failedCount,
-                }),
-              );
-            }
-          },
-          onError: () =>
-            this._bannerService.error(this._translateService.instant('ref_tests.list.reset_error')),
-          onComplete: () => this.removeIds(this._resettingRefTestIds, ids),
+  readonly resetDialog = createDialogOperation<IResetOptions>((ids, destroyRef, options) => {
+    this.addIds(this._resettingRefTestIds, ids);
+    this._dataService.resetRefTests(
+      { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
+      destroyRef,
+      {
+        onSuccess: ({ successCount, failedCount }) => {
+          if (successCount > 0) {
+            this._selectionManager.clearSelection();
+            this._bannerService.success(
+              this._translateService.instant('ref_tests.list.reset_success', {
+                count: successCount,
+              }),
+            );
+          }
+          if (failedCount > 0) {
+            this._bannerService.error(
+              this._translateService.instant('ref_tests.list.reset_partial_error', {
+                count: failedCount,
+              }),
+            );
+          }
         },
-      );
-    },
-    this.getSelectedIds,
-  );
+        onError: () =>
+          this._bannerService.error(this._translateService.instant('ref_tests.list.reset_error')),
+        onComplete: () => this.removeIds(this._resettingRefTestIds, ids),
+      },
+    );
+  }, this.getSelectedIds);
 
-  readonly reviveDialog = createDialogOperation((ids, destroyRef, _, loading) => {
+  readonly reviveDialog = createDialogOperation((ids, destroyRef) => {
     this.addIds(this._revivingRefTestIds, ids);
-    this._dataService.reviveRefTests(ids, loading, destroyRef, {
+    this._dataService.reviveRefTests(ids, destroyRef, {
       onSuccess: ({ successCount, failedCount }) => {
         if (successCount > 0) {
           this._selectionManager.clearSelection();

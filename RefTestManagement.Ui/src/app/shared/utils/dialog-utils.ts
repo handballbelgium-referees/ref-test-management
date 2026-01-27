@@ -1,13 +1,12 @@
-import { DestroyRef, signal, WritableSignal } from '@angular/core';
+import { DestroyRef, Signal, signal } from '@angular/core';
 import { IsolatedBannerManager } from '../../services/banner';
 
 export type DialogOperationCallback<TParams = void> = (
   ids: string[],
   destroyRef: DestroyRef,
   params: TParams,
-  loadingSignal: WritableSignal<boolean>,
   bannerManager?: IsolatedBannerManager,
-) => void;
+) => Signal<boolean> | void;
 
 export function createDialogOperation<TParams = void, TExtra = void>(
   callback: DialogOperationCallback<TParams>,
@@ -27,12 +26,16 @@ export function createDialogOperation<TParams = void, TExtra = void>(
       show.set(true);
     },
     confirm(destroyRef: DestroyRef, params: TParams, bannerManager?: IsolatedBannerManager): void {
-      // params must be provided if TParams is not void
       const ids = getSelectedIds ? getSelectedIds() : [];
       if (ids.length === 0) return;
 
       show.set(false);
-      callback(ids, destroyRef, params, loading, bannerManager);
+
+      const result = callback(ids, destroyRef, params, bannerManager);
+      if (result) {
+        loading.set(result());
+      }
+
       initialData.set(undefined);
     },
     cancel(): void {

@@ -31,8 +31,8 @@ export class RefTestDetailOperationManager {
   // ========================================================================
 
   readonly deleteDialog = createDialogOperation(
-    (ids, destroyRef, _, loading, bannerManager) => {
-      this._dataService.deleteRefTests(ids, loading, destroyRef, {
+    (ids, destroyRef, _, bannerManager) => {
+      this._dataService.deleteRefTests(ids, destroyRef, {
         onSuccess: () => {
           bannerManager?.success(this._translateService.instant('ref_tests.detail.delete_success'));
           // Navigate back to list after successful delete
@@ -47,8 +47,8 @@ export class RefTestDetailOperationManager {
   );
 
   readonly sendResultDialog = createDialogOperation(
-    (ids, destroyRef, _, loading, bannerManager) => {
-      this._dataService.sendResults(ids, loading, destroyRef, {
+    (ids, destroyRef, _, bannerManager) => {
+      this._dataService.sendResults(ids, destroyRef, {
         onSuccess: () => {
           bannerManager?.success(this._translateService.instant('ref_tests.detail.results_sent'));
         },
@@ -61,8 +61,8 @@ export class RefTestDetailOperationManager {
   );
 
   readonly sendInvitationDialog = createDialogOperation(
-    (ids, destroyRef, _, loading, bannerManager) => {
-      this._dataService.sendInvitations(ids, loading, destroyRef, {
+    (ids, destroyRef, _, bannerManager) => {
+      this._dataService.sendInvitations(ids, destroyRef, {
         onSuccess: () => {
           bannerManager?.success(
             this._translateService.instant('ref_tests.detail.invitation_sent'),
@@ -77,10 +77,9 @@ export class RefTestDetailOperationManager {
   );
 
   readonly resetDialog = createDialogOperation<IResetOptions>(
-    (ids, destroyRef, options, loading, bannerManager) => {
+    (ids, destroyRef, options, bannerManager) => {
       this._dataService.resetRefTests(
         { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
-        loading,
         destroyRef,
         {
           onSuccess: ({ successCount, failedCount }) => {
@@ -102,8 +101,8 @@ export class RefTestDetailOperationManager {
   );
 
   readonly reviveDialog = createDialogOperation(
-    (ids, destroyRef, _, loading, bannerManager) => {
-      this._dataService.reviveRefTests(ids, loading, destroyRef, {
+    (ids, destroyRef, _, bannerManager) => {
+      this._dataService.reviveRefTests(ids, destroyRef, {
         onSuccess: ({ successCount, failedCount }) => {
           if (successCount > 0) {
             bannerManager?.success(
@@ -122,8 +121,8 @@ export class RefTestDetailOperationManager {
   );
 
   readonly updateRefTestDetailsDialog = createDialogOperation<UpdateRefTestDetailsInput, RefTest>(
-    (_, destroyRef, updatedData, loading, bannerManager) => {
-      this._detailDataService.editParticipantDetails(updatedData, loading, destroyRef, {
+    (_, destroyRef, updatedData, bannerManager) => {
+      this._detailDataService.editParticipantDetails(updatedData, destroyRef, {
         onSuccess: () => {
           bannerManager?.success(
             this._translateService.instant('ref_tests.detail.edit_participant.success'),
@@ -141,8 +140,8 @@ export class RefTestDetailOperationManager {
   readonly updateRefTestConfigurationDialog = createDialogOperation<
     UpdateRefTestConfigurationInput,
     RefTest
-  >((_, destroyRef, updatedData, loading, bannerManager) => {
-    this._detailDataService.updateRefTestConfiguration(updatedData, loading, destroyRef, {
+  >((_, destroyRef, updatedData, bannerManager) => {
+    this._detailDataService.updateRefTestConfiguration(updatedData, destroyRef, {
       onSuccess: () => {
         bannerManager?.success(
           this._translateService.instant('ref_tests.detail.edit_configuration.success'),
@@ -159,8 +158,8 @@ export class RefTestDetailOperationManager {
   readonly updateRefTestNotificationSettingsDialog = createDialogOperation<
     UpdateRefTestNotificationSettingsInput,
     RefTest
-  >((_, destroyRef, updatedData, loading, bannerManager) => {
-    this._detailDataService.updateRefTestNotificationSettings(updatedData, loading, destroyRef, {
+  >((_, destroyRef, updatedData, bannerManager) => {
+    this._detailDataService.updateRefTestNotificationSettings(updatedData, destroyRef, {
       onSuccess: () => {
         bannerManager?.success(
           this._translateService.instant('ref_tests.detail.edit_notification_settings.success'),
@@ -175,8 +174,8 @@ export class RefTestDetailOperationManager {
   });
 
   readonly extendRefTestTimeDialog = createDialogOperation<ExtendRefTestTimeInput, RefTest>(
-    (_, destroyRef, updatedData, loading, bannerManager) => {
-      this._detailDataService.extendRefTestTime(updatedData, loading, destroyRef, {
+    (_, destroyRef, updatedData, bannerManager) => {
+      this._detailDataService.extendRefTestTime(updatedData, destroyRef, {
         onSuccess: () => {
           bannerManager?.success(
             this._translateService.instant('ref_tests.detail.extend_time.success'),
@@ -192,8 +191,8 @@ export class RefTestDetailOperationManager {
   );
 
   readonly regenerateRefTestTokenDialog = createDialogOperation<RegenerateRefTestTokenInput>(
-    (_, destroyRef, updatedData, loading, bannerManager) => {
-      this._detailDataService.regenerateRefTestToken(updatedData, loading, destroyRef, {
+    (_, destroyRef, updatedData, bannerManager) => {
+      this._detailDataService.regenerateRefTestToken(updatedData, destroyRef, {
         onSuccess: () => {
           bannerManager?.success(
             this._translateService.instant('ref_tests.detail.regenerate_token.success'),
