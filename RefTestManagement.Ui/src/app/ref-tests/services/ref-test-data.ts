@@ -349,9 +349,41 @@ export class RefTestData {
           const current = this._queryRef.getCurrentResult();
           const isLoaded = current?.data?.refTests?.edges?.some((e) => e?.node?.id === event.id);
 
-          if (isLoaded) {
-            this.updateRefTestInCache(event.id, event);
+          if (!isLoaded) return;
+
+          // Map subscription event to cache update
+          let updates: Record<string, unknown> = {};
+          switch (event.__typename) {
+            case 'RefTestCompleted':
+              updates = {
+                status: event.status,
+                completedAt: event.completedAt,
+                questionScore: event.questionScore,
+                questionTotal: event.questionTotal,
+                answerScore: event.answerScore,
+                answerTotal: event.answerTotal,
+                percentage: event.percentage,
+              };
+              break;
+
+            case 'RefTestExpired':
+              updates = { status: event.status };
+              break;
+
+            case 'RefTestStarted':
+              updates = { status: event.status, startedAt: event.startedAt };
+              break;
+
+            case 'RefTestInvitationSent':
+              updates = { invitationSent: true };
+              break;
+
+            case 'RefTestResultSent':
+              updates = { resultsSent: true };
+              break;
           }
+
+          this.updateRefTestInCache(event.id, updates);
         }),
         catchError(() => EMPTY),
         takeUntilDestroyed(destroyRef),
