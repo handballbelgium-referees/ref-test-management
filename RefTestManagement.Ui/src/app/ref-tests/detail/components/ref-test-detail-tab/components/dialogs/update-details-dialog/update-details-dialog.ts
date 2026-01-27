@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   effect,
-  inject,
   input,
   output,
   signal,
@@ -11,10 +10,7 @@ import {
 import { email, form, FormField, required } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTest, UpdateRefTestDetailsInput } from '../../../../../../../../../graphql/generated';
-import {
-  Banner as BannerService,
-  IsolatedBannerManager,
-} from '../../../../../../../services/banner';
+import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
 
 interface IParticipantData {
@@ -31,9 +27,6 @@ interface IParticipantData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UpdateDetailsDialog {
-  // Create isolated banner manager for this dialog
-  protected readonly bannerManager = inject(BannerService).createIsolated();
-
   protected readonly participantModel = signal<IParticipantData>({
     id: '',
     firstName: '',
@@ -60,10 +53,8 @@ export class UpdateDetailsDialog {
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
   readonly initialData = input.required<RefTest | undefined>();
-  protected readonly confirm = output<{
-    input: UpdateRefTestDetailsInput;
-    bannerManager: IsolatedBannerManager;
-  }>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
+  protected readonly confirm = output<UpdateRefTestDetailsInput>();
   protected readonly cancel = output<void>();
 
   protected readonly canSave = computed(() => {
@@ -99,13 +90,10 @@ export class UpdateDetailsDialog {
     const data = this.participantModel();
 
     this.confirm.emit({
-      input: {
-        id: data.id,
-        firstName: data.firstName,
-        lastName: data.lastName,
-        email: data.email,
-      },
-      bannerManager: this.bannerManager,
+      id: data.id,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      email: data.email,
     });
   }
 }

@@ -16,10 +16,7 @@ import {
   RefTest,
   UpdateRefTestConfigurationInput,
 } from '../../../../../../../../../graphql/generated';
-import {
-  Banner as BannerService,
-  IsolatedBannerManager,
-} from '../../../../../../../services/banner';
+import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
 import { QuestionSearchAutocomplete } from '../../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
 import { TitleAutocomplete } from '../../../../../../create/components/title-autocomplete/title-autocomplete';
@@ -40,9 +37,6 @@ interface IConfigurationData {
 })
 export class UpdateConfigurationDialog {
   private readonly _translate = inject(TranslateService);
-
-  // Create isolated banner manager for this dialog
-  protected readonly bannerManager = inject(BannerService).createIsolated();
 
   protected readonly configurationModel = signal<IConfigurationData>({
     id: '',
@@ -83,10 +77,8 @@ export class UpdateConfigurationDialog {
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
   readonly initialData = input.required<RefTest | undefined>();
-  protected readonly confirm = output<{
-    input: UpdateRefTestConfigurationInput;
-    bannerManager: IsolatedBannerManager;
-  }>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
+  protected readonly confirm = output<UpdateRefTestConfigurationInput>();
   protected readonly cancel = output<void>();
 
   protected readonly canSave = computed(() => {
@@ -206,18 +198,15 @@ export class UpdateConfigurationDialog {
       this.selectedQuestions().length > 0 ? this.selectedQuestions().map((q) => q.number) : null;
 
     this.confirm.emit({
-      input: {
-        id: data.id,
-        title: {
-          id: data.title?.id,
-          name: data.title?.id ? undefined : data.title?.name,
-        },
-        numberOfQuestions: questionNumbers ? questionNumbers.length : data.numberOfQuestions,
-        maxTimeInMinutes: data.maxTimeInMinutes,
-        randomQuestions: data.randomQuestionsForEachUser,
-        specificQuestionNumbers: questionNumbers || undefined,
+      id: data.id,
+      title: {
+        id: data.title?.id,
+        name: data.title?.id ? undefined : data.title?.name,
       },
-      bannerManager: this.bannerManager,
+      numberOfQuestions: questionNumbers ? questionNumbers.length : data.numberOfQuestions,
+      maxTimeInMinutes: data.maxTimeInMinutes,
+      randomQuestions: data.randomQuestionsForEachUser,
+      specificQuestionNumbers: questionNumbers || undefined,
     });
   }
 }

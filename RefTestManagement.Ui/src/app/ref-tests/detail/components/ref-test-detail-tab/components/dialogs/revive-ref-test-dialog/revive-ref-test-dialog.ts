@@ -1,9 +1,6 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import {
-  Banner as BannerService,
-  IsolatedBannerManager,
-} from '../../../../../../../services/banner';
+import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
 
 @Component({
@@ -13,12 +10,10 @@ import { Banner } from '../../../../../../../shared/components/banner/banner';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviveRefTestDialog {
-  // Create isolated banner manager for this dialog
-  protected readonly bannerManager = inject(BannerService).createIsolated();
-
+  readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly loading = input<boolean>(false);
-  protected readonly confirm = output<IsolatedBannerManager>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
+  protected readonly confirm = output<void>();
   protected readonly cancel = output<void>();
 
   constructor() {
@@ -29,9 +24,5 @@ export class ReviveRefTestDialog {
         document.body.style.overflow = '';
       }
     });
-  }
-
-  protected onConfirm(): void {
-    this.confirm.emit(this.bannerManager);
   }
 }

@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   effect,
-  inject,
   input,
   output,
   signal,
@@ -11,10 +10,7 @@ import {
 import { form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ExtendRefTestTimeInput, RefTest } from '../../../../../../../../../graphql/generated';
-import {
-  Banner as BannerService,
-  IsolatedBannerManager,
-} from '../../../../../../../services/banner';
+import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
 
 interface IExtendTimeData {
@@ -30,9 +26,6 @@ interface IExtendTimeData {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExtendTimeDialog {
-  // Create isolated banner manager for this dialog
-  protected readonly bannerManager = inject(BannerService).createIsolated();
-
   protected readonly extendTimeModel = signal<IExtendTimeData>({
     id: '',
     additionalMinutes: 15,
@@ -51,10 +44,8 @@ export class ExtendTimeDialog {
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
   readonly initialData = input.required<RefTest | undefined>();
-  protected readonly confirm = output<{
-    input: ExtendRefTestTimeInput;
-    bannerManager: IsolatedBannerManager;
-  }>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
+  protected readonly confirm = output<ExtendRefTestTimeInput>();
   protected readonly cancel = output<void>();
 
   protected readonly canSave = computed(() => {
@@ -94,8 +85,8 @@ export class ExtendTimeDialog {
     const data = this.extendTimeModel();
 
     this.confirm.emit({
-      input: { id: data.id, additionalMinutes: data.additionalMinutes },
-      bannerManager: this.bannerManager,
+      id: data.id,
+      additionalMinutes: data.additionalMinutes,
     });
   }
 }

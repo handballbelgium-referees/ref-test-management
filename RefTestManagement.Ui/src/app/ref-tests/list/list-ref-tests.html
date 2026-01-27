@@ -119,7 +119,9 @@
 
   <!-- Send Invitations Dialog -->
   <app-send-invitations-dialog
+    [loading]="operationManager.sendInvitationsDialog.loading()"
     [show]="operationManager.sendInvitationsDialog.show()"
+    [bannerManager]="operationManager.sendInvitationsDialog.bannerManager()"
     [summary]="invitationSummary()"
     (confirm)="confirmSendInvitations()"
     (cancel)="operationManager.sendInvitationsDialog.cancel()"
@@ -128,7 +130,9 @@
 
   <!-- Send Results Dialog -->
   <app-send-results-dialog
+    [loading]="operationManager.sendResultsDialog.loading()"
     [show]="operationManager.sendResultsDialog.show()"
+    [bannerManager]="operationManager.sendResultsDialog.bannerManager()"
     [summary]="resultsSummary()"
     (confirm)="confirmSendResults()"
     (cancel)="operationManager.sendResultsDialog.cancel()"
@@ -137,8 +141,10 @@
 
   <!-- Delete ref_tests Dialog -->
   <app-delete-ref-tests-dialog
+    [loading]="operationManager.deleteDialog.loading()"
     [show]="operationManager.deleteDialog.show()"
     [refTests]="refTestsToDelete()"
+    [bannerManager]="operationManager.deleteDialog.bannerManager()"
     (confirm)="confirmDelete()"
     (cancel)="operationManager.deleteDialog.cancel()"
   >
@@ -146,8 +152,10 @@
 
   <!-- Generate Report Dialog -->
   <app-generate-report-dialog
+    [loading]="operationManager.generateReportDialog.loading()"
     [show]="operationManager.generateReportDialog.show()"
     [summary]="reportSummary()"
+    [bannerManager]="operationManager.generateReportDialog.bannerManager()"
     (confirm)="confirmGenerateReport()"
     (cancel)="operationManager.generateReportDialog.cancel()"
   >
@@ -155,8 +163,10 @@
 
   <!-- Reset Dialog -->
   <app-reset-ref-tests-dialog
+    [loading]="operationManager.resetDialog.loading()"
     [show]="operationManager.resetDialog.show()"
     [refTests]="refTestsToReset()"
+    [bannerManager]="operationManager.resetDialog.bannerManager()"
     (confirm)="confirmReset($event)"
     (cancel)="operationManager.resetDialog.cancel()"
   >
@@ -164,8 +174,10 @@
 
   <!-- Revive Dialog -->
   <app-revive-ref-tests-dialog
+    [loading]="operationManager.reviveDialog.loading()"
     [show]="operationManager.reviveDialog.show()"
     [refTests]="refTestsToRevive()"
+    [bannerManager]="operationManager.reviveDialog.bannerManager()"
     (confirm)="confirmRevive()"
     (cancel)="operationManager.reviveDialog.cancel()"
   >

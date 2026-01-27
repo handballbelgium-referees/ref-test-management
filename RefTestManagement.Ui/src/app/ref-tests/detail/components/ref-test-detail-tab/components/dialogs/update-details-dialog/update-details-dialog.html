@@ -22,7 +22,7 @@
 
       <!-- Banner Container -->
       <div class="px-6 pt-4">
-        <app-banner [bannerManager]="bannerManager" />
+        <app-banner [bannerManager]="bannerManager()" />
       </div>
 
       <!-- Form Content -->
@@ -118,8 +118,9 @@
           @if (loading()) {
             <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
             {{ 'common.saving' | translate }}
+          } @else {
+            {{ 'common.save' | translate }}
           }
-          {{ 'common.save' | translate }}
         </button>
       </div>
     </div>

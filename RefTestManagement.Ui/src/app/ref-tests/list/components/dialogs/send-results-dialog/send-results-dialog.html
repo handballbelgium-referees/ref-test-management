@@ -1,96 +1,110 @@
 @if (show()) {
-<div
-  class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-  (click)="cancel.emit()"
->
   <div
-    class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-    (click)="$event.stopPropagation()"
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+    (click)="cancel.emit()"
   >
-    <!-- Header -->
-    <div class="px-6 py-4 border-b border-neutral-200">
-      <h2 class="text-xl font-bold text-neutral-900">
-        {{ 'ref_tests.list.dialogs.send_results.title' | translate }}
-      </h2>
-      <p class="text-sm text-neutral-600 mt-1">
-        {{ 'ref_tests.list.dialogs.send_results.message' | translate }}
-      </p>
-    </div>
-
-    <!-- Content -->
-    <div class="px-6 py-4 overflow-y-auto flex-1 scrollbar-hide">
-      @if (summary().newResults.length > 0) {
-      <div class="mb-4">
-        <h3 class="text-sm font-semibold text-neutral-900 mb-2">
-          {{
-            'ref_tests.list.dialogs.send_results.new_results'
-              | translate : { count: summary().newResults.length }
-          }}
-        </h3>
-        <ul class="space-y-1">
-          @for (refTest of summary().newResults; track refTest.email) {
-          <li class="text-sm text-neutral-700 flex items-center gap-2">
-            <svg class="w-4 h-4 text-primary-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <span class="font-medium">{{ refTest.name }}</span>
-            <span class="text-neutral-500">({{ refTest.email }})</span>
-          </li>
-          }
-        </ul>
+    <div
+      class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-neutral-200">
+        <h2 class="text-xl font-bold text-neutral-900">
+          {{ 'ref_tests.list.dialogs.send_results.title' | translate }}
+        </h2>
+        <p class="text-sm text-neutral-600 mt-1">
+          {{ 'ref_tests.list.dialogs.send_results.message' | translate }}
+        </p>
       </div>
-      } @if (summary().resendResults.length > 0) {
-      <div>
-        <h3 class="text-sm font-semibold text-neutral-900 mb-2">
-          {{
-            'ref_tests.list.dialogs.send_results.resend_results'
-              | translate : { count: summary().resendResults.length }
-          }}
-        </h3>
-        <ul class="space-y-1">
-          @for (refTest of summary().resendResults; track refTest.email) {
-          <li class="text-sm text-neutral-700 flex items-center gap-2">
-            <svg class="w-4 h-4 text-amber-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fill-rule="evenodd"
-                d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-                clip-rule="evenodd"
-              />
-            </svg>
-            <span class="font-medium">{{ refTest.name }}</span>
-            <span class="text-neutral-500">({{ refTest.email }})</span>
-          </li>
-          }
-        </ul>
-      </div>
-      }
-    </div>
 
-    <!-- Footer -->
-    <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
-      <button
-        type="button"
-        (click)="cancel.emit()"
-        class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-      >
-        {{ 'ref_tests.list.dialogs.send_results.cancel' | translate }}
-      </button>
-      <button
-        type="button"
-        (click)="confirm.emit()"
-        class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
-      >
-        {{
-          totalCount() === 1
-            ? ('ref_tests.list.actions.send_results' | translate)
-            : ('ref_tests.list.dialogs.send_results.confirm' | translate)
-        }}
-      </button>
+      <!-- Banner Container -->
+      <div class="px-6 pt-4">
+        <app-banner [bannerManager]="bannerManager()" />
+      </div>
+
+      <!-- Content -->
+      <div class="px-6 py-4 overflow-y-auto flex-1 scrollbar-hide">
+        @if (summary().newResults.length > 0) {
+          <div class="mb-4">
+            <h3 class="text-sm font-semibold text-neutral-900 mb-2">
+              {{
+                'ref_tests.list.dialogs.send_results.new_results'
+                  | translate: { count: summary().newResults.length }
+              }}
+            </h3>
+            <ul class="space-y-1">
+              @for (refTest of summary().newResults; track refTest.email) {
+                <li class="text-sm text-neutral-700 flex items-center gap-2">
+                  <svg
+                    class="w-4 h-4 text-primary-600 shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <span class="font-medium">{{ refTest.name }}</span>
+                  <span class="text-neutral-500">({{ refTest.email }})</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+        @if (summary().resendResults.length > 0) {
+          <div>
+            <h3 class="text-sm font-semibold text-neutral-900 mb-2">
+              {{
+                'ref_tests.list.dialogs.send_results.resend_results'
+                  | translate: { count: summary().resendResults.length }
+              }}
+            </h3>
+            <ul class="space-y-1">
+              @for (refTest of summary().resendResults; track refTest.email) {
+                <li class="text-sm text-neutral-700 flex items-center gap-2">
+                  <svg
+                    class="w-4 h-4 text-amber-600 shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fill-rule="evenodd"
+                      d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <span class="font-medium">{{ refTest.name }}</span>
+                  <span class="text-neutral-500">({{ refTest.email }})</span>
+                </li>
+              }
+            </ul>
+          </div>
+        }
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="cancel.emit()"
+          class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+          {{ 'ref_tests.list.dialogs.send_results.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          (click)="confirm.emit()"
+          class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+        >
+          {{
+            totalCount() === 1
+              ? ('ref_tests.list.actions.send_results' | translate)
+              : ('ref_tests.list.dialogs.send_results.confirm' | translate)
+          }}
+        </button>
+      </div>
     </div>
   </div>
-</div>
 }

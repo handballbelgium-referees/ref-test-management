@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   effect,
-  inject,
   input,
   output,
   signal,
@@ -12,10 +11,7 @@ import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestResetType } from '../../../../../../../../../graphql/generated';
-import {
-  Banner as BannerService,
-  IsolatedBannerManager,
-} from '../../../../../../../services/banner';
+import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
 
 interface IResetOptions {
@@ -30,9 +26,6 @@ interface IResetOptions {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResetRefTestDialog {
-  // Create isolated banner manager for this dialog
-  protected readonly bannerManager = inject(BannerService).createIsolated();
-
   protected readonly resetOptionsModel = signal<IResetOptions>({
     resetType: RefTestResetType.Soft,
     regenerateToken: false,
@@ -48,13 +41,10 @@ export class ResetRefTestDialog {
     disabled(schema.regenerateToken, () => this.isHardReset());
   });
 
+  readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly refTestId = signal<string>('');
-  readonly loading = input<boolean>(false);
-  protected readonly confirm = output<{
-    options: IResetOptions;
-    bannerManager: IsolatedBannerManager;
-  }>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
+  protected readonly confirm = output<IResetOptions>();
   protected readonly cancel = output<void>();
 
   protected readonly RefTestResetType = RefTestResetType;
@@ -98,6 +88,6 @@ export class ResetRefTestDialog {
       return;
     }
 
-    this.confirm.emit({ options: this.resetOptionsModel(), bannerManager: this.bannerManager });
+    this.confirm.emit(this.resetOptionsModel());
   }
 }

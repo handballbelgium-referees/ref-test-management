@@ -3,7 +3,6 @@ import {
   Component,
   computed,
   effect,
-  inject,
   input,
   output,
   signal,
@@ -15,10 +14,7 @@ import {
   RefTestStatus,
   UpdateRefTestNotificationSettingsInput,
 } from '../../../../../../../../../graphql/generated';
-import {
-  Banner as BannerService,
-  IsolatedBannerManager,
-} from '../../../../../../../services/banner';
+import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
 
 interface INotificationSettings {
@@ -37,9 +33,6 @@ interface INotificationSettings {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UpdateNotificationSettingsDialog {
-  // Create isolated banner manager for this dialog
-  protected readonly bannerManager = inject(BannerService).createIsolated();
-
   protected readonly settingsModel = signal<INotificationSettings>({
     id: '',
     sendInvitationsAutomatically: false,
@@ -58,10 +51,8 @@ export class UpdateNotificationSettingsDialog {
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
   readonly initialData = input.required<RefTest | undefined>();
-  protected readonly confirm = output<{
-    input: UpdateRefTestNotificationSettingsInput;
-    bannerManager: IsolatedBannerManager;
-  }>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
+  protected readonly confirm = output<UpdateRefTestNotificationSettingsInput>();
   protected readonly cancel = output<void>();
 
   protected readonly canEditInvitations = computed(() => {
@@ -110,12 +101,9 @@ export class UpdateNotificationSettingsDialog {
     const data = this.settingsModel();
 
     this.confirm.emit({
-      input: {
-        id: data.id,
-        sendInvitationsAutomatically: data.sendInvitationsAutomatically,
-        sendResultsAutomatically: data.sendResultsAutomatically,
-      },
-      bannerManager: this.bannerManager,
+      id: data.id,
+      sendInvitationsAutomatically: data.sendInvitationsAutomatically,
+      sendResultsAutomatically: data.sendResultsAutomatically,
     });
   }
 

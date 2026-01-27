@@ -249,28 +249,32 @@
 </div>
 
 <!-- Dialogs -->
-@if (refTestData()) {
-  <!-- Send Invitation Dialog -->
-  <app-send-invitations-dialog
-    [show]="operationManager.sendInvitationDialog.show()"
-    [summary]="invitationSummary()"
-    (confirm)="confirmSendInvitation()"
-    (cancel)="operationManager.sendInvitationDialog.cancel()"
-  />
+<!-- Send Invitation Dialog -->
+<app-send-invitations-dialog
+  [loading]="operationManager.sendInvitationDialog.loading()"
+  [show]="operationManager.sendInvitationDialog.show()"
+  [bannerManager]="operationManager.sendInvitationDialog.bannerManager()"
+  [summary]="invitationSummary()"
+  (confirm)="confirmSendInvitation()"
+  (cancel)="operationManager.sendInvitationDialog.cancel()"
+/>
 
-  <!-- Send Results Dialog -->
-  <app-send-results-dialog
-    [show]="operationManager.sendResultDialog.show()"
-    [summary]="resultsSummary()"
-    (confirm)="confirmSendResults()"
-    (cancel)="operationManager.sendResultDialog.cancel()"
-  />
+<!-- Send Results Dialog -->
+<app-send-results-dialog
+  [loading]="operationManager.sendResultDialog.loading()"
+  [show]="operationManager.sendResultDialog.show()"
+  [summary]="resultsSummary()"
+  [bannerManager]="operationManager.sendResultDialog.bannerManager()"
+  (confirm)="confirmSendResults()"
+  (cancel)="operationManager.sendResultDialog.cancel()"
+/>
 
-  <!-- Delete Dialog -->
-  <app-delete-ref-tests-dialog
-    [show]="operationManager.deleteDialog.show()"
-    [refTests]="refTestsToDelete()"
-    (confirm)="confirmDelete()"
-    (cancel)="operationManager.deleteDialog.cancel()"
-  />
-}
+<!-- Delete Dialog -->
+<app-delete-ref-tests-dialog
+  [loading]="operationManager.deleteDialog.loading()"
+  [show]="operationManager.deleteDialog.show()"
+  [refTests]="refTestsToDelete()"
+  [bannerManager]="operationManager.deleteDialog.bannerManager()"
+  (confirm)="confirmDelete()"
+  (cancel)="operationManager.deleteDialog.cancel()"
+/>
