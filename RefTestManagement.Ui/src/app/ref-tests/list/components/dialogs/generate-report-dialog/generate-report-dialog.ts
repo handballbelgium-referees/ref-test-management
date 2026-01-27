@@ -18,8 +18,8 @@ export class GenerateReportDialog {
   readonly show = input.required<boolean>();
   readonly summary = input.required<IReportSummary>();
 
-  readonly confirm = output<void>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<void>();
+  protected readonly cancel = output<void>();
 
   protected readonly totalCount = computed(() => this.summary().refTests.length);
   protected readonly displayedRefTests = computed(() => this.summary().refTests.slice(0, 10));

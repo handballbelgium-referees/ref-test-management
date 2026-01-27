@@ -10,13 +10,12 @@ import { RefTestStatus } from '../../../../../../../../graphql/generated';
   host: { class: 'block' },
 })
 export class StatusInfoCard {
-  invitationSent = input.required<boolean>();
-  resultsSent = input.required<boolean>();
-  sendInvitationsAutomatically = input.required<boolean>();
-  sendResultsAutomatically = input.required<boolean>();
-  status = input.required<RefTestStatus>();
-
-  readonly edit = output<void>();
+  readonly invitationSent = input.required<boolean>();
+  readonly resultsSent = input.required<boolean>();
+  readonly sendInvitationsAutomatically = input.required<boolean>();
+  readonly sendResultsAutomatically = input.required<boolean>();
+  readonly status = input.required<RefTestStatus>();
+  protected readonly edit = output<void>();
 
   protected readonly RefTestStatus = RefTestStatus;
 

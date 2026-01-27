@@ -26,7 +26,7 @@ export class RefTestTableRow {
   readonly visibleColumns = input.required<Set<string>>();
   readonly passingPercentage = input.required<number>();
 
-  readonly toggleSelection = output<string>();
+  protected readonly toggleSelection = output<string>();
 
   protected isColumnVisible(column: string): boolean {
     return this.visibleColumns().has(column);
@@ -44,10 +44,6 @@ export class RefTestTableRow {
       default:
         return 'bg-yellow-100 text-yellow-800';
     }
-  }
-
-  protected onToggleSelection(): void {
-    this.toggleSelection.emit(this.refTest().id);
   }
 
   protected onRowClick(event: MouseEvent): void {

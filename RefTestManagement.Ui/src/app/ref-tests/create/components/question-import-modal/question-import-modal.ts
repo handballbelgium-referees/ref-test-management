@@ -14,8 +14,8 @@ export class QuestionImportModal {
   readonly show = input<boolean>(false);
   readonly loading = input<boolean>(false);
 
-  readonly import = output<string>();
-  readonly cancel = output<void>();
+  protected readonly import = output<string>();
+  protected readonly cancel = output<void>();
 
   protected readonly text = signal('');
 

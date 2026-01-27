@@ -35,8 +35,8 @@ export class ResetRefTestsDialog {
   readonly show = input.required<boolean>();
   readonly refTests = input.required<IRefTestInfo[]>();
 
-  readonly confirm = output<IResetOptions>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<IResetOptions>();
+  protected readonly cancel = output<void>();
 
   protected readonly RefTestResetType = RefTestResetType;
 

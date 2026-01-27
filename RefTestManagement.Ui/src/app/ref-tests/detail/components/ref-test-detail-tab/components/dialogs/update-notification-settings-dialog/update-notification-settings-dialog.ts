@@ -62,6 +62,7 @@ export class UpdateNotificationSettingsDialog {
     input: UpdateRefTestNotificationSettingsInput;
     bannerManager: IsolatedBannerManager;
   }>();
+  protected readonly cancel = output<void>();
 
   protected readonly canEditInvitations = computed(() => {
     // Can update sendInvitationsAutomatically only if pending and invitation not yet sent

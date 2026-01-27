@@ -19,8 +19,8 @@ export class ReviveRefTestsDialog {
   readonly show = input.required<boolean>();
   readonly refTests = input.required<IRefTestInfo[]>();
 
-  readonly confirm = output<void>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<void>();
+  protected readonly cancel = output<void>();
 
   constructor() {
     effect(() => {

@@ -9,8 +9,8 @@ import { TranslatePipe } from '@ngx-translate/core';
   host: { class: 'block' },
 })
 export class AnswerItem {
-  answerNumber = input<string | null | undefined>(null);
-  answerText = input.required<string>();
-  isCorrect = input.required<boolean>();
-  isSelected = input.required<boolean>();
+  readonly answerNumber = input<string>();
+  readonly answerText = input.required<string>();
+  readonly isCorrect = input.required<boolean>();
+  readonly isSelected = input.required<boolean>();
 }

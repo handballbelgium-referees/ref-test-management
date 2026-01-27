@@ -50,11 +50,12 @@ export class ExtendTimeDialog {
 
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
+  readonly initialData = input.required<RefTest | undefined>();
   protected readonly confirm = output<{
     input: ExtendRefTestTimeInput;
     bannerManager: IsolatedBannerManager;
   }>();
-  readonly cancel = output<void>();
+  protected readonly cancel = output<void>();
 
   protected readonly canSave = computed(() => {
     return this.extendTimeForm().valid() && !this.loading();

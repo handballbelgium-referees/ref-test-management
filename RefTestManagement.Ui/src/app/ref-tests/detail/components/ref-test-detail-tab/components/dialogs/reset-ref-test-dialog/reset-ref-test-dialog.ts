@@ -51,8 +51,11 @@ export class ResetRefTestDialog {
   readonly show = input.required<boolean>();
   readonly refTestId = signal<string>('');
   readonly loading = input<boolean>(false);
-  readonly confirm = output<{ options: IResetOptions; bannerManager: IsolatedBannerManager }>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<{
+    options: IResetOptions;
+    bannerManager: IsolatedBannerManager;
+  }>();
+  protected readonly cancel = output<void>();
 
   protected readonly RefTestResetType = RefTestResetType;
 
@@ -89,9 +92,12 @@ export class ResetRefTestDialog {
     });
   }
 
-  onConfirm(): void {
-    if (this.resetOptionsForm().valid()) {
-      this.confirm.emit({ options: this.resetOptionsModel(), bannerManager: this.bannerManager });
+  protected onConfirm(): void {
+    if (this.resetOptionsForm().invalid()) {
+      this.resetOptionsForm().markAsTouched();
+      return;
     }
+
+    this.confirm.emit({ options: this.resetOptionsModel(), bannerManager: this.bannerManager });
   }
 }

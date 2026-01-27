@@ -16,7 +16,7 @@ export class CalendarHeader {
   readonly viewTitle = input.required<string>();
   readonly isSmallTouchDevice = input<boolean>(false);
 
-  readonly previous = output<void>();
-  readonly next = output<void>();
-  readonly toggleView = output<void>();
+  protected readonly previous = output<void>();
+  protected readonly next = output<void>();
+  protected readonly toggleView = output<void>();
 }

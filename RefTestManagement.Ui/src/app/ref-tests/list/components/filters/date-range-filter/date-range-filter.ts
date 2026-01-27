@@ -21,11 +21,11 @@ export class DateRangeFilter {
   readonly afterDate = input<string | undefined>();
   readonly beforeDate = input<string | undefined>();
 
-  readonly dateChange = output<IDateRange>();
+  protected readonly dateChange = output<IDateRange>();
 
   protected onAfterChange(value: string): void {
     this.dateChange.emit({
-      after: value || undefined,
+      after: value ?? undefined,
       before: this.beforeDate(),
     });
   }
@@ -33,7 +33,7 @@ export class DateRangeFilter {
   protected onBeforeChange(value: string): void {
     this.dateChange.emit({
       after: this.afterDate(),
-      before: value || undefined,
+      before: value ?? undefined,
     });
   }
 }

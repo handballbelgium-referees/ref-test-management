@@ -12,6 +12,9 @@ import { RefTestMobileCard } from '../ref-test-display/ref-test-mobile-card/ref-
   imports: [TranslatePipe, RefTestMobileCard],
   templateUrl: './ref-test-mobile-list.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class RefTestMobileList {
   readonly refTests = input.required<RefTestNode[]>();
@@ -22,8 +25,8 @@ export class RefTestMobileList {
   readonly selectedCount = input.required<number>();
   readonly selectedIds = input.required<Set<string>>();
 
-  readonly toggleSelectAll = output<void>();
-  readonly toggleSelection = output<string>();
+  protected readonly toggleSelectAll = output<void>();
+  protected readonly toggleSelection = output<string>();
 
   isSelected(id: string): boolean {
     return this.selectedIds().has(id);

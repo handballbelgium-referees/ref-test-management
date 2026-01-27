@@ -19,8 +19,8 @@ export class SendResultsDialog {
   readonly show = input.required<boolean>();
   readonly summary = input.required<IResultsSummary>();
 
-  readonly confirm = output<void>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<void>();
+  protected readonly cancel = output<void>();
 
   protected readonly totalCount = computed(() => {
     const summary = this.summary();

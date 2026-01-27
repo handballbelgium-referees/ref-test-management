@@ -1,12 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
   Banner as BannerService,
@@ -25,14 +17,9 @@ export class ReviveRefTestDialog {
   protected readonly bannerManager = inject(BannerService).createIsolated();
 
   readonly show = input.required<boolean>();
-  readonly refTestId = signal<string>('');
   readonly loading = input<boolean>(false);
-  readonly confirm = output<IsolatedBannerManager>();
-  readonly cancel = output<void>();
-
-  initialize(refTestId: string): void {
-    this.refTestId.set(refTestId);
-  }
+  protected readonly confirm = output<IsolatedBannerManager>();
+  protected readonly cancel = output<void>();
 
   constructor() {
     effect(() => {

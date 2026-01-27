@@ -26,7 +26,7 @@ export class RefTestMobileCard {
   readonly visibleColumns = input.required<Set<string>>();
   readonly passingPercentage = input.required<number>();
 
-  readonly toggleSelection = output<string>();
+  protected readonly toggleSelection = output<string>();
 
   protected isColumnVisible(column: string): boolean {
     return this.visibleColumns().has(column);

@@ -82,12 +82,12 @@ export class UpdateConfigurationDialog {
 
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly initialData = input.required<RefTest>();
-  readonly confirm = output<{
+  readonly initialData = input.required<RefTest | undefined>();
+  protected readonly confirm = output<{
     input: UpdateRefTestConfigurationInput;
     bannerManager: IsolatedBannerManager;
   }>();
-  readonly cancel = output<void>();
+  protected readonly cancel = output<void>();
 
   protected readonly canSave = computed(() => {
     return this.configurationForm().valid() && !this.loading();
@@ -103,7 +103,7 @@ export class UpdateConfigurationDialog {
     return this.configurationModel().title?.name || '';
   });
 
-  readonly currentLanguage = toSignal(
+  protected readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
     {
       initialValue: this._translate.getCurrentLang(),

@@ -72,7 +72,7 @@ export class RefTestSelectionManager {
   /**
    * Get the count of selected ref tests
    */
-  selectedCount = computed(() => this.selectedIds().size);
+  readonly selectedCount = computed(() => this.selectedIds().size);
 
   /**
    * Create computed for whether all ref tests are selected

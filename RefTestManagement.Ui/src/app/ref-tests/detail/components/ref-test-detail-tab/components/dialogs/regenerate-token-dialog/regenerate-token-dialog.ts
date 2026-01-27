@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, effect, inject, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { RefTest, RegenerateRefTestTokenInput } from '../../../../../../../../../graphql/generated';
 import {
   Banner as BannerService,
   IsolatedBannerManager,
@@ -19,12 +18,8 @@ export class RegenerateTokenDialog {
 
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly initialData = input.required<RefTest>();
-  readonly confirm = output<{
-    input: RegenerateRefTestTokenInput;
-    bannerManager: IsolatedBannerManager;
-  }>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<IsolatedBannerManager>();
+  protected readonly cancel = output<void>();
 
   constructor() {
     effect(() => {
@@ -37,9 +32,6 @@ export class RegenerateTokenDialog {
   }
 
   protected onConfirm(): void {
-    this.confirm.emit({
-      input: { refTestId: this.initialData().id },
-      bannerManager: this.bannerManager,
-    });
+    this.confirm.emit(this.bannerManager);
   }
 }

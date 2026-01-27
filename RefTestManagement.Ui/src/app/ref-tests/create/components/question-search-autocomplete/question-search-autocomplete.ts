@@ -38,9 +38,9 @@ export class QuestionSearchAutocomplete {
   readonly currentLanguage = input.required<string>();
   readonly selectedQuestions = input.required<IQuestion[]>();
 
-  readonly selectQuestion = output<IQuestion>();
-  readonly removeQuestion = output<string>();
-  readonly import = output<void>();
+  protected readonly selectQuestion = output<IQuestion>();
+  protected readonly removeQuestion = output<string>();
+  protected readonly import = output<void>();
 
   protected readonly searchTerm = signal('');
   protected readonly suggestions = signal<Array<IQuestion & { id: string }>>([]);

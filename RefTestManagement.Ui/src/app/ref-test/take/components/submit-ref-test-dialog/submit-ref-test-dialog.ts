@@ -15,8 +15,8 @@ export class SubmitRefTestDialog {
   readonly answeredCount = input.required<number>();
   readonly totalQuestions = input.required<number>();
 
-  readonly confirm = output<void>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<void>();
+  protected readonly cancel = output<void>();
 
   constructor() {
     effect(() => {

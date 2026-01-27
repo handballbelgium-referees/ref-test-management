@@ -11,8 +11,8 @@ import { TranslatePipe } from '@ngx-translate/core';
   },
 })
 export class PullToRefresh {
-  readonly onRefresh = output<void>();
   readonly isRefreshing = input<boolean>(false);
+  protected readonly onRefresh = output<void>();
 
   protected readonly isPulling = signal(false);
   protected readonly pullDistance = signal(0);

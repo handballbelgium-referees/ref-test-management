@@ -31,7 +31,7 @@ export class Datepicker {
 
   readonly value = input<string>('');
   readonly placeholder = input<string>('dd/mm/yyyy');
-  readonly dateChange = output<string>();
+  protected readonly dateChange = output<string>();
 
   protected readonly isOpen = signal(false);
   protected readonly displayValue = signal('');

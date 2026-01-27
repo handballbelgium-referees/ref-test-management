@@ -25,12 +25,12 @@ export class RefTestActions {
   readonly resettingRefTests = input.required<boolean>();
   readonly revivingRefTests = input.required<boolean>();
 
-  readonly sendInvitations = output<void>();
-  readonly sendResults = output<void>();
-  readonly deleteSelected = output<void>();
-  readonly generateReport = output<void>();
-  readonly resetSelected = output<void>();
-  readonly reviveSelected = output<void>();
+  protected readonly sendInvitations = output<void>();
+  protected readonly sendResults = output<void>();
+  protected readonly deleteSelected = output<void>();
+  protected readonly generateReport = output<void>();
+  protected readonly resetSelected = output<void>();
+  protected readonly reviveSelected = output<void>();
 
   protected toggleMenu(): void {
     this.menuOpen.set(!this.menuOpen());
