@@ -14,7 +14,6 @@ import {
   ExtendRefTestTimeInput,
   GetScoreConfigurationGQL,
   RefTestStatus,
-  RegenerateRefTestTokenInput,
   UpdateRefTestConfigurationInput,
   UpdateRefTestDetailsInput,
   UpdateRefTestNotificationSettingsInput,
@@ -128,13 +127,12 @@ export class RefTestDetailTab {
     this.operationManager.extendRefTestTimeDialog.confirm(this._destroyRef, input, bannerManager);
   }
 
-  protected confirmRegenerateToken(
-    input: RegenerateRefTestTokenInput,
-    bannerManager: IsolatedBannerManager,
-  ): void {
+  protected confirmRegenerateToken(bannerManager: IsolatedBannerManager): void {
     this.operationManager.regenerateRefTestTokenDialog.confirm(
       this._destroyRef,
-      input,
+      {
+        refTestId: this.refTest().id,
+      },
       bannerManager,
     );
   }

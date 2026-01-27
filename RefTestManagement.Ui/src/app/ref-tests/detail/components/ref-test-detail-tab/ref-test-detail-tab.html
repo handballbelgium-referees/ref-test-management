@@ -59,7 +59,7 @@
   <app-update-details-dialog
     [loading]="operationManager.updateRefTestDetailsDialog.loading()"
     [show]="operationManager.updateRefTestDetailsDialog.show()"
-    [initialData]="operationManager.updateRefTestDetailsDialog.initialData()!"
+    [initialData]="operationManager.updateRefTestDetailsDialog.initialData()"
     (confirm)="confirmUpdateParticipantDetails($event.input, $event.bannerManager)"
     (cancel)="operationManager.updateRefTestDetailsDialog.cancel()"
   />
@@ -68,7 +68,7 @@
   <app-update-configuration-dialog
     [loading]="operationManager.updateRefTestConfigurationDialog.loading()"
     [show]="operationManager.updateRefTestConfigurationDialog.show()"
-    [initialData]="operationManager.updateRefTestConfigurationDialog.initialData()!"
+    [initialData]="operationManager.updateRefTestConfigurationDialog.initialData()"
     (confirm)="confirmUpdateConfiguration($event.input, $event.bannerManager)"
     (cancel)="operationManager.updateRefTestConfigurationDialog.cancel()"
   />
@@ -77,7 +77,7 @@
   <app-update-notification-settings-dialog
     [loading]="operationManager.updateRefTestNotificationSettingsDialog.loading()"
     [show]="operationManager.updateRefTestNotificationSettingsDialog.show()"
-    [initialData]="operationManager.updateRefTestNotificationSettingsDialog.initialData()!"
+    [initialData]="operationManager.updateRefTestNotificationSettingsDialog.initialData()"
     (confirm)="confirmUpdateNotificationSettings($event.input, $event.bannerManager)"
     (cancel)="operationManager.updateRefTestNotificationSettingsDialog.cancel()"
   />
@@ -86,7 +86,7 @@
   <app-extend-time-dialog
     [loading]="operationManager.extendRefTestTimeDialog.loading()"
     [show]="operationManager.extendRefTestTimeDialog.show()"
-    [initialData]="operationManager.extendRefTestTimeDialog.initialData()!"
+    [initialData]="operationManager.extendRefTestTimeDialog.initialData()"
     (confirm)="extendTime($event.input, $event.bannerManager)"
     (cancel)="operationManager.extendRefTestTimeDialog.cancel()"
   />
@@ -95,8 +95,7 @@
   <app-regenerate-token-dialog
     [loading]="operationManager.regenerateRefTestTokenDialog.loading()"
     [show]="operationManager.regenerateRefTestTokenDialog.show()"
-    [initialData]="operationManager.regenerateRefTestTokenDialog.initialData()!"
-    (confirm)="confirmRegenerateToken($event.input, $event.bannerManager)"
+    (confirm)="confirmRegenerateToken($event)"
     (cancel)="operationManager.regenerateRefTestTokenDialog.cancel()"
   />
 

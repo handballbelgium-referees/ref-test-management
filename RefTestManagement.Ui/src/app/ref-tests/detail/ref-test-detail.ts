@@ -120,23 +120,16 @@ export class RefTestDetail {
   }
 
   // ========================================================================
-  // INVITATION OPERATIONS
+  // DIALOG OPERATIONS
   // ========================================================================
 
   protected confirmSendInvitation(): void {
     this.operationManager.sendInvitationDialog.confirm(this._destroyRef);
   }
 
-  // ========================================================================
-  // RESULTS OPERATIONS
-  // ========================================================================
   protected confirmSendResults(): void {
     this.operationManager.sendResultDialog.confirm(this._destroyRef);
   }
-
-  // ========================================================================
-  // DELETE OPERATIONS
-  // ========================================================================
 
   protected confirmDelete(): void {
     this.operationManager.deleteDialog.confirm(this._destroyRef);
