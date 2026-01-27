@@ -2,25 +2,30 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   effect,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { disabled, form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
-import { UpdateRefTestConfigurationGQL } from '../../../../../../../../../graphql/generated';
-import { Banner as BannerService } from '../../../../../../../services/banner';
+import { map } from 'rxjs';
+import {
+  RefTest,
+  UpdateRefTestConfigurationInput,
+} from '../../../../../../../../../graphql/generated';
+import {
+  Banner as BannerService,
+  IsolatedBannerManager,
+} from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
-import { toSnakeCase } from '../../../../../../../shared/utils/string-utils';
 import { QuestionSearchAutocomplete } from '../../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
 import { TitleAutocomplete } from '../../../../../../create/components/title-autocomplete/title-autocomplete';
 
 interface IConfigurationData {
+  id: string;
   title: { id?: string; name: string } | null;
   numberOfQuestions: number;
   randomQuestionsForEachUser: boolean;
@@ -28,21 +33,19 @@ interface IConfigurationData {
 }
 
 @Component({
-  selector: 'app-edit-configuration-dialog',
+  selector: 'app-update-configuration-dialog',
   imports: [TranslatePipe, FormField, TitleAutocomplete, QuestionSearchAutocomplete, Banner],
-  templateUrl: './edit-configuration-dialog.html',
+  templateUrl: './update-configuration-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class EditConfigurationDialog {
-  private readonly _updateRefTestConfigurationGQL = inject(UpdateRefTestConfigurationGQL);
-  private readonly _destroyRef = inject(DestroyRef);
-  private readonly _bannerServiceRoot = inject(BannerService);
+export class UpdateConfigurationDialog {
   private readonly _translate = inject(TranslateService);
 
   // Create isolated banner manager for this dialog
-  protected readonly bannerManager = this._bannerServiceRoot.createIsolated();
+  protected readonly bannerManager = inject(BannerService).createIsolated();
 
   protected readonly configurationModel = signal<IConfigurationData>({
+    id: '',
     title: null,
     numberOfQuestions: 30,
     randomQuestionsForEachUser: false,
@@ -50,6 +53,7 @@ export class EditConfigurationDialog {
   });
 
   protected readonly configurationForm = form(this.configurationModel, (schema) => {
+    required(schema.id);
     required(schema.title, {
       message: 'ref_tests.detail.edit_configuration.title_required',
     });
@@ -69,7 +73,6 @@ export class EditConfigurationDialog {
     });
   });
 
-  protected readonly loading = signal(false);
   protected readonly selectedQuestions = signal<
     Array<{ number: string; phrase: Record<string, string> }>
   >([]);
@@ -77,9 +80,13 @@ export class EditConfigurationDialog {
     Array<{ number: string; phrase: Record<string, string> }>
   >([]);
 
+  readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly refTestId = signal<string>('');
-  readonly closeDialog = output<void>();
+  readonly initialData = input.required<RefTest>();
+  readonly confirm = output<{
+    input: UpdateRefTestConfigurationInput;
+    bannerManager: IsolatedBannerManager;
+  }>();
   readonly cancel = output<void>();
 
   protected readonly canSave = computed(() => {
@@ -102,28 +109,6 @@ export class EditConfigurationDialog {
       initialValue: this._translate.getCurrentLang(),
     },
   );
-
-  initialize(
-    refTestId: string,
-    title: { id?: string; value: string } | null,
-    numberOfQuestions: number,
-    maxTimeInMinutes: number,
-    questions: { number: string; phrase: Record<string, string> }[],
-  ): void {
-    this.refTestId.set(refTestId);
-
-    const titleValue = title ? { id: title.id, name: title.value } : null;
-    this.configurationModel.set({
-      title: titleValue,
-      numberOfQuestions,
-      randomQuestionsForEachUser: false,
-      maxTimeInMinutes,
-    });
-
-    this.selectedQuestions.set(
-      questions?.map((q) => ({ number: q.number, phrase: q.phrase })) || [],
-    );
-  }
 
   constructor() {
     effect(() => {
@@ -154,6 +139,27 @@ export class EditConfigurationDialog {
           this.updateQuestionCount();
         }
       }
+    });
+
+    effect(() => {
+      const initial = this.initialData();
+      const titleValue = initial.title ? { id: initial.title.id, name: initial.title.value } : null;
+      this.configurationModel.set({
+        id: initial.id,
+        title: titleValue,
+        numberOfQuestions: initial.numberOfQuestions,
+        randomQuestionsForEachUser: false,
+        maxTimeInMinutes: initial.maxTimeInMinutes,
+      });
+
+      this.selectedQuestions.set(
+        initial.questions
+          ?.filter((q) => !!q)
+          .map((q) => ({
+            number: q.number,
+            phrase: q.phrase as Record<string, string>,
+          })) ?? [],
+      );
     });
   }
 
@@ -198,50 +204,19 @@ export class EditConfigurationDialog {
     const questionNumbers =
       this.selectedQuestions().length > 0 ? this.selectedQuestions().map((q) => q.number) : null;
 
-    this._updateRefTestConfigurationGQL
-      .mutate({
-        variables: {
-          input: {
-            id: this.refTestId(),
-            title: {
-              id: data.title?.id,
-              name: data.title?.id ? undefined : data.title?.name,
-            },
-            numberOfQuestions: questionNumbers ? questionNumbers.length : data.numberOfQuestions,
-            maxTimeInMinutes: data.maxTimeInMinutes,
-            randomQuestions: data.randomQuestionsForEachUser,
-            specificQuestionNumbers: questionNumbers || undefined,
-          },
+    this.confirm.emit({
+      input: {
+        id: data.id,
+        title: {
+          id: data.title?.id,
+          name: data.title?.id ? undefined : data.title?.name,
         },
-      })
-      .pipe(
-        tap((result) => this.loading.set(result.loading ?? false)),
-        map((result) => result.data?.updateRefTestConfiguration),
-        tap((data) => {
-          if (data?.errors && data.errors.length > 0) {
-            const error = data.errors[0];
-            if ('__typename' in error && error.__typename) {
-              this.bannerManager.error(this._translate.instant(toSnakeCase(error.__typename)));
-            }
-            return;
-          }
-
-          if (data?.refTest) {
-            this.bannerManager.success(
-              this._translate.instant('ref_tests.detail.edit_configuration.success'),
-            );
-            this.closeDialog.emit();
-          }
-        }),
-        catchError(() => {
-          this.bannerManager.error(
-            this._translate.instant('ref_tests.detail.edit_configuration.error'),
-          );
-          return EMPTY;
-        }),
-        finalize(() => this.loading.set(false)),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe();
+        numberOfQuestions: questionNumbers ? questionNumbers.length : data.numberOfQuestions,
+        maxTimeInMinutes: data.maxTimeInMinutes,
+        randomQuestions: data.randomQuestionsForEachUser,
+        specificQuestionNumbers: questionNumbers || undefined,
+      },
+      bannerManager: this.bannerManager,
+    });
   }
 }
