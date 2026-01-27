@@ -60,7 +60,8 @@
     [loading]="operationManager.updateRefTestDetailsDialog.loading()"
     [show]="operationManager.updateRefTestDetailsDialog.show()"
     [initialData]="operationManager.updateRefTestDetailsDialog.initialData()"
-    (confirm)="confirmUpdateDetails($event.input, $event.bannerManager)"
+    [bannerManager]="operationManager.updateRefTestDetailsDialog.bannerManager()"
+    (confirm)="confirmUpdateDetails($event)"
     (cancel)="operationManager.updateRefTestDetailsDialog.cancel()"
   />
 
@@ -69,7 +70,8 @@
     [loading]="operationManager.updateRefTestConfigurationDialog.loading()"
     [show]="operationManager.updateRefTestConfigurationDialog.show()"
     [initialData]="operationManager.updateRefTestConfigurationDialog.initialData()"
-    (confirm)="confirmUpdateConfiguration($event.input, $event.bannerManager)"
+    [bannerManager]="operationManager.updateRefTestConfigurationDialog.bannerManager()"
+    (confirm)="confirmUpdateConfiguration($event)"
     (cancel)="operationManager.updateRefTestConfigurationDialog.cancel()"
   />
 
@@ -78,7 +80,8 @@
     [loading]="operationManager.updateRefTestNotificationSettingsDialog.loading()"
     [show]="operationManager.updateRefTestNotificationSettingsDialog.show()"
     [initialData]="operationManager.updateRefTestNotificationSettingsDialog.initialData()"
-    (confirm)="confirmUpdateNotificationSettings($event.input, $event.bannerManager)"
+    [bannerManager]="operationManager.updateRefTestNotificationSettingsDialog.bannerManager()"
+    (confirm)="confirmUpdateNotificationSettings($event)"
     (cancel)="operationManager.updateRefTestNotificationSettingsDialog.cancel()"
   />
 
@@ -87,7 +90,8 @@
     [loading]="operationManager.extendRefTestTimeDialog.loading()"
     [show]="operationManager.extendRefTestTimeDialog.show()"
     [initialData]="operationManager.extendRefTestTimeDialog.initialData()"
-    (confirm)="extendTime($event.input, $event.bannerManager)"
+    [bannerManager]="operationManager.extendRefTestTimeDialog.bannerManager()"
+    (confirm)="extendTime($event)"
     (cancel)="operationManager.extendRefTestTimeDialog.cancel()"
   />
 
@@ -95,22 +99,25 @@
   <app-regenerate-token-dialog
     [loading]="operationManager.regenerateRefTestTokenDialog.loading()"
     [show]="operationManager.regenerateRefTestTokenDialog.show()"
-    (confirm)="confirmRegenerateToken($event)"
+    [bannerManager]="operationManager.regenerateRefTestTokenDialog.bannerManager()"
+    (confirm)="confirmRegenerateToken()"
     (cancel)="operationManager.regenerateRefTestTokenDialog.cancel()"
   />
 
   <!-- Reset Ref Test Dialog -->
   <app-reset-ref-test-dialog
-    [show]="operationManager.resetDialog.show()"
     [loading]="operationManager.resetDialog.loading()"
-    (confirm)="confirmReset($event.options, $event.bannerManager)"
+    [show]="operationManager.resetDialog.show()"
+    [bannerManager]="operationManager.resetDialog.bannerManager()"
+    (confirm)="confirmReset($event)"
     (cancel)="operationManager.resetDialog.cancel()"
   />
 
   <!-- Revive Ref Test Dialog -->
   <app-revive-ref-test-dialog
-    [show]="operationManager.reviveDialog.show()"
     [loading]="operationManager.reviveDialog.loading()"
+    [show]="operationManager.reviveDialog.show()"
+    [bannerManager]="operationManager.reviveDialog.bannerManager()"
     (confirm)="confirmRevive()"
     (cancel)="operationManager.reviveDialog.cancel()"
   />

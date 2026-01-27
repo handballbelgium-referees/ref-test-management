@@ -18,7 +18,6 @@ import {
   UpdateRefTestDetailsInput,
   UpdateRefTestNotificationSettingsInput,
 } from '../../../../../../graphql/generated';
-import { IsolatedBannerManager } from '../../../../services/banner';
 import { IResetOptions } from '../../../list/services/types';
 import { RefTestDetailData } from '../../services/ref-test-detail-data';
 import { RefTestDetailOperationManager } from '../../services/ref-test-detail-operation-manager';
@@ -90,55 +89,30 @@ export class RefTestDetailTab {
     );
   });
 
-  protected confirmUpdateDetails(
-    input: UpdateRefTestDetailsInput,
-    bannerManager: IsolatedBannerManager,
-  ): void {
-    this.operationManager.updateRefTestDetailsDialog.confirm(
-      this._destroyRef,
-      input,
-      bannerManager,
-    );
+  protected confirmUpdateDetails(input: UpdateRefTestDetailsInput): void {
+    this.operationManager.updateRefTestDetailsDialog.confirm(this._destroyRef, input);
   }
 
-  protected confirmUpdateConfiguration(
-    input: UpdateRefTestConfigurationInput,
-    bannerManager: IsolatedBannerManager,
-  ): void {
-    this.operationManager.updateRefTestConfigurationDialog.confirm(
-      this._destroyRef,
-      input,
-      bannerManager,
-    );
+  protected confirmUpdateConfiguration(input: UpdateRefTestConfigurationInput): void {
+    this.operationManager.updateRefTestConfigurationDialog.confirm(this._destroyRef, input);
   }
 
-  protected confirmUpdateNotificationSettings(
-    input: UpdateRefTestNotificationSettingsInput,
-    bannerManager: IsolatedBannerManager,
-  ): void {
-    this.operationManager.updateRefTestNotificationSettingsDialog.confirm(
-      this._destroyRef,
-      input,
-      bannerManager,
-    );
+  protected confirmUpdateNotificationSettings(input: UpdateRefTestNotificationSettingsInput): void {
+    this.operationManager.updateRefTestNotificationSettingsDialog.confirm(this._destroyRef, input);
   }
 
-  protected extendTime(input: ExtendRefTestTimeInput, bannerManager: IsolatedBannerManager): void {
-    this.operationManager.extendRefTestTimeDialog.confirm(this._destroyRef, input, bannerManager);
+  protected extendTime(input: ExtendRefTestTimeInput): void {
+    this.operationManager.extendRefTestTimeDialog.confirm(this._destroyRef, input);
   }
 
-  protected confirmRegenerateToken(bannerManager: IsolatedBannerManager): void {
-    this.operationManager.regenerateRefTestTokenDialog.confirm(
-      this._destroyRef,
-      {
-        refTestId: this.refTest().id,
-      },
-      bannerManager,
-    );
+  protected confirmRegenerateToken(): void {
+    this.operationManager.regenerateRefTestTokenDialog.confirm(this._destroyRef, {
+      refTestId: this.refTest().id,
+    });
   }
 
-  protected confirmReset(options: IResetOptions, bannerManager: IsolatedBannerManager): void {
-    this.operationManager.resetDialog.confirm(this._destroyRef, options, bannerManager);
+  protected confirmReset(options: IResetOptions): void {
+    this.operationManager.resetDialog.confirm(this._destroyRef, options);
   }
 
   protected confirmRevive(): void {
