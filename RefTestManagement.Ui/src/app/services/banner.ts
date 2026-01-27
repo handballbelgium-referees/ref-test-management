@@ -1,5 +1,17 @@
 ﻿import { Injectable, signal } from '@angular/core';
-import { TOAST_DURATION } from '../constants';
+/**
+ * Toast notification durations in milliseconds
+ */
+export const BANNER_DURATION = {
+  /** Error messages - longer display time */
+  ERROR: 5000,
+  /** Warning messages */
+  WARNING: 5000,
+  /** Success messages - longer display to allow for page navigation */
+  SUCCESS: 6000,
+  /** Info messages - shorter display */
+  INFO: 3000,
+} as const;
 
 export type BannerType = 'error' | 'warning' | 'success' | 'info';
 export type BannerDuration = number; // milliseconds
@@ -56,7 +68,7 @@ export class Banner {
   error(
     message: string,
     submessage = '',
-    duration: BannerDuration = TOAST_DURATION.ERROR,
+    duration: BannerDuration = BANNER_DURATION.ERROR,
     action?: { label: string; callback: () => void },
   ): void {
     this.show(message, { type: 'error', duration, submessage, action });
@@ -68,7 +80,7 @@ export class Banner {
   warning(
     message: string,
     submessage = '',
-    duration: BannerDuration = TOAST_DURATION.WARNING,
+    duration: BannerDuration = BANNER_DURATION.WARNING,
     action?: { label: string; callback: () => void },
   ): void {
     this.show(message, { type: 'warning', duration, submessage, action });
@@ -80,7 +92,7 @@ export class Banner {
   success(
     message: string,
     submessage = '',
-    duration: BannerDuration = TOAST_DURATION.SUCCESS,
+    duration: BannerDuration = BANNER_DURATION.SUCCESS,
     action?: { label: string; callback: () => void },
   ): void {
     this.show(message, { type: 'success', duration, submessage, action });
@@ -91,7 +103,7 @@ export class Banner {
    */
   info(
     message: string,
-    duration: BannerDuration = TOAST_DURATION.INFO,
+    duration: BannerDuration = BANNER_DURATION.INFO,
     submessage = '',
     action?: { label: string; callback: () => void },
   ): void {
@@ -105,7 +117,7 @@ export class Banner {
   private show(message: string, options: BannerOptions = {}): void {
     const {
       type = 'info',
-      duration = TOAST_DURATION.INFO,
+      duration = BANNER_DURATION.INFO,
       dismissible = true,
       action,
       submessage = '',
@@ -160,7 +172,7 @@ export class IsolatedBannerManager {
   error(
     message: string,
     submessage = '',
-    duration: BannerDuration = TOAST_DURATION.ERROR,
+    duration: BannerDuration = BANNER_DURATION.ERROR,
     action?: { label: string; callback: () => void },
   ): void {
     this.show(message, { type: 'error', duration, submessage, action });
@@ -169,7 +181,7 @@ export class IsolatedBannerManager {
   warning(
     message: string,
     submessage = '',
-    duration: BannerDuration = TOAST_DURATION.WARNING,
+    duration: BannerDuration = BANNER_DURATION.WARNING,
     action?: { label: string; callback: () => void },
   ): void {
     this.show(message, { type: 'warning', duration, submessage, action });
@@ -178,7 +190,7 @@ export class IsolatedBannerManager {
   success(
     message: string,
     submessage = '',
-    duration: BannerDuration = TOAST_DURATION.SUCCESS,
+    duration: BannerDuration = BANNER_DURATION.SUCCESS,
     action?: { label: string; callback: () => void },
   ): void {
     this.show(message, { type: 'success', duration, submessage, action });
@@ -187,7 +199,7 @@ export class IsolatedBannerManager {
   info(
     message: string,
     submessage = '',
-    duration: BannerDuration = TOAST_DURATION.INFO,
+    duration: BannerDuration = BANNER_DURATION.INFO,
     action?: { label: string; callback: () => void },
   ): void {
     this.show(message, { type: 'info', duration, submessage, action });
@@ -196,7 +208,7 @@ export class IsolatedBannerManager {
   private show(message: string, options: BannerOptions = {}): void {
     const {
       type = 'info',
-      duration = TOAST_DURATION.INFO,
+      duration = BANNER_DURATION.INFO,
       dismissible = true,
       action,
       submessage = '',
