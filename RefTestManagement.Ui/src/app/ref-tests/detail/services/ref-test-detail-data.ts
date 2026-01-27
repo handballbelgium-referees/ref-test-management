@@ -277,9 +277,40 @@ export class RefTestDetailData {
             if (current?.data?.refTest?.__typename !== 'RefTest') return;
             const isLoaded = current?.data?.refTest?.id === event.id;
 
-            if (isLoaded) {
-              this.updateRefTestData(event);
+            if (!isLoaded) return;
+            // Map subscription event to cache update
+            let updates: Record<string, unknown> = {};
+            switch (event.__typename) {
+              case 'RefTestCompleted':
+                updates = {
+                  status: event.status,
+                  completedAt: event.completedAt,
+                  questionScore: event.questionScore,
+                  questionTotal: event.questionTotal,
+                  answerScore: event.answerScore,
+                  answerTotal: event.answerTotal,
+                  percentage: event.percentage,
+                };
+                break;
+
+              case 'RefTestExpired':
+                updates = { status: event.status };
+                break;
+
+              case 'RefTestStarted':
+                updates = { status: event.status, startedAt: event.startedAt };
+                break;
+
+              case 'RefTestInvitationSent':
+                updates = { invitationSent: true };
+                break;
+
+              case 'RefTestResultSent':
+                updates = { resultsSent: true };
+                break;
             }
+
+            this.updateRefTestData(updates);
           }),
           catchError(() => EMPTY),
           takeUntilDestroyed(destroyRef),
@@ -288,9 +319,7 @@ export class RefTestDetailData {
     );
   }
 
-  private updateRefTestData(
-    event: NonNullable<RefTestUpdatedSubscription['refTestUpdated']>,
-  ): void {
+  private updateRefTestData(event: Record<string, unknown>): void {
     if (!this._queryRef) return;
 
     // Extract only the properties that should be merged, excluding __typename
