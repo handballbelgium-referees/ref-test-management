@@ -2,20 +2,20 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   effect,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField } from '@angular/forms/signals';
-import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, EMPTY, finalize, map, tap } from 'rxjs';
-import { RefTestResetType, ResetRefTestsGQL } from '../../../../../../../../../graphql/generated';
-import { Banner as BannerService } from '../../../../../../../services/banner';
+import { TranslatePipe } from '@ngx-translate/core';
+import { RefTestResetType } from '../../../../../../../../../graphql/generated';
+import {
+  Banner as BannerService,
+  IsolatedBannerManager,
+} from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
 
 interface IResetOptions {
@@ -30,13 +30,8 @@ interface IResetOptions {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResetRefTestDialog {
-  private readonly _resetRefTestsGQL = inject(ResetRefTestsGQL);
-  private readonly _destroyRef = inject(DestroyRef);
-  private readonly _bannerServiceRoot = inject(BannerService);
-  private readonly _translateService = inject(TranslateService);
-
   // Create isolated banner manager for this dialog
-  protected readonly bannerManager = this._bannerServiceRoot.createIsolated();
+  protected readonly bannerManager = inject(BannerService).createIsolated();
 
   protected readonly resetOptionsModel = signal<IResetOptions>({
     resetType: RefTestResetType.Soft,
@@ -53,23 +48,13 @@ export class ResetRefTestDialog {
     disabled(schema.regenerateToken, () => this.isHardReset());
   });
 
-  protected readonly loading = signal(false);
-
   readonly show = input.required<boolean>();
   readonly refTestId = signal<string>('');
-  readonly closeDialog = output<void>();
+  readonly loading = input<boolean>(false);
+  readonly confirm = output<{ options: IResetOptions; bannerManager: IsolatedBannerManager }>();
   readonly cancel = output<void>();
 
   protected readonly RefTestResetType = RefTestResetType;
-
-  initialize(refTestId: string): void {
-    this.refTestId.set(refTestId);
-    this.resetOptionsModel.set({
-      resetType: RefTestResetType.Soft,
-      regenerateToken: false,
-    });
-    this._previousResetType.set(RefTestResetType.Soft);
-  }
 
   constructor() {
     effect(() => {
@@ -104,41 +89,9 @@ export class ResetRefTestDialog {
     });
   }
 
-  protected onConfirm(): void {
-    const options = this.resetOptionsModel();
-
-    this._resetRefTestsGQL
-      .mutate({
-        variables: {
-          input: {
-            ids: [this.refTestId()],
-            resetType: options.resetType,
-            regenerateToken: options.regenerateToken,
-          },
-        },
-      })
-      .pipe(
-        tap((result) => this.loading.set(result.loading ?? false)),
-        map((result) => result.data?.resetRefTests),
-        tap((data) => {
-          const resetResult = data?.resetRefTestsResult;
-          if (resetResult?.errors && resetResult.errors.length > 0) {
-            const error = resetResult.errors[0];
-            this.bannerManager.error(error.errorMessage);
-          } else if (resetResult?.successfullyReset === 1) {
-            this.bannerManager.success(
-              this._translateService.instant('ref_tests.detail.reset.success'),
-            );
-            this.closeDialog.emit();
-          }
-        }),
-        catchError(() => {
-          this.bannerManager.error(this._translateService.instant('ref_tests.detail.reset.error'));
-          return EMPTY;
-        }),
-        finalize(() => this.loading.set(false)),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe();
+  onConfirm(): void {
+    if (this.resetOptionsForm().valid()) {
+      this.confirm.emit({ options: this.resetOptionsModel(), bannerManager: this.bannerManager });
+    }
   }
 }
