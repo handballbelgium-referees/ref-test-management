@@ -98,10 +98,14 @@ public static class RefTestQueries
     /// </summary>
     /// <param name="id"></param>
     /// <param name="dataLoader"></param>
+    /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize]
-    public static Task<RefTestDto?> GetRefTest([ID<RefTest>] Guid id, RefTestByIdDataLoader dataLoader)
-        => dataLoader.LoadAsync(id);
+    [Error<RefTestNotFoundException>]
+    public static async Task<RefTestDto> GetRefTest([ID<RefTest>] Guid id, RefTestByIdDataLoader dataLoader,
+        CancellationToken cancellationToken)
+        => await dataLoader.LoadAsync(id, cancellationToken) ?? throw new RefTestNotFoundException(id);
+
 
     /// <summary>
     /// Search questions by number

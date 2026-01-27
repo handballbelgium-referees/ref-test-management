@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using HotChocolate.Data.Filters;
 
@@ -11,7 +12,6 @@ public class RefTestTitleFilterType : FilterInputType<RefTestTitleDto>
         descriptor.BindFieldsExplicitly();
         descriptor.Name($"{nameof(RefTestTitle)}FilterInput");
         descriptor.Description("Filter RefTest titles based on Value");
-        descriptor.Field(x => x.Id).Description("Filter on RefTest title id");
         descriptor.Field(x => x.Value).Description("Filter on RefTest title value");
     }
 }
