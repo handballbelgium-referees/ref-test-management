@@ -1,12 +1,12 @@
 import { DestroyRef, effect, inject, Injector, Signal, signal } from '@angular/core';
-import { IsolatedBannerManager } from '../../services/banner';
+import { Banner, IsolatedBannerManager } from '../../services/banner';
 
 export type DialogOperationCallback<TParams = void> = (
   ids: string[],
   destroyRef: DestroyRef,
   params: TParams,
   bannerManager?: IsolatedBannerManager,
-) => Signal<boolean> | void;
+) => { loading: Signal<boolean>; success: Signal<boolean> } | void;
 
 export function createDialogOperation<TParams = void, TExtra = void>(
   callback: DialogOperationCallback<TParams>,
@@ -16,41 +16,50 @@ export function createDialogOperation<TParams = void, TExtra = void>(
   const loading = signal(false);
   const initialData = signal<TExtra | undefined>(undefined);
   const injector = inject(Injector);
+  const bannerManager = signal<IsolatedBannerManager>({} as IsolatedBannerManager);
 
   return {
     initiate(extra?: TExtra): void {
       if (getSelectedIds && getSelectedIds().length === 0) return;
       initialData.set(extra);
+      bannerManager.set(injector.get(Banner).createIsolated());
       show.set(true);
     },
-
-    confirm(destroyRef: DestroyRef, params: TParams, bannerManager?: IsolatedBannerManager): void {
+    confirm(destroyRef: DestroyRef, params: TParams): void {
       if (getSelectedIds && getSelectedIds().length === 0) return;
       const ids = getSelectedIds ? getSelectedIds() : [];
 
-      const result = callback(ids, destroyRef, params, bannerManager);
+      let closed = false;
+      const dialogControl = {
+        close: () => {
+          if (!closed) {
+            show.set(false);
+            initialData.set(undefined);
+            closed = true;
+          }
+        },
+      };
+
+      const result = callback(ids, destroyRef, params, bannerManager());
       if (result) {
-        // Watch the loading signal using effect
         const effectRef = effect(
           () => {
-            const isLoading = result();
+            const isLoading = result.loading();
+            const isSuccess = result.success();
             loading.set(isLoading);
 
-            if (!isLoading) {
-              show.set(false);
-              initialData.set(undefined);
+            // Auto-close when loading completes (assumes success if no error was thrown)
+            if (!isLoading && isSuccess) {
+              dialogControl.close();
+              effectRef.destroy();
+            } else if (!isLoading) {
               effectRef.destroy();
             }
           },
           { injector },
         );
-      } else {
-        // If no signal returned, close immediately
-        show.set(false);
-        initialData.set(undefined);
       }
     },
-
     cancel(): void {
       show.set(false);
       initialData.set(undefined);
@@ -58,5 +67,6 @@ export function createDialogOperation<TParams = void, TExtra = void>(
     loading: loading.asReadonly(),
     show: show.asReadonly(),
     initialData,
+    bannerManager: bannerManager.asReadonly(),
   };
 }

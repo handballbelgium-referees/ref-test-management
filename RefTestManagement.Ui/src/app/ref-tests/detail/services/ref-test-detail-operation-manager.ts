@@ -9,6 +9,7 @@ import {
   UpdateRefTestDetailsInput,
   UpdateRefTestNotificationSettingsInput,
 } from '../../../../../graphql/generated';
+import { Banner } from '../../../services/banner';
 import { createDialogOperation } from '../../../shared/utils/dialog-utils';
 import { IResetOptions } from '../../list/services/types';
 import { RefTestData } from '../../services/ref-test-data';
@@ -25,66 +26,68 @@ export class RefTestDetailOperationManager {
   private readonly _translateService = inject(TranslateService);
   private readonly _router = inject(Router);
   private readonly _detailDataService = inject(RefTestDetailData);
+  private readonly _bannerService = inject(Banner);
 
   // ========================================================================
   // DIALOG OPERATIONS
   // ========================================================================
 
   readonly deleteDialog = createDialogOperation(
-    (ids, destroyRef, _, bannerManager) => {
+    (ids, destroyRef, _, bannerManager) =>
       this._dataService.deleteRefTests(ids, destroyRef, {
         onSuccess: () => {
-          bannerManager?.success(this._translateService.instant('ref_tests.detail.delete_success'));
+          this._bannerService.success(
+            this._translateService.instant('ref_tests.detail.delete_success'),
+          );
           // Navigate back to list after successful delete
           this._router.navigate(['/ref-tests']);
         },
         onError: () => {
           bannerManager?.error(this._translateService.instant('ref_tests.detail.delete_error'));
         },
-      });
-    },
+      }),
     () => [this._detailDataService.refTestId()],
   );
 
   readonly sendResultDialog = createDialogOperation(
-    (ids, destroyRef, _, bannerManager) => {
+    (ids, destroyRef, _, bannerManager) =>
       this._dataService.sendResults(ids, destroyRef, {
         onSuccess: () => {
-          bannerManager?.success(this._translateService.instant('ref_tests.detail.results_sent'));
+          this._bannerService.success(
+            this._translateService.instant('ref_tests.detail.results_sent'),
+          );
         },
         onError: () => {
           bannerManager?.error(this._translateService.instant('ref_tests.detail.results_error'));
         },
-      });
-    },
+      }),
     () => [this._detailDataService.refTestId()],
   );
 
   readonly sendInvitationDialog = createDialogOperation(
-    (ids, destroyRef, _, bannerManager) => {
+    (ids, destroyRef, _, bannerManager) =>
       this._dataService.sendInvitations(ids, destroyRef, {
         onSuccess: () => {
-          bannerManager?.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.detail.invitation_sent'),
           );
         },
         onError: () => {
           bannerManager?.error(this._translateService.instant('ref_tests.detail.invitation_error'));
         },
-      });
-    },
+      }),
     () => [this._detailDataService.refTestId()],
   );
 
   readonly resetDialog = createDialogOperation<IResetOptions>(
-    (ids, destroyRef, options, bannerManager) => {
+    (ids, destroyRef, options, bannerManager) =>
       this._dataService.resetRefTests(
         { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
         destroyRef,
         {
           onSuccess: ({ successCount, failedCount }) => {
             if (successCount > 0) {
-              bannerManager?.success(
+              this._bannerService.success(
                 this._translateService.instant('ref_tests.detail.reset.success'),
               );
             }
@@ -95,17 +98,16 @@ export class RefTestDetailOperationManager {
           onError: () =>
             bannerManager?.error(this._translateService.instant('ref_tests.list.reset_error')),
         },
-      );
-    },
+      ),
     () => [this._detailDataService.refTestId()],
   );
 
   readonly reviveDialog = createDialogOperation(
-    (ids, destroyRef, _, bannerManager) => {
+    (ids, destroyRef, _, bannerManager) =>
       this._dataService.reviveRefTests(ids, destroyRef, {
         onSuccess: ({ successCount, failedCount }) => {
           if (successCount > 0) {
-            bannerManager?.success(
+            this._bannerService.success(
               this._translateService.instant('ref_tests.detail.revive.success'),
             );
           }
@@ -115,16 +117,15 @@ export class RefTestDetailOperationManager {
         },
         onError: () =>
           bannerManager?.error(this._translateService.instant('ref_tests.list.revive_error')),
-      });
-    },
+      }),
     () => [this._detailDataService.refTestId()],
   );
 
   readonly updateRefTestDetailsDialog = createDialogOperation<UpdateRefTestDetailsInput, RefTest>(
-    (_, destroyRef, updatedData, bannerManager) => {
+    (_, destroyRef, updatedData, bannerManager) =>
       this._detailDataService.editParticipantDetails(updatedData, destroyRef, {
         onSuccess: () => {
-          bannerManager?.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.detail.edit_participant.success'),
           );
         },
@@ -133,17 +134,16 @@ export class RefTestDetailOperationManager {
             this._translateService.instant('ref_tests.detail.edit_participant.error'),
           );
         },
-      });
-    },
+      }),
   );
 
   readonly updateRefTestConfigurationDialog = createDialogOperation<
     UpdateRefTestConfigurationInput,
     RefTest
-  >((_, destroyRef, updatedData, bannerManager) => {
+  >((_, destroyRef, updatedData, bannerManager) =>
     this._detailDataService.updateRefTestConfiguration(updatedData, destroyRef, {
       onSuccess: () => {
-        bannerManager?.success(
+        this._bannerService.success(
           this._translateService.instant('ref_tests.detail.edit_configuration.success'),
         );
       },
@@ -152,16 +152,16 @@ export class RefTestDetailOperationManager {
           this._translateService.instant('ref_tests.detail.edit_configuration.error'),
         );
       },
-    });
-  });
+    }),
+  );
 
   readonly updateRefTestNotificationSettingsDialog = createDialogOperation<
     UpdateRefTestNotificationSettingsInput,
     RefTest
-  >((_, destroyRef, updatedData, bannerManager) => {
+  >((_, destroyRef, updatedData, bannerManager) =>
     this._detailDataService.updateRefTestNotificationSettings(updatedData, destroyRef, {
       onSuccess: () => {
-        bannerManager?.success(
+        this._bannerService.success(
           this._translateService.instant('ref_tests.detail.edit_notification_settings.success'),
         );
       },
@@ -170,14 +170,14 @@ export class RefTestDetailOperationManager {
           this._translateService.instant('ref_tests.detail.edit_notification_settings.error'),
         );
       },
-    });
-  });
+    }),
+  );
 
   readonly extendRefTestTimeDialog = createDialogOperation<ExtendRefTestTimeInput, RefTest>(
-    (_, destroyRef, updatedData, bannerManager) => {
+    (_, destroyRef, updatedData, bannerManager) =>
       this._detailDataService.extendRefTestTime(updatedData, destroyRef, {
         onSuccess: () => {
-          bannerManager?.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.detail.extend_time.success'),
           );
         },
@@ -186,15 +186,14 @@ export class RefTestDetailOperationManager {
             this._translateService.instant('ref_tests.detail.extend_time.error'),
           );
         },
-      });
-    },
+      }),
   );
 
   readonly regenerateRefTestTokenDialog = createDialogOperation<RegenerateRefTestTokenInput>(
-    (_, destroyRef, updatedData, bannerManager) => {
+    (_, destroyRef, updatedData, bannerManager) =>
       this._detailDataService.regenerateRefTestToken(updatedData, destroyRef, {
         onSuccess: () => {
-          bannerManager?.success(
+          this._bannerService.success(
             this._translateService.instant('ref_tests.detail.regenerate_token.success'),
           );
         },
@@ -203,7 +202,6 @@ export class RefTestDetailOperationManager {
             this._translateService.instant('ref_tests.detail.regenerate_token.error'),
           );
         },
-      });
-    },
+      }),
   );
 }

@@ -52,9 +52,9 @@ export class RefTestOperationManager {
   // DIALOG OPERATIONS
   // ========================================================================
 
-  readonly deleteDialog = createDialogOperation((ids, destroyRef) => {
+  readonly deleteDialog = createDialogOperation((ids, destroyRef, _, bannerManager) => {
     this.addIds(this._deletingRefTestIds, ids);
-    this._dataService.deleteRefTests(ids, destroyRef, {
+    return this._dataService.deleteRefTests(ids, destroyRef, {
       onSuccess: (deletedIds) => {
         this._localStateManager.markAsDeleted(deletedIds);
         this._selectionManager.clearSelection();
@@ -63,18 +63,18 @@ export class RefTestOperationManager {
         );
       },
       onError: () =>
-        this._bannerService.error(this._translateService.instant('ref_tests.list.delete_error')),
+        bannerManager?.error(this._translateService.instant('ref_tests.list.delete_error')),
       onComplete: () => this.removeIds(this._deletingRefTestIds, ids),
     });
   }, this.getSelectedIds);
 
   readonly sendInvitationsDialog = createDialogOperation<RefTestNode[]>(
-    (ids, destroyRef, allRefTests) => {
+    (ids, destroyRef, allRefTests, bannerManager) => {
       const filtered = ids.filter(
         (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Pending,
       );
       this.addIds(this._sendingInvitationIds, filtered);
-      this._dataService.sendInvitations(filtered, destroyRef, {
+      return this._dataService.sendInvitations(filtered, destroyRef, {
         onSuccess: (sendIds) => {
           this._localStateManager.markInvitationsSent(sendIds);
           this._selectionManager.clearSelection();
@@ -83,9 +83,7 @@ export class RefTestOperationManager {
           );
         },
         onError: () =>
-          this._bannerService.error(
-            this._translateService.instant('ref_tests.list.invitations_error'),
-          ),
+          bannerManager?.error(this._translateService.instant('ref_tests.list.invitations_error')),
         onComplete: () => this.removeIds(this._sendingInvitationIds, filtered),
       });
     },
@@ -93,12 +91,12 @@ export class RefTestOperationManager {
   );
 
   readonly sendResultsDialog = createDialogOperation<RefTestNode[]>(
-    (ids, destroyRef, allRefTests) => {
+    (ids, destroyRef, allRefTests, bannerManager) => {
       const filtered = ids.filter(
         (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Completed,
       );
       this.addIds(this._sendingResultsIds, filtered);
-      this._dataService.sendResults(filtered, destroyRef, {
+      return this._dataService.sendResults(filtered, destroyRef, {
         onSuccess: () => {
           this._selectionManager.clearSelection();
           this._bannerService.success(
@@ -106,15 +104,15 @@ export class RefTestOperationManager {
           );
         },
         onError: () =>
-          this._bannerService.error(this._translateService.instant('ref_tests.list.results_error')),
+          bannerManager?.error(this._translateService.instant('ref_tests.list.results_error')),
         onComplete: () => this.removeIds(this._sendingResultsIds, filtered),
       });
     },
     this.getSelectedIds,
   );
 
-  readonly generateReportDialog = createDialogOperation((ids, destroyRef) => {
-    this._dataService.generateReport(ids, destroyRef, {
+  readonly generateReportDialog = createDialogOperation((ids, destroyRef, _, bannerManager) => {
+    return this._dataService.generateReport(ids, destroyRef, {
       onSuccess: (result) => {
         if (result.success) {
           this._selectionManager.clearSelection();
@@ -125,48 +123,51 @@ export class RefTestOperationManager {
             }),
           );
         } else {
-          this._bannerService.error(this._translateService.instant('ref_tests.list.report_error'));
+          bannerManager?.error(this._translateService.instant('ref_tests.list.report_error'));
         }
       },
       onError: () => {
-        this._bannerService.error(this._translateService.instant('ref_tests.list.report_error'));
+        bannerManager?.error(this._translateService.instant('ref_tests.list.report_error'));
       },
     });
   }, this.getSelectedIds);
 
-  readonly resetDialog = createDialogOperation<IResetOptions>((ids, destroyRef, options) => {
-    this.addIds(this._resettingRefTestIds, ids);
-    this._dataService.resetRefTests(
-      { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
-      destroyRef,
-      {
-        onSuccess: ({ successCount, failedCount }) => {
-          if (successCount > 0) {
-            this._selectionManager.clearSelection();
-            this._bannerService.success(
-              this._translateService.instant('ref_tests.list.reset_success', {
-                count: successCount,
-              }),
-            );
-          }
-          if (failedCount > 0) {
-            this._bannerService.error(
-              this._translateService.instant('ref_tests.list.reset_partial_error', {
-                count: failedCount,
-              }),
-            );
-          }
+  readonly resetDialog = createDialogOperation<IResetOptions>(
+    (ids, destroyRef, options, bannerManager) => {
+      this.addIds(this._resettingRefTestIds, ids);
+      return this._dataService.resetRefTests(
+        { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
+        destroyRef,
+        {
+          onSuccess: ({ successCount, failedCount }) => {
+            if (successCount > 0) {
+              this._selectionManager.clearSelection();
+              this._bannerService.success(
+                this._translateService.instant('ref_tests.list.reset_success', {
+                  count: successCount,
+                }),
+              );
+            }
+            if (failedCount > 0) {
+              bannerManager?.error(
+                this._translateService.instant('ref_tests.list.reset_partial_error', {
+                  count: failedCount,
+                }),
+              );
+            }
+          },
+          onError: () =>
+            bannerManager?.error(this._translateService.instant('ref_tests.list.reset_error')),
+          onComplete: () => this.removeIds(this._resettingRefTestIds, ids),
         },
-        onError: () =>
-          this._bannerService.error(this._translateService.instant('ref_tests.list.reset_error')),
-        onComplete: () => this.removeIds(this._resettingRefTestIds, ids),
-      },
-    );
-  }, this.getSelectedIds);
+      );
+    },
+    this.getSelectedIds,
+  );
 
-  readonly reviveDialog = createDialogOperation((ids, destroyRef) => {
+  readonly reviveDialog = createDialogOperation((ids, destroyRef, _, bannerManager) => {
     this.addIds(this._revivingRefTestIds, ids);
-    this._dataService.reviveRefTests(ids, destroyRef, {
+    return this._dataService.reviveRefTests(ids, destroyRef, {
       onSuccess: ({ successCount, failedCount }) => {
         if (successCount > 0) {
           this._selectionManager.clearSelection();
@@ -177,7 +178,7 @@ export class RefTestOperationManager {
           );
         }
         if (failedCount > 0) {
-          this._bannerService.error(
+          bannerManager?.error(
             this._translateService.instant('ref_tests.list.revive_partial_error', {
               count: failedCount,
             }),
@@ -185,7 +186,7 @@ export class RefTestOperationManager {
         }
       },
       onError: () =>
-        this._bannerService.error(this._translateService.instant('ref_tests.list.revive_error')),
+        bannerManager?.error(this._translateService.instant('ref_tests.list.revive_error')),
       onComplete: () => this.removeIds(this._revivingRefTestIds, ids),
     });
   }, this.getSelectedIds);
