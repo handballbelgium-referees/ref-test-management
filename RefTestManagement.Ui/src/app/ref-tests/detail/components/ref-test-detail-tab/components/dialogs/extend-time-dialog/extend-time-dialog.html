@@ -28,14 +28,13 @@
       <!-- Form Content -->
       <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
         <div class="space-y-6">
-
           <!-- Current Max Time Info -->
           <div class="bg-neutral-50 border border-neutral-200 rounded-lg p-4">
             <p class="text-sm text-neutral-700">
               <span class="font-medium">{{
                 'ref_tests.detail.extend_time.current_max_time' | translate
               }}</span
-              >: {{ currentMaxTime() }}
+              >: {{ extendTimeForm.currentMaxTime() }}
               {{ 'ref_tests.detail.extend_time.minutes' | translate }}
             </p>
             <p class="text-sm text-neutral-700 mt-2">
