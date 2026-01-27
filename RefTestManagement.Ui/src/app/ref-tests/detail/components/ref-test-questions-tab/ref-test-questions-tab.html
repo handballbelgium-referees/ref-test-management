@@ -4,7 +4,7 @@
       <app-empty-questions-state />
     } @else {
       <div class="space-y-6">
-        @for (question of test.questions ?? []; track question?.id; let questionIdx = $index) {
+        @for (question of questions(); track question?.id; let questionIdx = $index) {
           <app-question-card
             [question]="question"
             [questionIndex]="questionIdx"

@@ -31,13 +31,11 @@ import { SubmitRefTestDialog } from './components/submit-ref-test-dialog/submit-
 
 interface IAnswer {
   id: string;
-  number?: string;
   phrase: Record<string, string>;
 }
 
 interface IQuestion {
   id: string;
-  number?: string;
   phrase: Record<string, string>;
   answers: IAnswer[];
 }

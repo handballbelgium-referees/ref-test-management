@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { Question } from '../../../../../../../../graphql/generated';
 import { TranslationPipe } from '../../../../../../pipes/translation-pipe';
+import { IQuestion } from '../../models/question.interface';
 import { AnswerItem } from '../answer-item/answer-item';
 
 @Component({

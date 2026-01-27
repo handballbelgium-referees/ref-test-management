@@ -6,6 +6,7 @@ import { RefTestDetailData } from '../../services/ref-test-detail-data';
 import { AnswersSummary } from './components/answers-summary/answers-summary';
 import { EmptyQuestionsState } from './components/empty-questions-state/empty-questions-state';
 import { QuestionCard } from './components/question-card/question-card';
+import { IAnswer, IQuestion } from './models/question.interface';
 
 @Component({
   selector: 'app-ref-test-questions-tab',
@@ -25,6 +26,31 @@ export class RefTestQuestionsTab {
       initialValue: this._translate.getCurrentLang(),
     },
   );
+
+  protected readonly questions = computed(() => {
+    const questions = this.refTest()?.questions;
+    return (
+      questions
+        ?.filter((q) => !!q)
+        .map(
+          (q) =>
+            ({
+              id: q.id,
+              number: q.number,
+              phrase: q.phrase,
+              answers: q.answers.map(
+                (a) =>
+                  ({
+                    id: a.id,
+                    number: a.number,
+                    phrase: a.phrase,
+                    isCorrect: a.isCorrect,
+                  }) as IAnswer,
+              ),
+            }) as IQuestion,
+        ) ?? []
+    );
+  });
 
   protected readonly selectedAnswerIdsSet = computed<Set<string>>(() => {
     const test = this._dataService.refTestData();
