@@ -26,8 +26,9 @@ export function runMutation<TData, TResult>(
   callbacks: MutationCallbacks<TResult>,
   destroyRef: DestroyRef,
   mapResult?: (result: Apollo.MutateResult<TData>) => TResult,
-): Signal<boolean> {
+): { loading: Signal<boolean>; success: Signal<boolean> } {
   const loading = signal(false);
+  const success = signal(false);
 
   const {
     onStart = () => {},
@@ -46,6 +47,7 @@ export function runMutation<TData, TResult>(
 
         const mapped = mapResult ? mapResult(result) : (result as unknown as TResult);
 
+        success.set(true);
         onSuccess(mapped);
       }),
       catchError((error) => {
@@ -60,7 +62,10 @@ export function runMutation<TData, TResult>(
     )
     .subscribe();
 
-  return loading.asReadonly();
+  return {
+    loading: loading.asReadonly(),
+    success: success.asReadonly(),
+  };
 }
 
 /**

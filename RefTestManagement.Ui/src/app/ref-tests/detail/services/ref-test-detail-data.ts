@@ -101,7 +101,7 @@ export class RefTestDetailData {
   sendInvitations(
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendInvitationsGQL.mutate({ variables: { input: { ids: [this._refTestId()] } } }),
       callbacks,
@@ -113,7 +113,7 @@ export class RefTestDetailData {
   sendResults(
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendResultsGQL.mutate({ variables: { input: { ids: [this._refTestId()] } } }),
       callbacks,
@@ -129,7 +129,7 @@ export class RefTestDetailData {
     },
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._resetRefTestsGQL.mutate({
         variables: {
@@ -155,7 +155,7 @@ export class RefTestDetailData {
   reviveRefTests(
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._reviveRefTestsGQL.mutate({ variables: { input: { ids: [this._refTestId()] } } }),
       callbacks,
@@ -174,7 +174,7 @@ export class RefTestDetailData {
     input: UpdateRefTestDetailsInput,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<void> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._updateRefTestDetailsGQL.mutate({
         variables: {
@@ -199,7 +199,7 @@ export class RefTestDetailData {
     input: UpdateRefTestConfigurationInput,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<void> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._updateRefTestConfigurationGQL.mutate({ variables: { input } }),
       callbacks,
@@ -215,7 +215,7 @@ export class RefTestDetailData {
     input: UpdateRefTestNotificationSettingsInput,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<void> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._updateRefTestNotificationSettingsGQL.mutate({ variables: { input } }),
       callbacks,
@@ -231,7 +231,7 @@ export class RefTestDetailData {
     input: ExtendRefTestTimeInput,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<void> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._extendRefTestTimeGQL.mutate({ variables: { input } }),
       callbacks,
@@ -247,7 +247,7 @@ export class RefTestDetailData {
     input: RegenerateRefTestTokenInput,
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<void> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._regenerateRefTestTokenGQL.mutate({ variables: { input } }),
       callbacks,

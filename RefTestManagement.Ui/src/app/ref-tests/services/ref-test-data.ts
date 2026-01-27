@@ -163,7 +163,7 @@ export class RefTestData {
     ids: string[],
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._deleteRefTestsGQL.mutate({
         variables: { input: { ids } },
@@ -179,7 +179,7 @@ export class RefTestData {
     ids: string[],
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendInvitationsGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
@@ -192,7 +192,7 @@ export class RefTestData {
     ids: string[],
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendResultsGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
@@ -205,7 +205,7 @@ export class RefTestData {
     ids: string[],
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<IReportResult> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendReportGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
@@ -228,7 +228,7 @@ export class RefTestData {
     },
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._resetRefTestsGQL.mutate({
         variables: { input },
@@ -249,7 +249,7 @@ export class RefTestData {
     ids: string[],
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
-  ): Signal<boolean> {
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._reviveRefTestsGQL.mutate({ variables: { input: { ids } } }),
       callbacks,
