@@ -1,4 +1,4 @@
-import { DestroyRef, Signal, signal } from '@angular/core';
+import { DestroyRef, effect, inject, Injector, Signal, signal } from '@angular/core';
 import { IsolatedBannerManager } from '../../services/banner';
 
 export type DialogOperationCallback<TParams = void> = (
@@ -14,30 +14,43 @@ export function createDialogOperation<TParams = void, TExtra = void>(
 ) {
   const show = signal(false);
   const loading = signal(false);
-
-  // Store extra data temporarily
   const initialData = signal<TExtra | undefined>(undefined);
+  const injector = inject(Injector);
 
   return {
     initiate(extra?: TExtra): void {
       if (getSelectedIds && getSelectedIds().length === 0) return;
-
       initialData.set(extra);
       show.set(true);
     },
-    confirm(destroyRef: DestroyRef, params: TParams, bannerManager?: IsolatedBannerManager): void {
-      const ids = getSelectedIds ? getSelectedIds() : [];
-      if (ids.length === 0) return;
 
-      show.set(false);
+    confirm(destroyRef: DestroyRef, params: TParams, bannerManager?: IsolatedBannerManager): void {
+      if (getSelectedIds && getSelectedIds().length === 0) return;
+      const ids = getSelectedIds ? getSelectedIds() : [];
 
       const result = callback(ids, destroyRef, params, bannerManager);
       if (result) {
-        loading.set(result());
-      }
+        // Watch the loading signal using effect
+        const effectRef = effect(
+          () => {
+            const isLoading = result();
+            loading.set(isLoading);
 
-      initialData.set(undefined);
+            if (!isLoading) {
+              show.set(false);
+              initialData.set(undefined);
+              effectRef.destroy();
+            }
+          },
+          { injector },
+        );
+      } else {
+        // If no signal returned, close immediately
+        show.set(false);
+        initialData.set(undefined);
+      }
     },
+
     cancel(): void {
       show.set(false);
       initialData.set(undefined);
