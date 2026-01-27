@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { map } from 'rxjs';
-import { RefTestDetailDataService } from '../../services/ref-test-detail-data.service';
+import { RefTestDetailData } from '../../services/ref-test-detail-data';
 import { AnswersSummary } from './components/answers-summary/answers-summary';
 import { EmptyQuestionsState } from './components/empty-questions-state/empty-questions-state';
 import { QuestionCard } from './components/question-card/question-card';
@@ -15,9 +15,9 @@ import { QuestionCard } from './components/question-card/question-card';
 })
 export class RefTestQuestionsTab {
   private readonly _translate = inject(TranslateService);
-  private readonly _dataService = inject(RefTestDetailDataService);
+  private readonly _dataService = inject(RefTestDetailData);
 
-  protected readonly refTest = this._dataService.refTest;
+  protected readonly refTest = this._dataService.refTestData;
 
   protected readonly currentLanguage = toSignal(
     this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
@@ -27,19 +27,19 @@ export class RefTestQuestionsTab {
   );
 
   protected readonly selectedAnswerIdsSet = computed<Set<string>>(() => {
-    const test = this.refTest();
+    const test = this._dataService.refTestData();
     return test ? new Set<string>(test.selectedAnswerIds) : new Set<string>();
   });
 
   protected hasQuestions = computed(() => {
-    const test = this.refTest();
+    const test = this._dataService.refTestData();
     if (!test) return false;
     const questions = test.questions;
     return questions !== null && questions !== undefined && questions.length > 0;
   });
 
   protected readonly answeredQuestionsCount = computed(() => {
-    const test = this.refTest();
+    const test = this._dataService.refTestData();
     if (!test) return 0;
     const questions = test.questions ?? [];
     const selectedIds = this.selectedAnswerIdsSet();
