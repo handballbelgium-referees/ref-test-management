@@ -6,7 +6,7 @@ import { RefTestNode } from './types';
  * including deleted items, updated invitations, and updated results.
  * This optimistically updates the UI before the server state is refreshed.
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class RefTestLocalStateManager {
   // ========================================================================
   // STATE

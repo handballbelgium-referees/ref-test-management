@@ -72,17 +72,6 @@ import { IResetOptions, RefTestNode, SortField } from './services/types';
     RefTestPagination,
     Banner,
   ],
-  providers: [
-    RefTestFilterState,
-    RefTestFilterActions,
-    RefTestQueryBuilder,
-    RefTestData,
-    RefTestSelectionManager,
-    RefTestOperationManager,
-    RefTestLocalStateManager,
-    ColumnVisibilityManager,
-    RefTestUIHelpers,
-  ],
   templateUrl: './list-ref-tests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {

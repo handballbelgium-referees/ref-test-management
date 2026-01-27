@@ -6,7 +6,7 @@ import { IParticipantInfo, RefTestNode } from './types';
  * Service responsible for managing selection state and computing selection summaries
  * for the ref test list component.
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class RefTestSelectionManager {
   // ========================================================================
   // STATE
