@@ -143,6 +143,7 @@ export class UpdateConfigurationDialog {
 
     effect(() => {
       const initial = this.initialData();
+      if (!initial) return;
       const titleValue = initial.title ? { id: initial.title.id, name: initial.title.value } : null;
       this.configurationModel.set({
         id: initial.id,
@@ -193,7 +194,7 @@ export class UpdateConfigurationDialog {
     });
   }
 
-  protected onSave(): void {
+  protected onConfirm(): void {
     if (this.configurationForm().invalid()) {
       this.configurationForm().markAsTouched();
       return;

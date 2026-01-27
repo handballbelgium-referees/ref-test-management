@@ -59,7 +59,7 @@ export class UpdateDetailsDialog {
 
   readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
-  readonly initialData = input.required<RefTest>();
+  readonly initialData = input.required<RefTest | undefined>();
   protected readonly confirm = output<{
     input: UpdateRefTestDetailsInput;
     bannerManager: IsolatedBannerManager;
@@ -81,18 +81,17 @@ export class UpdateDetailsDialog {
 
     effect(() => {
       const refTest = this.initialData();
-      if (refTest) {
-        this.participantModel.set({
-          id: refTest.id,
-          firstName: refTest.firstName,
-          lastName: refTest.lastName,
-          email: refTest.email,
-        });
-      }
+      if (!refTest) return;
+      this.participantModel.set({
+        id: refTest.id,
+        firstName: refTest.firstName,
+        lastName: refTest.lastName,
+        email: refTest.email,
+      });
     });
   }
 
-  protected onSave(): void {
+  protected onConfirm(): void {
     if (this.participantForm().invalid()) {
       return;
     }
