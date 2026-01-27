@@ -60,7 +60,7 @@
     [loading]="operationManager.updateRefTestDetailsDialog.loading()"
     [show]="operationManager.updateRefTestDetailsDialog.show()"
     [initialData]="operationManager.updateRefTestDetailsDialog.initialData()"
-    (confirm)="confirmUpdateParticipantDetails($event.input, $event.bannerManager)"
+    (confirm)="confirmUpdateDetails($event.input, $event.bannerManager)"
     (cancel)="operationManager.updateRefTestDetailsDialog.cancel()"
   />
 

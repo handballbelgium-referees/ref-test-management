@@ -90,7 +90,7 @@ export class RefTestDetailTab {
     );
   });
 
-  protected confirmUpdateParticipantDetails(
+  protected confirmUpdateDetails(
     input: UpdateRefTestDetailsInput,
     bannerManager: IsolatedBannerManager,
   ): void {
