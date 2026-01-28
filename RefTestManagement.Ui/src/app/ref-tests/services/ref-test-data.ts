@@ -169,8 +169,8 @@ export class RefTestData {
         variables: { input: { ids } },
         update: this.updateDeleteCache.bind(this),
       }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => r.data?.deleteRefTests?.deleteRefTestsResult?.deletedRefTests.map((d) => d.id) ?? [],
     );
   }
@@ -182,8 +182,8 @@ export class RefTestData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendInvitationsGQL.mutate({ variables: { input: { ids } } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => r.data?.sendInvitations?.sendInvitationsResult?.sentRefTests.map((s) => s.id) ?? [],
     );
   }
@@ -195,8 +195,8 @@ export class RefTestData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendResultsGQL.mutate({ variables: { input: { ids } } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => r.data?.sendResults?.sendResultsResult?.sentRefTests.map((s) => s.id) ?? [],
     );
   }
@@ -208,8 +208,8 @@ export class RefTestData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendReportGQL.mutate({ variables: { input: { ids } } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.sendReport?.sendReportResult;
         return {
@@ -233,8 +233,8 @@ export class RefTestData {
       this._resetRefTestsGQL.mutate({
         variables: { input },
       }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.resetRefTests?.resetRefTestsResult;
         return {
@@ -252,8 +252,8 @@ export class RefTestData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._reviveRefTestsGQL.mutate({ variables: { input: { ids } } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.reviveRefTests?.reviveRefTestsResult;
         return {

@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  DestroyRef,
   inject,
   signal,
   viewChild,
@@ -50,13 +49,13 @@ import { TimelineCard } from './components/timeline-card/timeline-card';
     ResetRefTestDialog,
     ReviveRefTestDialog,
   ],
+  providers: [RefTestDetailOperationManager],
   templateUrl: './ref-test-detail-tab.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RefTestDetailTab {
   private readonly _dataService = inject(RefTestDetailData);
   protected readonly operationManager = inject(RefTestDetailOperationManager);
-  private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly refTest = this._dataService.refTestData;
 
@@ -90,32 +89,32 @@ export class RefTestDetailTab {
   });
 
   protected confirmUpdateDetails(input: UpdateRefTestDetailsInput): void {
-    this.operationManager.updateRefTestDetailsDialog.confirm(this._destroyRef, input);
+    this.operationManager.updateRefTestDetailsDialog.confirm(input);
   }
 
   protected confirmUpdateConfiguration(input: UpdateRefTestConfigurationInput): void {
-    this.operationManager.updateRefTestConfigurationDialog.confirm(this._destroyRef, input);
+    this.operationManager.updateRefTestConfigurationDialog.confirm(input);
   }
 
   protected confirmUpdateNotificationSettings(input: UpdateRefTestNotificationSettingsInput): void {
-    this.operationManager.updateRefTestNotificationSettingsDialog.confirm(this._destroyRef, input);
+    this.operationManager.updateRefTestNotificationSettingsDialog.confirm(input);
   }
 
   protected extendTime(input: ExtendRefTestTimeInput): void {
-    this.operationManager.extendRefTestTimeDialog.confirm(this._destroyRef, input);
+    this.operationManager.extendRefTestTimeDialog.confirm(input);
   }
 
   protected confirmRegenerateToken(): void {
-    this.operationManager.regenerateRefTestTokenDialog.confirm(this._destroyRef, {
+    this.operationManager.regenerateRefTestTokenDialog.confirm({
       refTestId: this.refTest().id,
     });
   }
 
   protected confirmReset(options: IResetOptions): void {
-    this.operationManager.resetDialog.confirm(this._destroyRef, options);
+    this.operationManager.resetDialog.confirm(options);
   }
 
   protected confirmRevive(): void {
-    this.operationManager.reviveDialog.confirm(this._destroyRef);
+    this.operationManager.reviveDialog.confirm();
   }
 }

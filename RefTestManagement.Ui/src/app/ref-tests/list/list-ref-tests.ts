@@ -72,6 +72,7 @@ import { IResetOptions, RefTestNode, SortField } from './services/types';
     RefTestPagination,
     Banner,
   ],
+  providers: [RefTestOperationManager],
   templateUrl: './list-ref-tests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -469,7 +470,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected confirmDelete(): void {
-    this.operationManager.deleteDialog.confirm(this._destroyRef);
+    this.operationManager.deleteDialog.confirm();
   }
 
   // ========================================================================
@@ -477,7 +478,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected confirmSendInvitations(): void {
-    this.operationManager.sendInvitationsDialog.confirm(this._destroyRef, this.allLoadedRefTests());
+    this.operationManager.sendInvitationsDialog.confirm(this.allLoadedRefTests());
   }
 
   // ========================================================================
@@ -485,7 +486,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected confirmSendResults(): void {
-    this.operationManager.sendResultsDialog.confirm(this._destroyRef, this.allLoadedRefTests());
+    this.operationManager.sendResultsDialog.confirm(this.allLoadedRefTests());
   }
 
   // ========================================================================
@@ -493,7 +494,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected confirmGenerateReport(): void {
-    this.operationManager.generateReportDialog.confirm(this._destroyRef);
+    this.operationManager.generateReportDialog.confirm();
   }
 
   // ========================================================================
@@ -501,7 +502,7 @@ export class ListRefTests {
   // ========================================================================
 
   protected confirmReset(options: IResetOptions): void {
-    this.operationManager.resetDialog.confirm(this._destroyRef, options);
+    this.operationManager.resetDialog.confirm(options);
   }
 
   // ========================================================================
@@ -509,6 +510,6 @@ export class ListRefTests {
   // ========================================================================
 
   protected confirmRevive(): void {
-    this.operationManager.reviveDialog.confirm(this._destroyRef);
+    this.operationManager.reviveDialog.confirm();
   }
 }

@@ -80,11 +80,16 @@
           (click)="confirm.emit()"
           class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
         >
-          {{
-            totalCount() === 1
-              ? ('ref_tests.list.actions.generate_report' | translate)
-              : ('ref_tests.list.dialogs.generate_report.confirm' | translate)
-          }}
+          @if (loading()) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            {{ 'common.processing' | translate }}
+          } @else {
+            {{
+              totalCount() === 1
+                ? ('ref_tests.list.actions.generate_report' | translate)
+                : ('ref_tests.list.dialogs.generate_report.confirm' | translate)
+            }}
+          }
         </button>
       </div>
     </div>

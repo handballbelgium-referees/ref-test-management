@@ -1,4 +1,4 @@
-import { inject, Injectable, signal, WritableSignal } from '@angular/core';
+import { DestroyRef, inject, Injectable, signal, WritableSignal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../graphql/generated';
 import { Banner } from '../../../services/banner';
@@ -12,13 +12,14 @@ import { IResetOptions, RefTestNode } from './types';
  * Service responsible for managing operations on ref tests
  * (delete, send invitations, send results, generate report, reset, revive)
  */
-@Injectable({ providedIn: 'root' })
+@Injectable()
 export class RefTestOperationManager {
   private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);
   private readonly _dataService = inject(RefTestData);
   private readonly _selectionManager = inject(RefTestSelectionManager);
   private readonly _localStateManager = inject(RefTestLocalStateManager);
+  private readonly _destroyRef = inject(DestroyRef);
 
   // ========================================================================
   // OPERATION STATE
@@ -52,9 +53,9 @@ export class RefTestOperationManager {
   // DIALOG OPERATIONS
   // ========================================================================
 
-  readonly deleteDialog = createDialogOperation((ids, destroyRef, _, bannerManager) => {
+  readonly deleteDialog = createDialogOperation((ids, _, bannerManager) => {
     this.addIds(this._deletingRefTestIds, ids);
-    return this._dataService.deleteRefTests(ids, destroyRef, {
+    return this._dataService.deleteRefTests(ids, this._destroyRef, {
       onSuccess: (deletedIds) => {
         this._localStateManager.markAsDeleted(deletedIds);
         this._selectionManager.clearSelection();
@@ -69,12 +70,12 @@ export class RefTestOperationManager {
   }, this.getSelectedIds);
 
   readonly sendInvitationsDialog = createDialogOperation<RefTestNode[]>(
-    (ids, destroyRef, allRefTests, bannerManager) => {
+    (ids, allRefTests, bannerManager) => {
       const filtered = ids.filter(
         (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Pending,
       );
       this.addIds(this._sendingInvitationIds, filtered);
-      return this._dataService.sendInvitations(filtered, destroyRef, {
+      return this._dataService.sendInvitations(filtered, this._destroyRef, {
         onSuccess: (sendIds) => {
           this._localStateManager.markInvitationsSent(sendIds);
           this._selectionManager.clearSelection();
@@ -91,12 +92,12 @@ export class RefTestOperationManager {
   );
 
   readonly sendResultsDialog = createDialogOperation<RefTestNode[]>(
-    (ids, destroyRef, allRefTests, bannerManager) => {
+    (ids, allRefTests, bannerManager) => {
       const filtered = ids.filter(
         (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Completed,
       );
       this.addIds(this._sendingResultsIds, filtered);
-      return this._dataService.sendResults(filtered, destroyRef, {
+      return this._dataService.sendResults(filtered, this._destroyRef, {
         onSuccess: () => {
           this._selectionManager.clearSelection();
           this._bannerService.success(
@@ -111,8 +112,8 @@ export class RefTestOperationManager {
     this.getSelectedIds,
   );
 
-  readonly generateReportDialog = createDialogOperation((ids, destroyRef, _, bannerManager) => {
-    return this._dataService.generateReport(ids, destroyRef, {
+  readonly generateReportDialog = createDialogOperation((ids, _, bannerManager) => {
+    return this._dataService.generateReport(ids, this._destroyRef, {
       onSuccess: (result) => {
         if (result.success) {
           this._selectionManager.clearSelection();
@@ -132,42 +133,39 @@ export class RefTestOperationManager {
     });
   }, this.getSelectedIds);
 
-  readonly resetDialog = createDialogOperation<IResetOptions>(
-    (ids, destroyRef, options, bannerManager) => {
-      this.addIds(this._resettingRefTestIds, ids);
-      return this._dataService.resetRefTests(
-        { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
-        destroyRef,
-        {
-          onSuccess: ({ successCount, failedCount }) => {
-            if (successCount > 0) {
-              this._selectionManager.clearSelection();
-              this._bannerService.success(
-                this._translateService.instant('ref_tests.list.reset_success', {
-                  count: successCount,
-                }),
-              );
-            }
-            if (failedCount > 0) {
-              bannerManager?.error(
-                this._translateService.instant('ref_tests.list.reset_partial_error', {
-                  count: failedCount,
-                }),
-              );
-            }
-          },
-          onError: () =>
-            bannerManager?.error(this._translateService.instant('ref_tests.list.reset_error')),
-          onComplete: () => this.removeIds(this._resettingRefTestIds, ids),
+  readonly resetDialog = createDialogOperation<IResetOptions>((ids, options, bannerManager) => {
+    this.addIds(this._resettingRefTestIds, ids);
+    return this._dataService.resetRefTests(
+      { ids, resetType: options.resetType, regenerateToken: options.regenerateToken },
+      this._destroyRef,
+      {
+        onSuccess: ({ successCount, failedCount }) => {
+          if (successCount > 0) {
+            this._selectionManager.clearSelection();
+            this._bannerService.success(
+              this._translateService.instant('ref_tests.list.reset_success', {
+                count: successCount,
+              }),
+            );
+          }
+          if (failedCount > 0) {
+            bannerManager?.error(
+              this._translateService.instant('ref_tests.list.reset_partial_error', {
+                count: failedCount,
+              }),
+            );
+          }
         },
-      );
-    },
-    this.getSelectedIds,
-  );
+        onError: () =>
+          bannerManager?.error(this._translateService.instant('ref_tests.list.reset_error')),
+        onComplete: () => this.removeIds(this._resettingRefTestIds, ids),
+      },
+    );
+  }, this.getSelectedIds);
 
-  readonly reviveDialog = createDialogOperation((ids, destroyRef, _, bannerManager) => {
+  readonly reviveDialog = createDialogOperation((ids, _, bannerManager) => {
     this.addIds(this._revivingRefTestIds, ids);
-    return this._dataService.reviveRefTests(ids, destroyRef, {
+    return this._dataService.reviveRefTests(ids, this._destroyRef, {
       onSuccess: ({ successCount, failedCount }) => {
         if (successCount > 0) {
           this._selectionManager.clearSelection();

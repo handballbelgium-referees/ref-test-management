@@ -29,6 +29,7 @@ import { RefTestDetailOperationManager } from './services/ref-test-detail-operat
     DeleteRefTestsDialog,
     Banner,
   ],
+  providers: [RefTestDetailOperationManager],
   templateUrl: './ref-test-detail.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -124,14 +125,14 @@ export class RefTestDetail {
   // ========================================================================
 
   protected confirmSendInvitation(): void {
-    this.operationManager.sendInvitationDialog.confirm(this._destroyRef);
+    this.operationManager.sendInvitationDialog.confirm();
   }
 
   protected confirmSendResults(): void {
-    this.operationManager.sendResultDialog.confirm(this._destroyRef);
+    this.operationManager.sendResultDialog.confirm();
   }
 
   protected confirmDelete(): void {
-    this.operationManager.deleteDialog.confirm(this._destroyRef);
+    this.operationManager.deleteDialog.confirm();
   }
 }

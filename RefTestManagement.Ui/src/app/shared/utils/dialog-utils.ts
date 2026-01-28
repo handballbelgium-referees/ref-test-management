@@ -1,9 +1,8 @@
-import { DestroyRef, effect, inject, Injector, Signal, signal } from '@angular/core';
+import { effect, inject, Injector, Signal, signal } from '@angular/core';
 import { Banner, IsolatedBannerManager } from '../../services/banner';
 
 export type DialogOperationCallback<TParams = void> = (
   ids: string[],
-  destroyRef: DestroyRef,
   params: TParams,
   bannerManager?: IsolatedBannerManager,
 ) => { loading: Signal<boolean>; success: Signal<boolean> } | void;
@@ -25,7 +24,7 @@ export function createDialogOperation<TParams = void, TExtra = void>(
       bannerManager.set(injector.get(Banner).createIsolated());
       show.set(true);
     },
-    confirm(destroyRef: DestroyRef, params: TParams): void {
+    confirm(params: TParams): void {
       if (getSelectedIds && getSelectedIds().length === 0) return;
       const ids = getSelectedIds ? getSelectedIds() : [];
 
@@ -40,7 +39,7 @@ export function createDialogOperation<TParams = void, TExtra = void>(
         },
       };
 
-      const result = callback(ids, destroyRef, params, bannerManager());
+      const result = callback(ids, params, bannerManager());
       if (result) {
         const effectRef = effect(
           () => {

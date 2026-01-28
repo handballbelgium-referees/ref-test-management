@@ -23,12 +23,19 @@ export type MutationCallbacks<T = unknown> = {
 
 export function runMutation<TData, TResult>(
   mutation$: Observable<Apollo.MutateResult<TData>>,
-  callbacks: MutationCallbacks<TResult>,
   destroyRef: DestroyRef,
+  callbacks: MutationCallbacks<TResult> = {},
   mapResult?: (result: Apollo.MutateResult<TData>) => TResult,
-): { loading: Signal<boolean>; success: Signal<boolean> } {
+): {
+  loading: Signal<boolean>;
+  success: Signal<boolean>;
+  error: Signal<unknown>;
+  data: Signal<TResult | null>;
+} {
   const loading = signal(false);
   const success = signal(false);
+  const error = signal<unknown>(null);
+  const data = signal<TResult | null>(null);
 
   const {
     onStart = () => {},
@@ -46,12 +53,15 @@ export function runMutation<TData, TResult>(
         if (result.loading) return;
 
         const mapped = mapResult ? mapResult(result) : (result as unknown as TResult);
-
+        data.set(mapped);
         success.set(true);
         onSuccess(mapped);
+        error.set(null);
       }),
-      catchError((error) => {
-        onError(error);
+      catchError((err) => {
+        onError(err);
+        error.set(err);
+        success.set(false);
         return EMPTY;
       }),
       finalize(() => {
@@ -65,6 +75,8 @@ export function runMutation<TData, TResult>(
   return {
     loading: loading.asReadonly(),
     success: success.asReadonly(),
+    error: error.asReadonly(),
+    data: data.asReadonly(),
   };
 }
 
@@ -80,22 +92,34 @@ export interface QueryCallbacks<TResult> {
 
 export interface QueryState<TResult> {
   loading: Signal<boolean>;
-  data: Signal<TResult | null>;
+  success: Signal<boolean>;
   error: Signal<unknown>;
+  data: Signal<TResult | null>;
 }
 
-export function runQueryWithState<TData, TResult = TData>(
+export function runQuery<TData, TResult>(
   query$: Observable<Apollo.QueryResult<TData> | ObservableQuery.Result<TData>>,
   destroyRef: DestroyRef,
+  callbacks: QueryCallbacks<TResult> = {},
   mapResult?: (result: Apollo.QueryResult<TData> | ObservableQuery.Result<TData>) => TResult,
 ): QueryState<TResult> {
-  const loading = signal(true); // always start as loading
-  const data = signal<TResult | null>(null);
+  const loading = signal(false);
+  const success = signal(false);
   const error = signal<unknown>(null);
+  const data = signal<TResult | null>(null);
+
+  const {
+    onStart = () => {},
+    onSuccess = () => {},
+    onError = () => {},
+    onComplete = () => {},
+  } = callbacks;
+
+  onStart();
 
   query$
     .pipe(
-      tap((result: any) => {
+      tap((result: Apollo.QueryResult<TData> | ObservableQuery.Result<TData>) => {
         // If the result has a loading property (watchQuery), update loading
         if ('loading' in result) {
           loading.set(result.loading);
@@ -106,16 +130,20 @@ export function runQueryWithState<TData, TResult = TData>(
         if (!isLoaded) return;
 
         const mapped = mapResult ? mapResult(result) : (result.data as unknown as TResult);
-
+        success.set(true);
         data.set(mapped);
-        error.set(null); // clear previous errors
+        onSuccess(mapped);
+        error.set(null);
       }),
       catchError((err: unknown) => {
+        onError(err);
         error.set(err);
+        success.set(false);
         return EMPTY;
       }),
       finalize(() => {
-        loading.set(false); // ensure loading is false on completion
+        onComplete();
+        loading.set(false);
       }),
       takeUntilDestroyed(destroyRef),
     )
@@ -123,6 +151,7 @@ export function runQueryWithState<TData, TResult = TData>(
 
   return {
     loading: loading.asReadonly(),
+    success: success.asReadonly(),
     data: data.asReadonly(),
     error: error.asReadonly(),
   };

@@ -104,8 +104,8 @@ export class RefTestDetailData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendInvitationsGQL.mutate({ variables: { input: { ids: [this._refTestId()] } } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => r.data?.sendInvitations?.sendInvitationsResult?.sentRefTests.map((s) => s.id) ?? [],
     );
   }
@@ -116,8 +116,8 @@ export class RefTestDetailData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._sendResultsGQL.mutate({ variables: { input: { ids: [this._refTestId()] } } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => r.data?.sendResults?.sendResultsResult?.sentRefTests.map((s) => s.id) ?? [],
     );
   }
@@ -140,8 +140,8 @@ export class RefTestDetailData {
           },
         },
       }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.resetRefTests?.resetRefTestsResult;
         return {
@@ -158,8 +158,8 @@ export class RefTestDetailData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._reviveRefTestsGQL.mutate({ variables: { input: { ids: [this._refTestId()] } } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.reviveRefTests?.reviveRefTestsResult;
         return {
@@ -186,8 +186,8 @@ export class RefTestDetailData {
           },
         },
       }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.updateRefTestDetails.refTest;
         return res;
@@ -202,8 +202,8 @@ export class RefTestDetailData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._updateRefTestConfigurationGQL.mutate({ variables: { input } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.updateRefTestConfiguration.refTest;
         return res;
@@ -218,8 +218,8 @@ export class RefTestDetailData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._updateRefTestNotificationSettingsGQL.mutate({ variables: { input } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.updateRefTestNotificationSettings.refTest;
         return res;
@@ -234,8 +234,8 @@ export class RefTestDetailData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._extendRefTestTimeGQL.mutate({ variables: { input } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.extendRefTestTime.refTest;
         return res;
@@ -250,8 +250,8 @@ export class RefTestDetailData {
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
     return runMutation(
       this._regenerateRefTestTokenGQL.mutate({ variables: { input } }),
-      callbacks,
       destroyRef,
+      callbacks,
       (r) => {
         const res = r.data?.regenerateRefTestToken.refTest;
         return res;
