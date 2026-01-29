@@ -29,7 +29,7 @@ export class QuestionCard {
   readonly totalQuestions = input.required<number>();
   readonly currentLanguage = input.required<string>();
   readonly selectedAnswerIds = input.required<string[]>();
-  readonly answerSelected = output<string>();
+  protected readonly answerSelected = output<string>();
 
   protected isAnswerSelected(answerId: string): boolean {
     return this.selectedAnswerIds().includes(answerId);

@@ -1,5 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { IsolatedBannerManager } from '../../../../../services/banner';
+import { Banner } from '../../../../../shared/components/banner/banner';
 
 interface IResultsSummary {
   newResults: Array<{ name: string; email: string }>;
@@ -8,7 +10,7 @@ interface IResultsSummary {
 
 @Component({
   selector: 'app-send-results-dialog',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, Banner],
   templateUrl: './send-results-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -16,11 +18,13 @@ interface IResultsSummary {
   },
 })
 export class SendResultsDialog {
+  readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
   readonly summary = input.required<IResultsSummary>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
 
-  readonly confirm = output<void>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<void>();
+  protected readonly cancel = output<void>();
 
   protected readonly totalCount = computed(() => {
     const summary = this.summary();

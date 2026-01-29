@@ -41,7 +41,7 @@ export class Banner {
   readonly bannerManager = input<IsolatedBannerManager | null>(null);
 
   // Read banners from either the isolated manager or the global service
-  readonly banners = () => {
+  protected readonly banners = () => {
     const manager = this.bannerManager();
     return manager ? manager.banners() : this._bannerService.banners();
   };
@@ -49,7 +49,7 @@ export class Banner {
   /**
    * Execute action and dismiss banner
    */
-  executeAction(id: number, action: () => void): void {
+  protected executeAction(id: number, action: () => void): void {
     const manager = this.bannerManager();
     if (manager) {
       manager.executeAction(id, action);
@@ -61,7 +61,7 @@ export class Banner {
   /**
    * Remove a banner by ID
    */
-  dismiss(id: number): void {
+  protected dismiss(id: number): void {
     const manager = this.bannerManager();
     if (manager) {
       manager.dismiss(id);
@@ -73,7 +73,7 @@ export class Banner {
   /**
    * Get Font Awesome icon for banner type
    */
-  getIcon(type: BannerType): string {
+  protected getIcon(type: BannerType): string {
     switch (type) {
       case 'success':
         return 'M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z';
@@ -89,7 +89,7 @@ export class Banner {
   /**
    * Get Tailwind CSS classes for banner type
    */
-  getColorClasses(type: BannerType): string {
+  protected getColorClasses(type: BannerType): string {
     switch (type) {
       case 'success':
         return 'bg-success-50 border-success-200 text-success-800';
@@ -105,7 +105,7 @@ export class Banner {
   /**
    * Get icon color classes for banner type
    */
-  getIconColorClass(type: BannerType): string {
+  protected getIconColorClass(type: BannerType): string {
     switch (type) {
       case 'success':
         return 'text-success-600';

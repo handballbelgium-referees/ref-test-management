@@ -10,6 +10,9 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [TranslatePipe],
   templateUrl: './ref-test-pagination.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class RefTestPagination {
   readonly displayedCount = input.required<number>();
@@ -19,5 +22,5 @@ export class RefTestPagination {
   readonly loadingMore = input.required<boolean>();
   readonly maxLoadableItems = input.required<number>();
 
-  readonly loadMore = output<void>();
+  protected readonly loadMore = output<void>();
 }

@@ -3,20 +3,20 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../../../../graphql/generated';
 
 @Component({
-  selector: 'app-participant-info-card',
+  selector: 'app-details-card',
   imports: [TranslatePipe],
-  templateUrl: './participant-info-card.html',
+  templateUrl: './details-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
-export class ParticipantInfoCard {
-  name = input.required<string>();
-  email = input.required<string>();
-  status = input.required<RefTestStatus>();
+export class DetailsCard {
+  readonly name = input.required<string>();
+  readonly email = input.required<string>();
+  readonly status = input.required<RefTestStatus>();
 
-  readonly edit = output<void>();
-  readonly reset = output<void>();
-  readonly revive = output<void>();
+  protected readonly edit = output<void>();
+  protected readonly reset = output<void>();
+  protected readonly revive = output<void>();
 
   protected readonly RefTestStatus = RefTestStatus;
 }

@@ -23,6 +23,9 @@
         </svg>
         <div class="flex-1">
           <p class="text-sm font-medium">{{ banner.message }}</p>
+          @if (banner.submessage) {
+            <p class="text-xs">{{ banner.submessage }}</p>
+          }
           @if (banner.action) {
             <button
               type="button"

@@ -25,8 +25,8 @@ export class Auth {
         }
         // Return null when not authenticated
         return of(null);
-      })
-    )
+      }),
+    ),
   );
 
   login(): void {

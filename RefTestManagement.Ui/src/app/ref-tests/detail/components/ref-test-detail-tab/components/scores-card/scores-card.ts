@@ -9,10 +9,10 @@ import { TranslatePipe } from '@ngx-translate/core';
   host: { class: 'block' },
 })
 export class ScoresCard {
-  percentage = input.required<number>();
-  isPassed = input.required<boolean>();
-  questionScore = input.required<number>();
-  questionTotal = input.required<number>();
-  answerScore = input.required<number>();
-  answerTotal = input.required<number>();
+  readonly percentage = input.required<number>();
+  readonly isPassed = input.required<boolean>();
+  readonly questionScore = input.required<number>();
+  readonly questionTotal = input.required<number>();
+  readonly answerScore = input.required<number>();
+  readonly answerTotal = input.required<number>();
 }

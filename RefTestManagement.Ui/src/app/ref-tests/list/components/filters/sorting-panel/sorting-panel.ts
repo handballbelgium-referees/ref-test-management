@@ -36,7 +36,7 @@ type SortField =
 export class SortingPanel {
   readonly sortField = input.required<SortField>();
   readonly sortDirection = input.required<SortEnumType>();
-  readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
+  protected readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
 
   protected readonly expanded = signal(false);
 

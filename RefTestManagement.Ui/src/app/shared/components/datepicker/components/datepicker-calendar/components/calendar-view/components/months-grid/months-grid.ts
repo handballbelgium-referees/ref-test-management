@@ -14,7 +14,7 @@ export class MonthsGrid {
 
   readonly currentDate = input.required<Date>();
 
-  readonly monthSelect = output<number>();
+  protected readonly monthSelect = output<number>();
 
   protected readonly months = computed(() => {
     return this._dateService.generateMonths(this.currentDate());

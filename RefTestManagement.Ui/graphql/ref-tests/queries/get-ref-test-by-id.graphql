@@ -1,39 +1,44 @@
 query GetRefTestById($id: ID!) {
   refTest(id: $id) {
-    id
-    title {
+    ... on RefTest {
       id
-      value
-    }
-    firstName
-    lastName
-    name
-    email
-    invitationSent
-    resultsSent
-    sendInvitationsAutomatically
-    sendResultsAutomatically
-    status
-    numberOfQuestions
-    maxTimeInMinutes
-    startedAt
-    completedAt
-    questionScore
-    answerScore
-    questionTotal
-    answerTotal
-    percentage
-    selectedAnswerIds
-    questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
-      id
-      number
-      phrase
-      answers {
+      title {
+        id
+        value
+      }
+      firstName
+      lastName
+      name
+      email
+      invitationSent
+      resultsSent
+      sendInvitationsAutomatically
+      sendResultsAutomatically
+      status
+      numberOfQuestions
+      maxTimeInMinutes
+      startedAt
+      completedAt
+      questionScore
+      answerScore
+      questionTotal
+      answerTotal
+      percentage
+      selectedAnswerIds
+      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
         id
         number
         phrase
-        isCorrect
+        answers {
+          id
+          number
+          phrase
+          isCorrect
+        }
       }
+    }
+    ... on RefTestNotFoundError {
+      message
     }
   }
 }

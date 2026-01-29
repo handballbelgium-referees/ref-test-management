@@ -11,13 +11,16 @@ import { ColumnVisibilityMenu } from '../column-visibility-menu/column-visibilit
   imports: [TranslatePipe, ColumnVisibilityMenu],
   templateUrl: './ref-test-list-toolbar.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class RefTestListToolbar {
   readonly visibleColumns = input.required<Set<string>>();
   readonly showColumnMenu = input.required<boolean>();
 
-  readonly createClick = output<void>();
-  readonly searchInput = output<Event>();
-  readonly toggleMenuClick = output<void>();
-  readonly toggleColumnClick = output<string>();
+  protected readonly createClick = output<void>();
+  protected readonly searchInput = output<Event>();
+  protected readonly toggleMenuClick = output<void>();
+  protected readonly toggleColumnClick = output<string>();
 }

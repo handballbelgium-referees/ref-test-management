@@ -13,8 +13,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 export class UserImportModal {
   readonly show = input<boolean>(false);
 
-  readonly import = output<string>();
-  readonly cancel = output<void>();
+  protected readonly import = output<string>();
+  protected readonly cancel = output<void>();
 
   protected readonly text = signal('');
 

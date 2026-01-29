@@ -80,13 +80,13 @@ export class RefTestFiltersCard {
   readonly filter = input.required<IRefTestFilter>();
   readonly statusCounts = input.required<IStatusCounts>();
 
-  readonly statusFilterChange = output<RefTestStatus | undefined>();
-  readonly titleFilterChange = output<string | undefined>();
-  readonly invitationFilterChange = output<boolean | undefined>();
-  readonly resultsFilterChange = output<boolean | undefined>();
+  protected readonly statusFilterChange = output<RefTestStatus | undefined>();
+  protected readonly titleFilterChange = output<string | undefined>();
+  protected readonly invitationFilterChange = output<boolean | undefined>();
+  protected readonly resultsFilterChange = output<boolean | undefined>();
 
-  readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
-  readonly performanceFilterChange = output<{
+  protected readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
+  protected readonly performanceFilterChange = output<{
     minQuestionScore?: number;
     maxQuestionScore?: number;
     minAnswerScore?: number;
@@ -97,7 +97,7 @@ export class RefTestFiltersCard {
     minMaxTimeInMinutes?: number;
     maxMaxTimeInMinutes?: number;
   }>();
-  readonly dateRangeChange = output<{
+  protected readonly dateRangeChange = output<{
     type: 'started' | 'completed';
     after?: string;
     before?: string;

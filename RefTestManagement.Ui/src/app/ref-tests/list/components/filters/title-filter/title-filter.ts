@@ -43,7 +43,7 @@ export class TitleFilter {
   private readonly _getRefTestTitlesGQL = inject(GetRefTestTitlesGQL);
 
   readonly selectedTitleId = input<string | undefined>();
-  readonly titleChange = output<string | undefined>();
+  protected readonly titleChange = output<string | undefined>();
 
   protected readonly searchTerm = signal('');
   protected readonly suggestions = signal<ITitle[]>([]);
@@ -94,12 +94,12 @@ export class TitleFilter {
               isSearching: false,
               hasNextPage: false,
               endCursor: undefined,
-            })
-          )
+            }),
+          ),
         );
-      })
+      }),
     ),
-    { initialValue: { titles: [], isSearching: false, hasNextPage: false, endCursor: undefined } }
+    { initialValue: { titles: [], isSearching: false, hasNextPage: false, endCursor: undefined } },
   );
 
   constructor() {

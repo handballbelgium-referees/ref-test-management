@@ -22,12 +22,11 @@
 
       <!-- Banner Container -->
       <div class="px-6 pt-4">
-        <app-banner [bannerManager]="bannerManager" />
+        <app-banner [bannerManager]="bannerManager()" />
       </div>
 
       <!-- Content -->
       <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
-
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div class="flex items-start gap-3">
             <svg
@@ -67,7 +66,7 @@
         </button>
         <button
           type="button"
-          (click)="onConfirm()"
+          (click)="confirm.emit()"
           class="px-4 py-2 bg-primary-600 text-white rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           [disabled]="loading()"
         >

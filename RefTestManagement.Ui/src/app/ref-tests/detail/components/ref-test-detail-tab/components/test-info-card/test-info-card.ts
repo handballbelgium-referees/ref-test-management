@@ -10,12 +10,12 @@ import { RefTestStatus, RefTestTitle } from '../../../../../../../../graphql/gen
   host: { class: 'block' },
 })
 export class TestInfoCard {
-  title = input<RefTestTitle>();
-  numberOfQuestions = input.required<number>();
-  maxTimeInMinutes = input<number>();
-  status = input.required<RefTestStatus>();
-  edit = output<void>();
-  regenerateToken = output<void>();
+  readonly title = input<RefTestTitle>();
+  readonly numberOfQuestions = input.required<number>();
+  readonly maxTimeInMinutes = input<number>();
+  readonly status = input.required<RefTestStatus>();
+  protected readonly edit = output<void>();
+  protected readonly regenerateToken = output<void>();
 
   protected readonly RefTestStatus = RefTestStatus;
 }

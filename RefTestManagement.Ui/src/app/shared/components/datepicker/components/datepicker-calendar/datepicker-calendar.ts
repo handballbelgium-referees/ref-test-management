@@ -38,11 +38,11 @@ export class DatepickerCalendar {
   readonly inputElement = input<ElementRef | undefined>(undefined);
   readonly openMode = input<'mobile' | 'desktop'>();
 
-  readonly dateSelect = output<Date | null>();
-  readonly close = output<void>();
-  readonly currentDateChange = output<Date>();
+  protected readonly dateSelect = output<Date | null>();
+  protected readonly close = output<void>();
+  protected readonly currentDateChange = output<Date>();
 
-  readonly calendar = viewChild<ElementRef>('calendar');
+  protected readonly calendar = viewChild<ElementRef>('calendar');
 
   protected readonly viewMode = signal<ViewMode>('days');
 
@@ -217,7 +217,7 @@ export class DatepickerCalendar {
       let left = inputRect.left + offsetLeft;
       left = Math.max(
         margin,
-        Math.min(left, viewportWidth + offsetLeft - calendarRect.width - margin)
+        Math.min(left, viewportWidth + offsetLeft - calendarRect.width - margin),
       );
 
       calendarEl.style.top = `${top}px`;

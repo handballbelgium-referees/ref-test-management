@@ -11,6 +11,8 @@ import { FormsModule } from '@angular/forms';
 import { disabled, form, FormField } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestResetType } from '../../../../../../../graphql/generated';
+import { IsolatedBannerManager } from '../../../../../services/banner';
+import { Banner } from '../../../../../shared/components/banner/banner';
 
 interface IRefTestInfo {
   name: string;
@@ -24,7 +26,7 @@ interface IResetOptions {
 
 @Component({
   selector: 'app-reset-ref-tests-dialog',
-  imports: [TranslatePipe, FormsModule, FormField],
+  imports: [TranslatePipe, FormsModule, FormField, Banner],
   templateUrl: './reset-ref-tests-dialog.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -32,11 +34,13 @@ interface IResetOptions {
   },
 })
 export class ResetRefTestsDialog {
+  readonly loading = input.required<boolean>();
   readonly show = input.required<boolean>();
   readonly refTests = input.required<IRefTestInfo[]>();
+  readonly bannerManager = input.required<IsolatedBannerManager>();
 
-  readonly confirm = output<IResetOptions>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<IResetOptions>();
+  protected readonly cancel = output<void>();
 
   protected readonly RefTestResetType = RefTestResetType;
 

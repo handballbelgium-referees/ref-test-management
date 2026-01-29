@@ -22,13 +22,12 @@
 
       <!-- Banner Container -->
       <div class="px-6 pt-4">
-        <app-banner [bannerManager]="bannerManager" />
+        <app-banner [bannerManager]="bannerManager()" />
       </div>
 
       <!-- Form Content -->
       <div class="px-6 py-6 overflow-y-auto flex-1 scrollbar-hide">
         <div class="space-y-6">
-
           <!-- Title Field -->
           <div>
             <app-title-autocomplete
@@ -156,14 +155,18 @@
         </button>
         <button
           type="button"
-          (click)="onSave()"
+          (click)="onConfirm()"
           [disabled]="!canSave() || loading()"
           class="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           @if (loading()) {
-            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            <span class="flex items-center gap-2">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              {{ 'common.saving' | translate }}
+            </span>
+          } @else {
+            {{ 'common.save' | translate }}
           }
-          {{ 'common.save' | translate }}
         </button>
       </div>
     </div>

@@ -14,7 +14,7 @@ export class YearsGrid {
 
   readonly currentDate = input.required<Date>();
 
-  readonly yearSelect = output<number>();
+  protected readonly yearSelect = output<number>();
 
   protected readonly years = computed(() => {
     return this._dateService.generateYears(this.currentDate());

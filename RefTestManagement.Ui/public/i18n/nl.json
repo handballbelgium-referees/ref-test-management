@@ -19,7 +19,9 @@
     "save": "Opslaan",
     "saving": "Opslaan...",
     "processing": "Bezig...",
-    "close": "Sluiten"
+    "close": "Sluiten",
+    "deleting": "Verwijderen...",
+    "sending": "Verzenden..."
   },
   "nav": {
     "language": "Taal",

@@ -1,12 +1,22 @@
-﻿import { Injectable, signal, Signal } from '@angular/core';
-import { TOAST_DURATION } from '../constants';
+﻿import { Injectable, signal } from '@angular/core';
+
+/**
+ * Toast notification durations in milliseconds
+ */
+export const BANNER_DURATION = {
+  ERROR: 5000,
+  WARNING: 5000,
+  SUCCESS: 6000,
+  INFO: 3000,
+} as const;
 
 export type BannerType = 'error' | 'warning' | 'success' | 'info';
-export type BannerDuration = number; // milliseconds
+export type BannerDuration = number;
 
 export interface IBanner {
   id: number;
   message: string;
+  submessage: string;
   type: BannerType;
   dismissible: boolean;
   action?: {
@@ -19,6 +29,7 @@ export interface BannerOptions {
   type?: BannerType;
   duration?: BannerDuration;
   dismissible?: boolean;
+  submessage?: string;
   action?: {
     label: string;
     callback: () => void;
@@ -26,159 +37,122 @@ export interface BannerOptions {
 }
 
 /**
- * Banner notification service
- * Manages banner state using signals that Banner components subscribe to
- * Prevents duplicate messages from being shown simultaneously
- * Supports both global (page-level) and isolated (dialog-level) instances
+ * Base banner manager used by both global and dialog banners
  */
+export abstract class BannerManagerBase {
+  protected _nextId = 1;
+  readonly banners = signal<IBanner[]>([]);
+
+  error(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = BANNER_DURATION.ERROR,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'error', duration, submessage, action });
+  }
+
+  warning(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = BANNER_DURATION.WARNING,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'warning', duration, submessage, action });
+  }
+
+  success(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = BANNER_DURATION.SUCCESS,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'success', duration, submessage, action });
+  }
+
+  info(
+    message: string,
+    submessage = '',
+    duration: BannerDuration = BANNER_DURATION.INFO,
+    action?: { label: string; callback: () => void },
+  ): void {
+    this.show(message, { type: 'info', duration, submessage, action });
+  }
+
+  protected show(message: string, options: BannerOptions = {}): void {
+    const {
+      type = 'info',
+      duration = BANNER_DURATION.INFO,
+      dismissible = true,
+      action,
+      submessage = '',
+    } = options;
+
+    // Prevent duplicate banners (same message + type)
+    const exists = this.banners().some((b) => b.message === message && b.type === type);
+
+    if (exists) {
+      return;
+    }
+
+    const id = this._nextId++;
+    const banner: IBanner = {
+      id,
+      message,
+      type,
+      dismissible,
+      action,
+      submessage,
+    };
+
+    this.banners.update((b) => [...b, banner]);
+
+    if (duration > 0) {
+      setTimeout(() => this.dismiss(id), duration);
+    }
+  }
+
+  dismiss(id: number): void {
+    this.banners.update((b) => b.filter((x) => x.id !== id));
+  }
+
+  executeAction(id: number, action: () => void): void {
+    action();
+    this.dismiss(id);
+  }
+
+  /**
+   * Useful for dialogs on close
+   */
+  clear(): void {
+    this.banners.set([]);
+  }
+}
+
 @Injectable({
   providedIn: 'root',
 })
-export class Banner {
-  private _nextId = 1;
-
-  // Global signal that page-level Banner components will read from
-  readonly banners = signal<IBanner[]>([]);
-
+export class Banner extends BannerManagerBase {
   /**
-   * Create an isolated banner manager for dialogs
-   * This creates a separate signal that won't affect the global banners
+   * Creates an isolated banner manager for dialogs
    */
   createIsolated(): IsolatedBannerManager {
     return new IsolatedBannerManager();
   }
-
-  /**
-   * Show an error banner
-   */
-  error(message: string, duration: BannerDuration = TOAST_DURATION.ERROR): void {
-    this.show(message, { type: 'error', duration });
-  }
-
-  /**
-   * Show a warning banner
-   */
-  warning(message: string, duration: BannerDuration = TOAST_DURATION.WARNING): void {
-    this.show(message, { type: 'warning', duration });
-  }
-
-  /**
-   * Show a success banner
-   */
-  success(message: string, duration: BannerDuration = TOAST_DURATION.SUCCESS): void {
-    this.show(message, { type: 'success', duration });
-  }
-
-  /**
-   * Show an info banner
-   */
-  info(message: string, duration: BannerDuration = TOAST_DURATION.INFO): void {
-    this.show(message, { type: 'info', duration });
-  }
-
-  /**
-   * Show a banner notification
-   * Prevents duplicate messages of the same type from being shown simultaneously
-   */
-  show(message: string, options: BannerOptions = {}): void {
-    const { type = 'info', duration = TOAST_DURATION.INFO, dismissible = true, action } = options;
-
-    // Check if the same message with the same type already exists
-    const existingBanner = this.banners().find(
-      (b) => b.message === message && b.type === type
-    );
-
-    // If duplicate found, don't add a new banner
-    if (existingBanner) {
-      return;
-    }
-
-    const id = this._nextId++;
-    const banner: IBanner = { id, message, type, dismissible, action };
-
-    // Add banner to the global state
-    this.banners.update((banners) => [...banners, banner]);
-
-    // Auto-dismiss after duration
-    if (duration > 0) {
-      setTimeout(() => {
-        this.dismiss(id);
-      }, duration);
-    }
-  }
-
-  /**
-   * Dismiss a banner by ID
-   */
-  dismiss(id: number): void {
-    this.banners.update((banners) => banners.filter((b) => b.id !== id));
-  }
-
-  /**
-   * Execute action and dismiss banner
-   */
-  executeAction(id: number, action: () => void): void {
-    action();
-    this.dismiss(id);
-  }
 }
 
 /**
- * Isolated banner manager for dialogs
- * Has its own signal that doesn't affect the global banners
+ * Dialog-scoped banner manager
  */
-export class IsolatedBannerManager {
-  private _nextId = 1;
-  readonly banners = signal<IBanner[]>([]);
-
-  error(message: string, duration: BannerDuration = TOAST_DURATION.ERROR): void {
-    this.show(message, { type: 'error', duration });
-  }
-
-  warning(message: string, duration: BannerDuration = TOAST_DURATION.WARNING): void {
-    this.show(message, { type: 'warning', duration });
-  }
-
-  success(message: string, duration: BannerDuration = TOAST_DURATION.SUCCESS): void {
-    this.show(message, { type: 'success', duration });
-  }
-
-  info(message: string, duration: BannerDuration = TOAST_DURATION.INFO): void {
-    this.show(message, { type: 'info', duration });
-  }
-
-  show(message: string, options: BannerOptions = {}): void {
-    const { type = 'info', duration = TOAST_DURATION.INFO, dismissible = true, action } = options;
-
-    // Check for duplicates
-    const existingBanner = this.banners().find(
-      (b) => b.message === message && b.type === type
-    );
-
-    if (existingBanner) {
-      return;
-    }
-
-    const id = this._nextId++;
-    const banner: IBanner = { id, message, type, dismissible, action };
-
-    this.banners.update((banners) => [...banners, banner]);
-
-    if (duration > 0) {
-      setTimeout(() => {
-        this.dismiss(id);
-      }, duration);
-    }
-  }
-
-  dismiss(id: number): void {
-    this.banners.update((banners) => banners.filter((b) => b.id !== id));
-  }
-
-  executeAction(id: number, action: () => void): void {
-    action();
-    this.dismiss(id);
+export class IsolatedBannerManager extends BannerManagerBase {
+  /**
+   * Dialog-friendly defaults
+   */
+  protected override show(message: string, options: BannerOptions = {}): void {
+    super.show(message, {
+      duration: options.duration ?? BANNER_DURATION.INFO,
+      dismissible: options.dismissible ?? true,
+      ...options,
+    });
   }
 }
-
-

@@ -7,7 +7,7 @@ import { SortField } from './types';
  * Service responsible for handling filter actions and coordinating
  * filter state changes with pagination reset.
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class RefTestFilterActions {
   private readonly _filterState = inject(RefTestFilterState);
 

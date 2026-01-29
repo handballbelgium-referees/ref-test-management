@@ -13,6 +13,9 @@ import { RefTestTableRow } from '../ref-test-display/ref-test-table-row/ref-test
   imports: [TranslatePipe, RefTestTableRow],
   templateUrl: './ref-test-table.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class RefTestTable {
   readonly refTests = input.required<RefTestNode[]>();
@@ -23,22 +26,22 @@ export class RefTestTable {
   readonly someSelected = input.required<boolean>();
   readonly selectedIds = input.required<Set<string>>();
 
-  readonly toggleSelectAll = output<void>();
-  readonly toggleSelection = output<string>();
-  readonly sortColumn = output<SortField>();
+  protected readonly toggleSelectAll = output<void>();
+  protected readonly toggleSelection = output<string>();
+  protected readonly sortColumn = output<SortField>();
 
-  readonly SortEnumType = SortEnumType;
+  protected readonly SortEnumType = SortEnumType;
 
-  isColumnVisible(column: string): boolean {
+  protected isColumnVisible(column: string): boolean {
     return this.visibleColumns().has(column);
   }
 
-  getAriaSort(field: SortField): string | null {
+  protected getAriaSort(field: SortField): string | null {
     if (this.filter().sortField !== field) return null;
     return this.filter().sortDirection === SortEnumType.Asc ? 'ascending' : 'descending';
   }
 
-  isSelected(id: string): boolean {
+  protected isSelected(id: string): boolean {
     return this.selectedIds().has(id);
   }
 }

@@ -11,7 +11,7 @@ import {
 import { PERCENTAGE_RANGES } from './constants';
 import { IRefTestFilter } from './types';
 
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class RefTestQueryBuilder {
   buildWhereFilter(
     filter: IRefTestFilter,

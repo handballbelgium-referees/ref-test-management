@@ -13,6 +13,6 @@ import { TranslatePipe } from '@ngx-translate/core';
 export class CalendarFooter {
   readonly isSmallTouchDevice = input<boolean>(false);
 
-  readonly today = output<void>();
-  readonly clear = output<void>();
+  protected readonly today = output<void>();
+  protected readonly clear = output<void>();
 }

@@ -10,7 +10,10 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [TranslatePipe],
   templateUrl: './ref-test-empty-state.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class RefTestEmptyState {
-  readonly createClick = output<void>();
+  protected readonly createClick = output<void>();
 }
