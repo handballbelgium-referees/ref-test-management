@@ -11,7 +11,6 @@ public class RefTestFilterType : FilterInputType<RefTestDto>
         descriptor.BindFieldsExplicitly();
         descriptor.Name($"{nameof(RefTest)}FilterInput");
         descriptor.Description("Filter RefTests based on Id, Email or Status");
-        descriptor.Field(x => x.Id).Description("Filter on RefTest id");
         descriptor.Field(x => x.Title).Description("Filter on RefTest title");
         descriptor.Field(x => x.FirstName).Description("Filter on first name of the user who started the RefTest");
         descriptor.Field(x => x.LastName).Description("Filter on last name of the user who started the RefTest");

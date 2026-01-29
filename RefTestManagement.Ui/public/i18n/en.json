@@ -19,7 +19,9 @@
     "save": "Save",
     "saving": "Saving...",
     "processing": "Processing...",
-    "close": "Close"
+    "close": "Close",
+    "deleting": "Deleting...",
+    "sending": "Sending..."
   },
   "nav": {
     "language": "Language",

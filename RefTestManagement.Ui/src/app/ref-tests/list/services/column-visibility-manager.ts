@@ -5,7 +5,7 @@ import { COLUMNS } from './constants';
  * Service responsible for managing column visibility state for the ref test list table.
  * Handles which columns are shown/hidden and the column menu state.
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class ColumnVisibilityManager {
   // ========================================================================
   // STATE

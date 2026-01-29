@@ -2,14 +2,14 @@
   <input
     type="checkbox"
     [checked]="selected()"
-    (change)="onToggleSelection()"
+    (change)="toggleSelection.emit(refTest().id)"
     (click)="$event.stopPropagation()"
     class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
   />
 </td>
 @if (isColumnVisible('title')) {
   <td class="px-4 py-3 whitespace-nowrap">
-    <div class="text-sm text-neutral-900">{{ refTest().title?.value || '-' }}</div>
+    <div class="text-sm text-neutral-900">{{ refTest().title?.value ?? '-' }}</div>
   </td>
 }
 @if (isColumnVisible('participant')) {

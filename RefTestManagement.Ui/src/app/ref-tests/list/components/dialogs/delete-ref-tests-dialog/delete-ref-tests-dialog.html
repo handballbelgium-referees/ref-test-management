@@ -1,80 +1,96 @@
 @if (show()) {
-<div
-  class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
-  (click)="cancel.emit()"
->
   <div
-    class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-    (click)="$event.stopPropagation()"
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+    (click)="cancel.emit()"
   >
-    <!-- Header -->
-    <div class="px-6 py-4 border-b border-neutral-200">
-      <h2 class="text-xl font-bold text-neutral-900">
-        {{ 'ref_tests.list.dialogs.delete.title' | translate }}
-      </h2>
-      <p class="text-sm text-neutral-600 mt-1">
-        {{ 'ref_tests.list.dialogs.delete.message' | translate : { count: refTests().length } }}
-      </p>
-    </div>
-
-    <!-- Content -->
-    <div class="px-6 py-4 overflow-y-auto flex-1 scrollbar-hide">
-      <!-- Warning -->
-      <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
-        <div class="flex gap-3">
-          <svg class="w-5 h-5 text-red-600 shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fill-rule="evenodd"
-              d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-              clip-rule="evenodd"
-            />
-          </svg>
-          <p class="text-sm font-medium text-red-800">
-            {{ 'ref_tests.list.dialogs.delete.warning' | translate }}
-          </p>
-        </div>
+    <div
+      class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-neutral-200">
+        <h2 class="text-xl font-bold text-neutral-900">
+          {{ 'ref_tests.list.dialogs.delete.title' | translate }}
+        </h2>
+        <p class="text-sm text-neutral-600 mt-1">
+          {{ 'ref_tests.list.dialogs.delete.message' | translate: { count: refTests().length } }}
+        </p>
       </div>
 
-      <!-- RefTests List -->
-      <div>
-        <h3 class="text-sm font-semibold text-neutral-900 mb-2">
-          {{ 'ref_tests.list.dialogs.delete.ref_tests' | translate }}
-        </h3>
-        <ul class="space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
-          @for (refTest of refTests(); track refTest.email) {
-          <li class="text-sm text-neutral-700 flex items-center gap-2 py-1">
-            <svg class="w-4 h-4 text-red-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <!-- Banner Container -->
+      <div class="px-6 pt-4">
+        <app-banner [bannerManager]="bannerManager()" />
+      </div>
+
+      <!-- Content -->
+      <div class="px-6 py-4 overflow-y-auto flex-1 scrollbar-hide">
+        <!-- Warning -->
+        <div class="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <div class="flex gap-3">
+            <svg
+              class="w-5 h-5 text-red-600 shrink-0 mt-0.5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
               <path
                 fill-rule="evenodd"
-                d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
                 clip-rule="evenodd"
               />
             </svg>
-            <span class="font-medium">{{ refTest.name }}</span>
-            <span class="text-neutral-500">({{ refTest.email }})</span>
-          </li>
+            <p class="text-sm font-medium text-red-800">
+              {{ 'ref_tests.list.dialogs.delete.warning' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <!-- RefTests List -->
+        <div>
+          <h3 class="text-sm font-semibold text-neutral-900 mb-2">
+            {{ 'ref_tests.list.dialogs.delete.ref_tests' | translate }}
+          </h3>
+          <ul class="space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+            @for (refTest of refTests(); track refTest.email) {
+              <li class="text-sm text-neutral-700 flex items-center gap-2 py-1">
+                <svg class="w-4 h-4 text-red-600 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fill-rule="evenodd"
+                    d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                    clip-rule="evenodd"
+                  />
+                </svg>
+                <span class="font-medium">{{ refTest.name }}</span>
+                <span class="text-neutral-500">({{ refTest.email }})</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="cancel.emit()"
+          class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
+        >
+          {{ 'ref_tests.list.dialogs.delete.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          (click)="confirm.emit()"
+          class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+        >
+          @if (loading()) {
+            <span class="flex items-center gap-2">
+              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              {{ 'common.deleting' | translate }}
+            </span>
+          } @else {
+            {{ 'ref_tests.list.dialogs.delete.confirm' | translate }}
           }
-        </ul>
+        </button>
       </div>
     </div>
-
-    <!-- Footer -->
-    <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
-      <button
-        type="button"
-        (click)="cancel.emit()"
-        class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
-      >
-        {{ 'ref_tests.list.dialogs.delete.cancel' | translate }}
-      </button>
-      <button
-        type="button"
-        (click)="confirm.emit()"
-        class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-      >
-        {{ 'ref_tests.list.dialogs.delete.confirm' | translate }}
-      </button>
-    </div>
   </div>
-</div>
 }

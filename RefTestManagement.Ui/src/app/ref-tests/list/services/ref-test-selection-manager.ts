@@ -6,7 +6,7 @@ import { IParticipantInfo, RefTestNode } from './types';
  * Service responsible for managing selection state and computing selection summaries
  * for the ref test list component.
  */
-@Injectable()
+@Injectable({ providedIn: 'root' })
 export class RefTestSelectionManager {
   // ========================================================================
   // STATE
@@ -72,7 +72,7 @@ export class RefTestSelectionManager {
   /**
    * Get the count of selected ref tests
    */
-  selectedCount = computed(() => this.selectedIds().size);
+  readonly selectedCount = computed(() => this.selectedIds().size);
 
   /**
    * Create computed for whether all ref tests are selected

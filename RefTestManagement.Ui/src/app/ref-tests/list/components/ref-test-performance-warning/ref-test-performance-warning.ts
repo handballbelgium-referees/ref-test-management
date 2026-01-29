@@ -10,5 +10,8 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [TranslatePipe],
   templateUrl: './ref-test-performance-warning.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  host: {
+    class: 'block',
+  },
 })
 export class RefTestPerformanceWarning {}

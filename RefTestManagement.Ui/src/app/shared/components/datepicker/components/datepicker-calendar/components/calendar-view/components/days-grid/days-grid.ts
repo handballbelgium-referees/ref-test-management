@@ -16,7 +16,7 @@ export class DaysGrid {
   readonly currentDate = input.required<Date>();
   readonly selectedDate = input<Date | null>(null);
 
-  readonly dateSelect = output<Date>();
+  protected readonly dateSelect = output<Date>();
 
   protected readonly today = new Date();
 
@@ -28,7 +28,7 @@ export class DaysGrid {
     return this._dateService.generateCalendarDays(
       this.currentDate(),
       this.selectedDate(),
-      this.today
+      this.today,
     );
   });
 

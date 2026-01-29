@@ -22,9 +22,9 @@ export class DatepickerInput {
   readonly isOpen = input<boolean>(false);
   readonly readonly = input<boolean>(false);
 
-  readonly focus = output<void>();
-  readonly inputChange = output<string>();
-  readonly blur = output<string>();
+  protected readonly focus = output<void>();
+  protected readonly inputChange = output<string>();
+  protected readonly blur = output<string>();
 
   readonly inputElement = viewChild<ElementRef>('input');
 

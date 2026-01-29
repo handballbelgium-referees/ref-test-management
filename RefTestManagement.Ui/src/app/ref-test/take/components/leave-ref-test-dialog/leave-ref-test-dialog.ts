@@ -12,8 +12,8 @@ import { TranslateModule } from '@ngx-translate/core';
 })
 export class LeaveRefTestDialog {
   readonly show = input.required<boolean>();
-  readonly confirm = output<void>();
-  readonly cancel = output<void>();
+  protected readonly confirm = output<void>();
+  protected readonly cancel = output<void>();
 
   constructor() {
     effect(() => {

@@ -12,13 +12,13 @@ import { TranslatePipe } from '@ngx-translate/core';
   },
 })
 export class ColumnVisibilityMenu {
-  private readonly document = inject(DOCUMENT);
+  private readonly _document = inject(DOCUMENT);
 
   readonly visibleColumns = input.required<Set<string>>();
   readonly showMenu = input.required<boolean>();
 
-  readonly toggleMenu = output<void>();
-  readonly toggleColumn = output<string>();
+  protected readonly toggleMenu = output<void>();
+  protected readonly toggleColumn = output<string>();
 
   constructor() {
     // Set up document click listener using effect instead of @HostListener
@@ -33,12 +33,12 @@ export class ColumnVisibilityMenu {
 
         // Add listener with a slight delay to avoid immediate triggering
         const timeoutId = setTimeout(() => {
-          this.document.addEventListener('click', handleClick, { once: true });
+          this._document.addEventListener('click', handleClick, { once: true });
         }, 0);
 
         return () => {
           clearTimeout(timeoutId);
-          this.document.removeEventListener('click', handleClick);
+          this._document.removeEventListener('click', handleClick);
         };
       }
       return undefined;

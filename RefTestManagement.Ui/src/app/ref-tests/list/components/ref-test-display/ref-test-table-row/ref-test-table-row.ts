@@ -1,12 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { GetRefTestsQuery, RefTestStatus } from '../../../../../../../graphql/generated';
+import { RefTestStatus } from '../../../../../../../graphql/generated';
 import { LocalizedDate } from '../../../../../shared/pipes/localized-date';
-
-type RefTestNode = NonNullable<
-  NonNullable<NonNullable<GetRefTestsQuery['refTests']>['edges']>[number]
->['node'];
+import { RefTestNode } from '../../../services/types';
 
 @Component({
   selector: 'tr[app-ref-test-table-row]',
@@ -26,7 +23,7 @@ export class RefTestTableRow {
   readonly visibleColumns = input.required<Set<string>>();
   readonly passingPercentage = input.required<number>();
 
-  readonly toggleSelection = output<string>();
+  protected readonly toggleSelection = output<string>();
 
   protected isColumnVisible(column: string): boolean {
     return this.visibleColumns().has(column);
@@ -44,10 +41,6 @@ export class RefTestTableRow {
       default:
         return 'bg-yellow-100 text-yellow-800';
     }
-  }
-
-  protected onToggleSelection(): void {
-    this.toggleSelection.emit(this.refTest().id);
   }
 
   protected onRowClick(event: MouseEvent): void {

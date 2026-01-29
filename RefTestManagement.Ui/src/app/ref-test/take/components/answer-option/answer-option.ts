@@ -14,5 +14,5 @@ export class AnswerOption {
   readonly phrase = input.required<Record<string, string>>();
   readonly selected = input.required<boolean>();
   readonly currentLanguage = input.required<string>();
-  readonly answerClick = output<void>();
+  protected readonly answerClick = output<void>();
 }

@@ -9,6 +9,6 @@ import { TranslatePipe } from '@ngx-translate/core';
   host: { class: 'block' },
 })
 export class AnswersSummary {
-  answeredQuestionsCount = input.required<number>();
-  totalQuestions = input.required<number>();
+  readonly answeredQuestionsCount = input.required<number>();
+  readonly totalQuestions = input.required<number>();
 }

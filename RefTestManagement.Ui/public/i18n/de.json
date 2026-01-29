@@ -19,7 +19,9 @@
     "save": "Speichern",
     "saving": "Speichern...",
     "processing": "Verarbeitung...",
-    "close": "Schließen"
+    "close": "Schließen",
+    "deleting": "Löschen...",
+    "sending": "Senden..."
   },
   "nav": {
     "language": "Sprache",

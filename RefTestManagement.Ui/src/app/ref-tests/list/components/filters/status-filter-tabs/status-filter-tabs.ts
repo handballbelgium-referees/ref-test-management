@@ -31,7 +31,7 @@ interface IStatusCounts {
 export class StatusFilterTabs {
   readonly selectedStatus = input<RefTestStatus | undefined>();
   readonly statusCounts = input.required<IStatusCounts>();
-  readonly statusChange = output<RefTestStatus | undefined>();
+  protected readonly statusChange = output<RefTestStatus | undefined>();
 
   protected readonly RefTestStatus = RefTestStatus;
   protected readonly filterScroll = viewChild<ElementRef<HTMLDivElement>>('filterScroll');

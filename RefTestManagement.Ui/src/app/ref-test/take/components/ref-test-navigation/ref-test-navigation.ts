@@ -26,8 +26,8 @@ export class RefTestNavigation {
   readonly isQuestionAnswered = input.required<(questionId: string) => boolean>();
   readonly isQuestionVisited = input.required<(index: number) => boolean>();
 
-  readonly previousClick = output<void>();
-  readonly nextClick = output<void>();
-  readonly submitClick = output<void>();
-  readonly questionSelected = output<number>();
+  protected readonly previousClick = output<void>();
+  protected readonly nextClick = output<void>();
+  protected readonly submitClick = output<void>();
+  protected readonly questionSelected = output<number>();
 }

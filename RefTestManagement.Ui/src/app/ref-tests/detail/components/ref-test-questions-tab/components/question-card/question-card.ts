@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { Question } from '../../../../../../../../graphql/generated';
 import { TranslationPipe } from '../../../../../../pipes/translation-pipe';
+import { IQuestion } from '../../models/question.interface';
 import { AnswerItem } from '../answer-item/answer-item';
 
 @Component({
@@ -11,8 +11,8 @@ import { AnswerItem } from '../answer-item/answer-item';
   host: { class: 'block' },
 })
 export class QuestionCard {
-  question = input.required<Question | null>();
-  questionIndex = input.required<number>();
-  currentLanguage = input.required<string>();
-  selectedAnswerIds = input.required<Set<string>>();
+  readonly question = input.required<IQuestion>();
+  readonly questionIndex = input.required<number>();
+  readonly currentLanguage = input.required<string>();
+  readonly selectedAnswerIds = input.required<Set<string>>();
 }

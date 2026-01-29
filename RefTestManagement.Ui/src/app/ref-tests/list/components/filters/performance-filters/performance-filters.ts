@@ -41,7 +41,7 @@ export class PerformanceFilters {
   readonly minMaxTimeInMinutes = input<number | undefined>();
   readonly maxMaxTimeInMinutes = input<number | undefined>();
 
-  readonly performanceChange = output<Partial<IPerformanceFilters>>();
+  protected readonly performanceChange = output<Partial<IPerformanceFilters>>();
 
   protected onMinQuestionScoreChange(value: string): void {
     this.performanceChange.emit({ minQuestionScore: value ? Number(value) : undefined });

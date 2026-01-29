@@ -16,5 +16,5 @@ export class RefTestUserListItem {
   readonly index = input.required<number>();
   readonly showRemove = input<boolean>(true);
 
-  readonly remove = output<void>();
+  protected readonly remove = output<void>();
 }

@@ -34,14 +34,6 @@
       />
     </div>
 
-    <!-- Report Result Banner -->
-    @if (operationManager.reportResult()) {
-      <app-ref-test-report-banner
-        [result]="operationManager.reportResult()!"
-        (dismiss)="dismissReportResult()"
-      />
-    }
-
     <!-- Actions Bar -->
     <app-ref-test-actions
       [selectedCount]="selectionManager.selectedCount()"
@@ -49,18 +41,18 @@
       [hasPendingRefTestsSelected]="hasPendingRefTestsSelected()"
       [hasInProgressOrCompletedRefTestsSelected]="hasInProgressOrCompletedRefTestsSelected()"
       [hasExpiredRefTestsSelected]="hasExpiredRefTestsSelected()"
-      [sendingInvitations]="operationManager.sendingInvitations()"
-      [sendingResults]="operationManager.sendingResults()"
-      [deletingRefTests]="operationManager.deletingRefTests()"
-      [generatingReport]="operationManager.generatingReport()"
-      [resettingRefTests]="operationManager.resettingRefTests()"
-      [revivingRefTests]="operationManager.revivingRefTests()"
-      (sendInvitations)="sendInvitationsToSelected()"
-      (sendResults)="sendResultsToSelected()"
-      (deleteSelected)="deleteSelectedRefTests()"
-      (generateReport)="generateReportForSelected()"
-      (resetSelected)="resetSelectedRefTests()"
-      (reviveSelected)="reviveSelectedRefTests()"
+      [sendingInvitations]="operationManager.sendInvitationsDialog.loading()"
+      [sendingResults]="operationManager.sendResultsDialog.loading()"
+      [deletingRefTests]="operationManager.deleteDialog.loading()"
+      [generatingReport]="operationManager.generateReportDialog.loading()"
+      [resettingRefTests]="operationManager.resetDialog.loading()"
+      [revivingRefTests]="operationManager.reviveDialog.loading()"
+      (sendInvitations)="operationManager.sendInvitationsDialog.initiate()"
+      (sendResults)="operationManager.sendResultsDialog.initiate()"
+      (deleteSelected)="operationManager.deleteDialog.initiate()"
+      (generateReport)="operationManager.generateReportDialog.initiate()"
+      (resetSelected)="operationManager.resetDialog.initiate()"
+      (reviveSelected)="operationManager.reviveDialog.initiate()"
     />
 
     <!-- Loading State -->
@@ -127,55 +119,67 @@
 
   <!-- Send Invitations Dialog -->
   <app-send-invitations-dialog
-    [show]="operationManager.showSendInvitationsDialog()"
+    [loading]="operationManager.sendInvitationsDialog.loading()"
+    [show]="operationManager.sendInvitationsDialog.show()"
+    [bannerManager]="operationManager.sendInvitationsDialog.bannerManager()"
     [summary]="invitationSummary()"
     (confirm)="confirmSendInvitations()"
-    (cancel)="cancelSendInvitations()"
+    (cancel)="operationManager.sendInvitationsDialog.cancel()"
   >
   </app-send-invitations-dialog>
 
   <!-- Send Results Dialog -->
   <app-send-results-dialog
-    [show]="operationManager.showSendResultsDialog()"
+    [loading]="operationManager.sendResultsDialog.loading()"
+    [show]="operationManager.sendResultsDialog.show()"
+    [bannerManager]="operationManager.sendResultsDialog.bannerManager()"
     [summary]="resultsSummary()"
     (confirm)="confirmSendResults()"
-    (cancel)="cancelSendResults()"
+    (cancel)="operationManager.sendResultsDialog.cancel()"
   >
   </app-send-results-dialog>
 
   <!-- Delete ref_tests Dialog -->
   <app-delete-ref-tests-dialog
-    [show]="operationManager.showDeleteDialog()"
+    [loading]="operationManager.deleteDialog.loading()"
+    [show]="operationManager.deleteDialog.show()"
     [refTests]="refTestsToDelete()"
+    [bannerManager]="operationManager.deleteDialog.bannerManager()"
     (confirm)="confirmDelete()"
-    (cancel)="cancelDelete()"
+    (cancel)="operationManager.deleteDialog.cancel()"
   >
   </app-delete-ref-tests-dialog>
 
   <!-- Generate Report Dialog -->
   <app-generate-report-dialog
-    [show]="operationManager.showGenerateReportDialog()"
+    [loading]="operationManager.generateReportDialog.loading()"
+    [show]="operationManager.generateReportDialog.show()"
     [summary]="reportSummary()"
+    [bannerManager]="operationManager.generateReportDialog.bannerManager()"
     (confirm)="confirmGenerateReport()"
-    (cancel)="cancelGenerateReport()"
+    (cancel)="operationManager.generateReportDialog.cancel()"
   >
   </app-generate-report-dialog>
 
   <!-- Reset Dialog -->
   <app-reset-ref-tests-dialog
-    [show]="operationManager.showResetDialog()"
+    [loading]="operationManager.resetDialog.loading()"
+    [show]="operationManager.resetDialog.show()"
     [refTests]="refTestsToReset()"
+    [bannerManager]="operationManager.resetDialog.bannerManager()"
     (confirm)="confirmReset($event)"
-    (cancel)="cancelReset()"
+    (cancel)="operationManager.resetDialog.cancel()"
   >
   </app-reset-ref-tests-dialog>
 
   <!-- Revive Dialog -->
   <app-revive-ref-tests-dialog
-    [show]="operationManager.showReviveDialog()"
+    [loading]="operationManager.reviveDialog.loading()"
+    [show]="operationManager.reviveDialog.show()"
     [refTests]="refTestsToRevive()"
+    [bannerManager]="operationManager.reviveDialog.bannerManager()"
     (confirm)="confirmRevive()"
-    (cancel)="cancelRevive()"
+    (cancel)="operationManager.reviveDialog.cancel()"
   >
   </app-revive-ref-tests-dialog>
 </app-pull-to-refresh>

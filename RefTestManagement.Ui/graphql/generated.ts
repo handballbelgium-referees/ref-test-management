@@ -313,7 +313,7 @@ export type Query = {
   /** Lookup nodes by a list of IDs. */
   nodes: Array<Maybe<Node>>;
   questionsByNumber: Array<Question>;
-  refTest?: Maybe<RefTest>;
+  refTest: RefTestResult;
   refTestByToken: RefTestByTokenResult;
   refTestTitles?: Maybe<RefTestTitlesConnection>;
   refTests?: Maybe<RefTestsConnection>;
@@ -493,8 +493,6 @@ export type RefTestFilterInput = {
   email?: InputMaybe<StringOperationFilterInput>;
   /** Filter on first name of the user who started the RefTest */
   firstName?: InputMaybe<StringOperationFilterInput>;
-  /** Filter on RefTest id */
-  id?: InputMaybe<UuidOperationFilterInput>;
   /** Filter on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<BooleanOperationFilterInput>;
   /** Filter on last name of the user who started the RefTest */
@@ -542,6 +540,8 @@ export enum RefTestResetType {
   Soft = 'SOFT'
 }
 
+export type RefTestResult = RefTest | RefTestNotFoundError;
+
 export type RefTestResultSent = {
   __typename?: 'RefTestResultSent';
   id: Scalars['ID']['output'];
@@ -562,8 +562,6 @@ export type RefTestSortInput = {
   email?: InputMaybe<SortEnumType>;
   /** Sort on first name of the user who started the RefTest */
   firstName?: InputMaybe<SortEnumType>;
-  /** Sort on RefTest id */
-  id?: InputMaybe<SortEnumType>;
   /** Sort on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<SortEnumType>;
   /** Sort on last name of the user who started the RefTest */
@@ -633,8 +631,6 @@ export type RefTestTitle = Node & {
 /** Filter RefTest titles based on Value */
 export type RefTestTitleFilterInput = {
   and?: InputMaybe<Array<RefTestTitleFilterInput>>;
-  /** Filter on RefTest title id */
-  id?: InputMaybe<UuidOperationFilterInput>;
   or?: InputMaybe<Array<RefTestTitleFilterInput>>;
   /** Filter on RefTest title value */
   value?: InputMaybe<StringOperationFilterInput>;
@@ -642,8 +638,6 @@ export type RefTestTitleFilterInput = {
 
 /** Sort RefTest titles by Value */
 export type RefTestTitleSortInput = {
-  /** Sort on RefTest title id */
-  id?: InputMaybe<SortEnumType>;
   /** Sort on RefTest title value */
   value?: InputMaybe<SortEnumType>;
 };
@@ -959,21 +953,6 @@ export type UserInput = {
   lastName: Scalars['String']['input'];
 };
 
-export type UuidOperationFilterInput = {
-  eq?: InputMaybe<Scalars['UUID']['input']>;
-  gt?: InputMaybe<Scalars['UUID']['input']>;
-  gte?: InputMaybe<Scalars['UUID']['input']>;
-  in?: InputMaybe<Array<InputMaybe<Scalars['UUID']['input']>>>;
-  lt?: InputMaybe<Scalars['UUID']['input']>;
-  lte?: InputMaybe<Scalars['UUID']['input']>;
-  neq?: InputMaybe<Scalars['UUID']['input']>;
-  ngt?: InputMaybe<Scalars['UUID']['input']>;
-  ngte?: InputMaybe<Scalars['UUID']['input']>;
-  nin?: InputMaybe<Array<InputMaybe<Scalars['UUID']['input']>>>;
-  nlt?: InputMaybe<Scalars['UUID']['input']>;
-  nlte?: InputMaybe<Scalars['UUID']['input']>;
-};
-
 export type CompleteRefTestMutationVariables = Exact<{
   input: CompleteRefTestInput;
 }>;
@@ -1141,7 +1120,10 @@ export type GetRefTestByIdQueryVariables = Exact<{
 }>;
 
 
-export type GetRefTestByIdQuery = { __typename?: 'Query', refTest?: { __typename?: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null } | null };
+export type GetRefTestByIdQuery = { __typename?: 'Query', refTest:
+    | { __typename?: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null }
+    | { __typename?: 'RefTestNotFoundError', message: string }
+   };
 
 export type GetRefTestsAllCountsQueryVariables = Exact<{
   allWhere?: InputMaybe<RefTestFilterInput>;
@@ -1807,40 +1789,45 @@ export const GetQuestionsByNumberDocument = gql`
 export const GetRefTestByIdDocument = gql`
     query GetRefTestById($id: ID!) {
   refTest(id: $id) {
-    id
-    title {
+    ... on RefTest {
       id
-      value
-    }
-    firstName
-    lastName
-    name
-    email
-    invitationSent
-    resultsSent
-    sendInvitationsAutomatically
-    sendResultsAutomatically
-    status
-    numberOfQuestions
-    maxTimeInMinutes
-    startedAt
-    completedAt
-    questionScore
-    answerScore
-    questionTotal
-    answerTotal
-    percentage
-    selectedAnswerIds
-    questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
-      id
-      number
-      phrase
-      answers {
+      title {
+        id
+        value
+      }
+      firstName
+      lastName
+      name
+      email
+      invitationSent
+      resultsSent
+      sendInvitationsAutomatically
+      sendResultsAutomatically
+      status
+      numberOfQuestions
+      maxTimeInMinutes
+      startedAt
+      completedAt
+      questionScore
+      answerScore
+      questionTotal
+      answerTotal
+      percentage
+      selectedAnswerIds
+      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
         id
         number
         phrase
-        isCorrect
+        answers {
+          id
+          number
+          phrase
+          isCorrect
+        }
       }
+    }
+    ... on RefTestNotFoundError {
+      message
     }
   }
 }

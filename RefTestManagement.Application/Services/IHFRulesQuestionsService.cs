@@ -47,7 +47,7 @@ public class IhfRulesQuestionsService(
         var result = await client.GetQuestionsByNumber.ExecuteAsync(numbers.ToList(), cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.Questions?.Nodes?.OfType<IGetQuestionsByNumber_Questions_Nodes>();
+        var nodes = result.Data?.QuestionsByNumber?.OfType<IGetQuestionsByNumber_QuestionsByNumber_Question>();
 
         if (nodes is null)
             return [];
@@ -139,7 +139,7 @@ public class IhfRulesQuestionsService(
         var result = await client.GetQuestionsByNumbers.ExecuteAsync(numbers, cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.Questions?.Nodes?.OfType<GetQuestionsByNumbers_Questions_Nodes_Question>();
+        var nodes = result.Data?.QuestionsByNumber?.OfType<GetQuestionsByNumbers_QuestionsByNumber_Question>();
         return nodes?.Select(x =>
         {
             var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??

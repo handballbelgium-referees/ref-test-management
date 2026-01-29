@@ -19,7 +19,9 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "processing": "Traitement...",
-    "close": "Fermer"
+    "close": "Fermer",
+    "deleting": "Suppression...",
+    "sending": "Envoi..."
   },
   "nav": {
     "language": "Langue",
