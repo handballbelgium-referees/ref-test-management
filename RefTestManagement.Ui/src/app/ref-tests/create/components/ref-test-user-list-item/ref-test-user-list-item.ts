@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { FormField } from '@angular/forms/signals';
+import { FieldTree, FormField } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
+import { IUserData } from '../../create-ref-tests';
 
 @Component({
   selector: 'app-ref-test-user-list-item',
@@ -12,7 +13,7 @@ import { TranslatePipe } from '@ngx-translate/core';
   },
 })
 export class RefTestUserListItem {
-  readonly userFormControl = input.required<any>();
+  readonly userFormControl = input.required<FieldTree<IUserData, number>>();
   readonly index = input.required<number>();
   readonly showRemove = input<boolean>(true);
 

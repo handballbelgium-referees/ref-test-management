@@ -471,7 +471,8 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 **Key Patterns:**
 
 - Standalone components (no NgModules)
-- Signal-based state management with reactive services
+- Signal-based state management with facade/store pattern for complex components
+- Reactive services for shared business logic
 - OnPush change detection strategy
 - Route guards for authentication
 - GraphQL operations in separate `.graphql` files
@@ -1000,6 +1001,10 @@ ref-test-management/
 │   │   │   │   ├── take/                 # RefTest taking page
 │   │   │   │   │   ├── take-ref-test.ts
 │   │   │   │   │   ├── guards/           # Can deactivate guard
+│   │   │   │   │   ├── state/            # State management for ref test taking
+│   │   │   │   │   │   ├── ref-test.facade.ts    # Facade for state operations
+│   │   │   │   │   │   ├── ref-test.models.ts    # State models
+│   │   │   │   │   │   └── ref-test.store.ts     # Signal-based store
 │   │   │   │   │   └── components/       # Question card, navigation, results, etc.
 │   │   │   │   └── components/
 │   │   │   │       └── ref-test-error/    # Error display component

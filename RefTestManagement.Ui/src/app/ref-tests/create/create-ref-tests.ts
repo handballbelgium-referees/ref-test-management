@@ -12,7 +12,7 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { applyEach, disabled, email, form, FormField, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { catchError, delay, map, of, tap } from 'rxjs';
+import { catchError, map, of, tap } from 'rxjs';
 import { CreateRefTestsGQL, GetQuestionsByNumberGQL } from '../../../../graphql/generated';
 import { Banner } from '../../services/banner';
 import { QuestionImportModal } from './components/question-import-modal/question-import-modal';
@@ -21,7 +21,7 @@ import { RefTestUserListItem } from './components/ref-test-user-list-item/ref-te
 import { TitleAutocomplete } from './components/title-autocomplete/title-autocomplete';
 import { UserImportModal } from './components/user-import-modal/user-import-modal';
 
-interface IUserData {
+export interface IUserData {
   firstName: string;
   lastName: string;
   email: string;
@@ -405,13 +405,9 @@ export class CreateRefTests {
             }
 
             if (data.successfullyCreated > 0 && data.failed === 0) {
-              of(null)
-                .pipe(delay(2000), takeUntilDestroyed(this._destroyRef))
-                .subscribe(() =>
-                  this._router.navigate(['/ref-tests'], {
-                    state: { fromCreate: true },
-                  }),
-                );
+              this._router.navigate(['/ref-tests'], {
+                state: { fromCreate: true },
+              });
             }
           }
         }),
