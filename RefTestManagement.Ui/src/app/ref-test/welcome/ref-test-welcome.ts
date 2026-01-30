@@ -4,6 +4,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { map, switchMap, tap } from 'rxjs';
 import { GetRefTestByTokenGQL } from '../../../../graphql/generated';
+import { toSnakeCase } from '../../shared/utils/string-utils';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
 import { RefTestDetails } from './components/ref-test-details/ref-test-details';
 import { RefTestHero } from './components/ref-test-hero/ref-test-hero';
@@ -41,11 +42,11 @@ export class RefTestWelcome {
               ) {
                 this._router.navigate(['/ref-test', token, 'take']);
               }
-            })
-          )
-      )
+            }),
+          ),
+      ),
     ),
-    { initialValue: null }
+    { initialValue: null },
   );
 
   readonly refTest = computed(() => {
@@ -64,12 +65,8 @@ export class RefTestWelcome {
     if (!result?.data?.refTestByToken) return null;
 
     const data = result.data.refTestByToken;
-    if (data.__typename !== 'RefTest') {
-      const snakeCaseValue = data.__typename
-        ?.replace(/([A-Z])/g, '_$1')
-        .toLowerCase()
-        .replace(/^_/, '');
-      return snakeCaseValue;
+    if (data.__typename && data.__typename !== 'RefTest') {
+      return toSnakeCase(data.__typename);
     }
     return null;
   });
@@ -82,7 +79,7 @@ export class RefTestWelcome {
   });
 
   private readonly _token = toSignal(
-    this._route.paramMap.pipe(map((params) => params.get('token') ?? ''))
+    this._route.paramMap.pipe(map((params) => params.get('token') ?? '')),
   );
 
   startRefTest(): void {
