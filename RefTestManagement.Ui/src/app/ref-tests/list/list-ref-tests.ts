@@ -356,6 +356,7 @@ export class ListRefTests {
 
     this.isRefreshing.set(true);
     this.resetPagination();
+    this.dataService.reset();
   }
 
   private resetPagination(): void {
