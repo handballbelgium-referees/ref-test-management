@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/guards/auth-guard';
-import { canDeactivateRefTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
+import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 
 export const routes: Routes = [
   {
@@ -32,15 +32,15 @@ export const routes: Routes = [
         path: 'details',
         loadComponent: () =>
           import('./ref-tests/detail/components/ref-test-detail-tab/ref-test-detail-tab').then(
-            (m) => m.RefTestDetailTab
+            (m) => m.RefTestDetailTab,
           ),
       },
       {
         path: 'questions',
         loadComponent: () =>
-          import(
-            './ref-tests/detail/components/ref-test-questions-tab/ref-test-questions-tab'
-          ).then((m) => m.RefTestQuestionsTab),
+          import('./ref-tests/detail/components/ref-test-questions-tab/ref-test-questions-tab').then(
+            (m) => m.RefTestQuestionsTab,
+          ),
       },
     ],
   },
@@ -52,7 +52,7 @@ export const routes: Routes = [
   {
     path: 'ref-test/:token/take',
     loadComponent: () => import('./ref-test/take/take-ref-test').then((m) => m.TakeRefTest),
-    canDeactivate: [canDeactivateRefTestGuard],
+    canDeactivate: [refTestGuard],
   },
   {
     path: '**',

@@ -1,104 +1,119 @@
 <div class="bg-neutral-50 py-8 px-4">
-  @if (loading()) {
-  <div class="flex items-center justify-center min-h-[60vh]">
-    <div class="text-center">
-      <div class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto"></div>
-      <p class="mt-4 text-neutral-600">{{ 'ref_test.loading' | translate }}</p>
-    </div>
-  </div>
-  } @else if (error()) {
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <app-ref-test-error [errorType]="error()!" />
-  </div>
-  } @else if (refTestCompleted()) {
-  <app-ref-test-results
-    [questions]="questions()"
-    [questionScore]="questionScore()!"
-    [questionTotal]="questionTotal()!"
-    [answerScore]="answerScore()!"
-    [answerTotal]="answerTotal()!"
-    [percentage]="percentage()!"
-    [passingPercentage]="passingPercentage()"
-    [emailDelayMinutes]="emailDelayMinutes()"
-  />
-  } @else {
-  <!-- RefTest Taking Screen -->
-  <div class="max-w-4xl mx-auto">
-    <!-- Progress Restored Info Banner -->
-    @if (showProgressRestored()) {
-    <div class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3 animate-fadeIn">
-      <svg class="w-5 h-5 text-blue-400 mt-0.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-      </svg>
-      <div class="flex-1">
-        <p class="text-sm font-medium text-neutral-800">
-          {{ 'ref_test.progress_restored' | translate }}
-        </p>
-        <p class="text-sm text-neutral-600 mt-1">
-          {{ 'ref_test.continue_where_left' | translate }}
-        </p>
+  @if (store.loading()) {
+    <div class="flex items-center justify-center min-h-[60vh]">
+      <div class="text-center">
+        <div
+          class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto"
+        ></div>
+        <p class="mt-4 text-neutral-600">{{ 'ref_test.loading' | translate }}</p>
       </div>
-      <button
-        type="button"
-        (click)="showProgressRestored.set(false)"
-        class="text-neutral-400 hover:text-neutral-600 transition-colors"
-        aria-label="Close"
-      >
-        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-        </svg>
-      </button>
     </div>
-    }
-
-    <app-ref-test-header
-      [timeRemaining]="formattedTimeRemaining()"
-      [timeRemainingSeconds]="timeRemainingSeconds()"
-      [answeredCount]="answeredCount()"
-      [totalQuestions]="questions().length"
-      [progress]="progress()"
+  } @else if (store.error()) {
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <app-ref-test-error [errorType]="store.error()!" />
+    </div>
+  } @else if (store.completed()) {
+    <app-ref-test-results
+      [questions]="store.questions()"
+      [questionScore]="store.result()?.questionScore ?? 0"
+      [questionTotal]="store.result()?.questionTotal ?? 0"
+      [answerScore]="store.result()?.answerScore ?? 0"
+      [answerTotal]="store.result()?.answerTotal ?? 0"
+      [percentage]="store.result()?.percentage ?? 0"
+      [passingPercentage]="passingPercentage() ?? 0"
+      [emailDelayMinutes]="emailDelayMinutes() ?? 0"
     />
+  } @else {
+    <div class="max-w-4xl mx-auto">
+      @if (store.showProgressRestored()) {
+        <div
+          class="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg flex items-start gap-3 animate-fadeIn"
+        >
+          <svg
+            class="w-5 h-5 text-blue-400 mt-0.5 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
+          </svg>
+          <div class="flex-1">
+            <p class="text-sm font-medium text-neutral-800">
+              {{ 'ref_test.progress_restored' | translate }}
+            </p>
+            <p class="text-sm text-neutral-600 mt-1">
+              {{ 'ref_test.continue_where_left' | translate }}
+            </p>
+          </div>
+          <button
+            type="button"
+            (click)="store.showProgressRestored.set(false)"
+            class="text-neutral-400 hover:text-neutral-600 transition-colors"
+            aria-label="Close"
+          >
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              ></path>
+            </svg>
+          </button>
+        </div>
+      }
 
-    @if (currentQuestion(); as question) {
-    <app-question-card
-      [question]="question"
-      [currentIndex]="currentQuestionIndex()"
-      [totalQuestions]="questions().length"
-      [currentLanguage]="currentLanguage()!"
-      [selectedAnswerIds]="selectedAnswers()[question.id]"
-      (answerSelected)="selectAnswer(question.id, $event)"
-    />
-    }
+      <app-ref-test-header
+        [timeRemaining]="store.formattedTimeRemaining()"
+        [timeRemainingSeconds]="store.timeRemainingSeconds()"
+        [answeredCount]="store.answeredCount()"
+        [totalQuestions]="store.questions().length"
+        [progress]="store.progress()"
+      />
 
-    <app-ref-test-navigation
-      [questions]="questions()"
-      [currentQuestionIndex]="currentQuestionIndex()"
-      [answeredCount]="answeredCount()"
-      [canPrevious]="canPrevious()"
-      [canNext]="canNext()"
-      [isLastQuestion]="isLastQuestion()"
-      [isQuestionAnswered]="isQuestionAnswered.bind(this)"
-      [isQuestionVisited]="isQuestionVisited.bind(this)"
-      (previousClick)="previousQuestion()"
-      (nextClick)="nextQuestion()"
-      (submitClick)="requestSubmitRefTest()"
-      (questionSelected)="goToQuestion($event)"
-    />
-  </div>
+      @if (store.currentQuestion(); as question) {
+        <app-question-card
+          [question]="question"
+          [currentIndex]="store.currentQuestionIndex()"
+          [totalQuestions]="store.questions().length"
+          [currentLanguage]="currentLanguage()"
+          [selectedAnswerIds]="[...store.selectedAnswers()[question.id]]"
+          (answerSelected)="selectAnswer(question.id, $event)"
+        />
+      }
+
+      <app-ref-test-navigation
+        [questions]="store.questions()"
+        [currentQuestionIndex]="store.currentQuestionIndex()"
+        [answeredCount]="store.answeredCount()"
+        [canPrevious]="store.canPrevious()"
+        [canNext]="store.canNext()"
+        [isLastQuestion]="store.isLastQuestion()"
+        [isQuestionAnswered]="isQuestionAnswered"
+        [isQuestionVisited]="isQuestionVisited"
+        (previousClick)="previous()"
+        (nextClick)="next()"
+        (submitClick)="store.showSubmitDialog.set(true)"
+        (questionSelected)="goTo($event)"
+      />
+    </div>
   }
 
-  <!-- Submit Confirmation Dialog -->
   <app-submit-ref-test-dialog
-    [show]="showSubmitDialog()"
-    [answeredCount]="answeredCount()"
-    [totalQuestions]="questions().length"
-    (confirm)="confirmSubmitRefTest()"
-    (cancel)="cancelSubmit()"
+    [show]="store.showSubmitDialog()"
+    [answeredCount]="store.answeredCount()"
+    [totalQuestions]="store.questions().length"
+    (confirm)="submit()"
+    (cancel)="store.showSubmitDialog.set(false)"
   />
 
-  <!-- Leave Confirmation Dialog -->
   <app-leave-ref-test-dialog
-    [show]="showLeaveDialog()"
+    [show]="store.showLeaveDialog()"
     (confirm)="confirmLeave()"
     (cancel)="cancelLeave()"
   />

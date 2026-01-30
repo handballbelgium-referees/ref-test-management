@@ -1,9 +1,10 @@
 import { computed, DestroyRef, inject, Injectable, Signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { ApolloCache, ApolloClient, FetchResult } from '@apollo/client';
+import { ApolloCache, ApolloClient, ApolloLink } from '@apollo/client';
 import { catchError, EMPTY, map, switchMap, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
+  DeleteRefTestsMutation,
   GetRefTestsAllCountsGQL,
   GetRefTestsAllCountsQuery,
   GetRefTestsGQL,
@@ -268,7 +269,10 @@ export class RefTestData {
   /* Delete Cache Logic                                                       */
   /* ------------------------------------------------------------------------ */
 
-  private updateDeleteCache(cache: ApolloCache, { data }: FetchResult<any>): void {
+  private updateDeleteCache(
+    cache: ApolloCache,
+    { data }: ApolloLink.Result<DeleteRefTestsMutation>,
+  ): void {
     const deleted = data?.deleteRefTests?.deleteRefTestsResult?.deletedRefTests ?? [];
 
     if (!deleted.length) return;
