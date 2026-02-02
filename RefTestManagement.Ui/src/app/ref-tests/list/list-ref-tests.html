@@ -11,6 +11,7 @@
     <app-ref-test-list-toolbar
       [visibleColumns]="columnVisibility.visibleColumns()"
       [showColumnMenu]="columnVisibility.showColumnMenu()"
+      [searchTerm]="filterState.filter().searchTerm"
       (createClick)="navigateToCreate()"
       (searchInput)="onSearchInput($event)"
       (toggleMenuClick)="toggleColumnMenu()"
