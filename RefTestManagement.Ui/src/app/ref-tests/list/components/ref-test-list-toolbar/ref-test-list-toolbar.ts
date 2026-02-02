@@ -18,6 +18,7 @@ import { ColumnVisibilityMenu } from '../column-visibility-menu/column-visibilit
 export class RefTestListToolbar {
   readonly visibleColumns = input.required<Set<string>>();
   readonly showColumnMenu = input.required<boolean>();
+  readonly searchTerm = input.required<string>();
 
   protected readonly createClick = output<void>();
   protected readonly searchInput = output<Event>();
