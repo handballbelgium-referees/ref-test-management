@@ -353,10 +353,10 @@ export class RefTestData {
           const current = this._queryRef.getCurrentResult();
           const isLoaded = current?.data?.refTests?.edges?.some((e) => e?.node?.id === event.id);
 
-          if (!isLoaded) return;
-
-          // Map subscription event to cache update
+          // Map subscription event to cache update and infer old status
           let updates: Record<string, unknown> = {};
+          let oldStatus: RefTestStatus | undefined;
+
           switch (event.__typename) {
             case 'RefTestCompleted':
               updates = {
@@ -368,14 +368,20 @@ export class RefTestData {
                 answerTotal: event.answerTotal,
                 percentage: event.percentage,
               };
+              // Flow: InProgress -> Completed
+              oldStatus = RefTestStatus.InProgress;
               break;
 
             case 'RefTestExpired':
               updates = { status: event.status };
+              // Flow: Pending -> Expired
+              oldStatus = RefTestStatus.Pending;
               break;
 
             case 'RefTestStarted':
               updates = { status: event.status, startedAt: event.startedAt };
+              // Flow: Pending -> InProgress
+              oldStatus = RefTestStatus.Pending;
               break;
 
             case 'RefTestInvitationSent':
@@ -387,7 +393,15 @@ export class RefTestData {
               break;
           }
 
-          this.updateRefTestInCache(event.id, updates);
+          // Update status counts if status changed
+          if ('status' in updates && oldStatus !== undefined) {
+            this.updateStatusCounts(oldStatus, updates['status'] as RefTestStatus);
+          }
+
+          // Update the ref test in cache only if it's loaded
+          if (isLoaded) {
+            this.updateRefTestInCache(event.id, updates);
+          }
         }),
         catchError(() => EMPTY),
         takeUntilDestroyed(destroyRef),
@@ -398,12 +412,6 @@ export class RefTestData {
   private updateRefTestInCache(id: string, updates: Record<string, unknown>): void {
     const currentData = this._queryRef.getCurrentResult();
     if (!currentData?.data?.refTests) return;
-
-    let oldStatus: RefTestStatus | undefined;
-    if ('status' in updates) {
-      const edge = currentData.data.refTests.edges?.find((e) => e?.node?.id === id);
-      oldStatus = edge?.node?.status;
-    }
 
     // @ts-expect-error Apollo typing
     this._queryRef.updateQuery((prev) => {
@@ -426,10 +434,6 @@ export class RefTestData {
         },
       };
     });
-
-    if ('status' in updates && oldStatus !== updates['status']) {
-      this.updateStatusCounts(oldStatus, updates['status'] as RefTestStatus);
-    }
   }
 
   private updateStatusCounts(oldStatus: RefTestStatus | undefined, newStatus: RefTestStatus): void {

@@ -118,6 +118,33 @@ jobs:
           path: ./publish
           retention-days: 7
 
+  sync-to-main:
+    name: 🔄 Sync release to main
+    runs-on: ubuntu-latest
+    needs: [release]
+    if: needs.release.outputs.new-release-published == 'true'
+    permissions:
+      contents: write
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🔧 Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 🔄 Sync release tag to main
+        run: |
+          git fetch origin main
+          git checkout main
+          git merge origin/release --strategy-option theirs --no-ff -m "chore(release): sync v${{ needs.release.outputs.new-release-version }} to main [skip ci]"
+          git push origin main
+
   deploy-production:
     name: 🚀 Deploy to Production (${{ needs.release.outputs.new-release-version }})
     runs-on: ubuntu-latest

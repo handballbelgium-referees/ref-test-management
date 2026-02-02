@@ -21,6 +21,7 @@
     <div class="flex-1 sm:w-96">
       <input
         type="search"
+        [value]="searchTerm()"
         [placeholder]="'ref_tests.list.search_placeholder' | translate"
         [attr.aria-label]="'ref_tests.list.search_placeholder' | translate"
         (input)="searchInput.emit($event)"
