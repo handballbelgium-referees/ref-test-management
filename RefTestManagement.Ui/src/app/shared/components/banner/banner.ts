@@ -40,6 +40,9 @@ export class Banner {
   // Optional isolated banner manager for dialogs
   readonly bannerManager = input<IsolatedBannerManager | null>(null);
 
+  // Optional padding classes for the container
+  readonly containerClass = input<string>('');
+
   // Read banners from either the isolated manager or the global service
   protected readonly banners = () => {
     const manager = this.bannerManager();
