@@ -3,8 +3,7 @@
     "release",
     {
       "name": "main",
-      "prerelease": "alpha",
-      "channel": "alpha"
+      "prerelease": "alpha"
     }
   ],
   "tagFormat": "v${version}",
