@@ -3,9 +3,11 @@
     "release",
     {
       "name": "main",
-      "prerelease": "alpha"
+      "prerelease": "alpha",
+      "channel": "alpha"
     }
   ],
+  "tagFormat": "v${version}",
   "plugins": [
     [
       "@semantic-release/commit-analyzer",

@@ -138,11 +138,11 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: 🔄 Merge release into main
+      - name: 🔄 Sync release tag to main
         run: |
           git fetch origin main
           git checkout main
-          git merge origin/release --no-ff -m "chore: merge release v${{ needs.release.outputs.new-release-version }} into main [skip ci]"
+          git merge origin/release --strategy-option theirs --no-ff -m "chore(release): sync v${{ needs.release.outputs.new-release-version }} to main [skip ci]"
           git push origin main
 
   deploy-production:
