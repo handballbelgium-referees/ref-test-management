@@ -9,7 +9,7 @@ export class RefTestStore {
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
 
-  readonly refTestId = signal<string | null>(null);
+  readonly token = signal<string>('');
   readonly questions = signal<Question[]>([]);
   readonly currentQuestionIndex = signal(0);
 
@@ -160,5 +160,9 @@ export class RefTestStore {
     this.showLeaveDialog.set(false);
     this.showSubmitDialog.set(false);
     this.showProgressRestored.set(false);
+    this.startTime.set(null);
+    this.maxTimeInMinutes.set(60);
+    this.timeRemainingSeconds.set(0);
+    this.token.set('');
   }
 }

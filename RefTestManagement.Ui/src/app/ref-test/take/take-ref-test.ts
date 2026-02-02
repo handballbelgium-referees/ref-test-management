@@ -84,10 +84,7 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
 
         // Auto-submit when timer reaches 0
         if (this.store.timeRemainingSeconds() === 0 && !this.store.completed()) {
-          const token = this._token();
-          if (token) {
-            this._facade.submit(token);
-          }
+          this._facade.submit();
         }
       }, 1000);
       onCleanup(() => clearInterval(interval));
@@ -121,9 +118,7 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
   }
 
   submit() {
-    const token = this._token();
-    if (!token) return;
-    this._facade.submit(token);
+    this._facade.submit();
   }
 
   back() {

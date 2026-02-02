@@ -41,7 +41,7 @@ export class RefTestFacade {
       .pipe(
         map((r) => r.data?.startRefTest),
         filter((data): data is StartRefTestPayload => !!data),
-        tap((data) => this.handleStart(data)),
+        tap((data) => this.handleStart(token, data)),
         catchError(() => {
           this._store.error.set('general');
           return EMPTY;
@@ -52,7 +52,7 @@ export class RefTestFacade {
       .subscribe();
   }
 
-  private handleStart(data?: StartRefTestPayload): void {
+  private handleStart(token: string, data?: StartRefTestPayload): void {
     const errors = data?.errors;
     if (errors && errors.length > 0) {
       this._store.error.set(toSnakeCase(errors[0].__typename!));
@@ -61,7 +61,7 @@ export class RefTestFacade {
     const refTest = data?.refTest;
     if (!refTest?.questions) return;
 
-    this._store.refTestId.set(refTest.id);
+    this._store.token.set(token);
 
     const questions = refTest.questions
       .filter((q) => !!q)
@@ -88,7 +88,10 @@ export class RefTestFacade {
     this.subscribeToTimeExtension(refTest.id);
   }
 
-  submit(token: string): void {
+  submit(): void {
+    const token = this._store.token();
+    if (!token) return;
+
     const selectedAnswerIds = this._store.getSelectedAnswerIds();
 
     this._completeRefTestGQL
@@ -112,20 +115,21 @@ export class RefTestFacade {
   }
 
   triggerSave(): void {
+    if (!this._store.token()) return;
     this._saveProgress$.next();
   }
 
-  private saveInternal(token?: string) {
-    const t = token ?? this._store.refTestId();
+  private saveInternal() {
+    const token = this._store.token();
     const lang = this._store.currentLanguage();
 
-    if (!t) return;
+    if (!token) return;
 
     this._saveRefTestProgressGQL
       .mutate({
         variables: {
           input: {
-            token: t,
+            token: token,
             currentQuestionIndex: this._store.currentQuestionIndex(),
             selectedAnswerIds: this._store.getSelectedAnswerIds(),
             language: lang,
@@ -136,8 +140,8 @@ export class RefTestFacade {
       .subscribe();
   }
 
-  save(token?: string): void {
-    this.saveInternal(token);
+  save(): void {
+    this.saveInternal();
   }
 
   private subscribeToTimeExtension(refTestId: string): void {
