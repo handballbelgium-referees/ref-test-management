@@ -121,7 +121,6 @@ export class UpdateConfigurationDialog {
         if (currentSelected.length > 0) {
           this.previousSelectedQuestions.set(currentSelected);
           this.selectedQuestions.set([]);
-          this.updateQuestionCount();
         }
       } else {
         // Checkbox is unchecked - restore previous questions
