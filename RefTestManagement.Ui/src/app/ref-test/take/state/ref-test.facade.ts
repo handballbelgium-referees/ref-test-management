@@ -33,12 +33,12 @@ export class RefTestFacade {
   }
 
   start(token: string): void {
-    this._store.loading.set(true);
     this._store.error.set(null);
 
     this._startRefTestGQL
       .mutate({ variables: { input: { token } } })
       .pipe(
+        tap((r) => this._store.loading.set(r.loading ?? false)),
         map((r) => r.data?.startRefTest),
         filter((data): data is StartRefTestPayload => !!data),
         tap((data) => this.handleStart(token, data)),
@@ -46,7 +46,7 @@ export class RefTestFacade {
           this._store.error.set('general');
           return EMPTY;
         }),
-        tap(() => this._store.loading.set(false)),
+        finalize(() => this._store.loading.set(false)),
         takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();

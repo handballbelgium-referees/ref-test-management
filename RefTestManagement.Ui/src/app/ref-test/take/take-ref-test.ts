@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/cor
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, CanDeactivate, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { map } from 'rxjs';
+import { interval, map } from 'rxjs';
 import {
   GetResultsEmailDelayMinutesGQL,
   GetScoreConfigurationGQL,
@@ -76,18 +76,21 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
     });
 
     // Timer tick
-    effect((onCleanup) => {
-      const start = this.store.startTime();
-      if (!start || this.store.completed()) return;
-      const interval = setInterval(() => {
-        this.store.updateRemainingTime();
+    const tick = toSignal(interval(1000), { initialValue: -1 });
 
-        // Auto-submit when timer reaches 0
-        if (this.store.timeRemainingSeconds() === 0 && !this.store.completed()) {
-          this._facade.submit();
-        }
-      }, 1000);
-      onCleanup(() => clearInterval(interval));
+    effect(() => {
+      const start = this.store.startTime();
+      const completed = this.store.completed();
+      const currentTick = tick();
+
+      if (!start || completed || currentTick < 0) return;
+
+      this.store.updateRemainingTime();
+
+      // Auto-submit when timer reaches 0
+      if (this.store.timeRemainingSeconds() === 0 && !this.store.completed()) {
+        this._facade.submit();
+      }
     });
   }
 

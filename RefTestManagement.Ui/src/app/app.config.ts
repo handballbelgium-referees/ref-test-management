@@ -8,6 +8,7 @@ import {
   LOCALE_ID,
   provideAppInitializer,
   provideBrowserGlobalErrorListeners,
+  provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
@@ -56,6 +57,7 @@ function registerDynamicLocales() {
 
 export const appConfig: ApplicationConfig = {
   providers: [
+    provideZonelessChangeDetection(),
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
@@ -70,7 +72,8 @@ export const appConfig: ApplicationConfig = {
       provide: LOCALE_ID,
       useFactory: () => {
         const translate = inject(TranslateService);
-        const currentLang = translate.currentLang || localStorage.getItem('app-language') || 'en';
+        const currentLang =
+          translate.getCurrentLang() || localStorage.getItem('app-language') || 'en';
         return `${currentLang}-BE`;
       },
     },
