@@ -128,14 +128,12 @@
         <button
           type="button"
           (click)="onConfirm()"
-          class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          class="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-medium hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           [disabled]="loading()"
         >
           @if (loading()) {
-            <span class="flex items-center gap-2">
-              <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-              {{ 'common.processing' | translate }}
-            </span>
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+            {{ 'common.processing' | translate }}
           } @else {
             {{ 'ref_tests.detail.reset.confirm_button' | translate }}
           }
