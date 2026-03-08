@@ -31,5 +31,6 @@ public class RefTestFilterType : FilterInputType<RefTestDto>
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Filter on maximum time in minutes for the RefTest");
         descriptor.Field(x => x.ResultsSent).Description("Filter on results were sent for the RefTest");
         descriptor.Field(x => x.SendResultsAutomatically).Description("Filter on whether results are sent automatically");
+        descriptor.Field(x => x.Language).Description("Filter on language where the RefTest was taken");
     }
 }

@@ -83,5 +83,17 @@
         }
       </dd>
     </div>
+    <div>
+      <dt class="text-sm font-medium text-neutral-500">
+        {{ 'ref_tests.detail.language' | translate }}
+      </dt>
+      <dd class="mt-1 text-sm text-neutral-900">
+        @if (languageDisplayName()) {
+          {{ languageDisplayName() }}
+        } @else {
+          <span class="text-neutral-400">-</span>
+        }
+      </dd>
+    </div>
   </dl>
 </div>

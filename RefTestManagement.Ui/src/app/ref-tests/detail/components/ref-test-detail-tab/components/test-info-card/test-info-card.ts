@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus, RefTestTitle } from '../../../../../../../../graphql/generated';
+import { Language, LANGUAGE_NAMES } from '../../../../../../services/language-config';
 
 @Component({
   selector: 'app-test-info-card',
@@ -13,9 +14,16 @@ export class TestInfoCard {
   readonly title = input<RefTestTitle>();
   readonly numberOfQuestions = input.required<number>();
   readonly maxTimeInMinutes = input<number>();
+  readonly language = input<string | null>();
   readonly status = input.required<RefTestStatus>();
   protected readonly edit = output<void>();
   protected readonly regenerateToken = output<void>();
 
   protected readonly RefTestStatus = RefTestStatus;
+
+  protected readonly languageDisplayName = computed(() => {
+    const lang = this.language();
+    if (!lang) return null;
+    return LANGUAGE_NAMES[lang as Language] ?? lang;
+  });
 }

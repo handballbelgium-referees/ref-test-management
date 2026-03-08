@@ -56,6 +56,11 @@ export class RefTestQueryBuilder {
       } as BooleanOperationFilterInput;
     }
 
+    // Language filter
+    if (filter.language) {
+      filters.language = { eq: filter.language } as StringOperationFilterInput;
+    }
+
     // Score filters
     this.applyIntRangeFilter(
       filters,

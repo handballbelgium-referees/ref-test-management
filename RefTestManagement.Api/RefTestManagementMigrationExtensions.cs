@@ -14,9 +14,6 @@ public static class RefTestManagementMigrationExtensions
         await using var context = await scope.ServiceProvider
             .GetRequiredService<IDbContextFactory<RefTestManagementContext>>().CreateDbContextAsync();
 
-        if (await context.Database.CanConnectAsync())
-        {
-            await context.Database.MigrateAsync();
-        }
+        await context.Database.MigrateAsync();
     }
 }

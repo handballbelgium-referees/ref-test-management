@@ -36,6 +36,7 @@ query GetRefTestById($id: ID!) {
           isCorrect
         }
       }
+      language
     }
     ... on RefTestNotFoundError {
       message
