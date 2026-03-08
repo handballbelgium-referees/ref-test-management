@@ -32,5 +32,6 @@ public class RefTestSortType : SortInputType<RefTestDto>
         descriptor.Field(x => x.MaxTimeInMinutes).Description("Sort on maximum time in minutes for the RefTest");
         descriptor.Field(x => x.ResultsSent).Description("Sort on results were sent for the RefTest");
         descriptor.Field(x => x.SendResultsAutomatically).Description("Sort on whether results are sent automatically");
+        descriptor.Field(x => x.Language).Description("Sort on language where the RefTest was taken");
     }
 }

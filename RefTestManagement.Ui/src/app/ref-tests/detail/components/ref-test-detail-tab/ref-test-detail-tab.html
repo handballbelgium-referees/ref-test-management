@@ -16,6 +16,7 @@
         [title]="test.title ?? undefined"
         [numberOfQuestions]="test.numberOfQuestions"
         [maxTimeInMinutes]="test.maxTimeInMinutes"
+        [language]="test.language"
         [status]="test.status"
         (edit)="operationManager.updateRefTestConfigurationDialog.initiate(test)"
         (regenerateToken)="operationManager.regenerateRefTestTokenDialog.initiate()"

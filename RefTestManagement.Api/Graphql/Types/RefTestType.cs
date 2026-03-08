@@ -63,6 +63,7 @@ public class RefTestType : ObjectType<RefTestDto>
                 GetQuestions(ctx.Parent<RefTestDto>().QuestionIds, ctx.Service<IIhfRulesQuestionsService>(),
                     ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"),
                     ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
+        descriptor.Field(x => x.Language).Description("Language where the RefTest was taken").Authorize();
     }
 
     /// <summary>

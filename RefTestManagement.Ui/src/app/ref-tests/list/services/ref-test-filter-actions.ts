@@ -45,6 +45,11 @@ export class RefTestFilterActions {
     this._onFilterChange?.();
   }
 
+  setLanguageFilter(language?: string): void {
+    this._filterState.setLanguage(language);
+    this._onFilterChange?.();
+  }
+
   setSorting(sortField: SortField, sortDirection: SortEnumType): void {
     this._filterState.setSorting(sortField, sortDirection);
     this._onFilterChange?.();

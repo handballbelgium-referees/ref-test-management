@@ -24,6 +24,7 @@ export interface IRefTestFilter {
   invitationSent?: boolean;
   resultsSent?: boolean;
   titleValue?: string;
+  language?: string;
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;

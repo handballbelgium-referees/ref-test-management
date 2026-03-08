@@ -42,6 +42,18 @@ export class RefTestFilterState {
     this.updateFilter({ resultsSent });
   }
 
+  setLanguage(language?: string): void {
+    this._filter.update((current) => {
+      const updated = { ...current };
+      if (language) {
+        updated.language = language;
+      } else {
+        delete updated.language;
+      }
+      return updated;
+    });
+  }
+
   setSearchTerm(searchTerm: string): void {
     this.updateFilter({ searchTerm });
   }

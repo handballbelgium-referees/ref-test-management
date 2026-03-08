@@ -406,6 +406,8 @@ export type RefTest = Node & {
   id: Scalars['ID']['output'];
   /** Indication of invitation was sent */
   invitationSent: Scalars['Boolean']['output'];
+  /** Language where the RefTest was taken */
+  language?: Maybe<Scalars['String']['output']>;
   /** Last name of the user who started the RefTest */
   lastName: Scalars['String']['output'];
   /** Maximum time in minutes for the RefTest */
@@ -495,6 +497,8 @@ export type RefTestFilterInput = {
   firstName?: InputMaybe<StringOperationFilterInput>;
   /** Filter on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<BooleanOperationFilterInput>;
+  /** Filter on language where the RefTest was taken */
+  language?: InputMaybe<StringOperationFilterInput>;
   /** Filter on last name of the user who started the RefTest */
   lastName?: InputMaybe<StringOperationFilterInput>;
   /** Filter on maximum time in minutes for the RefTest */
@@ -564,6 +568,8 @@ export type RefTestSortInput = {
   firstName?: InputMaybe<SortEnumType>;
   /** Sort on invitation was sent for the RefTest */
   invitationSent?: InputMaybe<SortEnumType>;
+  /** Sort on language where the RefTest was taken */
+  language?: InputMaybe<SortEnumType>;
   /** Sort on last name of the user who started the RefTest */
   lastName?: InputMaybe<SortEnumType>;
   /** Sort on maximum time in minutes for the RefTest */
@@ -1121,7 +1127,7 @@ export type GetRefTestByIdQueryVariables = Exact<{
 
 
 export type GetRefTestByIdQuery = { __typename?: 'Query', refTest:
-    | { __typename?: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null }
+    | { __typename?: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt?: string | null, completedAt?: string | null, questionScore?: number | null, answerScore?: number | null, questionTotal: number, answerTotal?: number | null, percentage?: number | null, selectedAnswerIds: Array<string>, language?: string | null, title?: { __typename?: 'RefTestTitle', id: string, value: string } | null, questions?: Array<{ __typename?: 'Question', id: string, number: string, phrase?: Record<string, string> | null, answers: Array<{ __typename?: 'Answer', id: string, number?: string | null, phrase?: Record<string, string> | null, isCorrect: boolean }> } | null> | null }
     | { __typename?: 'RefTestNotFoundError', message: string }
    };
 
@@ -1825,6 +1831,7 @@ export const GetRefTestByIdDocument = gql`
           isCorrect
         }
       }
+      language
     }
     ... on RefTestNotFoundError {
       message

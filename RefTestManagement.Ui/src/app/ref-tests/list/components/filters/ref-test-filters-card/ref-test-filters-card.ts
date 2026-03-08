@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus, SortEnumType } from '../../../../../../../graphql/generated';
+import { LanguageConfig } from '../../../../../services/language-config';
 import { DateRangeFilter } from '../date-range-filter/date-range-filter';
 import { PerformanceFilters } from '../performance-filters/performance-filters';
 import { SortingPanel } from '../sorting-panel/sorting-panel';
@@ -26,6 +28,7 @@ interface IRefTestFilter {
   invitationSent?: boolean;
   resultsSent?: boolean;
   titleValue?: string;
+  language?: string;
   searchTerm: string;
   sortField: SortField;
   sortDirection: SortEnumType;
@@ -77,6 +80,8 @@ interface IStatusCounts {
   `,
 })
 export class RefTestFiltersCard {
+  private readonly _languageConfig = inject(LanguageConfig);
+
   readonly filter = input.required<IRefTestFilter>();
   readonly statusCounts = input.required<IStatusCounts>();
 
@@ -84,6 +89,7 @@ export class RefTestFiltersCard {
   protected readonly titleFilterChange = output<string | undefined>();
   protected readonly invitationFilterChange = output<boolean | undefined>();
   protected readonly resultsFilterChange = output<boolean | undefined>();
+  protected readonly languageFilterChange = output<string | undefined>();
 
   protected readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
   protected readonly performanceFilterChange = output<{
@@ -108,6 +114,10 @@ export class RefTestFiltersCard {
 
   protected readonly filtersExpanded = signal(false);
 
+  protected readonly availableLanguages = toSignal(this._languageConfig.getAvailableLanguages(), {
+    initialValue: [],
+  });
+
   protected toggleFilters(): void {
     this.filtersExpanded.update((v) => !v);
   }
@@ -130,6 +140,10 @@ export class RefTestFiltersCard {
 
   protected onResultsChange(value: string): void {
     this.resultsFilterChange.emit(value === '' ? undefined : value === 'true');
+  }
+
+  protected onLanguageChange(value: string): void {
+    this.languageFilterChange.emit(value === '' ? undefined : value);
   }
 
   protected onPerformanceChange(changes: {

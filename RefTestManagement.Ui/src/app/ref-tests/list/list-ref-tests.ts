@@ -383,6 +383,10 @@ export class ListRefTests {
     this.filterActions.setResultsFilter(resultsSent);
   }
 
+  protected setLanguageFilter(language?: string): void {
+    this.filterActions.setLanguageFilter(language);
+  }
+
   protected setSorting(sortField: SortField, sortDirection: SortEnumType): void {
     this.filterActions.setSorting(sortField, sortDirection);
   }
