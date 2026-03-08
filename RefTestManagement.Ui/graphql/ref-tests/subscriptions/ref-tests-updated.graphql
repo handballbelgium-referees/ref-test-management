@@ -15,6 +15,7 @@ subscription RefTestsUpdated {
       answerScore
       answerTotal
       percentage
+      language
     }
     ... on RefTestExpired {
       id

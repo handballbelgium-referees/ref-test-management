@@ -169,6 +169,7 @@ public static class RefTestLifecycleMutations
             refTest.AnswerScore ?? 0,
             refTest.AnswerTotal ?? 0,
             refTest.Percentage ?? 0,
+            input.Language ?? "",
             cancellationToken);
 
         if (!refTest.SendResultsAutomatically)

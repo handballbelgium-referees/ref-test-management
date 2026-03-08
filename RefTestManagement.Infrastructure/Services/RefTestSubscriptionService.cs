@@ -55,6 +55,7 @@ public interface IRefTestSubscriptionService
         int answerScore,
         int answerTotal,
         double percentage,
+        string language,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -133,10 +134,11 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         int answerScore,
         int answerTotal,
         double percentage,
+        string language,
         CancellationToken cancellationToken = default)
     {
         var evt = new RefTestCompletedEvent(refTestId, status, completedAt, questionScore, questionTotal, answerScore,
-            answerTotal, percentage);
+            answerTotal, percentage, language);
 
         await Task.WhenAll(
             eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
@@ -176,6 +178,7 @@ public record RefTestCompletedEvent(
     int QuestionTotal,
     int AnswerScore,
     int AnswerTotal,
-    double Percentage);
+    double Percentage,
+    string Language);
 
 public record RefTestExpiredEvent(Guid Id, RefTestStatus Status, DateTime ExpiredAt);

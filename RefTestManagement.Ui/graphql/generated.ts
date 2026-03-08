@@ -460,6 +460,7 @@ export type RefTestCompleted = {
   answerTotal: Scalars['Int']['output'];
   completedAt: Scalars['DateTime']['output'];
   id: Scalars['ID']['output'];
+  language: Scalars['String']['output'];
   percentage: Scalars['Float']['output'];
   questionScore: Scalars['Int']['output'];
   questionTotal: Scalars['Int']['output'];
@@ -1175,7 +1176,7 @@ export type RefTestUpdatedSubscriptionVariables = Exact<{
 
 
 export type RefTestUpdatedSubscription = { __typename?: 'Subscription', refTestUpdated:
-    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number }
+    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestResultSent', id: string }
@@ -1186,7 +1187,7 @@ export type RefTestsUpdatedSubscriptionVariables = Exact<{ [key: string]: never;
 
 
 export type RefTestsUpdatedSubscription = { __typename?: 'Subscription', refTestsUpdated:
-    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number }
+    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestResultSent', id: string }
@@ -1996,6 +1997,7 @@ export const RefTestUpdatedDocument = gql`
       answerScore
       answerTotal
       percentage
+      language
     }
     ... on RefTestExpired {
       id
@@ -2039,6 +2041,7 @@ export const RefTestsUpdatedDocument = gql`
       answerScore
       answerTotal
       percentage
+      language
     }
     ... on RefTestExpired {
       id
