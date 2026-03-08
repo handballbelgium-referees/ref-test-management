@@ -22,6 +22,7 @@ export class RefTestStore {
 
   readonly completed = signal(false);
   readonly result = signal<RefTestResult | null>(null);
+  readonly sendResultsAutomatically = signal<boolean>(false);
 
   readonly showSubmitDialog = signal(false);
   readonly showLeaveDialog = signal(false);
@@ -141,6 +142,7 @@ export class RefTestStore {
   complete(result: RefTestResult): void {
     this.completed.set(true);
     this.result.set(result);
+    this.sendResultsAutomatically.set(result.sendResultsAutomatically ?? false);
     this.showSubmitDialog.set(false);
   }
 

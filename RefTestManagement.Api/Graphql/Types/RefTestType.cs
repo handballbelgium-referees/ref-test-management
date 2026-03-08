@@ -47,7 +47,7 @@ public class RefTestType : ObjectType<RefTestDto>
         descriptor.Field(x => x.WrongAnswerIds).Description("List of answer IDs that were answered incorrectly");
         descriptor.Field(x => x.ResultsSent).Description("Indication of results were sent").Authorize();
         descriptor.Field(x => x.SendResultsAutomatically)
-            .Description("Indication of whether results are sent automatically").Authorize();
+            .Description("Indication of whether results are sent automatically");
         descriptor.Field(x => x.Status)
             .Description(
                 "Status of the RefTest (e.g., InProgress, Completed, Expired). Expired tests are automatically processed by a background service.")
@@ -63,6 +63,7 @@ public class RefTestType : ObjectType<RefTestDto>
                 GetQuestions(ctx.Parent<RefTestDto>().QuestionIds, ctx.Service<IIhfRulesQuestionsService>(),
                     ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"),
                     ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
+        descriptor.Field(x => x.Language).Description("Language where the RefTest was taken").Authorize();
     }
 
     /// <summary>
