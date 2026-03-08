@@ -290,6 +290,7 @@ export class RefTestDetailData {
                   answerScore: event.answerScore,
                   answerTotal: event.answerTotal,
                   percentage: event.percentage,
+                  language: event.language,
                 };
                 break;
 

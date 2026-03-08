@@ -367,6 +367,7 @@ export class RefTestData {
                 answerScore: event.answerScore,
                 answerTotal: event.answerTotal,
                 percentage: event.percentage,
+                language: event.language,
               };
               // Flow: InProgress -> Completed
               oldStatus = RefTestStatus.InProgress;

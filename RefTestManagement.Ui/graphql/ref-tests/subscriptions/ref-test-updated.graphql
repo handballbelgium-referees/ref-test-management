@@ -15,6 +15,7 @@ subscription RefTestUpdated($id: ID!) {
       answerScore
       answerTotal
       percentage
+      language
     }
     ... on RefTestExpired {
       id

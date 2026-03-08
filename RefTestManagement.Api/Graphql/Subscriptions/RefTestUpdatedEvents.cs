@@ -29,7 +29,8 @@ public record RefTestCompleted(
     int QuestionTotal,
     int AnswerScore,
     int AnswerTotal,
-    double Percentage) : IRefTestEvent;
+    double Percentage,
+    string Language) : IRefTestEvent;
 
 [ObjectType]
 public record RefTestExpired([property: ID<RefTest>] Guid Id, RefTestStatus Status, DateTime ExpiredAt) : IRefTestEvent;

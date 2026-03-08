@@ -43,7 +43,7 @@ public static class RefTestSubscriptions
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
             RefTestCompletedEvent e => new RefTestCompleted(e.Id, e.Status, e.CompletedAt, e.QuestionScore,
-                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage),
+                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage, e.Language),
             RefTestExpiredEvent e => new RefTestExpired(e.Id, e.Status, e.ExpiredAt),
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
@@ -68,7 +68,7 @@ public static class RefTestSubscriptions
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
             RefTestCompletedEvent e => new RefTestCompleted(e.Id, e.Status, e.CompletedAt, e.QuestionScore,
-                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage),
+                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage, e.Language),
             RefTestExpiredEvent e => new RefTestExpired(e.Id, e.Status, e.ExpiredAt),
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
