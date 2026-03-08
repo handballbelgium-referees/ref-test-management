@@ -2032,7 +2032,22 @@ Versions are automatically determined by [semantic-release](https://github.com/s
 
 ## 📄 License
 
-This project is licensed under the ISC License - see the LICENSE file for details.
+Copyright (c) 2026 Kristof Gilis. All rights reserved.
+
+This repository is publicly accessible for **educational and reference purposes only**. It is **not open-source** and is governed by a custom [Source Available – Educational Viewing Only License](LICENSE).
+
+**You may:**
+
+- Read and study the source code for personal learning
+
+**You may NOT:**
+
+- Use, copy, or incorporate any part of this code into your own projects
+- Deploy or run this software in any production environment
+- Distribute, sublicense, or sell this software
+- Modify or create derivative works
+
+For any use beyond personal study, contact [kristof.gilis@outlook.be](mailto:kristof.gilis@outlook.be).
 
 ## 👨‍💻 Authors
 
