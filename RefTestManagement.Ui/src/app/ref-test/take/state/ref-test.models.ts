@@ -15,4 +15,5 @@ export interface RefTestResult {
   answerScore?: number | null;
   answerTotal?: number | null;
   percentage?: number | null;
+  sendResultsAutomatically?: boolean | null;
 }

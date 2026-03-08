@@ -964,7 +964,7 @@ export type CompleteRefTestMutationVariables = Exact<{
 }>;
 
 
-export type CompleteRefTestMutation = { __typename?: 'Mutation', completeRefTest: { __typename?: 'CompleteRefTestPayload', refTest?: { __typename?: 'RefTest', id: string, questionScore?: number | null, questionTotal: number, answerScore?: number | null, answerTotal?: number | null, percentage?: number | null } | null } };
+export type CompleteRefTestMutation = { __typename?: 'Mutation', completeRefTest: { __typename?: 'CompleteRefTestPayload', refTest?: { __typename?: 'RefTest', id: string, questionScore?: number | null, questionTotal: number, answerScore?: number | null, answerTotal?: number | null, percentage?: number | null, sendResultsAutomatically: boolean } | null } };
 
 export type SaveRefTestProgressMutationVariables = Exact<{
   input: SaveRefTestProgressInput;
@@ -1203,6 +1203,7 @@ export const CompleteRefTestDocument = gql`
       answerScore
       answerTotal
       percentage
+      sendResultsAutomatically
     }
   }
 }

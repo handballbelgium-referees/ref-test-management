@@ -23,4 +23,5 @@ export class RefTestResults {
   readonly percentage = input.required<number>();
   readonly passingPercentage = input.required<number>();
   readonly emailDelayMinutes = input.required<number>();
+  readonly sendResultsAutomatically = input.required<boolean>();
 }
