@@ -1,0 +1,113 @@
+Copyright (c) 2026 Kristof Gilis. All rights reserved.
+
+SOURCE AVAILABLE – EDUCATIONAL VIEWING ONLY LICENSE
+
+PLEASE READ THIS LICENSE CAREFULLY BEFORE ACCESSING, VIEWING, OR USING THIS
+SOFTWARE. BY ACCESSING THIS REPOSITORY, YOU AGREE TO BE BOUND BY THE TERMS
+OF THIS LICENSE. IF YOU DO NOT AGREE, DO NOT ACCESS OR USE THIS SOFTWARE.
+
+1. DEFINITIONS
+
+   "Software" means all source code, documentation, configuration files,
+   scripts, and other materials contained in this repository.
+
+   "Licensor" means Kristof Gilis, the copyright holder of the Software.
+
+   "You" means the individual or legal entity accessing the Software.
+
+   "Educational Use" means personal, non-commercial study, learning, or
+   academic research by an individual for the purpose of understanding
+   programming techniques, patterns, or concepts, with no direct or indirect
+   commercial benefit.
+
+   "Production Use" means any deployment, execution, or operation of the
+   Software, or any derivative thereof, in an environment that serves end
+   users, processes real data, generates revenue, supports business
+   operations, or is otherwise used for any purpose other than Educational Use.
+
+2. GRANT OF LICENSE
+
+   Subject to the terms and conditions of this License, the Licensor hereby
+   grants You a limited, non-exclusive, non-transferable, revocable,
+   royalty-free license solely to:
+
+   (a) view and read the source code for Educational Use; and
+   (b) study the techniques, patterns, and concepts embodied in the Software
+   for personal learning purposes.
+
+3. RESTRICTIONS
+
+   Except as expressly permitted in Section 2, You may NOT, without the prior
+   express written permission of the Licensor:
+
+   (a) use, copy, reproduce, or incorporate the Software or any portion
+   thereof into any product, project, or service, whether commercial or
+   non-commercial;
+   (b) deploy, run, execute, or operate the Software or any derivative work
+   in any Production environment;
+   (c) distribute, publish, sublicense, sell, rent, lease, or otherwise
+   transfer the Software or any portion thereof to any third party;
+   (d) modify, adapt, translate, reverse engineer, decompile, disassemble,
+   or create derivative works based on the Software;
+   (e) remove, alter, or obscure any copyright, trademark, or other
+   proprietary notices contained in the Software;
+   (f) use the Software, or any part thereof, for any commercial purpose or
+   for any public display (commercial or non-commercial) other than as
+   permitted under Section 2.
+
+4. NO OPEN SOURCE
+
+   This License does not constitute an open-source license. The Software is
+   made publicly accessible for transparency and educational reference only.
+   Public accessibility does not imply any right to use, copy, modify, or
+   distribute the Software beyond the limited rights expressly granted herein.
+
+5. INTELLECTUAL PROPERTY
+
+   The Software and all copies thereof are proprietary to the Licensor and
+   title thereto remains with the Licensor at all times. All rights not
+   specifically granted in this License are reserved by the Licensor.
+
+6. NO WARRANTY
+
+   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NON-INFRINGEMENT. THE LICENSOR MAKES
+   NO WARRANTY THAT THE SOFTWARE IS ERROR-FREE, ACCURATE, COMPLETE, OR FIT
+   FOR ANY PARTICULAR PURPOSE.
+
+7. LIMITATION OF LIABILITY
+
+   TO THE MAXIMUM EXTENT PERMITTED BY APPLICABLE LAW, IN NO EVENT SHALL THE
+   LICENSOR BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+   EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+   PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+   PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+   LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+   NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OR INABILITY TO
+   USE THE SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+8. TERMINATION
+
+   This License is effective until terminated. It will terminate automatically
+   without notice from the Licensor if You fail to comply with any term or
+   condition of this License. Upon termination, You must immediately destroy
+   all copies of the Software in Your possession or control. Sections 3, 5,
+   6, 7, and 9 survive termination.
+
+9. GOVERNING LAW
+
+   This License shall be governed by and construed in accordance with the
+   laws of Belgium, without regard to its conflict-of-law provisions.
+   Any dispute arising out of or in connection with this License shall be
+   subject to the exclusive jurisdiction of the courts of Belgium.
+
+10. ENTIRE AGREEMENT
+
+    This License constitutes the entire agreement between You and the Licensor
+    with respect to the subject matter herein and supersedes all prior or
+    contemporaneous understandings, agreements, representations, and warranties
+    with respect to the Software.
+
+    To request permissions beyond the scope of this License, contact:
+    kristof.gilis@outlook.be
