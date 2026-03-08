@@ -27,19 +27,33 @@
       </label>
       <div class="flex flex-col sm:flex-row sm:items-center gap-2">
         <input
+          id="min-question-score"
           type="number"
           [value]="minQuestionScore() || ''"
           (input)="onMinQuestionScoreChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.min' | translate"
+          title="{{ 'ref_tests.list.filters.min' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.question_score_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.min' | translate)
+          "
           min="0"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
         <span class="text-neutral-400 hidden sm:inline">—</span>
         <input
+          id="max-question-score"
           type="number"
           [value]="maxQuestionScore() || ''"
           (input)="onMaxQuestionScoreChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.max' | translate"
+          title="{{ 'ref_tests.list.filters.max' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.question_score_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.max' | translate)
+          "
           min="0"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
@@ -53,19 +67,33 @@
       </label>
       <div class="flex flex-col sm:flex-row sm:items-center gap-2">
         <input
+          id="min-answer-score"
           type="number"
           [value]="minAnswerScore() || ''"
           (input)="onMinAnswerScoreChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.min' | translate"
+          title="{{ 'ref_tests.list.filters.min' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.answer_score_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.min' | translate)
+          "
           min="0"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
         <span class="text-neutral-400 hidden sm:inline">—</span>
         <input
+          id="max-answer-score"
           type="number"
           [value]="maxAnswerScore() || ''"
           (input)="onMaxAnswerScoreChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.max' | translate"
+          title="{{ 'ref_tests.list.filters.max' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.answer_score_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.max' | translate)
+          "
           min="0"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
@@ -74,10 +102,11 @@
 
     <!-- Percentage Range -->
     <div>
-      <label class="text-xs font-medium text-neutral-600 mb-1.5 block">
+      <label for="percentage-range" class="text-xs font-medium text-neutral-600 mb-1.5 block">
         {{ 'ref_tests.list.filters.percentage_range' | translate }}
       </label>
       <select
+        id="percentage-range"
         [value]="percentageRange() || ''"
         (change)="onPercentageRangeChange($any($event.target).value)"
         class="w-full pl-3 pr-8 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm appearance-none"
@@ -96,19 +125,33 @@
       </label>
       <div class="flex flex-col sm:flex-row sm:items-center gap-2">
         <input
+          id="min-questions"
           type="number"
           [value]="minQuestions() || ''"
           (input)="onMinQuestionsChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.min' | translate"
+          title="{{ 'ref_tests.list.filters.min' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.questions_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.min' | translate)
+          "
           min="1"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
         <span class="text-neutral-400 hidden sm:inline">—</span>
         <input
+          id="max-questions"
           type="number"
           [value]="maxQuestions() || ''"
           (input)="onMaxQuestionsChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.max' | translate"
+          title="{{ 'ref_tests.list.filters.max' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.questions_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.max' | translate)
+          "
           min="1"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
@@ -122,19 +165,33 @@
       </label>
       <div class="flex flex-col sm:flex-row sm:items-center gap-2">
         <input
+          id="min-max-time"
           type="number"
           [value]="minMaxTimeInMinutes() || ''"
           (input)="onMinMaxTimeInMinutesChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.min' | translate"
+          title="{{ 'ref_tests.list.filters.min' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.max_time_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.min' | translate)
+          "
           min="1"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
         <span class="text-neutral-400 hidden sm:inline">—</span>
         <input
+          id="max-max-time"
           type="number"
           [value]="maxMaxTimeInMinutes() || ''"
           (input)="onMaxMaxTimeInMinutesChange($any($event.target).value)"
           [placeholder]="'ref_tests.list.filters.max' | translate"
+          title="{{ 'ref_tests.list.filters.max' | translate }}"
+          [attr.aria-label]="
+            ('ref_tests.list.filters.max_time_range' | translate) +
+            ' ' +
+            ('ref_tests.list.filters.max' | translate)
+          "
           min="1"
           class="flex-1 px-3 py-2 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent text-sm"
         />
