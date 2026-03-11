@@ -7,8 +7,7 @@ jobs:
   promote:
     name: 🚀 Promote main to release
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    environment: promote
 
     steps:
       - name: 📥 Checkout code
