@@ -1869,7 +1869,8 @@ The service logs all activities to help you monitor expiration processing:
 
 ### Branching Strategy
 
-- `main`: Production branch, protected
+- `main`: Default development branch, protected — pre-releases are automatically created from every push
+- `release`: Stable release branch, protected — stable releases are created when `main` is promoted here
 - `feat/*`: Feature branches
 - `fix/*`: Bug fix branches
 - `chore/*`: Maintenance branches
@@ -1918,14 +1919,16 @@ Husky enforces quality checks:
 
 ### Automated Deployment (GitHub Actions)
 
-The application deploys automatically when changes are merged to `main`:
+The application deploys automatically when a stable release is triggered via the **Promote to Release** workflow:
 
-1. **Semantic Release**: Analyzes commits and creates a new version
-2. **Build**:
+1. **Promote**: `promote.yml` fast-forwards `release` to `main`'s HEAD
+2. **Semantic Release**: Analyzes commits and creates a new stable version tag
+3. **Build**:
    - Builds Angular application
    - Copies build to `RefTestManagement.Api/wwwroot/`
    - Builds and publishes .NET application
-3. **Deploy**: Deploys to Azure App Service
+4. **Deploy**: Deploys to Azure App Service
+5. **Sync**: Rebases `main` onto `release` to keep histories aligned
 
 ### Manual Deployment
 
@@ -2025,10 +2028,23 @@ Versions are automatically determined by [semantic-release](https://github.com/s
 
 ### Release Process
 
-1. Commits merged to `main` trigger semantic-release
-2. Semantic-release analyzes commits and determines version
-3. Creates Git tag and GitHub release
-4. Triggers build and deployment pipeline
+#### Pre-releases (automatic)
+
+Every push to `main` automatically triggers a pre-release:
+
+1. Semantic-release analyzes unreleased commits and determines the next version
+2. Creates a `vX.Y.Z-alpha.N` Git tag and GitHub pre-release
+
+#### Stable releases (manual)
+
+To promote `main` to a stable release:
+
+1. Go to **Actions → Promote to Release (Stable Release) → Run workflow** on the `main` branch
+2. Approve the deployment in the `promote` environment (required reviewers)
+3. The workflow fast-forwards the `release` branch to `main`'s HEAD (preserving all commit SHAs)
+4. This triggers `release.yml` which runs semantic-release on `release`, creates a `vX.Y.Z` tag and GitHub release, builds the application, deploys to production, and rebases `main` onto `release`
+
+> **Important**: Never use squash or rebase merge strategies when merging into `release`. These create new commit SHAs, causing semantic-release to miscount unreleased commits and bump the version incorrectly. The `promote.yml` workflow uses fast-forward, which is the only correct strategy.
 
 ## 📄 License
 
