@@ -25,5 +25,5 @@ jobs:
         run: |
           git fetch origin
           git checkout release
-          git merge origin/main --no-ff -m "chore(release): promote main to release [skip ci]"
+          git merge origin/main --ff-only
           git push origin release
