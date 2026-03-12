@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using Handball.Belgium.RefTestManagement.Permissions;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -9,6 +10,24 @@ public static class SecurityStartup
 {
     internal static void AddSecurityConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
+        services.AddHttpContextAccessor();
+        services.AddAuthorizationBuilder()
+            .AddPolicy(Permission.RefTests.Read,               p => p.RequireClaim("permissions", Permission.RefTests.Read))
+            .AddPolicy(Permission.RefTests.Create,             p => p.RequireClaim("permissions", Permission.RefTests.Create))
+            .AddPolicy(Permission.RefTests.Delete,             p => p.RequireClaim("permissions", Permission.RefTests.Delete))
+            .AddPolicy(Permission.RefTests.UpdateDetails,      p => p.RequireClaim("permissions", Permission.RefTests.UpdateDetails))
+            .AddPolicy(Permission.RefTests.UpdateConfiguration,p => p.RequireClaim("permissions", Permission.RefTests.UpdateConfiguration))
+            .AddPolicy(Permission.RefTests.ExtendTime,         p => p.RequireClaim("permissions", Permission.RefTests.ExtendTime))
+            .AddPolicy(Permission.RefTests.UpdateNotifications,p => p.RequireClaim("permissions", Permission.RefTests.UpdateNotifications))
+            .AddPolicy(Permission.RefTests.RegenerateToken,    p => p.RequireClaim("permissions", Permission.RefTests.RegenerateToken))
+            .AddPolicy(Permission.RefTests.Reset,              p => p.RequireClaim("permissions", Permission.RefTests.Reset))
+            .AddPolicy(Permission.RefTests.Revive,             p => p.RequireClaim("permissions", Permission.RefTests.Revive))
+            .AddPolicy(Permission.RefTests.SendInvitations,    p => p.RequireClaim("permissions", Permission.RefTests.SendInvitations))
+            .AddPolicy(Permission.RefTests.SendResults,        p => p.RequireClaim("permissions", Permission.RefTests.SendResults))
+            .AddPolicy(Permission.RefTests.SendReport,         p => p.RequireClaim("permissions", Permission.RefTests.SendReport))
+            .AddPolicy(Permission.RefTests.Approve,            p => p.RequireClaim("permissions", Permission.RefTests.Approve))
+            .AddPolicy(Permission.RefTests.ReadAuditLog,       p => p.RequireClaim("permissions", Permission.RefTests.ReadAuditLog));
+
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;

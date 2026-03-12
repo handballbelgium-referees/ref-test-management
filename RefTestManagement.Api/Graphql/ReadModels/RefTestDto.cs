@@ -47,4 +47,9 @@ public sealed class RefTestDto
     public string? Language { get; init; }
 
     public TimeSpan? Duration { get; init; }
+
+    public ApprovalStatus ApprovalStatus { get; init; }
+    public DateTime? ApprovedAt { get; init; }
+    public string? ApprovedByUserEmail { get; init; }
+    public string? RejectionReason { get; init; }
 }

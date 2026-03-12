@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Handball.Belgium.RefTestManagement.Permissions</RootNamespace>
+
+        <!-- NuGet packaging — ready to publish as a standalone package -->
+        <PackageId>Handball.Belgium.RefTestManagement.Permissions</PackageId>
+        <Version>1.0.0</Version>
+        <Authors>Handball Belgium</Authors>
+        <Description>
+            Permission constants, role definitions, and audit log abstractions for the
+            Handball Belgium RefTest Management platform. Bundles an internal EF Core
+            implementation (AuditLogService, AuditLogConfiguration) exposed only through
+            the AuditLogExtensions registration methods so consumers have no coupling to
+            the concrete types.
+        </Description>
+        <PackageTags>permissions;auditlog;reftestmanagement;handball</PackageTags>
+        <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="HotChocolate.Authorization" Version="15.1.12" />
+        <PackageReference Include="HotChocolate.Data" Version="15.1.12" />
+        <PackageReference Include="HotChocolate.Types" Version="15.1.12" />
+        <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.12" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.4" />
+    </ItemGroup>
+</Project>

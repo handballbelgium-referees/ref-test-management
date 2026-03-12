@@ -17,7 +17,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.4")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -66,7 +66,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.HasIndex("Status", "ExecuteAfter", "LockedUntil")
                         .HasDatabaseName("IX_Jobs_Status_ExecuteAfter_LockedUntil");
 
-                    b.ToTable("Jobs");
+                    b.ToTable("Jobs", (string)null);
                 });
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTest", b =>
@@ -100,8 +100,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
-                    b.Property<DateTime?>("InvitationSentAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("InvitationSent")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Language")
                         .HasColumnType("nvarchar(max)");
@@ -128,8 +128,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.Property<int?>("QuestionScore")
                         .HasColumnType("int");
 
-                    b.Property<DateTime?>("ResultsSentAt")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("ResultsSent")
+                        .HasColumnType("bit");
 
                     b.Property<string>("SelectedAnswerIds")
                         .IsRequired()
@@ -180,7 +180,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
-                    b.ToTable("RefTests");
+                    b.ToTable("RefTests", (string)null);
                 });
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTestTitle", b =>
@@ -196,7 +196,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("RefTestTitles");
+                    b.ToTable("RefTestTitles", (string)null);
                 });
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTest", b =>

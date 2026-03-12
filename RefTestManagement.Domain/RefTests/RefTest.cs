@@ -14,7 +14,8 @@ public class RefTest
         int maxTimeInMinutes,
         List<string> questionIds,
         bool sendInvitationsAutomatically,
-        bool sendResultsAutomatically)
+        bool sendResultsAutomatically,
+        ApprovalStatus approvalStatus)
     {
         TitleId = titleId;
         FirstName = firstName;
@@ -28,6 +29,7 @@ public class RefTest
         CreatedAt = DateTime.UtcNow;
         Status = RefTestStatus.Pending;
         SendResultsAutomatically = sendResultsAutomatically;
+        ApprovalStatus = approvalStatus;
     }
 
     public Guid Id { get; private set; } = Guid.NewGuid();
@@ -63,6 +65,11 @@ public class RefTest
     public DateTime? ResultsSentAt { get; private set; }
     public string? Language { get; private set; }
 
+    public ApprovalStatus ApprovalStatus { get; private set; } = ApprovalStatus.Approved;
+    public DateTime? ApprovedAt { get; private set; }
+    public string? ApprovedByUserEmail { get; private set; }
+    public string? RejectionReason { get; private set; }
+
     [NotMapped]
     public TimeSpan? Duration => CompletedAt.HasValue && StartedAt.HasValue
         ? CompletedAt.Value - StartedAt.Value
@@ -95,7 +102,53 @@ public class RefTest
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
         return new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
-            questionIds, sendInvitationAutomatically, sendResultsAutomatically);
+            questionIds, sendInvitationAutomatically, sendResultsAutomatically, ApprovalStatus.Approved);
+    }
+
+    public static RefTest CreatePendingApproval(
+        Guid titleId,
+        string firstName,
+        string lastName,
+        string email,
+        int numberOfQuestions,
+        int maxTimeInMinutes,
+        List<string> questionIds,
+        bool sendInvitationAutomatically,
+        bool sendResultsAutomatically)
+    {
+        if (string.IsNullOrWhiteSpace(firstName))
+            throw new ArgumentException("First name is required", nameof(firstName));
+
+        if (string.IsNullOrWhiteSpace(lastName))
+            throw new ArgumentException("Last name is required", nameof(lastName));
+
+        if (string.IsNullOrWhiteSpace(email))
+            throw new ArgumentException("Email is required", nameof(email));
+
+        if (numberOfQuestions <= 0)
+            throw new ArgumentException("Number of questions must be greater than 0", nameof(numberOfQuestions));
+
+        if (maxTimeInMinutes <= 0)
+            throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
+
+        return new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
+            questionIds, sendInvitationAutomatically, sendResultsAutomatically, ApprovalStatus.PendingApproval);
+    }
+
+    public void Approve(string approvedByUserEmail)
+    {
+        ApprovalStatus = ApprovalStatus.Approved;
+        ApprovedAt = DateTime.UtcNow;
+        ApprovedByUserEmail = approvedByUserEmail;
+        RejectionReason = null;
+    }
+
+    public void Reject(string reason)
+    {
+        ApprovalStatus = ApprovalStatus.Rejected;
+        RejectionReason = reason;
+        ApprovedAt = null;
+        ApprovedByUserEmail = null;
     }
 
     public void SendInvitation()

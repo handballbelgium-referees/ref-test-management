@@ -6,7 +6,10 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Permissions;
+using Handball.Belgium.RefTestManagement.Permissions.AuditLog;
 using HotChocolate.Authorization;
+using Microsoft.AspNetCore.Http;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 
@@ -25,18 +28,23 @@ public static class RefTestCreationMutations
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permission.RefTests.Create)]
+    [AuditAction(AuditLogAction.RefTest.Create)]
     public static async Task<CreateRefTestsResult> CreateRefTestsAsync(
         CreateRefTestsInput input,
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         var result = new CreateRefTestsResult
         {
             TotalRequested = input.Users.Count
         };
+
+        var currentUser = httpContextAccessor.HttpContext?.User;
+        var canAutoApprove = currentUser?.HasPermission(Permission.RefTests.Approve) ?? false;
 
         var createdRefTests = new List<RefTest>();
 
@@ -87,17 +95,27 @@ public static class RefTestCreationMutations
                         cancellationToken);
                 }
 
-                var refTest = RefTest.Create(
-                    titleId,
-                    user.FirstName,
-                    user.LastName,
-                    user.Email,
-                    input.NumberOfQuestions,
-                    input.MaxTimeInMinutes,
-                    questionIds,
-                    input.SendAutomatedInvitations,
-                    input.SendAutomatedResults
-                );
+                var refTest = canAutoApprove
+                    ? RefTest.Create(
+                        titleId,
+                        user.FirstName,
+                        user.LastName,
+                        user.Email,
+                        input.NumberOfQuestions,
+                        input.MaxTimeInMinutes,
+                        questionIds,
+                        input.SendAutomatedInvitations,
+                        input.SendAutomatedResults)
+                    : RefTest.CreatePendingApproval(
+                        titleId,
+                        user.FirstName,
+                        user.LastName,
+                        user.Email,
+                        input.NumberOfQuestions,
+                        input.MaxTimeInMinutes,
+                        questionIds,
+                        input.SendAutomatedInvitations,
+                        input.SendAutomatedResults);
 
                 createdRefTests.Add(refTest);
                 result.SuccessfullyCreated++;
@@ -117,7 +135,8 @@ public static class RefTestCreationMutations
         if (createdRefTests.Count == 0)
             return result;
 
-        if (!input.SendAutomatedInvitations)
+        // Only send invitations for auto-approved tests
+        if (!input.SendAutomatedInvitations || !canAutoApprove)
         {
             context.RefTests.AddRange(createdRefTests);
             await context.SaveChangesAsync(cancellationToken);

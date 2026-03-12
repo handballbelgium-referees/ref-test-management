@@ -5,6 +5,8 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Permissions;
+using Handball.Belgium.RefTestManagement.Permissions.AuditLog;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +28,8 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permission.RefTests.UpdateDetails)]
+    [AuditAction(AuditLogAction.RefTest.UpdateDetails)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> UpdateRefTestDetailsAsync(
@@ -76,7 +79,8 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permission.RefTests.UpdateConfiguration)]
+    [AuditAction(AuditLogAction.RefTest.UpdateConfiguration)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> UpdateRefTestConfigurationAsync(
@@ -155,7 +159,8 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permission.RefTests.ExtendTime)]
+    [AuditAction(AuditLogAction.RefTest.ExtendTime)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> ExtendRefTestTimeAsync(
@@ -173,7 +178,6 @@ public static class RefTestUpdateMutations
         refTest.ExtendTime(input.AdditionalMinutes);
         await context.SaveChangesAsync(cancellationToken);
 
-        // Publish subscription event for real-time UI updates
         await subscriptionService.PublishTimeExtendedAsync(
             refTest.Id,
             refTest.MaxTimeInMinutes,
@@ -193,7 +197,8 @@ public static class RefTestUpdateMutations
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permission.RefTests.UpdateNotifications)]
+    [AuditAction(AuditLogAction.RefTest.UpdateNotifications)]
     [Error<RefTestNotFoundException>]
     public static async Task<RefTestDto> UpdateRefTestNotificationSettingsAsync(
         UpdateRefTestNotificationSettingsInput input,
@@ -278,7 +283,8 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permission.RefTests.RegenerateToken)]
+    [AuditAction(AuditLogAction.RefTest.RegenerateToken)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> RegenerateRefTestTokenAsync(
