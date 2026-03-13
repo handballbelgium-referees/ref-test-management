@@ -25,6 +25,8 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                 type: "datetime2",
                 nullable: true);
 
+            migrationBuilder.Sql("UPDATE RefTests SET ApprovedAt = CreatedAt");
+
             migrationBuilder.AddColumn<string>(
                 name: "ApprovedByUserEmail",
                 table: "RefTests",
