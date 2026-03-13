@@ -22,9 +22,9 @@
         <PackageReference Include="HotChocolate.Caching" Version="15.1.12" />
         <PackageReference Include="HotChocolate.Data.EntityFramework" Version="15.1.12"/>
         <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.12"/>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.4" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.4" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.4">
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.5" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>
