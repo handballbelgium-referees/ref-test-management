@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
 /// <summary>
 /// Marks a GraphQL mutation method with the audit log action to record.

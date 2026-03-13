@@ -10,13 +10,10 @@
         <Version>1.0.0</Version>
         <Authors>Handball Belgium</Authors>
         <Description>
-            Permission constants, role definitions, and audit log abstractions for the
-            Handball Belgium RefTest Management platform. Bundles an internal EF Core
-            implementation (AuditLogService, AuditLogConfiguration) exposed only through
-            the AuditLogExtensions registration methods so consumers have no coupling to
-            the concrete types.
+            Permission constants, role definitions, and claims helpers for the
+            Handball Belgium RefTest Management platform.
         </Description>
-        <PackageTags>permissions;auditlog;reftestmanagement;handball</PackageTags>
+        <PackageTags>permissions;reftestmanagement;handball</PackageTags>
         <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     </PropertyGroup>
 
@@ -24,11 +21,4 @@
         <FrameworkReference Include="Microsoft.AspNetCore.App" />
     </ItemGroup>
 
-    <ItemGroup>
-        <PackageReference Include="HotChocolate.Authorization" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Data" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Types" Version="15.1.12" />
-        <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.12" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.4" />
-    </ItemGroup>
 </Project>

@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
 internal sealed class AuditLogConfiguration : IEntityTypeConfiguration<AuditLog>
 {

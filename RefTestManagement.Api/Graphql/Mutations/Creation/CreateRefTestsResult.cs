@@ -1,6 +1,6 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
-using Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+using Handball.Belgium.RefTestManagement.AuditLog;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 

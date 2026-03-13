@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
 /// <summary>
 /// Marks a property on a GraphQL mutation result type as the source of the audit log

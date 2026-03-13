@@ -1,4 +1,5 @@
 using System.Reflection;
+using Handball.Belgium.RefTestManagement.Permissions;
 using HotChocolate;
 using HotChocolate.Configuration;
 using HotChocolate.Resolvers;
@@ -7,7 +8,7 @@ using HotChocolate.Types.Relay;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
 /// <summary>
 /// HotChocolate <see cref="TypeInterceptor"/> that finds every mutation method
@@ -18,7 +19,7 @@ namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
 ///   1. <see cref="IDAttribute"/> / <c>[ID&lt;T&gt;]</c> on properties of the input argument.
 ///   2. <see cref="AuditResultIdAttribute"/> on a property of the mutation result (for server-generated IDs).
 /// </summary>
-public sealed class AuditLogTypeInterceptor : TypeInterceptor
+internal sealed class AuditLogTypeInterceptor : TypeInterceptor
 {
     public override void OnBeforeCompleteType(
         ITypeCompletionContext completionContext,
@@ -69,7 +70,7 @@ public sealed class AuditLogTypeInterceptor : TypeInterceptor
                 .Where(p => p.IsDefined(typeof(AuditResultIdAttribute), inherit: false))
                 .SelectMany(p => p.GetValue(result) switch
                 {
-                    Guid g                 => [g.ToString()],
+                    Guid g               => [g.ToString()],
                     IEnumerable<object> many => many
                         .Select(item => item?.GetType().GetProperty("Id")?.GetValue(item) as Guid?)
                         .Where(g => g.HasValue)

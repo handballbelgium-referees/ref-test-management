@@ -2,11 +2,12 @@ using HotChocolate;
 using HotChocolate.Authorization;
 using HotChocolate.Types;
 using Microsoft.EntityFrameworkCore;
+using Handball.Belgium.RefTestManagement.Permissions;
 
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
 [QueryType]
-public static class AuditLogQueries
+internal static class AuditLogQueries
 {
     [Authorize(Policy = Permission.RefTests.ReadAuditLog)]
     [UsePaging]

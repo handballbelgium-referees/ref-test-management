@@ -6,7 +6,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Permissions;
-using Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+using Handball.Belgium.RefTestManagement.AuditLog;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -178,6 +178,7 @@ public static class RefTestUpdateMutations
         refTest.ExtendTime(input.AdditionalMinutes);
         await context.SaveChangesAsync(cancellationToken);
 
+        // Publish subscription event for real-time UI updates
         await subscriptionService.PublishTimeExtendedAsync(
             refTest.Id,
             refTest.MaxTimeInMinutes,

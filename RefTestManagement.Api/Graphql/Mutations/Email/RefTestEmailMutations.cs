@@ -6,7 +6,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Permissions;
-using Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+using Handball.Belgium.RefTestManagement.AuditLog;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 

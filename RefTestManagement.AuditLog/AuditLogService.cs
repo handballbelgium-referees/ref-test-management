@@ -1,14 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
-internal sealed class AuditLogService<TContext> : IAuditLogService
-    where TContext : DbContext, IAuditLogContext
+internal sealed class AuditLogService(IDbContextFactory<AuditLogContext> factory) : IAuditLogService
 {
-    private readonly IDbContextFactory<TContext> _factory;
-
-    public AuditLogService(IDbContextFactory<TContext> factory) => _factory = factory;
-
     public async Task LogAsync(
         string action,
         string userEmail,
@@ -17,7 +12,7 @@ internal sealed class AuditLogService<TContext> : IAuditLogService
         string? details = null,
         CancellationToken cancellationToken = default)
     {
-        await using var context = await _factory.CreateDbContextAsync(cancellationToken);
+        await using var context = await factory.CreateDbContextAsync(cancellationToken);
         var entry = AuditLog.Create(action, userEmail, userName, resourceId, details);
         context.AuditLogs.Add(entry);
         await context.SaveChangesAsync(cancellationToken);

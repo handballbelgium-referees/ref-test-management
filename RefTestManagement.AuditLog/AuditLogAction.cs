@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
 /// <summary>Well-known action identifiers written to the audit log.</summary>
 public static class AuditLogAction

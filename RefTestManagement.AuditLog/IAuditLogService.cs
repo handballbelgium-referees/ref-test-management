@@ -1,6 +1,6 @@
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
-public interface IAuditLogService
+internal interface IAuditLogService
 {
     Task LogAsync(
         string action,

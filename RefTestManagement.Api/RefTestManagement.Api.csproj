@@ -12,6 +12,7 @@
         <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj"/>
         <ProjectReference
             Include="..\RefTestManagement.Permissions\RefTestManagement.Permissions.csproj" />
+        <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
     </ItemGroup>
 
     <ItemGroup>

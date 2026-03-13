@@ -1,7 +1,7 @@
-namespace Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+namespace Handball.Belgium.RefTestManagement.AuditLog;
 
 /// <summary>Represents a single audited action performed by an authenticated user.</summary>
-public class AuditLog
+internal class AuditLog
 {
     private AuditLog() { }
 

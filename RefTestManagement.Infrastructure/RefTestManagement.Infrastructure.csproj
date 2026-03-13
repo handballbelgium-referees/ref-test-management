@@ -16,9 +16,8 @@
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\RefTestManagement.Application\RefTestManagement.Application.csproj" />
     <ProjectReference
-      Include="..\RefTestManagement.Permissions\RefTestManagement.Permissions.csproj" />
+      Include="..\RefTestManagement.Application\RefTestManagement.Application.csproj" />
     </ItemGroup>
 
 </Project>

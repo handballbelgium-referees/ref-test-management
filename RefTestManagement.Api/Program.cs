@@ -6,7 +6,7 @@ using Handball.Belgium.RefTestManagement.Api.Graphql;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
-using Handball.Belgium.RefTestManagement.Permissions.AuditLog;
+using Handball.Belgium.RefTestManagement.AuditLog;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -111,14 +111,14 @@ services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
         c.DefaultRequestHeaders.Add("Accept-Language", langConfig.DefaultPhraseLanguage);
     });
 
-services.AddAuditLogServices<RefTestManagementContext>();
+services.AddAuditLogServices(configuration.GetConnectionString("RefTestManagement"));
 
 services.AddGraphQLServer()
     .AddQueryType()
     .AddMutationType()
     .AddSubscriptionType()
     .AddApiTypes()
-    .AddAuditLogQueries()
+    .AddAuditLogSchema()
     .AddQueryConventions()
     .AddMutationConventions()
     .AddInMemorySubscriptions()
