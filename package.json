@@ -9,15 +9,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/handballbelgium/ref-test-management.git"
+    "url": "git+https://github.com/handballbelgium-referees/ref-test-management.git"
   },
   "author": "Kristof Gilis <kristof.gilis@outlook.be>",
   "license": "SEE LICENSE IN LICENSE",
   "type": "module",
   "bugs": {
-    "url": "https://github.com/handballbelgium/ref-test-management/issues"
+    "url": "https://github.com/handballbelgium-referees/ref-test-management/issues"
   },
-  "homepage": "https://github.com/handballbelgium/ref-test-management#readme",
+  "homepage": "https://github.com/handballbelgium-referees/ref-test-management#readme",
   "devDependencies": {
     "@commitlint/cli": "~20.5.0",
     "@commitlint/config-conventional": "~20.5.0",
