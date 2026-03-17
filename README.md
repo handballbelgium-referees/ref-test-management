@@ -6,8 +6,8 @@
 
 A comprehensive web application for managing and taking IHF (International Handball Federation) RefTests for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create RefTests, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed RefTests.
 
-[![Latest Release](https://img.shields.io/github/v/release/handballbelgium-referees/ref-test-management?label=release)](https://github.com/handballbelgium/ref-test-management/releases)
-[![Latest Pre-Release](https://img.shields.io/github/v/release/handballbelgium-referees/ref-test-management?include_prereleases&label=pre-release)](https://github.com/handballbelgium/ref-test-management/releases)
+[![Latest Release](https://img.shields.io/github/v/release/handballbelgium-referees/ref-test-management?label=release)](https://github.com/handballbelgium-referees/ref-test-management/releases)
+[![Latest Pre-Release](https://img.shields.io/github/v/release/handballbelgium-referees/ref-test-management?include_prereleases&label=pre-release)](https://github.com/handballbelgium-referees/ref-test-management/releases)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
 ## 📋 Table of Contents
