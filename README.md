@@ -6,8 +6,8 @@
 
 A comprehensive web application for managing and taking IHF (International Handball Federation) RefTests for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create RefTests, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed RefTests.
 
-[![Latest Release](https://img.shields.io/github/v/release/handballbelgium/ref-test-management?label=release)](https://github.com/handballbelgium/ref-test-management/releases)
-[![Latest Pre-Release](https://img.shields.io/github/v/release/handballbelgium/ref-test-management?include_prereleases&label=pre-release)](https://github.com/handballbelgium/ref-test-management/releases)
+[![Latest Release](https://img.shields.io/github/v/release/handballbelgium-referees/ref-test-management?label=release)](https://github.com/handballbelgium/ref-test-management/releases)
+[![Latest Pre-Release](https://img.shields.io/github/v/release/handballbelgium-referees/ref-test-management?include_prereleases&label=pre-release)](https://github.com/handballbelgium/ref-test-management/releases)
 [![semantic-release](https://img.shields.io/badge/%20%20%F0%9F%93%A6%F0%9F%9A%80-semantic--release-e10079.svg)](https://github.com/semantic-release/semantic-release)
 
 ## 📋 Table of Contents
@@ -21,7 +21,6 @@ A comprehensive web application for managing and taking IHF (International Handb
 - [Background Services](#️-background-services)
 - [Development Workflow](#-development-workflow)
 - [Deployment](#-deployment)
-- [Testing](#-testing)
 - [Contributing](#-contributing)
 - [Versioning](#-versioning)
 - [License](#-license)
@@ -514,7 +513,7 @@ Before you begin, ensure you have the following installed:
 ### 1. Clone the Repository
 
 ```bash
-git clone https://github.com/handballbelgium/ref-test-management.git
+git clone https://github.com/handballbelgium-referees/ref-test-management.git
 cd ref-test-management
 ```
 
@@ -1332,7 +1331,7 @@ Note the `appId` (client ID), `tenant` (tenant ID) from output.
    --parameters '{
    "name": "github-deploy",
    "issuer": "https://token.actions.githubusercontent.com",
-   "subject": "repo:handballbelgium/ref-test-management:ref:refs/heads/main",
+   "subject": "repo:handballbelgium-referees/ref-test-management:ref:refs/heads/main",
    "audiences": ["api://AzureADTokenExchange"]
    }'
    ```
@@ -2079,7 +2078,7 @@ For any use beyond personal study, contact [kristof.gilis@outlook.be](mailto:kri
 
 For issues, questions, or contributions:
 
-- **Issues**: [GitHub Issues](https://github.com/handballbelgium/ref-test-management/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/handballbelgium/ref-test-management/discussions)
+- **Issues**: [GitHub Issues](https://github.com/handballbelgium-referees/ref-test-management/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/handballbelgium-referees/ref-test-management/discussions)
 
 **Made with ❤️ for Handball Belgium**
