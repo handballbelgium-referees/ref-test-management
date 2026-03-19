@@ -1,16 +1,6 @@
 #!/usr/bin/env bash
 set -e
 
-REPO="${GITHUB_REPOSITORY}"
-
-# Unlock the badges branch if it already exists and is protected
-if git ls-remote --exit-code --heads origin badges; then
-  echo "Unlocking badges branch..."
-  echo '{"required_status_checks":null,"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null,"lock_branch":false}' | \
-    gh api -X PUT "/repos/${REPO}/branches/badges/protection" --input -
-fi
-
-# Set up worktree
 if git ls-remote --exit-code --heads origin badges; then
   git fetch origin badges
   git worktree add /tmp/badges-branch origin/badges
@@ -26,8 +16,3 @@ if ! git diff --cached --quiet; then
   git commit -m "chore: update badges [skip ci]"
 fi
 git push origin HEAD:refs/heads/badges
-
-# Re-lock the branch
-echo "Re-locking badges branch..."
-echo '{"required_status_checks":null,"enforce_admins":false,"required_pull_request_reviews":null,"restrictions":null,"lock_branch":true}' | \
-  gh api -X PUT "/repos/${REPO}/branches/badges/protection" --input -
