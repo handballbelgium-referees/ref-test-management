@@ -49,6 +49,25 @@ jobs:
             echo "new_release_published=false" >> $GITHUB_OUTPUT
           fi
 
+      - name: 🎖 Push badges to badges branch
+        if: steps.semantic-release.outputs.new_release_published == 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if git ls-remote --exit-code --heads origin badges; then
+            git fetch origin badges
+            git worktree add /tmp/badges-branch -b badges-update origin/badges
+          else
+            git worktree add --orphan /tmp/badges-branch badges
+          fi
+          cp badges/*.svg /tmp/badges-branch/
+          cd /tmp/badges-branch
+          git add .
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: update badges [skip ci]"
+          fi
+          git push origin HEAD:refs/heads/badges
+
   build:
     name: 🛠 Build Application
     runs-on: ubuntu-latest
