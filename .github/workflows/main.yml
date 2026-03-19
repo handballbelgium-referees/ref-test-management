@@ -39,6 +39,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
           LATEST_TAG_BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           npx semantic-release
           LATEST_TAG_AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
