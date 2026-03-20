@@ -25,6 +25,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@v6
@@ -38,7 +39,6 @@ jobs:
         id: semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_PAT: ${{ secrets.GH_PAT }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -48,6 +48,13 @@ jobs:
           if [ "$LATEST_TAG_BEFORE" != "$LATEST_TAG_AFTER" ] && [ -n "$LATEST_TAG_AFTER" ]; then
             echo "new_release_published=true" >> $GITHUB_OUTPUT
             echo "new_release_version=$LATEST_TAG_AFTER" >> $GITHUB_OUTPUT
+            VERSION="${LATEST_TAG_AFTER#v}"
+            TARGET_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+            git add badges/*.png
+            if ! git diff --cached --quiet; then
+              git commit -m "chore(release): update badges to v${VERSION} [skip ci]"
+              git push origin HEAD:refs/heads/${TARGET_BRANCH}
+            fi
           else
             echo "new_release_published=false" >> $GITHUB_OUTPUT
           fi
