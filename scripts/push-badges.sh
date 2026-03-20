@@ -8,7 +8,7 @@ else
   git worktree add --orphan -b badges /tmp/badges-branch
 fi
 
-cp badges/*.svg /tmp/badges-branch/
+cp badges/*.png /tmp/badges-branch/
 
 cd /tmp/badges-branch
 git add .
