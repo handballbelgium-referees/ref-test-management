@@ -62,14 +62,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node scripts/generate-badges.mjs ${nextRelease.version}"
-      }
-    ],
-    [
-      "@semantic-release/git",
-      {
-        "assets": ["badges/*.png"],
-        "message": "chore(release): ${nextRelease.version} [skip ci]"
+        "prepareCmd": "node scripts/generate-badges.mjs ${nextRelease.version} && bash scripts/push-badges.sh ${nextRelease.version}"
       }
     ],
     "@semantic-release/github"
