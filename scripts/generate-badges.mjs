@@ -21,7 +21,7 @@ const TRANSPARENT_PNG = Buffer.from(
 );
 
 async function svgToPng(svg) {
-  return sharp(Buffer.from(svg)).png().toBuffer();
+  return sharp(Buffer.from(svg), { density: 1200 }).png().toBuffer();
 }
 
 const isPreRelease = version.includes('-');
@@ -52,30 +52,5 @@ if (isPreRelease) {
   console.log(`Generated release badge: v${version}`);
 
   writeFileSync(join(badgesDir, 'pre-release.png'), TRANSPARENT_PNG);
-  console.log('Hid pre-release badge (no active pre-release)');
-}
-
-mkdirSync(badgesDir, { recursive: true });
-
-if (isPreRelease) {
-  const svg = makeBadge({
-    label: 'pre-release',
-    message: `v${version}`,
-    color: 'orange',
-    style: 'flat',
-  });
-  writeFileSync(join(badgesDir, 'pre-release.svg'), svg);
-  console.log(`Generated pre-release badge: v${version}`);
-} else {
-  const svg = makeBadge({
-    label: 'release',
-    message: `v${version}`,
-    color: '0075ca',
-    style: 'flat',
-  });
-  writeFileSync(join(badgesDir, 'release.svg'), svg);
-  console.log(`Generated release badge: v${version}`);
-
-  writeFileSync(join(badgesDir, 'pre-release.svg'), HIDDEN_SVG);
   console.log('Hid pre-release badge (no active pre-release)');
 }
