@@ -13,6 +13,9 @@ if (!version) {
   process.exit(1);
 }
 
+const HIDDEN_SVG =
+  '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"/>';
+
 const isPreRelease = version.includes('-');
 
 mkdirSync(badgesDir, { recursive: true });
@@ -27,17 +30,15 @@ if (isPreRelease) {
   writeFileSync(join(badgesDir, 'pre-release.svg'), svg);
   console.log(`Generated pre-release badge: v${version}`);
 } else {
-  const releaseSvg = makeBadge({
+  const svg = makeBadge({
     label: 'release',
     message: `v${version}`,
     color: '0075ca',
     style: 'flat',
   });
-  writeFileSync(join(badgesDir, 'release.svg'), releaseSvg);
+  writeFileSync(join(badgesDir, 'release.svg'), svg);
   console.log(`Generated release badge: v${version}`);
 
-  const preReleaseSvg =
-    '<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0"/>';
-  writeFileSync(join(badgesDir, 'pre-release.svg'), preReleaseSvg);
-  console.log('Hide pre-release badge (no active pre-release)');
+  writeFileSync(join(badgesDir, 'pre-release.svg'), HIDDEN_SVG);
+  console.log('Hid pre-release badge (no active pre-release)');
 }
