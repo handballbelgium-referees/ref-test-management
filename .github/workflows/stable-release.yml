@@ -52,6 +52,9 @@ jobs:
           ref: release
           token: ${{ secrets.GH_PAT }}
 
+      - name: 🔧 Fetch main branch
+        run: git fetch origin main:main
+
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@v6
         with:
