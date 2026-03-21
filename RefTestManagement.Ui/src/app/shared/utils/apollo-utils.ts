@@ -1,6 +1,5 @@
 import { DestroyRef, Signal, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ObservableQuery } from '@apollo/client';
 import { Apollo } from 'apollo-angular';
 import { catchError, EMPTY, finalize, Observable, tap } from 'rxjs';
 
@@ -77,83 +76,6 @@ export function runMutation<TData, TResult>(
     success: success.asReadonly(),
     error: error.asReadonly(),
     data: data.asReadonly(),
-  };
-}
-
-/**
- * Unified helper for Apollo queries (fetch and watchQuery)
- */
-export interface QueryCallbacks<TResult> {
-  onStart?: () => void;
-  onSuccess?: (result: TResult) => void;
-  onError?: (error: unknown) => void;
-  onComplete?: () => void;
-}
-
-export interface QueryState<TResult> {
-  loading: Signal<boolean>;
-  success: Signal<boolean>;
-  error: Signal<unknown>;
-  data: Signal<TResult | null>;
-}
-
-export function runQuery<TData, TResult>(
-  query$: Observable<Apollo.QueryResult<TData> | ObservableQuery.Result<TData>>,
-  destroyRef: DestroyRef,
-  callbacks: QueryCallbacks<TResult> = {},
-  mapResult?: (result: Apollo.QueryResult<TData> | ObservableQuery.Result<TData>) => TResult,
-): QueryState<TResult> {
-  const loading = signal(false);
-  const success = signal(false);
-  const error = signal<unknown>(null);
-  const data = signal<TResult | null>(null);
-
-  const {
-    onStart = () => {},
-    onSuccess = () => {},
-    onError = () => {},
-    onComplete = () => {},
-  } = callbacks;
-
-  onStart();
-
-  query$
-    .pipe(
-      tap((result: Apollo.QueryResult<TData> | ObservableQuery.Result<TData>) => {
-        // If the result has a loading property (watchQuery), update loading
-        if ('loading' in result) {
-          loading.set(result.loading);
-        }
-
-        // Only process when actual data is present
-        const isLoaded = !('loading' in result) || result.loading === false;
-        if (!isLoaded) return;
-
-        const mapped = mapResult ? mapResult(result) : (result.data as unknown as TResult);
-        success.set(true);
-        data.set(mapped);
-        onSuccess(mapped);
-        error.set(null);
-      }),
-      catchError((err: unknown) => {
-        onError(err);
-        error.set(err);
-        success.set(false);
-        return EMPTY;
-      }),
-      finalize(() => {
-        onComplete();
-        loading.set(false);
-      }),
-      takeUntilDestroyed(destroyRef),
-    )
-    .subscribe();
-
-  return {
-    loading: loading.asReadonly(),
-    success: success.asReadonly(),
-    data: data.asReadonly(),
-    error: error.asReadonly(),
   };
 }
 
