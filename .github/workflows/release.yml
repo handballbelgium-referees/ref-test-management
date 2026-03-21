@@ -1,8 +1,7 @@
 name: Release CI/CD (Stable Releases)
 
 on:
-  push:
-    branches: [release]
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: 10.0.x
@@ -52,7 +51,7 @@ jobs:
             TARGET_BRANCH=$(git rev-parse --abbrev-ref HEAD)
             git add badges/*.png
             if ! git diff --cached --quiet; then
-              git commit -m "chore(release): update badges to v${VERSION} [skip ci]"
+              git commit -m "ci(release): update badges to v${VERSION} [skip ci]"
               git push origin HEAD:refs/heads/${TARGET_BRANCH}
             fi
           else
