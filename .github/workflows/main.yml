@@ -1,4 +1,4 @@
-name: Main CI/CD (Beta Pre-releases)
+name: 🧪 Beta Pre-release
 
 on:
   push:
