@@ -1,8 +1,7 @@
 name: Release CI/CD (Stable Releases)
 
 on:
-  push:
-    branches: [release]
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: 10.0.x

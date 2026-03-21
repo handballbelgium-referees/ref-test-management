@@ -27,3 +27,8 @@ jobs:
           git checkout release
           git merge origin/main --ff-only
           git push origin release
+
+      - name: 🚀 Trigger release workflow
+        run: gh workflow run release.yml --ref release
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
