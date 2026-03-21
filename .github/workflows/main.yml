@@ -130,7 +130,7 @@ jobs:
           retention-days: 1
 
   deploy-testing:
-    name: 🧪 Deploy to Testing (${{ needs.release.outputs.new-release-version }})
+    name: ${{ needs.release.outputs.new-release-version != '' && format('🧪 Deploy to Testing ({0})', needs.release.outputs.new-release-version) || '🧪 Deploy to Testing' }}
     runs-on: ubuntu-latest
     needs: [release, build]
     environment:

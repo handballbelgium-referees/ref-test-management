@@ -1,16 +1,41 @@
-name: Release CI/CD (Stable Releases)
+name: Stable Release
 
 on:
-  workflow_call:
+  workflow_dispatch:
 
 env:
   DOTNET_VERSION: 10.0.x
   NODE_VERSION: 22
 
 jobs:
+  promote:
+    name: 🚀 Promote main to release
+    runs-on: ubuntu-latest
+    environment: promote
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: 🔧 Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: 🔄 Merge main into release (no squash)
+        run: |
+          git fetch origin
+          git checkout release
+          git merge origin/main --ff-only
+          git push origin release
+
   release:
     name: 🚀 Create Stable Release
     runs-on: ubuntu-latest
+    needs: promote
     outputs:
       new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
       new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
@@ -24,6 +49,7 @@ jobs:
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
+          ref: release
           token: ${{ secrets.GH_PAT }}
 
       - name: ⚡ Setup Node.js
@@ -155,7 +181,7 @@ jobs:
           git push --force-with-lease origin main
 
   deploy-production:
-    name: 🚀 Deploy to Production (${{ needs.release.outputs.new-release-version }})
+    name: ${{ needs.release.outputs.new-release-version != '' && format('🚀 Deploy to Production ({0})', needs.release.outputs.new-release-version) || '🚀 Deploy to Production' }}
     runs-on: ubuntu-latest
     needs: [release, build]
     if: needs.release.outputs.new-release-published == 'true'
