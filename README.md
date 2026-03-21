@@ -171,22 +171,22 @@ This application follows a **clean architecture pattern** with clear separation 
        │              │
        │ JWT Token    │
        │              │
-┌──────┴──────────────▼──────────────────────────┐
-│     .NET 10 Web API (Backend)                  │
-│     Hot Chocolate 15 GraphQL Server            │
-│                                                │
-│  🔄 Background Services:                       │
-│     • BackgroundJobService (Email Queue)       │
-│     • RefTestExpirationService (Auto-expire)   │
-└────────────────────┬───────────────────────────┘
+┌──────┴──────────────▼───────────────────────────┐
+│     .NET 10 Web API (Backend)                   │
+│     Hot Chocolate 15 GraphQL Server             │
+│                                                 │
+│   Background Services:                          │
+│     • BackgroundJobService (Email Queue)        │
+│     • RefTestExpirationService (Auto-expire)    │
+└────────────────────┬────────────────────────────┘
                      │
       ┌──────────────┼──────────────┐
       │              │              │
-┌─────▼──────┐ ┌─────▼──────┐ ┌────▼──────────────┐
+┌─────▼──────┐ ┌─────▼──────┐ ┌─────▼─────────────┐
 │Application │ │   Domain   │ │  Infrastructure   │
 │   Layer    │ │   Models   │ │      Layer        │
 │            │ │            │ │                   │
-│• GraphQL   │ │• RefTest   │ │🎯 Services:       │
+│• GraphQL   │ │• RefTest   │ │ Services:         │
 │  Queries   │ │• Job       │ │ • EmailService    │
 │• Payloads  │ │• Status    │ │ • TemplateService │
 │• Config    │ │  Enums     │ │ • TranslationSvc  │
@@ -194,11 +194,11 @@ This application follows a **clean architecture pattern** with clear separation 
 │            │ │            │ │ • ReportService   │
 │            │ │            │ │ • LogoService     │
 │            │ │            │ │ • JobEnqueueSvc   │
-└─────┬──────┘ └────────────┘ └────┬──────────────┘
+└─────┬──────┘ └────────────┘ └─────┬─────────────┘
       │                             │
       │           ┌─────────────────┼─────────────────┐
       │           │                 │                 │
-      │     ┌─────▼──────┐    ┌─────▼──────┐   ┌─────▼─────────┐
+      │     ┌─────▼──────┐    ┌─────▼──────┐   ┌──────▼────────┐
       │     │Azure SQL   │    │   Brevo    │   │  QuestPDF +   │
       │     │ Database   │    │    API     │   │  ClosedXML    │
       │     │            │    │            │   │               │
@@ -439,14 +439,16 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 
 #### Backend (.NET 10)
 
-| Technology                | Version | Purpose                                                        |
-| ------------------------- | ------- | -------------------------------------------------------------- | --- | ------------- | ------- | -------------------------------------- | --- | ------------ | --------- | ---------------------------------- |
-| **.NET**                  | 10.0    | Latest .NET framework for high-performance APIs                |
-| **Hot Chocolate**         | 15.1.11 | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.1  | ORM for database access with migrations                        |
-| **SQL Server**            | -       | Primary data store (Azure SQL or local)                        |     | **ClosedXML** | 0.105.0 | Excel file generation and manipulation |     | **QuestPDF** | 2025.12.1 | PDF generation for RefTest results |
-| **Auth0**                 | -       | OAuth2/OpenID Connect authentication                           |
-| **Brevo API**             | -       | Email delivery service                                         |
+| Technology                | Version  | Purpose                                                        |
+| ------------------------- | -------- | -------------------------------------------------------------- |
+| **.NET**                  | 10.0     | Latest .NET framework for high-performance APIs                |
+| **Hot Chocolate**         | 15.1.12  | GraphQL server with authorization, data loaders, and filtering |
+| **Entity Framework Core** | 10.0.5   | ORM for database access with migrations                        |
+| **SQL Server**            | -        | Primary data store (Azure SQL or local)                        |
+| **ClosedXML**             | 0.105.0  | Excel file generation and manipulation                         |
+| **QuestPDF**              | 2026.2.4 | PDF generation for RefTest results                             |
+| **Auth0**                 | -        | OAuth2/OpenID Connect authentication                           |
+| **Brevo API**             | -        | Email delivery service                                         |
 
 **Project Structure:**
 
@@ -459,15 +461,15 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 
 | Technology                 | Version  | Purpose                                         |
 | -------------------------- | -------- | ----------------------------------------------- |
-| **Angular**                | 21.1.0   | Modern SPA framework with standalone components |
-| **TypeScript**             | 5.9.2    | Strict type-checking for reliability            |
+| **Angular**                | 21.2.0   | Modern SPA framework with standalone components |
+| **TypeScript**             | 5.9.3    | Strict type-checking for reliability            |
 | **Signals**                | Built-in | Reactive state management                       |
-| **TailwindCSS**            | 4.1.12   | Utility-first CSS framework                     |
-| **Apollo Client**          | 4.0.1    | GraphQL client with caching                     |
-| **GraphQL Code Generator** | 6.1.0    | Auto-generate TypeScript types from GraphQL     |
+| **TailwindCSS**            | 4.2.0    | Utility-first CSS framework                     |
+| **Apollo Client**          | 4.1.0    | GraphQL client with caching                     |
+| **GraphQL Code Generator** | 6.2.0    | Auto-generate TypeScript types from GraphQL     |
 | **ngx-translate**          | 17.0.0   | i18n and localization                           |
-| **Vitest**                 | 4.0.8    | Fast unit testing framework                     |
-| **RxJS**                   | 7.8.0    | Reactive programming                            |
+| **Vitest**                 | 4.1.0    | Fast unit testing framework                     |
+| **RxJS**                   | 7.8.2    | Reactive programming                            |
 
 **Key Patterns:**
 
@@ -784,11 +786,16 @@ This regenerates TypeScript types in `graphql/generated.ts`.
 ref-test-management/
 ├── .github/workflows/                    # CI/CD Pipelines
 │   ├── pr.yml                            # PR validation (lint, test, build)
-│   └── main.yml                          # Main deployment (release, build, deploy)
+│   ├── beta-release.yml                  # Beta pre-release on every push to main
+│   └── stable-release.yml               # Stable release pipeline (manual, from release branch)
 │
 ├── .husky/                               # Git Hooks
 │   ├── commit-msg                        # Validates commit format with commitlint
 │   └── pre-commit                        # Runs Angular build before commit
+│
+├── badges/                               # Auto-generated release badge images
+│   ├── release.png                       # Latest stable release badge
+│   └── pre-release.png                   # Latest pre-release badge
 │
 ├── RefTestManagement.Api/                   # 🔷 .NET Web API (.NET 10)
 │   ├── Controllers/
@@ -805,7 +812,7 @@ ref-test-management/
 │   │   │   ├── Creation/                 # Test creation mutations
 │   │   │   │   ├── RefTestCreationMutations.cs       # CreateRefTests
 │   │   │   │   ├── CreateRefTestsInput.cs            # Creation input model
-│   │   │   │   └── RefTestsResult.cs                 # Creation result model
+│   │   │   │   └── CreateRefTestsResult.cs           # Creation result model
 │   │   │   ├── Email/                    # Email operation mutations
 │   │   │   │   ├── RefTestEmailMutations.cs          # Send invitations/results/reports
 │   │   │   │   ├── SendInvitationsInput.cs
@@ -822,7 +829,7 @@ ref-test-management/
 │   │   │   │   └── UpdateRefTestNotificationSettingsInput.cs
 │   │   │   ├── Reset/                    # Reset & revive mutations
 │   │   │   │   ├── RefTestResetMutations.cs          # ResetRefTests, ReviveExpiredRefTests
-│   │   │   │   ├── ResetRefTestInput.cs              # Input with List<Guid> RefTestIds
+│   │   │   │   ├── ResetRefTestsInput.cs             # Input with List<Guid> RefTestIds
 │   │   │   │   ├── ResetRefTestsResult.cs            # Result for reset operations
 │   │   │   │   └── ReviveRefTestsResult.cs           # Result for revive operations
 │   │   │   ├── Deletion/                 # Delete operation mutations
@@ -849,8 +856,11 @@ ref-test-management/
 │   │   │   ├── RefTestTitleFilterType.cs # RefTestTitle filtering
 │   │   │   └── RefTestTitleSortType.cs   # RefTestTitle sorting
 │   │   └── ReadModels/                   # GraphQL response DTOs
-│   │       ├── RefTestDto.cs             # RefTest DTO with mappings
-│   │       └── RefTestTitleDto.cs        # RefTestTitle DTO
+│   │       ├── RefTestDto.cs             # RefTest read model
+│   │       ├── RefTestMappings.cs        # RefTest mapping extensions
+│   │       ├── RefTestExtensions.cs      # RefTest query extensions
+│   │       ├── RefTestTitleDto.cs        # RefTestTitle read model
+│   │       └── RefTestTitleMappings.cs   # RefTestTitle mapping extensions
 │   ├── Program.cs                        # Application entry point & DI setup
 │   ├── SecurityStartup.cs                # Auth0 JWT configuration
 │   ├── RefTestManagementMigrationExtensions.cs # EF Core migration runner
@@ -858,14 +868,26 @@ ref-test-management/
 │   └── wwwroot/                          # Angular production build (post-build)
 │
 ├── RefTestManagement.Application/           # 🔷 Business Logic Layer (.NET 10)
-│   ├── Services/                         # Application services (IHF questions client)
+│   ├── Services/
+│   │   ├── IHFRulesQuestionsService.cs   # StrawberryShake client for IHF questions API
+│   │   └── LanguageConfiguration.cs      # Language settings service
 │   ├── GraphQL/                          # GraphQL schemas and queries for external APIs
 │   │   ├── schema.graphql                # IHF Rules Questions schema
+│   │   ├── schema.extensions.graphql     # Schema extensions
 │   │   └── Queries/                      # GraphQL query definitions
+│   │       ├── calculateScore.graphql
+│   │       ├── getQuestionsById.graphql
+│   │       ├── getQuestionsByNumber.graphql
+│   │       ├── getQuestionsByNumbers.graphql
+│   │       ├── getRandomQuestionIds.graphql
+│   │       └── searchQuestionsByNumber.graphql
 │   ├── Models/                           # Application models (Question, Answer, etc.)
 │   │   └── JobPayloads.cs                # Job payload DTOs (InvitationEmail, ResultEmail, ReportEmail, RefTestExpiration)
 │   ├── Configurations/                   # Configuration models
-│   │   └── BackgroundJobConfiguration.cs # Job queue configuration
+│   │   ├── BackgroundJobConfiguration.cs # Job queue settings
+│   │   ├── EmailConfiguration.cs         # Email/Brevo settings
+│   │   ├── ReportConfiguration.cs        # Report recipient settings
+│   │   └── ScoreConfiguration.cs         # Scoring rules settings
 │   └── RefTestManagement.Application.csproj # Dependencies: StrawberryShake.Server
 │
 ├── RefTestManagement.Domain/                # 🔷 Domain Layer (.NET 10)
@@ -1031,11 +1053,6 @@ ref-test-management/
 │   │   ├── main.ts                       # Bootstrap Angular app
 │   │   ├── styles.css                    # Global TailwindCSS styles
 │   │   └── version.ts                    # Auto-generated version file (gitignored)
-│   │   │
-│   │   ├── index.html                    # HTML entry point
-│   │   ├── main.ts                       # Bootstrap Angular app
-│   │   ├── styles.css                    # Global TailwindCSS styles
-│   │   └── version.ts                    # Auto-generated version file (gitignored)
 │   │
 │   ├── public/                           # 🌐 Static assets
 │   │   ├── i18n/                         # Translation files (en, nl, fr, de)
@@ -1052,6 +1069,8 @@ ref-test-management/
 │   │   │   │   ├── complete-ref-test.graphql      # Complete RefTest mutation
 │   │   │   │   ├── save-ref-test-progress.graphql # Save progress mutation
 │   │   │   │   └── start-ref-test.graphql         # Start RefTest mutation
+│   │   │   ├── subscriptions/
+│   │   │   │   └── ref-test-time-extended.graphql # Time extension subscription
 │   │   │   └── queries/
 │   │   │       ├── get-ref-test-by-token.graphql       # Get RefTest by token query
 │   │   │       ├── get-results-email-delay-minutes.graphql # Get email delay config
@@ -1083,19 +1102,26 @@ ref-test-management/
 │   │           └── search-questions-by-number.graphql # Search questions
 │   │
 │   ├── scripts/
-│   │   └── generate-version.mjs          # Sync version from package.json
+│   │   └── generate-pwa-icons.mjs        # Generate PWA icon assets
 │   │
 │   ├── angular.json                      # Angular CLI configuration
 │   ├── codegen.ts                        # GraphQL Code Generator config
+│   ├── ngsw-config.json                  # Service Worker (PWA) configuration
 │   ├── proxy.conf.json                   # Dev server proxy settings
 │   ├── package.json                      # Frontend dependencies
-│   ├── tailwind.config.js                # TailwindCSS configuration
-│   ├── tsconfig.json                     # TypeScript config
-│   └── vite.config.ts                    # Vite build configuration
+│   ├── tsconfig.json                     # TypeScript base config
+│   ├── tsconfig.app.json                 # App TypeScript config
+│   └── tsconfig.spec.json                # Test TypeScript config
 │
-├── .releaserc.json                       # Semantic Release config (emojis, plugins)
+├── scripts/                              # Root-level build/tooling scripts
+│   └── generate-badges.mjs               # Generate release badge PNG files
+│
+├── .releaserc.json                       # Semantic Release config (branches, plugins)
+├── ARCHITECTURE-DIAGRAM.md               # Architecture overview diagram
 ├── commitlint.config.mjs                 # Conventional commits validation
+├── dotnet-tools.json                     # .NET local tool manifest (EF Core CLI)
 ├── package.json                          # Root dependencies (semantic-release, husky)
+├── renovate.json                         # Renovate dependency update config
 ├── RefTestManagement.sln                 # .NET solution file
 └── README.md                             # This file
 ```
@@ -1918,18 +1944,36 @@ Husky enforces quality checks:
 
 ## 🚢 Deployment
 
+### CI/CD Pipelines (GitHub Actions)
+
+Three workflows handle the full release lifecycle:
+
+| Workflow               | File                 | Trigger                        | Purpose                                         |
+| ---------------------- | -------------------- | ------------------------------ | ----------------------------------------------- |
+| ✅ Pull Request Checks | `pr.yml`             | Pull request to `main`         | Build/lint/test validation                      |
+| 🧪 Beta Pre-release    | `beta-release.yml`   | Push to `main`                 | Automated alpha pre-release + deploy to testing |
+| 🚀 Stable Release      | `stable-release.yml` | Manual (from `release` branch) | Promote → stable release → deploy to production |
+
 ### Automated Deployment (GitHub Actions)
 
-The application deploys automatically when a stable release is triggered via the **Promote to Release** workflow:
+#### Beta Pre-release (automatic)
 
-1. **Promote**: `promote.yml` fast-forwards `release` to `main`'s HEAD
-2. **Semantic Release**: Analyzes commits and creates a new stable version tag
-3. **Build**:
-   - Builds Angular application
-   - Copies build to `RefTestManagement.Api/wwwroot/`
-   - Builds and publishes .NET application
-4. **Deploy**: Deploys to Azure App Service
-5. **Sync**: Rebases `main` onto `release` to keep histories aligned
+Every push to `main` automatically triggers the **🧪 Beta Pre-release** workflow:
+
+1. **Semantic Release**: Analyzes unreleased commits and creates a `vX.Y.Z-alpha.N` tag and GitHub pre-release
+2. **Build**: Builds Angular + .NET application
+3. **Deploy**: Deploys to Azure App Service (testing environment)
+
+#### Stable Release (manual)
+
+Triggered manually via **Actions → 🚀 Stable Release → Run workflow** — must be run from the `release` branch:
+
+1. **Verify branch**: Fails immediately if not triggered from `release`
+2. **Promote**: Fast-forwards the `release` branch to `main`'s HEAD (preserving all commit SHAs)
+3. **Semantic Release**: Analyzes commits on `release` and creates a `vX.Y.Z` tag and GitHub release
+4. **Build**: Builds Angular + .NET application
+5. **Deploy**: Deploys to Azure App Service (production environment — requires approval)
+6. **Sync**: Rebases `main` onto `release` to keep histories aligned
 
 ### Manual Deployment
 
@@ -2031,21 +2075,21 @@ Versions are automatically determined by [semantic-release](https://github.com/s
 
 #### Pre-releases (automatic)
 
-Every push to `main` automatically triggers a pre-release:
+Every push to `main` automatically triggers the **🧪 Beta Pre-release** workflow:
 
 1. Semantic-release analyzes unreleased commits and determines the next version
 2. Creates a `vX.Y.Z-alpha.N` Git tag and GitHub pre-release
 
 #### Stable releases (manual)
 
-To promote `main` to a stable release:
+To create a stable release:
 
-1. Go to **Actions → Promote to Release (Stable Release) → Run workflow** on the `main` branch
+1. Go to **Actions → 🚀 Stable Release → Run workflow** and select the **`release`** branch
 2. Approve the deployment in the `promote` environment (required reviewers)
 3. The workflow fast-forwards the `release` branch to `main`'s HEAD (preserving all commit SHAs)
-4. This triggers `release.yml` which runs semantic-release on `release`, creates a `vX.Y.Z` tag and GitHub release, builds the application, deploys to production, and rebases `main` onto `release`
+4. Semantic-release runs on `release`, creates a `vX.Y.Z` tag and GitHub release, builds the application, deploys to production, and rebases `main` onto `release`
 
-> **Important**: Never use squash or rebase merge strategies when merging into `release`. These create new commit SHAs, causing semantic-release to miscount unreleased commits and bump the version incorrectly. The `promote.yml` workflow uses fast-forward, which is the only correct strategy.
+> **Important**: Never use squash or rebase merge strategies when merging into `release`. These create new commit SHAs, causing semantic-release to miscount unreleased commits and bump the version incorrectly. The `stable-release.yml` workflow uses fast-forward, which is the only correct strategy.
 
 ## 📄 License
 
