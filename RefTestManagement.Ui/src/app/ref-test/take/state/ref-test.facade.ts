@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, Subject, catchError, debounceTime, filter, finalize, map, tap } from 'rxjs';
+import { Subject, debounceTime, map, tap } from 'rxjs';
 import {
   Answer,
   CompleteRefTestGQL,
@@ -10,6 +10,7 @@ import {
   StartRefTestGQL,
   StartRefTestPayload,
 } from '../../../../../graphql/generated';
+import { runMutation } from '../../../shared/utils/apollo-utils';
 import { toSnakeCase } from '../../../shared/utils/string-utils';
 import { Question as QuestionModel } from './ref-test.models';
 import { RefTestStore } from './ref-test.store';
@@ -35,21 +36,18 @@ export class RefTestFacade {
   start(token: string): void {
     this._store.error.set(null);
 
-    this._startRefTestGQL
-      .mutate({ variables: { input: { token } } })
-      .pipe(
-        tap((r) => this._store.loading.set(r.loading ?? false)),
-        map((r) => r.data?.startRefTest),
-        filter((data): data is StartRefTestPayload => !!data),
-        tap((data) => this.handleStart(token, data)),
-        catchError(() => {
-          this._store.error.set('general');
-          return EMPTY;
-        }),
-        finalize(() => this._store.loading.set(false)),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe();
+    const { loading } = runMutation(
+      this._startRefTestGQL.mutate({ variables: { input: { token } } }),
+      this._destroyRef,
+      {
+        onSuccess: (data) => {
+          if (data) this.handleStart(token, data);
+        },
+        onError: () => this._store.error.set('general'),
+      },
+      (r) => r.data?.startRefTest ?? null,
+    );
+    this._store.loading.set(loading());
   }
 
   private handleStart(token: string, data?: StartRefTestPayload): void {
@@ -94,24 +92,20 @@ export class RefTestFacade {
 
     const selectedAnswerIds = this._store.getSelectedAnswerIds();
 
-    this._completeRefTestGQL
-      .mutate({
+    const { loading } = runMutation(
+      this._completeRefTestGQL.mutate({
         variables: {
           input: { token, selectedAnswerIds, language: this._store.currentLanguage() },
         },
-      })
-      .pipe(
-        tap((r) => this._store.loading.set(r.loading ?? false)),
-        map((r) => r.data?.completeRefTest?.refTest),
-        tap((refTest) => this._store.complete(refTest ?? {})),
-        catchError(() => {
-          this._store.error.set('submit_failed');
-          return EMPTY;
-        }),
-        finalize(() => this._store.loading.set(false)),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe();
+      }),
+      this._destroyRef,
+      {
+        onSuccess: (refTest) => this._store.complete(refTest ?? {}),
+        onError: () => this._store.error.set('submit_failed'),
+      },
+      (r) => r.data?.completeRefTest?.refTest,
+    );
+    this._store.loading.set(loading());
   }
 
   triggerSave(): void {
@@ -125,8 +119,8 @@ export class RefTestFacade {
 
     if (!token) return;
 
-    this._saveRefTestProgressGQL
-      .mutate({
+    runMutation(
+      this._saveRefTestProgressGQL.mutate({
         variables: {
           input: {
             token: token,
@@ -135,9 +129,9 @@ export class RefTestFacade {
             language: lang,
           },
         },
-      })
-      .pipe(takeUntilDestroyed(this._destroyRef))
-      .subscribe();
+      }),
+      this._destroyRef,
+    );
   }
 
   save(): void {
