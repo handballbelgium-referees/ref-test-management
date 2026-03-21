@@ -49,7 +49,7 @@
         },
         "writerOpts": {
           "commitsSort": ["type", "scope", "subject"],
-          "commitPartial": "* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}{{#if hash}} ([{{hash}}]({{repoUrl}}/commit/{{hash}})){{/if}}\n\n{{#if body}}<details><summary>Details</summary>\n\n{{body}}\n\n</details>\n{{/if}}{{#if notes}}\n\n{{#each notes}}### {{title}}\n\n{{text}}\n\n{{/each}}{{/if}}"
+          "commitPartial": "* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}{{#if hash}} ([{{hash}}]({{host}}/{{owner}}/{{repository}}/commit/{{hash}})){{/if}}\n\n{{#if body}}<details><summary>Details</summary>\n\n{{body}}\n\n</details>\n{{/if}}{{#if notes}}\n\n{{#each notes}}### {{title}}\n\n{{text}}\n\n{{/each}}{{/if}}"
         }
       }
     ],
