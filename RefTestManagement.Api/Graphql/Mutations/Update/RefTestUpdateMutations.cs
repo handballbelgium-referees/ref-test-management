@@ -86,6 +86,7 @@ public static class RefTestUpdateMutations
         CancellationToken cancellationToken)
     {
         var refTest = await context.RefTests
+            .Include(rt => rt.Title)
             .FirstOrDefaultAsync(rt => rt.Id == input.Id, cancellationToken);
 
         if (refTest == null)
@@ -141,6 +142,8 @@ public static class RefTestUpdateMutations
             questionIds);
 
         await context.SaveChangesAsync(cancellationToken);
+
+        await context.Entry(refTest).Reference(r => r.Title).LoadAsync(cancellationToken);
 
         return refTest.ToDto();
     }
