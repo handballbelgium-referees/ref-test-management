@@ -33,3 +33,7 @@ jobs:
     needs: promote
     uses: ./.github/workflows/release.yml
     secrets: inherit
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
