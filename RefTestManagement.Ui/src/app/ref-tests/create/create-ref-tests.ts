@@ -13,8 +13,13 @@ import { applyEach, disabled, email, form, FormField, min, required } from '@ang
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, map, of, tap } from 'rxjs';
-import { CreateRefTestsGQL, GetQuestionsByNumberGQL } from '../../../../graphql/generated';
+import {
+  CreateRefTestsGQL,
+  CreateRefTestsMutation,
+  GetQuestionsByNumberGQL,
+} from '../../../../graphql/generated';
 import { Banner } from '../../services/banner';
+import { runMutation } from '../../shared/utils/apollo-utils';
 import { QuestionImportModal } from './components/question-import-modal/question-import-modal';
 import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
 import { RefTestUserListItem } from './components/ref-test-user-list-item/ref-test-user-list-item';
@@ -348,8 +353,8 @@ export class CreateRefTests {
       .map((q) => q.trim())
       .filter((q) => q.length > 0);
 
-    this._createRefTestsGQL
-      .mutate({
+    const { loading } = runMutation(
+      this._createRefTestsGQL.mutate({
         variables: {
           input: {
             users: formData.users,
@@ -364,11 +369,10 @@ export class CreateRefTests {
             sendAutomatedResults: formData.sendResults,
           },
         },
-      })
-      .pipe(
-        tap((result) => this.loading.set(result.loading ?? false)),
-        map((result) => result.data?.createRefTests?.createRefTestsResult),
-        tap((data) => {
+      }),
+      this._destroyRef,
+      {
+        onSuccess: (data: CreateRefTestsMutation['createRefTests']['createRefTestsResult']) => {
           if (data) {
             if (data.errors.length > 0) {
               // Show error banner with failed count
@@ -410,17 +414,17 @@ export class CreateRefTests {
               });
             }
           }
-        }),
-        catchError((err) => {
-          this.loading.set(false);
+        },
+        onError: (err) => {
+          const message = err instanceof Error ? err.message : null;
           this._bannerService.error(
-            err.message || this._translate.instant('ref_tests.create.form.submit_error'),
+            message || this._translate.instant('ref_tests.create.form.submit_error'),
           );
-          return of(null);
-        }),
-        takeUntilDestroyed(this._destroyRef),
-      )
-      .subscribe();
+        },
+      },
+      (result) => result.data?.createRefTests?.createRefTestsResult,
+    );
+    this.loading.set(loading());
   }
 
   protected cancel(): void {

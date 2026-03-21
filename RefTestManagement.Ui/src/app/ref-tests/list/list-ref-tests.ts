@@ -7,11 +7,11 @@ import {
   inject,
   signal,
 } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
-import { filter, map, take } from 'rxjs';
+import { map } from 'rxjs';
 import {
   GetScoreConfigurationGQL,
   RefTestStatus,
@@ -259,27 +259,14 @@ export class ListRefTests {
       }
     });
 
-    // Read navigation state - only available during actual navigation, not on page refresh
-    const navigation = this._router.currentNavigation();
-
-    // Only proceed if there's an active navigation with fromCreate state
-    if (navigation?.extras?.state) {
-      const state = navigation.extras.state as { fromCreate?: boolean };
-
-      if (state.fromCreate) {
-        // Clear the state immediately using window.history to prevent re-triggering
-        window.history.replaceState({}, '', window.location.href);
-
-        // Wait for data to be available, then reset filters
-        toObservable(this.dataService.hasData)
-          .pipe(
-            filter((hasData) => hasData),
-            take(1),
-          )
-          .subscribe(() => {
-            this.dataService.reset();
-          });
-      }
+    // Read navigation state from history.state — reliable regardless of when the constructor runs
+    const navState = history.state as { fromCreate?: boolean } | null;
+    if (navState?.fromCreate) {
+      // Clear the flag immediately to prevent re-triggering on manual page refresh
+      window.history.replaceState({}, '', window.location.href);
+      // Reset local pagination state and refetch to include the newly created ref-tests
+      this.localStateManager.resetAllState();
+      this.dataService.reset();
     }
   }
 
