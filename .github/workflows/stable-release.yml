@@ -14,7 +14,13 @@ jobs:
     environment: promote
 
     steps:
-      - name: 📥 Checkout code
+      - name: � Verify branch
+        if: github.ref_name != 'release'
+        run: |
+          echo "❌ This workflow must be triggered from the 'release' branch, not '${{ github.ref_name }}'."
+          exit 1
+
+      - name: �📥 Checkout code
         uses: actions/checkout@v6
         with:
           fetch-depth: 0
