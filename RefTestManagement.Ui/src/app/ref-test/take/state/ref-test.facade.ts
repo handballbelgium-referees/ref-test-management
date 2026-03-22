@@ -36,18 +36,19 @@ export class RefTestFacade {
   start(token: string): void {
     this._store.error.set(null);
 
-    const { loading } = runMutation(
+    runMutation(
       this._startRefTestGQL.mutate({ variables: { input: { token } } }),
       this._destroyRef,
       {
+        onStart: () => this._store.loading.set(true),
         onSuccess: (data) => {
           if (data) this.handleStart(token, data);
         },
         onError: () => this._store.error.set('general'),
+        onComplete: () => this._store.loading.set(false),
       },
       (r) => r.data?.startRefTest ?? null,
     );
-    this._store.loading.set(loading());
   }
 
   private handleStart(token: string, data?: StartRefTestPayload): void {
@@ -92,7 +93,7 @@ export class RefTestFacade {
 
     const selectedAnswerIds = this._store.getSelectedAnswerIds();
 
-    const { loading } = runMutation(
+    runMutation(
       this._completeRefTestGQL.mutate({
         variables: {
           input: { token, selectedAnswerIds, language: this._store.currentLanguage() },
@@ -100,12 +101,13 @@ export class RefTestFacade {
       }),
       this._destroyRef,
       {
+        onStart: () => this._store.loading.set(true),
         onSuccess: (refTest) => this._store.complete(refTest ?? {}),
         onError: () => this._store.error.set('submit_failed'),
+        onComplete: () => this._store.loading.set(false),
       },
       (r) => r.data?.completeRefTest?.refTest,
     );
-    this._store.loading.set(loading());
   }
 
   triggerSave(): void {
