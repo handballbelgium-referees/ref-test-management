@@ -24,6 +24,13 @@ function fixTableBody(body) {
     .replace(/([^|\n])\n(?![-\s*]|$)([^|\n])/g, '$1 $2');
 }
 
+function indentBody(body) {
+  return body
+    .split('\n')
+    .map((line) => '  ' + line)
+    .join('\n');
+}
+
 export default {
   branches: [
     'release',
@@ -73,13 +80,13 @@ export default {
               ...commit,
               type: typeConfig?.section ?? commit.type,
               shortHash: commit.hash ? commit.hash.slice(0, 7) : '',
-              body: commit.body ? fixTableBody(commit.body) : commit.body,
+              body: commit.body ? indentBody(fixTableBody(commit.body)) : commit.body,
             };
           },
           commitPartial:
             '* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}' +
             '{{#if hash}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}})){{/if}}\n\n' +
-            '{{#if body}}<details><summary>Details</summary>\n\n{{body}}\n\n</details>\n\n{{/if}}' +
+            '{{#if body}}  <details><summary>Details</summary>\n\n{{body}}\n\n  </details>\n\n{{/if}}' +
             '{{#if notes}}\n\n{{#each notes}}### {{title}}\n\n{{text}}\n\n{{/each}}{{/if}}',
         },
       },
