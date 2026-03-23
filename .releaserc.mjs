@@ -51,17 +51,15 @@ export default {
         writerOpts: {
           commitsSort: ['type', 'scope', 'subject'],
           transform: (commit) => {
-            if (commit.body) {
-              // Collapse Renovate's line-wrapped table cells into single lines
-              commit.body = commit.body
-                // Join lines that are a continuation inside a table cell (no | at start/end)
-                .replace(/\|\n([^|\-\n])/g, '| $1')
-                // Join lines where content wraps before a closing |
-                .replace(/([^|\n])\n\|/g, '$1 |')
-                // Clean up any remaining wrapped content between pipes
-                .replace(/\|\n\|/g, '| |');
-            }
-            return commit;
+            if (!commit.body) return commit;
+            const body = commit.body
+              // Join lines that are a continuation inside a table cell (no | at start/end)
+              .replace(/\|\n([^|\-\n])/g, '| $1')
+              // Join lines where content wraps before a closing |
+              .replace(/([^|\n])\n\|/g, '$1 |')
+              // Clean up any remaining wrapped content between pipes
+              .replace(/\|\n\|/g, '| |');
+            return { ...commit, body };
           },
           commitPartial:
             '* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}' +
