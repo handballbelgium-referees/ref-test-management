@@ -50,21 +50,20 @@ export default {
         },
         writerOpts: {
           commitsSort: ['type', 'scope', 'subject'],
-          transform: (commit) => {
-            if (!commit.body) return commit;
-            const body = commit.body
-              // Join lines that are a continuation inside a table cell (no | at start/end)
-              .replace(/\|\n([^|\-\n])/g, '| $1')
-              // Join lines where content wraps before a closing |
-              .replace(/([^|\n])\n\|/g, '$1 |')
-              // Clean up any remaining wrapped content between pipes
-              .replace(/\|\n\|/g, '| |');
-            return { ...commit, body };
+          helpers: {
+            fixTableBody: (body) => {
+              if (!body) return '';
+              return body
+                .replace(/\|\n([^|\-\n])/g, '| $1')
+                .replace(/([^|\n])\n\|/g, '$1 |')
+                .replace(/\|\n\|/g, '| |');
+            },
+            shortHash: (hash) => (hash ? hash.slice(0, 7) : ''),
           },
           commitPartial:
             '* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}' +
-            '{{#if hash}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}})){{/if}}\n\n' +
-            '{{#if body}}<details><summary>Details</summary>\n\n{{body}}\n\n</details>\n{{/if}}' +
+            '{{#if hash}} ([{{shortHash hash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}})){{/if}}\n\n' +
+            '{{#if body}}<details><summary>Details</summary>\n\n{{fixTableBody body}}\n\n</details>\n{{/if}}' +
             '{{#if notes}}\n\n{{#each notes}}### {{title}}\n\n{{text}}\n\n{{/each}}{{/if}}',
         },
       },
