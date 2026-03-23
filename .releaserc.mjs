@@ -16,9 +16,12 @@ const PRESET_TYPES = [
 
 function fixTableBody(body) {
   return body
-    .replace(/\|\n([^|\-\n])/g, '| $1')
-    .replace(/([^|\n])\n\|/g, '$1 |')
-    .replace(/\|\n\|/g, '| |');
+    // Join wrapped content after a pipe (but not before separator rows like |---|)
+    .replace(/\|\n(?![|\-])/g, '| ')
+    // Join wrapped content before a pipe (but not after separator rows)
+    .replace(/(?<![|\-])\n\|/g, ' |')
+    // Join any remaining wrapped lines that are inside a cell (no pipe on either side)
+    .replace(/([^|\n])\n([^|\n])/g, '$1 $2');
 }
 
 export default {
@@ -76,7 +79,7 @@ export default {
           commitPartial:
             '* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}' +
             '{{#if hash}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}})){{/if}}\n\n' +
-            '{{#if body}}<details><summary>Details</summary>\n\n{{body}}\n\n</details>\n{{/if}}' +
+            '{{#if body}}<details><summary>Details</summary>\n\n{{body}}\n\n</details>\n\n{{/if}}' +
             '{{#if notes}}\n\n{{#each notes}}### {{title}}\n\n{{text}}\n\n{{/each}}{{/if}}',
         },
       },
