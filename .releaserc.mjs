@@ -58,11 +58,10 @@ export default {
                 .replace(/([^|\n])\n\|/g, '$1 |')
                 .replace(/\|\n\|/g, '| |');
             },
-            shortHash: (hash) => (hash ? hash.slice(0, 7) : ''),
           },
           commitPartial:
             '* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}' +
-            '{{#if hash}} ([{{shortHash hash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}})){{/if}}\n\n' +
+            '{{#if hash}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}})){{/if}}\n\n' +
             '{{#if body}}<details><summary>Details</summary>\n\n{{fixTableBody body}}\n\n</details>\n{{/if}}' +
             '{{#if notes}}\n\n{{#each notes}}### {{title}}\n\n{{text}}\n\n{{/each}}{{/if}}',
         },
