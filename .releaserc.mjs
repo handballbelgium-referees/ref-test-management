@@ -20,8 +20,8 @@ function fixTableBody(body) {
     .replace(/\|\n(?![|\-])/g, '| ')
     // Join wrapped content before a pipe (but not after separator rows)
     .replace(/(?<![|\-])\n\|/g, ' |')
-    // Join any remaining wrapped lines that are inside a cell (no pipe on either side)
-    .replace(/([^|\n])\n([^|\n])/g, '$1 $2');
+    // Join remaining wrapped lines inside a cell (no pipe on either side, not a list item)
+    .replace(/([^|\n])\n(?![-\s*]|$)([^|\n])/g, '$1 $2');
 }
 
 export default {
