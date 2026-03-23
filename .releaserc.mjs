@@ -1,4 +1,26 @@
 /** @type {import('semantic-release').GlobalConfig} */
+
+const PRESET_TYPES = [
+  { type: 'feat', section: '✨ Features' },
+  { type: 'fix', section: '🐛 Bug Fixes' },
+  { type: 'perf', section: '⚡ Performance Improvements' },
+  { type: 'revert', section: '⏪ Reverts' },
+  { type: 'style', section: '💄 Styles' },
+  { type: 'refactor', section: '♻️ Code Refactoring' },
+  { type: 'build', section: '🔧 Build System' },
+  { type: 'chore', section: '🔨 Chores' },
+  { type: 'test', hidden: true },
+  { type: 'docs', hidden: true },
+  { type: 'ci', hidden: true },
+];
+
+function fixTableBody(body) {
+  return body
+    .replace(/\|\n([^|\-\n])/g, '| $1')
+    .replace(/([^|\n])\n\|/g, '$1 |')
+    .replace(/\|\n\|/g, '| |');
+}
+
 export default {
   branches: [
     'release',
@@ -34,35 +56,25 @@ export default {
       {
         preset: 'conventionalcommits',
         presetConfig: {
-          types: [
-            { type: 'feat', section: '✨ Features' },
-            { type: 'fix', section: '🐛 Bug Fixes' },
-            { type: 'perf', section: '⚡ Performance Improvements' },
-            { type: 'revert', section: '⏪ Reverts' },
-            { type: 'style', section: '💄 Styles' },
-            { type: 'refactor', section: '♻️ Code Refactoring' },
-            { type: 'build', section: '🔧 Build System' },
-            { type: 'chore', section: '🔨 Chores' },
-            { type: 'test', hidden: true },
-            { type: 'docs', hidden: true },
-            { type: 'ci', hidden: true },
-          ],
+          types: PRESET_TYPES,
         },
         writerOpts: {
           commitsSort: ['type', 'scope', 'subject'],
-          helpers: {
-            fixTableBody: (body) => {
-              if (!body) return '';
-              return body
-                .replace(/\|\n([^|\-\n])/g, '| $1')
-                .replace(/([^|\n])\n\|/g, '$1 |')
-                .replace(/\|\n\|/g, '| |');
-            },
+          transform: (commit) => {
+            const typeConfig = PRESET_TYPES.find((t) => t.type === commit.type);
+            // Filter out hidden types; pass through merge commits (no type)
+            if (commit.type && (!typeConfig || typeConfig.hidden)) return false;
+            return {
+              ...commit,
+              type: typeConfig?.section ?? commit.type,
+              shortHash: commit.hash ? commit.hash.slice(0, 7) : '',
+              body: commit.body ? fixTableBody(commit.body) : commit.body,
+            };
           },
           commitPartial:
             '* {{#if scope}}**{{scope}}:** {{/if}}{{subject}}' +
             '{{#if hash}} ([{{shortHash}}]({{@root.host}}/{{@root.owner}}/{{@root.repository}}/commit/{{hash}})){{/if}}\n\n' +
-            '{{#if body}}<details><summary>Details</summary>\n\n{{fixTableBody body}}\n\n</details>\n{{/if}}' +
+            '{{#if body}}<details><summary>Details</summary>\n\n{{body}}\n\n</details>\n{{/if}}' +
             '{{#if notes}}\n\n{{#each notes}}### {{title}}\n\n{{text}}\n\n{{/each}}{{/if}}',
         },
       },
