@@ -61,9 +61,11 @@ export default {
         writerOpts: {
           commitsSort: ['type', 'scope', 'subject'],
           transform: (commit) => {
+            // Filter out merge commits
+            if (commit.merge) return false;
             const typeConfig = PRESET_TYPES.find((t) => t.type === commit.type);
-            // Filter out hidden types; pass through merge commits (no type)
-            if (commit.type && (!typeConfig || typeConfig.hidden)) return false;
+            // Filter out hidden types and commits with no matching type
+            if (!typeConfig || typeConfig.hidden) return false;
             return {
               ...commit,
               type: typeConfig?.section ?? commit.type,
