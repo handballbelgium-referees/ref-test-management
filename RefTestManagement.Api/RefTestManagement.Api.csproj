@@ -13,12 +13,12 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="15.1.13" />
-        <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="15.1.13"/>
-        <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.13"/>
-        <PackageReference Include="HotChocolate.Caching" Version="15.1.13" />
-        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="15.1.13"/>
-        <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.13"/>
+        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="15.1.14" />
+        <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="15.1.14"/>
+        <PackageReference Include="HotChocolate.AspNetCore" Version="15.1.14"/>
+        <PackageReference Include="HotChocolate.Caching" Version="15.1.14" />
+        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="15.1.14"/>
+        <PackageReference Include="HotChocolate.Types.Analyzers" Version="15.1.14"/>
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.5" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.5" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.5">
