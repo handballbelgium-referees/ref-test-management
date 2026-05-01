@@ -15,9 +15,9 @@ public class AnswerType : ObjectType<Answer>
         descriptor.Field(x => x.Id).Description("Answer id");
         descriptor.Field(x => x.Number).Description("Answer number").Authorize();
         descriptor.Field(x => x.Phrase)
-            .Type<JsonType>()
+            .Type<AnyType>()
             .Description("Translations of the answer phrase")
-            .Resolve(ctx => JsonSerializer.Serialize(ctx.Parent<Answer>().Phrase));
+            .Resolve(ctx => JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(ctx.Parent<Answer>().Phrase)));
         descriptor.Field(x => x.IsCorrect).Description("Answer is correct").Authorize();
     }
 }

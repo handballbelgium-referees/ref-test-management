@@ -133,6 +133,7 @@ services.AddGraphQLServer()
     .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
     .AddGlobalObjectIdentification(true)
     .AddAuthorization()
+    .AddJsonTypeConverter()
     .AddHttpRequestInterceptor(async (ctx, _, _, _) =>
     {
         var result = await ctx.AuthenticateAsync(JwtBearerDefaults.AuthenticationScheme);
