@@ -15,9 +15,9 @@ public class QuestionType : ObjectType<Question>
         descriptor.Field(x => x.Id).Description("Question id");
         descriptor.Field(x => x.Number).Description("Question number").Authorize();
         descriptor.Field(x => x.Phrase)
-            .Type<JsonType>()
+            .Type<AnyType>()
             .Description("Translations of the question phrase")
-            .Resolve(ctx => JsonSerializer.Serialize(ctx.Parent<Question>().Phrase));
+            .Resolve(ctx => JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(ctx.Parent<Question>().Phrase)));
         
         descriptor.Field(x => x.Answers).Description("Answers for this RefTest question");
     }
