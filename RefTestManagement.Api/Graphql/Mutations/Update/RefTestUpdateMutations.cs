@@ -285,7 +285,7 @@ public static class RefTestUpdateMutations
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> RegenerateRefTestTokenAsync(
-        [ID<RefTest>] Guid refTestId,
+        [ID<RefTestDto>] Guid refTestId,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)

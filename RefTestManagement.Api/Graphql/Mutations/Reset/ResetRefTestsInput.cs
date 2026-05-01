@@ -1,4 +1,4 @@
-using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Reset;
 
@@ -9,7 +9,7 @@ public enum RefTestResetType
 }
 
 public record ResetRefTestsInput(
-    [property: ID<RefTest>] List<Guid> Ids,
+    [property: ID<RefTestDto>] List<Guid> Ids,
     RefTestResetType ResetType,
     bool RegenerateToken
 );

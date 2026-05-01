@@ -102,7 +102,7 @@ public static class RefTestQueries
     /// <returns></returns>
     [Authorize]
     [Error<RefTestNotFoundException>]
-    public static async Task<RefTestDto> GetRefTest([ID<RefTest>] Guid id, RefTestByIdDataLoader dataLoader,
+    public static async Task<RefTestDto> GetRefTest([ID<RefTestDto>] Guid id, RefTestByIdDataLoader dataLoader,
         CancellationToken cancellationToken)
         => await dataLoader.LoadAsync(id, cancellationToken) ?? throw new RefTestNotFoundException(id);
 

@@ -138,7 +138,7 @@ public static class RefTestResetMutations
     /// <returns></returns>
     [Authorize]
     public static async Task<ReviveRefTestsResult> ReviveRefTestsAsync(
-        [ID<RefTest>] List<Guid> ids,
+        [ID<RefTestDto>] List<Guid> ids,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)

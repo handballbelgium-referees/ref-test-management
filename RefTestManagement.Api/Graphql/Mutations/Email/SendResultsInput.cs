@@ -1,6 +1,6 @@
-using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Email;
 
-public record SendResultsInput([property: ID<RefTest>] List<Guid> Ids);
+public record SendResultsInput([property: ID<RefTestDto>] List<Guid> Ids);
 

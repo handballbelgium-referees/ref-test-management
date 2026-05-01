@@ -1,4 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Authorization;
 
@@ -20,7 +20,7 @@ public static class RefTestSubscriptions
     [Subscribe]
     [Topic(RefTestSubscriptionService.TimeExtendedTopic)]
     public static RefTestTimeExtended RefTestTimeExtended(
-        [ID<RefTest>] Guid id,
+        [ID<RefTestDto>] Guid id,
         [EventMessage] RefTestTimeExtendedEvent message) =>
         new(message.Id, message.NewMaxTimeInMinutes, message.AdditionalMinutes, message.ExtendedAt);
 
@@ -36,7 +36,7 @@ public static class RefTestSubscriptions
     [Authorize]
     [Topic("{id}")]
     public static IRefTestEvent RefTestUpdated(
-        [ID<RefTest>] Guid id,
+        [ID<RefTestDto>] Guid id,
         [EventMessage] object message)
     {
         return message switch

@@ -1,4 +1,5 @@
-﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
+﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 
@@ -12,17 +13,17 @@ public interface IRefTestEvent
 }
 
 [ObjectType]
-public record RefTestInvitationSent([property: ID<RefTest>] Guid Id, DateTime SentAt) : IRefTestEvent;
+public record RefTestInvitationSent([property: ID<RefTestDto>] Guid Id, DateTime SentAt) : IRefTestEvent;
 
 [ObjectType]
-public record RefTestResultSent([property: ID<RefTest>] Guid Id, DateTime SentAt) : IRefTestEvent;
+public record RefTestResultSent([property: ID<RefTestDto>] Guid Id, DateTime SentAt) : IRefTestEvent;
 
 [ObjectType]
-public record RefTestStarted([property: ID<RefTest>] Guid Id, RefTestStatus Status, DateTime StartedAt) : IRefTestEvent;
+public record RefTestStarted([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, DateTime StartedAt) : IRefTestEvent;
 
 [ObjectType]
 public record RefTestCompleted(
-    [property: ID<RefTest>] Guid Id,
+    [property: ID<RefTestDto>] Guid Id,
     RefTestStatus Status,
     DateTime CompletedAt,
     int QuestionScore,
@@ -33,4 +34,4 @@ public record RefTestCompleted(
     string Language) : IRefTestEvent;
 
 [ObjectType]
-public record RefTestExpired([property: ID<RefTest>] Guid Id, RefTestStatus Status, DateTime ExpiredAt) : IRefTestEvent;
+public record RefTestExpired([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, DateTime ExpiredAt) : IRefTestEvent;
