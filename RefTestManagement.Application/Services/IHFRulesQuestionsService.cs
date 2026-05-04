@@ -31,6 +31,8 @@ public class IhfRulesQuestionsService(
     ScoreConfiguration scoreConfiguration)
     : IIhfRulesQuestionsService
 {
+    private static string NormalizeQuestionId(string id) => id.TrimEnd('=');
+
     public async Task<List<string>> GetRandomQuestionIdsAsync(int count,
         CancellationToken cancellationToken = default)
     {
@@ -57,7 +59,7 @@ public class IhfRulesQuestionsService(
             .ToDictionary(x => x.Number!, x => x.Id);
 
         // Return question IDs in the same order as the input numbers
-        return numbers.Where(number => questionDict.ContainsKey(number))
+        return numbers.Where(questionDict.ContainsKey)
             .Select(number => questionDict[number])
             .ToList();
     }
@@ -109,7 +111,7 @@ public class IhfRulesQuestionsService(
 
         // Return questions in the same order as the input IDs
         return ids.Where(questionDict.ContainsKey)
-            .Select(id => questionDict[id])
+            .Select(id => questionDict[NormalizeQuestionId(id)])
             .ToList();
     }
 
@@ -195,8 +197,11 @@ public class IhfRulesQuestionsService(
             throw new Exception("Invalid percentage format");
         }
 
-        // Calculate a question-based score (number of fully correct questions)
-        var questionScore = questionIds.Count(id => !scoreData.WrongQuestionsIds.Contains(id));
+        // Calculate a question-based score with ID matching resilient to omitted '=' padding.
+        var normalizedWrongQuestionIds = scoreData.WrongQuestionsIds
+            .Select(NormalizeQuestionId)
+            .ToHashSet();
+        var questionScore = questionIds.Count(id => !normalizedWrongQuestionIds.Contains(NormalizeQuestionId(id)));
         
         // Get an answer-based score from API (based on correct +1, incorrect -1, not answered 0)
         var answerScore = scoreData.Score ?? 0;
