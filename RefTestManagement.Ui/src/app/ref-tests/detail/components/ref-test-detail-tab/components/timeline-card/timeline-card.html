@@ -17,7 +17,7 @@
       </svg>
       {{ 'ref_tests.detail.timeline' | translate }}
     </h2>
-    @if (status() === RefTestStatus.InProgress) {
+    @if (status() === 'IN_PROGRESS') {
       <button
         type="button"
         (click)="extendTime.emit()"

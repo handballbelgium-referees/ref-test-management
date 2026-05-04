@@ -5,7 +5,7 @@ import {
   FloatOperationFilterInput,
   IntOperationFilterInput,
   RefTestFilterInput,
-  SortEnumType,
+  RefTestSortInput,
   StringOperationFilterInput,
 } from '../../../../../graphql/generated';
 import { PERCENTAGE_RANGES } from './constants';
@@ -113,8 +113,8 @@ export class RefTestQueryBuilder {
 
     return [
       { [filter.sortField]: filter.sortDirection },
-      { createdAt: SortEnumType.Desc }, // Secondary sort for consistency
-    ];
+      { createdAt: 'DESC' }, // Secondary sort for consistency
+    ] as RefTestSortInput[];
   }
 
   mergeFilters(

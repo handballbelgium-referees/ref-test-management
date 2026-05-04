@@ -17,18 +17,16 @@ export class StatusInfoCard {
   readonly status = input.required<RefTestStatus>();
   protected readonly edit = output<void>();
 
-  protected readonly RefTestStatus = RefTestStatus;
-
   protected readonly canEditNotificationSettings = computed(() => {
     const status = this.status();
     const invitationSent = this.invitationSent();
     const resultsSent = this.resultsSent();
 
     // Can update sendInvitationsAutomatically if pending and invitation not yet sent
-    const canEditInvitations = status === RefTestStatus.Pending && !invitationSent;
+    const canEditInvitations = status === 'PENDING' && !invitationSent;
 
     // Can update sendResultsAutomatically if not expired and results not yet sent
-    const canEditResults = status !== RefTestStatus.Expired && !resultsSent;
+    const canEditResults = status !== 'EXPIRED' && !resultsSent;
 
     return canEditInvitations || canEditResults;
   });

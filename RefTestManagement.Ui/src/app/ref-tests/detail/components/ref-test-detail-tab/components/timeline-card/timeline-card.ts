@@ -16,6 +16,4 @@ export class TimelineCard {
   readonly status = input.required<RefTestStatus>();
 
   protected readonly extendTime = output<void>();
-
-  readonly RefTestStatus = RefTestStatus;
 }

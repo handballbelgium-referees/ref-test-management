@@ -108,7 +108,7 @@ public class IhfRulesQuestionsService(
         }) ?? new Dictionary<string, Question>();
 
         // Return questions in the same order as the input IDs
-        return ids.Where(id => questionDict.ContainsKey(id))
+        return ids.Where(questionDict.ContainsKey)
             .Select(id => questionDict[id])
             .ToList();
     }

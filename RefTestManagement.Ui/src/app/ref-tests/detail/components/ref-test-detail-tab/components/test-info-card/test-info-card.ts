@@ -1,7 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { RefTestStatus, RefTestTitle } from '../../../../../../../../graphql/generated';
+import { GetRefTestByIdQuery, RefTestStatus } from '../../../../../../../../graphql/generated';
 import { Language, LANGUAGE_NAMES } from '../../../../../../services/language-config';
+
+type RefTestTitle = NonNullable<
+  Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>
+>['title'];
 
 @Component({
   selector: 'app-test-info-card',
@@ -18,8 +22,6 @@ export class TestInfoCard {
   readonly status = input.required<RefTestStatus>();
   protected readonly edit = output<void>();
   protected readonly regenerateToken = output<void>();
-
-  protected readonly RefTestStatus = RefTestStatus;
 
   protected readonly languageDisplayName = computed(() => {
     const lang = this.language();

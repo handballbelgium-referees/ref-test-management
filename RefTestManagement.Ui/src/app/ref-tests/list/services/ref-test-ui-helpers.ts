@@ -12,10 +12,10 @@ export class RefTestUIHelpers {
    */
   getStatusClass(status: RefTestStatus): string {
     const statusClasses: Record<RefTestStatus, string> = {
-      [RefTestStatus.Pending]: 'bg-yellow-100 text-yellow-800',
-      [RefTestStatus.InProgress]: 'bg-blue-100 text-blue-800',
-      [RefTestStatus.Completed]: 'bg-success-100 text-success-800',
-      [RefTestStatus.Expired]: 'bg-red-100 text-red-800',
+      PENDING: 'bg-yellow-100 text-yellow-800',
+      IN_PROGRESS: 'bg-blue-100 text-blue-800',
+      COMPLETED: 'bg-success-100 text-success-800',
+      EXPIRED: 'bg-red-100 text-red-800',
     };
 
     return statusClasses[status] ?? 'bg-neutral-100 text-neutral-800';
@@ -26,10 +26,10 @@ export class RefTestUIHelpers {
    */
   getStatusLabel(status: RefTestStatus): string {
     const labels: Record<RefTestStatus, string> = {
-      [RefTestStatus.Pending]: 'Pending',
-      [RefTestStatus.InProgress]: 'In Progress',
-      [RefTestStatus.Completed]: 'Completed',
-      [RefTestStatus.Expired]: 'Expired',
+      PENDING: 'Pending',
+      IN_PROGRESS: 'In Progress',
+      COMPLETED: 'Completed',
+      EXPIRED: 'Expired',
     };
 
     return labels[status] ?? 'Unknown';

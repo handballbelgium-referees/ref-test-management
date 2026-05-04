@@ -1,6 +1,5 @@
 import { DestroyRef, inject, Injectable, signal, WritableSignal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
-import { RefTestStatus } from '../../../../../graphql/generated';
 import { Banner } from '../../../services/banner';
 import { createDialogOperation } from '../../../shared/utils/dialog-utils';
 import { RefTestData } from '../../services/ref-test-data';
@@ -72,7 +71,7 @@ export class RefTestOperationManager {
   readonly sendInvitationsDialog = createDialogOperation<RefTestNode[]>(
     (ids, allRefTests, bannerManager) => {
       const filtered = ids.filter(
-        (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Pending,
+        (id) => allRefTests.find((t) => t.id === id)?.status === 'PENDING',
       );
       this.addIds(this._sendingInvitationIds, filtered);
       return this._dataService.sendInvitations(filtered, this._destroyRef, {
@@ -94,7 +93,7 @@ export class RefTestOperationManager {
   readonly sendResultsDialog = createDialogOperation<RefTestNode[]>(
     (ids, allRefTests, bannerManager) => {
       const filtered = ids.filter(
-        (id) => allRefTests.find((t) => t.id === id)?.status === RefTestStatus.Completed,
+        (id) => allRefTests.find((t) => t.id === id)?.status === 'COMPLETED',
       );
       this.addIds(this._sendingResultsIds, filtered);
       return this._dataService.sendResults(filtered, this._destroyRef, {

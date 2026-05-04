@@ -10,12 +10,14 @@ import {
 import { disabled, form, FormField, required } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
-  RefTest,
+  GetRefTestByIdQuery,
   RefTestStatus,
   UpdateRefTestNotificationSettingsInput,
 } from '../../../../../../../../../graphql/generated';
 import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
+
+type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
 interface INotificationSettings {
   id: string;
@@ -37,7 +39,7 @@ export class UpdateNotificationSettingsDialog {
     id: '',
     sendInvitationsAutomatically: false,
     sendResultsAutomatically: false,
-    status: RefTestStatus.Pending,
+    status: 'PENDING',
     invitationSent: false,
     resultsSent: false,
   });
@@ -57,16 +59,12 @@ export class UpdateNotificationSettingsDialog {
 
   protected readonly canEditInvitations = computed(() => {
     // Can update sendInvitationsAutomatically only if pending and invitation not yet sent
-    return (
-      this.settingsModel().status === RefTestStatus.Pending && !this.settingsModel().invitationSent
-    );
+    return this.settingsModel().status === 'PENDING' && !this.settingsModel().invitationSent;
   });
 
   protected readonly canEditResults = computed(() => {
     // Can update sendResultsAutomatically only if not expired and results not yet sent
-    return (
-      this.settingsModel().status !== RefTestStatus.Expired && !this.settingsModel().resultsSent
-    );
+    return this.settingsModel().status !== 'EXPIRED' && !this.settingsModel().resultsSent;
   });
 
   constructor() {

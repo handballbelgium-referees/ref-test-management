@@ -286,10 +286,10 @@ export class RefTestData {
     return deleted.reduce(
       (acc, { status }) => {
         acc.total++;
-        if (status === RefTestStatus.Pending) acc.pending++;
-        else if (status === RefTestStatus.InProgress) acc.inProgress++;
-        else if (status === RefTestStatus.Completed) acc.completed++;
-        else if (status === RefTestStatus.Expired) acc.expired++;
+        if (status === 'PENDING') acc.pending++;
+        else if (status === 'IN_PROGRESS') acc.inProgress++;
+        else if (status === 'COMPLETED') acc.completed++;
+        else if (status === 'EXPIRED') acc.expired++;
         return acc;
       },
       { total: 0, pending: 0, inProgress: 0, completed: 0, expired: 0 },
@@ -369,20 +369,20 @@ export class RefTestData {
                 percentage: event.percentage,
                 language: event.language,
               };
-              // Flow: InProgress -> Completed
-              oldStatus = RefTestStatus.InProgress;
+              // Flow: IN_PROGRESS -> COMPLETED
+              oldStatus = 'IN_PROGRESS';
               break;
 
             case 'RefTestExpired':
               updates = { status: event.status };
-              // Flow: Pending -> Expired
-              oldStatus = RefTestStatus.Pending;
+              // Flow: PENDING -> EXPIRED
+              oldStatus = 'PENDING';
               break;
 
             case 'RefTestStarted':
               updates = { status: event.status, startedAt: event.startedAt };
-              // Flow: Pending -> InProgress
-              oldStatus = RefTestStatus.Pending;
+              // Flow: PENDING -> IN_PROGRESS
+              oldStatus = 'PENDING';
               break;
 
             case 'RefTestInvitationSent':
@@ -449,32 +449,32 @@ export class RefTestData {
 
       // Decrement old status
       switch (oldStatus) {
-        case RefTestStatus.Pending:
+        case 'PENDING':
           result.pending = decrement(result.pending);
           break;
-        case RefTestStatus.InProgress:
+        case 'IN_PROGRESS':
           result.inProgress = decrement(result.inProgress);
           break;
-        case RefTestStatus.Completed:
+        case 'COMPLETED':
           result.completed = decrement(result.completed);
           break;
-        case RefTestStatus.Expired:
+        case 'EXPIRED':
           result.expired = decrement(result.expired);
           break;
       }
 
       // Increment new status
       switch (newStatus) {
-        case RefTestStatus.Pending:
+        case 'PENDING':
           result.pending = increment(result.pending);
           break;
-        case RefTestStatus.InProgress:
+        case 'IN_PROGRESS':
           result.inProgress = increment(result.inProgress);
           break;
-        case RefTestStatus.Completed:
+        case 'COMPLETED':
           result.completed = increment(result.completed);
           break;
-        case RefTestStatus.Expired:
+        case 'EXPIRED':
           result.expired = increment(result.expired);
           break;
       }
@@ -495,16 +495,16 @@ export class RefTestData {
     return {
       allWhere: base,
       pendingWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: RefTestStatus.Pending },
+        status: { eq: 'PENDING' },
       }),
       inProgressWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: RefTestStatus.InProgress },
+        status: { eq: 'IN_PROGRESS' },
       }),
       completedWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: RefTestStatus.Completed },
+        status: { eq: 'COMPLETED' },
       }),
       expiredWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: RefTestStatus.Expired },
+        status: { eq: 'EXPIRED' },
       }),
     };
   }

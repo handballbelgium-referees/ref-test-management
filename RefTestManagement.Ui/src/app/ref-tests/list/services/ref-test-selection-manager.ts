@@ -1,5 +1,4 @@
 import { computed, Injectable, signal } from '@angular/core';
-import { RefTestStatus } from '../../../../../graphql/generated';
 import { IParticipantInfo, RefTestNode } from './types';
 
 /**
@@ -109,7 +108,7 @@ export class RefTestSelectionManager {
     return computed(() => {
       const selected = this.selectedIds();
       const allTests = allRefTests();
-      return allTests.some((t) => selected.has(t.id) && t.status === RefTestStatus.Completed);
+      return allTests.some((t) => selected.has(t.id) && t.status === 'COMPLETED');
     });
   }
 
@@ -120,7 +119,7 @@ export class RefTestSelectionManager {
     return computed(() => {
       const selected = this.selectedIds();
       const allTests = allRefTests();
-      return allTests.some((t) => selected.has(t.id) && t.status === RefTestStatus.Pending);
+      return allTests.some((t) => selected.has(t.id) && t.status === 'PENDING');
     });
   }
 
@@ -135,9 +134,7 @@ export class RefTestSelectionManager {
     return computed(() => {
       const selected = this.selectedIds();
       const allTests = allRefTests();
-      const pendingSelected = allTests.filter(
-        (t) => selected.has(t.id) && t.status === RefTestStatus.Pending,
-      );
+      const pendingSelected = allTests.filter((t) => selected.has(t.id) && t.status === 'PENDING');
 
       return {
         newInvitations: this.mapToParticipantInfo(pendingSelected.filter((t) => !t.invitationSent)),
@@ -156,7 +153,7 @@ export class RefTestSelectionManager {
       const selected = this.selectedIds();
       const allTests = allRefTests();
       const completedSelected = allTests.filter(
-        (t) => selected.has(t.id) && t.status === RefTestStatus.Completed,
+        (t) => selected.has(t.id) && t.status === 'COMPLETED',
       );
 
       return {
@@ -186,9 +183,7 @@ export class RefTestSelectionManager {
       const allTests = allRefTests();
       return this.mapToParticipantInfo(
         allTests.filter(
-          (t) =>
-            selected.has(t.id) &&
-            (t.status === RefTestStatus.InProgress || t.status === RefTestStatus.Completed),
+          (t) => selected.has(t.id) && (t.status === 'IN_PROGRESS' || t.status === 'COMPLETED'),
         ),
       );
     });
@@ -202,7 +197,7 @@ export class RefTestSelectionManager {
       const selected = this.selectedIds();
       const allTests = allRefTests();
       return this.mapToParticipantInfo(
-        allTests.filter((t) => selected.has(t.id) && t.status === RefTestStatus.Expired),
+        allTests.filter((t) => selected.has(t.id) && t.status === 'EXPIRED'),
       );
     });
   }

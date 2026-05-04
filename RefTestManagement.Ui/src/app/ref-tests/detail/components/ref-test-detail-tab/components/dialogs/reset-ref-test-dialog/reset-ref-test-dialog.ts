@@ -27,14 +27,14 @@ interface IResetOptions {
 })
 export class ResetRefTestDialog {
   protected readonly resetOptionsModel = signal<IResetOptions>({
-    resetType: RefTestResetType.Soft,
+    resetType: 'SOFT',
     regenerateToken: false,
   });
 
-  private readonly _previousResetType = signal<RefTestResetType>(RefTestResetType.Soft);
+  private readonly _previousResetType = signal<RefTestResetType>('SOFT');
 
   protected readonly isHardReset = computed(() => {
-    return this.resetOptionsModel().resetType === RefTestResetType.Hard;
+    return this.resetOptionsModel().resetType === 'HARD';
   });
 
   protected readonly resetOptionsForm = form(this.resetOptionsModel, (schema) => {
@@ -46,8 +46,6 @@ export class ResetRefTestDialog {
   readonly bannerManager = input.required<IsolatedBannerManager>();
   protected readonly confirm = output<IResetOptions>();
   protected readonly cancel = output<void>();
-
-  protected readonly RefTestResetType = RefTestResetType;
 
   constructor() {
     effect(() => {
@@ -67,12 +65,12 @@ export class ResetRefTestDialog {
       if (currentModel.resetType !== previousType) {
         this._previousResetType.set(currentModel.resetType);
 
-        if (currentModel.resetType === RefTestResetType.Hard) {
+        if (currentModel.resetType === 'HARD') {
           this.resetOptionsModel.set({
             ...currentModel,
             regenerateToken: true,
           });
-        } else if (currentModel.resetType === RefTestResetType.Soft) {
+        } else if (currentModel.resetType === 'SOFT') {
           this.resetOptionsModel.set({
             ...currentModel,
             regenerateToken: false,

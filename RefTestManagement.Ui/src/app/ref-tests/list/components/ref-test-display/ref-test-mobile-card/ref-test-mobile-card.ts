@@ -31,13 +31,13 @@ export class RefTestMobileCard {
 
   protected getStatusClass(status: RefTestStatus): string {
     switch (status) {
-      case RefTestStatus.Completed:
+      case 'COMPLETED':
         return 'bg-success-100 text-success-800';
-      case RefTestStatus.InProgress:
+      case 'IN_PROGRESS':
         return 'bg-blue-100 text-blue-800';
-      case RefTestStatus.Expired:
+      case 'EXPIRED':
         return 'bg-red-100 text-red-800';
-      case RefTestStatus.Pending:
+      case 'PENDING':
       default:
         return 'bg-yellow-100 text-yellow-800';
     }

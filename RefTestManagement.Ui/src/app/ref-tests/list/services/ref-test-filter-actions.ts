@@ -95,6 +95,6 @@ export class RefTestFilterActions {
       return 'none';
     }
 
-    return filter.sortDirection === SortEnumType.Asc ? 'ascending' : 'descending';
+    return filter.sortDirection === 'ASC' ? 'ascending' : 'descending';
   }
 }

@@ -9,7 +9,6 @@ import {
   GetRefTestByIdGQL,
   GetRefTestByIdQuery,
   GetRefTestByIdQueryVariables,
-  RefTest,
   RefTestResetType,
   RefTestUpdatedGQL,
   RefTestUpdatedSubscription,
@@ -27,6 +26,8 @@ import {
   UpdateRefTestNotificationSettingsInput,
 } from '../../../../../graphql/generated';
 import { MutationCallbacks, runMutation } from '../../../shared/utils/apollo-utils';
+
+type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
 @Injectable({ providedIn: 'root' })
 export class RefTestDetailData {

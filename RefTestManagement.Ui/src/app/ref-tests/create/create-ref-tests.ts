@@ -257,7 +257,10 @@ export class CreateRefTests {
           const questions = result.data?.questionsByNumber ?? [];
           return questions
             .filter((q) => q.phrase != null)
-            .map((q) => ({ number: q.number, phrase: q.phrase! }))
+            .map((q) => ({
+              number: q.number,
+              phrase: q.phrase as Record<string, string>,
+            }))
             .filter((q) => !this.selectedQuestions().some((sq) => sq.number === q.number));
         }),
         tap((validQuestions) => {
@@ -422,7 +425,7 @@ export class CreateRefTests {
           );
         },
       },
-      (result) => result.data?.createRefTests?.createRefTestsResult,
+      (result) => result.data?.createRefTests?.createRefTestsResult ?? null,
     );
     this.loading.set(loading());
   }

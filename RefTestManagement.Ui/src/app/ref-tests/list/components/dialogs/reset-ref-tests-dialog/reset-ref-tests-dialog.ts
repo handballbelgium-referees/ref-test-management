@@ -42,15 +42,13 @@ export class ResetRefTestsDialog {
   protected readonly confirm = output<IResetOptions>();
   protected readonly cancel = output<void>();
 
-  protected readonly RefTestResetType = RefTestResetType;
-
   protected readonly resetOptionsModel = signal<IResetOptions>({
-    resetType: RefTestResetType.Soft,
+    resetType: 'SOFT',
     regenerateToken: false,
   });
 
   protected readonly isHardReset = computed(() => {
-    return this.resetOptionsModel().resetType === RefTestResetType.Hard;
+    return this.resetOptionsModel().resetType === 'HARD';
   });
 
   protected readonly resetOptionsForm = form(this.resetOptionsModel, (schema) => {
@@ -63,7 +61,7 @@ export class ResetRefTestsDialog {
         document.body.style.overflow = 'hidden';
         // Reset form when dialog opens
         this.resetOptionsModel.set({
-          resetType: RefTestResetType.Soft,
+          resetType: 'SOFT',
           regenerateToken: false,
         });
       } else {

@@ -9,9 +9,14 @@ import {
 } from '@angular/core';
 import { form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
-import { ExtendRefTestTimeInput, RefTest } from '../../../../../../../../../graphql/generated';
+import {
+  ExtendRefTestTimeInput,
+  GetRefTestByIdQuery,
+} from '../../../../../../../../../graphql/generated';
 import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
+
+type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
 interface IExtendTimeData {
   id: string;

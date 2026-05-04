@@ -12,7 +12,6 @@ import { map } from 'rxjs';
 import {
   ExtendRefTestTimeInput,
   GetScoreConfigurationGQL,
-  RefTestStatus,
   UpdateRefTestConfigurationInput,
   UpdateRefTestDetailsInput,
   UpdateRefTestNotificationSettingsInput,
@@ -58,8 +57,6 @@ export class RefTestDetailTab {
   protected readonly operationManager = inject(RefTestDetailOperationManager);
 
   protected readonly refTest = this._dataService.refTestData;
-
-  protected readonly RefTestStatus = RefTestStatus;
 
   protected readonly regenerateTokenDialog = viewChild(RegenerateTokenDialog);
   protected readonly showRegenerateTokenDialog = signal(false);

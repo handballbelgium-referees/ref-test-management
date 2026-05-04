@@ -17,6 +17,4 @@ export class DetailsCard {
   protected readonly edit = output<void>();
   protected readonly reset = output<void>();
   protected readonly revive = output<void>();
-
-  protected readonly RefTestStatus = RefTestStatus;
 }

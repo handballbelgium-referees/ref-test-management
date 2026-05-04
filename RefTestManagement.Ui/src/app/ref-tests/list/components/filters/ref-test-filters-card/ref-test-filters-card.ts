@@ -109,9 +109,6 @@ export class RefTestFiltersCard {
     before?: string;
   }>();
 
-  protected readonly RefTestStatus = RefTestStatus;
-  protected readonly SortEnumType = SortEnumType;
-
   protected readonly filtersExpanded = signal(false);
 
   protected readonly availableLanguages = toSignal(this._languageConfig.getAvailableLanguages(), {

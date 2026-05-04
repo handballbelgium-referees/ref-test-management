@@ -10,14 +10,14 @@ const config: CodegenConfig = {
   documents: ['graphql/**/*.graphql'],
   generates: {
     'graphql/generated.ts': {
-      plugins: ['typescript', 'typescript-operations', 'typescript-apollo-angular'],
+      plugins: ['typescript-operations', 'typescript-apollo-angular'],
       config: {
         addExplicitOverride: true,
         strictScalars: true,
         scalars: {
+          Any: 'unknown',
           UUID: 'string',
           DateTime: 'string',
-          JSON: 'Record<string, string>',
           TimeSpan: 'string',
         },
       },

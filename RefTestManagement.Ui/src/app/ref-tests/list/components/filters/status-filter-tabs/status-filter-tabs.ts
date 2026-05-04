@@ -33,7 +33,6 @@ export class StatusFilterTabs {
   readonly statusCounts = input.required<IStatusCounts>();
   protected readonly statusChange = output<RefTestStatus | undefined>();
 
-  protected readonly RefTestStatus = RefTestStatus;
   protected readonly filterScroll = viewChild<ElementRef<HTMLDivElement>>('filterScroll');
   protected readonly canScrollLeft = signal(false);
   protected readonly canScrollRight = signal(false);

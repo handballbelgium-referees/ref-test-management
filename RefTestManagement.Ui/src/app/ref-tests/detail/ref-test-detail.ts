@@ -40,7 +40,6 @@ export class RefTestDetail {
   private readonly _dataService = inject(RefTestDetailData);
   protected readonly operationManager = inject(RefTestDetailOperationManager);
 
-  protected readonly RefTestStatus = RefTestStatus;
   protected readonly refTestData = this._dataService.refTestData;
   protected readonly loading = this._dataService.loading;
 
@@ -63,54 +62,45 @@ export class RefTestDetail {
 
   // Computed properties for actions
   protected readonly canSendInvitation = computed(() => {
-    return this.refTestData().status === RefTestStatus.Pending;
+    return this.refTestData().status === 'PENDING';
   });
 
   protected readonly canSendResults = computed(() => {
-    return this.refTestData().status === RefTestStatus.Completed;
+    return this.refTestData().status === 'COMPLETED';
   });
 
   protected readonly invitationSummary = computed(() => {
-    if (!this.refTestData()) return { newInvitations: [], resendInvitations: [] };
-
-    const participant = {
-      name: this.refTestData().name,
-      email: this.refTestData().email,
-    };
+    const refTest = this.refTestData();
+    const participant = { name: refTest.name, email: refTest.email };
     return {
-      newInvitations: this.refTestData().invitationSent ? [] : [participant],
-      resendInvitations: this.refTestData().invitationSent ? [participant] : [],
+      newInvitations: refTest.invitationSent ? [] : [participant],
+      resendInvitations: refTest.invitationSent ? [participant] : [],
     };
   });
 
   protected readonly resultsSummary = computed(() => {
-    if (!this.refTestData()) return { newResults: [], resendResults: [] };
-
-    const participant = {
-      name: this.refTestData().name,
-      email: this.refTestData().email,
-    };
+    const refTest = this.refTestData();
+    const participant = { name: refTest.name, email: refTest.email };
     return {
-      newResults: this.refTestData().resultsSent ? [] : [participant],
-      resendResults: this.refTestData().resultsSent ? [participant] : [],
+      newResults: refTest.resultsSent ? [] : [participant],
+      resendResults: refTest.resultsSent ? [participant] : [],
     };
   });
 
   protected readonly refTestsToDelete = computed(() => {
-    if (!this.refTestData()) return [];
-
-    return [{ name: this.refTestData()?.name, email: this.refTestData()?.email }];
+    const refTest = this.refTestData();
+    return [{ name: refTest.name, email: refTest.email }];
   });
 
   protected getStatusClass(status: RefTestStatus): string {
     switch (status) {
-      case RefTestStatus.Completed:
+      case 'COMPLETED':
         return 'bg-success-100 text-success-800';
-      case RefTestStatus.InProgress:
+      case 'IN_PROGRESS':
         return 'bg-blue-100 text-blue-800';
-      case RefTestStatus.Expired:
+      case 'EXPIRED':
         return 'bg-red-100 text-red-800';
-      case RefTestStatus.Pending:
+      case 'PENDING':
       default:
         return 'bg-yellow-100 text-yellow-800';
     }

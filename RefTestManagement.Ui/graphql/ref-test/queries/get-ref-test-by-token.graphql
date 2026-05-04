@@ -1,5 +1,6 @@
 query GetRefTestByToken($token: String!) {
   refTestByToken(token: $token) {
+    __typename
     ... on RefTest {
       id
       name

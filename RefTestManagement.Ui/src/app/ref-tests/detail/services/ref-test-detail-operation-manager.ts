@@ -3,7 +3,7 @@ import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import {
   ExtendRefTestTimeInput,
-  RefTest,
+  GetRefTestByIdQuery,
   RegenerateRefTestTokenInput,
   UpdateRefTestConfigurationInput,
   UpdateRefTestDetailsInput,
@@ -14,6 +14,8 @@ import { createDialogOperation } from '../../../shared/utils/dialog-utils';
 import { IResetOptions } from '../../list/services/types';
 import { RefTestData } from '../../services/ref-test-data';
 import { RefTestDetailData } from './ref-test-detail-data';
+
+type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
 @Injectable()
 export class RefTestDetailOperationManager {

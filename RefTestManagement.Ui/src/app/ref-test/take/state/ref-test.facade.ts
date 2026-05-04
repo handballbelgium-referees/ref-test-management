@@ -2,18 +2,20 @@ import { DestroyRef, Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Subject, debounceTime, map, tap } from 'rxjs';
 import {
-  Answer,
   CompleteRefTestGQL,
-  Question,
+  CompleteRefTestMutation,
   RefTestTimeExtendedGQL,
   SaveRefTestProgressGQL,
   StartRefTestGQL,
-  StartRefTestPayload,
+  StartRefTestMutation,
 } from '../../../../../graphql/generated';
 import { runMutation } from '../../../shared/utils/apollo-utils';
 import { toSnakeCase } from '../../../shared/utils/string-utils';
 import { Question as QuestionModel } from './ref-test.models';
 import { RefTestStore } from './ref-test.store';
+
+type StartRefTestPayload = StartRefTestMutation['startRefTest'];
+type CompleteRefTestPayload = CompleteRefTestMutation['completeRefTest']['refTest'];
 
 @Injectable()
 export class RefTestFacade {
@@ -36,7 +38,7 @@ export class RefTestFacade {
   start(token: string): void {
     this._store.error.set(null);
 
-    runMutation(
+    runMutation<StartRefTestMutation, StartRefTestPayload | null>(
       this._startRefTestGQL.mutate({ variables: { input: { token } } }),
       this._destroyRef,
       {
@@ -65,11 +67,11 @@ export class RefTestFacade {
     const questions = refTest.questions
       .filter((q) => !!q)
       .map(
-        (q: Question) =>
+        (q) =>
           ({
             id: q.id,
             phrase: q.phrase,
-            answers: q.answers.map((a: Answer) => ({ id: a.id, phrase: a.phrase })),
+            answers: q.answers.map((a) => ({ id: a.id, phrase: a.phrase })),
           }) as QuestionModel,
       );
 
@@ -93,7 +95,7 @@ export class RefTestFacade {
 
     const selectedAnswerIds = this._store.getSelectedAnswerIds();
 
-    runMutation(
+    runMutation<CompleteRefTestMutation, CompleteRefTestPayload>(
       this._completeRefTestGQL.mutate({
         variables: {
           input: { token, selectedAnswerIds, language: this._store.currentLanguage() },
@@ -102,11 +104,13 @@ export class RefTestFacade {
       this._destroyRef,
       {
         onStart: () => this._store.loading.set(true),
-        onSuccess: (refTest) => this._store.complete(refTest ?? {}),
+        onSuccess: (refTest) => {
+          if (refTest) this._store.complete(refTest);
+        },
         onError: () => this._store.error.set('submit_failed'),
         onComplete: () => this._store.loading.set(false),
       },
-      (r) => r.data?.completeRefTest?.refTest,
+      (r) => r.data?.completeRefTest?.refTest ?? null,
     );
   }
 

@@ -101,8 +101,6 @@ export class ListRefTests {
   // ========================================================================
   // CONSTANTS
   // ========================================================================
-  protected readonly RefTestStatus = RefTestStatus;
-  protected readonly SortEnumType = SortEnumType;
   protected readonly COLUMNS = COLUMNS;
   protected readonly REF_TEST_CONFIG = REF_TEST_CONFIG;
 
@@ -196,10 +194,7 @@ export class ListRefTests {
     const allRefTests = this.allLoadedRefTests();
     return Array.from(selectedIds).some((id) => {
       const refTest = allRefTests.find((rt) => rt.id === id);
-      return (
-        refTest &&
-        (refTest.status === RefTestStatus.InProgress || refTest.status === RefTestStatus.Completed)
-      );
+      return refTest && (refTest.status === 'IN_PROGRESS' || refTest.status === 'COMPLETED');
     });
   });
 
@@ -208,7 +203,7 @@ export class ListRefTests {
     const allRefTests = this.allLoadedRefTests();
     return Array.from(selectedIds).some((id) => {
       const refTest = allRefTests.find((rt) => rt.id === id);
-      return refTest && refTest.status === RefTestStatus.Expired;
+      return refTest && refTest.status === 'EXPIRED';
     });
   });
 

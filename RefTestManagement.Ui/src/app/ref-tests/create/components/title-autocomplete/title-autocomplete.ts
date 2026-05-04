@@ -15,7 +15,6 @@ import {
   GetRefTestTitlesGQL,
   GetRefTestTitlesQuery,
   GetRefTestTitlesQueryVariables,
-  SortEnumType,
 } from '../../../../../../graphql/generated';
 import { LocalizedDate } from '../../../../shared/pipes/localized-date';
 
@@ -73,7 +72,7 @@ export class TitleAutocomplete {
           variables: {
             first: 10,
             where,
-            order: { value: SortEnumType.Asc },
+            order: { value: 'ASC' },
           },
           fetchPolicy: 'cache-first',
         });

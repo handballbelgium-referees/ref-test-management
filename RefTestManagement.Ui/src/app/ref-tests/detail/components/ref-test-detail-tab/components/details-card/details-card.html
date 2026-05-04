@@ -18,7 +18,7 @@
       {{ 'ref_tests.detail.participant_info' | translate }}
     </h2>
     <div class="flex items-center gap-2">
-      @if (status() !== RefTestStatus.InProgress && status() !== RefTestStatus.Completed) {
+      @if (status() !== 'IN_PROGRESS' && status() !== 'COMPLETED') {
         <button
           type="button"
           (click)="edit.emit()"
@@ -36,7 +36,7 @@
           </svg>
         </button>
       }
-      @if (status() === RefTestStatus.InProgress || status() === RefTestStatus.Completed) {
+      @if (status() === 'IN_PROGRESS' || status() === 'COMPLETED') {
         <button
           type="button"
           (click)="reset.emit()"
@@ -54,7 +54,7 @@
           </svg>
         </button>
       }
-      @if (status() === RefTestStatus.Expired) {
+      @if (status() === 'EXPIRED') {
         <button
           type="button"
           (click)="revive.emit()"

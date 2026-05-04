@@ -15,7 +15,6 @@ import {
   GetRefTestTitlesGQL,
   GetRefTestTitlesQuery,
   GetRefTestTitlesQueryVariables,
-  SortEnumType,
 } from '../../../../../../../graphql/generated';
 
 interface ITitle {
@@ -67,7 +66,7 @@ export class TitleFilter {
           variables: {
             first: 20,
             where,
-            order: { value: SortEnumType.Asc },
+            order: { value: 'ASC' },
           },
           fetchPolicy: 'cache-first',
         });

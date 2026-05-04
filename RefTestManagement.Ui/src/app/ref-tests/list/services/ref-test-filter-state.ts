@@ -8,7 +8,7 @@ export class RefTestFilterState {
   private readonly _filter = signal<IRefTestFilter>({
     searchTerm: '',
     sortField: 'completedAt',
-    sortDirection: SortEnumType.Desc,
+    sortDirection: 'DESC',
     pagingInfo: { first: REF_TEST_CONFIG.PAGE_SIZE },
   });
 
@@ -74,11 +74,10 @@ export class RefTestFilterState {
   toggleSortDirection(field: SortField): void {
     const current = this._filter();
     if (current.sortField === field) {
-      const newDirection =
-        current.sortDirection === SortEnumType.Asc ? SortEnumType.Desc : SortEnumType.Asc;
+      const newDirection = current.sortDirection === 'ASC' ? 'DESC' : 'ASC';
       this.setSorting(field, newDirection);
     } else {
-      this.setSorting(field, SortEnumType.Desc);
+      this.setSorting(field, 'DESC');
     }
   }
 
@@ -108,7 +107,7 @@ export class RefTestFilterState {
     this._filter.set({
       searchTerm: '',
       sortField: 'completedAt',
-      sortDirection: SortEnumType.Desc,
+      sortDirection: 'DESC',
       pagingInfo: { first: REF_TEST_CONFIG.PAGE_SIZE },
     });
   }

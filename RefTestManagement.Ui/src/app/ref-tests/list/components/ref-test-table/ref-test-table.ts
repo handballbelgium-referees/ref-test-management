@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { SortEnumType } from '../../../../../../graphql/generated';
 import { IRefTestFilter, RefTestNode, SortField } from '../../services/types';
 import { RefTestTableRow } from '../ref-test-display/ref-test-table-row/ref-test-table-row';
 
@@ -30,15 +29,13 @@ export class RefTestTable {
   protected readonly toggleSelection = output<string>();
   protected readonly sortColumn = output<SortField>();
 
-  protected readonly SortEnumType = SortEnumType;
-
   protected isColumnVisible(column: string): boolean {
     return this.visibleColumns().has(column);
   }
 
   protected getAriaSort(field: SortField): string | null {
     if (this.filter().sortField !== field) return null;
-    return this.filter().sortDirection === SortEnumType.Asc ? 'ascending' : 'descending';
+    return this.filter().sortDirection === 'ASC' ? 'ascending' : 'descending';
   }
 
   protected isSelected(id: string): boolean {
