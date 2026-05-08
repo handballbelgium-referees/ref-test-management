@@ -1,9 +1,10 @@
 import { DestroyRef, Injectable, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Subject, debounceTime, map, tap } from 'rxjs';
+import { EMPTY, Subject, catchError, debounceTime, map, tap } from 'rxjs';
 import {
   CompleteRefTestGQL,
   CompleteRefTestMutation,
+  RefTestSessionLockGQL,
   RefTestTimeExtendedGQL,
   SaveRefTestProgressGQL,
   StartRefTestGQL,
@@ -26,6 +27,7 @@ export class RefTestFacade {
   private readonly _completeRefTestGQL = inject(CompleteRefTestGQL);
   private readonly _saveRefTestProgressGQL = inject(SaveRefTestProgressGQL);
   private readonly _refTestTimeExtendedGQL = inject(RefTestTimeExtendedGQL);
+  private readonly _refTestSessionLockGQL = inject(RefTestSessionLockGQL);
 
   private readonly _saveProgress$ = new Subject<void>();
 
@@ -33,6 +35,31 @@ export class RefTestFacade {
     this._saveProgress$
       .pipe(debounceTime(500), takeUntilDestroyed(this._destroyRef))
       .subscribe(() => this.saveInternal());
+  }
+
+  acquireSessionAndStart(token: string): void {
+    const sessionId = crypto.randomUUID();
+    this._store.loading.set(true);
+
+    this._refTestSessionLockGQL
+      .subscribe({ variables: { token, sessionId } })
+      .pipe(
+        map((result) => result.data?.refTestSessionLock?.status),
+        tap((status) => {
+          if (status === 'ACQUIRED') this.start(token);
+          else if (status === 'BLOCKED') {
+            this._store.loading.set(false);
+            this._store.error.set('session_already_active');
+          }
+        }),
+        catchError(() => {
+          this._store.loading.set(false);
+          this._store.error.set('general');
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
   }
 
   start(token: string): void {

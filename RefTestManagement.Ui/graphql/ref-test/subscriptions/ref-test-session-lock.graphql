@@ -1,0 +1,5 @@
+subscription RefTestSessionLock($token: String!, $sessionId: String!) {
+  refTestSessionLock(token: $token, sessionId: $sessionId) {
+    status
+  }
+}

@@ -536,7 +536,8 @@
       "submit_failed": "Das Absenden des RefTests ist fehlgeschlagen. Bitte versuchen Sie es später erneut.",
       "ref_test_not_found_error": "Dieser RefTest wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
       "ref_test_expired_error": "Dieser RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
-      "invalid_ref_test_status_error": "Dieser RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen."
+      "invalid_ref_test_status_error": "Dieser RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen.",
+      "session_already_active": "Dieser RefTest ist bereits in einem anderen Tab oder Fenster geöffnet. Bitte schließen Sie den anderen Tab und aktualisieren Sie diese Seite."
     },
     "welcome_title": "Willkommen zu Ihrem RefTest",
     "welcome_subtitle": "Bitte überprüfen Sie die folgenden Informationen, bevor Sie beginnen",
@@ -551,6 +552,7 @@
     "instruction_2": "Einige Fragen können mehrere richtige Antworten haben",
     "instruction_3": "Sie können zwischen den Fragen hin und her navigieren",
     "instruction_progress_saved": "Ihr Fortschritt wird automatisch gespeichert, aber die Zeit läuft weiter, auch wenn Sie die Seite schließen",
+    "instruction_single_session": "Der RefTest kann nur in einem Browser-Tab gleichzeitig geöffnet werden — ein zweiter Tab wird blockiert",
     "instruction_4": "Schließen Sie den RefTest innerhalb des Zeitlimits ab",
     "start_button": "RefTest starten",
     "time_remaining": "Verbleibende Zeit",

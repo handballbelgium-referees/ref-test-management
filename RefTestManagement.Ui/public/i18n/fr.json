@@ -533,7 +533,8 @@
       "submit_failed": "L'envoi du RefTest a échoué. Veuillez réessayer plus tard.",
       "ref_test_not_found_error": "Ce RefTest est introuvable. Veuillez vérifier votre lien.",
       "ref_test_expired_error": "Ce RefTest a expiré. Veuillez contacter l'administrateur.",
-      "invalid_ref_test_status_error": "Ce RefTest n'est plus disponible ou a déjà été complété."
+      "invalid_ref_test_status_error": "Ce RefTest n'est plus disponible ou a déjà été complété.",
+      "session_already_active": "Ce RefTest est déjà ouvert dans un autre onglet ou fenêtre. Veuillez fermer l'autre onglet et rafraîchir cette page."
     },
     "welcome_title": "Bienvenue à votre RefTest",
     "welcome_subtitle": "Veuillez consulter les informations ci-dessous avant de commencer",
@@ -548,6 +549,7 @@
     "instruction_2": "Certaines questions peuvent avoir plusieurs réponses correctes",
     "instruction_3": "Vous pouvez naviguer en avant et en arrière entre les questions",
     "instruction_progress_saved": "Votre progression est automatiquement sauvegardée, mais le chronomètre continue même si vous fermez la page",
+    "instruction_single_session": "Le RefTest ne peut être ouvert que dans un seul onglet à la fois — ouvrir un deuxième onglet le bloquera",
     "instruction_4": "Complétez le RefTest dans le délai imparti",
     "start_button": "Commencer le RefTest",
     "time_remaining": "Temps Restant",

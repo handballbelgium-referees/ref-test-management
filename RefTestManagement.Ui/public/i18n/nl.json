@@ -532,7 +532,8 @@
       "submit_failed": "Het indienen van de RefTest is mislukt. Probeer het later opnieuw.",
       "ref_test_not_found_error": "Deze RefTest kon niet worden gevonden. Controleer de link.",
       "ref_test_expired_error": "Deze RefTest is verlopen. Neem contact op met de beheerder.",
-      "invalid_ref_test_status_error": "Deze RefTest is niet meer beschikbaar of is al voltooid."
+      "invalid_ref_test_status_error": "Deze RefTest is niet meer beschikbaar of is al voltooid.",
+      "session_already_active": "Deze RefTest staat al open in een ander tabblad of venster. Sluit het andere tabblad en vernieuw deze pagina."
     },
     "welcome_title": "Welkom bij je RefTest",
     "welcome_subtitle": "Bekijk de informatie hieronder voordat je begint",
@@ -547,6 +548,7 @@
     "instruction_2": "Sommige vragen kunnen meerdere juiste antwoorden hebben",
     "instruction_3": "Je kunt heen en weer navigeren tussen vragen",
     "instruction_progress_saved": "Je voortgang wordt automatisch opgeslagen, maar de timer loopt door, zelfs als je de pagina sluit",
+    "instruction_single_session": "De RefTest kan slechts in één browsertabblad tegelijk geopend worden — een tweede tabblad wordt geblokkeerd",
     "instruction_4": "Voltooi de RefTest binnen de tijdslimiet",
     "start_button": "Start RefTest",
     "time_remaining": "Resterende Tijd",
