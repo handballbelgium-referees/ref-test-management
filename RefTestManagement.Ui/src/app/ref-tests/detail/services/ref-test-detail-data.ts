@@ -282,6 +282,10 @@ export class RefTestDetailData {
             // Map subscription event to cache update
             let updates: Record<string, unknown> = {};
             switch (event.__typename) {
+              case 'RefTestDeleted':
+                this._router.navigate(['/ref-tests']);
+                return;
+
               case 'RefTestCompleted':
                 updates = {
                   status: event.status,

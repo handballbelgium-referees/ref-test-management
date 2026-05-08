@@ -48,6 +48,9 @@ public static class RefTestSubscriptions
             RefTestExpiredEvent e => new RefTestExpired(e.Id, e.Status, e.ExpiredAt),
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
+            RefTestDeletedEvent e => new RefTestDeleted(e.Id, e.Status),
+            RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
+            RefTestRevivedEvent e => new RefTestRevived(e.Id),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };
     }
@@ -73,6 +76,9 @@ public static class RefTestSubscriptions
             RefTestExpiredEvent e => new RefTestExpired(e.Id, e.Status, e.ExpiredAt),
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
+            RefTestDeletedEvent e => new RefTestDeleted(e.Id, e.Status),
+            RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
+            RefTestRevivedEvent e => new RefTestRevived(e.Id),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };
     }

@@ -1,6 +1,7 @@
 import { computed, DestroyRef, inject, Injectable, Signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApolloCache, ApolloClient, ApolloLink } from '@apollo/client';
+import { Apollo } from 'apollo-angular';
 import { catchError, EMPTY, map, switchMap, tap } from 'rxjs';
 import {
   DeleteRefTestsGQL,
@@ -47,6 +48,7 @@ type DeletionCounts = {
 
 @Injectable({ providedIn: 'root' })
 export class RefTestData {
+  private readonly _apollo = inject(Apollo);
   private readonly _getRefTestsGQL = inject(GetRefTestsGQL);
   private readonly _getRefTestsAllCountsGQL = inject(GetRefTestsAllCountsGQL);
   private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
@@ -279,7 +281,7 @@ export class RefTestData {
 
     const counts = this.countDeletionsByStatus(deleted);
     this.updateCountsCache(cache, counts);
-    this.updateRefTestsListCache(cache, counts.total);
+    this.removeFromAllCachedStatusLists(deleted, cache);
   }
 
   private countDeletionsByStatus(deleted: Array<{ status: RefTestStatus }>): DeletionCounts {
@@ -317,27 +319,6 @@ export class RefTestData {
     });
   }
 
-  private updateRefTestsListCache(cache: ApolloCache, deletedTotal: number): void {
-    const prev = cache.readQuery<GetRefTestsQuery>({
-      query: this._getRefTestsGQL.document,
-      variables: this._queryRef.variables,
-    });
-
-    if (!prev?.refTests) return;
-
-    cache.writeQuery({
-      query: this._getRefTestsGQL.document,
-      variables: this._queryRef.variables,
-      data: {
-        ...prev,
-        refTests: {
-          ...prev.refTests,
-          totalCount: prev.refTests.totalCount - deletedTotal,
-        },
-      },
-    });
-  }
-
   /* ------------------------------------------------------------------------ */
   /* Subscription + Cache Updates                                             */
   /* ------------------------------------------------------------------------ */
@@ -350,58 +331,111 @@ export class RefTestData {
         tap((event) => {
           if (!event) return;
 
-          const current = this._queryRef.getCurrentResult();
-          const isLoaded = current?.data?.refTests?.edges?.some((e) => e?.node?.id === event.id);
-
-          // Map subscription event to cache update and infer old status
-          let updates: Record<string, unknown> = {};
-          let oldStatus: RefTestStatus | undefined;
-
           switch (event.__typename) {
+            case 'RefTestStarted':
+              this.moveRefTestBetweenStatusLists(
+                event.id,
+                { status: event.status, startedAt: event.startedAt },
+                'PENDING',
+                'IN_PROGRESS',
+              );
+              this.updateStatusCounts('PENDING', 'IN_PROGRESS');
+              break;
+
             case 'RefTestCompleted':
-              updates = {
-                status: event.status,
-                completedAt: event.completedAt,
-                questionScore: event.questionScore,
-                questionTotal: event.questionTotal,
-                answerScore: event.answerScore,
-                answerTotal: event.answerTotal,
-                percentage: event.percentage,
-                language: event.language,
-              };
-              // Flow: IN_PROGRESS -> COMPLETED
-              oldStatus = 'IN_PROGRESS';
+              this.moveRefTestBetweenStatusLists(
+                event.id,
+                {
+                  status: event.status,
+                  completedAt: event.completedAt,
+                  questionScore: event.questionScore,
+                  questionTotal: event.questionTotal,
+                  answerScore: event.answerScore,
+                  answerTotal: event.answerTotal,
+                  percentage: event.percentage,
+                  language: event.language,
+                },
+                'IN_PROGRESS',
+                'COMPLETED',
+              );
+              this.updateStatusCounts('IN_PROGRESS', 'COMPLETED');
               break;
 
             case 'RefTestExpired':
-              updates = { status: event.status };
-              // Flow: PENDING -> EXPIRED
-              oldStatus = 'PENDING';
+              this.moveRefTestBetweenStatusLists(
+                event.id,
+                { status: event.status },
+                'PENDING',
+                'EXPIRED',
+              );
+              this.updateStatusCounts('PENDING', 'EXPIRED');
               break;
 
-            case 'RefTestStarted':
-              updates = { status: event.status, startedAt: event.startedAt };
-              // Flow: PENDING -> IN_PROGRESS
-              oldStatus = 'PENDING';
+            case 'RefTestReset': {
+              const oldStatus = event.oldStatus;
+              this.moveRefTestBetweenStatusLists(
+                event.id,
+                {
+                  status: 'PENDING',
+                  startedAt: null,
+                  completedAt: null,
+                  questionScore: null,
+                  questionTotal: null,
+                  answerScore: null,
+                  answerTotal: null,
+                  percentage: null,
+                  resultsSent: false,
+                },
+                oldStatus,
+                'PENDING',
+              );
+              this.updateStatusCounts(oldStatus, 'PENDING');
+              break;
+            }
+
+            case 'RefTestRevived':
+              this.moveRefTestBetweenStatusLists(
+                event.id,
+                {
+                  status: 'PENDING',
+                  invitationSent: false,
+                },
+                'EXPIRED',
+                'PENDING',
+              );
+              this.updateStatusCounts('EXPIRED', 'PENDING');
               break;
 
-            case 'RefTestInvitationSent':
-              updates = { invitationSent: true };
+            case 'RefTestDeleted':
+              this.removeFromAllCachedStatusLists([{ id: event.id, status: event.status }]);
+              this.decrementCountsForDelete(event.status);
               break;
 
-            case 'RefTestResultSent':
-              updates = { resultsSent: true };
+            case 'RefTestInvitationSent': {
+              const entityId = this._apollo.client.cache.identify({
+                __typename: 'RefTest',
+                id: event.id,
+              });
+              if (entityId)
+                this._apollo.client.cache.modify({
+                  id: entityId,
+                  fields: { invitationSent: () => true },
+                });
               break;
-          }
+            }
 
-          // Update status counts if status changed
-          if ('status' in updates && oldStatus !== undefined) {
-            this.updateStatusCounts(oldStatus, updates['status'] as RefTestStatus);
-          }
-
-          // Update the ref test in cache only if it's loaded
-          if (isLoaded) {
-            this.updateRefTestInCache(event.id, updates);
+            case 'RefTestResultSent': {
+              const entityId = this._apollo.client.cache.identify({
+                __typename: 'RefTest',
+                id: event.id,
+              });
+              if (entityId)
+                this._apollo.client.cache.modify({
+                  id: entityId,
+                  fields: { resultsSent: () => true },
+                });
+              break;
+            }
           }
         }),
         catchError(() => EMPTY),
@@ -410,32 +444,178 @@ export class RefTestData {
       .subscribe();
   }
 
-  private updateRefTestInCache(id: string, updates: Record<string, unknown>): void {
-    const currentData = this._queryRef.getCurrentResult();
-    if (!currentData?.data?.refTests) return;
+  /* ------------------------------------------------------------------------ */
+  /* Cache Helpers — List Manipulation                                        */
+  /* ------------------------------------------------------------------------ */
 
-    // @ts-expect-error Apollo typing
-    this._queryRef.updateQuery((prev) => {
-      if (!prev?.refTests?.edges) return prev;
+  private buildListVariables(status: RefTestStatus | undefined) {
+    const filter = this._filterState.filter();
+    const base = this._queryBuilder.buildWhereFilter(filter, { excludeStatus: true });
+    const where = status ? this._queryBuilder.mergeFilters(base, { status: { eq: status } }) : base;
+    return {
+      first: filter.pagingInfo.first,
+      where,
+      order: this._queryBuilder.buildOrderClause(filter),
+    };
+  }
 
-      return {
-        ...prev,
-        refTests: {
-          ...prev.refTests,
-          edges: prev.refTests.edges.map((edge) => {
-            if (!edge || edge.node?.id !== id) return edge;
-            return {
-              ...edge,
-              node: {
-                ...edge.node!,
-                ...updates,
-              },
-            };
-          }),
-        },
-      };
+  private readCachedList(status: RefTestStatus | undefined): GetRefTestsQuery | null {
+    return (this._apollo.client.cache as ApolloCache).readQuery<GetRefTestsQuery>({
+      query: this._getRefTestsGQL.document,
+      variables: this.buildListVariables(status),
     });
   }
+
+  private writeCachedList(status: RefTestStatus | undefined, data: GetRefTestsQuery): void {
+    (this._apollo.client.cache as ApolloCache).writeQuery({
+      query: this._getRefTestsGQL.document,
+      variables: this.buildListVariables(status),
+      data,
+    });
+  }
+
+  /**
+   * Removes edges by ID from a specific status-filtered cached list (or the All list when status is undefined).
+   * Also updates totalCount. Returns the number of edges actually removed.
+   */
+  private removeEdgesFromCachedList(
+    ids: ReadonlySet<string>,
+    status: RefTestStatus | undefined,
+  ): number {
+    const prev = this.readCachedList(status);
+    if (!prev?.refTests?.edges) return 0;
+
+    const newEdges = prev.refTests.edges.filter((e) => !ids.has(e?.node?.id ?? ''));
+    const removed = prev.refTests.edges.length - newEdges.length;
+    if (removed === 0) return 0;
+
+    this.writeCachedList(status, {
+      ...prev,
+      refTests: {
+        ...prev.refTests,
+        edges: newEdges,
+        totalCount: prev.refTests.totalCount - removed,
+      },
+    });
+    return removed;
+  }
+
+  /**
+   * Removes deleted items from the All list and each status-specific list.
+   * Accepts an optional external cache (mutation update callback); falls back to the Apollo client cache.
+   */
+  private removeFromAllCachedStatusLists(
+    deletedItems: ReadonlyArray<{ id: string; status: RefTestStatus }>,
+    _cache?: ApolloCache,
+  ): void {
+    const allIds = new Set(deletedItems.map((d) => d.id));
+
+    // Remove from All list (no status filter)
+    this.removeEdgesFromCachedList(allIds, undefined);
+
+    // Remove from each relevant status-specific list
+    const byStatus = new Map<RefTestStatus, Set<string>>();
+    for (const { id, status } of deletedItems) {
+      const set = byStatus.get(status) ?? new Set<string>();
+      set.add(id);
+      byStatus.set(status, set);
+    }
+    for (const [status, ids] of byStatus) {
+      this.removeEdgesFromCachedList(ids, status);
+    }
+  }
+
+  /**
+   * Removes a single edge from a specific cached list (or All list) and decrements totalCount.
+   */
+  private removeEdgeFromCachedList(id: string, status: RefTestStatus | undefined): void {
+    this.removeEdgesFromCachedList(new Set([id]), status);
+  }
+
+  /**
+   * Appends an updated edge to a cached list if the list exists in cache and the item isn't already there.
+   * Also increments totalCount.
+   */
+  private addEdgeToCachedList(
+    updatedNode: NonNullable<
+      NonNullable<NonNullable<GetRefTestsQuery['refTests']>['edges']>[number]
+    >['node'],
+    cursor: string,
+    status: RefTestStatus,
+  ): void {
+    const prev = this.readCachedList(status);
+    if (!prev?.refTests) return;
+
+    // Don't add if already present
+    if (prev.refTests.edges?.some((e) => e?.node?.id === updatedNode?.id)) return;
+
+    this.writeCachedList(status, {
+      ...prev,
+      refTests: {
+        ...prev.refTests,
+        edges: [...(prev.refTests.edges ?? []), { cursor, node: updatedNode }],
+        totalCount: prev.refTests.totalCount + 1,
+      },
+    });
+  }
+
+  /**
+   * Finds an edge (node + cursor) from the first cached list that contains it.
+   * Tries statuses in the given order; undefined means the All list.
+   */
+  private findEdgeInCache(
+    id: string,
+    ...statuses: Array<RefTestStatus | undefined>
+  ): {
+    node: NonNullable<
+      NonNullable<NonNullable<GetRefTestsQuery['refTests']>['edges']>[number]
+    >['node'];
+    cursor: string;
+  } | null {
+    for (const status of statuses) {
+      const data = this.readCachedList(status);
+      const edge = data?.refTests?.edges?.find((e) => e?.node?.id === id);
+      if (edge?.node) return { node: edge.node, cursor: edge.cursor ?? '' };
+    }
+    return null;
+  }
+
+  /**
+   * Moves a ref test from one status list to another, updating both lists and the entity globally.
+   * Also updates the All list in-place (entity update propagates automatically via normalization).
+   */
+  private moveRefTestBetweenStatusLists(
+    id: string,
+    updates: Record<string, unknown>,
+    oldStatus: RefTestStatus,
+    newStatus: RefTestStatus,
+  ): void {
+    // Find the edge BEFORE removing it so we still have the node data
+    const found = this.findEdgeInCache(id, oldStatus, undefined);
+
+    // Update the normalized entity so the All list reflects the new state immediately
+    const entityId = this._apollo.client.cache.identify({ __typename: 'RefTest', id });
+    if (entityId) {
+      const fields: Record<string, () => unknown> = {};
+      for (const [k, v] of Object.entries(updates)) {
+        fields[k] = () => v;
+      }
+      this._apollo.client.cache.modify({ id: entityId, fields });
+    }
+
+    // Remove edge from old-status list
+    this.removeEdgeFromCachedList(id, oldStatus);
+
+    // Add updated edge to new-status list
+    if (found?.node) {
+      const updatedNode = { ...found.node, ...updates } as typeof found.node;
+      this.addEdgeToCachedList(updatedNode, found.cursor, newStatus);
+    }
+  }
+
+  /* ------------------------------------------------------------------------ */
+  /* Cache Helpers — Status Counts                                            */
+  /* ------------------------------------------------------------------------ */
 
   private updateStatusCounts(oldStatus: RefTestStatus | undefined, newStatus: RefTestStatus): void {
     const current = this._countsQueryRef.getCurrentResult();
@@ -476,6 +656,37 @@ export class RefTestData {
           break;
         case 'EXPIRED':
           result.expired = increment(result.expired);
+          break;
+      }
+
+      return result;
+    });
+  }
+
+  private decrementCountsForDelete(status: RefTestStatus): void {
+    const current = this._countsQueryRef.getCurrentResult();
+    if (!current?.data) return;
+
+    // @ts-expect-error Apollo typing
+    this._countsQueryRef.updateQuery((prev) => {
+      if (!prev) return prev;
+
+      const result = { ...prev };
+
+      result.all = decrement(result.all);
+
+      switch (status) {
+        case 'PENDING':
+          result.pending = decrement(result.pending);
+          break;
+        case 'IN_PROGRESS':
+          result.inProgress = decrement(result.inProgress);
+          break;
+        case 'COMPLETED':
+          result.completed = decrement(result.completed);
+          break;
+        case 'EXPIRED':
+          result.expired = decrement(result.expired);
           break;
       }
 

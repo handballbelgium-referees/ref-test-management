@@ -27,6 +27,7 @@ public static class RefTestDeletionMutations
         DeleteRefTestsInput input,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         var refTests = await context.RefTests
@@ -68,6 +69,11 @@ public static class RefTestDeletionMutations
         }
 
         await context.SaveChangesAsync(cancellationToken);
+
+        foreach (var deletedDto in result.DeletedRefTests)
+        {
+            await subscriptionService.PublishRefTestDeletedAsync(deletedDto.Id, deletedDto.Status, cancellationToken);
+        }
 
         return result;
     }

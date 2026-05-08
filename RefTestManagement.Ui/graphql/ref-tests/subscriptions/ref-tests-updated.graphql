@@ -27,5 +27,16 @@ subscription RefTestsUpdated {
     ... on RefTestResultSent {
       id
     }
+    ... on RefTestDeleted {
+      id
+      status
+    }
+    ... on RefTestReset {
+      id
+      oldStatus
+    }
+    ... on RefTestRevived {
+      id
+    }
   }
 }
