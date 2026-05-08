@@ -35,3 +35,12 @@ public record RefTestCompleted(
 
 [ObjectType]
 public record RefTestExpired([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, DateTime ExpiredAt) : IRefTestEvent;
+
+[ObjectType]
+public record RefTestDeleted([property: ID<RefTestDto>] Guid Id, RefTestStatus Status) : IRefTestEvent;
+
+[ObjectType]
+public record RefTestReset([property: ID<RefTestDto>] Guid Id, RefTestStatus OldStatus) : IRefTestEvent;
+
+[ObjectType]
+public record RefTestRevived([property: ID<RefTestDto>] Guid Id) : IRefTestEvent;

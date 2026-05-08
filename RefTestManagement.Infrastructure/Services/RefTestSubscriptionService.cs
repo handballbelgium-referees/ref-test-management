@@ -66,6 +66,29 @@ public interface IRefTestSubscriptionService
         RefTestStatus status,
         DateTime expiredAt,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publish an event when a RefTest is deleted
+    /// </summary>
+    Task PublishRefTestDeletedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publish an event when a RefTest is reset (soft or hard) back to Pending
+    /// </summary>
+    Task PublishRefTestResetAsync(
+        Guid refTestId,
+        RefTestStatus oldStatus,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publish an event when an expired RefTest is revived back to Pending
+    /// </summary>
+    Task PublishRefTestRevivedAsync(
+        Guid refTestId,
+        CancellationToken cancellationToken = default);
 }
 
 public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTestSubscriptionService
@@ -159,6 +182,44 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
             eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
         );
     }
+
+    public async Task PublishRefTestDeletedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        CancellationToken cancellationToken = default)
+    {
+        var evt = new RefTestDeletedEvent(refTestId, status);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
+    }
+
+    public async Task PublishRefTestResetAsync(
+        Guid refTestId,
+        RefTestStatus oldStatus,
+        CancellationToken cancellationToken = default)
+    {
+        var evt = new RefTestResetEvent(refTestId, oldStatus);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
+    }
+
+    public async Task PublishRefTestRevivedAsync(
+        Guid refTestId,
+        CancellationToken cancellationToken = default)
+    {
+        var evt = new RefTestRevivedEvent(refTestId);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
+    }
 }
 
 // Internal event records used for publishing
@@ -182,6 +243,12 @@ public record RefTestCompletedEvent(
     string Language);
 
 public record RefTestExpiredEvent(Guid Id, RefTestStatus Status, DateTime ExpiredAt);
+
+public record RefTestDeletedEvent(Guid Id, RefTestStatus Status);
+
+public record RefTestResetEvent(Guid Id, RefTestStatus OldStatus);
+
+public record RefTestRevivedEvent(Guid Id);
 
 public enum RefTestSessionStatus { Acquired, Blocked }
 

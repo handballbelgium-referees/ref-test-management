@@ -27,6 +27,7 @@ public static class RefTestResetMutations
         ResetRefTestsInput input,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         var result = new ResetRefTestsResult
@@ -43,6 +44,7 @@ public static class RefTestResetMutations
         var successCount = 0;
         var failedCount = 0;
         var errors = new List<ResetRefTestsError>();
+        var resetEvents = new List<(Guid Id, RefTestStatus OldStatus)>();
 
         foreach (var id in input.Ids)
         {
@@ -73,6 +75,8 @@ public static class RefTestResetMutations
 
                 // Check if the invitation was previously sent
                 var invitationWasSent = refTest.InvitationSentAt.HasValue;
+
+                var oldStatus = refTest.Status;
 
                 if (input.ResetType == RefTestResetType.Soft)
                 {
@@ -105,6 +109,7 @@ public static class RefTestResetMutations
 
                 successCount++;
                 result.ResetRefTests.Add(refTest.ToDto());
+                resetEvents.Add((refTest.Id, oldStatus));
                 
             }
             catch (Exception ex)
@@ -119,6 +124,11 @@ public static class RefTestResetMutations
         }
 
         await context.SaveChangesAsync(cancellationToken);
+
+        foreach (var (refTestId, oldStatus) in resetEvents)
+        {
+            await subscriptionService.PublishRefTestResetAsync(refTestId, oldStatus, cancellationToken);
+        }
 
         return result with
         {
@@ -141,6 +151,7 @@ public static class RefTestResetMutations
         [ID<RefTestDto>] List<Guid> ids,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         var result = new ReviveRefTestsResult
@@ -157,6 +168,7 @@ public static class RefTestResetMutations
         var successCount = 0;
         var failedCount = 0;
         var errors = new List<ReviveRefTestsError>();
+        var revivedIds = new List<Guid>();
 
         foreach (var id in ids)
         {
@@ -195,6 +207,7 @@ public static class RefTestResetMutations
 
                 successCount++;
                 result.RevivedRefTests.Add(refTest.ToDto());
+                revivedIds.Add(refTest.Id);
             }
             catch (Exception ex)
             {
@@ -208,6 +221,11 @@ public static class RefTestResetMutations
         }
 
         await context.SaveChangesAsync(cancellationToken);
+
+        foreach (var refTestId in revivedIds)
+        {
+            await subscriptionService.PublishRefTestRevivedAsync(refTestId, cancellationToken);
+        }
 
         return result with
         {

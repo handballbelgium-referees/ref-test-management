@@ -27,5 +27,15 @@ subscription RefTestUpdated($id: ID!) {
     ... on RefTestResultSent {
       id
     }
+    ... on RefTestDeleted {
+      id
+    }
+    ... on RefTestReset {
+      id
+      oldStatus
+    }
+    ... on RefTestRevived {
+      id
+    }
   }
 }
