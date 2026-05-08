@@ -95,6 +95,7 @@ services.AddScoped<IRefTestReportService, RefTestReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 services.AddScoped<IJobEnqueueService, JobEnqueueService>();
 services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
+services.AddSingleton<IRefTestSessionService, RefTestSessionService>();
 
 // Add background services
 services.AddHostedService<RefTestExpirationService>();

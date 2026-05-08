@@ -72,7 +72,7 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
 
     effect(() => {
       const token = this._token();
-      if (token) this._facade.start(token);
+      if (token) this._facade.acquireSessionAndStart(token);
     });
 
     // Timer tick

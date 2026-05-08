@@ -182,3 +182,7 @@ public record RefTestCompletedEvent(
     string Language);
 
 public record RefTestExpiredEvent(Guid Id, RefTestStatus Status, DateTime ExpiredAt);
+
+public enum RefTestSessionStatus { Acquired, Blocked }
+
+public record RefTestSessionEvent(RefTestSessionStatus Status);

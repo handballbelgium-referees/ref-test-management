@@ -1,4 +1,5 @@
-﻿using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+﻿using System.Runtime.CompilerServices;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Authorization;
 
@@ -74,5 +75,47 @@ public static class RefTestSubscriptions
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };
+    }
+
+    /// <summary>
+    /// Subscribe to acquire a session lock for a specific RefTest token.
+    /// PUBLIC: No authorization is required — test takers are not authenticated.
+    /// Yields Acquired if no other tab holds the session (or this tab is refreshing),
+    /// then keeps the connection open until the client disconnects.
+    /// Yields Blocked (and completes) if another tab already holds the session.
+    /// Releasing the session happens automatically when the SSE connection drops.
+    /// </summary>
+    [Subscribe(With = nameof(SubscribeToRefTestSessionLock))]
+    public static RefTestSessionEvent RefTestSessionLock([EventMessage] RefTestSessionEvent message) => message;
+
+    public static async IAsyncEnumerable<RefTestSessionEvent> SubscribeToRefTestSessionLock(
+        string token,
+        string sessionId,
+        [Service] IRefTestSessionService sessionService,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        if (!sessionService.TryAcquireSession(token, sessionId))
+        {
+            // Grace period: on browser refresh the old SSE connection drops within ~100ms.
+            // Waiting here allows the existing session to release before we give up.
+            // A genuine second tab will still hold its connection throughout the wait → BLOCKED.
+            await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
+
+            if (!sessionService.TryAcquireSession(token, sessionId))
+            {
+                yield return new RefTestSessionEvent(RefTestSessionStatus.Blocked);
+                yield break;
+            }
+        }
+
+        try
+        {
+            yield return new RefTestSessionEvent(RefTestSessionStatus.Acquired);
+            await Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+        finally
+        {
+            sessionService.ReleaseSession(token, sessionId);
+        }
     }
 }
