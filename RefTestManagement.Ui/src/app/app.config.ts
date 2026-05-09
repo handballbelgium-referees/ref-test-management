@@ -104,6 +104,11 @@ export const appConfig: ApplicationConfig = {
               const client = createClient({
                 url: '/graphql',
                 credentials: 'include',
+                // Prevent the Angular Service Worker from intercepting SSE connections,
+                // which would break subscriptions in PWA mode.
+                headers: {
+                  'ngsw-bypass': 'true',
+                },
               });
 
               const unsubscribe = client.subscribe(
