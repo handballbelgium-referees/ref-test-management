@@ -173,44 +173,61 @@ This application follows a **clean architecture pattern** with clear separation 
 ┌──────▼──────┐       │
 │   Auth0     │       │
 │  (External) │       │
+│             │       │
+│ RBAC Roles  │       │
+│ permissions │       │
+│ claim in JWT│       │
 └──────┬──────┘       │
        │              │
-       │ JWT Token    │
-       │              │
+       │ JWT Token /  │
+       │ Cookie + perm│
+       │ claims       │
 ┌──────┴──────────────▼───────────────────────────┐
 │     .NET 10 Web API (Backend)                   │
-│     Hot Chocolate 15 GraphQL Server             │
+│     Hot Chocolate 16 GraphQL Server             │
 │                                                 │
 │   Background Services:                          │
 │     • BackgroundJobService (Email Queue)        │
 │     • RefTestExpirationService (Auto-expire)    │
-└────────────────────┬────────────────────────────┘
-                     │
-      ┌──────────────┼──────────────┐
-      │              │              │
-┌─────▼──────┐ ┌─────▼──────┐ ┌─────▼─────────────┐
-│Application │ │   Domain   │ │  Infrastructure   │
-│   Layer    │ │   Models   │ │      Layer        │
-│            │ │            │ │                   │
-│• GraphQL   │ │• RefTest   │ │ Services:         │
-│  Queries   │ │• Job       │ │ • EmailService    │
-│• Payloads  │ │• Status    │ │ • TemplateService │
-│• Config    │ │  Enums     │ │ • TranslationSvc  │
-│            │ │            │ │ • PDFService      │
-│            │ │            │ │ • ReportService   │
-│            │ │            │ │ • LogoService     │
-│            │ │            │ │ • JobEnqueueSvc   │
-└─────┬──────┘ └────────────┘ └─────┬─────────────┘
-      │                             │
-      │           ┌─────────────────┼─────────────────┐
-      │           │                 │                 │
-      │     ┌─────▼──────┐    ┌─────▼──────┐   ┌──────▼────────┐
-      │     │Azure SQL   │    │   Brevo    │   │  QuestPDF +   │
-      │     │ Database   │    │    API     │   │  ClosedXML    │
-      │     │            │    │            │   │               │
-      │     │• RefTests  │    │(Email      │   │(PDF/Excel     │
-      │     │• Jobs      │    │ Delivery)  │   │ Generation)   │
-      │     │• Titles    │    └────────────┘   └───────────────┘
+└──────────────┬─────────────────────────────────┘
+               │
+      ┌────────┼──────────────┬───────────────────┐
+      │        │              │                   │
+┌─────▼──────┐ │ ┌────────────▼──┐  ┌────────────▼────────────┐
+│Application │ │ │   Domain      │  │  Infrastructure Layer   │
+│   Layer    │ │ │   Models      │  │                         │
+│            │ │ │               │  │ Services:               │
+│• GraphQL   │ │ │• RefTest      │  │ • EmailService          │
+│  Queries   │ │ │• Job          │  │ • TemplateService       │
+│• Payloads  │ │ │• Status       │  │ • TranslationSvc        │
+│• Config    │ │ │  Enums        │  │ • PDFService            │
+│            │ │ │               │  │ • ReportService         │
+│            │ │ └───────────────┘  │ • LogoService           │
+│            │ │                    │ • JobEnqueueSvc         │
+└─────┬──────┘ │                    └──────┬──────────────────┘
+      │        │                           │
+      │   ┌────▼──────────────┐            │
+      │   │  Security Layer   │            │
+      │   │                   │            │
+      │   │• Permissions.cs   │            │
+      │   │  (all constants)  │            │
+      │   │• TaskPermission   │            │
+      │   │  Handler          │            │
+      │   │• AnyTaskPermission│            │
+      │   │  Handler (OR)     │            │
+      │   │• PolicyProvider   │            │
+      │   │  (anyof: dynamic) │            │
+      │   └───────────────────┘            │
+      │                                    │
+      │           ┌────────────────────────┼──────────────┐
+      │           │                        │              │
+      │     ┌─────▼──────┐    ┌────────────▼──┐   ┌──────▼────────┐
+      │     │Azure SQL   │    │   Brevo       │   │  QuestPDF +   │
+      │     │ Database   │    │    API        │   │  ClosedXML    │
+      │     │            │    │               │   │               │
+      │     │• RefTests  │    │(Email         │   │(PDF/Excel     │
+      │     │• Jobs      │    │ Delivery)     │   │ Generation)   │
+      │     │• Titles    │    └───────────────┘   └───────────────┘
       │     └────────────┘
       │
       │ GraphQL (StrawberryShake Client)
@@ -225,8 +242,9 @@ This application follows a **clean architecture pattern** with clear separation 
 
 #### ✅ Clean Architecture
 
-- **Clear separation** between Domain, Application, and Infrastructure layers
+- **Clear separation** between Domain, Application, Infrastructure, and Security layers
 - **Dependency Inversion** - Infrastructure depends on Application abstractions
+- **Security isolation** - `RefTestManagement.Security` has zero dependencies on other projects
 - **SOLID principles** throughout the codebase
 
 #### 🚀 Performance Optimizations
@@ -237,6 +255,16 @@ This application follows a **clean architecture pattern** with clear separation 
 - **Source-generated logging** for minimal overhead
 - **Read-only dictionaries** to prevent accidental mutations
 - **Sequential PDF generation** to reduce memory pressure by 75%
+
+#### 🔐 Task-Based Authorization
+
+- **`RefTestManagement.Security`** is a standalone class library with no project dependencies
+- **Every GraphQL operation** is protected by a named permission (e.g. `ref-tests:create`)
+- **`TaskPermissionHandler`** resolves exact matches, namespace wildcards (`ref-tests:*`), and superadmin bypass
+- **`AnyTaskPermissionHandler`** supports OR-semantics for field-level authorization
+- **`TaskAuthorizationPolicyProvider`** resolves `anyof:perm1|perm2` policy names dynamically at runtime
+- **Permissions propagated via cookie** — `OnTokenValidated` copies Auth0 JWT `permissions` claims into the cookie identity
+- See [SECURITY.md](SECURITY.md) for full setup, permission reference, and suggested roles
 
 #### 🔄 Background Processing
 
@@ -259,6 +287,9 @@ Each service has a **single, clear responsibility**:
 - **JobEnqueueService** → Enqueue background jobs
 - **BackgroundJobService** → Process job queue
 - **RefTestExpirationService** → Auto-expire old tests
+- **TaskPermissionHandler** → Enforce single-permission authorization
+- **AnyTaskPermissionHandler** → Enforce OR-permission authorization
+- **TaskAuthorizationPolicyProvider** → Dynamically resolve permission policies
 
 ### 🎨 Clean GraphQL Architecture
 

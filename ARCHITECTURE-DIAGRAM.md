@@ -249,22 +249,22 @@ Frontend Permission Loading
 ═══════════════════════════
 
 ┌──────────────┐  isAuthenticated?  ┌──────────────────────────────────────┐
-│ Angular SPA  │ ──────────────────▶│ GET /Account/IsAuthenticated          │
-│              │ ◀────────────────── │ → true                               │
+│ Angular SPA  │ ──────────────────▶│ GET /Account/IsAuthenticated         │
+│              │ ◀──────────────────│ → true                               │
 │              │                    └──────────────────────────────────────┘
 │              │
 │              │  fetch permissions ┌──────────────────────────────────────┐
 │              │ ──────────────────▶│ GET /Account/Permissions             │
-│              │ ◀────────────────── │ → ["ref-tests:create",               │
-│              │                    │    "ref-tests:view-list", ...]        │
+│              │ ◀──────────────────│ → ["ref-tests:create",               │
+│              │                    │    "ref-tests:view-list", ...]       │
 │              │                    └──────────────────────────────────────┘
 │              │
 │  PermissionsService (singleton)
 │  ┌───────────────────────────────────────────────────────────────┐
 │  │ permissions = signal<string[] | undefined>                    │
 │  │   undefined = still loading                                   │
-│  │   []        = loaded, no permissions                         │
-│  │   [...]     = loaded with permissions                        │
+│  │   []        = loaded, no permissions                          │
+│  │   [...]     = loaded with permissions                         │
 │  │                                                               │
 │  │ hasPermission(p):                                             │
 │  │   1. superadmin? → true                                       │
@@ -274,15 +274,15 @@ Frontend Permission Loading
 │  └───────────────────────────────────────────────────────────────┘
 │              │
 │  ┌───────────┴────────────────────────────────────────────────┐
-│  │ HasPermission directive          permissionGuard factory    │
-│  │ *hasPermission="Permissions.X"   canActivate: [             │
-│  │                                    authGuard,               │
-│  │ Structural directive that shows    permissionGuard(P)       │
-│  │ / hides elements reactively.     ]                          │
-│  │ Waits for signal ≠ undefined.                               │
-│  │ Re-evaluates on permission       Guard waits for            │
-│  │ signal change.                   permissions signal ≠       │
-│  │                                  undefined, then checks.    │
+│  │ HasPermission directive          permissionGuard factory   │
+│  │ *hasPermission="Permissions.X"   canActivate: [            │
+│  │                                    authGuard,              │
+│  │ Structural directive that shows    permissionGuard(P)      │
+│  │ / hides elements reactively.     ]                         │
+│  │ Waits for signal ≠ undefined.                              │
+│  │ Re-evaluates on permission       Guard waits for           │
+│  │ signal change.                   permissions signal ≠      │
+│  │                                  undefined, then checks.   │
 │  └────────────────────────────────────────────────────────────┘
 └──────────────┘
 
@@ -295,8 +295,8 @@ GraphQL Request (cookie or JWT Bearer)
            ▼
 ┌──────────────────────────────────────────────────────────────────────────┐
 │  HotChocolate                                                            │
-│  [Authorize(Policy = "ref-tests:create")]  ← exact policy name          │
-│  [Authorize(Policy = "anyof:perm1|perm2")] ← OR policy (dynamic)        │
+│  [Authorize(Policy = "ref-tests:create")]  ← exact policy name           │
+│  [Authorize(Policy = "anyof:perm1|perm2")] ← OR policy (dynamic)         │
 └──────────────────────────┬───────────────────────────────────────────────┘
                            │
                            ▼
@@ -309,7 +309,7 @@ GraphQL Request (cookie or JWT Bearer)
                            │
            ┌───────────────┴────────────────┐
            ▼                                ▼
-┌─────────────────────┐          ┌──────────────────────────┐
+┌──────────────────────┐          ┌───────────────────────────┐
 │ TaskPermissionHandler│          │ AnyTaskPermissionHandler  │
 │ (single permission)  │          │ (OR across N permissions) │
 │                      │          │                           │
@@ -317,7 +317,7 @@ GraphQL Request (cookie or JWT Bearer)
 │ 2. exact match? → ✓  │          │ 2. any exact match? → ✓   │
 │ 3. ns wildcard? → ✓  │          │ 3. any ns wildcard? → ✓   │
 │ else → ✗             │          │ else → ✗                  │
-└─────────────────────┘          └──────────────────────────┘
+└──────────────────────┘          └───────────────────────────┘
 
 
 Permission Sources in the JWT (Auth0)
@@ -328,7 +328,7 @@ Permission Sources in the JWT (Auth0)
 │  {                                                                      │
 │    "sub": "auth0|...",                                                  │
 │    "permissions": [                                                     │
-│      "ref-tests:create",          ← single permission                  │
+│      "ref-tests:create",          ← single permission                   │
 │      "ref-tests:view-list",                                             │
 │      "ref-tests:*",               ← wildcard: all ref-tests ops         │
 │      "superadmin"                 ← bypasses ALL checks                 │
