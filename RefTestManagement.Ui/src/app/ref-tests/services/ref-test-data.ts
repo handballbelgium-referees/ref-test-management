@@ -50,6 +50,9 @@ type DeletionCounts = {
 export class RefTestData {
   private readonly _apollo = inject(Apollo);
   private readonly _getRefTestsGQL = inject(GetRefTestsGQL);
+  /** IDs of deletes initiated by this client that haven't yet been confirmed by the mutation response.
+   * Used to suppress the subscription event so the mutation callback is the sole handler. */
+  private readonly _pendingDeleteIds = new Set<string>();
   private readonly _getRefTestsAllCountsGQL = inject(GetRefTestsAllCountsGQL);
   private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
@@ -171,6 +174,10 @@ export class RefTestData {
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<string[]> = {},
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    // Register IDs before the mutation fires so the subscription handler knows to skip
+    // them — whichever arrives first (SSE vs mutation response), the mutation callback
+    // is the sole handler for self-initiated deletes.
+    for (const id of ids) this._pendingDeleteIds.add(id);
     return runMutation(
       this._deleteRefTestsGQL.mutate({
         variables: { input: { ids } },
@@ -282,6 +289,9 @@ export class RefTestData {
     const deleted = data?.deleteRefTests?.deleteRefTestsResult?.deletedRefTests ?? [];
 
     if (!deleted.length) return;
+
+    // Clear pending tracking so the subscription handler knows these are done.
+    for (const d of deleted) this._pendingDeleteIds.delete(d.id);
 
     const counts = this.countDeletionsByStatus(deleted);
     this.updateCountsCache(cache, counts);
@@ -410,11 +420,58 @@ export class RefTestData {
               this.updateStatusCounts('EXPIRED', 'PENDING');
               break;
 
+            case 'RefTestCreated': {
+              // We now receive the full node data in the subscription event, so we can
+              // insert the new item directly into the ALL and PENDING cached lists
+              // without evicting or triggering any network request.
+              const createdEvent = event;
+              const node = {
+                id: createdEvent.id,
+                name: createdEvent.name,
+                email: createdEvent.email,
+                title:
+                  createdEvent.titleId != null
+                    ? {
+                        __typename: 'RefTestTitleDto',
+                        id: createdEvent.titleId,
+                        value: createdEvent.titleValue ?? '',
+                      }
+                    : null,
+                invitationSent: createdEvent.invitationSent,
+                resultsSent: createdEvent.resultsSent,
+                sendInvitationsAutomatically: createdEvent.sendInvitationsAutomatically,
+                sendResultsAutomatically: createdEvent.sendResultsAutomatically,
+                status: createdEvent.status,
+                numberOfQuestions: createdEvent.numberOfQuestions,
+                maxTimeInMinutes: createdEvent.maxTimeInMinutes,
+                startedAt: null,
+                completedAt: null,
+                questionScore: null,
+                answerScore: null,
+                questionTotal: null,
+                answerTotal: null,
+                percentage: null,
+              };
+              // Add to PENDING list (the new test is always PENDING)
+              this.addEdgeToCachedList(node as any, '', 'PENDING');
+              // Add to ALL list (undefined = no status filter)
+              this.addEdgeToCachedList(node as any, '', undefined);
+              // Increment tab counters
+              this.updateStatusCounts(undefined, 'PENDING', true);
+              break;
+            }
+
             case 'RefTestDeleted': {
-              // Only decrement counts if the item was still in cache.
-              // If the local user deleted it, the mutation callback already removed it
-              // and decremented the counts — avoid a double-decrement.
-              const removed = this.removeFromAllCachedStatusLists([{ id: event.id, status: event.status }]);
+              // If this client initiated the delete, the mutation update callback is the
+              // sole handler (regardless of SSE/response ordering). Skip here to avoid
+              // a double-decrement when the SSE arrives before the mutation response.
+              if (this._pendingDeleteIds.has(event.id)) break;
+
+              // Remote delete — remove from cache and decrement counts only if the
+              // item was actually present (avoids processing the same event twice).
+              const removed = this.removeFromAllCachedStatusLists([
+                { id: event.id, status: event.status },
+              ]);
               if (removed > 0) {
                 this.decrementCountsForDelete(event.status);
               }
@@ -553,7 +610,7 @@ export class RefTestData {
       NonNullable<NonNullable<GetRefTestsQuery['refTests']>['edges']>[number]
     >['node'],
     cursor: string,
-    status: RefTestStatus,
+    status: RefTestStatus | undefined,
   ): void {
     const prev = this.readCachedList(status);
     if (!prev?.refTests) return;
@@ -629,7 +686,11 @@ export class RefTestData {
   /* Cache Helpers — Status Counts                                            */
   /* ------------------------------------------------------------------------ */
 
-  private updateStatusCounts(oldStatus: RefTestStatus | undefined, newStatus: RefTestStatus): void {
+  private updateStatusCounts(
+    oldStatus: RefTestStatus | undefined,
+    newStatus: RefTestStatus,
+    incrementAll = false,
+  ): void {
     const current = this._countsQueryRef.getCurrentResult();
     if (!current?.data) return;
 
@@ -638,6 +699,11 @@ export class RefTestData {
       if (!prev) return prev;
 
       const result = { ...prev };
+
+      // Optionally increment the 'all' count (used for new creations)
+      if (incrementAll) {
+        result.all = increment(result.all);
+      }
 
       // Decrement old status
       switch (oldStatus) {

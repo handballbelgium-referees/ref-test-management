@@ -38,5 +38,19 @@ subscription RefTestsUpdated {
     ... on RefTestRevived {
       id
     }
+    ... on RefTestCreated {
+      id
+      name
+      email
+      titleId
+      titleValue
+      invitationSent
+      resultsSent
+      sendInvitationsAutomatically
+      sendResultsAutomatically
+      status
+      numberOfQuestions
+      maxTimeInMinutes
+    }
   }
 }

@@ -68,6 +68,24 @@ public interface IRefTestSubscriptionService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Publish an event when a new RefTest is created
+    /// </summary>
+    Task PublishRefTestCreatedAsync(
+        Guid refTestId,
+        string fullName,
+        string email,
+        Guid? titleId,
+        string? titleValue,
+        bool invitationSent,
+        bool resultsSent,
+        bool sendInvitationsAutomatically,
+        bool sendResultsAutomatically,
+        RefTestStatus status,
+        int numberOfQuestions,
+        int maxTimeInMinutes,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Publish an event when a RefTest is deleted
     /// </summary>
     Task PublishRefTestDeletedAsync(
@@ -183,6 +201,32 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         );
     }
 
+    public async Task PublishRefTestCreatedAsync(
+        Guid refTestId,
+        string fullName,
+        string email,
+        Guid? titleId,
+        string? titleValue,
+        bool invitationSent,
+        bool resultsSent,
+        bool sendInvitationsAutomatically,
+        bool sendResultsAutomatically,
+        RefTestStatus status,
+        int numberOfQuestions,
+        int maxTimeInMinutes,
+        CancellationToken cancellationToken = default)
+    {
+        var evt = new RefTestCreatedEvent(
+            refTestId, fullName, email,
+            titleId, titleValue,
+            invitationSent, resultsSent,
+            sendInvitationsAutomatically, sendResultsAutomatically,
+            status, numberOfQuestions, maxTimeInMinutes);
+
+        // Only publish to the global topic — there is no per-ID subscription for a brand-new ID.
+        await eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken);
+    }
+
     public async Task PublishRefTestDeletedAsync(
         Guid refTestId,
         RefTestStatus status,
@@ -245,6 +289,20 @@ public record RefTestCompletedEvent(
 public record RefTestExpiredEvent(Guid Id, RefTestStatus Status, DateTime ExpiredAt);
 
 public record RefTestDeletedEvent(Guid Id, RefTestStatus Status);
+
+public record RefTestCreatedEvent(
+    Guid Id,
+    string FullName,
+    string Email,
+    Guid? TitleId,
+    string? TitleValue,
+    bool InvitationSent,
+    bool ResultsSent,
+    bool SendInvitationsAutomatically,
+    bool SendResultsAutomatically,
+    RefTestStatus Status,
+    int NumberOfQuestions,
+    int MaxTimeInMinutes);
 
 public record RefTestResetEvent(Guid Id, RefTestStatus OldStatus);
 

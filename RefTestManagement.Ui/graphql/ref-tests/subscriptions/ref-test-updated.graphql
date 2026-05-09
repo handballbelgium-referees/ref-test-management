@@ -37,5 +37,8 @@ subscription RefTestUpdated($id: ID!) {
     ... on RefTestRevived {
       id
     }
+    ... on RefTestCreated {
+      id
+    }
   }
 }

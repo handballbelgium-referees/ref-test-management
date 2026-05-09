@@ -31,6 +31,7 @@ public static class RefTestCreationMutations
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         var result = new CreateRefTestsResult
@@ -55,12 +56,18 @@ public static class RefTestCreationMutations
         }
 
         Guid titleId;
+        string? titleValue;
 
         switch (input.Title.Id)
         {
             case not null:
+            {
                 titleId = input.Title.Id.Value;
+                // Load the title value so we can include it in the subscription event
+                var existingTitle = await context.RefTestTitles.FindAsync([titleId], cancellationToken);
+                titleValue = existingTitle?.Value;
                 break;
+            }
             case null when input.Title.Name is not null:
             {
                 var title = RefTestTitle.Create(input.Title.Name);
@@ -68,6 +75,7 @@ public static class RefTestCreationMutations
                 await context.SaveChangesAsync(cancellationToken);
 
                 titleId = title.Id;
+                titleValue = title.Value;
                 break;
             }
             default:
@@ -122,6 +130,15 @@ public static class RefTestCreationMutations
             context.RefTests.AddRange(createdRefTests);
             await context.SaveChangesAsync(cancellationToken);
 
+            foreach (var refTest in createdRefTests)
+                await subscriptionService.PublishRefTestCreatedAsync(
+                    refTest.Id, refTest.FullName, refTest.Email,
+                    titleId, titleValue,
+                    refTest.InvitationSentAt.HasValue, refTest.ResultsSentAt.HasValue,
+                    refTest.SendInvitationsAutomatically, refTest.SendResultsAutomatically,
+                    refTest.Status, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes,
+                    cancellationToken);
+
             return result;
         }
 
@@ -158,6 +175,15 @@ public static class RefTestCreationMutations
 
         context.RefTests.AddRange(createdRefTests);
         await context.SaveChangesAsync(cancellationToken);
+
+        foreach (var refTest in createdRefTests)
+            await subscriptionService.PublishRefTestCreatedAsync(
+                refTest.Id, refTest.FullName, refTest.Email,
+                titleId, titleValue,
+                refTest.InvitationSentAt.HasValue, refTest.ResultsSentAt.HasValue,
+                refTest.SendInvitationsAutomatically, refTest.SendResultsAutomatically,
+                refTest.Status, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes,
+                cancellationToken);
 
         return result;
     }

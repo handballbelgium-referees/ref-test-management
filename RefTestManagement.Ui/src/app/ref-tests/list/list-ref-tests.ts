@@ -259,7 +259,9 @@ export class ListRefTests {
     if (navState?.fromCreate) {
       // Clear the flag immediately to prevent re-triggering on manual page refresh
       window.history.replaceState({}, '', window.location.href);
-      // Reset local pagination state and refetch to include the newly created ref-tests
+      // Reset local UI state (pagination cursor, selection, etc.) and refetch.
+      // The subscription is not reliable here: the SSE event fires during the mutation
+      // while the list component doesn't exist yet, so it may be missed entirely.
       this.localStateManager.resetAllState();
       this.dataService.reset();
     }

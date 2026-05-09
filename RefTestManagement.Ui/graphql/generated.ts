@@ -523,6 +523,7 @@ export type RefTestUpdatedSubscriptionVariables = Exact<{
 
 export type RefTestUpdatedSubscription = { refTestUpdated:
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
+    | { __typename: 'RefTestCreated', id: string }
     | { __typename: 'RefTestDeleted', id: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
@@ -537,6 +538,7 @@ export type RefTestsUpdatedSubscriptionVariables = Exact<{ [key: string]: never;
 
 export type RefTestsUpdatedSubscription = { refTestsUpdated:
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
+    | { __typename: 'RefTestCreated', id: string, name: string, email: string, titleId: string | null, titleValue: string | null, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number }
     | { __typename: 'RefTestDeleted', id: string, status: RefTestStatus }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
@@ -1392,6 +1394,9 @@ export const RefTestUpdatedDocument = gql`
     ... on RefTestRevived {
       id
     }
+    ... on RefTestCreated {
+      id
+    }
   }
 }
     `;
@@ -1446,6 +1451,20 @@ export const RefTestsUpdatedDocument = gql`
     }
     ... on RefTestRevived {
       id
+    }
+    ... on RefTestCreated {
+      id
+      name
+      email
+      titleId
+      titleValue
+      invitationSent
+      resultsSent
+      sendInvitationsAutomatically
+      sendResultsAutomatically
+      status
+      numberOfQuestions
+      maxTimeInMinutes
     }
   }
 }

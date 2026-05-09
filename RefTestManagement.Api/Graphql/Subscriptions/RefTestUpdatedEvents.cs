@@ -44,3 +44,18 @@ public record RefTestReset([property: ID<RefTestDto>] Guid Id, RefTestStatus Old
 
 [ObjectType]
 public record RefTestRevived([property: ID<RefTestDto>] Guid Id) : IRefTestEvent;
+
+[ObjectType]
+public record RefTestCreated(
+    [property: ID<RefTestDto>] Guid Id,
+    string Name,
+    string Email,
+    [property: ID<RefTestTitleDto>] Guid? TitleId,
+    string? TitleValue,
+    bool InvitationSent,
+    bool ResultsSent,
+    bool SendInvitationsAutomatically,
+    bool SendResultsAutomatically,
+    RefTestStatus Status,
+    int NumberOfQuestions,
+    int MaxTimeInMinutes) : IRefTestEvent;
