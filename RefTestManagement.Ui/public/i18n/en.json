@@ -73,6 +73,7 @@
       "showing": "Showing {{displayed}} of {{total}} RefTest",
       "showing_plural": "Showing {{displayed}} of {{total}} RefTests",
       "select_all": "Select All",
+      "select_ref_test": "Select {{name}}",
       "selected": "selected",
       "filters": {
         "advanced_filters": "Advanced Filters",

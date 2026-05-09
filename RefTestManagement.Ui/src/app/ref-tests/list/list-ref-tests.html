@@ -81,6 +81,8 @@
         [allSelected]="allSelected()"
         [someSelected]="someSelected()"
         [selectedIds]="selectionManager.selectedIds()"
+        [showCheckboxes]="showCheckboxes()"
+        [canNavigate]="canNavigate()"
         (toggleSelectAll)="toggleSelectAll()"
         (toggleSelection)="toggleRefTestSelection($event)"
         (sortColumn)="sortByColumn($event)"
@@ -95,6 +97,8 @@
         [someSelected]="someSelected()"
         [selectedCount]="selectedCount()"
         [selectedIds]="selectionManager.selectedIds()"
+        [showCheckboxes]="showCheckboxes()"
+        [canNavigate]="canNavigate()"
         (toggleSelectAll)="toggleSelectAll()"
         (toggleSelection)="toggleRefTestSelection($event)"
       />

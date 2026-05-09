@@ -2,6 +2,7 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +23,7 @@ public static class RefTestDeletionMutations
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.Delete)]
     public static async Task<DeleteRefTestsResult> DeleteRefTestsAsync(
         DeleteRefTestsInput input,
         RefTestManagementContext context,

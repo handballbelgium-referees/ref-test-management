@@ -5,6 +5,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +27,7 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.UpdateDetails)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> UpdateRefTestDetailsAsync(
@@ -76,7 +77,7 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.UpdateConfiguration)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> UpdateRefTestConfigurationAsync(
@@ -158,7 +159,7 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.ExtendTime)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> ExtendRefTestTimeAsync(
@@ -196,7 +197,7 @@ public static class RefTestUpdateMutations
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.UpdateNotifications)]
     [Error<RefTestNotFoundException>]
     public static async Task<RefTestDto> UpdateRefTestNotificationSettingsAsync(
         UpdateRefTestNotificationSettingsInput input,
@@ -281,7 +282,7 @@ public static class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.RegenerateToken)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> RegenerateRefTestTokenAsync(

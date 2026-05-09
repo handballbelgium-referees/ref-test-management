@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../../../../graphql/generated';
+import { HasPermission } from '../../../../../../auth/directives/has-permission.directive';
+import { Permissions } from '../../../../../../auth/models/permissions';
 
 @Component({
   selector: 'app-status-info-card',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, HasPermission],
   templateUrl: './status-info-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -15,6 +17,7 @@ export class StatusInfoCard {
   readonly sendInvitationsAutomatically = input.required<boolean>();
   readonly sendResultsAutomatically = input.required<boolean>();
   readonly status = input.required<RefTestStatus>();
+  protected readonly Permissions = Permissions;
   protected readonly edit = output<void>();
 
   protected readonly canEditNotificationSettings = computed(() => {

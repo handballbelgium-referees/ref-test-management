@@ -5,6 +5,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -24,7 +25,7 @@ public static class RefTestEmailMutations
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.SendInvitations)]
     public static async Task<SendInvitationsResult> SendInvitationsAsync(
         SendInvitationsInput input,
         RefTestManagementContext context,
@@ -97,7 +98,7 @@ public static class RefTestEmailMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.SendResults)]
     public static async Task<SendResultsResult> SendResultsAsync(
         SendResultsInput input,
         RefTestManagementContext context,
@@ -174,7 +175,7 @@ public static class RefTestEmailMutations
     /// <param name="scoreConfig"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.SendReport)]
     public static async Task<SendReportResult> SendReportAsync(
         SendReportInput input,
         RefTestManagementContext context,

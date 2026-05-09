@@ -1,5 +1,7 @@
 import { Routes } from '@angular/router';
 import { authGuard } from './auth/guards/auth-guard';
+import { permissionGuard } from './auth/guards/permission-guard';
+import { Permissions } from './auth/models/permissions';
 import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 
 export const routes: Routes = [
@@ -10,18 +12,18 @@ export const routes: Routes = [
   {
     path: 'ref-tests',
     loadComponent: () => import('./ref-tests/list/list-ref-tests').then((m) => m.ListRefTests),
-    canActivate: [authGuard],
+    canActivate: [authGuard, permissionGuard(Permissions.RefTests.ViewList)],
   },
   {
     path: 'ref-tests/create',
     loadComponent: () =>
       import('./ref-tests/create/create-ref-tests').then((m) => m.CreateRefTests),
-    canActivate: [authGuard],
+    canActivate: [authGuard, permissionGuard(Permissions.RefTests.Create)],
   },
   {
     path: 'ref-tests/:id',
     loadComponent: () => import('./ref-tests/detail/ref-test-detail').then((m) => m.RefTestDetail),
-    canActivate: [authGuard],
+    canActivate: [authGuard, permissionGuard(Permissions.RefTests.ViewDetail)],
     children: [
       {
         path: '',
@@ -41,6 +43,7 @@ export const routes: Routes = [
           import('./ref-tests/detail/components/ref-test-questions-tab/ref-test-questions-tab').then(
             (m) => m.RefTestQuestionsTab,
           ),
+        canActivate: [permissionGuard(Permissions.RefTests.ViewDetailQuestions)],
       },
     ],
   },

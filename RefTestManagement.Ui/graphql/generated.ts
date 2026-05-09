@@ -470,11 +470,12 @@ export type GetQuestionsByNumberQuery = { questionsByNumber: Array<{ id: string,
 
 export type GetRefTestByIdQueryVariables = Exact<{
   id: string | number;
+  skipQuestions?: boolean;
 }>;
 
 
 export type GetRefTestByIdQuery = { refTest:
-    | { __typename: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, selectedAnswerIds: Array<string>, language: string | null, title: { id: string, value: string } | null, questions: Array<{ id: string, number: string, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
+    | { __typename: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, selectedAnswerIds: Array<string>, language: string | null, title: { id: string, value: string } | null, questions?: Array<{ id: string, number: string, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
     | { __typename: 'RefTestNotFoundError', message: string }
    };
 
@@ -1169,7 +1170,7 @@ export const GetQuestionsByNumberDocument = gql`
     }
   }
 export const GetRefTestByIdDocument = gql`
-    query GetRefTestById($id: ID!) {
+    query GetRefTestById($id: ID!, $skipQuestions: Boolean! = false) {
   refTest(id: $id) {
     __typename
     ... on RefTest {
@@ -1197,7 +1198,7 @@ export const GetRefTestByIdDocument = gql`
       answerTotal
       percentage
       selectedAnswerIds
-      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
+      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) @skip(if: $skipQuestions) {
         id
         number
         phrase

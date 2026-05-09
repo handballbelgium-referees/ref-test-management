@@ -1,4 +1,4 @@
-query GetRefTestById($id: ID!) {
+query GetRefTestById($id: ID!, $skipQuestions: Boolean! = false) {
   refTest(id: $id) {
     __typename
     ... on RefTest {
@@ -26,7 +26,8 @@ query GetRefTestById($id: ID!) {
       answerTotal
       percentage
       selectedAnswerIds
-      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
+      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false)
+        @skip(if: $skipQuestions) {
         id
         number
         phrase

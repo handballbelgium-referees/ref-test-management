@@ -10,6 +10,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj"/>
+        <ProjectReference Include="..\RefTestManagement.Security\RefTestManagement.Security.csproj"/>
     </ItemGroup>
 
     <ItemGroup>

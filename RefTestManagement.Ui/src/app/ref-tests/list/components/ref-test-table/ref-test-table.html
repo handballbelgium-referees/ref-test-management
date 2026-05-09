@@ -4,17 +4,20 @@
   <table class="min-w-full">
     <thead class="bg-neutral-100 border-b border-neutral-200">
       <tr>
-        <th class="px-6 py-4 text-left">
-          <input
-            type="checkbox"
-            [checked]="allSelected()"
-            [indeterminate]="someSelected()"
-            (change)="toggleSelectAll.emit()"
-            (click)="$event.stopPropagation()"
-            [attr.aria-label]="'ref_tests.list.select_all' | translate"
-            class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
-          />
-        </th>
+        @if (showCheckboxes()) {
+          <th class="px-6 py-4 text-left">
+            <input
+              type="checkbox"
+              [checked]="allSelected()"
+              [indeterminate]="someSelected()"
+              (change)="toggleSelectAll.emit()"
+              (click)="$event.stopPropagation()"
+              [attr.aria-label]="'ref_tests.list.select_all' | translate"
+              placeholder="{{ 'ref_tests.list.select_all' | translate }}"
+              class="h-5 w-5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+            />
+          </th>
+        }
         @if (isColumnVisible('title')) {
           <th
             class="px-4 py-3 text-left text-xs font-semibold text-neutral-700 uppercase tracking-wide"
@@ -273,6 +276,8 @@
           [selected]="isSelected(refTest.id)"
           [visibleColumns]="visibleColumns()"
           [passingPercentage]="passingPercentage()"
+          [showCheckboxes]="showCheckboxes()"
+          [canNavigate]="canNavigate()"
           (toggleSelection)="toggleSelection.emit($event)"
         ></tr>
       }

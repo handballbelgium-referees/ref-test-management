@@ -20,6 +20,7 @@
     <div class="flex items-center gap-1">
       @if (status() !== 'IN_PROGRESS' && status() !== 'COMPLETED') {
         <button
+          *hasPermission="Permissions.RefTests.UpdateConfiguration"
           type="button"
           (click)="edit.emit()"
           class="text-primary-600 hover:text-primary-700 transition-colors p-1"
@@ -38,6 +39,7 @@
       }
       @if (status() === 'PENDING') {
         <button
+          *hasPermission="Permissions.RefTests.RegenerateToken"
           type="button"
           (click)="regenerateToken.emit()"
           class="text-primary-600 hover:text-primary-700 transition-colors p-1"

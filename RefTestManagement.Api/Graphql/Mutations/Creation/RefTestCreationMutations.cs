@@ -6,6 +6,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
@@ -25,7 +26,7 @@ public static class RefTestCreationMutations
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.Create)]
     public static async Task<CreateRefTestsResult> CreateRefTestsAsync(
         CreateRefTestsInput input,
         RefTestManagementContext context,

@@ -20,6 +20,7 @@
     <div class="flex items-center gap-2">
       @if (status() !== 'IN_PROGRESS' && status() !== 'COMPLETED') {
         <button
+          *hasPermission="Permissions.RefTests.UpdateDetails"
           type="button"
           (click)="edit.emit()"
           class="text-primary-600 hover:text-primary-700 transition-colors p-1"
@@ -38,6 +39,7 @@
       }
       @if (status() === 'IN_PROGRESS' || status() === 'COMPLETED') {
         <button
+          *hasPermission="Permissions.RefTests.Reset"
           type="button"
           (click)="reset.emit()"
           class="text-primary-600 hover:text-primary-700 transition-colors p-1"
@@ -56,6 +58,7 @@
       }
       @if (status() === 'EXPIRED') {
         <button
+          *hasPermission="Permissions.RefTests.Revive"
           type="button"
           (click)="revive.emit()"
           class="text-primary-600 hover:text-primary-700 transition-colors p-1"

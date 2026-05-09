@@ -10,6 +10,8 @@ import {
 import { TranslatePipe } from '@ngx-translate/core';
 import { catchError, EMPTY, filter, map, tap } from 'rxjs';
 import { RefTestStatus } from '../../../../graphql/generated';
+import { HasPermission } from '../../auth/directives/has-permission.directive';
+import { Permissions } from '../../auth/models/permissions';
 import { Banner } from '../../shared/components/banner/banner';
 import { DeleteRefTestsDialog } from '../list/components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { SendInvitationsDialog } from '../list/components/dialogs/send-invitations-dialog/send-invitations-dialog';
@@ -28,6 +30,7 @@ import { RefTestDetailOperationManager } from './services/ref-test-detail-operat
     SendResultsDialog,
     DeleteRefTestsDialog,
     Banner,
+    HasPermission,
   ],
   providers: [RefTestDetailOperationManager],
   templateUrl: './ref-test-detail.html',
@@ -42,6 +45,7 @@ export class RefTestDetail {
 
   protected readonly refTestData = this._dataService.refTestData;
   protected readonly loading = this._dataService.loading;
+  protected readonly Permissions = Permissions;
 
   constructor() {
     // Subscribe to ref test updates for the current ref test
