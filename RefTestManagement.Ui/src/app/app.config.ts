@@ -96,41 +96,63 @@ export const appConfig: ApplicationConfig = {
           withCredentials: true,
         });
 
+        // One shared SSE client for all subscription operations.
+        // retryAttempts: Infinity ensures it keeps reconnecting if the connection
+        // drops (e.g. network blip or server restart).
+        const sseClient = createClient({
+          url: '/graphql',
+          credentials: 'include',
+          // Prevent the Angular Service Worker from intercepting SSE connections,
+          // which would break subscriptions in PWA mode.
+          headers: {
+            'ngsw-bypass': 'true',
+          },
+          retryAttempts: Infinity,
+          retry: async (retries: number) => {
+            // Exponential backoff capped at 10 s
+            await new Promise((resolve) =>
+              setTimeout(resolve, Math.min(1_000 * 2 ** retries, 10_000)),
+            );
+          },
+        });
+
         // Create a custom link for SSE subscriptions
         const sseLink = {
           request: (operation: any) => {
             // Return an Observable, not a Promise (Apollo requires Observable)
             return new Observable((observer) => {
-              const client = createClient({
-                url: '/graphql',
-                credentials: 'include',
-                // Prevent the Angular Service Worker from intercepting SSE connections,
-                // which would break subscriptions in PWA mode.
-                headers: {
-                  'ngsw-bypass': 'true',
-                },
-              });
+              let unsubscribe: (() => void) | null = null;
 
-              const unsubscribe = client.subscribe(
-                {
-                  query: operation.query.loc?.source.body || '',
-                  variables: operation.variables,
-                },
-                {
-                  next: (data) => {
-                    observer.next(data);
+              const start = () => {
+                // Cancel any in-flight attempt before starting a fresh one
+                unsubscribe?.();
+                unsubscribe = sseClient.subscribe(
+                  {
+                    query: operation.query.loc?.source.body || '',
+                    variables: operation.variables,
                   },
-                  error: (err) => {
-                    observer.error(err);
+                  {
+                    next: (data) => observer.next(data),
+                    error: (err) => observer.error(err),
+                    complete: () => observer.complete(),
                   },
-                  complete: () => {
-                    observer.complete();
-                  },
-                },
-              );
+                );
+              };
+
+              // When the PWA returns from the background the SSE connection may be
+              // dead. Force a fresh subscribe so events are never missed.
+              const onVisibilityChange = () => {
+                if (document.visibilityState === 'visible') start();
+              };
+
+              document.addEventListener('visibilitychange', onVisibilityChange);
+              start();
 
               // Return cleanup function
-              return () => unsubscribe();
+              return () => {
+                document.removeEventListener('visibilitychange', onVisibilityChange);
+                unsubscribe?.();
+              };
             });
           },
         };

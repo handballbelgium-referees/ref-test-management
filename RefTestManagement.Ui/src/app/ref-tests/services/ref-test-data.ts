@@ -426,6 +426,7 @@ export class RefTestData {
               // without evicting or triggering any network request.
               const createdEvent = event;
               const node = {
+                __typename: 'RefTest',
                 id: createdEvent.id,
                 name: createdEvent.name,
                 email: createdEvent.email,
