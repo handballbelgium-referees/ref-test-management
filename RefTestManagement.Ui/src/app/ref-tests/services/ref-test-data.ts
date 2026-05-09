@@ -154,6 +154,10 @@ export class RefTestData {
   }
 
   reset(): void {
+    // Evict all cached refTests entries (all variable combinations / status tabs)
+    // so every tab fetches fresh data on next visit.
+    this._apollo.client.cache.evict({ id: 'ROOT_QUERY', fieldName: 'refTests' });
+    this._apollo.client.cache.gc();
     this._queryRef.refetch();
     this._countsQueryRef.refetch();
   }
@@ -281,7 +285,7 @@ export class RefTestData {
 
     const counts = this.countDeletionsByStatus(deleted);
     this.updateCountsCache(cache, counts);
-    this.removeFromAllCachedStatusLists(deleted, cache);
+    this.removeFromAllCachedStatusLists(deleted);
   }
 
   private countDeletionsByStatus(deleted: Array<{ status: RefTestStatus }>): DeletionCounts {
@@ -406,10 +410,16 @@ export class RefTestData {
               this.updateStatusCounts('EXPIRED', 'PENDING');
               break;
 
-            case 'RefTestDeleted':
-              this.removeFromAllCachedStatusLists([{ id: event.id, status: event.status }]);
-              this.decrementCountsForDelete(event.status);
+            case 'RefTestDeleted': {
+              // Only decrement counts if the item was still in cache.
+              // If the local user deleted it, the mutation callback already removed it
+              // and decremented the counts — avoid a double-decrement.
+              const removed = this.removeFromAllCachedStatusLists([{ id: event.id, status: event.status }]);
+              if (removed > 0) {
+                this.decrementCountsForDelete(event.status);
+              }
               break;
+            }
 
             case 'RefTestInvitationSent': {
               const entityId = this._apollo.client.cache.identify({
@@ -502,16 +512,16 @@ export class RefTestData {
 
   /**
    * Removes deleted items from the All list and each status-specific list.
-   * Accepts an optional external cache (mutation update callback); falls back to the Apollo client cache.
+   * Returns the total number of edges actually removed across all lists.
    */
   private removeFromAllCachedStatusLists(
     deletedItems: ReadonlyArray<{ id: string; status: RefTestStatus }>,
-    _cache?: ApolloCache,
-  ): void {
+  ): number {
     const allIds = new Set(deletedItems.map((d) => d.id));
+    let totalRemoved = 0;
 
     // Remove from All list (no status filter)
-    this.removeEdgesFromCachedList(allIds, undefined);
+    totalRemoved += this.removeEdgesFromCachedList(allIds, undefined);
 
     // Remove from each relevant status-specific list
     const byStatus = new Map<RefTestStatus, Set<string>>();
@@ -521,8 +531,10 @@ export class RefTestData {
       byStatus.set(status, set);
     }
     for (const [status, ids] of byStatus) {
-      this.removeEdgesFromCachedList(ids, status);
+      totalRemoved += this.removeEdgesFromCachedList(ids, status);
     }
+
+    return totalRemoved;
   }
 
   /**
