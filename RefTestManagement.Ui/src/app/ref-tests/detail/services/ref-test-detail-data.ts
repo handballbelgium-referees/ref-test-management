@@ -25,6 +25,8 @@ import {
   UpdateRefTestNotificationSettingsGQL,
   UpdateRefTestNotificationSettingsInput,
 } from '../../../../../graphql/generated';
+import { Permissions } from '../../../auth/models/permissions';
+import { PermissionsService } from '../../../auth/services/permissions';
 import { MutationCallbacks, runMutation } from '../../../shared/utils/apollo-utils';
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
@@ -32,6 +34,7 @@ type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }
 @Injectable({ providedIn: 'root' })
 export class RefTestDetailData {
   private readonly _getRefTestByIdGQL = inject(GetRefTestByIdGQL);
+  private readonly _permissions = inject(PermissionsService);
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
   private readonly _sendResultsGQL = inject(SendRefTestResultsGQL);
   private readonly _resetRefTestsGQL = inject(ResetRefTestsGQL);
@@ -61,7 +64,14 @@ export class RefTestDetailData {
       switchMap((id) => {
         if (!id) return EMPTY;
 
-        const ref = this._getRefTestByIdGQL.watch({ variables: { id } });
+        const ref = this._getRefTestByIdGQL.watch({
+          variables: {
+            id,
+            skipQuestions: !this._permissions.hasPermission(
+              Permissions.RefTests.ViewDetailQuestions,
+            ),
+          },
+        });
         this._queryRef = ref;
         return ref.valueChanges;
       }),

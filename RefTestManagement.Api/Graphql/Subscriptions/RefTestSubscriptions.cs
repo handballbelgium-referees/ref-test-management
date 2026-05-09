@@ -1,6 +1,7 @@
 ﻿using System.Runtime.CompilerServices;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
@@ -34,7 +35,7 @@ public static class RefTestSubscriptions
     /// <param name="message">The event message</param>
     /// <returns></returns>
     [Subscribe]
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.ViewDetail)]
     [Topic("{id}")]
     public static IRefTestEvent RefTestUpdated(
         [ID<RefTestDto>] Guid id,
@@ -65,7 +66,7 @@ public static class RefTestSubscriptions
     /// <param name="message">The event message containing the RefTest ID and event data</param>
     /// <returns></returns>
     [Subscribe]
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.ViewList)]
     [Topic(RefTestSubscriptionService.GlobalTopic)]
     public static IRefTestEvent RefTestsUpdated([EventMessage] object message)
     {

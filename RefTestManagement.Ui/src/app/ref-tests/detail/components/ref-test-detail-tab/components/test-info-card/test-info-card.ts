@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { GetRefTestByIdQuery, RefTestStatus } from '../../../../../../../../graphql/generated';
+import { HasPermission } from '../../../../../../auth/directives/has-permission.directive';
+import { Permissions } from '../../../../../../auth/models/permissions';
 import { Language, LANGUAGE_NAMES } from '../../../../../../services/language-config';
 
 type RefTestTitle = NonNullable<
@@ -9,7 +11,7 @@ type RefTestTitle = NonNullable<
 
 @Component({
   selector: 'app-test-info-card',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, HasPermission],
   templateUrl: './test-info-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -20,6 +22,7 @@ export class TestInfoCard {
   readonly maxTimeInMinutes = input<number>();
   readonly language = input<string | null>();
   readonly status = input.required<RefTestStatus>();
+  protected readonly Permissions = Permissions;
   protected readonly edit = output<void>();
   protected readonly regenerateToken = output<void>();
 

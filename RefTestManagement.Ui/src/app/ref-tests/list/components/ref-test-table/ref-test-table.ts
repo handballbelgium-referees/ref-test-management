@@ -24,6 +24,8 @@ export class RefTestTable {
   readonly allSelected = input.required<boolean>();
   readonly someSelected = input.required<boolean>();
   readonly selectedIds = input.required<Set<string>>();
+  readonly showCheckboxes = input<boolean>(false);
+  readonly canNavigate = input<boolean>(true);
 
   protected readonly toggleSelectAll = output<void>();
   protected readonly toggleSelection = output<string>();

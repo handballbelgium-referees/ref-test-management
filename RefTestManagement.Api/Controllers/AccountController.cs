@@ -16,6 +16,18 @@ public class AccountController : Controller
     }
     
     [Authorize]
+    [HttpGet("Permissions")]
+    public IActionResult GetPermissions()
+    {
+        var permissions = User
+            .FindAll("permissions")
+            .Select(c => c.Value)
+            .ToArray();
+
+        return Ok(permissions);
+    }
+
+    [Authorize]
     [HttpGet("Logout")]
     public async Task Logout(string returnUrl = "/")
     {

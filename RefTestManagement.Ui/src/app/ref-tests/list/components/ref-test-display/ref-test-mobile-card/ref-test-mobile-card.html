@@ -3,13 +3,17 @@
 >
   <!-- Header -->
   <div class="flex gap-3 items-start mb-3 pb-3 border-b border-neutral-100">
-    <input
-      type="checkbox"
-      [checked]="selected()"
-      (change)="onToggleSelection()"
-      (click)="$event.stopPropagation()"
-      class="h-5 w-5 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
-    />
+    @if (showCheckboxes()) {
+      <input
+        type="checkbox"
+        [checked]="selected()"
+        (change)="onToggleSelection()"
+        (click)="$event.stopPropagation()"
+        [attr.aria-label]="'ref_tests.list.select_ref_test' | translate: { name: refTest().name }"
+        placeholder="{{ 'ref_tests.list.select_ref_test' | translate: { name: refTest().name } }}"
+        class="h-5 w-5 mt-0.5 text-primary-600 focus:ring-primary-500 border-neutral-300 rounded cursor-pointer"
+      />
+    }
     <div class="flex-1 min-w-0">
       <h3 class="text-sm font-semibold text-neutral-900 truncate">{{ refTest().name }}</h3>
       <p class="text-xs text-neutral-600 truncate">{{ refTest().email }}</p>

@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Authentication.Cookies;
+﻿using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
 using Microsoft.IdentityModel.Protocols.OpenIdConnect;
@@ -52,6 +54,30 @@ public static class SecurityStartup
 
         options.Events = new OpenIdConnectEvents
         {
+            OnTokenValidated = context =>
+            {
+                // Copy the Auth0 'permissions' claim from the access token into the cookie identity.
+                // JwtBearer authentication already has permissions in the token, but for cookie-based
+                // sessions (browser login via OIDC) we need to extract them from the access token.
+                var accessToken = context.TokenEndpointResponse?.AccessToken;
+                if (string.IsNullOrEmpty(accessToken))
+                    return Task.CompletedTask;
+
+                var handler = new JwtSecurityTokenHandler();
+                if (!handler.CanReadToken(accessToken))
+                    return Task.CompletedTask;
+
+                var jwt = handler.ReadJwtToken(accessToken);
+                var permissionClaims = jwt.Claims
+                    .Where(c => c.Type == "permissions")
+                    .ToList();
+
+                if (permissionClaims.Count > 0)
+                    (context.Principal?.Identity as ClaimsIdentity)?.AddClaims(permissionClaims);
+
+                return Task.CompletedTask;
+            },
+
             OnRedirectToIdentityProviderForSignOut = context =>
             {
                 var logoutUri =

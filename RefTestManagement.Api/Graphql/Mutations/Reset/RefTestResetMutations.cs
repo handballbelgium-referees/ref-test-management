@@ -3,6 +3,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 
@@ -22,7 +23,7 @@ public static class RefTestResetMutations
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.Reset)]
     public static async Task<ResetRefTestsResult> ResetRefTestsAsync(
         ResetRefTestsInput input,
         RefTestManagementContext context,
@@ -146,7 +147,7 @@ public static class RefTestResetMutations
     /// <param name="jobEnqueueService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.Revive)]
     public static async Task<ReviveRefTestsResult> ReviveRefTestsAsync(
         [ID<RefTestDto>] List<Guid> ids,
         RefTestManagementContext context,

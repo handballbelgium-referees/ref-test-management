@@ -95,7 +95,7 @@
 │  ┌─────────────────────────────────────────────────────────────────────┐     │
 │  │ - Generate email content                                            │     │
 │  │ - Generate PDFs (if needed)                                         │     │
-│  │ - Send via SMTP                                                     │     │
+│  │ - Send via Brevo API                                                │     │
 │  └─────────────────────────────────────────────────────────────────────┘     │
 └──────────────────────────────────────────────────────────────────────────────┘
 
@@ -202,4 +202,143 @@ Performance Features
 ✓ Graceful Shutdown:        Cancellation token support
 ✓ Auto Cleanup:             Old jobs automatically purged (configurable retention)
 ✓ DateTime Tracking:        Precise timestamps when emails are delivered
+```
+
+---
+
+# Security & Authorization Architecture
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                     Authentication & Permission Flow                        │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+Browser Login Flow
+══════════════════
+
+┌──────────────┐     1. GET /Account/Login      ┌──────────────────────────────┐
+│   Angular    │ ─────────────────────────────▶ │  .NET API (AccountController)│
+│   SPA        │                                └──────────────┬───────────────┘
+└──────────────┘                                               │ 2. Challenge (OIDC redirect)
+                                                               ▼
+                                                ┌──────────────────────────────┐
+                                                │         Auth0                │
+                                                │  - Authenticate user         │
+                                                │  - Issue JWT access token    │
+                                                │    with permissions[] claim  │
+                                                └──────────────┬───────────────┘
+                                                               │ 3. Redirect with code
+                                                               ▼
+                                                ┌──────────────────────────────┐
+                                                │  .NET API (OIDC callback)    │
+                                                │  OnTokenValidated:           │
+                                                │  - Decode JWT access token   │
+                                                │  - Read permissions[] claims │
+                                                │  - Copy into cookie identity │
+                                                │  - Set auth cookie           │
+                                                └──────────────┬───────────────┘
+                                                               │ 4. Redirect to Angular app
+                                                               ▼
+                                                ┌──────────────────────────────┐
+                                                │   Angular SPA loaded         │
+                                                │   Auth cookie set on browser │
+                                                └──────────────────────────────┘
+
+
+Frontend Permission Loading
+═══════════════════════════
+
+┌──────────────┐  isAuthenticated?  ┌──────────────────────────────────────┐
+│ Angular SPA  │ ──────────────────▶│ GET /Account/IsAuthenticated          │
+│              │ ◀────────────────── │ → true                               │
+│              │                    └──────────────────────────────────────┘
+│              │
+│              │  fetch permissions ┌──────────────────────────────────────┐
+│              │ ──────────────────▶│ GET /Account/Permissions             │
+│              │ ◀────────────────── │ → ["ref-tests:create",               │
+│              │                    │    "ref-tests:view-list", ...]        │
+│              │                    └──────────────────────────────────────┘
+│              │
+│  PermissionsService (singleton)
+│  ┌───────────────────────────────────────────────────────────────┐
+│  │ permissions = signal<string[] | undefined>                    │
+│  │   undefined = still loading                                   │
+│  │   []        = loaded, no permissions                         │
+│  │   [...]     = loaded with permissions                        │
+│  │                                                               │
+│  │ hasPermission(p):                                             │
+│  │   1. superadmin? → true                                       │
+│  │   2. exact match? → true                                      │
+│  │   3. namespace wildcard (ref-tests:*)? → true                 │
+│  │   else → false                                                │
+│  └───────────────────────────────────────────────────────────────┘
+│              │
+│  ┌───────────┴────────────────────────────────────────────────┐
+│  │ HasPermission directive          permissionGuard factory    │
+│  │ *hasPermission="Permissions.X"   canActivate: [             │
+│  │                                    authGuard,               │
+│  │ Structural directive that shows    permissionGuard(P)       │
+│  │ / hides elements reactively.     ]                          │
+│  │ Waits for signal ≠ undefined.                               │
+│  │ Re-evaluates on permission       Guard waits for            │
+│  │ signal change.                   permissions signal ≠       │
+│  │                                  undefined, then checks.    │
+│  └────────────────────────────────────────────────────────────┘
+└──────────────┘
+
+
+Backend Authorization (per GraphQL request)
+═══════════════════════════════════════════
+
+GraphQL Request (cookie or JWT Bearer)
+           │
+           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  HotChocolate                                                            │
+│  [Authorize(Policy = "ref-tests:create")]  ← exact policy name          │
+│  [Authorize(Policy = "anyof:perm1|perm2")] ← OR policy (dynamic)        │
+└──────────────────────────┬───────────────────────────────────────────────┘
+                           │
+                           ▼
+┌──────────────────────────────────────────────────────────────────────────┐
+│  TaskAuthorizationPolicyProvider                                         │
+│  - "ref-tests:create"     → DefaultAuthorizationPolicyProvider           │
+│  - "anyof:perm1|perm2"    → builds AnyTaskPermissionRequirement at       │
+│                             runtime (no upfront registration needed)     │
+└──────────────────────────┬───────────────────────────────────────────────┘
+                           │
+           ┌───────────────┴────────────────┐
+           ▼                                ▼
+┌─────────────────────┐          ┌──────────────────────────┐
+│ TaskPermissionHandler│          │ AnyTaskPermissionHandler  │
+│ (single permission)  │          │ (OR across N permissions) │
+│                      │          │                           │
+│ 1. superadmin? → ✓   │          │ 1. superadmin? → ✓        │
+│ 2. exact match? → ✓  │          │ 2. any exact match? → ✓   │
+│ 3. ns wildcard? → ✓  │          │ 3. any ns wildcard? → ✓   │
+│ else → ✗             │          │ else → ✗                  │
+└─────────────────────┘          └──────────────────────────┘
+
+
+Permission Sources in the JWT (Auth0)
+══════════════════════════════════════
+
+┌─────────────────────────────────────────────────────────────────────────┐
+│  Auth0 JWT access token                                                 │
+│  {                                                                      │
+│    "sub": "auth0|...",                                                  │
+│    "permissions": [                                                     │
+│      "ref-tests:create",          ← single permission                  │
+│      "ref-tests:view-list",                                             │
+│      "ref-tests:*",               ← wildcard: all ref-tests ops         │
+│      "superadmin"                 ← bypasses ALL checks                 │
+│    ]                                                                    │
+│  }                                                                      │
+└──────────────────────────────┬──────────────────────────────────────────┘
+                               │ OnTokenValidated (OIDC event)
+                               │ Copies permissions into cookie ClaimsIdentity
+                               ▼
+                    Cookie session carries
+                    same permissions claims
+                    for browser requests
 ```

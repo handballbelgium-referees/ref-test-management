@@ -105,6 +105,7 @@
       <div class="flex flex-wrap gap-2 w-full sm:w-auto">
         @if (canSendInvitation()) {
           <button
+            *hasPermission="Permissions.RefTests.SendInvitations"
             type="button"
             (click)="operationManager.sendInvitationDialog.initiate()"
             [disabled]="operationManager.sendInvitationDialog.loading()"
@@ -130,6 +131,7 @@
 
         @if (canSendResults()) {
           <button
+            *hasPermission="Permissions.RefTests.SendResults"
             type="button"
             (click)="operationManager.sendResultDialog.initiate()"
             [disabled]="operationManager.sendResultDialog.loading()"
@@ -154,6 +156,7 @@
         }
 
         <button
+          *hasPermission="Permissions.RefTests.Delete"
           type="button"
           (click)="operationManager.deleteDialog.initiate()"
           [disabled]="operationManager.deleteDialog.loading()"
@@ -211,6 +214,7 @@
           </a>
 
           <a
+            *hasPermission="Permissions.RefTests.ViewDetailQuestions"
             [routerLink]="['questions']"
             routerLinkActive="!border-primary-600 !text-primary-600"
             [routerLinkActiveOptions]="{ exact: false }"

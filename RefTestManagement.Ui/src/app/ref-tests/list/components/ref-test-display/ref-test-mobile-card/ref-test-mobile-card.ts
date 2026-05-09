@@ -11,7 +11,7 @@ import { RefTestNode } from '../../../services/types';
   templateUrl: './ref-test-mobile-card.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
-    class: 'block cursor-pointer',
+    '[class]': 'canNavigate() ? "block cursor-pointer" : "block cursor-default"',
     '(click)': 'onCardClick($event)',
   },
 })
@@ -22,6 +22,8 @@ export class RefTestMobileCard {
   readonly selected = input.required<boolean>();
   readonly visibleColumns = input.required<Set<string>>();
   readonly passingPercentage = input.required<number>();
+  readonly showCheckboxes = input<boolean>(false);
+  readonly canNavigate = input<boolean>(true);
 
   protected readonly toggleSelection = output<string>();
 
@@ -48,6 +50,7 @@ export class RefTestMobileCard {
   }
 
   protected onCardClick(event: MouseEvent): void {
+    if (!this.canNavigate()) return;
     // Don't navigate if clicking on checkbox
     const target = event.target as HTMLElement;
     if (

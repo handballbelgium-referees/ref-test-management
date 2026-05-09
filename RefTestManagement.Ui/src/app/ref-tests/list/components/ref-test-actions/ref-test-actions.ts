@@ -1,9 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { HasPermission } from '../../../../auth/directives/has-permission.directive';
+import { Permissions } from '../../../../auth/models/permissions';
 
 @Component({
   selector: 'app-ref-test-actions',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, HasPermission],
   templateUrl: './ref-test-actions.html',
   styleUrl: './ref-test-actions.css',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -13,6 +15,8 @@ import { TranslatePipe } from '@ngx-translate/core';
 })
 export class RefTestActions {
   protected readonly menuOpen = signal(false);
+  protected readonly Permissions = Permissions;
+
   readonly selectedCount = input.required<number>();
   readonly hasCompletedRefTestsSelected = input.required<boolean>();
   readonly hasPendingRefTestsSelected = input.required<boolean>();

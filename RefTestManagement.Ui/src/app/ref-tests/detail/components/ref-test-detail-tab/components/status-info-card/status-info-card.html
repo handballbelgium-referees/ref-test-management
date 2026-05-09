@@ -19,6 +19,7 @@
     </h2>
     @if (canEditNotificationSettings()) {
       <button
+        *hasPermission="Permissions.RefTests.UpdateNotifications"
         type="button"
         (click)="edit.emit()"
         class="text-primary-600 hover:text-primary-700 transition-colors p-1"

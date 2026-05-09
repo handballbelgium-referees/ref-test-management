@@ -24,6 +24,8 @@ export class RefTestMobileList {
   readonly someSelected = input.required<boolean>();
   readonly selectedCount = input.required<number>();
   readonly selectedIds = input.required<Set<string>>();
+  readonly showCheckboxes = input<boolean>(false);
+  readonly canNavigate = input<boolean>(true);
 
   protected readonly toggleSelectAll = output<void>();
   protected readonly toggleSelection = output<string>();

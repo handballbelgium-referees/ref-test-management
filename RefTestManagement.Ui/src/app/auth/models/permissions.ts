@@ -1,0 +1,27 @@
+export const Permissions = {
+  Superadmin: 'superadmin',
+  RefTests: {
+    Create: 'ref-tests:create',
+    Delete: 'ref-tests:delete',
+    UpdateDetails: 'ref-tests:update-details',
+    UpdateConfiguration: 'ref-tests:update-configuration',
+    UpdateNotifications: 'ref-tests:update-notifications',
+    ExtendTime: 'ref-tests:extend-time',
+    RegenerateToken: 'ref-tests:regenerate-token',
+    Reset: 'ref-tests:reset',
+    Revive: 'ref-tests:revive',
+    SendInvitations: 'ref-tests:send-invitations',
+    SendResults: 'ref-tests:send-results',
+    SendReport: 'ref-tests:send-report',
+    ViewList: 'ref-tests:view-list',
+    ViewDetail: 'ref-tests:view-detail',
+    ViewDetailQuestions: 'ref-tests:view-detail-questions',
+    ViewTitles: 'ref-tests:view-titles',
+    All: 'ref-tests:*',
+  },
+  Questions: {
+    Search: 'questions:search',
+    View: 'questions:view',
+    All: 'questions:*',
+  },
+} as const;

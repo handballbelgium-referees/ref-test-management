@@ -6,6 +6,7 @@ using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 using HotChocolate.Caching;
 using Microsoft.EntityFrameworkCore;
@@ -67,7 +68,7 @@ public static class RefTestQueries
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.ViewTitles)]
     [UsePaging]
     [UseProjection]
     [UseFiltering<RefTestTitleFilterType>]
@@ -82,7 +83,7 @@ public static class RefTestQueries
     /// </summary>
     /// <param name="context"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.ViewList)]
     [UsePaging]
     [UseProjection]
     [UseFiltering<RefTestFilterType>]
@@ -100,7 +101,7 @@ public static class RefTestQueries
     /// <param name="dataLoader"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.RefTests.ViewDetail)]
     [Error<RefTestNotFoundException>]
     public static async Task<RefTestDto> GetRefTest([ID<RefTestDto>] Guid id, RefTestByIdDataLoader dataLoader,
         CancellationToken cancellationToken)
@@ -114,7 +115,7 @@ public static class RefTestQueries
     /// <param name="ihfRulesQuestionsService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.Questions.Search)]
     public static Task<List<Question>> SearchQuestionsByNumber(string? number,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService, CancellationToken cancellationToken)
         => ihfRulesQuestionsService.SearchQuestionsByNumberAsync(number, cancellationToken);
@@ -126,7 +127,7 @@ public static class RefTestQueries
     /// <param name="ihfRulesQuestionsService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
-    [Authorize]
+    [Authorize(Policy = Permissions.Questions.View)]
     public static Task<List<Question>> GetQuestionsByNumber(List<string> numbers,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService, CancellationToken cancellationToken)
         => ihfRulesQuestionsService.GetQuestionsByNumberAsync(numbers, cancellationToken);

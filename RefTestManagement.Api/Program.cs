@@ -5,6 +5,7 @@ using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
@@ -21,6 +22,7 @@ var services = builder.Services;
 var configuration = builder.Configuration;
 
 services.AddSecurityConfiguration(configuration);
+services.AddTaskBasedAuthorization();
 services.AddControllersWithViews();
 
 // Add CORS for development (allows WebSocket connections from Angular dev server)

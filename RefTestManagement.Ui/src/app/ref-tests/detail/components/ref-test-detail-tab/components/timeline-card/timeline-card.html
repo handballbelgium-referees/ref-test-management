@@ -19,6 +19,7 @@
     </h2>
     @if (status() === 'IN_PROGRESS') {
       <button
+        *hasPermission="Permissions.RefTests.ExtendTime"
         type="button"
         (click)="extendTime.emit()"
         class="text-primary-600 hover:text-primary-700 transition-colors p-1"

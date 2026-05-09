@@ -35,6 +35,8 @@ import { RefTestMobileList } from './components/ref-test-mobile-list/ref-test-mo
 import { RefTestPagination } from './components/ref-test-pagination/ref-test-pagination';
 import { RefTestPerformanceWarning } from './components/ref-test-performance-warning/ref-test-performance-warning';
 import { RefTestTable } from './components/ref-test-table/ref-test-table';
+import { PermissionsService } from '../../auth/services/permissions';
+import { Permissions } from '../../auth/models/permissions';
 import { ColumnVisibilityManager } from './services/column-visibility-manager';
 import { COLUMNS, REF_TEST_CONFIG } from './services/constants';
 import { RefTestFilterActions } from './services/ref-test-filter-actions';
@@ -97,6 +99,7 @@ export class ListRefTests {
   protected readonly localStateManager = inject(RefTestLocalStateManager);
   protected readonly columnVisibility = inject(ColumnVisibilityManager);
   protected readonly uiHelpers = inject(RefTestUIHelpers);
+  private readonly _permissions = inject(PermissionsService);
 
   // ========================================================================
   // CONSTANTS
@@ -109,6 +112,21 @@ export class ListRefTests {
   // ========================================================================
   protected readonly isRefreshing = signal(false);
   protected readonly loadingMore = signal(false);
+
+  /** True when the user has at least one bulk-action permission, making row selection meaningful. */
+  protected readonly showCheckboxes = computed(
+    () =>
+      this._permissions.hasPermission(Permissions.RefTests.SendInvitations) ||
+      this._permissions.hasPermission(Permissions.RefTests.SendResults) ||
+      this._permissions.hasPermission(Permissions.RefTests.SendReport) ||
+      this._permissions.hasPermission(Permissions.RefTests.Delete) ||
+      this._permissions.hasPermission(Permissions.RefTests.Reset) ||
+      this._permissions.hasPermission(Permissions.RefTests.Revive),
+  );
+
+  protected readonly canNavigate = computed(() =>
+    this._permissions.hasPermission(Permissions.RefTests.ViewDetail),
+  );
 
   // ========================================================================
   // SEARCH
