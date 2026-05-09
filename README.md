@@ -21,6 +21,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - [Project Structure](#-project-structure)
 - [Configuration](#-configuration)
 - [Background Services](#️-background-services)
+- [Security & Permissions](SECURITY.md)
 - [Development Workflow](#-development-workflow)
 - [Deployment](#-deployment)
 - [Contributing](#-contributing)
@@ -113,10 +114,15 @@ A comprehensive web application for managing and taking IHF (International Handb
 
 ### 🔐 Authentication & Security
 
-- **Auth0 Integration**: Secure OAuth2/OpenID Connect authentication
-- **JWT Authorization**: Token-based API access control
-- **Protected Routes**: Angular guards for authenticated-only pages
-- **User Management**: Profile display with user initials
+- **Auth0 Integration**: Secure OAuth2/OpenID Connect authentication via cookie session (browser) and JWT Bearer (direct API)
+- **Task-Based Permissions**: Every GraphQL operation is protected by a named permission (e.g. `ref-tests:create`). Permissions are defined in Auth0 and included in the access token
+- **Superadmin Role**: The `superadmin` permission bypasses all checks
+- **Namespace Wildcards**: `ref-tests:*` grants all ref-tests permissions; useful for admin roles
+- **Route Guards**: Angular `permissionGuard` blocks navigation to routes the user lacks permission for
+- **UI Enforcement**: `HasPermission` structural directive hides buttons and cards reactively
+- **OR Permissions**: `AnyTaskPermissionHandler` + dynamic policy provider support field-level OR authorization
+
+See [SECURITY.md](SECURITY.md) for the full permission reference, Auth0 setup guide, and suggested roles.
 
 ### 🌍 Internationalization
 
