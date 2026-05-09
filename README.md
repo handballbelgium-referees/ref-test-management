@@ -940,6 +940,16 @@ ref-test-management/
 │   │   └── RefTestTitle.cs                  # RefTest title entity
 │   └── RefTestManagement.Domain.csproj      # No external dependencies (pure domain)
 │
+├── RefTestManagement.Security/              # 🔐 Security Layer (.NET 10)
+│   ├── Permissions.cs                       # All permission string constants (single source of truth)
+│   ├── TaskPermissionRequirement.cs         # Single-permission authorization requirement
+│   ├── TaskPermissionHandler.cs             # Handles exact match, wildcard, superadmin bypass
+│   ├── AnyTaskPermissionRequirement.cs      # OR-semantics requirement (any of N permissions)
+│   ├── AnyTaskPermissionHandler.cs          # Handles OR authorization logic
+│   ├── TaskAuthorizationPolicyProvider.cs   # Dynamic policy provider (anyof: prefix)
+│   ├── SecurityServiceExtensions.cs         # AddSecurity() DI extension method
+│   └── RefTestManagement.Security.csproj    # No project dependencies (standalone)
+│
 ├── RefTestManagement.Infrastructure/        # 🔷 Infrastructure Layer (.NET 10)
 │   ├── RefTestManagementContext.cs          # EF Core DbContext
 │   ├── Migrations/                       # Database migrations
@@ -967,10 +977,18 @@ ref-test-management/
 │   │   │   ├── app.config.ts             # App configuration (providers, i18n, Apollo)
 │   │   │   ├── app.routes.ts             # Route definitions
 │   │   │   │
-│   │   │   ├── auth/                     # 🔐 Authentication Module
-│   │   │   │   ├── guards/auth-guard.ts  # Route protection
-│   │   │   │   ├── services/auth.ts      # Auth service (login, logout, user state)
-│   │   │   │   └── models/user.ts        # User model
+│   │   │   ├── auth/                     # 🔐 Authentication & Permissions Module
+│   │   │   │   ├── guards/
+│   │   │   │   │   ├── auth-guard.ts         # Route protection (requires login)
+│   │   │   │   │   └── permission-guard.ts   # Route protection (requires permission)
+│   │   │   │   ├── directives/
+│   │   │   │   │   └── has-permission.directive.ts # Structural directive (*hasPermission)
+│   │   │   │   ├── services/
+│   │   │   │   │   ├── auth.ts               # Auth service (login, logout, user state)
+│   │   │   │   │   └── permissions.ts        # PermissionsService (signal-based, cached)
+│   │   │   │   └── models/
+│   │   │   │       ├── user.ts               # User model
+│   │   │   │       └── permissions.ts        # Permission string constants
 │   │   │   │
 │   │   │   ├── home/                     # 🏠 Home Page
 │   │   │   │   └── home.ts               # Landing page component
@@ -1160,23 +1178,26 @@ ref-test-management/
 ├── package.json                          # Root dependencies (semantic-release, husky)
 ├── renovate.json                         # Renovate dependency update config
 ├── RefTestManagement.sln                 # .NET solution file
+├── SECURITY.md                           # Security setup, permissions reference & suggested roles
 └── README.md                             # This file
 ```
 
 ### Key Directories Explained
 
-| Directory                                              | Purpose                                                             |
-| ------------------------------------------------------ | ------------------------------------------------------------------- |
-| `RefTestManagement.Api/Graphql`                        | GraphQL schema, queries, mutations, and type definitions            |
-| `RefTestManagement.Application/GraphQL`                | External GraphQL client schemas and queries (IHF Rules)             |
-| `RefTestManagement.Infrastructure/Services`            | PDF/Excel generation and email delivery (Brevo)                     |
-| `RefTestManagement.Ui/src/app/ref-tests`               | RefTest creation, detail view, and management UI                    |
-| `RefTestManagement.Ui/src/app/ref-tests/list`          | List view with mobile/desktop layouts, filters and operations       |
-| `RefTestManagement.Ui/src/app/ref-tests/list/services` | Business logic services for data, filters, and state management     |
-| `RefTestManagement.Ui/src/app/ref-test`                | RefTest-taking experience (welcome, take, results)                  |
-| `RefTestManagement.Ui/graphql/ref-test`                | Single RefTest operations (start, progress, complete, get by token) |
-| `RefTestManagement.Ui/graphql/ref-tests`               | Multiple RefTests operations (create, delete, send emails, queries) |
-| `.github/workflows`                                    | CI/CD pipelines for automated testing and deployment                |
+| Directory                                              | Purpose                                                                   |
+| ------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `RefTestManagement.Api/Graphql`                        | GraphQL schema, queries, mutations, and type definitions                  |
+| `RefTestManagement.Application/GraphQL`                | External GraphQL client schemas and queries (IHF Rules)                   |
+| `RefTestManagement.Security`                           | Permission constants, authorization handlers and policy provider          |
+| `RefTestManagement.Infrastructure/Services`            | PDF/Excel generation and email delivery (Brevo)                           |
+| `RefTestManagement.Ui/src/app/ref-tests`               | RefTest creation, detail view, and management UI                          |
+| `RefTestManagement.Ui/src/app/ref-tests/list`          | List view with mobile/desktop layouts, filters and operations             |
+| `RefTestManagement.Ui/src/app/ref-tests/list/services` | Business logic services for data, filters, and state management           |
+| `RefTestManagement.Ui/src/app/auth`                    | Auth guard, permission guard, HasPermission directive, PermissionsService |
+| `RefTestManagement.Ui/src/app/ref-test`                | RefTest-taking experience (welcome, take, results)                        |
+| `RefTestManagement.Ui/graphql/ref-test`                | Single RefTest operations (start, progress, complete, get by token)       |
+| `RefTestManagement.Ui/graphql/ref-tests`               | Multiple RefTests operations (create, delete, send emails, queries)       |
+| `.github/workflows`                                    | CI/CD pipelines for automated testing and deployment                      |
 
 ## ⚙️ Configuration
 
