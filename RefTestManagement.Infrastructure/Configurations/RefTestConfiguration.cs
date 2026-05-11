@@ -101,6 +101,9 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 
         builder.Property(x => x.SendResultsAutomatically);
         builder.Property(x => x.ResultsSentAt);
+
+        builder.Property(x => x.RejectionReason)
+            .HasMaxLength(1000);
         
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);

@@ -10,6 +10,8 @@ import {
 } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../../../graphql/generated';
+import { HasPermission } from '../../../../../auth/directives/has-permission.directive';
+import { Permissions } from '../../../../../auth/models/permissions';
 
 interface IStatusCounts {
   all: number;
@@ -17,11 +19,13 @@ interface IStatusCounts {
   inProgress: number;
   completed: number;
   expired: number;
+  pendingApproval: number;
+  rejected: number;
 }
 
 @Component({
   selector: 'app-status-filter-tabs',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, HasPermission],
   templateUrl: './status-filter-tabs.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
@@ -32,6 +36,8 @@ export class StatusFilterTabs {
   readonly selectedStatus = input<RefTestStatus | undefined>();
   readonly statusCounts = input.required<IStatusCounts>();
   protected readonly statusChange = output<RefTestStatus | undefined>();
+
+  protected readonly Permissions = Permissions;
 
   protected readonly filterScroll = viewChild<ElementRef<HTMLDivElement>>('filterScroll');
   protected readonly canScrollLeft = signal(false);

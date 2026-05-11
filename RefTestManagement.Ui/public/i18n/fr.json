@@ -85,6 +85,8 @@
         "in_progress": "En Cours",
         "completed": "Terminées",
         "expired": "Expirées",
+        "pending_approval": "En Attente d'Approbation",
+        "rejected": "Refusées",
         "title_label": "Titre du RefTest",
         "title_all": "Tous les Titres",
         "title_search_placeholder": "Rechercher des titres...",
@@ -181,6 +183,10 @@
         "reset_tests": "Réinitialiser les Tests",
         "revive_test": "Réactiver le Test",
         "revive_tests": "Réactiver les Tests",
+        "approve_test": "Approuver le Test",
+        "approve_tests": "Approuver les Tests",
+        "reject_test": "Refuser le Test",
+        "reject_tests": "Refuser les Tests",
         "delete": "Supprimer"
       },
       "dialogs": {
@@ -240,6 +246,25 @@
           "ref_tests": "RefTests à réactiver:",
           "confirm": "Réactiver les RefTests",
           "cancel": "Annuler"
+        },
+        "approve": {
+          "title": "Approuver les RefTests",
+          "message": "Approuver {{count}} RefTest(s)?",
+          "info": "Les tests approuvés seront activés et les invitations seront envoyées selon leurs paramètres.",
+          "ref_tests": "RefTests à approuver:",
+          "confirm": "Approuver",
+          "cancel": "Annuler"
+        },
+        "reject": {
+          "title": "Refuser les RefTests",
+          "message": "Refuser {{count}} RefTest(s)?",
+          "warning": "Les tests refusés ne seront pas activés. Le créateur devra redemander une approbation.",
+          "reason_label": "Motif du Refus",
+          "reason_placeholder": "Indiquez un motif de refus...",
+          "reason_required": "Un motif de refus est obligatoire.",
+          "ref_tests": "RefTests à refuser:",
+          "confirm": "Refuser",
+          "cancel": "Annuler"
         }
       },
       "report": {
@@ -257,6 +282,12 @@
       "revive_success": "{{count}} RefTest(s) réactivé(s) avec succès",
       "revive_error": "Échec de la réactivation des RefTests",
       "revive_partial_error": "{{count}} RefTest(s) n'ont pas pu être réactivé(s)",
+      "approve_success": "{{count}} RefTest(s) approuvé(s) avec succès",
+      "approve_error": "Échec de l'approbation des RefTests",
+      "approve_partial_error": "{{count}} RefTest(s) n'ont pas pu être approuvé(s)",
+      "reject_success": "{{count}} RefTest(s) refusé(s) avec succès",
+      "reject_error": "Échec du refus des RefTests",
+      "reject_partial_error": "{{count}} RefTest(s) n'ont pas pu être refusé(s)",
       "invitations_sent": "Invitations envoyées avec succès",
       "invitations_error": "Échec de l'envoi des invitations",
       "results_sent": "Résultats envoyés avec succès",

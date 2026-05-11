@@ -85,6 +85,8 @@
         "in_progress": "In Bearbeitung",
         "completed": "Abgeschlossen",
         "expired": "Abgelaufen",
+        "pending_approval": "Warte auf Genehmigung",
+        "rejected": "Abgelehnt",
         "title_label": "RefTest Titel",
         "title_all": "Alle Titel",
         "title_search_placeholder": "Titel suchen...",
@@ -185,6 +187,10 @@
         "reset_tests": "Tests Zurücksetzen",
         "revive_test": "Test Wiederherstellen",
         "revive_tests": "Tests Wiederherstellen",
+        "approve_test": "Test Genehmigen",
+        "approve_tests": "Tests Genehmigen",
+        "reject_test": "Test Ablehnen",
+        "reject_tests": "Tests Ablehnen",
         "delete": "Löschen"
       },
       "dialogs": {
@@ -244,6 +250,25 @@
           "ref_tests": "Wiederzubelebende RefTests:",
           "confirm": "RefTests Wiederbeleben",
           "cancel": "Abbrechen"
+        },
+        "approve": {
+          "title": "RefTests Genehmigen",
+          "message": "{{count}} RefTest(s) genehmigen?",
+          "info": "Genehmigte Tests werden aktiviert und Einladungen gemäß ihren Einstellungen versendet.",
+          "ref_tests": "Zu genehmigende RefTests:",
+          "confirm": "Genehmigen",
+          "cancel": "Abbrechen"
+        },
+        "reject": {
+          "title": "RefTests Ablehnen",
+          "message": "{{count}} RefTest(s) ablehnen?",
+          "warning": "Abgelehnte Tests werden nicht aktiviert. Der Ersteller muss erneut eine Genehmigung anfragen.",
+          "reason_label": "Ablehnungsgrund",
+          "reason_placeholder": "Geben Sie einen Ablehnungsgrund an...",
+          "reason_required": "Ein Ablehnungsgrund ist erforderlich.",
+          "ref_tests": "Abzulehnende RefTests:",
+          "confirm": "Ablehnen",
+          "cancel": "Abbrechen"
         }
       },
       "report": {
@@ -261,6 +286,12 @@
       "revive_success": "{{count}} RefTest(s) erfolgreich wiederbelebt",
       "revive_error": "Fehler beim Wiederbeleben der RefTests",
       "revive_partial_error": "{{count}} RefTest(s) konnten nicht wiederbelebt werden",
+      "approve_success": "{{count}} RefTest(s) erfolgreich genehmigt",
+      "approve_error": "Fehler beim Genehmigen der RefTests",
+      "approve_partial_error": "{{count}} RefTest(s) konnten nicht genehmigt werden",
+      "reject_success": "{{count}} RefTest(s) erfolgreich abgelehnt",
+      "reject_error": "Fehler beim Ablehnen der RefTests",
+      "reject_partial_error": "{{count}} RefTest(s) konnten nicht abgelehnt werden",
       "invitations_sent": "Einladungen erfolgreich gesendet",
       "invitations_error": "Fehler beim Senden der Einladungen",
       "results_sent": "Ergebnisse erfolgreich gesendet",

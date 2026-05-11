@@ -21,6 +21,15 @@ public interface IEmailService
 
     Task SendReportEmailAsync(string recipientEmail, byte[] excelReport, byte[] pdfReport, string timestamp,
         int refTestCount, CancellationToken cancellationToken);
+
+    Task SendApprovalNotificationAsync(
+        string approverName,
+        string approverEmail,
+        string creatorName,
+        string? titleValue,
+        List<(string FullName, string Email)> refTestItems,
+        string baseUrl,
+        CancellationToken cancellationToken);
 }
 
 public class EmailService(
@@ -187,6 +196,26 @@ public class EmailService(
         ServiceLoggerMessages.LogReportEmailSent(logger, recipientEmail);
     }
 
+    public async Task SendApprovalNotificationAsync(
+        string approverName,
+        string approverEmail,
+        string creatorName,
+        string? titleValue,
+        List<(string FullName, string Email)> refTestItems,
+        string baseUrl,
+        CancellationToken cancellationToken)
+    {
+        // Use a single language (English default) for internal staff emails
+        var translations = translationService.GetEmailApprovalNotificationTranslations("en");
+        var subject = translations["subject"];
+
+        var emailBody = await templateService.BuildCompleteApprovalNotificationEmailAsync(
+            approverName, creatorName, titleValue, translations, refTestItems, baseUrl);
+
+        await SendEmailAsync(approverEmail, subject, emailBody, cancellationToken: cancellationToken);
+
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, approverEmail);
+    }
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
     {

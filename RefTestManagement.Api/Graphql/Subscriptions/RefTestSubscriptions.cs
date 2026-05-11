@@ -53,6 +53,8 @@ public static class RefTestSubscriptions
             RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
             RefTestRevivedEvent e => new RefTestRevived(e.Id),
             RefTestCreatedEvent e => new RefTestCreated(e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent, e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions, e.MaxTimeInMinutes),
+            RefTestApprovedEvent e => new RefTestApproved(e.Id, e.Status, e.ApprovedAt),
+            RefTestRejectedEvent e => new RefTestRejected(e.Id, e.Status, e.Reason, e.RejectedAt),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };
     }
@@ -82,6 +84,8 @@ public static class RefTestSubscriptions
             RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
             RefTestRevivedEvent e => new RefTestRevived(e.Id),
             RefTestCreatedEvent e => new RefTestCreated(e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent, e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions, e.MaxTimeInMinutes),
+            RefTestApprovedEvent e => new RefTestApproved(e.Id, e.Status, e.ApprovedAt),
+            RefTestRejectedEvent e => new RefTestRejected(e.Id, e.Status, e.Reason, e.RejectedAt),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };
     }

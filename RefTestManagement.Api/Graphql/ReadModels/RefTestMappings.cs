@@ -44,6 +44,7 @@ public static class RefTestMappings
             Language = refTest.Language,
             Duration = refTest.CompletedAt != null && refTest.StartedAt != null
                 ? refTest.CompletedAt.Value - refTest.StartedAt.Value
-                : null
+                : null,
+            RejectionReason = refTest.RejectionReason
         };
 }

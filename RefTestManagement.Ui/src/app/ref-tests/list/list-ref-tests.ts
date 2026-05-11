@@ -17,11 +17,15 @@ import {
   RefTestStatus,
   SortEnumType,
 } from '../../../../graphql/generated';
+import { Permissions } from '../../auth/models/permissions';
+import { PermissionsService } from '../../auth/services/permissions';
 import { Banner } from '../../shared/components/banner/banner';
 import { PullToRefresh } from '../../shared/components/pull-to-refresh/pull-to-refresh';
 import { RefTestData } from '../services/ref-test-data';
+import { ApproveRefTestsDialog } from './components/dialogs/approve-ref-tests-dialog/approve-ref-tests-dialog';
 import { DeleteRefTestsDialog } from './components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
 import { GenerateReportDialog } from './components/dialogs/generate-report-dialog/generate-report-dialog';
+import { RejectRefTestsDialog } from './components/dialogs/reject-ref-tests-dialog/reject-ref-tests-dialog';
 import { ResetRefTestsDialog } from './components/dialogs/reset-ref-tests-dialog/reset-ref-tests-dialog';
 import { ReviveRefTestsDialog } from './components/dialogs/revive-ref-tests-dialog/revive-ref-tests-dialog';
 import { SendInvitationsDialog } from './components/dialogs/send-invitations-dialog/send-invitations-dialog';
@@ -35,8 +39,6 @@ import { RefTestMobileList } from './components/ref-test-mobile-list/ref-test-mo
 import { RefTestPagination } from './components/ref-test-pagination/ref-test-pagination';
 import { RefTestPerformanceWarning } from './components/ref-test-performance-warning/ref-test-performance-warning';
 import { RefTestTable } from './components/ref-test-table/ref-test-table';
-import { PermissionsService } from '../../auth/services/permissions';
-import { Permissions } from '../../auth/models/permissions';
 import { ColumnVisibilityManager } from './services/column-visibility-manager';
 import { COLUMNS, REF_TEST_CONFIG } from './services/constants';
 import { RefTestFilterActions } from './services/ref-test-filter-actions';
@@ -64,6 +66,8 @@ import { IResetOptions, RefTestNode, SortField } from './services/types';
     GenerateReportDialog,
     ResetRefTestsDialog,
     ReviveRefTestsDialog,
+    ApproveRefTestsDialog,
+    RejectRefTestsDialog,
     PullToRefresh,
     RefTestListHero,
     RefTestListToolbar,
@@ -121,7 +125,8 @@ export class ListRefTests {
       this._permissions.hasPermission(Permissions.RefTests.SendReport) ||
       this._permissions.hasPermission(Permissions.RefTests.Delete) ||
       this._permissions.hasPermission(Permissions.RefTests.Reset) ||
-      this._permissions.hasPermission(Permissions.RefTests.Revive),
+      this._permissions.hasPermission(Permissions.RefTests.Revive) ||
+      this._permissions.hasPermission(Permissions.RefTests.Approve),
   );
 
   protected readonly canNavigate = computed(() =>
@@ -197,6 +202,9 @@ export class ListRefTests {
     this.allLoadedRefTests(),
   );
 
+  protected readonly refTestsToApproveOrReject =
+    this.selectionManager.createRefTestsToPendingApprovalComputed(() => this.allLoadedRefTests());
+
   // ========================================================================
   // COMPUTED VALUES - Selection State (delegated to selection manager)
   // ========================================================================
@@ -224,6 +232,9 @@ export class ListRefTests {
       return refTest && refTest.status === 'EXPIRED';
     });
   });
+
+  protected readonly hasPendingApprovalRefTestsSelected =
+    this.selectionManager.createHasPendingApprovalSelectedComputed(() => this.allLoadedRefTests());
 
   protected readonly allSelected = this.selectionManager.createAllSelectedComputed(
     () => this.refTests(),
@@ -518,5 +529,17 @@ export class ListRefTests {
 
   protected confirmRevive(): void {
     this.operationManager.reviveDialog.confirm();
+  }
+
+  // ========================================================================
+  // APPROVE / REJECT OPERATIONS (delegated to operation manager)
+  // ========================================================================
+
+  protected confirmApprove(): void {
+    this.operationManager.approveDialog.confirm();
+  }
+
+  protected confirmReject(reason: string): void {
+    this.operationManager.rejectDialog.confirm(reason);
   }
 }

@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Api;
@@ -23,6 +24,7 @@ var configuration = builder.Configuration;
 
 services.AddSecurityConfiguration(configuration);
 services.AddTaskBasedAuthorization();
+services.AddHttpContextAccessor();
 services.AddControllersWithViews();
 
 // Add CORS for development (allows WebSocket connections from Angular dev server)
@@ -99,7 +101,10 @@ services.AddScoped<IJobEnqueueService, JobEnqueueService>();
 services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
 services.AddSingleton<IRefTestSessionService, RefTestSessionService>();
 
+services.AddAuth0ManagementServices(configuration);
+
 // Add background services
+services.AddHostedService<PermissionSyncService>();
 services.AddHostedService<RefTestExpirationService>();
 services.AddHostedService<BackgroundJobService>();
 

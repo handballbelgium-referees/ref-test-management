@@ -4,6 +4,8 @@ query GetRefTestsAllCounts(
   $inProgressWhere: RefTestFilterInput
   $completedWhere: RefTestFilterInput
   $expiredWhere: RefTestFilterInput
+  $pendingApprovalWhere: RefTestFilterInput
+  $rejectedWhere: RefTestFilterInput
 ) {
   all: refTests(first: 0, where: $allWhere) {
     totalCount
@@ -18,6 +20,12 @@ query GetRefTestsAllCounts(
     totalCount
   }
   expired: refTests(first: 0, where: $expiredWhere) {
+    totalCount
+  }
+  pendingApproval: refTests(first: 0, where: $pendingApprovalWhere) {
+    totalCount
+  }
+  rejected: refTests(first: 0, where: $rejectedWhere) {
     totalCount
   }
 }

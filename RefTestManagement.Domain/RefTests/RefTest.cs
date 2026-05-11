@@ -63,6 +63,8 @@ public class RefTest
     public DateTime? ResultsSentAt { get; private set; }
     public string? Language { get; private set; }
 
+    public string? RejectionReason { get; private set; }
+
     [NotMapped]
     public TimeSpan? Duration => CompletedAt.HasValue && StartedAt.HasValue
         ? CompletedAt.Value - StartedAt.Value
@@ -77,7 +79,8 @@ public class RefTest
         int maxTimeInMinutes,
         List<string> questionIds,
         bool sendInvitationAutomatically,
-        bool sendResultsAutomatically)
+        bool sendResultsAutomatically,
+        bool requiresApproval = false)
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name is required", nameof(firstName));
@@ -95,7 +98,34 @@ public class RefTest
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
         return new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
-            questionIds, sendInvitationAutomatically, sendResultsAutomatically);
+            questionIds, sendInvitationAutomatically, sendResultsAutomatically)
+        {
+            Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending
+        };
+    }
+
+    public void Approve()
+    {
+        if (Status != RefTestStatus.PendingApproval && Status != RefTestStatus.Rejected)
+            throw new InvalidRefTestStatusException(
+                "Only RefTests in PendingApproval or Rejected status can be approved");
+
+        Status = RefTestStatus.Pending;
+        CreatedAt = DateTime.UtcNow;
+        RejectionReason = null;
+    }
+
+    public void Reject(string reason)
+    {
+        if (Status != RefTestStatus.PendingApproval)
+            throw new InvalidRefTestStatusException(
+                "Only RefTests in PendingApproval status can be rejected");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new RefTestValidationException("Rejection reason is required");
+
+        Status = RefTestStatus.Rejected;
+        RejectionReason = reason;
     }
 
     public void SendInvitation()

@@ -1,0 +1,97 @@
+@if (show()) {
+  <div
+    class="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4"
+    (click)="cancel.emit()"
+  >
+    <div
+      class="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden flex flex-col"
+      (click)="$event.stopPropagation()"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-neutral-200">
+        <h2 class="text-xl font-bold text-neutral-900">
+          {{ 'ref_tests.list.dialogs.approve.title' | translate }}
+        </h2>
+        <p class="text-sm text-neutral-600 mt-1">
+          {{ 'ref_tests.list.dialogs.approve.message' | translate: { count: refTests().length } }}
+        </p>
+      </div>
+
+      <!-- Banner Container -->
+      <app-banner [bannerManager]="bannerManager()" containerClass="px-6 pt-4" />
+
+      <!-- Content -->
+      <div class="px-6 py-4 overflow-y-auto flex-1 scrollbar-hide">
+        <!-- Info -->
+        <div class="bg-success-50 border border-success-200 rounded-lg p-4 mb-4">
+          <div class="flex gap-3">
+            <svg
+              class="w-5 h-5 text-success-600 shrink-0 mt-0.5"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd"
+              />
+            </svg>
+            <p class="text-sm font-medium text-success-800">
+              {{ 'ref_tests.list.dialogs.approve.info' | translate }}
+            </p>
+          </div>
+        </div>
+
+        <!-- RefTests List -->
+        <div>
+          <h3 class="text-sm font-semibold text-neutral-900 mb-2">
+            {{ 'ref_tests.list.dialogs.approve.ref_tests' | translate }}
+          </h3>
+          <ul class="space-y-1 max-h-64 overflow-y-auto scrollbar-hide">
+            @for (refTest of refTests(); track refTest.email) {
+              <li class="text-sm text-neutral-700 flex items-center gap-2 py-1">
+                <svg
+                  class="w-4 h-4 text-success-600 shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                <span class="font-medium">{{ refTest.name }}</span>
+                <span class="text-neutral-500">({{ refTest.email }})</span>
+              </li>
+            }
+          </ul>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="px-6 py-4 border-t border-neutral-200 flex gap-3 justify-end">
+        <button
+          type="button"
+          (click)="cancel.emit()"
+          class="px-4 py-2 text-sm font-medium text-neutral-700 bg-white border border-neutral-300 rounded-lg hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
+        >
+          {{ 'ref_tests.list.dialogs.approve.cancel' | translate }}
+        </button>
+        <button
+          type="button"
+          [disabled]="loading()"
+          (click)="confirm.emit()"
+          class="px-4 py-2 text-sm font-medium text-white bg-success-600 border border-transparent rounded-lg hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          @if (loading()) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+          }
+          {{ 'ref_tests.list.dialogs.approve.confirm' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+}

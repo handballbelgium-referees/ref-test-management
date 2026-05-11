@@ -40,5 +40,16 @@ subscription RefTestUpdated($id: ID!) {
     ... on RefTestCreated {
       id
     }
+    ... on RefTestApproved {
+      id
+      status
+      approvedAt
+    }
+    ... on RefTestRejected {
+      id
+      status
+      reason
+      rejectedAt
+    }
   }
 }

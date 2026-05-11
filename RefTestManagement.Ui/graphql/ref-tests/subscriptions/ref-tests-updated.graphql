@@ -52,5 +52,16 @@ subscription RefTestsUpdated {
       numberOfQuestions
       maxTimeInMinutes
     }
+    ... on RefTestApproved {
+      id
+      status
+      approvedAt
+    }
+    ... on RefTestRejected {
+      id
+      status
+      reason
+      rejectedAt
+    }
   }
 }

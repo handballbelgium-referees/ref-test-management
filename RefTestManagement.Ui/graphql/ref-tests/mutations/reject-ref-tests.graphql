@@ -1,0 +1,18 @@
+mutation RejectRefTests($input: RejectRefTestsInput!) {
+  rejectRefTests(input: $input) {
+    rejectRefTestsResult {
+      totalRequested
+      successfullyRejected
+      failed
+      rejectedRefTests {
+        id
+        status
+        rejectionReason
+      }
+      errors {
+        refTestId
+        errorMessage
+      }
+    }
+  }
+}

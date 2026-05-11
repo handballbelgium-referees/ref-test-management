@@ -8,5 +8,6 @@ public enum JobType
     InvitationEmail,
     ResultEmail,
     ReportEmail,
-    RefTestExpiration
+    RefTestExpiration,
+    ApprovalNotificationEmail
 }

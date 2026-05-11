@@ -67,6 +67,34 @@
         >
           {{ 'ref_tests.list.filters.expired' | translate }} ({{ statusCounts().expired }})
         </button>
+        @if (statusCounts().pendingApproval > 0) {
+          <button
+            *hasPermission="Permissions.RefTests.Approve"
+            type="button"
+            (click)="onStatusChange('PENDING_APPROVAL', $event.target)"
+            [class.bg-warning-100]="selectedStatus() === 'PENDING_APPROVAL'"
+            [class.text-warning-700]="selectedStatus() === 'PENDING_APPROVAL'"
+            [class.font-medium]="selectedStatus() === 'PENDING_APPROVAL'"
+            class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-warning-50 transition-colors text-xs md:text-sm whitespace-nowrap text-warning-600"
+          >
+            {{ 'ref_tests.list.filters.pending_approval' | translate }} ({{
+              statusCounts().pendingApproval
+            }})
+          </button>
+        }
+        @if (statusCounts().rejected > 0) {
+          <button
+            *hasPermission="Permissions.RefTests.Approve"
+            type="button"
+            (click)="onStatusChange('REJECTED', $event.target)"
+            [class.bg-error-100]="selectedStatus() === 'REJECTED'"
+            [class.text-error-700]="selectedStatus() === 'REJECTED'"
+            [class.font-medium]="selectedStatus() === 'REJECTED'"
+            class="px-3 md:px-4 py-1.5 md:py-2 rounded-lg hover:bg-error-50 transition-colors text-xs md:text-sm whitespace-nowrap text-error-600"
+          >
+            {{ 'ref_tests.list.filters.rejected' | translate }} ({{ statusCounts().rejected }})
+          </button>
+        }
       </div>
     </div>
     <button

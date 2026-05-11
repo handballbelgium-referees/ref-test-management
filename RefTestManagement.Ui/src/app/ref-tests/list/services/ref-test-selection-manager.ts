@@ -203,6 +203,30 @@ export class RefTestSelectionManager {
   }
 
   /**
+   * Create computed for ref tests to approve/reject (PendingApproval only)
+   */
+  createRefTestsToPendingApprovalComputed(allRefTests: () => RefTestNode[]) {
+    return computed(() => {
+      const selected = this.selectedIds();
+      const allTests = allRefTests();
+      return this.mapToParticipantInfo(
+        allTests.filter((t) => selected.has(t.id) && t.status === 'PENDING_APPROVAL'),
+      );
+    });
+  }
+
+  /**
+   * Create computed that returns true when at least one selected ref test is in PendingApproval status.
+   */
+  createHasPendingApprovalSelectedComputed(allRefTests: () => RefTestNode[]) {
+    return computed(() => {
+      const selected = this.selectedIds();
+      const allTests = allRefTests();
+      return allTests.some((t) => selected.has(t.id) && t.status === 'PENDING_APPROVAL');
+    });
+  }
+
+  /**
    * Create computed for report summary
    */
   createReportSummaryComputed(allRefTests: () => RefTestNode[]) {

@@ -15,6 +15,14 @@ public interface IEmailTemplateService
         bool passed, string resultColor, string resultBgColor, string resultIcon, string enabledLanguagesDisplay);
     Task<string> BuildCompleteReportEmailAsync(List<LanguageContent> enabledLanguages, 
         DateTime reportDate, int refTestCount);
+
+    Task<string> BuildCompleteApprovalNotificationEmailAsync(
+        string approverName,
+        string creatorName,
+        string? titleValue,
+        IReadOnlyDictionary<string, string> translations,
+        List<(string FullName, string Email)> refTestItems,
+        string baseUrl);
 }
 
 public record LanguageContent(
@@ -58,6 +66,77 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
 
         var languageSections = BuildAllReportLanguageSections(enabledLanguages, reportDate, refTestCount);
         return BuildReportEmail(logoTag, languageSections);
+    }
+
+    public async Task<string> BuildCompleteApprovalNotificationEmailAsync(
+        string approverName,
+        string creatorName,
+        string? titleValue,
+        IReadOnlyDictionary<string, string> translations,
+        List<(string FullName, string Email)> refTestItems,
+        string baseUrl)
+    {
+        var logoTag = await CreateLogoImageTag();
+
+        var t = translations;
+        var reviewUrl = $"{baseUrl.TrimEnd('/')}/ref-tests?status=PENDING_APPROVAL";
+
+        // Build the table rows
+        var rows = new StringBuilder();
+        foreach (var item in refTestItems)
+        {
+            rows.Append($@"
+                    <tr>
+                        <td style='padding: 8px 12px; border-bottom: 1px solid #e5e7eb;'>{System.Web.HttpUtility.HtmlEncode(item.FullName)}</td>
+                        <td style='padding: 8px 12px; border-bottom: 1px solid #e5e7eb;'>{System.Web.HttpUtility.HtmlEncode(item.Email)}</td>
+                    </tr>");
+        }
+
+        var titleRow = string.IsNullOrWhiteSpace(titleValue)
+            ? string.Empty
+            : $"<p style='margin: 4px 0; color: #374151;'><strong>{System.Web.HttpUtility.HtmlEncode(t["title"])}:</strong> {System.Web.HttpUtility.HtmlEncode(titleValue)}</p>";
+
+        return $@"<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <style>body {{ font-family: ui-sans-serif, system-ui, sans-serif; }}</style>
+</head>
+<body style='margin: 0; padding: 0;'>
+    <div style='max-width: 600px; margin: 20px auto; background-color: #ffffff; border-radius: 12px; overflow: hidden;'>
+        <div style='background-color: #b30510; padding: 40px 20px; text-align: center; border-radius: 12px 12px 0 0;'>
+            {logoTag}
+            <h1 style='color: #ffffff; font-size: 32px; font-weight: bold; margin: 0 0 8px 0;'>RefTest</h1>
+            <p style='color: #fecaca; font-size: 18px; margin: 0;'>Referees Handball Belgium</p>
+        </div>
+        <div style='padding: 24px;'>
+            <h2 style='margin: 0 0 16px 0; color: #111827; font-size: 22px;'>{System.Web.HttpUtility.HtmlEncode(t["heading"])}</h2>
+            <p style='margin: 0 0 8px 0; color: #374151;'>{System.Web.HttpUtility.HtmlEncode(t["introText"])}</p>
+            <p style='margin: 4px 0; color: #374151;'><strong>{System.Web.HttpUtility.HtmlEncode(t["createdBy"])}:</strong> {System.Web.HttpUtility.HtmlEncode(creatorName)}</p>
+            {titleRow}
+            <table style='width: 100%; border-collapse: collapse; margin: 20px 0; font-size: 14px;'>
+                <thead>
+                    <tr style='background-color: #f9fafb;'>
+                        <th style='padding: 10px 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #374151;'>{System.Web.HttpUtility.HtmlEncode(t["tableNameHeader"])}</th>
+                        <th style='padding: 10px 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #374151;'>{System.Web.HttpUtility.HtmlEncode(t["tableEmailHeader"])}</th>
+                    </tr>
+                </thead>
+                <tbody>{rows}</tbody>
+            </table>
+            <div style='text-align: center; margin: 24px 0;'>
+                <a href='{reviewUrl}' style='display: inline-block; background-color: #b30510; color: #ffffff; padding: 12px 28px; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 15px;'>{System.Web.HttpUtility.HtmlEncode(t["reviewButton"])}</a>
+            </div>
+            <div style='text-align: center; color: #737373; font-size: 13px; padding: 12px 0;'>
+                <p style='margin: 0;'>{System.Web.HttpUtility.HtmlEncode(t["footerNote"])}</p>
+            </div>
+            <div style='text-align: center; color: #737373; font-size: 14px; padding: 20px 0;'>
+                <p style='margin: 0; font-weight: bold; color: #000000;'>Referees Handball Belgium Team</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>";
     }
 
     private async Task<string> CreateLogoImageTag()

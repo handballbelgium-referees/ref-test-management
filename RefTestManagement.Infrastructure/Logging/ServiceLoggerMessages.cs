@@ -1,7 +1,6 @@
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
-using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Logging;

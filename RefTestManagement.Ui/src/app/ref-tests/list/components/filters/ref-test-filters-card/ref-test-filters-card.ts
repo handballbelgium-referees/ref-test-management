@@ -53,6 +53,8 @@ interface IStatusCounts {
   inProgress: number;
   completed: number;
   expired: number;
+  pendingApproval: number;
+  rejected: number;
 }
 
 @Component({

@@ -4,6 +4,7 @@ import { ApolloCache, ApolloClient, ApolloLink } from '@apollo/client';
 import { Apollo } from 'apollo-angular';
 import { catchError, EMPTY, map, switchMap, tap } from 'rxjs';
 import {
+  ApproveRefTestsGQL,
   DeleteRefTestsGQL,
   DeleteRefTestsMutation,
   GetRefTestsAllCountsGQL,
@@ -13,6 +14,7 @@ import {
   RefTestResetType,
   RefTestStatus,
   RefTestsUpdatedGQL,
+  RejectRefTestsGQL,
   ResetRefTestsGQL,
   ReviveRefTestsGQL,
   SendRefTestInvitationsGQL,
@@ -40,6 +42,8 @@ type DeletionCounts = {
   inProgress: number;
   completed: number;
   expired: number;
+  pendingApproval: number;
+  rejected: number;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -60,6 +64,8 @@ export class RefTestData {
   private readonly _sendReportGQL = inject(SendReportGQL);
   private readonly _resetRefTestsGQL = inject(ResetRefTestsGQL);
   private readonly _reviveRefTestsGQL = inject(ReviveRefTestsGQL);
+  private readonly _approveRefTestsGQL = inject(ApproveRefTestsGQL);
+  private readonly _rejectRefTestsGQL = inject(RejectRefTestsGQL);
   private readonly _refTestsUpdatedGQL = inject(RefTestsUpdatedGQL);
   private readonly _filterState = inject(RefTestFilterState);
   private readonly _queryBuilder = inject(RefTestQueryBuilder);
@@ -134,10 +140,20 @@ export class RefTestData {
         inProgress: r.data?.inProgress?.totalCount ?? 0,
         completed: r.data?.completed?.totalCount ?? 0,
         expired: r.data?.expired?.totalCount ?? 0,
+        pendingApproval: r.data?.pendingApproval?.totalCount ?? 0,
+        rejected: r.data?.rejected?.totalCount ?? 0,
       })),
     ),
     {
-      initialValue: { all: 0, pending: 0, inProgress: 0, completed: 0, expired: 0 },
+      initialValue: {
+        all: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        expired: 0,
+        pendingApproval: 0,
+        rejected: 0,
+      },
     },
   );
 
@@ -278,6 +294,45 @@ export class RefTestData {
     );
   }
 
+  approveRefTests(
+    ids: string[],
+    destroyRef: DestroyRef,
+    callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    return runMutation(
+      this._approveRefTestsGQL.mutate({ variables: { input: { ids } } }),
+      destroyRef,
+      callbacks,
+      (r) => {
+        const res = r.data?.approveRefTests?.approveRefTestsResult;
+        return {
+          successCount: res?.successfullyApproved ?? 0,
+          failedCount: res?.failed ?? 0,
+        };
+      },
+    );
+  }
+
+  rejectRefTests(
+    ids: string[],
+    reason: string,
+    destroyRef: DestroyRef,
+    callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
+  ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    return runMutation(
+      this._rejectRefTestsGQL.mutate({ variables: { input: { ids, reason } } }),
+      destroyRef,
+      callbacks,
+      (r) => {
+        const res = r.data?.rejectRefTests?.rejectRefTestsResult;
+        return {
+          successCount: res?.successfullyRejected ?? 0,
+          failedCount: res?.failed ?? 0,
+        };
+      },
+    );
+  }
+
   /* ------------------------------------------------------------------------ */
   /* Delete Cache Logic                                                       */
   /* ------------------------------------------------------------------------ */
@@ -306,9 +361,19 @@ export class RefTestData {
         else if (status === 'IN_PROGRESS') acc.inProgress++;
         else if (status === 'COMPLETED') acc.completed++;
         else if (status === 'EXPIRED') acc.expired++;
+        else if (status === 'PENDING_APPROVAL') acc.pendingApproval++;
+        else if (status === 'REJECTED') acc.rejected++;
         return acc;
       },
-      { total: 0, pending: 0, inProgress: 0, completed: 0, expired: 0 },
+      {
+        total: 0,
+        pending: 0,
+        inProgress: 0,
+        completed: 0,
+        expired: 0,
+        pendingApproval: 0,
+        rejected: 0,
+      },
     );
   }
 
@@ -329,6 +394,8 @@ export class RefTestData {
         inProgress: decrement(prev.inProgress, counts.inProgress),
         completed: decrement(prev.completed, counts.completed),
         expired: decrement(prev.expired, counts.expired),
+        pendingApproval: decrement(prev.pendingApproval, counts.pendingApproval),
+        rejected: decrement(prev.rejected, counts.rejected),
       },
     });
   }
@@ -420,9 +487,29 @@ export class RefTestData {
               this.updateStatusCounts('EXPIRED', 'PENDING');
               break;
 
+            case 'RefTestApproved':
+              this.moveRefTestBetweenStatusLists(
+                event.id,
+                { status: event.status },
+                'PENDING_APPROVAL',
+                'PENDING',
+              );
+              this.updateStatusCounts('PENDING_APPROVAL', 'PENDING');
+              break;
+
+            case 'RefTestRejected':
+              this.moveRefTestBetweenStatusLists(
+                event.id,
+                { status: event.status, rejectionReason: event.reason },
+                'PENDING_APPROVAL',
+                'REJECTED',
+              );
+              this.updateStatusCounts('PENDING_APPROVAL', 'REJECTED');
+              break;
+
             case 'RefTestCreated': {
               // We now receive the full node data in the subscription event, so we can
-              // insert the new item directly into the ALL and PENDING cached lists
+              // insert the new item directly into the ALL and PENDING/PENDING_APPROVAL cached lists
               // without evicting or triggering any network request.
               const createdEvent = event;
               const node = {
@@ -453,12 +540,15 @@ export class RefTestData {
                 answerTotal: null,
                 percentage: null,
               };
-              // Add to PENDING list (the new test is always PENDING)
-              this.addEdgeToCachedList(node as any, '', 'PENDING');
+              // Determine the initial status list
+              const createdStatus = (createdEvent.status as RefTestStatus) ?? 'PENDING';
+              const targetStatus: RefTestStatus =
+                createdStatus === 'PENDING_APPROVAL' ? 'PENDING_APPROVAL' : 'PENDING';
+              this.addEdgeToCachedList(node as any, '', targetStatus);
               // Add to ALL list (undefined = no status filter)
               this.addEdgeToCachedList(node as any, '', undefined);
               // Increment tab counters
-              this.updateStatusCounts(undefined, 'PENDING', true);
+              this.updateStatusCounts(undefined, targetStatus, true);
               break;
             }
 
@@ -720,6 +810,12 @@ export class RefTestData {
         case 'EXPIRED':
           result.expired = decrement(result.expired);
           break;
+        case 'PENDING_APPROVAL':
+          result.pendingApproval = decrement(result.pendingApproval);
+          break;
+        case 'REJECTED':
+          result.rejected = decrement(result.rejected);
+          break;
       }
 
       // Increment new status
@@ -735,6 +831,12 @@ export class RefTestData {
           break;
         case 'EXPIRED':
           result.expired = increment(result.expired);
+          break;
+        case 'PENDING_APPROVAL':
+          result.pendingApproval = increment(result.pendingApproval);
+          break;
+        case 'REJECTED':
+          result.rejected = increment(result.rejected);
           break;
       }
 
@@ -767,6 +869,12 @@ export class RefTestData {
         case 'EXPIRED':
           result.expired = decrement(result.expired);
           break;
+        case 'PENDING_APPROVAL':
+          result.pendingApproval = decrement(result.pendingApproval);
+          break;
+        case 'REJECTED':
+          result.rejected = decrement(result.rejected);
+          break;
       }
 
       return result;
@@ -795,6 +903,12 @@ export class RefTestData {
       }),
       expiredWhere: this._queryBuilder.mergeFilters(base, {
         status: { eq: 'EXPIRED' },
+      }),
+      pendingApprovalWhere: this._queryBuilder.mergeFilters(base, {
+        status: { eq: 'PENDING_APPROVAL' },
+      }),
+      rejectedWhere: this._queryBuilder.mergeFilters(base, {
+        status: { eq: 'REJECTED' },
       }),
     };
   }

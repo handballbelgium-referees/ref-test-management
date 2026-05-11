@@ -3,11 +3,13 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
@@ -158,6 +160,10 @@ public class BackgroundJobService : BackgroundService
 
                 case JobType.RefTestExpiration:
                     await ProcessRefTestExpirationJobAsync(job, serviceProvider, cancellationToken);
+                    break;
+
+                case JobType.ApprovalNotificationEmail:
+                    await ProcessApprovalNotificationEmailJobAsync(job, serviceProvider, cancellationToken);
                     break;
 
                 default:
@@ -385,6 +391,48 @@ public class BackgroundJobService : BackgroundService
             ServiceLoggerMessages.LogAutoCompleteFailed(_logger, ex, refTest.Id, refTest.Email);
             throw; // Re-throw so the job can be retried
         }
+    }
+
+    private async Task ProcessApprovalNotificationEmailJobAsync(
+        Job job,
+        IServiceProvider serviceProvider,
+        CancellationToken cancellationToken)
+    {
+        var payload = DeserializePayload<ApprovalNotificationEmailPayload>(job);
+        var auth0Service = serviceProvider.GetRequiredService<IAuth0ManagementService>();
+        var emailService = serviceProvider.GetRequiredService<IEmailService>();
+        var emailConfig = serviceProvider.GetRequiredService<EmailConfiguration>();
+
+        var approvers = await auth0Service.GetUsersWithPermissionAsync(
+            Permissions.RefTests.Approve, cancellationToken);
+
+        if (approvers.Count == 0)
+        {
+            _logger.LogWarning(
+                "No approvers found for permission '{Permission}' — approval notification email not sent",
+                Permissions.RefTests.Approve);
+            return;
+        }
+
+        var items = payload.RefTests
+            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email))
+            .ToList();
+
+        foreach (var approver in approvers)
+        {
+            await emailService.SendApprovalNotificationAsync(
+                approver.Name,
+                approver.Email,
+                payload.CreatorName,
+                payload.TitleValue,
+                items,
+                emailConfig.BaseUrl,
+                cancellationToken);
+        }
+
+        _logger.LogInformation(
+            "Approval notification sent to {Count} approver(s) for {RefTestCount} RefTest(s)",
+            approvers.Count, payload.RefTests.Count);
     }
 
     private T DeserializePayload<T>(Job job) where T : IJobPayload

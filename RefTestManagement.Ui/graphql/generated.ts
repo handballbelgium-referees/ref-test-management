@@ -5,6 +5,10 @@ export type Incremental<T> = T | { [P in keyof T]?: P extends ' $fragmentName' |
 import { gql } from 'apollo-angular';
 import { Injectable } from '@angular/core';
 import * as Apollo from 'apollo-angular';
+export type ApproveRefTestsInput = {
+  ids: Array<string | number>;
+};
+
 export type BooleanOperationFilterInput = {
   eq?: boolean | null | undefined;
   neq?: boolean | null | undefined;
@@ -185,7 +189,9 @@ export type RefTestStatus =
   | 'COMPLETED'
   | 'EXPIRED'
   | 'IN_PROGRESS'
-  | 'PENDING';
+  | 'PENDING'
+  | 'PENDING_APPROVAL'
+  | 'REJECTED';
 
 export type RefTestStatusOperationFilterInput = {
   eq?: RefTestStatus | null | undefined;
@@ -210,6 +216,11 @@ export type RefTestTitleSortInput = {
 
 export type RegenerateRefTestTokenInput = {
   refTestId: string | number;
+};
+
+export type RejectRefTestsInput = {
+  ids: Array<string | number>;
+  reason: string;
 };
 
 export type ResetRefTestsInput = {
@@ -360,6 +371,13 @@ export type RefTestTimeExtendedSubscriptionVariables = Exact<{
 
 export type RefTestTimeExtendedSubscription = { refTestTimeExtended: { id: string, newMaxTimeInMinutes: number } };
 
+export type ApproveRefTestsMutationVariables = Exact<{
+  input: ApproveRefTestsInput;
+}>;
+
+
+export type ApproveRefTestsMutation = { approveRefTests: { approveRefTestsResult: { totalRequested: number, successfullyApproved: number, failed: number, approvedRefTests: Array<{ id: string, status: RefTestStatus, createdAt: string, invitationSent: boolean }>, errors: Array<{ refTestId: string, errorMessage: string }> } | null } };
+
 export type CreateRefTestsMutationVariables = Exact<{
   input: CreateRefTestsInput;
 }>;
@@ -393,6 +411,13 @@ export type RegenerateRefTestTokenMutation = { regenerateRefTestToken: { refTest
       | { message: string }
       | { message: string }
     > | null } };
+
+export type RejectRefTestsMutationVariables = Exact<{
+  input: RejectRefTestsInput;
+}>;
+
+
+export type RejectRefTestsMutation = { rejectRefTests: { rejectRefTestsResult: { totalRequested: number, successfullyRejected: number, failed: number, rejectedRefTests: Array<{ id: string, status: RefTestStatus, rejectionReason: string | null }>, errors: Array<{ refTestId: string, errorMessage: string }> } | null } };
 
 export type ResetRefTestsMutationVariables = Exact<{
   input: ResetRefTestsInput;
@@ -485,10 +510,12 @@ export type GetRefTestsAllCountsQueryVariables = Exact<{
   inProgressWhere?: RefTestFilterInput | null | undefined;
   completedWhere?: RefTestFilterInput | null | undefined;
   expiredWhere?: RefTestFilterInput | null | undefined;
+  pendingApprovalWhere?: RefTestFilterInput | null | undefined;
+  rejectedWhere?: RefTestFilterInput | null | undefined;
 }>;
 
 
-export type GetRefTestsAllCountsQuery = { all: { totalCount: number } | null, pending: { totalCount: number } | null, inProgress: { totalCount: number } | null, completed: { totalCount: number } | null, expired: { totalCount: number } | null };
+export type GetRefTestsAllCountsQuery = { all: { totalCount: number } | null, pending: { totalCount: number } | null, inProgress: { totalCount: number } | null, completed: { totalCount: number } | null, expired: { totalCount: number } | null, pendingApproval: { totalCount: number } | null, rejected: { totalCount: number } | null };
 
 export type GetRefTestsQueryVariables = Exact<{
   first?: number | null | undefined;
@@ -523,11 +550,13 @@ export type RefTestUpdatedSubscriptionVariables = Exact<{
 
 
 export type RefTestUpdatedSubscription = { refTestUpdated:
+    | { __typename: 'RefTestApproved', id: string, status: RefTestStatus, approvedAt: string }
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestCreated', id: string }
     | { __typename: 'RefTestDeleted', id: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
+    | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
     | { __typename: 'RefTestReset', id: string, oldStatus: RefTestStatus }
     | { __typename: 'RefTestResultSent', id: string }
     | { __typename: 'RefTestRevived', id: string }
@@ -538,11 +567,13 @@ export type RefTestsUpdatedSubscriptionVariables = Exact<{ [key: string]: never;
 
 
 export type RefTestsUpdatedSubscription = { refTestsUpdated:
+    | { __typename: 'RefTestApproved', id: string, status: RefTestStatus, approvedAt: string }
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestCreated', id: string, name: string, email: string, titleId: string | null, titleValue: string | null, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number }
     | { __typename: 'RefTestDeleted', id: string, status: RefTestStatus }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
+    | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
     | { __typename: 'RefTestReset', id: string, oldStatus: RefTestStatus }
     | { __typename: 'RefTestResultSent', id: string }
     | { __typename: 'RefTestRevived', id: string }
@@ -747,6 +778,38 @@ export const RefTestTimeExtendedDocument = gql`
       super(apollo);
     }
   }
+export const ApproveRefTestsDocument = gql`
+    mutation ApproveRefTests($input: ApproveRefTestsInput!) {
+  approveRefTests(input: $input) {
+    approveRefTestsResult {
+      totalRequested
+      successfullyApproved
+      failed
+      approvedRefTests {
+        id
+        status
+        createdAt
+        invitationSent
+      }
+      errors {
+        refTestId
+        errorMessage
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class ApproveRefTestsGQL extends Apollo.Mutation<ApproveRefTestsMutation, ApproveRefTestsMutationVariables> {
+    override document = ApproveRefTestsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const CreateRefTestsDocument = gql`
     mutation CreateRefTests($input: CreateRefTestsInput!) {
   createRefTests(input: $input) {
@@ -859,6 +922,37 @@ export const RegenerateRefTestTokenDocument = gql`
   })
   export class RegenerateRefTestTokenGQL extends Apollo.Mutation<RegenerateRefTestTokenMutation, RegenerateRefTestTokenMutationVariables> {
     override document = RegenerateRefTestTokenDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RejectRefTestsDocument = gql`
+    mutation RejectRefTests($input: RejectRefTestsInput!) {
+  rejectRefTests(input: $input) {
+    rejectRefTestsResult {
+      totalRequested
+      successfullyRejected
+      failed
+      rejectedRefTests {
+        id
+        status
+        rejectionReason
+      }
+      errors {
+        refTestId
+        errorMessage
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RejectRefTestsGQL extends Apollo.Mutation<RejectRefTestsMutation, RejectRefTestsMutationVariables> {
+    override document = RejectRefTestsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
@@ -1229,7 +1323,7 @@ export const GetRefTestByIdDocument = gql`
     }
   }
 export const GetRefTestsAllCountsDocument = gql`
-    query GetRefTestsAllCounts($allWhere: RefTestFilterInput, $pendingWhere: RefTestFilterInput, $inProgressWhere: RefTestFilterInput, $completedWhere: RefTestFilterInput, $expiredWhere: RefTestFilterInput) {
+    query GetRefTestsAllCounts($allWhere: RefTestFilterInput, $pendingWhere: RefTestFilterInput, $inProgressWhere: RefTestFilterInput, $completedWhere: RefTestFilterInput, $expiredWhere: RefTestFilterInput, $pendingApprovalWhere: RefTestFilterInput, $rejectedWhere: RefTestFilterInput) {
   all: refTests(first: 0, where: $allWhere) {
     totalCount
   }
@@ -1243,6 +1337,12 @@ export const GetRefTestsAllCountsDocument = gql`
     totalCount
   }
   expired: refTests(first: 0, where: $expiredWhere) {
+    totalCount
+  }
+  pendingApproval: refTests(first: 0, where: $pendingApprovalWhere) {
+    totalCount
+  }
+  rejected: refTests(first: 0, where: $rejectedWhere) {
     totalCount
   }
 }
@@ -1398,6 +1498,17 @@ export const RefTestUpdatedDocument = gql`
     ... on RefTestCreated {
       id
     }
+    ... on RefTestApproved {
+      id
+      status
+      approvedAt
+    }
+    ... on RefTestRejected {
+      id
+      status
+      reason
+      rejectedAt
+    }
   }
 }
     `;
@@ -1466,6 +1577,17 @@ export const RefTestsUpdatedDocument = gql`
       status
       numberOfQuestions
       maxTimeInMinutes
+    }
+    ... on RefTestApproved {
+      id
+      status
+      approvedAt
+    }
+    ... on RefTestRejected {
+      id
+      status
+      reason
+      rejectedAt
     }
   }
 }

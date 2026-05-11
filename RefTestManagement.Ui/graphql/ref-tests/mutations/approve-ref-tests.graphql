@@ -1,0 +1,19 @@
+mutation ApproveRefTests($input: ApproveRefTestsInput!) {
+  approveRefTests(input: $input) {
+    approveRefTestsResult {
+      totalRequested
+      successfullyApproved
+      failed
+      approvedRefTests {
+        id
+        status
+        createdAt
+        invitationSent
+      }
+      errors {
+        refTestId
+        errorMessage
+      }
+    }
+  }
+}

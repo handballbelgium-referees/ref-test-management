@@ -8,6 +8,7 @@ public interface ITranslationService
     IReadOnlyDictionary<string, string> GetEmailInvitationTranslations(string language);
     IReadOnlyDictionary<string, string> GetEmailResultsTranslations(string language);
     IReadOnlyDictionary<string, string> GetEmailReportTranslations(string language);
+    IReadOnlyDictionary<string, string> GetEmailApprovalNotificationTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfResultsTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfReportTranslations(string language);
     IReadOnlyDictionary<string, string> GetReportColumnTranslations(string language);
@@ -21,6 +22,7 @@ public class TranslationService : ITranslationService
     private readonly Dictionary<string, Dictionary<string, string>> _emailInvitationTranslations = InitializeEmailInvitationTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailResultsTranslations = InitializeEmailResultsTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailReportTranslations = InitializeEmailReportTranslations();
+    private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalNotificationTranslations = InitializeEmailApprovalNotificationTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfResultsTranslations = InitializePdfResultsTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfReportTranslations = InitializePdfReportTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _reportColumnTranslations = InitializeReportColumnTranslations();
@@ -45,6 +47,13 @@ public class TranslationService : ITranslationService
         return _emailReportTranslations.TryGetValue(language, out var translations)
             ? translations
             : _emailReportTranslations["en"];
+    }
+
+    public IReadOnlyDictionary<string, string> GetEmailApprovalNotificationTranslations(string language)
+    {
+        return _emailApprovalNotificationTranslations.TryGetValue(language, out var translations)
+            ? translations
+            : _emailApprovalNotificationTranslations["en"];
     }
 
     public IReadOnlyDictionary<string, string> GetPdfResultsTranslations(string language)
@@ -274,8 +283,62 @@ public class TranslationService : ITranslationService
         };
     }
 
-    private static Dictionary<string, Dictionary<string, string>> InitializePdfResultsTranslations()
+    private static Dictionary<string, Dictionary<string, string>> InitializeEmailApprovalNotificationTranslations()
     {
+        return new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["subject"] = "RefTests Awaiting Your Approval",
+                ["heading"] = "RefTests Awaiting Approval",
+                ["introText"] = "The following RefTests were created and require your approval before invitations are sent.",
+                ["createdBy"] = "Created by",
+                ["title"] = "Title",
+                ["tableNameHeader"] = "Name",
+                ["tableEmailHeader"] = "Email",
+                ["reviewButton"] = "Review Pending Tests",
+                ["footerNote"] = "You are receiving this email because you have approval rights in RefTest Management."
+            },
+            ["nl"] = new()
+            {
+                ["subject"] = "RefTests wachten op uw goedkeuring",
+                ["heading"] = "RefTests wachten op goedkeuring",
+                ["introText"] = "De volgende RefTests zijn aangemaakt en wachten op uw goedkeuring voordat uitnodigingen worden verstuurd.",
+                ["createdBy"] = "Aangemaakt door",
+                ["title"] = "Titel",
+                ["tableNameHeader"] = "Naam",
+                ["tableEmailHeader"] = "E-mail",
+                ["reviewButton"] = "Openstaande tests beoordelen",
+                ["footerNote"] = "U ontvangt deze e-mail omdat u goedkeuringsrechten heeft in RefTest Management."
+            },
+            ["fr"] = new()
+            {
+                ["subject"] = "RefTests en attente de votre approbation",
+                ["heading"] = "RefTests en attente d'approbation",
+                ["introText"] = "Les RefTests suivants ont été créés et nécessitent votre approbation avant l'envoi des invitations.",
+                ["createdBy"] = "Créé par",
+                ["title"] = "Titre",
+                ["tableNameHeader"] = "Nom",
+                ["tableEmailHeader"] = "E-mail",
+                ["reviewButton"] = "Examiner les tests en attente",
+                ["footerNote"] = "Vous recevez cet e-mail car vous disposez de droits d'approbation dans RefTest Management."
+            },
+            ["de"] = new()
+            {
+                ["subject"] = "RefTests warten auf Ihre Genehmigung",
+                ["heading"] = "RefTests warten auf Genehmigung",
+                ["introText"] = "Die folgenden RefTests wurden erstellt und warten auf Ihre Genehmigung, bevor Einladungen verschickt werden.",
+                ["createdBy"] = "Erstellt von",
+                ["title"] = "Titel",
+                ["tableNameHeader"] = "Name",
+                ["tableEmailHeader"] = "E-Mail",
+                ["reviewButton"] = "Ausstehende Tests prüfen",
+                ["footerNote"] = "Sie erhalten diese E-Mail, weil Sie Genehmigungsrechte in RefTest Management haben."
+            }
+        };
+    }
+
+    private static Dictionary<string, Dictionary<string, string>> InitializePdfResultsTranslations()    {
         return new Dictionary<string, Dictionary<string, string>>
         {
             ["en"] = new()

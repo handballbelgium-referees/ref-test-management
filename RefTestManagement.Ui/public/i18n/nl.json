@@ -85,6 +85,8 @@
         "in_progress": "Bezig",
         "completed": "Voltooid",
         "expired": "Verlopen",
+        "pending_approval": "Wacht op Goedkeuring",
+        "rejected": "Afgewezen",
         "title_label": "RefTest Titel",
         "title_all": "Alle Titels",
         "title_search_placeholder": "Titels zoeken...",
@@ -181,6 +183,10 @@
         "reset_tests": "Tests Resetten",
         "revive_test": "Test Herstellen",
         "revive_tests": "Tests Herstellen",
+        "approve_test": "Test Goedkeuren",
+        "approve_tests": "Tests Goedkeuren",
+        "reject_test": "Test Weigeren",
+        "reject_tests": "Tests Weigeren",
         "delete": "Verwijderen"
       },
       "dialogs": {
@@ -240,6 +246,25 @@
           "ref_tests": "RefTests die hersteld worden:",
           "confirm": "RefTests Herstellen",
           "cancel": "Annuleren"
+        },
+        "approve": {
+          "title": "RefTests Goedkeuren",
+          "message": "{{count}} RefTest(s) goedkeuren?",
+          "info": "Goedgekeurde tests worden geactiveerd en uitnodigingen worden verzonden volgens hun instellingen.",
+          "ref_tests": "Goed te keuren RefTests:",
+          "confirm": "Goedkeuren",
+          "cancel": "Annuleren"
+        },
+        "reject": {
+          "title": "RefTests Weigeren",
+          "message": "{{count}} RefTest(s) weigeren?",
+          "warning": "Geweigerde tests worden niet geactiveerd. De aanmaker moet opnieuw goedkeuring aanvragen.",
+          "reason_label": "Reden van Weigering",
+          "reason_placeholder": "Geef een reden voor weigering...",
+          "reason_required": "Een reden voor weigering is verplicht.",
+          "ref_tests": "Te weigeren RefTests:",
+          "confirm": "Weigeren",
+          "cancel": "Annuleren"
         }
       },
       "report": {
@@ -257,6 +282,12 @@
       "revive_success": "{{count}} RefTest(s) succesvol hersteld",
       "revive_error": "Fout bij herstellen van RefTests",
       "revive_partial_error": "{{count}} RefTest(s) konden niet worden hersteld",
+      "approve_success": "{{count}} RefTest(s) succesvol goedgekeurd",
+      "approve_error": "Fout bij goedkeuren van RefTests",
+      "approve_partial_error": "{{count}} RefTest(s) konden niet worden goedgekeurd",
+      "reject_success": "{{count}} RefTest(s) succesvol geweigerd",
+      "reject_error": "Fout bij weigeren van RefTests",
+      "reject_partial_error": "{{count}} RefTest(s) konden niet worden geweigerd",
       "invitations_sent": "Uitnodigingen succesvol verstuurd",
       "invitations_error": "Fout bij versturen van uitnodigingen",
       "results_sent": "Resultaten succesvol verstuurd",

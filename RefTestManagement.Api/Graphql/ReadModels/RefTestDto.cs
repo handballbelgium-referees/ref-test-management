@@ -47,4 +47,6 @@ public sealed class RefTestDto
     public string? Language { get; init; }
 
     public TimeSpan? Duration { get; init; }
+
+    public string? RejectionReason { get; init; }
 }

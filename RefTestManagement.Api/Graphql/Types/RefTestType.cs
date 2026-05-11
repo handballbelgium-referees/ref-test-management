@@ -3,7 +3,6 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
-using Handball.Belgium.RefTestManagement.Security;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 
@@ -65,6 +64,7 @@ public class RefTestType : ObjectType<RefTestDto>
                     ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"),
                     ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
         descriptor.Field(x => x.Language).Description("Language where the RefTest was taken").Authorize();
+        descriptor.Field(x => x.RejectionReason).Description("Reason why the RefTest was rejected during approval review").Authorize();
     }
 
     /// <summary>
