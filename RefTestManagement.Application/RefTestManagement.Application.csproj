@@ -12,7 +12,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="StrawberryShake.Server" Version="16.0.0" />
+      <PackageReference Include="StrawberryShake.Server" Version="16.0.2" />
       <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
       <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
     </ItemGroup>
