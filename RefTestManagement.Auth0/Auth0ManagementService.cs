@@ -1,5 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -61,6 +62,10 @@ internal sealed class Auth0ManagementService(
         // Collect user IDs from roles that include the permission
         var userIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
+        // Derive the namespace wildcard (e.g. "ref-tests:*" for "ref-tests:approve")
+        var colonIndex = permission.IndexOf(':');
+        var wildcardPermission = colonIndex >= 0 ? string.Concat(permission.AsSpan(0, colonIndex + 1), "*") : null;
+
         var roles = await GetAllPagesAsync<RoleResponse>(
             $"https://{_config.Domain}/api/v2/roles",
             token,
@@ -73,7 +78,12 @@ internal sealed class Auth0ManagementService(
                 token,
                 cancellationToken);
 
-            if (!rolePermissions.Any(p => string.Equals(p.PermissionName, permission, StringComparison.OrdinalIgnoreCase)))
+            var hasPermission = rolePermissions.Any(p =>
+                string.Equals(p.PermissionName, permission, StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(p.PermissionName, Permissions.Superadmin, StringComparison.OrdinalIgnoreCase) ||
+                (wildcardPermission != null && string.Equals(p.PermissionName, wildcardPermission, StringComparison.OrdinalIgnoreCase)));
+
+            if (!hasPermission)
                 continue;
 
             var roleUsers = await GetAllPagesAsync<UserIdResponse>(
