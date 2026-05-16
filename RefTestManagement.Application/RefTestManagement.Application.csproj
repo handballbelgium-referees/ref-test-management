@@ -12,9 +12,9 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="StrawberryShake.Server" Version="16.0.0" />
-      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.7" />
-      <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.7" />
+      <PackageReference Include="StrawberryShake.Server" Version="16.0.3" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="10.0.8" />
+      <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.8" />
     </ItemGroup>
 </Project>
 
