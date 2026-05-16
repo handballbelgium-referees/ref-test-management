@@ -60,8 +60,9 @@ public class EmailService(
 
         var firstRefTestUrl =
             enabledLanguages.FirstOrDefault()?.RefTestUrl ?? $"{configuration.BaseUrl}/ref-test/{token}";
-        
-        ServiceLoggerMessages.LogSendingRefTestInvitation(logger, email, token, numberOfQuestions, maxTimeInMinutes, firstRefTestUrl);
+
+        ServiceLoggerMessages.LogSendingRefTestInvitation(logger, email, token, numberOfQuestions, maxTimeInMinutes,
+            firstRefTestUrl);
 
         await SendEmailAsync(email, subject, emailBody, cancellationToken: cancellationToken);
 
@@ -98,7 +99,8 @@ public class EmailService(
                     questionsWithCorrectAnswers)
             select new EmailAttachment($"RefTest_Results_{langUpper}.pdf", pdfBytes)).ToList();
 
-        ServiceLoggerMessages.LogSendingRefTestResults(logger, email, questionScore, totalQuestions, answerScore, answerTotal, percentage);
+        ServiceLoggerMessages.LogSendingRefTestResults(logger, email, questionScore, totalQuestions, answerScore,
+            answerTotal, percentage);
 
         await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail, cancellationToken);
 
@@ -205,12 +207,17 @@ public class EmailService(
         string baseUrl,
         CancellationToken cancellationToken)
     {
-        // Use a single language (English default) for internal staff emails
-        var translations = translationService.GetEmailApprovalNotificationTranslations("en");
-        var subject = translations["subject"];
+        var enabledLanguages = languageConfiguration.EnabledLanguages
+            .Select(lang => new LanguageContent(
+                string.Empty,
+                translationService.GetEmailApprovalNotificationTranslations(lang)))
+            .ToList();
+
+        var subject = translationService.GetEmailApprovalNotificationTranslations(
+            languageConfiguration.EnabledLanguages.FirstOrDefault() ?? "en")["subject"];
 
         var emailBody = await templateService.BuildCompleteApprovalNotificationEmailAsync(
-            approverName, creatorName, titleValue, translations, refTestItems, baseUrl);
+            enabledLanguages, creatorName, titleValue, refTestItems, baseUrl);
 
         await SendEmailAsync(approverEmail, subject, emailBody, cancellationToken: cancellationToken);
 
