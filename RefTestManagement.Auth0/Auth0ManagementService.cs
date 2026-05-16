@@ -62,14 +62,14 @@ internal sealed class Auth0ManagementService(
         var userIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         var roles = await GetAllPagesAsync<RoleResponse>(
-            $"https://{_config.Domain}/api/v2/roles?per_page=100",
+            $"https://{_config.Domain}/api/v2/roles",
             token,
             cancellationToken);
 
         foreach (var role in roles)
         {
             var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
-                $"https://{_config.Domain}/api/v2/roles/{role.Id}/permissions?per_page=100",
+                $"https://{_config.Domain}/api/v2/roles/{role.Id}/permissions",
                 token,
                 cancellationToken);
 
@@ -77,7 +77,7 @@ internal sealed class Auth0ManagementService(
                 continue;
 
             var roleUsers = await GetAllPagesAsync<UserIdResponse>(
-                $"https://{_config.Domain}/api/v2/roles/{role.Id}/users?per_page=100",
+                $"https://{_config.Domain}/api/v2/roles/{role.Id}/users",
                 token,
                 cancellationToken);
 
@@ -119,7 +119,7 @@ internal sealed class Auth0ManagementService(
 
         // Find the API resource server by audience
         var apis = await GetAllPagesAsync<ResourceServerResponse>(
-            $"https://{_config.Domain}/api/v2/resource-servers?per_page=100",
+            $"https://{_config.Domain}/api/v2/resource-servers",
             token,
             cancellationToken);
 
