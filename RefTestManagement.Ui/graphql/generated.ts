@@ -24,6 +24,7 @@ export type CreateRefTestsInput = {
   maxTimeInMinutes: number;
   numberOfQuestions: number;
   randomQuestionsForEachUser: boolean;
+  scheduledAt?: string | null | undefined;
   sendAutomatedInvitations?: boolean;
   sendAutomatedResults?: boolean;
   specificQuestionNumbers?: Array<string> | null | undefined;

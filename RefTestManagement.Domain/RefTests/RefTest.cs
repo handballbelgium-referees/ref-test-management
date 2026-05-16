@@ -65,6 +65,12 @@ public class RefTest
 
     public string? RejectionReason { get; private set; }
 
+    /// <summary>
+    /// The date/time from which this RefTest can be started. Set during approval when
+    /// SendInvitationsAutomatically is true — the invitation email fires at this time.
+    /// </summary>
+    public DateTime? ScheduledAt { get; private set; }
+
     [NotMapped]
     public TimeSpan? Duration => CompletedAt.HasValue && StartedAt.HasValue
         ? CompletedAt.Value - StartedAt.Value
@@ -80,7 +86,8 @@ public class RefTest
         List<string> questionIds,
         bool sendInvitationAutomatically,
         bool sendResultsAutomatically,
-        bool requiresApproval = false)
+        bool requiresApproval = false,
+        DateTime? scheduledAt = null)
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name is required", nameof(firstName));
@@ -100,7 +107,8 @@ public class RefTest
         return new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
             questionIds, sendInvitationAutomatically, sendResultsAutomatically)
         {
-            Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending
+            Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending,
+            ScheduledAt = scheduledAt
         };
     }
 
@@ -113,6 +121,7 @@ public class RefTest
         Status = RefTestStatus.Pending;
         CreatedAt = DateTime.UtcNow;
         RejectionReason = null;
+        // ScheduledAt is preserved as set by the creator
     }
 
     public void Reject(string reason)
@@ -137,6 +146,10 @@ public class RefTest
     {
         if (Status != RefTestStatus.Pending)
             throw new InvalidRefTestStatusException("RefTest can only be started from Pending status");
+
+        if (ScheduledAt.HasValue && ScheduledAt.Value > DateTime.UtcNow)
+            throw new RefTestValidationException(
+                $"This ref test is not yet available. It can be started from {ScheduledAt.Value:yyyy-MM-dd HH:mm} UTC");
 
         Status = RefTestStatus.InProgress;
         StartedAt = DateTime.UtcNow;

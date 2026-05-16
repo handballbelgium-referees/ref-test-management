@@ -65,6 +65,7 @@ public class RefTestType : ObjectType<RefTestDto>
                     ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
         descriptor.Field(x => x.Language).Description("Language where the RefTest was taken").Authorize();
         descriptor.Field(x => x.RejectionReason).Description("Reason why the RefTest was rejected during approval review").Authorize();
+        descriptor.Field(x => x.ScheduledAt).Description("Date/time from which this RefTest can be started; invitation email fires at this time when automated invitations are enabled").Authorize();
     }
 
     /// <summary>

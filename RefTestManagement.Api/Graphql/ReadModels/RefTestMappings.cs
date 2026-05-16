@@ -45,6 +45,7 @@ public static class RefTestMappings
             Duration = refTest.CompletedAt != null && refTest.StartedAt != null
                 ? refTest.CompletedAt.Value - refTest.StartedAt.Value
                 : null,
-            RejectionReason = refTest.RejectionReason
+            RejectionReason = refTest.RejectionReason,
+            ScheduledAt = refTest.ScheduledAt
         };
 }

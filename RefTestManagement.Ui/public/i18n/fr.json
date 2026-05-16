@@ -530,6 +530,11 @@
           "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des RefTests",
           "description": "Les participants recevront un e-mail avec leur lien de RefTest"
         },
+        "scheduled_at": {
+          "label": "Planifier pour",
+          "optional": "(facultatif)",
+          "description": "Laissez vide pour envoyer l'invitation immédiatement. Définissez une date/heure pour retarder jusqu'à ce moment."
+        },
         "send_results": {
           "label": "Envoyer les e-mails de résultats",
           "hint": "Cochez pour envoyer les e-mails de résultats immédiatement après la création des RefTests",

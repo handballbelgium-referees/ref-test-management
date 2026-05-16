@@ -6,7 +6,6 @@
   </div>
 </div>
 
-
 <!-- Main Content -->
 <div class="bg-neutral-50 py-8 px-4">
   <div class="max-w-7xl mx-auto">
@@ -346,6 +345,25 @@
                   </p>
                 </label>
               </div>
+
+              <!-- Scheduled date/time (shown when Send Invitations is checked) -->
+              @if (refTestModel().sendInvitations) {
+                <div class="ml-7 flex flex-col gap-1">
+                  <label class="text-sm font-medium text-neutral-700">
+                    {{ 'ref_tests.create.form.scheduled_at.label' | translate }}
+                    <span class="font-normal text-neutral-500 ml-1">
+                      {{ 'ref_tests.create.form.scheduled_at.optional' | translate }}
+                    </span>
+                  </label>
+                  <app-datetime-picker
+                    [value]="refTestModel().scheduledAt"
+                    (valueChange)="onScheduledAtChange($event)"
+                  />
+                  <p class="text-xs text-neutral-500">
+                    {{ 'ref_tests.create.form.scheduled_at.description' | translate }}
+                  </p>
+                </div>
+              }
 
               <!-- Send Results -->
               <div class="flex items-start gap-3">

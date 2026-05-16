@@ -72,6 +72,7 @@ public static class RefTestApprovalMutations
                                 refTest.Token,
                                 refTest.NumberOfQuestions,
                                 refTest.MaxTimeInMinutes),
+                            executeAfter: refTest.ScheduledAt,
                             cancellationToken: cancellationToken);
                     }
                     catch (Exception ex)

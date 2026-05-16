@@ -533,6 +533,11 @@
           "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der RefTests zu senden",
           "description": "Teilnehmer erhalten eine E-Mail mit ihrem RefTest-Link"
         },
+        "scheduled_at": {
+          "label": "Planen für",
+          "optional": "(optional)",
+          "description": "Leer lassen, um die Einladung sofort zu senden. Datum/Uhrzeit festlegen, um bis zu diesem Zeitpunkt zu warten."
+        },
         "send_results": {
           "label": "Ergebnis-E-Mails senden",
           "hint": "Aktivieren, um Ergebnis-E-Mails sofort nach Erstellung der RefTests zu senden",

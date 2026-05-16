@@ -529,6 +529,11 @@
           "hint": "Check to send invitation emails immediately after creating RefTests",
           "description": "Participants will receive an email with their RefTest link"
         },
+        "scheduled_at": {
+          "label": "Schedule for",
+          "optional": "(optional)",
+          "description": "Leave empty to send the invitation immediately. Set a date/time to delay until that moment."
+        },
         "send_results": {
           "label": "Send result emails",
           "hint": "Check to send result emails immediately after creating RefTests",

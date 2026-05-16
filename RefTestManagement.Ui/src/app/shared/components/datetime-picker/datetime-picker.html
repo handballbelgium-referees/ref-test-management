@@ -1,0 +1,17 @@
+<div class="flex flex-wrap items-start gap-2">
+  <!-- Date part -->
+  <div class="flex-1 min-w-40">
+    <app-datepicker [value]="dateValue()" (dateChange)="onDateChange($event)" />
+  </div>
+
+  <!-- Time part — only shown once a date is selected -->
+  @if (dateValue()) {
+    <div class="shrink-0 w-24">
+      <app-time-picker
+        [value]="timeValue()"
+        (valueChange)="onTimeChange($event)"
+        (clear)="onTimeClear()"
+      />
+    </div>
+  }
+</div>

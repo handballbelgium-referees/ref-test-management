@@ -529,6 +529,11 @@
           "hint": "Vink aan om uitnodigingsmails direct na aanmaken van RefTests te versturen",
           "description": "Deelnemers ontvangen een e-mail met hun RefTest-link"
         },
+        "scheduled_at": {
+          "label": "Inplannen voor",
+          "optional": "(optioneel)",
+          "description": "Leeg laten om de uitnodiging onmiddellijk te versturen. Stel een datum/tijd in om te wachten tot dat moment."
+        },
         "send_results": {
           "label": "Resultatenmails versturen",
           "hint": "Vink aan om resultaatmails direct na aanmaken van RefTests te versturen",

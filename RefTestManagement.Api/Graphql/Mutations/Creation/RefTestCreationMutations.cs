@@ -128,7 +128,8 @@ public static class RefTestCreationMutations
                     input.NumberOfQuestions, input.MaxTimeInMinutes,
                     questionIds,
                     input.SendAutomatedInvitations, input.SendAutomatedResults,
-                    requiresApproval: requiresApproval));
+                    requiresApproval: requiresApproval,
+                    scheduledAt: input.ScheduledAt));
 
                 result.SuccessfullyCreated++;
             }
@@ -201,6 +202,7 @@ public static class RefTestCreationMutations
                     new InvitationEmailPayload(
                         refTest.Id, refTest.FullName, refTest.Email,
                         refTest.Token, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes),
+                    executeAfter: refTest.ScheduledAt,
                     cancellationToken: cancellationToken);
 
                 result.CreatedRefTests.Add(refTest.ToDto());

@@ -104,7 +104,9 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 
         builder.Property(x => x.RejectionReason)
             .HasMaxLength(1000);
-        
+
+        builder.Property(x => x.ScheduledAt);
+
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreatedAt);
