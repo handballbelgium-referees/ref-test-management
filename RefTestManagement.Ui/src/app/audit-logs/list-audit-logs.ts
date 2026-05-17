@@ -18,6 +18,7 @@ import { AuditLogData } from './audit-log-data';
 export class ListAuditLogs {
   private readonly _data = inject(AuditLogData);
   private readonly _permissions = inject(PermissionsService);
+  private readonly _datePipe = inject(DatePipe);
 
   protected readonly Permissions = Permissions;
   protected readonly loading = this._data.loading;
@@ -91,6 +92,15 @@ export class ListAuditLogs {
   protected formatListValue(items: string[]): string {
     if (items.length <= 5) return items.join(', ');
     return `${items.slice(0, 3).join(', ')} … (${items.length} items)`;
+  }
+
+  protected formatChangeValue(value: unknown): string {
+    if (value === null || value === undefined) return '';
+    const str = String(value);
+    if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)) {
+      return this._datePipe.transform(str, 'dd/MM/yyyy HH:mm:ss') ?? str;
+    }
+    return str;
   }
 
   private isEmptyChange(v: ChangesValue): boolean {

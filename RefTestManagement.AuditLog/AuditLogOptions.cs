@@ -9,6 +9,7 @@ public class AuditLogOptions
     public int RetentionDays { get; set; } = 90;
 
     internal HashSet<Type> ExcludedEntityTypes { get; } = [];
+    internal HashSet<Type> ExcludedForSystemActorTypes { get; } = [];
     internal HashSet<string> ExcludedPropertyNames { get; } = [];
     internal HashSet<string> ListPropertyNames { get; } = [];
     internal Dictionary<string, (string OutputKey, Func<object, DbContext, object?> Resolver)> PropertyResolvers { get; } = new();
@@ -17,6 +18,12 @@ public class AuditLogOptions
     public AuditLogOptions ExcludeEntity<T>()
     {
         ExcludedEntityTypes.Add(typeof(T));
+        return this;
+    }
+
+    public AuditLogOptions ExcludeEntityForSystemActor<T>()
+    {
+        ExcludedForSystemActorTypes.Add(typeof(T));
         return this;
     }
 

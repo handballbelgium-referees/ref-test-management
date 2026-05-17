@@ -48,6 +48,7 @@ var auditLogOptions = services.AddAuditLogging(opts =>
     opts.RetentionDays = section.GetValue("RetentionDays", 90);
 
     opts.ExcludeEntity<Handball.Belgium.RefTestManagement.Domain.Jobs.Job>();
+    opts.ExcludeEntityForSystemActor<Handball.Belgium.RefTestManagement.Domain.RefTests.RefTest>();
     opts.ExcludeProperty("Token");
     opts.ExcludeProperty("Id");
     opts.ResolveProperty("TitleId", "Title", (entity, ctx) =>
@@ -58,9 +59,6 @@ var auditLogOptions = services.AddAuditLogging(opts =>
             ?? ctx.Find<Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle>(rt.TitleId)?.Value;
     });
     opts.SummarizeList("QuestionIds", "Questions", "questions");
-    opts.SummarizeList("SelectedAnswerIds", "SelectedAnswers", "answers");
-    opts.SummarizeList("WrongQuestionIds", "WrongQuestions", "wrong questions");
-    opts.SummarizeList("WrongAnswerIds", "WrongAnswers", "wrong answers");
 });
 
 services.AddDbContextFactory<RefTestManagementContext>((sp, options) =>

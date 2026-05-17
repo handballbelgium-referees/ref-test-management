@@ -233,16 +233,16 @@
                             $any(change.value).newValue !== undefined
                           ) {
                             <span class="line-through text-red-400 mr-1">{{
-                              $any(change.value).oldValue
+                              formatChangeValue($any(change.value).oldValue)
                             }}</span>
                             <span class="text-neutral-400">→</span>
                             <span class="text-green-600 ml-1">{{
-                              $any(change.value).newValue
+                              formatChangeValue($any(change.value).newValue)
                             }}</span>
                           } @else if ($any(change.value).newValue !== undefined) {
-                            <span>{{ $any(change.value).newValue }}</span>
+                            <span>{{ formatChangeValue($any(change.value).newValue) }}</span>
                           } @else if ($any(change.value).oldValue !== undefined) {
-                            <span>{{ $any(change.value).oldValue }}</span>
+                            <span>{{ formatChangeValue($any(change.value).oldValue) }}</span>
                           }
                         </span>
                       }

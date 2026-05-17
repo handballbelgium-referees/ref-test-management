@@ -31,12 +31,14 @@ public class AuditSaveChangesInterceptor(
     {
         var (actorName, actorEmail) = GetActor();
         var timestamp = DateTime.UtcNow;
+        var isSystemActor = string.IsNullOrEmpty(actorEmail) && actorName == "System";
 
         var entries = context.ChangeTracker.Entries()
             .Where(e =>
                 e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted &&
                 e.Entity is not AuditLogEntry &&
-                !options.ExcludedEntityTypes.Contains(e.Entity.GetType()))
+                !options.ExcludedEntityTypes.Contains(e.Entity.GetType()) &&
+                !(isSystemActor && options.ExcludedForSystemActorTypes.Contains(e.Entity.GetType())))
             .ToList();
 
         foreach (var entry in entries)
