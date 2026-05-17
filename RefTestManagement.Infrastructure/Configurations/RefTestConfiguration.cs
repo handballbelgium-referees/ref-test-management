@@ -107,6 +107,14 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 
         builder.Property(x => x.ScheduledAt);
 
+        builder.Property(x => x.CreatorName)
+            .HasMaxLength(256)
+            .HasDefaultValue(string.Empty);
+
+        builder.Property(x => x.CreatorEmail)
+            .HasMaxLength(256)
+            .HasDefaultValue(string.Empty);
+
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreatedAt);

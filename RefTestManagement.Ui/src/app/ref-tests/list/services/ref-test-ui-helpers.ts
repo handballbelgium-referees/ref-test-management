@@ -16,7 +16,7 @@ export class RefTestUIHelpers {
       IN_PROGRESS: 'bg-blue-100 text-blue-800',
       COMPLETED: 'bg-success-100 text-success-800',
       EXPIRED: 'bg-red-100 text-red-800',
-      PENDING_APPROVAL: 'bg-amber-100 text-amber-800',
+      PENDING_APPROVAL: 'bg-orange-100 text-orange-800',
       REJECTED: 'bg-error-100 text-error-800',
     };
 

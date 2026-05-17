@@ -138,7 +138,9 @@
         "PENDING": "In Afwachting",
         "IN_PROGRESS": "Bezig",
         "COMPLETED": "Voltooid",
-        "EXPIRED": "Verlopen"
+        "EXPIRED": "Verlopen",
+        "PENDING_APPROVAL": "Wacht op Goedkeuring",
+        "REJECTED": "Afgewezen"
       },
       "table": {
         "title": "Titel",

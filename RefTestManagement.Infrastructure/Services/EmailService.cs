@@ -30,6 +30,16 @@ public interface IEmailService
         List<(string FullName, string Email)> refTestItems,
         string baseUrl,
         CancellationToken cancellationToken);
+
+    Task SendApprovalDecisionAsync(
+        string creatorName,
+        string creatorEmail,
+        string approverName,
+        bool isApproved,
+        string? rejectionReason,
+        string? titleValue,
+        List<(string FullName, string Email)> refTestItems,
+        CancellationToken cancellationToken);
 }
 
 public class EmailService(
@@ -222,6 +232,33 @@ public class EmailService(
         await SendEmailAsync(approverEmail, subject, emailBody, cancellationToken: cancellationToken);
 
         ServiceLoggerMessages.LogEmailSentSuccessfully(logger, approverEmail);
+    }
+
+    public async Task SendApprovalDecisionAsync(
+        string creatorName,
+        string creatorEmail,
+        string approverName,
+        bool isApproved,
+        string? rejectionReason,
+        string? titleValue,
+        List<(string FullName, string Email)> refTestItems,
+        CancellationToken cancellationToken)
+    {
+        var enabledLanguages = languageConfiguration.EnabledLanguages
+            .Select(lang => new LanguageContent(
+                string.Empty,
+                translationService.GetEmailApprovalDecisionTranslations(lang, isApproved)))
+            .ToList();
+
+        var subject = translationService.GetEmailApprovalDecisionTranslations(
+            languageConfiguration.EnabledLanguages.FirstOrDefault() ?? "en", isApproved)["subject"];
+
+        var emailBody = await templateService.BuildCompleteApprovalDecisionEmailAsync(
+            enabledLanguages, approverName, isApproved, rejectionReason, titleValue, refTestItems);
+
+        await SendEmailAsync(creatorEmail, subject, emailBody, cancellationToken: cancellationToken);
+
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, creatorEmail);
     }
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)

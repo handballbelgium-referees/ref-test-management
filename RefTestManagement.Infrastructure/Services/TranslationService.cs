@@ -9,6 +9,7 @@ public interface ITranslationService
     IReadOnlyDictionary<string, string> GetEmailResultsTranslations(string language);
     IReadOnlyDictionary<string, string> GetEmailReportTranslations(string language);
     IReadOnlyDictionary<string, string> GetEmailApprovalNotificationTranslations(string language);
+    IReadOnlyDictionary<string, string> GetEmailApprovalDecisionTranslations(string language, bool isApproved);
     IReadOnlyDictionary<string, string> GetPdfResultsTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfReportTranslations(string language);
     IReadOnlyDictionary<string, string> GetReportColumnTranslations(string language);
@@ -23,6 +24,8 @@ public class TranslationService : ITranslationService
     private readonly Dictionary<string, Dictionary<string, string>> _emailResultsTranslations = InitializeEmailResultsTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailReportTranslations = InitializeEmailReportTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalNotificationTranslations = InitializeEmailApprovalNotificationTranslations();
+    private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalApprovedTranslations = InitializeEmailApprovalApprovedTranslations();
+    private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalRejectedTranslations = InitializeEmailApprovalRejectedTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfResultsTranslations = InitializePdfResultsTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfReportTranslations = InitializePdfReportTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _reportColumnTranslations = InitializeReportColumnTranslations();
@@ -47,6 +50,12 @@ public class TranslationService : ITranslationService
         return _emailReportTranslations.TryGetValue(language, out var translations)
             ? translations
             : _emailReportTranslations["en"];
+    }
+
+    public IReadOnlyDictionary<string, string> GetEmailApprovalDecisionTranslations(string language, bool isApproved)
+    {
+        var dict = isApproved ? _emailApprovalApprovedTranslations : _emailApprovalRejectedTranslations;
+        return dict.TryGetValue(language, out var translations) ? translations : dict["en"];
     }
 
     public IReadOnlyDictionary<string, string> GetEmailApprovalNotificationTranslations(string language)
@@ -334,6 +343,104 @@ public class TranslationService : ITranslationService
                 ["tableEmailHeader"] = "E-Mail",
                 ["reviewButton"] = "Ausstehende Tests prüfen",
                 ["footerNote"] = "Sie erhalten diese E-Mail, weil Sie Genehmigungsrechte in RefTest Management haben."
+            }
+        };
+    }
+
+    private static Dictionary<string, Dictionary<string, string>> InitializeEmailApprovalApprovedTranslations()
+    {
+        return new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["subject"] = "Your RefTests Have Been Approved",
+                ["heading"] = "RefTests Approved ✅",
+                ["introText"] = "Great news! The following RefTests you created have been approved and are now ready.",
+                ["approvedBy"] = "Approved by",
+                ["tableNameHeader"] = "Name",
+                ["tableEmailHeader"] = "Email",
+                ["footerNote"] = "You are receiving this email because you created these RefTests."
+            },
+            ["nl"] = new()
+            {
+                ["subject"] = "Uw RefTests zijn goedgekeurd",
+                ["heading"] = "RefTests goedgekeurd ✅",
+                ["introText"] = "Goed nieuws! De volgende RefTests die u heeft aangemaakt zijn goedgekeurd en klaar voor gebruik.",
+                ["approvedBy"] = "Goedgekeurd door",
+                ["tableNameHeader"] = "Naam",
+                ["tableEmailHeader"] = "E-mail",
+                ["footerNote"] = "U ontvangt deze e-mail omdat u deze RefTests heeft aangemaakt."
+            },
+            ["fr"] = new()
+            {
+                ["subject"] = "Vos RefTests ont été approuvés",
+                ["heading"] = "RefTests approuvés ✅",
+                ["introText"] = "Bonne nouvelle ! Les RefTests suivants que vous avez créés ont été approuvés et sont maintenant prêts.",
+                ["approvedBy"] = "Approuvé par",
+                ["tableNameHeader"] = "Nom",
+                ["tableEmailHeader"] = "E-mail",
+                ["footerNote"] = "Vous recevez cet e-mail car vous avez créé ces RefTests."
+            },
+            ["de"] = new()
+            {
+                ["subject"] = "Ihre RefTests wurden genehmigt",
+                ["heading"] = "RefTests genehmigt ✅",
+                ["introText"] = "Gute Neuigkeiten! Die folgenden RefTests, die Sie erstellt haben, wurden genehmigt und sind jetzt bereit.",
+                ["approvedBy"] = "Genehmigt von",
+                ["tableNameHeader"] = "Name",
+                ["tableEmailHeader"] = "E-Mail",
+                ["footerNote"] = "Sie erhalten diese E-Mail, weil Sie diese RefTests erstellt haben."
+            }
+        };
+    }
+
+    private static Dictionary<string, Dictionary<string, string>> InitializeEmailApprovalRejectedTranslations()
+    {
+        return new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["subject"] = "Your RefTests Have Been Rejected",
+                ["heading"] = "RefTests Rejected ❌",
+                ["introText"] = "Unfortunately, the following RefTests you created have been rejected.",
+                ["rejectedBy"] = "Rejected by",
+                ["reason"] = "Reason",
+                ["tableNameHeader"] = "Name",
+                ["tableEmailHeader"] = "Email",
+                ["footerNote"] = "You are receiving this email because you created these RefTests."
+            },
+            ["nl"] = new()
+            {
+                ["subject"] = "Uw RefTests zijn afgewezen",
+                ["heading"] = "RefTests afgewezen ❌",
+                ["introText"] = "Helaas zijn de volgende RefTests die u heeft aangemaakt afgewezen.",
+                ["rejectedBy"] = "Afgewezen door",
+                ["reason"] = "Reden",
+                ["tableNameHeader"] = "Naam",
+                ["tableEmailHeader"] = "E-mail",
+                ["footerNote"] = "U ontvangt deze e-mail omdat u deze RefTests heeft aangemaakt."
+            },
+            ["fr"] = new()
+            {
+                ["subject"] = "Vos RefTests ont été refusés",
+                ["heading"] = "RefTests refusés ❌",
+                ["introText"] = "Malheureusement, les RefTests suivants que vous avez créés ont été refusés.",
+                ["rejectedBy"] = "Refusé par",
+                ["reason"] = "Raison",
+                ["tableNameHeader"] = "Nom",
+                ["tableEmailHeader"] = "E-mail",
+                ["footerNote"] = "Vous recevez cet e-mail car vous avez créé ces RefTests."
+            },
+            ["de"] = new()
+            {
+                ["subject"] = "Ihre RefTests wurden abgelehnt",
+                ["heading"] = "RefTests abgelehnt ❌",
+                ["introText"] = "Leider wurden die folgenden RefTests, die Sie erstellt haben, abgelehnt.",
+                ["rejectedBy"] = "Abgelehnt von",
+                ["reason"] = "Grund",
+                ["tableNameHeader"] = "Name",
+                ["tableEmailHeader"] = "E-Mail",
+                ["footerNote"] = "Sie erhalten diese E-Mail, weil Sie diese RefTests erstellt haben."
             }
         };
     }

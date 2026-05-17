@@ -210,7 +210,22 @@ export class RefTestSelectionManager {
       const selected = this.selectedIds();
       const allTests = allRefTests();
       return this.mapToParticipantInfo(
-        allTests.filter((t) => selected.has(t.id) && t.status === 'PENDING_APPROVAL'),
+        allTests.filter(
+          (t) => selected.has(t.id) && (t.status === 'PENDING_APPROVAL' || t.status === 'REJECTED'),
+        ),
+      );
+    });
+  }
+
+  /**
+   * Create computed that returns true when at least one selected ref test is approvable (PendingApproval or Rejected).
+   */
+  createHasApprovableSelectedComputed(allRefTests: () => RefTestNode[]) {
+    return computed(() => {
+      const selected = this.selectedIds();
+      const allTests = allRefTests();
+      return allTests.some(
+        (t) => selected.has(t.id) && (t.status === 'PENDING_APPROVAL' || t.status === 'REJECTED'),
       );
     });
   }

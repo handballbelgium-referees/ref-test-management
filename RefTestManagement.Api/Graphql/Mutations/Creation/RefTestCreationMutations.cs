@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Api.Extensions;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -14,6 +15,18 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 [MutationType]
 public static class RefTestCreationMutations
 {
+    /// <summary>
+    /// Create RefTests for one or more users with the same configuration.
+    /// Depending on the caller's permissions, the created RefTests may require approval before invitations can be sent.
+    /// </summary>
+    /// <param name="input">The input parameters for RefTest creation.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
+    /// <param name="ihfRulesQuestionsService">Service for fetching IHF Rules questions.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
+    /// <param name="subscriptionService">Service for managing subscriptions to RefTest creation events.</param>
+    /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The result of the RefTest creation operation.</returns>
     [Authorize(Policy = Permissions.RefTests.Create)]
     public static async Task<CreateRefTestsResult> CreateRefTestsAsync(
         CreateRefTestsInput input,
@@ -25,19 +38,18 @@ public static class RefTestCreationMutations
         CancellationToken cancellationToken)
     {
         var currentUser = httpContextAccessor.HttpContext?.User;
-        var callerPermissions = currentUser?.FindAll("permissions").Select(c => c.Value).ToHashSet() ?? [];
+        var callerPermissions = currentUser?.GetPermissions() ?? [];
         var requiresApproval = !callerPermissions.Contains(Permissions.RefTests.Approve);
-        var creatorName = currentUser?.FindFirst("name")?.Value
-                          ?? currentUser?.FindFirst("email")?.Value
-                          ?? "Unknown";
-        var creatorEmail = currentUser?.FindFirst("email")?.Value ?? string.Empty;
+        var creatorName = currentUser.GetDisplayName();
+        var creatorEmail = currentUser.GetEmail();
 
         var result = new CreateRefTestsResult { TotalRequested = input.Users.Count };
 
         var (titleId, titleValue) = await ResolveTitleAsync(input.Title, context, cancellationToken);
-        var specifiedQuestionIds = await ResolveSharedQuestionIdsAsync(input, ihfRulesQuestionsService, cancellationToken);
+        var specifiedQuestionIds =
+            await ResolveSharedQuestionIdsAsync(input, ihfRulesQuestionsService, cancellationToken);
         var createdRefTests = await BuildRefTestsAsync(input, titleId, specifiedQuestionIds, requiresApproval,
-            ihfRulesQuestionsService, result, cancellationToken);
+            creatorName, creatorEmail, ihfRulesQuestionsService, result, cancellationToken);
 
         if (createdRefTests.Count == 0)
             return result;
@@ -65,6 +77,15 @@ public static class RefTestCreationMutations
 
     // --- Helpers ------------------------------------------------------------
 
+    /// <summary>
+    /// Resolve RefTest title ID and value from input.
+    /// If Title.Id is provided, it is used. Otherwise, a new title is created with the provided Name.
+    /// </summary>
+    /// <param name="titleInput">The input parameters for title resolution.</param>
+    /// <param name="context">The database context for accessing RefTestTitles.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>A tuple containing the title ID and value.</returns>
+    /// <exception cref="ArgumentException">Thrown if neither Title.Id nor Title.Name is provided.</exception>
     private static async Task<(Guid Id, string? Value)> ResolveTitleAsync(
         Title titleInput,
         RefTestManagementContext context,
@@ -76,17 +97,23 @@ public static class RefTestCreationMutations
             return (titleInput.Id.Value, existing?.Value);
         }
 
-        if (titleInput.Name is not null)
-        {
-            var title = RefTestTitle.Create(titleInput.Name);
-            context.RefTestTitles.Add(title);
-            await context.SaveChangesAsync(cancellationToken);
-            return (title.Id, title.Value);
-        }
+        if (titleInput.Name is null)
+            throw new ArgumentException("Either Title.Id or Title.Name must be provided.");
 
-        throw new ArgumentException("Either Title.Id or Title.Name must be provided.");
+        var title = RefTestTitle.Create(titleInput.Name);
+        context.RefTestTitles.Add(title);
+        await context.SaveChangesAsync(cancellationToken);
+        return (title.Id, title.Value);
     }
 
+    /// <summary>
+    /// Resolve question IDs to be shared among all RefTests.
+    /// If SpecificQuestionNumbers are provided, it takes precedence over RandomQuestionsForEachUser.
+    /// </summary>
+    /// <param name="input">The input parameters for question resolution.</param>
+    /// <param name="ihfRulesQuestionsService">Service for fetching IHF Rules questions.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>A list of question IDs to be shared among RefTests.</returns>
     private static async Task<List<string>> ResolveSharedQuestionIdsAsync(
         CreateRefTestsInput input,
         IIhfRulesQuestionsService ihfRulesQuestionsService,
@@ -103,11 +130,26 @@ public static class RefTestCreationMutations
         return [];
     }
 
+    /// <summary>
+    /// Build RefTests for each user. If RandomQuestionsForEachUser is true, each RefTest gets its own set of random questions; otherwise, all RefTests share the same question IDs.
+    /// </summary>
+    /// <param name="input">The input containing RefTest creation details.</param>
+    /// <param name="titleId">The ID of the RefTest title.</param>
+    /// <param name="sharedQuestionIds">The list of question IDs to be shared among RefTests.</param>
+    /// <param name="requiresApproval">Indicates if RefTests require approval.</param>
+    /// <param name="creatorName">The name of the RefTest creator.</param>
+    /// <param name="creatorEmail">The email of the RefTest creator.</param>
+    /// <param name="ihfRulesQuestionsService">Service for managing IHF rules questions.</param>
+    /// <param name="result">The result object for tracking creation status.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>A list of created RefTests.</returns>
     private static async Task<List<RefTest>> BuildRefTestsAsync(
         CreateRefTestsInput input,
         Guid titleId,
         List<string> sharedQuestionIds,
         bool requiresApproval,
+        string creatorName,
+        string creatorEmail,
         IIhfRulesQuestionsService ihfRulesQuestionsService,
         CreateRefTestsResult result,
         CancellationToken cancellationToken)
@@ -119,7 +161,8 @@ public static class RefTestCreationMutations
             try
             {
                 var questionIds = input.RandomQuestionsForEachUser
-                    ? await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions, cancellationToken)
+                    ? await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions,
+                        cancellationToken)
                     : sharedQuestionIds;
 
                 created.Add(RefTest.Create(
@@ -129,7 +172,9 @@ public static class RefTestCreationMutations
                     questionIds,
                     input.SendAutomatedInvitations, input.SendAutomatedResults,
                     requiresApproval: requiresApproval,
-                    scheduledAt: input.ScheduledAt));
+                    scheduledAt: input.ScheduledAt,
+                    creatorName: creatorName,
+                    creatorEmail: creatorEmail));
 
                 result.SuccessfullyCreated++;
             }
@@ -143,6 +188,14 @@ public static class RefTestCreationMutations
         return created;
     }
 
+    /// <summary>
+    /// Publish RefTestCreated events for all created RefTests.
+    /// </summary>
+    /// <param name="refTests">The list of created RefTests.</param>
+    /// <param name="titleId">The ID of the RefTest title.</param>
+    /// <param name="titleValue">The value of the RefTest title.</param>
+    /// <param name="subscriptionService">Service for publishing RefTestCreated events.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task PublishCreatedEventsAsync(
         List<RefTest> refTests,
         Guid titleId,
@@ -160,6 +213,17 @@ public static class RefTestCreationMutations
                 cancellationToken);
     }
 
+    /// <summary>
+    /// Enqueue approval notification emails for all created RefTests. The notification is sent to the creator and includes details of all RefTests awaiting approval. If enqueuing the notification fails, the error is recorded but does not prevent the RefTests from being created.
+    /// This ensures that the approval process can proceed even if the notification system experiences issues, while still providing visibility into any problems with sending notifications.
+    /// </summary>
+    /// <param name="refTests">The list of created RefTests.</param>
+    /// <param name="creatorName">The name of the RefTest creator.</param>
+    /// <param name="creatorEmail">The email address of the RefTest creator.</param>
+    /// <param name="titleValue">The value of the RefTest title.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
+    /// <param name="result">The result object for tracking operation status.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueApprovalNotificationAsync(
         List<RefTest> refTests,
         string creatorName,
@@ -188,6 +252,14 @@ public static class RefTestCreationMutations
         }
     }
 
+    /// <summary>
+    /// Enqueue invitation emails for all created RefTests.
+    /// If SendAutomatedInvitations is false, the RefTests are created but the emails are not sent.
+    /// </summary>
+    /// <param name="refTests">The list of created RefTests.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
+    /// <param name="result">The result object for tracking operation status.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueInvitationEmailsAsync(
         List<RefTest> refTests,
         IJobEnqueueService jobEnqueueService,
@@ -218,4 +290,3 @@ public static class RefTestCreationMutations
         }
     }
 }
-

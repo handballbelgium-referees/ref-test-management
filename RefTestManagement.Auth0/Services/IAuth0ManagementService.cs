@@ -1,4 +1,7 @@
-namespace Handball.Belgium.RefTestManagement.Auth0;
+using Handball.Belgium.RefTestManagement.Auth0.Configurations;
+using Handball.Belgium.RefTestManagement.Auth0.Models;
+
+namespace Handball.Belgium.RefTestManagement.Auth0.Services;
 
 /// <summary>
 /// Provides Auth0 Management API operations needed by the application:

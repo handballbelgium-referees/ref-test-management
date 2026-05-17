@@ -142,7 +142,9 @@
         "PENDING": "Ausstehend",
         "IN_PROGRESS": "In Bearbeitung",
         "COMPLETED": "Abgeschlossen",
-        "EXPIRED": "Abgelaufen"
+        "EXPIRED": "Abgelaufen",
+        "PENDING_APPROVAL": "Warte auf Genehmigung",
+        "REJECTED": "Abgelehnt"
       },
       "table": {
         "title": "Titel",

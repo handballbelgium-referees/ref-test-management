@@ -8,7 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
 import { map } from 'rxjs';
@@ -90,6 +90,7 @@ export class ListRefTests {
   // DEPENDENCIES
   // ========================================================================
   private readonly _router = inject(Router);
+  private readonly _route = inject(ActivatedRoute);
   private readonly _scoreConfigGQL = inject(GetScoreConfigurationGQL);
   private readonly _destroyRef = inject(DestroyRef);
 
@@ -233,6 +234,9 @@ export class ListRefTests {
     });
   });
 
+  protected readonly hasApprovableRefTestsSelected =
+    this.selectionManager.createHasApprovableSelectedComputed(() => this.allLoadedRefTests());
+
   protected readonly hasPendingApprovalRefTestsSelected =
     this.selectionManager.createHasPendingApprovalSelectedComputed(() => this.allLoadedRefTests());
 
@@ -293,6 +297,24 @@ export class ListRefTests {
       // while the list component doesn't exist yet, so it may be missed entirely.
       this.localStateManager.resetAllState();
       this.dataService.reset();
+    }
+
+    // Apply ?status query param (e.g. from the approval notification email link)
+    // Only honour approval-specific statuses when the user actually has the approve permission.
+    const statusParam = this._route.snapshot.queryParamMap.get('status') as RefTestStatus | null;
+    const isApprovalStatus = statusParam === 'PENDING_APPROVAL' || statusParam === 'REJECTED';
+    if (
+      statusParam &&
+      (!isApprovalStatus || this._permissions.hasPermission(Permissions.RefTests.Approve))
+    ) {
+      this.filterActions.setStatusFilter(statusParam);
+      // Remove the param from the URL without re-navigating so back-button works cleanly
+      void this._router.navigate([], {
+        relativeTo: this._route,
+        queryParams: { status: null },
+        queryParamsHandling: 'merge',
+        replaceUrl: true,
+      });
     }
   }
 

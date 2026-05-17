@@ -27,6 +27,9 @@ public interface IJobEnqueueService
     Task EnqueueApprovalNotificationAsync(ApprovalNotificationEmailPayload payload,
         CancellationToken cancellationToken = default);
 
+    Task EnqueueApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload,
+        CancellationToken cancellationToken = default);
+
     Task CancelPendingJobsForRefTestAsync(Guid refTestId, CancellationToken cancellationToken = default);
     Task CancelPendingResultEmailsAsync(Guid refTestId, CancellationToken cancellationToken = default);
 }
@@ -99,6 +102,19 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         await context.SaveChangesAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalNotificationEmail, job.Id);
+    }
+
+    public async Task EnqueueApprovalDecisionEmailAsync(
+        ApprovalDecisionEmailPayload payload,
+        CancellationToken cancellationToken = default)
+    {
+        var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
+        var job = Job.Create(JobType.ApprovalDecisionEmail, payloadJson);
+
+        context.Jobs.Add(job);
+        await context.SaveChangesAsync(cancellationToken);
+
+        ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalDecisionEmail, job.Id);
     }
 
     public async Task CancelPendingJobsForRefTestAsync(Guid refTestId, CancellationToken cancellationToken = default)

@@ -1,15 +1,17 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
+using Handball.Belgium.RefTestManagement.Auth0.Configurations;
+using Handball.Belgium.RefTestManagement.Auth0.Models;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Handball.Belgium.RefTestManagement.Auth0;
+namespace Handball.Belgium.RefTestManagement.Auth0.Services;
 
 /// <summary>
 /// Calls the Auth0 Management API using a cached M2M client credentials token.
 /// </summary>
-internal sealed class Auth0ManagementService(
+internal sealed partial class Auth0ManagementService(
     HttpClient httpClient,
     IOptions<Auth0ManagementConfiguration> options,
     ILogger<Auth0ManagementService> logger)
@@ -59,13 +61,18 @@ internal sealed class Auth0ManagementService(
     {
         var token = await GetAccessTokenAsync(cancellationToken);
 
-        // Collect user IDs from roles that include the permission
-        var userIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var matchingUserIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
         // Derive the namespace wildcard (e.g. "ref-tests:*" for "ref-tests:approve")
         var colonIndex = permission.IndexOf(':');
         var wildcardPermission = colonIndex >= 0 ? string.Concat(permission.AsSpan(0, colonIndex + 1), "*") : null;
 
+        bool PermissionMatches(string name) =>
+            string.Equals(name, permission, StringComparison.OrdinalIgnoreCase) ||
+            string.Equals(name, Permissions.Superadmin, StringComparison.OrdinalIgnoreCase) ||
+            (wildcardPermission != null && string.Equals(name, wildcardPermission, StringComparison.OrdinalIgnoreCase));
+
+        // 1. Role-based lookup
         var roles = await GetAllPagesAsync<RoleResponse>(
             $"https://{_config.Domain}/api/v2/roles",
             token,
@@ -78,12 +85,7 @@ internal sealed class Auth0ManagementService(
                 token,
                 cancellationToken);
 
-            var hasPermission = rolePermissions.Any(p =>
-                string.Equals(p.PermissionName, permission, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(p.PermissionName, Permissions.Superadmin, StringComparison.OrdinalIgnoreCase) ||
-                (wildcardPermission != null && string.Equals(p.PermissionName, wildcardPermission, StringComparison.OrdinalIgnoreCase)));
-
-            if (!hasPermission)
+            if (!rolePermissions.Any(p => PermissionMatches(p.PermissionName)))
                 continue;
 
             var roleUsers = await GetAllPagesAsync<UserIdResponse>(
@@ -92,30 +94,59 @@ internal sealed class Auth0ManagementService(
                 cancellationToken);
 
             foreach (var u in roleUsers)
-                userIds.Add(u.UserId);
+                matchingUserIds.Add(u.UserId);
         }
 
-        // Also check direct user-permission grants
-        // Auth0 doesn't offer a "list users with permission" endpoint directly,
-        // so we rely on role-based assignments only (which is the recommended Auth0 RBAC approach).
+        // 2. Direct user-permission grants
+        // Auth0 has no "list users by permission" endpoint, so fetch all users and
+        // check each one's directly-assigned permissions individually.
+        var allUsers = await GetAllPagesAsync<UserResponse>(
+            $"https://{_config.Domain}/api/v2/users",
+            token,
+            cancellationToken);
 
-        if (userIds.Count == 0)
+        foreach (var userRef in allUsers)
         {
-            logger.LogInformation("No users found with permission '{Permission}'", permission);
+            if (userRef.UserId is null || matchingUserIds.Contains(userRef.UserId))
+                continue;
+
+            var userPermissions = await GetAllPagesAsync<PermissionResponse>(
+                $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userRef.UserId)}/permissions",
+                token,
+                cancellationToken);
+
+            if (userPermissions.Any(p => PermissionMatches(p.PermissionName)))
+                matchingUserIds.Add(userRef.UserId);
+        }
+
+        if (matchingUserIds.Count == 0)
+        {
+            LogNoUsersFoundWithPermissionPermission(permission);
             return [];
         }
 
-        var users = new List<Auth0User>(userIds.Count);
-        foreach (var userId in userIds)
+        // Build result from the already-fetched user list to avoid redundant API calls
+        var userMap = allUsers
+            .Where(u => u.UserId is not null)
+            .ToDictionary(u => u.UserId!, StringComparer.OrdinalIgnoreCase);
+
+        var users = new List<Auth0User>(matchingUserIds.Count);
+        foreach (var userId in matchingUserIds)
         {
-            var user = await GetUserAsync(userId, token, cancellationToken);
-            if (user is not null)
-                users.Add(user);
+            if (userMap.TryGetValue(userId, out var cached))
+            {
+                users.Add(new Auth0User(cached.Name ?? cached.Email, cached.Email));
+            }
+            else
+            {
+                // Fallback for users found via role but absent from the /users page (edge case)
+                var user = await GetUserAsync(userId, token, cancellationToken);
+                if (user is not null)
+                    users.Add(user);
+            }
         }
 
-        logger.LogInformation(
-            "Found {Count} user(s) with permission '{Permission}'",
-            users.Count, permission);
+        LogFoundCountUserSWithPermissionPermission(users.Count, permission);
 
         return users;
     }
@@ -188,7 +219,7 @@ internal sealed class Auth0ManagementService(
         CancellationToken cancellationToken)
     {
         var results = new List<T>();
-        int page = 0;
+        var page = 0;
         const int perPage = 100;
 
         while (true)
@@ -259,6 +290,7 @@ internal sealed class Auth0ManagementService(
         [property: JsonPropertyName("user_id")] string UserId);
 
     private record UserResponse(
+        [property: JsonPropertyName("user_id")] string? UserId,
         [property: JsonPropertyName("name")] string? Name,
         [property: JsonPropertyName("email")] string Email);
 
@@ -269,4 +301,12 @@ internal sealed class Auth0ManagementService(
 
     private record ScopeItem(
         [property: JsonPropertyName("value")] string Value);
+    
+    // --- Logger messages --------------------------------------------------
+
+    [LoggerMessage(LogLevel.Information, "No users found with permission '{Permission}'")]
+    partial void LogNoUsersFoundWithPermissionPermission(string permission);
+
+    [LoggerMessage(LogLevel.Information, "Found {Count} user(s) with permission '{Permission}'")]
+    partial void LogFoundCountUserSWithPermissionPermission(int count, string permission);
 }

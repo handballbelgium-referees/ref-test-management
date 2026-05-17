@@ -188,7 +188,7 @@
             <button
               type="button"
               [disabled]="
-                !hasPendingApprovalRefTestsSelected() || approvingRefTests() || deletingRefTests()
+                !hasApprovableRefTestsSelected() || approvingRefTests() || deletingRefTests()
               "
               (click)="onApproveSelected($event)"
               class="fab-button-6a flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-success-600 hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
@@ -454,9 +454,7 @@
         <button
           *hasPermission="Permissions.RefTests.Approve"
           type="button"
-          [disabled]="
-            !hasPendingApprovalRefTestsSelected() || approvingRefTests() || deletingRefTests()
-          "
+          [disabled]="!hasApprovableRefTestsSelected() || approvingRefTests() || deletingRefTests()"
           (click)="onApproveSelected($event)"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >

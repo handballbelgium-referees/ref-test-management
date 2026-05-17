@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Auth0;
+namespace Handball.Belgium.RefTestManagement.Auth0.Configurations;
 
 /// <summary>
 /// Configuration for the Auth0 Management API M2M application.

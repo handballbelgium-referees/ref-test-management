@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Auth0;
+namespace Handball.Belgium.RefTestManagement.Auth0.Models;
 
 /// <summary>
 /// Represents an Auth0 user returned by the Management API.

@@ -65,6 +65,12 @@ public class RefTest
 
     public string? RejectionReason { get; private set; }
 
+    /// <summary>Name of the Auth0 user who created this RefTest.</summary>
+    public string CreatorName { get; private set; } = string.Empty;
+
+    /// <summary>Email of the Auth0 user who created this RefTest.</summary>
+    public string CreatorEmail { get; private set; } = string.Empty;
+
     /// <summary>
     /// The date/time from which this RefTest can be started. Set during approval when
     /// SendInvitationsAutomatically is true — the invitation email fires at this time.
@@ -87,7 +93,9 @@ public class RefTest
         bool sendInvitationAutomatically,
         bool sendResultsAutomatically,
         bool requiresApproval = false,
-        DateTime? scheduledAt = null)
+        DateTime? scheduledAt = null,
+        string creatorName = "",
+        string creatorEmail = "")
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name is required", nameof(firstName));
@@ -108,7 +116,9 @@ public class RefTest
             questionIds, sendInvitationAutomatically, sendResultsAutomatically)
         {
             Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending,
-            ScheduledAt = scheduledAt
+            ScheduledAt = scheduledAt,
+            CreatorName = creatorName,
+            CreatorEmail = creatorEmail
         };
     }
 

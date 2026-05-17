@@ -1,3 +1,5 @@
+using Handball.Belgium.RefTestManagement.Auth0.Configurations;
+using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

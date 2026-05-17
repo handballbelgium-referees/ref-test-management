@@ -93,6 +93,19 @@ public record ApprovalNotificationRefTestItem(
 );
 
 /// <summary>
+/// Payload for approval-decision confirmation emails sent to the creator when their RefTests are approved or rejected
+/// </summary>
+public record ApprovalDecisionEmailPayload(
+    string CreatorName,
+    string CreatorEmail,
+    string ApproverName,
+    bool IsApproved,
+    string? RejectionReason,
+    string? TitleValue,
+    List<ApprovalNotificationRefTestItem> RefTests
+) : IJobPayload;
+
+/// <summary>
 /// Action to take for an expired RefTest
 /// </summary>
 public enum RefTestExpirationAction

@@ -138,7 +138,9 @@
         "PENDING": "Pending",
         "IN_PROGRESS": "In Progress",
         "COMPLETED": "Completed",
-        "EXPIRED": "Expired"
+        "EXPIRED": "Expired",
+        "PENDING_APPROVAL": "Pending Approval",
+        "REJECTED": "Rejected"
       },
       "table": {
         "title": "Title",

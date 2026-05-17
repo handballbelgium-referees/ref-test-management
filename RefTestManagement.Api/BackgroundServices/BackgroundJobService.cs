@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Auth0;
+using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -166,6 +167,10 @@ public class BackgroundJobService : BackgroundService
                     await ProcessApprovalNotificationEmailJobAsync(job, serviceProvider, cancellationToken);
                     break;
 
+                case JobType.ApprovalDecisionEmail:
+                    await ProcessApprovalDecisionEmailJobAsync(job, serviceProvider, cancellationToken);
+                    break;
+
                 default:
                     throw new InvalidOperationException($"Unknown job type: {job.JobType}");
             }
@@ -223,7 +228,7 @@ public class BackgroundJobService : BackgroundService
         {
             refTest.SendInvitation();
             await context.SaveChangesAsync(cancellationToken);
-            
+
             // Publish subscription event
             await subscriptionService.PublishInvitationSentAsync(
                 refTest.Id,
@@ -280,7 +285,7 @@ public class BackgroundJobService : BackgroundService
         // Mark the RefTest results as sent
         refTest.SendResults();
         await context.SaveChangesAsync(cancellationToken);
-        
+
         // Publish subscription event
         await subscriptionService.PublishResultSentAsync(
             refTest.Id,
@@ -374,7 +379,7 @@ public class BackgroundJobService : BackgroundService
                     // Mark as expired (for pending tests)
                     refTest.Expire();
                     await context.SaveChangesAsync(cancellationToken);
-                    
+
                     // Publish subscription event
                     await subscriptionService.PublishRefTestExpiredAsync(
                         refTest.Id,
@@ -430,9 +435,36 @@ public class BackgroundJobService : BackgroundService
                 cancellationToken);
         }
 
-        _logger.LogInformation(
-            "Approval notification sent to {Count} approver(s) for {RefTestCount} RefTest(s)",
-            approvers.Count, payload.RefTests.Count);
+        ServiceLoggerMessages.LogApprovalNotificationSent(_logger, approvers.Count, payload.RefTests.Count);
+    }
+
+    private async Task ProcessApprovalDecisionEmailJobAsync(
+        Job job,
+        IServiceProvider serviceProvider,
+        CancellationToken cancellationToken)
+    {
+        var payload = DeserializePayload<ApprovalDecisionEmailPayload>(job);
+        var emailService = serviceProvider.GetRequiredService<IEmailService>();
+
+        var items = payload.RefTests
+            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email))
+            .ToList();
+
+        await emailService.SendApprovalDecisionAsync(
+            payload.CreatorName,
+            payload.CreatorEmail,
+            payload.ApproverName,
+            payload.IsApproved,
+            payload.RejectionReason,
+            payload.TitleValue,
+            items,
+            cancellationToken);
+
+        ServiceLoggerMessages.LogApprovalDecisionEmailSent(
+            _logger,
+            payload.IsApproved ? "approved" : "rejected",
+            payload.CreatorEmail,
+            payload.RefTests.Count);
     }
 
     private T DeserializePayload<T>(Job job) where T : IJobPayload

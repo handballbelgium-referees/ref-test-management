@@ -95,6 +95,12 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Debug, "Sending report email to {count} recipients")]
     public static partial void LogSendingReportEmail(ILogger logger, int count);
 
+    [LoggerMessage(LogLevel.Information, "Approval notification sent to {approverCount} approver(s) for {refTestCount} RefTest(s)")]
+    public static partial void LogApprovalNotificationSent(ILogger logger, int approverCount, int refTestCount);
+
+    [LoggerMessage(LogLevel.Information, "Approval decision ({decision}) email sent to creator {creatorEmail} for {refTestCount} RefTest(s)")]
+    public static partial void LogApprovalDecisionEmailSent(ILogger logger, string decision, string creatorEmail, int refTestCount);
+
     [LoggerMessage(LogLevel.Error, "Failed to deserialize job payload for job {jobId}")]
     public static partial void LogJobDeserializationError(ILogger logger, Exception ex, Guid jobId);
 
