@@ -13,7 +13,9 @@ import { RefTestStatus } from '../../../../graphql/generated';
 import { HasPermission } from '../../auth/directives/has-permission.directive';
 import { Permissions } from '../../auth/models/permissions';
 import { Banner } from '../../shared/components/banner/banner';
+import { ApproveRefTestsDialog } from '../list/components/dialogs/approve-ref-tests-dialog/approve-ref-tests-dialog';
 import { DeleteRefTestsDialog } from '../list/components/dialogs/delete-ref-tests-dialog/delete-ref-tests-dialog';
+import { RejectRefTestsDialog } from '../list/components/dialogs/reject-ref-tests-dialog/reject-ref-tests-dialog';
 import { SendInvitationsDialog } from '../list/components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from '../list/components/dialogs/send-results-dialog/send-results-dialog';
 import { RefTestDetailData } from './services/ref-test-detail-data';
@@ -29,6 +31,8 @@ import { RefTestDetailOperationManager } from './services/ref-test-detail-operat
     SendInvitationsDialog,
     SendResultsDialog,
     DeleteRefTestsDialog,
+    ApproveRefTestsDialog,
+    RejectRefTestsDialog,
     Banner,
     HasPermission,
   ],
@@ -96,6 +100,18 @@ export class RefTestDetail {
     return [{ name: refTest.name, email: refTest.email }];
   });
 
+  protected readonly canApprove = computed(() => {
+    const s = this.refTestData().status;
+    return s === 'PENDING_APPROVAL' || s === 'REJECTED';
+  });
+
+  protected readonly canReject = computed(() => this.refTestData().status === 'PENDING_APPROVAL');
+
+  protected readonly refTestForApproval = computed(() => {
+    const refTest = this.refTestData();
+    return [{ name: refTest.name, email: refTest.email }];
+  });
+
   protected getStatusClass(status: RefTestStatus): string {
     switch (status) {
       case 'COMPLETED':
@@ -132,5 +148,13 @@ export class RefTestDetail {
 
   protected confirmDelete(): void {
     this.operationManager.deleteDialog.confirm();
+  }
+
+  protected confirmApprove(): void {
+    this.operationManager.approveDialog.confirm();
+  }
+
+  protected confirmReject(reason: string): void {
+    this.operationManager.rejectDialog.confirm(reason);
   }
 }
