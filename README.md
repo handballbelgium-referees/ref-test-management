@@ -48,7 +48,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Detail View**: Dedicated detail page with tabbed interface and real-time updates
   - **Edit Dialogs**: Inline editing for participant details, test configuration, notification settings, time extensions, and token regeneration
   - **Reset & Revive**: Soft/hard reset dialogs for test retakes and expired test revival
-  - **Card Components**: Organized information display with ParticipantInfoCard, TestInfoCard, StatusInfoCard, TimelineCard, and ScoresCard
+  - **Card Components**: Organized information display with DetailsCard, TestInfoCard, StatusInfoCard, TimelineCard, and ScoresCard
   - **Question Display**: Detailed question and answer components with visual feedback
   - **Real-time Sync**: Automatic updates via GraphQL subscriptions
 - **Responsive Design**:
@@ -160,7 +160,7 @@ See [SECURITY.md](SECURITY.md) for the full permission reference, Auth0 setup gu
 - **Global Error Handler**: Centralized error handling with automatic banner notifications
 - **Detail Page Components**: Modular card-based components for enhanced organization
   - **Question & Answer Components**: Dedicated `QuestionCard`, `AnswerItem`, and `AnswersSummary` components
-  - **Info Cards**: Reusable `ParticipantInfoCard`, `TestInfoCard`, `StatusInfoCard`, `TimelineCard`, and `ScoresCard`
+  - **Info Cards**: Reusable `DetailsCard`, `TestInfoCard`, `StatusInfoCard`, `TimelineCard`, and `ScoresCard`
   - **Empty States**: Friendly empty state component when no questions exist
 - **Progressive Enhancement**: Improved navigation with automatic redirection after test creation
 
@@ -294,6 +294,8 @@ Each service has a **single, clear responsibility**:
 - **JobEnqueueService** → Enqueue background jobs
 - **BackgroundJobService** → Process job queue
 - **RefTestExpirationService** → Auto-expire old tests
+- **RefTestSubscriptionService** → Publish real-time events via GraphQL subscriptions
+- **RefTestSessionService** → Manage session locks for concurrent test-taking
 - **TaskPermissionHandler** → Enforce single-permission authorization
 - **AnyTaskPermissionHandler** → Enforce OR-permission authorization
 - **TaskAuthorizationPolicyProvider** → Dynamically resolve permission policies
@@ -311,11 +313,12 @@ Graphql/
 ├── Mutations/                    # All mutations organized by domain
 │   ├── Lifecycle/                (3 files) - Start, Progress, Complete + inputs
 │   ├── Creation/                 (3 files) - CreateRefTests + input/output
+│   ├── Approval/                 (2 files) - ApproveRefTests, RejectRefTests + models
 │   ├── Email/                    (7 files) - Send invitations, results, reports
 │   ├── Update/                   (5 files) - 5 update operations + inputs
 │   ├── Reset/                    (4 files) - Reset & Revive operations + results
 │   ├── Deletion/                 (3 files) - Delete + input/output
-│   └── Shared/                   (1 file)  - Shared User DTO
+│   └── Shared/                   (2 files) - Shared Title and User DTOs
 ├── Queries/                      (2 files) - Queries + DataLoaders
 ├── Subscriptions/                (3 files) - Real-time event subscriptions with authorization
 │   ├── RefTestSubscriptions.cs   - Main subscription resolver with access control
@@ -328,7 +331,7 @@ Graphql/
 #### ✅ Key Benefits
 
 - **From**: 1 monolithic 860-line mutation file
-- **To**: 7 organized subfolders with 28 well-organized files
+- **To**: 8 organized subfolders with 29 well-organized files
 - **Average file size**: ~180 lines (highly maintainable)
 - **Perfect co-location**: Each mutation with its input/output models
 - **Shared DTOs**: Common models in dedicated Shared folder
@@ -336,15 +339,16 @@ Graphql/
 
 #### ✅ Mutation Organization
 
-| Folder        | Files | Mutations | Purpose                                             |
-| ------------- | ----- | --------- | --------------------------------------------------- |
-| **Lifecycle** | 3     | 3         | User test execution (Start, SaveProgress, Complete) |
-| **Creation**  | 3     | 1         | Create multiple tests with question selection       |
-| **Email**     | 7     | 3         | Send invitations, results, and reports via email    |
-| **Update**    | 5     | 5         | Update details, config, time, notifications, token  |
-| **Reset**     | 4     | 2         | Reset tests for retake and revive expired tests     |
-| **Deletion**  | 3     | 1         | Delete operations                                   |
-| **Shared**    | 1     | -         | Shared DTOs (User record) used across mutations     |
+| Folder        | Files | Mutations | Purpose                                                    |
+| ------------- | ----- | --------- | ---------------------------------------------------------- |
+| **Lifecycle** | 3     | 3         | User test execution (Start, SaveProgress, Complete)        |
+| **Creation**  | 3     | 1         | Create multiple tests with question selection              |
+| **Approval**  | 2     | 2         | Approve/reject tests in Pending Approval status            |
+| **Email**     | 7     | 3         | Send invitations, results, and reports via email           |
+| **Update**    | 5     | 5         | Update details, config, time, notifications, token         |
+| **Reset**     | 4     | 2         | Reset tests for retake and revive expired tests            |
+| **Deletion**  | 3     | 1         | Delete operations                                          |
+| **Shared**    | 2     | -         | Shared DTOs (Title and User records) used across mutations |
 
 #### ✅ Developer Experience
 
@@ -486,11 +490,11 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 | Technology                | Version  | Purpose                                                        |
 | ------------------------- | -------- | -------------------------------------------------------------- |
 | **.NET**                  | 10.0     | Latest .NET framework for high-performance APIs                |
-| **Hot Chocolate**         | 15.1.12  | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.5   | ORM for database access with migrations                        |
+| **Hot Chocolate**         | 16.0.3   | GraphQL server with authorization, data loaders, and filtering |
+| **Entity Framework Core** | 10.0.8   | ORM for database access with migrations                        |
 | **SQL Server**            | -        | Primary data store (Azure SQL or local)                        |
 | **ClosedXML**             | 0.105.0  | Excel file generation and manipulation                         |
-| **QuestPDF**              | 2026.2.4 | PDF generation for RefTest results                             |
+| **QuestPDF**              | 2026.5.0 | PDF generation for RefTest results                             |
 | **Auth0**                 | -        | OAuth2/OpenID Connect authentication                           |
 | **Brevo API**             | -        | Email delivery service                                         |
 
@@ -508,9 +512,9 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 | **Angular**                | 21.2.0   | Modern SPA framework with standalone components |
 | **TypeScript**             | 5.9.3    | Strict type-checking for reliability            |
 | **Signals**                | Built-in | Reactive state management                       |
-| **TailwindCSS**            | 4.2.0    | Utility-first CSS framework                     |
+| **TailwindCSS**            | 4.3.0    | Utility-first CSS framework                     |
 | **Apollo Client**          | 4.1.0    | GraphQL client with caching                     |
-| **GraphQL Code Generator** | 6.2.0    | Auto-generate TypeScript types from GraphQL     |
+| **GraphQL Code Generator** | 7.0.0    | Auto-generate TypeScript types from GraphQL     |
 | **ngx-translate**          | 17.0.0   | i18n and localization                           |
 | **Vitest**                 | 4.1.0    | Fast unit testing framework                     |
 | **RxJS**                   | 7.8.2    | Reactive programming                            |

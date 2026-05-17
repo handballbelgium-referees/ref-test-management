@@ -90,11 +90,14 @@ ref-test-management/
 │   └── wwwroot/                          # Angular production build (post-build)
 │
 ├── RefTestManagement.Auth0/              # 🔐 Auth0 Management API Client (.NET 10)
-│   ├── Auth0ManagementConfiguration.cs  # M2M client credentials config
-│   ├── Auth0User.cs                      # User record (Name, Email)
-│   ├── IAuth0ManagementService.cs        # Service interface
-│   ├── Auth0ManagementService.cs         # M2M token + role-based user discovery
 │   ├── Auth0ServiceExtensions.cs         # AddAuth0ManagementServices() DI extension
+│   ├── Configurations/
+│   │   └── Auth0ManagementConfiguration.cs  # M2M client credentials config
+│   ├── Models/
+│   │   └── Auth0User.cs                  # User record (Name, Email)
+│   ├── Services/
+│   │   ├── IAuth0ManagementService.cs    # Service interface
+│   │   └── Auth0ManagementService.cs     # M2M token + role-based user discovery
 │   └── RefTestManagement.Auth0.csproj    # Depends on Security project
 │
 ├── RefTestManagement.Application/        # 🔷 Business Logic Layer (.NET 10)
@@ -112,7 +115,11 @@ ref-test-management/
 │   │       ├── getRandomQuestionIds.graphql
 │   │       └── searchQuestionsByNumber.graphql
 │   ├── Models/                           # Application models
-│   │   └── JobPayloads.cs                # Job payload DTOs (InvitationEmail, ResultEmail, ReportEmail, RefTestExpiration, ApprovalNotificationEmail)
+│   │   ├── Answer.cs                     # Answer model
+│   │   ├── JobPayloads.cs                # Job payload DTOs (InvitationEmail, ResultEmail, ReportEmail, RefTestExpiration, ApprovalNotificationEmail)
+│   │   ├── Question.cs                   # Question model
+│   │   ├── RefTestExpirationConfiguration.cs # Expiration configuration model
+│   │   └── ScoreCalculation.cs           # Score calculation model
 │   ├── Configurations/                   # Configuration models
 │   │   ├── BackgroundJobConfiguration.cs # Job queue settings
 │   │   ├── EmailConfiguration.cs         # Email/Brevo settings
@@ -160,6 +167,7 @@ ref-test-management/
 │   │   ├── RefTestReportService.cs       # 📊 Generate Excel + PDF system reports
 │   │   ├── LogoService.cs                # 🖼️ Fetch and cache application logo (singleton)
 │   │   ├── JobEnqueueService.cs          # ➕ Enqueue background jobs (incl. EnqueueApprovalNotificationAsync)
+│   │   ├── RefTestSessionService.cs      # 🔒 Session lock management for concurrent test-taking
 │   │   └── RefTestSubscriptionService.cs # 🔔 Pub/sub for GraphQL subscriptions (incl. Approved/Rejected events)
 │   └── RefTestManagement.Infrastructure.csproj # Dependencies: EF Core, QuestPDF, ClosedXML
 │
@@ -187,6 +195,8 @@ ref-test-management/
 │   │   │   │   └── home.ts               # Landing page component
 │   │   │   │
 │   │   │   ├── ref-tests/                # 📋 RefTest Management
+│   │   │   │   ├── services/             # 🎯 Shared ref-tests services
+│   │   │   │   │   └── ref-test-data.ts  # Data, mutations, subscriptions (incl. approve/reject)
 │   │   │   │   ├── create/               # Create RefTests page
 │   │   │   │   │   ├── create-ref-tests.ts
 │   │   │   │   │   └── components/
@@ -198,20 +208,21 @@ ref-test-management/
 │   │   │   │   ├── detail/               # RefTest detail page
 │   │   │   │   │   ├── ref-test-detail.ts
 │   │   │   │   │   ├── services/
-│   │   │   │   │   │   └── ref-test-detail-data.service.ts
+│   │   │   │   │   │   ├── ref-test-detail-data.ts
+│   │   │   │   │   │   └── ref-test-detail-operation-manager.ts
 │   │   │   │   │   └── components/
 │   │   │   │   │       ├── ref-test-detail-tab/
 │   │   │   │   │       │   ├── ref-test-detail-tab.ts
 │   │   │   │   │       │   └── components/
 │   │   │   │   │       │       ├── dialogs/
-│   │   │   │   │       │       │   ├── edit-participant-dialog/
-│   │   │   │   │       │       │   ├── edit-configuration-dialog/
-│   │   │   │   │       │       │   ├── edit-notification-settings-dialog/
+│   │   │   │   │       │       │   ├── update-details-dialog/
+│   │   │   │   │       │       │   ├── update-configuration-dialog/
+│   │   │   │   │       │       │   ├── update-notification-settings-dialog/
 │   │   │   │   │       │       │   ├── extend-time-dialog/
 │   │   │   │   │       │       │   ├── regenerate-token-dialog/
 │   │   │   │   │       │       │   ├── reset-ref-test-dialog/
 │   │   │   │   │       │       │   └── revive-ref-test-dialog/
-│   │   │   │   │       │       ├── participant-info-card/
+│   │   │   │   │       │       ├── details-card/
 │   │   │   │   │       │       ├── scores-card/
 │   │   │   │   │       │       ├── status-info-card/
 │   │   │   │   │       │       ├── test-info-card/
@@ -226,7 +237,6 @@ ref-test-management/
 │   │   │   │   └── list/                 # RefTests list page
 │   │   │   │       ├── list-ref-tests.ts         # Main list component
 │   │   │   │       ├── services/                 # 🎯 Business Logic Services
-│   │   │   │       │   ├── ref-test-data.ts      # Data, mutations, subscriptions (incl. approve/reject)
 │   │   │   │       │   ├── ref-test-filter-state.ts
 │   │   │   │       │   ├── ref-test-filter-actions.ts
 │   │   │   │       │   ├── ref-test-query-builder.ts
@@ -254,7 +264,6 @@ ref-test-management/
 │   │   │   │           ├── ref-test-list-toolbar/
 │   │   │   │           ├── ref-test-pagination/
 │   │   │   │           ├── ref-test-performance-warning/
-│   │   │   │           ├── ref-test-report-banner/
 │   │   │   │           ├── ref-test-empty-state/
 │   │   │   │           ├── dialogs/                     # 💬 Modal Dialogs
 │   │   │   │           │   ├── delete-ref-tests-dialog/
@@ -295,6 +304,8 @@ ref-test-management/
 │   │   │       ├── components/
 │   │   │       │   ├── banner/
 │   │   │       │   ├── datepicker/
+│   │   │       │   ├── datetime-picker/
+│   │   │       │   ├── dialog/
 │   │   │       │   └── pull-to-refresh/
 │   │   │       ├── pipes/
 │   │   │       └── utils/
