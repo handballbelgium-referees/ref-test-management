@@ -39,7 +39,7 @@ public static class RefTestCreationMutations
     {
         var currentUser = httpContextAccessor.HttpContext?.User;
         var callerPermissions = currentUser?.GetPermissions() ?? [];
-        var requiresApproval = !callerPermissions.Contains(Permissions.RefTests.Approve);
+        var requiresApproval = !callerPermissions.Contains(Permissions.RefTests.Approve) && !callerPermissions.Contains(Permissions.RefTests.All) && !callerPermissions.Contains(Permissions.Superadmin);
         var creatorName = currentUser.GetDisplayName();
         var creatorEmail = currentUser.GetEmail();
 

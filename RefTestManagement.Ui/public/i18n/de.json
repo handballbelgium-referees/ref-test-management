@@ -42,6 +42,10 @@
       "manage": {
         "title": "RefTests Verwalten",
         "description": "RefTests verfolgen und verwalten"
+      },
+      "auditLogs": {
+        "title": "Auditprotokoll",
+        "description": "Sehen Sie eine vollständige Historie aller Änderungen im System"
       }
     },
     "about": {
@@ -644,5 +648,44 @@
   "footer": {
     "copyright": "© {{year}} Handball-RefTest-Verwaltung. Alle Rechte vorbehalten.",
     "creator": "Eigentum von Kristof Gilis"
+  },
+  "audit-logs": {
+    "title": "Auditprotokoll",
+    "subtitle": "Vollständige Historie aller Systemänderungen",
+    "loading": "Auditprotokoll wird geladen...",
+    "empty": "Keine Einträge gefunden",
+    "totalCount": "{{count}} Einträge",
+    "loadMore": "Mehr laden",
+    "loadingMore": "Wird geladen...",
+    "showing": "{{displayed}} von {{total}} Eintrag wird angezeigt",
+    "showing_plural": "{{displayed}} von {{total}} Einträge werden angezeigt",
+    "filter": {
+      "title": "Filter",
+      "entityTypeLabel": "Entitätstyp",
+      "entityTypePlaceholder": "z. B. RefTest",
+      "actionLabel": "Aktion",
+      "actorLabel": "Akteur",
+      "actorPlaceholder": "Name oder E-Mail",
+      "allActions": "Alle Aktionen",
+      "apply": "Anwenden",
+      "clear": "Löschen"
+    },
+    "column": {
+      "timestamp": "Zeitstempel",
+      "actor": "Akteur",
+      "action": "Aktion",
+      "entityType": "Entitätstyp",
+      "entityId": "Entitäts-ID",
+      "changes": "Änderungen"
+    },
+    "action": {
+      "created": "Erstellt",
+      "modified": "Geändert",
+      "deleted": "Gelöscht"
+    },
+    "changes": {
+      "show": "Änderungen anzeigen",
+      "hide": "Änderungen ausblenden"
+    }
   }
 }

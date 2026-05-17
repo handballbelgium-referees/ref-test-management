@@ -19,6 +19,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RefTestManagement.Security"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RefTestManagement.Auth0", "RefTestManagement.Auth0\RefTestManagement.Auth0.csproj", "{92861A51-8194-4F7B-A4D5-0E5FF4149C2A}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RefTestManagement.AuditLog", "RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj", "{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -101,6 +103,18 @@ Global
 		{92861A51-8194-4F7B-A4D5-0E5FF4149C2A}.Release|x64.Build.0 = Release|Any CPU
 		{92861A51-8194-4F7B-A4D5-0E5FF4149C2A}.Release|x86.ActiveCfg = Release|Any CPU
 		{92861A51-8194-4F7B-A4D5-0E5FF4149C2A}.Release|x86.Build.0 = Release|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Debug|x64.Build.0 = Debug|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Debug|x86.Build.0 = Debug|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Release|x64.ActiveCfg = Release|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Release|x64.Build.0 = Release|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Release|x86.ActiveCfg = Release|Any CPU
+		{2FEDDBBE-93AF-47C7-9F42-719A65AEDE00}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

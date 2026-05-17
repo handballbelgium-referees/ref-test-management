@@ -9,6 +9,30 @@ export type ApproveRefTestsInput = {
   ids: Array<string | number>;
 };
 
+export type AuditLogDtoFilterInput = {
+  action?: StringOperationFilterInput | null | undefined;
+  actorEmail?: StringOperationFilterInput | null | undefined;
+  actorName?: StringOperationFilterInput | null | undefined;
+  and?: Array<AuditLogDtoFilterInput> | null | undefined;
+  changes?: StringOperationFilterInput | null | undefined;
+  entityId?: StringOperationFilterInput | null | undefined;
+  entityType?: StringOperationFilterInput | null | undefined;
+  id?: UuidOperationFilterInput | null | undefined;
+  or?: Array<AuditLogDtoFilterInput> | null | undefined;
+  timestamp?: DateTimeOperationFilterInput | null | undefined;
+};
+
+export type AuditLogDtoSortInput = {
+  action?: SortEnumType | null | undefined;
+  actorEmail?: SortEnumType | null | undefined;
+  actorName?: SortEnumType | null | undefined;
+  changes?: SortEnumType | null | undefined;
+  entityId?: SortEnumType | null | undefined;
+  entityType?: SortEnumType | null | undefined;
+  id?: SortEnumType | null | undefined;
+  timestamp?: SortEnumType | null | undefined;
+};
+
 export type BooleanOperationFilterInput = {
   eq?: boolean | null | undefined;
   neq?: boolean | null | undefined;
@@ -314,6 +338,31 @@ export type UserInput = {
   lastName: string;
 };
 
+export type UuidOperationFilterInput = {
+  eq?: string | null | undefined;
+  gt?: string | null | undefined;
+  gte?: string | null | undefined;
+  in?: Array<string | null | undefined> | null | undefined;
+  lt?: string | null | undefined;
+  lte?: string | null | undefined;
+  neq?: string | null | undefined;
+  ngt?: string | null | undefined;
+  ngte?: string | null | undefined;
+  nin?: Array<string | null | undefined> | null | undefined;
+  nlt?: string | null | undefined;
+  nlte?: string | null | undefined;
+};
+
+export type GetAuditLogsQueryVariables = Exact<{
+  first?: number | null | undefined;
+  after?: string | null | undefined;
+  where?: AuditLogDtoFilterInput | null | undefined;
+  order?: Array<AuditLogDtoSortInput> | AuditLogDtoSortInput | null | undefined;
+}>;
+
+
+export type GetAuditLogsQuery = { auditLogs: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, entityType: string, entityId: string, action: string, changes: string | null, actorName: string, actorEmail: string, timestamp: string } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+
 export type CompleteRefTestMutationVariables = Exact<{
   input: CompleteRefTestInput;
 }>;
@@ -585,6 +634,41 @@ export type RefTestsUpdatedSubscription = { refTestsUpdated:
     | { __typename: 'RefTestStarted', id: string, status: RefTestStatus, startedAt: string }
    };
 
+export const GetAuditLogsDocument = gql`
+    query GetAuditLogs($first: Int, $after: String, $where: AuditLogDtoFilterInput, $order: [AuditLogDtoSortInput!]) {
+  auditLogs(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        entityType
+        entityId
+        action
+        changes
+        actorName
+        actorEmail
+        timestamp
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetAuditLogsGQL extends Apollo.Query<GetAuditLogsQuery, GetAuditLogsQueryVariables> {
+    override document = GetAuditLogsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const CompleteRefTestDocument = gql`
     mutation CompleteRefTest($input: CompleteRefTestInput!) {
   completeRefTest(input: $input) {

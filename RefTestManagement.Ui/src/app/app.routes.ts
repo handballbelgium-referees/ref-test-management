@@ -48,6 +48,11 @@ export const routes: Routes = [
     ],
   },
   {
+    path: 'audit-logs',
+    loadComponent: () => import('./audit-logs/list-audit-logs').then((m) => m.ListAuditLogs),
+    canActivate: [authGuard, permissionGuard(Permissions.AuditLogs.View)],
+  },
+  {
     path: 'ref-test/:token',
     loadComponent: () =>
       import('./ref-test/welcome/ref-test-welcome').then((m) => m.RefTestWelcome),

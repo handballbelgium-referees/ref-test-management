@@ -21,7 +21,8 @@ ref-test-management/
 │   ├── BackgroundServices/               # Background services
 │   │   ├── BackgroundJobService.cs       # Job queue processor (emails, PDFs, reports, approval notifications)
 │   │   ├── PermissionSyncService.cs      # Syncs Auth0 API permissions on startup
-│   │   └── RefTestExpirationService.cs   # Automatic RefTest expiration (runs every 5 min)
+│   │   ├── RefTestExpirationService.cs   # Automatic RefTest expiration (runs every 5 min)
+│   │   └── AuditLogCleanupService.cs     # Deletes audit log entries older than retention period
 │   ├── Graphql/                          # Hot Chocolate GraphQL (Clean Architecture)
 │   │   ├── Mutations/                    # 🔷 All GraphQL Mutations (organized by domain)
 │   │   │   ├── Lifecycle/                # User test execution mutations
@@ -63,6 +64,7 @@ ref-test-management/
 │   │   │       └── User.cs               # User DTO (FirstName, LastName, Email)
 │   │   ├── Queries/                      # 🔷 All GraphQL Queries
 │   │   │   ├── RefTestQueries.cs         # RefTest queries (list, detail, titles)
+│   │   │   ├── AuditLogQueries.cs        # Audit log paginated query (requires audit-logs:view)
 │   │   │   └── DataLoaders.cs            # Batch loading for N+1 optimization
 │   │   ├── Subscriptions/                # 🔷 Real-time event subscriptions
 │   │   │   ├── RefTestSubscriptions.cs   # Subscription definitions with authorization
@@ -82,12 +84,21 @@ ref-test-management/
 │   │       ├── RefTestMappings.cs        # RefTest mapping extensions
 │   │       ├── RefTestExtensions.cs      # RefTest query extensions
 │   │       ├── RefTestTitleDto.cs        # RefTestTitle read model
-│   │       └── RefTestTitleMappings.cs   # RefTestTitle mapping extensions
+│   │       ├── RefTestTitleMappings.cs   # RefTestTitle mapping extensions
+│   │       └── AuditLogDto.cs            # Audit log entry read model
 │   ├── Program.cs                        # Application entry point & DI setup
 │   ├── SecurityStartup.cs                # Auth0 JWT configuration
 │   ├── RefTestManagementMigrationExtensions.cs # EF Core migration runner
 │   ├── appsettings.json                  # Configuration (DB, Auth0, Email, etc.)
 │   └── wwwroot/                          # Angular production build (post-build)
+│
+├── RefTestManagement.AuditLog/           # 📋 Audit Log Library (.NET 10)
+│   ├── AuditLogEntry.cs                  # Audit log entity (Id, EntityType, EntityId, Action, Changes, Actor, Timestamp)
+│   ├── AuditLogEntryConfiguration.cs     # EF Core entity configuration with indexes
+│   ├── AuditLogOptions.cs                # Configuration (RetentionDays, CleanupInterval, exclusions, list properties)
+│   ├── AuditSaveChangesInterceptor.cs    # EF Core interceptor — captures all write operations in same transaction
+│   ├── AuditLogServiceExtensions.cs      # AddAuditLogging() DI extension
+│   └── RefTestManagement.AuditLog.csproj # Depends on EF Core, ASP.NET Core HTTP Abstractions
 │
 ├── RefTestManagement.Auth0/              # 🔐 Auth0 Management API Client (.NET 10)
 │   ├── Auth0ServiceExtensions.cs         # AddAuth0ManagementServices() DI extension
@@ -151,7 +162,7 @@ ref-test-management/
 │   └── RefTestManagement.Security.csproj # No project dependencies (standalone)
 │
 ├── RefTestManagement.Infrastructure/     # 🔷 Infrastructure Layer (.NET 10)
-│   ├── RefTestManagementContext.cs       # EF Core DbContext
+│   ├── RefTestManagementContext.cs       # EF Core DbContext (incl. AuditLogs DbSet)
 │   ├── Migrations/                       # Database migrations
 │   ├── Configurations/                   # EF Core entity configurations
 │   │   ├── RefTestConfiguration.cs       # Includes RejectionReason column
@@ -192,7 +203,12 @@ ref-test-management/
 │   │   │   │       └── permissions.ts        # Permission string constants (incl. Approve)
 │   │   │   │
 │   │   │   ├── home/                     # 🏠 Home Page
-│   │   │   │   └── home.ts               # Landing page component
+│   │   │   │   └── home.ts               # Landing page component (incl. Audit Logs quick action)
+│   │   │   │
+│   │   │   ├── audit-logs/               # 📋 Audit Log
+│   │   │   │   ├── audit-log-data.ts     # Signal-based service (paginated GraphQL query)
+│   │   │   │   ├── list-audit-logs.ts    # List component (filters, expandable changes)
+│   │   │   │   └── list-audit-logs.html  # Template (table, entity linking, list diffs)
 │   │   │   │
 │   │   │   ├── ref-tests/                # 📋 RefTest Management
 │   │   │   │   ├── services/             # 🎯 Shared ref-tests services
@@ -325,6 +341,9 @@ ref-test-management/
 │   │
 │   ├── graphql/                          # 📡 GraphQL Operations
 │   │   ├── generated.ts                  # 🤖 Auto-generated TypeScript types
+│   │   ├── audit-logs/                   # Audit log operations
+│   │   │   └── queries/
+│   │   │       └── get-audit-logs.graphql  # Paginated audit log query
 │   │   ├── ref-test/                     # Single RefTest operations (test-taking)
 │   │   │   ├── mutations/
 │   │   │   │   ├── complete-ref-test.graphql
@@ -394,6 +413,7 @@ ref-test-management/
 
 | Directory                                                        | Purpose                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `RefTestManagement.AuditLog`                                     | Self-contained audit log library — interceptor, entity, options, DI extension |
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |
@@ -404,6 +424,7 @@ ref-test-management/
 | `RefTestManagement.Ui/src/app/ref-tests/list`                    | List view with mobile/desktop layouts, filters and operations                 |
 | `RefTestManagement.Ui/src/app/ref-tests/list/services`           | Business logic services for data, filters, state and operations               |
 | `RefTestManagement.Ui/src/app/ref-tests/list/components/dialogs` | All bulk-action dialogs incl. approve & reject                                |
+| `RefTestManagement.Ui/src/app/audit-logs`                        | Audit log list page with filters, expandable change diffs and entity linking  |
 | `RefTestManagement.Ui/src/app/auth`                              | Auth guard, permission guard, `HasPermission` directive, `PermissionsService` |
 | `RefTestManagement.Ui/src/app/ref-test`                          | RefTest-taking experience (welcome, take, results)                            |
 | `RefTestManagement.Ui/graphql/ref-tests/mutations`               | All management mutations incl. `approve-ref-tests` and `reject-ref-tests`     |

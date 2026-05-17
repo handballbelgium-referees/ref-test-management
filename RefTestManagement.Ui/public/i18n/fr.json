@@ -42,6 +42,10 @@
       "manage": {
         "title": "Gérer les RefTests",
         "description": "Suivre et gérer les RefTests"
+      },
+      "auditLogs": {
+        "title": "Journal d'audit",
+        "description": "Consultez l'historique complet de toutes les modifications apportées au système"
       }
     },
     "about": {
@@ -641,5 +645,44 @@
   "footer": {
     "copyright": "© {{year}} Gestion des RefTest Handball. Tous droits réservés.",
     "creator": "Propriété de Kristof Gilis"
+  },
+  "audit-logs": {
+    "title": "Journal d'audit",
+    "subtitle": "Historique complet de toutes les modifications du système",
+    "loading": "Chargement du journal d'audit...",
+    "empty": "Aucune entrée trouvée",
+    "totalCount": "{{count}} entrées",
+    "loadMore": "Charger plus",
+    "loadingMore": "Chargement...",
+    "showing": "Affichage de {{displayed}} sur {{total}} entrée",
+    "showing_plural": "Affichage de {{displayed}} sur {{total}} entrées",
+    "filter": {
+      "title": "Filtres",
+      "entityTypeLabel": "Type d'entité",
+      "entityTypePlaceholder": "ex. RefTest",
+      "actionLabel": "Action",
+      "actorLabel": "Acteur",
+      "actorPlaceholder": "Nom ou e-mail",
+      "allActions": "Toutes les actions",
+      "apply": "Appliquer",
+      "clear": "Effacer"
+    },
+    "column": {
+      "timestamp": "Horodatage",
+      "actor": "Acteur",
+      "action": "Action",
+      "entityType": "Type d'entité",
+      "entityId": "ID d'entité",
+      "changes": "Modifications"
+    },
+    "action": {
+      "created": "Créé",
+      "modified": "Modifié",
+      "deleted": "Supprimé"
+    },
+    "changes": {
+      "show": "Afficher les modifications",
+      "hide": "Masquer les modifications"
+    }
   }
 }

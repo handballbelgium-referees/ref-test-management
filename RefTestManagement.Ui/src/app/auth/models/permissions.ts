@@ -25,4 +25,8 @@ export const Permissions = {
     View: 'questions:view',
     All: 'questions:*',
   },
+  AuditLogs: {
+    View: 'audit-logs:view',
+    All: 'audit-logs:*',
+  },
 } as const;

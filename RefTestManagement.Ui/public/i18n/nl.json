@@ -42,6 +42,10 @@
       "manage": {
         "title": "RefTests Beheren",
         "description": "Volg en beheer RefTests"
+      },
+      "auditLogs": {
+        "title": "Auditlogboek",
+        "description": "Bekijk een volledige geschiedenis van alle wijzigingen in het systeem"
       }
     },
     "about": {
@@ -640,5 +644,44 @@
   "footer": {
     "copyright": "© {{year}} Handbal RefTest Beheer. Alle rechten voorbehouden.",
     "creator": "Eigendom van Kristof Gilis"
+  },
+  "audit-logs": {
+    "title": "Auditlogboek",
+    "subtitle": "Volledige geschiedenis van alle systeemwijzigingen",
+    "loading": "Auditlogboek laden...",
+    "empty": "Geen auditlogboek-entries gevonden",
+    "totalCount": "{{count}} entries",
+    "loadMore": "Meer laden",
+    "loadingMore": "Laden...",
+    "showing": "{{displayed}} van {{total}} entry weergegeven",
+    "showing_plural": "{{displayed}} van {{total}} entries weergegeven",
+    "filter": {
+      "title": "Filters",
+      "entityTypeLabel": "Entiteitstype",
+      "entityTypePlaceholder": "bijv. RefTest",
+      "actionLabel": "Actie",
+      "actorLabel": "Actor",
+      "actorPlaceholder": "Naam of e-mail",
+      "allActions": "Alle acties",
+      "apply": "Toepassen",
+      "clear": "Wissen"
+    },
+    "column": {
+      "timestamp": "Tijdstempel",
+      "actor": "Actor",
+      "action": "Actie",
+      "entityType": "Entiteitstype",
+      "entityId": "Entiteits-ID",
+      "changes": "Wijzigingen"
+    },
+    "action": {
+      "created": "Aangemaakt",
+      "modified": "Gewijzigd",
+      "deleted": "Verwijderd"
+    },
+    "changes": {
+      "show": "Wijzigingen tonen",
+      "hide": "Wijzigingen verbergen"
+    }
   }
 }

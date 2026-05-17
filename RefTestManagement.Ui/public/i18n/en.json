@@ -42,6 +42,10 @@
       "manage": {
         "title": "Manage RefTests",
         "description": "Track and manage RefTests"
+      },
+      "auditLogs": {
+        "title": "Audit Log",
+        "description": "View a complete history of all changes made to the system"
       }
     },
     "about": {
@@ -640,5 +644,44 @@
   "footer": {
     "copyright": "© {{year}} Handball RefTest Management System. All rights reserved.",
     "creator": "Owned by Kristof Gilis"
+  },
+  "audit-logs": {
+    "title": "Audit Log",
+    "subtitle": "Complete history of all system changes",
+    "loading": "Loading audit log...",
+    "empty": "No audit log entries found",
+    "totalCount": "{{count}} entries",
+    "loadMore": "Load more",
+    "loadingMore": "Loading...",
+    "showing": "Showing {{displayed}} of {{total}} entry",
+    "showing_plural": "Showing {{displayed}} of {{total}} entries",
+    "filter": {
+      "title": "Filters",
+      "entityTypeLabel": "Entity type",
+      "entityTypePlaceholder": "e.g. RefTest",
+      "actionLabel": "Action",
+      "actorLabel": "Actor",
+      "actorPlaceholder": "Name or email",
+      "allActions": "All actions",
+      "apply": "Apply",
+      "clear": "Clear"
+    },
+    "column": {
+      "timestamp": "Timestamp",
+      "actor": "Actor",
+      "action": "Action",
+      "entityType": "Entity Type",
+      "entityId": "Entity ID",
+      "changes": "Changes"
+    },
+    "action": {
+      "created": "Created",
+      "modified": "Modified",
+      "deleted": "Deleted"
+    },
+    "changes": {
+      "show": "Show changes",
+      "hide": "Hide changes"
+    }
   }
 }

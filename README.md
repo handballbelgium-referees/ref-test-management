@@ -37,6 +37,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Randomization**: Optional random answer order per RefTest to prevent pattern memorization
 - **Time Management**: Configurable time limits with auto-submit functionality
 - **Automatic Expiration**: Background service automatically expires and completes tests (no extra cost on Azure)
+- **Audit Log**: Every create, update, and delete operation is recorded with actor, timestamp, and field-level diffs
 - **Instant Scoring**: Automatic score calculation with detailed answer feedback
 - **PDF Generation**: Professional PDF reports with QuestPDF for RefTest results
 
@@ -842,6 +843,7 @@ See [PROJECT-STRUCTURE.md](PROJECT-STRUCTURE.md) for the full annotated director
 | `RefTestManagement.Domain`         | Core entities and domain exceptions (no external dependencies)                                  |
 | `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
 | `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel, subscriptions, background job enqueue                        |
+| `RefTestManagement.AuditLog`       | Self-contained audit log library — EF Core interceptor, entity, retention options, DI extension |
 
 **Frontend:** `RefTestManagement.Ui` — Angular 21, Apollo Client, GraphQL Codegen, Tailwind CSS, PWA.
 
@@ -914,6 +916,12 @@ Complete configuration file structure:
 
   "ReportConfiguration": {
     "RecipientEmails": []
+  },
+
+  "AuditLogConfiguration": {
+    "EnableCleanup": true,
+    "CleanupIntervalHours": 24,
+    "RetentionDays": 90
   }
 }
 ```
@@ -955,6 +963,9 @@ Complete configuration file structure:
 |                                    | `RetainCompletedJobsDays`        | Keep successful jobs for X days                                           | ⚠️ Optional (defaults to 7)                   |
 |                                    | `RetainFailedJobsDays`           | Keep failed jobs for X days                                               | ⚠️ Optional (defaults to 30)                  |
 | **ReportConfiguration**            | `RecipientEmails`                | Array of emails to receive system reports                                 | ⚠️ Optional (defaults to empty)               |
+| **AuditLogConfiguration**          | `EnableCleanup`                  | Enable automatic cleanup of old audit log entries                         | ⚠️ Optional (defaults to true)                |
+|                                    | `CleanupIntervalHours`           | How often cleanup runs (hours)                                            | ⚠️ Optional (defaults to 24)                  |
+|                                    | `RetentionDays`                  | Delete entries older than this many days                                  | ⚠️ Optional (defaults to 90)                  |
 
 ### User Secrets (Development)
 
@@ -1082,7 +1093,7 @@ Note the `appId` (client ID), `tenant` (tenant ID) from output.
 
 ## ⏱️ Background Services
 
-The application includes **two built-in background services** that run continuously within your application at **no additional cost** on Azure.
+The application includes **three built-in background services** that run continuously within your application at **no additional cost** on Azure.
 
 ### 1. Background Job Queue Service
 
@@ -1379,12 +1390,43 @@ az webapp log tail --name YourAppName --resource-group YourResourceGroup \\
 
 ### Summary
 
-✅ **FREE** - Both services run within your existing App Service, no additional resources required  
+✅ **FREE** - All services run within your existing App Service, no additional resources required  
 ✅ **Reliable** - Start automatically with your application  
 ✅ **Scalable** - Handle thousands of operations efficiently  
 ✅ **Zero Configuration** - Work out of the box with sensible defaults  
 ✅ **High Performance** - Optimized queries, minimal CPU/memory usage  
 ✅ **Observable** - Full logging and error tracking
+
+### 3. Audit Log Cleanup Service
+
+The `AuditLogCleanupService` periodically deletes audit log entries that are older than the configured retention period.
+
+#### How It Works
+
+On startup (after a 10-second delay) and then every `CleanupIntervalHours` hours:
+
+1. Opens a scoped `RefTestManagementContext`
+2. Calculates the cutoff date (`UtcNow - RetentionDays`)
+3. Issues a single bulk `ExecuteDeleteAsync` — no entities loaded into memory
+4. Logs the number of deleted rows
+
+#### Configuration
+
+```json
+{
+  "AuditLogConfiguration": {
+    "EnableCleanup": true,
+    "CleanupIntervalHours": 24,
+    "RetentionDays": 90
+  }
+}
+```
+
+| Setting                | Default | Description                                   |
+| ---------------------- | ------- | --------------------------------------------- |
+| `EnableCleanup`        | `true`  | Set to `false` to disable the cleanup service |
+| `CleanupIntervalHours` | `24`    | How often the cleanup runs (in hours)         |
+| `RetentionDays`        | `90`    | Audit log entries older than this are deleted |
 
 - **ResultEmail**: Generates result PDFs and sends them via email
 - **ReportEmail**: Generates Excel-style reports and sends to admins

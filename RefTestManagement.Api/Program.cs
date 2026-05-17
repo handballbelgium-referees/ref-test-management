@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -39,12 +40,36 @@ services.AddCors(options =>
     });
 });
 
-services.AddDbContextFactory<RefTestManagementContext>(options =>
+var auditLogOptions = services.AddAuditLogging(opts =>
+{
+    var section = configuration.GetSection("AuditLogConfiguration");
+    opts.EnableCleanup = section.GetValue("EnableCleanup", true);
+    opts.CleanupIntervalHours = section.GetValue("CleanupIntervalHours", 24);
+    opts.RetentionDays = section.GetValue("RetentionDays", 90);
+
+    opts.ExcludeEntity<Handball.Belgium.RefTestManagement.Domain.Jobs.Job>();
+    opts.ExcludeProperty("Token");
+    opts.ExcludeProperty("Id");
+    opts.ResolveProperty("TitleId", "Title", (entity, ctx) =>
+    {
+        if (entity is not Handball.Belgium.RefTestManagement.Domain.RefTests.RefTest rt)
+            return null;
+        return rt.Title?.Value
+            ?? ctx.Find<Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle>(rt.TitleId)?.Value;
+    });
+    opts.SummarizeList("QuestionIds", "Questions", "questions");
+    opts.SummarizeList("SelectedAnswerIds", "SelectedAnswers", "answers");
+    opts.SummarizeList("WrongQuestionIds", "WrongQuestions", "wrong questions");
+    opts.SummarizeList("WrongAnswerIds", "WrongAnswers", "wrong answers");
+});
+
+services.AddDbContextFactory<RefTestManagementContext>((sp, options) =>
 {
     options.UseSqlServer(configuration.GetConnectionString("RefTestManagement"),
         x => x
             .EnableRetryOnFailure()
             .MigrationsAssembly(typeof(RefTestManagementContext).Assembly.GetName().Name));
+    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
 #if DEBUG
     options.EnableSensitiveDataLogging();
 #endif
@@ -107,6 +132,10 @@ services.AddAuth0ManagementServices(configuration);
 services.AddHostedService<PermissionSyncService>();
 services.AddHostedService<RefTestExpirationService>();
 services.AddHostedService<BackgroundJobService>();
+if (auditLogOptions.EnableCleanup)
+{
+    services.AddHostedService<AuditLogCleanupService>();
+}
 
 // Add IHF Rules Questions GraphQL client
 services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)

@@ -17,6 +17,7 @@
 
     <ItemGroup>
       <ProjectReference Include="..\RefTestManagement.Application\RefTestManagement.Application.csproj" />
+    <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
     </ItemGroup>
 
 </Project>

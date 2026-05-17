@@ -88,6 +88,13 @@ Decode your access token at [jwt.io](https://jwt.io). You should see a `permissi
 | `questions:view`   | `getQuestionsByNumber` query                    | Query    |
 | `questions:*`      | Wildcard — grants all `questions:*` permissions | Wildcard |
 
+### Audit Logs
+
+| Permission        | Protects                                    | Type     |
+| ----------------- | ------------------------------------------- | -------- |
+| `audit-logs:view` | `auditLogs` query (paginated, with filters) | Query    |
+| `audit-logs:*`    | Wildcard — grants all `audit-logs:*` perms  | Wildcard |
+
 ---
 
 ## Wildcard & Superadmin Resolution
@@ -106,7 +113,8 @@ For OR-semantics (a field accessible with any one of several permissions), the `
 
 | Role       | Permissions                                                                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Admin`    | `ref-tests:*`, `questions:*`                                                                                                                                       |
+| `Admin`    | `ref-tests:*`, `questions:*`, `audit-logs:*`                                                                                                                       |
+| `Auditor`  | `audit-logs:view`                                                                                                                                                  |
 | `Approver` | `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:approve`                                                                                                |
 | `Creator`  | `ref-tests:create`, `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:view-titles`                                     |
 | `Manager`  | `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:send-invitations`, `ref-tests:send-results`, `ref-tests:send-report` |

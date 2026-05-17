@@ -46,6 +46,14 @@ public static class Permissions
         public const string All = "questions:*";
     }
 
+    public static class AuditLogs
+    {
+        public const string View = "audit-logs:view";
+
+        /// <summary>Wildcard — grants all audit-logs:* permissions.</summary>
+        public const string All = "audit-logs:*";
+    }
+
     /// <summary>
     /// All individual (non-wildcard) permissions. Used to register authorization policies.
     /// </summary>
@@ -70,5 +78,6 @@ public static class Permissions
         RefTests.ViewTitles,
         Questions.Search,
         Questions.View,
+        AuditLogs.View,
     ];
 }

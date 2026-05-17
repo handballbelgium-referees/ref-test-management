@@ -1,0 +1,27 @@
+query GetAuditLogs(
+  $first: Int
+  $after: String
+  $where: AuditLogDtoFilterInput
+  $order: [AuditLogDtoSortInput!]
+) {
+  auditLogs(first: $first, after: $after, where: $where, order: $order) {
+    edges {
+      cursor
+      node {
+        id
+        entityType
+        entityId
+        action
+        changes
+        actorName
+        actorEmail
+        timestamp
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+    totalCount
+  }
+}
