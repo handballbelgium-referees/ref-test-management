@@ -38,6 +38,16 @@
     }
   </div>
   <dl class="space-y-3">
+    @if (scheduledAt()) {
+      <div>
+        <dt class="text-sm font-medium text-neutral-500">
+          {{ 'ref_tests.detail.scheduled_at' | translate }}
+        </dt>
+        <dd class="mt-1 text-sm text-orange-700 font-medium">
+          {{ scheduledAt() | localizedDate: 'short' }}
+        </dd>
+      </div>
+    }
     <div>
       <dt class="text-sm font-medium text-neutral-500">
         {{ 'ref_tests.detail.started_at' | translate }}

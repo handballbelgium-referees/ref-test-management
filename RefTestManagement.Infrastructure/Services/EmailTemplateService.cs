@@ -22,7 +22,7 @@ public interface IEmailTemplateService
         List<LanguageContent> enabledLanguages,
         string creatorName,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         string baseUrl);
 
     Task<string> BuildCompleteApprovalDecisionEmailAsync(
@@ -31,7 +31,7 @@ public interface IEmailTemplateService
         bool isApproved,
         string? rejectionReason,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems);
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems);
 }
 
 public record LanguageContent(
@@ -85,7 +85,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         List<LanguageContent> enabledLanguages,
         string creatorName,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         string baseUrl)
     {
         var logoTag = await CreateLogoImageTag();
@@ -100,7 +100,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         bool isApproved,
         string? rejectionReason,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems)
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems)
     {
         var logoTag = await CreateLogoImageTag();
         var languageSections = BuildAllApprovalDecisionLanguageSections(
@@ -207,7 +207,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         List<LanguageContent> enabledLanguages,
         string creatorName,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         string baseUrl)
     {
         var languageSections = new StringBuilder();
@@ -226,7 +226,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         IReadOnlyDictionary<string, string> t,
         string creatorName,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         string baseUrl,
         bool isLast)
     {
@@ -235,10 +235,14 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         var rows = new StringBuilder();
         foreach (var item in refTestItems)
         {
+            var scheduledAtDisplay = item.ScheduledAt.HasValue
+                ? item.ScheduledAt.Value.ToString("dd/MM/yyyy HH:mm") + " UTC"
+                : "-";
             rows.Append($@"
                     <tr>
                         <td style='padding: 8px 12px; border-bottom: 1px solid #e5e7eb;'>{System.Web.HttpUtility.HtmlEncode(item.FullName)}</td>
                         <td style='padding: 8px 12px; border-bottom: 1px solid #e5e7eb;'>{System.Web.HttpUtility.HtmlEncode(item.Email)}</td>
+                        <td style='padding: 8px 12px; border-bottom: 1px solid #e5e7eb;'>{System.Web.HttpUtility.HtmlEncode(scheduledAtDisplay)}</td>
                     </tr>");
         }
 
@@ -263,6 +267,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
                         <tr style='background-color: #f9fafb;'>
                             <th style='padding: 10px 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #374151;'>{System.Web.HttpUtility.HtmlEncode(t["tableNameHeader"])}</th>
                             <th style='padding: 10px 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #374151;'>{System.Web.HttpUtility.HtmlEncode(t["tableEmailHeader"])}</th>
+                            <th style='padding: 10px 12px; text-align: left; border-bottom: 2px solid #e5e7eb; color: #374151;'>{System.Web.HttpUtility.HtmlEncode(t["tableScheduledAtHeader"])}</th>
                         </tr>
                     </thead>
                     <tbody>{rows}</tbody>
@@ -443,7 +448,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         bool isApproved,
         string? rejectionReason,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems)
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems)
     {
         var sb = new StringBuilder();
         for (var i = 0; i < enabledLanguages.Count; i++)
@@ -462,7 +467,7 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         bool isApproved,
         string? rejectionReason,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         bool isLast)
     {
         var accentColor = isApproved ? "#16a34a" : "#dc2626";

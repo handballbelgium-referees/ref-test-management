@@ -18,6 +18,7 @@ query GetRefTestById($id: ID!, $skipQuestions: Boolean! = false) {
       status
       numberOfQuestions
       maxTimeInMinutes
+      scheduledAt
       startedAt
       completedAt
       questionScore
@@ -26,6 +27,7 @@ query GetRefTestById($id: ID!, $skipQuestions: Boolean! = false) {
       answerTotal
       percentage
       selectedAnswerIds
+      rejectionReason
       questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false)
         @skip(if: $skipQuestions) {
         id

@@ -83,6 +83,7 @@ export class ColumnVisibilityManager {
         COLUMNS.RESULTS,
         COLUMNS.STARTED,
         COLUMNS.COMPLETED,
+        COLUMNS.SCHEDULED,
       ]),
     );
   }

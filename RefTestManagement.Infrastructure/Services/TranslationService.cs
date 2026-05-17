@@ -305,6 +305,7 @@ public class TranslationService : ITranslationService
                 ["title"] = "Title",
                 ["tableNameHeader"] = "Name",
                 ["tableEmailHeader"] = "Email",
+                ["tableScheduledAtHeader"] = "Scheduled At",
                 ["reviewButton"] = "Review Pending Tests",
                 ["footerNote"] = "You are receiving this email because you have approval rights in RefTest Management."
             },
@@ -317,6 +318,7 @@ public class TranslationService : ITranslationService
                 ["title"] = "Titel",
                 ["tableNameHeader"] = "Naam",
                 ["tableEmailHeader"] = "E-mail",
+                ["tableScheduledAtHeader"] = "Gepland Op",
                 ["reviewButton"] = "Openstaande tests beoordelen",
                 ["footerNote"] = "U ontvangt deze e-mail omdat u goedkeuringsrechten heeft in RefTest Management."
             },
@@ -329,6 +331,7 @@ public class TranslationService : ITranslationService
                 ["title"] = "Titre",
                 ["tableNameHeader"] = "Nom",
                 ["tableEmailHeader"] = "E-mail",
+                ["tableScheduledAtHeader"] = "Planifié Le",
                 ["reviewButton"] = "Examiner les tests en attente",
                 ["footerNote"] = "Vous recevez cet e-mail car vous disposez de droits d'approbation dans RefTest Management."
             },
@@ -341,6 +344,7 @@ public class TranslationService : ITranslationService
                 ["title"] = "Titel",
                 ["tableNameHeader"] = "Name",
                 ["tableEmailHeader"] = "E-Mail",
+                ["tableScheduledAtHeader"] = "Geplant Am",
                 ["reviewButton"] = "Ausstehende Tests prüfen",
                 ["footerNote"] = "Sie erhalten diese E-Mail, weil Sie Genehmigungsrechte in RefTest Management haben."
             }

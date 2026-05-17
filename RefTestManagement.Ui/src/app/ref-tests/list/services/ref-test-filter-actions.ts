@@ -70,7 +70,7 @@ export class RefTestFilterActions {
     this._onFilterChange?.();
   }
 
-  setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
+  setDateRange(type: 'started' | 'completed' | 'scheduled', after?: string, before?: string): void {
     this._filterState.setDateRange(type, after, before);
     this._onFilterChange?.();
   }

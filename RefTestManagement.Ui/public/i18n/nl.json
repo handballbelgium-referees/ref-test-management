@@ -114,7 +114,8 @@
         "min": "Min",
         "max": "Max",
         "started_date_range": "Startdatum",
-        "completed_date_range": "Voltooiingsdatum"
+        "completed_date_range": "Voltooiingsdatum",
+        "scheduled_date_range": "Geplande Datum"
       },
       "sorting": {
         "title": "Sorteeropties",
@@ -130,6 +131,7 @@
         "results_sent": "Resultaten",
         "started_at": "Startdatum",
         "completed_at": "Voltooiingsdatum",
+        "scheduled_at": "Geplande Datum",
         "percentage": "Percentage",
         "asc": "Oplopend",
         "desc": "Aflopend"
@@ -153,7 +155,8 @@
         "invitation": "Uitnodiging",
         "results": "Resultaten",
         "started": "Gestart",
-        "completed": "Voltooid"
+        "completed": "Voltooid",
+        "scheduled": "Gepland"
       },
       "columns": {
         "toggle": "Kolommen tonen/verbergen",
@@ -166,8 +169,10 @@
         "invitation": "Uitnodiging",
         "results": "Resultaten",
         "started": "Gestart",
-        "completed": "Voltooid"
+        "completed": "Voltooid",
+        "scheduled": "Gepland"
       },
+      "rejection_reason": "Reden van Afwijzing",
       "empty": {
         "title": "Geen RefTests gevonden",
         "subtitle": "Begin met het aanmaken van uw eerste RefTests",
@@ -419,8 +424,10 @@
       "send_invitations_automatically": "Automatisch Uitnodigingen Versturen",
       "send_results_automatically": "Automatisch Resultaten Versturen",
       "timeline": "Tijdlijn",
+      "scheduled_at": "Gepland Op",
       "started_at": "Gestart Op",
       "completed_at": "Voltooid Op",
+      "rejection_reason_label": "Reden van Afwijzing",
       "scores": "Test Scores",
       "overall_score": "Totaalscore",
       "passed": "Geslaagd",

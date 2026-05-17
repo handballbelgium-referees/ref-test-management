@@ -89,6 +89,14 @@
                   [beforeDate]="filter().completedBefore"
                   (dateChange)="onCompletedDateChange($event)"
                 />
+
+                <!-- Scheduled Date -->
+                <app-date-range-filter
+                  label="ref_tests.list.filters.scheduled_date_range"
+                  [afterDate]="filter().scheduledAfter"
+                  [beforeDate]="filter().scheduledBefore"
+                  (dateChange)="onScheduledDateChange($event)"
+                />
               </div>
             </div>
 

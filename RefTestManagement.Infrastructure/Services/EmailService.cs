@@ -27,7 +27,7 @@ public interface IEmailService
         string approverEmail,
         string creatorName,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         string baseUrl,
         CancellationToken cancellationToken);
 
@@ -38,7 +38,7 @@ public interface IEmailService
         bool isApproved,
         string? rejectionReason,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         CancellationToken cancellationToken);
 }
 
@@ -213,7 +213,7 @@ public class EmailService(
         string approverEmail,
         string creatorName,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         string baseUrl,
         CancellationToken cancellationToken)
     {
@@ -241,7 +241,7 @@ public class EmailService(
         bool isApproved,
         string? rejectionReason,
         string? titleValue,
-        List<(string FullName, string Email)> refTestItems,
+        List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         CancellationToken cancellationToken)
     {
         var enabledLanguages = languageConfiguration.EnabledLanguages

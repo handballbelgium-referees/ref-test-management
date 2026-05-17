@@ -114,7 +114,7 @@ public static class RefTestApprovalMutations
             if (string.IsNullOrWhiteSpace(first.CreatorEmail)) continue;
 
             var items = creatorGroup.Select(rt => new ApprovalNotificationRefTestItem(
-                rt.Id, rt.FirstName, rt.LastName, rt.Email)).ToList();
+                rt.Id, rt.FirstName, rt.LastName, rt.Email, rt.ScheduledAt)).ToList();
 
             await jobEnqueueService.EnqueueApprovalDecisionEmailAsync(
                 new ApprovalDecisionEmailPayload(
@@ -207,7 +207,7 @@ public static class RefTestApprovalMutations
             if (string.IsNullOrWhiteSpace(first.CreatorEmail)) continue;
 
             var items = creatorGroup.Select(rt => new ApprovalNotificationRefTestItem(
-                rt.Id, rt.FirstName, rt.LastName, rt.Email)).ToList();
+                rt.Id, rt.FirstName, rt.LastName, rt.Email, rt.ScheduledAt)).ToList();
 
             await jobEnqueueService.EnqueueApprovalDecisionEmailAsync(
                 new ApprovalDecisionEmailPayload(

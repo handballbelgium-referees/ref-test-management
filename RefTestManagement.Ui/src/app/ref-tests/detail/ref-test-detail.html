@@ -231,6 +231,34 @@
       </div>
     </div>
 
+    <!-- Rejection Reason Banner -->
+    @if (refTestData().status === 'REJECTED' && refTestData().rejectionReason) {
+      <div
+        class="mt-4 mb-6 flex items-center gap-3 bg-error-50 border border-error-200 rounded-xl px-4 py-3 text-error-800"
+      >
+        <svg
+          class="w-5 h-5 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+          />
+        </svg>
+        <div>
+          <p class="text-sm font-semibold mb-0.5">
+            {{ 'ref_tests.detail.rejection_reason_label' | translate }}
+          </p>
+          <p class="text-sm">{{ refTestData().rejectionReason }}</p>
+        </div>
+      </div>
+    }
+
     <!-- Tabs Navigation -->
     <div class="bg-white rounded-t-xl shadow-sm border border-neutral-200 border-b-0">
       <div class="border-b border-neutral-200">

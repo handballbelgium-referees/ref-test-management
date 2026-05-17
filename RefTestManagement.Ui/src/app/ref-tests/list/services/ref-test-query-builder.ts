@@ -102,6 +102,13 @@ export class RefTestQueryBuilder {
       filter.completedBefore,
     );
 
+    this.applyDateRangeFilter(
+      filters,
+      'scheduledAt',
+      filter.scheduledAfter,
+      filter.scheduledBefore,
+    );
+
     return Object.keys(filters).length > 0 ? filters : undefined;
   }
 
@@ -147,7 +154,7 @@ export class RefTestQueryBuilder {
 
   private applyDateRangeFilter(
     filters: RefTestFilterInput,
-    field: 'startedAt' | 'completedAt',
+    field: 'startedAt' | 'completedAt' | 'scheduledAt',
     after?: string,
     before?: string,
   ): void {

@@ -122,6 +122,8 @@ export type RefTestFilterInput = {
   questionTotal?: IntOperationFilterInput | null | undefined;
   /** Filter on results were sent for the RefTest */
   resultsSent?: BooleanOperationFilterInput | null | undefined;
+  /** Filter on scheduled date of the RefTest */
+  scheduledAt?: DateTimeOperationFilterInput | null | undefined;
   /** Filter on whether invitations are sent automatically */
   sendInvitationsAutomatically?: BooleanOperationFilterInput | null | undefined;
   /** Filter on whether results are sent automatically */
@@ -176,6 +178,8 @@ export type RefTestSortInput = {
   questionTotal?: SortEnumType | null | undefined;
   /** Sort on results were sent for the RefTest */
   resultsSent?: SortEnumType | null | undefined;
+  /** Sort on scheduled date of the RefTest */
+  scheduledAt?: SortEnumType | null | undefined;
   /** Sort on whether invitations are sent automatically */
   sendInvitationsAutomatically?: SortEnumType | null | undefined;
   /** Sort on whether results are sent automatically */
@@ -501,7 +505,7 @@ export type GetRefTestByIdQueryVariables = Exact<{
 
 
 export type GetRefTestByIdQuery = { refTest:
-    | { __typename: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, selectedAnswerIds: Array<string>, language: string | null, title: { id: string, value: string } | null, questions?: Array<{ id: string, number: string, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
+    | { __typename: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, selectedAnswerIds: Array<string>, rejectionReason: string | null, language: string | null, title: { id: string, value: string } | null, questions?: Array<{ id: string, number: string, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
     | { __typename: 'RefTestNotFoundError', message: string }
    };
 
@@ -526,7 +530,7 @@ export type GetRefTestsQueryVariables = Exact<{
 }>;
 
 
-export type GetRefTestsQuery = { refTests: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, title: { id: string, value: string } | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+export type GetRefTestsQuery = { refTests: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, rejectionReason: string | null, title: { id: string, value: string } | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type GetRefTestTitlesQueryVariables = Exact<{
   first: number;
@@ -1285,6 +1289,7 @@ export const GetRefTestByIdDocument = gql`
       status
       numberOfQuestions
       maxTimeInMinutes
+      scheduledAt
       startedAt
       completedAt
       questionScore
@@ -1293,6 +1298,7 @@ export const GetRefTestByIdDocument = gql`
       answerTotal
       percentage
       selectedAnswerIds
+      rejectionReason
       questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) @skip(if: $skipQuestions) {
         id
         number
@@ -1379,6 +1385,7 @@ export const GetRefTestsDocument = gql`
         status
         numberOfQuestions
         maxTimeInMinutes
+        scheduledAt
         startedAt
         completedAt
         questionScore
@@ -1386,6 +1393,7 @@ export const GetRefTestsDocument = gql`
         questionTotal
         answerTotal
         percentage
+        rejectionReason
       }
     }
     pageInfo {

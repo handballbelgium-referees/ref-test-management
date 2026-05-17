@@ -20,65 +20,70 @@
   </button>
 
   @if (expanded()) {
-  <div class="px-4 pb-4 border-t border-neutral-200">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
-      <!-- Sort Field -->
-      <div>
-        <label class="block text-sm font-medium text-neutral-700 mb-2">
-          {{ 'ref_tests.list.sorting.sortBy' | translate }}
-        </label>
-        <select
-          [value]="sortField()"
-          (change)="onSortFieldChange($any($event.target).value)"
-          class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
-        >
-          <option value="email">{{ 'ref_tests.list.sorting.email' | translate }}</option>
-          <option value="status">{{ 'ref_tests.list.sorting.status' | translate }}</option>
-          <option value="numberOfQuestions">
-            {{ 'ref_tests.list.sorting.number_of_questions' | translate }}
-          </option>
-          <option value="maxTimeInMinutes">
-            {{ 'ref_tests.list.sorting.max_time_in_minutes' | translate }}
-          </option>
-          <option value="questionScore">
-            {{ 'ref_tests.list.sorting.question_score' | translate }}
-          </option>
-          <option value="answerScore">
-            {{ 'ref_tests.list.sorting.answer_score' | translate }}
-          </option>
-          <option value="invitationSent">
-            {{ 'ref_tests.list.sorting.invitation_sent' | translate }}
-          </option>
-          <option value="resultsSent">
-            {{ 'ref_tests.list.sorting.results_sent' | translate }}
-          </option>
-          <option value="startedAt">{{ 'ref_tests.list.sorting.started_at' | translate }}</option>
-          <option value="completedAt">
-            {{ 'ref_tests.list.sorting.completed_at' | translate }}
-          </option>
-          <option value="percentage">{{ 'ref_tests.list.sorting.percentage' | translate }}</option>
-        </select>
-      </div>
+    <div class="px-4 pb-4 border-t border-neutral-200">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+        <!-- Sort Field -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'ref_tests.list.sorting.sortBy' | translate }}
+          </label>
+          <select
+            [value]="sortField()"
+            (change)="onSortFieldChange($any($event.target).value)"
+            class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
+          >
+            <option value="email">{{ 'ref_tests.list.sorting.email' | translate }}</option>
+            <option value="status">{{ 'ref_tests.list.sorting.status' | translate }}</option>
+            <option value="numberOfQuestions">
+              {{ 'ref_tests.list.sorting.number_of_questions' | translate }}
+            </option>
+            <option value="maxTimeInMinutes">
+              {{ 'ref_tests.list.sorting.max_time_in_minutes' | translate }}
+            </option>
+            <option value="questionScore">
+              {{ 'ref_tests.list.sorting.question_score' | translate }}
+            </option>
+            <option value="answerScore">
+              {{ 'ref_tests.list.sorting.answer_score' | translate }}
+            </option>
+            <option value="invitationSent">
+              {{ 'ref_tests.list.sorting.invitation_sent' | translate }}
+            </option>
+            <option value="resultsSent">
+              {{ 'ref_tests.list.sorting.results_sent' | translate }}
+            </option>
+            <option value="startedAt">{{ 'ref_tests.list.sorting.started_at' | translate }}</option>
+            <option value="completedAt">
+              {{ 'ref_tests.list.sorting.completed_at' | translate }}
+            </option>
+            <option value="scheduledAt">
+              {{ 'ref_tests.list.sorting.scheduled_at' | translate }}
+            </option>
+            <option value="percentage">
+              {{ 'ref_tests.list.sorting.percentage' | translate }}
+            </option>
+          </select>
+        </div>
 
-      <!-- Sort Direction -->
-      <div>
-        <label class="block text-sm font-medium text-neutral-700 mb-2">
-          {{ 'ref_tests.list.sorting.direction' | translate }}
-        </label>
-        <select
-          [value]="sortDirection()"
-          (change)="onSortDirectionChange($any($event.target).value)"
-          class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
-        >
-          <option value="DESC">
-            {{ 'ref_tests.list.sorting.desc' | translate }}
-          </option>
-          <option value="ASC">
-            {{ 'ref_tests.list.sorting.asc' | translate }}
-          </option>
-        </select>
+        <!-- Sort Direction -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'ref_tests.list.sorting.direction' | translate }}
+          </label>
+          <select
+            [value]="sortDirection()"
+            (change)="onSortDirectionChange($any($event.target).value)"
+            class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
+          >
+            <option value="DESC">
+              {{ 'ref_tests.list.sorting.desc' | translate }}
+            </option>
+            <option value="ASC">
+              {{ 'ref_tests.list.sorting.asc' | translate }}
+            </option>
+          </select>
+        </div>
       </div>
     </div>
-  </div>
   }
 </div>

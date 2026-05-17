@@ -236,7 +236,7 @@ public static class RefTestCreationMutations
         var payload = new ApprovalNotificationEmailPayload(
             creatorName, creatorEmail, titleValue,
             refTests.Select(rt => new ApprovalNotificationRefTestItem(
-                rt.Id, rt.FirstName, rt.LastName, rt.Email)).ToList());
+                rt.Id, rt.FirstName, rt.LastName, rt.Email, rt.ScheduledAt)).ToList());
 
         try
         {

@@ -114,7 +114,8 @@
         "min": "Min",
         "max": "Max",
         "started_date_range": "Date de Début",
-        "completed_date_range": "Date de Fin"
+        "completed_date_range": "Date de Fin",
+        "scheduled_date_range": "Date Planifiée"
       },
       "sorting": {
         "title": "Options de Tri",
@@ -130,6 +131,7 @@
         "results_sent": "Résultats",
         "started_at": "Date de Début",
         "completed_at": "Date de Fin",
+        "scheduled_at": "Date Planifiée",
         "percentage": "Pourcentage",
         "asc": "Croissant",
         "desc": "Décroissant"
@@ -153,7 +155,8 @@
         "invitation": "Invitation",
         "results": "Résultats",
         "started": "Démarré",
-        "completed": "Terminé"
+        "completed": "Terminé",
+        "scheduled": "Planifié"
       },
       "columns": {
         "toggle": "Afficher/Masquer les colonnes",
@@ -166,8 +169,10 @@
         "invitation": "Invitation",
         "results": "Résultats",
         "started": "Démarré",
-        "completed": "Terminé"
+        "completed": "Terminé",
+        "scheduled": "Planifié"
       },
+      "rejection_reason": "Motif de Rejet",
       "empty": {
         "title": "Aucune RefTest trouvée",
         "subtitle": "Commencez par créer vos premiers RefTests",
@@ -419,8 +424,10 @@
       "send_invitations_automatically": "Envoyer les Invitations Automatiquement",
       "send_results_automatically": "Envoyer les Résultats Automatiquement",
       "timeline": "Chronologie",
+      "scheduled_at": "Planifié Le",
       "started_at": "Commencé Le",
       "completed_at": "Terminé Le",
+      "rejection_reason_label": "Motif de Rejet",
       "scores": "Scores du Test",
       "overall_score": "Score Global",
       "passed": "Réussi",

@@ -420,7 +420,7 @@ public class BackgroundJobService : BackgroundService
         }
 
         var items = payload.RefTests
-            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email))
+            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email, rt.ScheduledAt))
             .ToList();
 
         foreach (var approver in approvers)
@@ -447,7 +447,7 @@ public class BackgroundJobService : BackgroundService
         var emailService = serviceProvider.GetRequiredService<IEmailService>();
 
         var items = payload.RefTests
-            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email))
+            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email, rt.ScheduledAt))
             .ToList();
 
         await emailService.SendApprovalDecisionAsync(

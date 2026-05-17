@@ -89,7 +89,8 @@ public record ApprovalNotificationRefTestItem(
     Guid Id,
     string FirstName,
     string LastName,
-    string Email
+    string Email,
+    DateTime? ScheduledAt
 );
 
 /// <summary>

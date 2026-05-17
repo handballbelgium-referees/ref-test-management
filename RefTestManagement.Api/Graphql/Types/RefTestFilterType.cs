@@ -22,6 +22,7 @@ public class RefTestFilterType : FilterInputType<RefTestDto>
         descriptor.Field(x => x.CreatedAt).Description("Filter on creation date of the RefTest");
         descriptor.Field(x => x.StartedAt).Description("Filter on start date of the RefTest");
         descriptor.Field(x => x.CompletedAt).Description("Filter on completion date of the RefTest");
+        descriptor.Field(x => x.ScheduledAt).Description("Filter on scheduled date of the RefTest");
         descriptor.Field(x => x.Percentage).Description("Filter on percentage of correct answers");
         descriptor.Field(x => x.QuestionScore).Description("Filter on question score of the RefTest");
         descriptor.Field(x => x.AnswerScore).Description("Filter on answer score of the RefTest");

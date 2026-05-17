@@ -117,7 +117,8 @@
         "min": "Min",
         "max": "Max",
         "started_date_range": "Startdatum",
-        "completed_date_range": "Abschlussdatum"
+        "completed_date_range": "Abschlussdatum",
+        "scheduled_date_range": "Geplantes Datum"
       },
       "sorting": {
         "title": "Sortieroptionen",
@@ -134,6 +135,7 @@
         "results_sent": "Ergebnisse",
         "started_at": "Startdatum",
         "completed_at": "Abschlussdatum",
+        "scheduled_at": "Geplantes Datum",
         "percentage": "Prozentsatz",
         "asc": "Aufsteigend",
         "desc": "Absteigend"
@@ -157,7 +159,8 @@
         "invitation": "Einladung",
         "results": "Ergebnisse",
         "started": "Gestartet",
-        "completed": "Abgeschlossen"
+        "completed": "Abgeschlossen",
+        "scheduled": "Geplant"
       },
       "columns": {
         "toggle": "Spalten ein-/ausblenden",
@@ -170,8 +173,10 @@
         "invitation": "Einladung",
         "results": "Ergebnisse",
         "started": "Gestartet",
-        "completed": "Abgeschlossen"
+        "completed": "Abgeschlossen",
+        "scheduled": "Geplant"
       },
+      "rejection_reason": "Ablehnungsgrund",
       "empty": {
         "title": "Keine RefTests gefunden",
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten RefTests",
@@ -423,8 +428,10 @@
       "send_invitations_automatically": "Einladungen Automatisch Senden",
       "send_results_automatically": "Ergebnisse Automatisch Senden",
       "timeline": "Zeitachse",
+      "scheduled_at": "Geplant Am",
       "started_at": "Gestartet Am",
       "completed_at": "Abgeschlossen Am",
+      "rejection_reason_label": "Ablehnungsgrund",
       "scores": "Testergebnisse",
       "overall_score": "Gesamtpunktzahl",
       "passed": "Bestanden",

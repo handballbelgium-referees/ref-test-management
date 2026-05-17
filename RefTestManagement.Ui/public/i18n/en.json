@@ -114,7 +114,8 @@
         "min": "Min",
         "max": "Max",
         "started_date_range": "Started Date",
-        "completed_date_range": "Completed Date"
+        "completed_date_range": "Completed Date",
+        "scheduled_date_range": "Scheduled Date"
       },
       "sorting": {
         "title": "Sorting Options",
@@ -130,6 +131,7 @@
         "results_sent": "Results",
         "started_at": "Start Date",
         "completed_at": "Completion Date",
+        "scheduled_at": "Scheduled Date",
         "percentage": "Percentage",
         "asc": "Ascending",
         "desc": "Descending"
@@ -153,7 +155,8 @@
         "invitation": "Invitation",
         "results": "Results",
         "started": "Started",
-        "completed": "Completed"
+        "completed": "Completed",
+        "scheduled": "Scheduled"
       },
       "columns": {
         "toggle": "Show/Hide Columns",
@@ -166,8 +169,10 @@
         "invitation": "Invitation",
         "results": "Results",
         "started": "Started",
-        "completed": "Completed"
+        "completed": "Completed",
+        "scheduled": "Scheduled"
       },
+      "rejection_reason": "Rejection Reason",
       "empty": {
         "title": "No RefTests found",
         "subtitle": "Get started by creating your first RefTests",
@@ -419,8 +424,10 @@
       "send_invitations_automatically": "Send Invitations Automatically",
       "send_results_automatically": "Send Results Automatically",
       "timeline": "Timeline",
+      "scheduled_at": "Scheduled At",
       "started_at": "Started At",
       "completed_at": "Completed At",
+      "rejection_reason_label": "Rejection Reason",
       "scores": "Test Scores",
       "overall_score": "Overall Score",
       "passed": "Passed",

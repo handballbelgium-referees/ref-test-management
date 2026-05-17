@@ -440,7 +440,7 @@ export class ListRefTests {
     this.filterActions.setPerformanceFilters(performance);
   }
 
-  protected setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
+  protected setDateRange(type: 'started' | 'completed' | 'scheduled', after?: string, before?: string): void {
     this.filterActions.setDateRange(type, after, before);
   }
 
