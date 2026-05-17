@@ -155,6 +155,58 @@
           </button>
         }
 
+        @if (canApprove()) {
+          <button
+            *hasPermission="Permissions.RefTests.Approve"
+            type="button"
+            (click)="operationManager.approveDialog.initiate()"
+            [disabled]="operationManager.approveDialog.loading()"
+            class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            @if (operationManager.approveDialog.loading()) {
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"
+              ></div>
+            } @else {
+              <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M5 13l4 4L19 7"
+                />
+              </svg>
+            }
+            {{ 'ref_tests.list.actions.approve_test' | translate }}
+          </button>
+        }
+
+        @if (canReject()) {
+          <button
+            *hasPermission="Permissions.RefTests.Approve"
+            type="button"
+            (click)="operationManager.rejectDialog.initiate()"
+            [disabled]="operationManager.rejectDialog.loading()"
+            class="flex-1 sm:flex-none inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-error-600 hover:bg-error-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-error-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            @if (operationManager.rejectDialog.loading()) {
+              <div
+                class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"
+              ></div>
+            } @else {
+              <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            }
+            {{ 'ref_tests.list.actions.reject_test' | translate }}
+          </button>
+        }
+
         <button
           *hasPermission="Permissions.RefTests.Delete"
           type="button"
@@ -178,6 +230,34 @@
         </button>
       </div>
     </div>
+
+    <!-- Rejection Reason Banner -->
+    @if (refTestData().status === 'REJECTED' && refTestData().rejectionReason) {
+      <div
+        class="mt-4 mb-6 flex items-center gap-3 bg-error-50 border border-error-200 rounded-xl px-4 py-3 text-error-800"
+      >
+        <svg
+          class="w-5 h-5 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"
+          />
+        </svg>
+        <div>
+          <p class="text-sm font-semibold mb-0.5">
+            {{ 'ref_tests.detail.rejection_reason_label' | translate }}
+          </p>
+          <p class="text-sm">{{ refTestData().rejectionReason }}</p>
+        </div>
+      </div>
+    }
 
     <!-- Tabs Navigation -->
     <div class="bg-white rounded-t-xl shadow-sm border border-neutral-200 border-b-0">
@@ -274,6 +354,24 @@
       [bannerManager]="operationManager.deleteDialog.bannerManager()"
       (confirm)="confirmDelete()"
       (cancel)="operationManager.deleteDialog.cancel()"
+    />
+
+    <app-approve-ref-tests-dialog
+      [loading]="operationManager.approveDialog.loading()"
+      [show]="operationManager.approveDialog.show()"
+      [refTests]="refTestForApproval()"
+      [bannerManager]="operationManager.approveDialog.bannerManager()"
+      (confirm)="confirmApprove()"
+      (cancel)="operationManager.approveDialog.cancel()"
+    />
+
+    <app-reject-ref-tests-dialog
+      [loading]="operationManager.rejectDialog.loading()"
+      [show]="operationManager.rejectDialog.show()"
+      [refTests]="refTestForApproval()"
+      [bannerManager]="operationManager.rejectDialog.bannerManager()"
+      (confirm)="confirmReject($event)"
+      (cancel)="operationManager.rejectDialog.cancel()"
     />
   }
 </div>

@@ -17,34 +17,36 @@
           <ng-container *hasPermission="Permissions.RefTests.SendInvitations">
             <button
               type="button"
-              [disabled]="!hasPendingRefTestsSelected() || sendingInvitations() || deletingRefTests()"
+              [disabled]="
+                !hasPendingRefTestsSelected() || sendingInvitations() || deletingRefTests()
+              "
               (click)="onSendInvitations($event)"
-            class="fab-button-1 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
-            [attr.aria-label]="
-              selectedCount() === 1
-                ? ('ref_tests.list.actions.send_invitation' | translate)
-                : ('ref_tests.list.actions.send_invitations' | translate)
-            "
-          >
-            @if (sendingInvitations()) {
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            } @else {
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
-              </svg>
-            }
-            <span class="text-sm font-medium">
-              {{
+              class="fab-button-1 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+              [attr.aria-label]="
                 selectedCount() === 1
                   ? ('ref_tests.list.actions.send_invitation' | translate)
                   : ('ref_tests.list.actions.send_invitations' | translate)
-              }}
-            </span>
+              "
+            >
+              @if (sendingInvitations()) {
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              } @else {
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                  />
+                </svg>
+              }
+              <span class="text-sm font-medium">
+                {{
+                  selectedCount() === 1
+                    ? ('ref_tests.list.actions.send_invitation' | translate)
+                    : ('ref_tests.list.actions.send_invitations' | translate)
+                }}
+              </span>
             </button>
           </ng-container>
 
@@ -54,31 +56,31 @@
               [disabled]="!hasCompletedRefTestsSelected() || sendingResults() || deletingRefTests()"
               (click)="onSendResults($event)"
               class="fab-button-2 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
-            [attr.aria-label]="
-              selectedCount() === 1
-                ? ('ref_tests.list.actions.send_result' | translate)
-                : ('ref_tests.list.actions.send_results' | translate)
-            "
-          >
-            @if (sendingResults()) {
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            } @else {
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-            }
-            <span class="text-sm font-medium">
-              {{
+              [attr.aria-label]="
                 selectedCount() === 1
                   ? ('ref_tests.list.actions.send_result' | translate)
                   : ('ref_tests.list.actions.send_results' | translate)
-              }}
-            </span>
+              "
+            >
+              @if (sendingResults()) {
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              } @else {
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              }
+              <span class="text-sm font-medium">
+                {{
+                  selectedCount() === 1
+                    ? ('ref_tests.list.actions.send_result' | translate)
+                    : ('ref_tests.list.actions.send_results' | translate)
+                }}
+              </span>
             </button>
           </ng-container>
 
@@ -125,26 +127,26 @@
                   ? ('ref_tests.list.actions.reset_test' | translate)
                   : ('ref_tests.list.actions.reset_tests' | translate)
               "
-          >
-            @if (resettingRefTests()) {
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-            } @else {
-              <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                />
-              </svg>
-            }
-            <span class="text-sm font-medium">
-              {{
-                selectedCount() === 1
-                  ? ('ref_tests.list.actions.reset_test' | translate)
-                  : ('ref_tests.list.actions.reset_tests' | translate)
-              }}
-            </span>
+            >
+              @if (resettingRefTests()) {
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              } @else {
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
+                </svg>
+              }
+              <span class="text-sm font-medium">
+                {{
+                  selectedCount() === 1
+                    ? ('ref_tests.list.actions.reset_test' | translate)
+                    : ('ref_tests.list.actions.reset_tests' | translate)
+                }}
+              </span>
             </button>
           </ng-container>
 
@@ -177,6 +179,78 @@
                   selectedCount() === 1
                     ? ('ref_tests.list.actions.revive_test' | translate)
                     : ('ref_tests.list.actions.revive_tests' | translate)
+                }}
+              </span>
+            </button>
+          </ng-container>
+
+          <ng-container *hasPermission="Permissions.RefTests.Approve">
+            <button
+              type="button"
+              [disabled]="
+                !hasApprovableRefTestsSelected() || approvingRefTests() || deletingRefTests()
+              "
+              (click)="onApproveSelected($event)"
+              class="fab-button-6a flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-success-600 hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+              [attr.aria-label]="
+                selectedCount() === 1
+                  ? ('ref_tests.list.actions.approve_test' | translate)
+                  : ('ref_tests.list.actions.approve_tests' | translate)
+              "
+            >
+              @if (approvingRefTests()) {
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              } @else {
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              }
+              <span class="text-sm font-medium">
+                {{
+                  selectedCount() === 1
+                    ? ('ref_tests.list.actions.approve_test' | translate)
+                    : ('ref_tests.list.actions.approve_tests' | translate)
+                }}
+              </span>
+            </button>
+          </ng-container>
+
+          <ng-container *hasPermission="Permissions.RefTests.Approve">
+            <button
+              type="button"
+              [disabled]="
+                !hasPendingApprovalRefTestsSelected() || rejectingRefTests() || deletingRefTests()
+              "
+              (click)="onRejectSelected($event)"
+              class="fab-button-6b flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-error-600 hover:bg-error-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
+              [attr.aria-label]="
+                selectedCount() === 1
+                  ? ('ref_tests.list.actions.reject_test' | translate)
+                  : ('ref_tests.list.actions.reject_tests' | translate)
+              "
+            >
+              @if (rejectingRefTests()) {
+                <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+              } @else {
+                <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              }
+              <span class="text-sm font-medium">
+                {{
+                  selectedCount() === 1
+                    ? ('ref_tests.list.actions.reject_test' | translate)
+                    : ('ref_tests.list.actions.reject_tests' | translate)
                 }}
               </span>
             </button>
@@ -375,6 +449,58 @@
             selectedCount() === 1
               ? ('ref_tests.list.actions.revive_test' | translate)
               : ('ref_tests.list.actions.revive_tests' | translate)
+          }}
+        </button>
+        <button
+          *hasPermission="Permissions.RefTests.Approve"
+          type="button"
+          [disabled]="!hasApprovableRefTestsSelected() || approvingRefTests() || deletingRefTests()"
+          (click)="onApproveSelected($event)"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (approvingRefTests()) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>
+          } @else {
+            <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M5 13l4 4L19 7"
+              />
+            </svg>
+          }
+          {{
+            selectedCount() === 1
+              ? ('ref_tests.list.actions.approve_test' | translate)
+              : ('ref_tests.list.actions.approve_tests' | translate)
+          }}
+        </button>
+        <button
+          *hasPermission="Permissions.RefTests.Approve"
+          type="button"
+          [disabled]="
+            !hasPendingApprovalRefTestsSelected() || rejectingRefTests() || deletingRefTests()
+          "
+          (click)="onRejectSelected($event)"
+          class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-error-600 hover:bg-error-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-error-500 disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          @if (rejectingRefTests()) {
+            <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white -ml-1 mr-2"></div>
+          } @else {
+            <svg class="-ml-1 mr-2 h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          }
+          {{
+            selectedCount() === 1
+              ? ('ref_tests.list.actions.reject_test' | translate)
+              : ('ref_tests.list.actions.reject_tests' | translate)
           }}
         </button>
         <button

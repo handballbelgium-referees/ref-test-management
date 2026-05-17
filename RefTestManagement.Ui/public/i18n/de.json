@@ -85,6 +85,8 @@
         "in_progress": "In Bearbeitung",
         "completed": "Abgeschlossen",
         "expired": "Abgelaufen",
+        "pending_approval": "Warte auf Genehmigung",
+        "rejected": "Abgelehnt",
         "title_label": "RefTest Titel",
         "title_all": "Alle Titel",
         "title_search_placeholder": "Titel suchen...",
@@ -115,7 +117,8 @@
         "min": "Min",
         "max": "Max",
         "started_date_range": "Startdatum",
-        "completed_date_range": "Abschlussdatum"
+        "completed_date_range": "Abschlussdatum",
+        "scheduled_date_range": "Geplantes Datum"
       },
       "sorting": {
         "title": "Sortieroptionen",
@@ -132,6 +135,7 @@
         "results_sent": "Ergebnisse",
         "started_at": "Startdatum",
         "completed_at": "Abschlussdatum",
+        "scheduled_at": "Geplantes Datum",
         "percentage": "Prozentsatz",
         "asc": "Aufsteigend",
         "desc": "Absteigend"
@@ -140,7 +144,9 @@
         "PENDING": "Ausstehend",
         "IN_PROGRESS": "In Bearbeitung",
         "COMPLETED": "Abgeschlossen",
-        "EXPIRED": "Abgelaufen"
+        "EXPIRED": "Abgelaufen",
+        "PENDING_APPROVAL": "Warte auf Genehmigung",
+        "REJECTED": "Abgelehnt"
       },
       "table": {
         "title": "Titel",
@@ -153,7 +159,8 @@
         "invitation": "Einladung",
         "results": "Ergebnisse",
         "started": "Gestartet",
-        "completed": "Abgeschlossen"
+        "completed": "Abgeschlossen",
+        "scheduled": "Geplant"
       },
       "columns": {
         "toggle": "Spalten ein-/ausblenden",
@@ -166,25 +173,31 @@
         "invitation": "Einladung",
         "results": "Ergebnisse",
         "started": "Gestartet",
-        "completed": "Abgeschlossen"
+        "completed": "Abgeschlossen",
+        "scheduled": "Geplant"
       },
+      "rejection_reason": "Ablehnungsgrund",
       "empty": {
         "title": "Keine RefTests gefunden",
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten RefTests",
         "action": "RefTests Erstellen"
       },
       "actions": {
-        "reftest_selected": "RefTest ausgewählt",
-        "reftests_selected": "RefTests ausgewählt",
+        "reftest_selected": "Ausgewählt",
+        "reftests_selected": "Ausgewählt",
         "send_invitation": "Einladung Senden",
         "send_invitations": "Einladungen Senden",
         "send_result": "Ergebnis Senden",
         "send_results": "Ergebnisse Senden",
         "generate_report": "Bericht Senden",
-        "reset_test": "Test Zurücksetzen",
-        "reset_tests": "Tests Zurücksetzen",
-        "revive_test": "Test Wiederherstellen",
-        "revive_tests": "Tests Wiederherstellen",
+        "reset_test": "Zurücksetzen",
+        "reset_tests": "Zurücksetzen",
+        "revive_test": "Wiederherstellen",
+        "revive_tests": "Wiederherstellen",
+        "approve_test": "Genehmigen",
+        "approve_tests": "Genehmigen",
+        "reject_test": "Ablehnen",
+        "reject_tests": "Ablehnen",
         "delete": "Löschen"
       },
       "dialogs": {
@@ -244,6 +257,25 @@
           "ref_tests": "Wiederzubelebende RefTests:",
           "confirm": "RefTests Wiederbeleben",
           "cancel": "Abbrechen"
+        },
+        "approve": {
+          "title": "RefTests Genehmigen",
+          "message": "{{count}} RefTest(s) genehmigen?",
+          "info": "Genehmigte Tests werden aktiviert und Einladungen gemäß ihren Einstellungen versendet.",
+          "ref_tests": "Zu genehmigende RefTests:",
+          "confirm": "Genehmigen",
+          "cancel": "Abbrechen"
+        },
+        "reject": {
+          "title": "RefTests Ablehnen",
+          "message": "{{count}} RefTest(s) ablehnen?",
+          "warning": "Abgelehnte Tests werden nicht aktiviert. Der Ersteller muss erneut eine Genehmigung anfragen.",
+          "reason_label": "Ablehnungsgrund",
+          "reason_placeholder": "Geben Sie einen Ablehnungsgrund an...",
+          "reason_required": "Ein Ablehnungsgrund ist erforderlich.",
+          "ref_tests": "Abzulehnende RefTests:",
+          "confirm": "Ablehnen",
+          "cancel": "Abbrechen"
         }
       },
       "report": {
@@ -261,6 +293,12 @@
       "revive_success": "{{count}} RefTest(s) erfolgreich wiederbelebt",
       "revive_error": "Fehler beim Wiederbeleben der RefTests",
       "revive_partial_error": "{{count}} RefTest(s) konnten nicht wiederbelebt werden",
+      "approve_success": "{{count}} RefTest(s) erfolgreich genehmigt",
+      "approve_error": "Fehler beim Genehmigen der RefTests",
+      "approve_partial_error": "{{count}} RefTest(s) konnten nicht genehmigt werden",
+      "reject_success": "{{count}} RefTest(s) erfolgreich abgelehnt",
+      "reject_error": "Fehler beim Ablehnen der RefTests",
+      "reject_partial_error": "{{count}} RefTest(s) konnten nicht abgelehnt werden",
       "invitations_sent": "Einladungen erfolgreich gesendet",
       "invitations_error": "Fehler beim Senden der Einladungen",
       "results_sent": "Ergebnisse erfolgreich gesendet",
@@ -390,8 +428,10 @@
       "send_invitations_automatically": "Einladungen Automatisch Senden",
       "send_results_automatically": "Ergebnisse Automatisch Senden",
       "timeline": "Zeitachse",
+      "scheduled_at": "Geplant Am",
       "started_at": "Gestartet Am",
       "completed_at": "Abgeschlossen Am",
+      "rejection_reason_label": "Ablehnungsgrund",
       "scores": "Testergebnisse",
       "overall_score": "Gesamtpunktzahl",
       "passed": "Bestanden",
@@ -501,6 +541,11 @@
           "label": "Einladungs-E-Mails senden",
           "hint": "Aktivieren, um Einladungs-E-Mails sofort nach Erstellung der RefTests zu senden",
           "description": "Teilnehmer erhalten eine E-Mail mit ihrem RefTest-Link"
+        },
+        "scheduled_at": {
+          "label": "Planen für",
+          "optional": "(optional)",
+          "description": "Leer lassen, um die Einladung sofort zu senden. Datum/Uhrzeit festlegen, um bis zu diesem Zeitpunkt zu warten."
         },
         "send_results": {
           "label": "Ergebnis-E-Mails senden",

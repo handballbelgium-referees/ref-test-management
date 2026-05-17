@@ -122,6 +122,44 @@ export class RefTestDetailOperationManager {
     () => [this._detailDataService.refTestId()],
   );
 
+  readonly approveDialog = createDialogOperation(
+    (ids, _, bannerManager) =>
+      this._dataService.approveRefTests(ids, this._destroyRef, {
+        onSuccess: ({ successCount, failedCount }) => {
+          if (successCount > 0) {
+            this._bannerService.success(
+              this._translateService.instant('ref_tests.list.approve_success', { count: 1 }),
+            );
+          }
+          if (failedCount > 0) {
+            bannerManager?.error(this._translateService.instant('ref_tests.list.approve_error'));
+          }
+        },
+        onError: () =>
+          bannerManager?.error(this._translateService.instant('ref_tests.list.approve_error')),
+      }),
+    () => [this._detailDataService.refTestId()],
+  );
+
+  readonly rejectDialog = createDialogOperation<string>(
+    (ids, reason, bannerManager) =>
+      this._dataService.rejectRefTests(ids, reason, this._destroyRef, {
+        onSuccess: ({ successCount, failedCount }) => {
+          if (successCount > 0) {
+            this._bannerService.success(
+              this._translateService.instant('ref_tests.list.reject_success', { count: 1 }),
+            );
+          }
+          if (failedCount > 0) {
+            bannerManager?.error(this._translateService.instant('ref_tests.list.reject_error'));
+          }
+        },
+        onError: () =>
+          bannerManager?.error(this._translateService.instant('ref_tests.list.reject_error')),
+      }),
+    () => [this._detailDataService.refTestId()],
+  );
+
   readonly updateRefTestDetailsDialog = createDialogOperation<UpdateRefTestDetailsInput, RefTest>(
     (_, updatedData, bannerManager) =>
       this._detailDataService.editParticipantDetails(updatedData, this._destroyRef, {

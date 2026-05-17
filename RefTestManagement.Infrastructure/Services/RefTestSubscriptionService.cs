@@ -107,6 +107,25 @@ public interface IRefTestSubscriptionService
     Task PublishRefTestRevivedAsync(
         Guid refTestId,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publish an event when a RefTest is approved
+    /// </summary>
+    Task PublishRefTestApprovedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        DateTime approvedAt,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Publish an event when a RefTest is rejected
+    /// </summary>
+    Task PublishRefTestRejectedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        string reason,
+        DateTime rejectedAt,
+        CancellationToken cancellationToken = default);
 }
 
 public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTestSubscriptionService
@@ -264,6 +283,35 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
             eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
         );
     }
+
+    public async Task PublishRefTestApprovedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        DateTime approvedAt,
+        CancellationToken cancellationToken = default)
+    {
+        var evt = new RefTestApprovedEvent(refTestId, status, approvedAt);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
+    }
+
+    public async Task PublishRefTestRejectedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        string reason,
+        DateTime rejectedAt,
+        CancellationToken cancellationToken = default)
+    {
+        var evt = new RefTestRejectedEvent(refTestId, status, reason, rejectedAt);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
+    }
 }
 
 // Internal event records used for publishing
@@ -307,6 +355,10 @@ public record RefTestCreatedEvent(
 public record RefTestResetEvent(Guid Id, RefTestStatus OldStatus);
 
 public record RefTestRevivedEvent(Guid Id);
+
+public record RefTestApprovedEvent(Guid Id, RefTestStatus Status, DateTime ApprovedAt);
+
+public record RefTestRejectedEvent(Guid Id, RefTestStatus Status, string Reason, DateTime RejectedAt);
 
 public enum RefTestSessionStatus { Acquired, Blocked }
 

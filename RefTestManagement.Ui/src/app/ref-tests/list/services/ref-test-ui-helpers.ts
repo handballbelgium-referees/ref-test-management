@@ -16,6 +16,8 @@ export class RefTestUIHelpers {
       IN_PROGRESS: 'bg-blue-100 text-blue-800',
       COMPLETED: 'bg-success-100 text-success-800',
       EXPIRED: 'bg-red-100 text-red-800',
+      PENDING_APPROVAL: 'bg-orange-100 text-orange-800',
+      REJECTED: 'bg-error-100 text-error-800',
     };
 
     return statusClasses[status] ?? 'bg-neutral-100 text-neutral-800';
@@ -30,6 +32,8 @@ export class RefTestUIHelpers {
       IN_PROGRESS: 'In Progress',
       COMPLETED: 'Completed',
       EXPIRED: 'Expired',
+      PENDING_APPROVAL: 'Pending Approval',
+      REJECTED: 'Rejected',
     };
 
     return labels[status] ?? 'Unknown';

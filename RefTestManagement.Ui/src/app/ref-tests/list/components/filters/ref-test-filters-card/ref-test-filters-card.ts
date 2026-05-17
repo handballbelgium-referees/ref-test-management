@@ -3,25 +3,12 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus, SortEnumType } from '../../../../../../../graphql/generated';
 import { LanguageConfig } from '../../../../../services/language-config';
+import { SortField } from '../../../services/types';
 import { DateRangeFilter } from '../date-range-filter/date-range-filter';
 import { PerformanceFilters } from '../performance-filters/performance-filters';
 import { SortingPanel } from '../sorting-panel/sorting-panel';
 import { StatusFilterTabs } from '../status-filter-tabs/status-filter-tabs';
 import { TitleFilter } from '../title-filter/title-filter';
-
-type SortField =
-  | 'title'
-  | 'completedAt'
-  | 'startedAt'
-  | 'email'
-  | 'questionScore'
-  | 'answerScore'
-  | 'percentage'
-  | 'status'
-  | 'numberOfQuestions'
-  | 'invitationSent'
-  | 'resultsSent'
-  | 'maxTimeInMinutes';
 
 interface IRefTestFilter {
   status?: RefTestStatus;
@@ -45,6 +32,8 @@ interface IRefTestFilter {
   startedBefore?: string;
   completedAfter?: string;
   completedBefore?: string;
+  scheduledAfter?: string;
+  scheduledBefore?: string;
 }
 
 interface IStatusCounts {
@@ -53,6 +42,8 @@ interface IStatusCounts {
   inProgress: number;
   completed: number;
   expired: number;
+  pendingApproval: number;
+  rejected: number;
 }
 
 @Component({
@@ -104,7 +95,7 @@ export class RefTestFiltersCard {
     maxMaxTimeInMinutes?: number;
   }>();
   protected readonly dateRangeChange = output<{
-    type: 'started' | 'completed';
+    type: 'started' | 'completed' | 'scheduled';
     after?: string;
     before?: string;
   }>();
@@ -168,6 +159,14 @@ export class RefTestFiltersCard {
   protected onCompletedDateChange(changes: { after?: string; before?: string }): void {
     this.dateRangeChange.emit({
       type: 'completed',
+      after: changes.after,
+      before: changes.before,
+    });
+  }
+
+  protected onScheduledDateChange(changes: { after?: string; before?: string }): void {
+    this.dateRangeChange.emit({
+      type: 'scheduled',
       after: changes.after,
       before: changes.before,
     });

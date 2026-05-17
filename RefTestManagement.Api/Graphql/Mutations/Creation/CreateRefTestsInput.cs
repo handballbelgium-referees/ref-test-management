@@ -10,5 +10,10 @@ public record CreateRefTestsInput(
     int MaxTimeInMinutes,
     List<string>? SpecificQuestionNumbers = null,
     bool SendAutomatedInvitations = false,
-    bool SendAutomatedResults = false
+    bool SendAutomatedResults = false,
+    /// <summary>
+    /// Optional date/time from which the ref tests can be started.
+    /// When SendAutomatedInvitations is true, the invitation email is scheduled for this time.
+    /// </summary>
+    DateTime? ScheduledAt = null
 );

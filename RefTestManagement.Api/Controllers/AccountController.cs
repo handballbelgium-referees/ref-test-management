@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Handball.Belgium.RefTestManagement.Api.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -41,11 +42,8 @@ public class AccountController : Controller
     {
         var user = new
         {
-            Name = User.FindFirst(ClaimTypes.Name)?.Value
-                ?? User.FindFirst("name")?.Value
-                ?? "Unknown",
-            Email = User.FindFirst(ClaimTypes.Email)?.Value
-                ?? User.FindFirst("email")?.Value,
+            Name = User.GetDisplayName(),
+            Email = User.GetEmail() is { Length: > 0 } e ? e : null,
             Picture = User.FindFirst("picture")?.Value,
             Sub = User.FindFirst(ClaimTypes.NameIdentifier)?.Value
                 ?? User.FindFirst("sub")?.Value

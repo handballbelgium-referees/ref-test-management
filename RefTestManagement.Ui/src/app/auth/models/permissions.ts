@@ -10,6 +10,7 @@ export const Permissions = {
     RegenerateToken: 'ref-tests:regenerate-token',
     Reset: 'ref-tests:reset',
     Revive: 'ref-tests:revive',
+    Approve: 'ref-tests:approve',
     SendInvitations: 'ref-tests:send-invitations',
     SendResults: 'ref-tests:send-results',
     SendReport: 'ref-tests:send-report',

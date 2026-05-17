@@ -28,6 +28,8 @@ export class RefTestOperationManager {
   private readonly _sendingResultsIds = signal<Set<string>>(new Set());
   private readonly _resettingRefTestIds = signal<Set<string>>(new Set());
   private readonly _revivingRefTestIds = signal<Set<string>>(new Set());
+  private readonly _approvingRefTestIds = signal<Set<string>>(new Set());
+  private readonly _rejectingRefTestIds = signal<Set<string>>(new Set());
 
   // ========================================================================
   // HELPER METHODS
@@ -185,6 +187,58 @@ export class RefTestOperationManager {
       onError: () =>
         bannerManager?.error(this._translateService.instant('ref_tests.list.revive_error')),
       onComplete: () => this.removeIds(this._revivingRefTestIds, ids),
+    });
+  }, this.getSelectedIds);
+
+  readonly approveDialog = createDialogOperation((ids, _, bannerManager) => {
+    this.addIds(this._approvingRefTestIds, ids);
+    return this._dataService.approveRefTests(ids, this._destroyRef, {
+      onSuccess: ({ successCount, failedCount }) => {
+        if (successCount > 0) {
+          this._selectionManager.clearSelection();
+          this._bannerService.success(
+            this._translateService.instant('ref_tests.list.approve_success', {
+              count: successCount,
+            }),
+          );
+        }
+        if (failedCount > 0) {
+          bannerManager?.error(
+            this._translateService.instant('ref_tests.list.approve_partial_error', {
+              count: failedCount,
+            }),
+          );
+        }
+      },
+      onError: () =>
+        bannerManager?.error(this._translateService.instant('ref_tests.list.approve_error')),
+      onComplete: () => this.removeIds(this._approvingRefTestIds, ids),
+    });
+  }, this.getSelectedIds);
+
+  readonly rejectDialog = createDialogOperation<string>((ids, reason, bannerManager) => {
+    this.addIds(this._rejectingRefTestIds, ids);
+    return this._dataService.rejectRefTests(ids, reason, this._destroyRef, {
+      onSuccess: ({ successCount, failedCount }) => {
+        if (successCount > 0) {
+          this._selectionManager.clearSelection();
+          this._bannerService.success(
+            this._translateService.instant('ref_tests.list.reject_success', {
+              count: successCount,
+            }),
+          );
+        }
+        if (failedCount > 0) {
+          bannerManager?.error(
+            this._translateService.instant('ref_tests.list.reject_partial_error', {
+              count: failedCount,
+            }),
+          );
+        }
+      },
+      onError: () =>
+        bannerManager?.error(this._translateService.instant('ref_tests.list.reject_error')),
+      onComplete: () => this.removeIds(this._rejectingRefTestIds, ids),
     });
   }, this.getSelectedIds);
 }

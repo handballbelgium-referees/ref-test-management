@@ -85,6 +85,8 @@
         "in_progress": "Bezig",
         "completed": "Voltooid",
         "expired": "Verlopen",
+        "pending_approval": "Wacht op Goedkeuring",
+        "rejected": "Afgewezen",
         "title_label": "RefTest Titel",
         "title_all": "Alle Titels",
         "title_search_placeholder": "Titels zoeken...",
@@ -112,7 +114,8 @@
         "min": "Min",
         "max": "Max",
         "started_date_range": "Startdatum",
-        "completed_date_range": "Voltooiingsdatum"
+        "completed_date_range": "Voltooiingsdatum",
+        "scheduled_date_range": "Geplande Datum"
       },
       "sorting": {
         "title": "Sorteeropties",
@@ -128,6 +131,7 @@
         "results_sent": "Resultaten",
         "started_at": "Startdatum",
         "completed_at": "Voltooiingsdatum",
+        "scheduled_at": "Geplande Datum",
         "percentage": "Percentage",
         "asc": "Oplopend",
         "desc": "Aflopend"
@@ -136,7 +140,9 @@
         "PENDING": "In Afwachting",
         "IN_PROGRESS": "Bezig",
         "COMPLETED": "Voltooid",
-        "EXPIRED": "Verlopen"
+        "EXPIRED": "Verlopen",
+        "PENDING_APPROVAL": "Wacht op Goedkeuring",
+        "REJECTED": "Afgewezen"
       },
       "table": {
         "title": "Titel",
@@ -149,7 +155,8 @@
         "invitation": "Uitnodiging",
         "results": "Resultaten",
         "started": "Gestart",
-        "completed": "Voltooid"
+        "completed": "Voltooid",
+        "scheduled": "Gepland"
       },
       "columns": {
         "toggle": "Kolommen tonen/verbergen",
@@ -162,25 +169,31 @@
         "invitation": "Uitnodiging",
         "results": "Resultaten",
         "started": "Gestart",
-        "completed": "Voltooid"
+        "completed": "Voltooid",
+        "scheduled": "Gepland"
       },
+      "rejection_reason": "Reden van Afwijzing",
       "empty": {
         "title": "Geen RefTests gevonden",
         "subtitle": "Begin met het aanmaken van uw eerste RefTests",
         "action": "RefTests Aanmaken"
       },
       "actions": {
-        "reftest_selected": "RefTest geselecteerd",
-        "reftests_selected": "RefTests geselecteerd",
+        "reftest_selected": "Geselecteerd",
+        "reftests_selected": "Geselecteerd",
         "send_invitation": "Uitnodiging Versturen",
         "send_invitations": "Uitnodigingen Versturen",
         "send_result": "Resultaat Versturen",
         "send_results": "Resultaten Versturen",
         "generate_report": "Rapport Versturen",
-        "reset_test": "Test Resetten",
-        "reset_tests": "Tests Resetten",
-        "revive_test": "Test Herstellen",
-        "revive_tests": "Tests Herstellen",
+        "reset_test": "Reset",
+        "reset_tests": "Reset",
+        "revive_test": "Herstellen",
+        "revive_tests": "Herstellen",
+        "approve_test": "Goedkeuren",
+        "approve_tests": "Goedkeuren",
+        "reject_test": "Weigeren",
+        "reject_tests": "Weigeren",
         "delete": "Verwijderen"
       },
       "dialogs": {
@@ -240,6 +253,25 @@
           "ref_tests": "RefTests die hersteld worden:",
           "confirm": "RefTests Herstellen",
           "cancel": "Annuleren"
+        },
+        "approve": {
+          "title": "RefTests Goedkeuren",
+          "message": "{{count}} RefTest(s) goedkeuren?",
+          "info": "Goedgekeurde tests worden geactiveerd en uitnodigingen worden verzonden volgens hun instellingen.",
+          "ref_tests": "Goed te keuren RefTests:",
+          "confirm": "Goedkeuren",
+          "cancel": "Annuleren"
+        },
+        "reject": {
+          "title": "RefTests Weigeren",
+          "message": "{{count}} RefTest(s) weigeren?",
+          "warning": "Geweigerde tests worden niet geactiveerd. De aanmaker moet opnieuw goedkeuring aanvragen.",
+          "reason_label": "Reden van Weigering",
+          "reason_placeholder": "Geef een reden voor weigering...",
+          "reason_required": "Een reden voor weigering is verplicht.",
+          "ref_tests": "Te weigeren RefTests:",
+          "confirm": "Weigeren",
+          "cancel": "Annuleren"
         }
       },
       "report": {
@@ -257,6 +289,12 @@
       "revive_success": "{{count}} RefTest(s) succesvol hersteld",
       "revive_error": "Fout bij herstellen van RefTests",
       "revive_partial_error": "{{count}} RefTest(s) konden niet worden hersteld",
+      "approve_success": "{{count}} RefTest(s) succesvol goedgekeurd",
+      "approve_error": "Fout bij goedkeuren van RefTests",
+      "approve_partial_error": "{{count}} RefTest(s) konden niet worden goedgekeurd",
+      "reject_success": "{{count}} RefTest(s) succesvol geweigerd",
+      "reject_error": "Fout bij weigeren van RefTests",
+      "reject_partial_error": "{{count}} RefTest(s) konden niet worden geweigerd",
       "invitations_sent": "Uitnodigingen succesvol verstuurd",
       "invitations_error": "Fout bij versturen van uitnodigingen",
       "results_sent": "Resultaten succesvol verstuurd",
@@ -386,8 +424,10 @@
       "send_invitations_automatically": "Automatisch Uitnodigingen Versturen",
       "send_results_automatically": "Automatisch Resultaten Versturen",
       "timeline": "Tijdlijn",
+      "scheduled_at": "Gepland Op",
       "started_at": "Gestart Op",
       "completed_at": "Voltooid Op",
+      "rejection_reason_label": "Reden van Afwijzing",
       "scores": "Test Scores",
       "overall_score": "Totaalscore",
       "passed": "Geslaagd",
@@ -497,6 +537,11 @@
           "label": "Uitnodigingsmails versturen",
           "hint": "Vink aan om uitnodigingsmails direct na aanmaken van RefTests te versturen",
           "description": "Deelnemers ontvangen een e-mail met hun RefTest-link"
+        },
+        "scheduled_at": {
+          "label": "Inplannen voor",
+          "optional": "(optioneel)",
+          "description": "Leeg laten om de uitnodiging onmiddellijk te versturen. Stel een datum/tijd in om te wachten tot dat moment."
         },
         "send_results": {
           "label": "Resultatenmails versturen",

@@ -59,3 +59,9 @@ public record RefTestCreated(
     RefTestStatus Status,
     int NumberOfQuestions,
     int MaxTimeInMinutes) : IRefTestEvent;
+
+[ObjectType]
+public record RefTestApproved([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, DateTime ApprovedAt) : IRefTestEvent;
+
+[ObjectType]
+public record RefTestRejected([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, string Reason, DateTime RejectedAt) : IRefTestEvent;

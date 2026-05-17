@@ -23,6 +23,7 @@ public class RefTestSortType : SortInputType<RefTestDto>
         descriptor.Field(x => x.CreatedAt).Description("Sort on creation date of the RefTest");
         descriptor.Field(x => x.StartedAt).Description("Sort on start date of the RefTest");
         descriptor.Field(x => x.CompletedAt).Description("Sort on completion date of the RefTest");
+        descriptor.Field(x => x.ScheduledAt).Description("Sort on scheduled date of the RefTest");
         descriptor.Field(x => x.Percentage).Description("Sort on percentage of correct answers");
         descriptor.Field(x => x.QuestionScore).Description("Sort on question score of the RefTest");
         descriptor.Field(x => x.AnswerScore).Description("Sort on answer score of the RefTest");

@@ -41,18 +41,24 @@
       [hasPendingRefTestsSelected]="hasPendingRefTestsSelected()"
       [hasInProgressOrCompletedRefTestsSelected]="hasInProgressOrCompletedRefTestsSelected()"
       [hasExpiredRefTestsSelected]="hasExpiredRefTestsSelected()"
+      [hasApprovableRefTestsSelected]="hasApprovableRefTestsSelected()"
+      [hasPendingApprovalRefTestsSelected]="hasPendingApprovalRefTestsSelected()"
       [sendingInvitations]="operationManager.sendInvitationsDialog.loading()"
       [sendingResults]="operationManager.sendResultsDialog.loading()"
       [deletingRefTests]="operationManager.deleteDialog.loading()"
       [generatingReport]="operationManager.generateReportDialog.loading()"
       [resettingRefTests]="operationManager.resetDialog.loading()"
       [revivingRefTests]="operationManager.reviveDialog.loading()"
+      [approvingRefTests]="operationManager.approveDialog.loading()"
+      [rejectingRefTests]="operationManager.rejectDialog.loading()"
       (sendInvitations)="operationManager.sendInvitationsDialog.initiate()"
       (sendResults)="operationManager.sendResultsDialog.initiate()"
       (deleteSelected)="operationManager.deleteDialog.initiate()"
       (generateReport)="operationManager.generateReportDialog.initiate()"
       (resetSelected)="operationManager.resetDialog.initiate()"
       (reviveSelected)="operationManager.reviveDialog.initiate()"
+      (approveSelected)="operationManager.approveDialog.initiate()"
+      (rejectSelected)="operationManager.rejectDialog.initiate()"
     />
 
     <!-- Loading State -->
@@ -186,4 +192,26 @@
     (cancel)="operationManager.reviveDialog.cancel()"
   >
   </app-revive-ref-tests-dialog>
+
+  <!-- Approve Dialog -->
+  <app-approve-ref-tests-dialog
+    [loading]="operationManager.approveDialog.loading()"
+    [show]="operationManager.approveDialog.show()"
+    [refTests]="refTestsToApproveOrReject()"
+    [bannerManager]="operationManager.approveDialog.bannerManager()"
+    (confirm)="confirmApprove()"
+    (cancel)="operationManager.approveDialog.cancel()"
+  >
+  </app-approve-ref-tests-dialog>
+
+  <!-- Reject Dialog -->
+  <app-reject-ref-tests-dialog
+    [loading]="operationManager.rejectDialog.loading()"
+    [show]="operationManager.rejectDialog.show()"
+    [refTests]="refTestsToApproveOrReject()"
+    [bannerManager]="operationManager.rejectDialog.bannerManager()"
+    (confirm)="confirmReject($event)"
+    (cancel)="operationManager.rejectDialog.cancel()"
+  >
+  </app-reject-ref-tests-dialog>
 </app-pull-to-refresh>

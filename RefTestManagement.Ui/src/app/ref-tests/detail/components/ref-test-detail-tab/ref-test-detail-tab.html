@@ -34,6 +34,7 @@
 
       <!-- Timeline -->
       <app-timeline-card
+        [scheduledAt]="test.scheduledAt ?? undefined"
         [startedAt]="test.startedAt ?? undefined"
         [completedAt]="test.completedAt ?? undefined"
         [status]="test.status"

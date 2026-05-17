@@ -13,6 +13,7 @@ import { LocalizedDate } from './../../../../../../shared/pipes/localized-date';
   host: { class: 'block' },
 })
 export class TimelineCard {
+  readonly scheduledAt = input<string | undefined>(undefined);
   readonly startedAt = input<string | undefined>(undefined);
   readonly completedAt = input<string | undefined>(undefined);
   readonly status = input.required<RefTestStatus>();

@@ -14,6 +14,7 @@ public static class Permissions
     {
         // Mutations
         public const string Create = "ref-tests:create";
+        public const string Approve = "ref-tests:approve";
         public const string Delete = "ref-tests:delete";
         public const string UpdateDetails = "ref-tests:update-details";
         public const string UpdateConfiguration = "ref-tests:update-configuration";
@@ -51,6 +52,7 @@ public static class Permissions
     public static readonly IReadOnlyList<string> All =
     [
         RefTests.Create,
+        RefTests.Approve,
         RefTests.Delete,
         RefTests.UpdateDetails,
         RefTests.UpdateConfiguration,

@@ -342,3 +342,78 @@ Permission Sources in the JWT (Auth0)
                     same permissions claims
                     for browser requests
 ```
+
+---
+
+# Approval Workflow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                        RefTest Approval Workflow                            │
+└─────────────────────────────────────────────────────────────────────────────┘
+
+   Creator (has ref-tests:create, NOT ref-tests:approve)
+   ┌────────────────────────────────────────────────────────────────────────┐
+   │  createRefTests mutation                                               │
+   │  → requiresApproval = true  (creator lacks ref-tests:approve)         │
+   │  → RefTest.Status = PendingApproval                                   │
+   └───────────────────────────┬────────────────────────────────────────────┘
+                               │
+                               │ 1. RefTestCreated subscription event fired
+                               │    (status = PENDING_APPROVAL)
+                               │
+                               │ 2. ApprovalNotificationEmail job enqueued
+                               ▼
+   ┌────────────────────────────────────────────────────────────────────────┐
+   │  BackgroundJobService                                                  │
+   │  JobType = ApprovalNotificationEmail                                   │
+   │                                                                        │
+   │  1. IAuth0ManagementService.GetUsersWithPermissionAsync(               │
+   │       "ref-tests:approve")                                             │
+   │     → Fetches approver list via Auth0 Management API (M2M token)       │
+   │                                                                        │
+   │  2. For each approver:                                                 │
+   │     IEmailService.SendApprovalNotificationAsync(...)                   │
+   │     → HTML email with list of pending tests                            │
+   │     → "Review Pending Tests" button → /ref-tests?status=PENDING_APPROVAL│
+   └───────────────────────────┬────────────────────────────────────────────┘
+                               │
+                   ┌───────────┴───────────┐
+                   ▼                       ▼
+   Approver clicks Approve          Approver clicks Reject
+   ┌────────────────────┐           ┌────────────────────────────────────┐
+   │ approveRefTests    │           │ rejectRefTests mutation            │
+   │ mutation           │           │ (requires reason string)           │
+   │ [Authorize:        │           │ [Authorize:                        │
+   │  ref-tests:approve]│           │  ref-tests:approve]                │
+   └─────────┬──────────┘           └───────────────┬────────────────────┘
+             │                                      │
+             │ RefTest.Approve()                    │ RefTest.Reject(reason)
+             │ Status → Pending                     │ Status → Rejected
+             │                                      │ RejectionReason saved
+             ▼                                      ▼
+   RefTestApproved event              RefTestRejected event
+   (subscription SSE)                 (subscription SSE)
+             │                                      │
+             ▼                                      ▼
+   Cache: move PENDING_APPROVAL     Cache: move PENDING_APPROVAL
+          → PENDING list                   → REJECTED list
+   Tab counts updated               Tab counts updated
+
+   ┌────────────────────────────────────────────────────────────────────────┐
+   │  Frontend UI (list page)                                               │
+   │                                                                        │
+   │  Status tabs (approvers only):                                         │
+   │  [All] [Pending] [In Progress] [Completed] [Expired]                   │
+   │  [Pending Approval ✦] (amber, shown when count > 0)                    │
+   │  [Rejected ✦] (red, shown when count > 0)                              │
+   │                                                                        │
+   │  Bulk actions bar (approvers only, via *hasPermission):                │
+   │  [Approve Tests]  [Reject Tests]                                       │
+   └────────────────────────────────────────────────────────────────────────┘
+
+   Status state machine (relevant transitions):
+   PendingApproval ──Approve()──► Pending
+   PendingApproval ──Reject()───► Rejected
+   Rejected        ──Approve()──► Pending   (re-approve after rejection)
+```

@@ -9,6 +9,7 @@ export type SortField =
   | 'title'
   | 'completedAt'
   | 'startedAt'
+  | 'scheduledAt'
   | 'email'
   | 'questionScore'
   | 'answerScore'
@@ -41,6 +42,8 @@ export interface IRefTestFilter {
   startedBefore?: string;
   completedAfter?: string;
   completedBefore?: string;
+  scheduledAfter?: string;
+  scheduledBefore?: string;
   pagingInfo: IPagingInfo;
 }
 

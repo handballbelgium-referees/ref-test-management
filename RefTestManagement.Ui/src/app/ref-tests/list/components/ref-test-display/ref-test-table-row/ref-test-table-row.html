@@ -29,6 +29,11 @@
     <span
       [class]="getStatusClass(refTest().status)"
       class="px-2 py-1 inline-flex text-xs font-medium rounded-md"
+      [title]="
+        refTest().status === 'REJECTED' && refTest().rejectionReason
+          ? refTest().rejectionReason
+          : ''
+      "
     >
       {{ 'ref_tests.list.status.' + refTest().status | translate }}
     </span>
@@ -170,6 +175,15 @@
   <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-600">
     @if (refTest().completedAt) {
       {{ refTest().completedAt | localizedDate: 'short' }}
+    } @else {
+      <span class="text-neutral-400">-</span>
+    }
+  </td>
+}
+@if (isColumnVisible('scheduled')) {
+  <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-600">
+    @if (refTest().scheduledAt) {
+      {{ refTest().scheduledAt | localizedDate: 'short' }}
     } @else {
       <span class="text-neutral-400">-</span>
     }

@@ -44,7 +44,9 @@ public static class RefTestExtensions
             Language = refTest.Language,
             Duration = refTest is { CompletedAt: not null, StartedAt: not null }
                 ? refTest.CompletedAt.Value - refTest.StartedAt.Value
-                : null
+                : null,
+            RejectionReason = refTest.RejectionReason,
+            ScheduledAt = refTest.ScheduledAt
         };
     }
 }

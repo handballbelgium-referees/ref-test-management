@@ -18,6 +18,7 @@ export const COLUMNS = {
   RESULTS: 'results',
   STARTED: 'started',
   COMPLETED: 'completed',
+  SCHEDULED: 'scheduled',
 };
 
 export const PERCENTAGE_RANGES = {

@@ -7,7 +7,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 
-
 /// <summary>
 /// Background service that checks for expired RefTests and enqueues specific jobs to handle them.
 /// This approach is more efficient than processing all tests - it only creates jobs for tests that need action.
@@ -27,7 +26,7 @@ public class RefTestExpirationService : BackgroundService
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
-        
+
         configuration ??= new RefTestExpirationConfiguration();
         _checkInterval = TimeSpan.FromMinutes(configuration.ExpirationCheckIntervalMinutes);
         _startupDelay = TimeSpan.FromSeconds(configuration.StartupDelaySeconds);
@@ -93,19 +92,19 @@ public class RefTestExpirationService : BackgroundService
         foreach (var test in potentiallyExpiredTests)
         {
             var isExpired = IsExpired(test.Status, test.StartedAt, test.CreatedAt, test.MaxTimeInMinutes, now);
-            
+
             if (!isExpired)
                 continue;
 
             // Determine the action based on status
-            var action = test.Status == RefTestStatus.InProgress 
-                ? RefTestExpirationAction.AutoComplete 
+            var action = test.Status == RefTestStatus.InProgress
+                ? RefTestExpirationAction.AutoComplete
                 : RefTestExpirationAction.MarkAsExpired;
 
             // Enqueue a specific job to handle this expired test
             await jobEnqueueService.EnqueueRefTestExpirationAsync(
-                new RefTestExpirationPayload(test.Id, action), 
-                executeAfter: null, 
+                new RefTestExpirationPayload(test.Id, action),
+                executeAfter: null,
                 cancellationToken);
 
             enqueuedCount++;
@@ -118,7 +117,8 @@ public class RefTestExpirationService : BackgroundService
         }
     }
 
-    private bool IsExpired(RefTestStatus status, DateTime? startedAt, DateTime createdAt, int maxTimeInMinutes, DateTime now)
+    private bool IsExpired(RefTestStatus status, DateTime? startedAt, DateTime createdAt, int maxTimeInMinutes,
+        DateTime now)
     {
         switch (status)
         {
@@ -136,6 +136,8 @@ public class RefTestExpirationService : BackgroundService
             }
             case RefTestStatus.Completed:
             case RefTestStatus.Expired:
+            case RefTestStatus.PendingApproval:
+            case RefTestStatus.Rejected:
             default:
                 return false;
         }

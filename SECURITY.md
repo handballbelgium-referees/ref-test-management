@@ -70,6 +70,7 @@ Decode your access token at [jwt.io](https://jwt.io). You should see a `permissi
 | `ref-tests:regenerate-token`      | `regenerateRefTestToken` mutation                 | Mutation |
 | `ref-tests:reset`                 | `resetRefTests` mutation                          | Mutation |
 | `ref-tests:revive`                | `reviveRefTests` mutation                         | Mutation |
+| `ref-tests:approve`               | `approveRefTests` / `rejectRefTests` mutations    | Mutation |
 | `ref-tests:send-invitations`      | `sendRefTestInvitations` mutation                 | Mutation |
 | `ref-tests:send-results`          | `sendRefTestResults` mutation                     | Mutation |
 | `ref-tests:send-report`           | `sendRefTestReport` mutation                      | Mutation |
@@ -103,11 +104,13 @@ For OR-semantics (a field accessible with any one of several permissions), the `
 
 ## Suggested Roles
 
-| Role      | Permissions                                                                                                                                                        |
-| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Admin`   | `ref-tests:*`, `questions:*`                                                                                                                                       |
-| `Manager` | `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:send-invitations`, `ref-tests:send-results`, `ref-tests:send-report` |
-| `Viewer`  | `ref-tests:view-list`, `ref-tests:view-detail`                                                                                                                     |
+| Role       | Permissions                                                                                                                                                        |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `Admin`    | `ref-tests:*`, `questions:*`                                                                                                                                       |
+| `Approver` | `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:approve`                                                                                                |
+| `Creator`  | `ref-tests:create`, `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:view-titles`                                     |
+| `Manager`  | `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:send-invitations`, `ref-tests:send-results`, `ref-tests:send-report` |
+| `Viewer`   | `ref-tests:view-list`, `ref-tests:view-detail`                                                                                                                     |
 
 ---
 

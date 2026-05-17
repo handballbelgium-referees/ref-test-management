@@ -85,6 +85,8 @@
         "in_progress": "En Cours",
         "completed": "Terminées",
         "expired": "Expirées",
+        "pending_approval": "En Attente d'Approbation",
+        "rejected": "Refusées",
         "title_label": "Titre du RefTest",
         "title_all": "Tous les Titres",
         "title_search_placeholder": "Rechercher des titres...",
@@ -112,7 +114,8 @@
         "min": "Min",
         "max": "Max",
         "started_date_range": "Date de Début",
-        "completed_date_range": "Date de Fin"
+        "completed_date_range": "Date de Fin",
+        "scheduled_date_range": "Date Planifiée"
       },
       "sorting": {
         "title": "Options de Tri",
@@ -128,6 +131,7 @@
         "results_sent": "Résultats",
         "started_at": "Date de Début",
         "completed_at": "Date de Fin",
+        "scheduled_at": "Date Planifiée",
         "percentage": "Pourcentage",
         "asc": "Croissant",
         "desc": "Décroissant"
@@ -136,7 +140,9 @@
         "PENDING": "En Attente",
         "IN_PROGRESS": "En Cours",
         "COMPLETED": "Terminée",
-        "EXPIRED": "Expirée"
+        "EXPIRED": "Expirée",
+        "PENDING_APPROVAL": "En Attente d'Approbation",
+        "REJECTED": "Refusée"
       },
       "table": {
         "title": "Titre",
@@ -149,7 +155,8 @@
         "invitation": "Invitation",
         "results": "Résultats",
         "started": "Démarré",
-        "completed": "Terminé"
+        "completed": "Terminé",
+        "scheduled": "Planifié"
       },
       "columns": {
         "toggle": "Afficher/Masquer les colonnes",
@@ -162,25 +169,31 @@
         "invitation": "Invitation",
         "results": "Résultats",
         "started": "Démarré",
-        "completed": "Terminé"
+        "completed": "Terminé",
+        "scheduled": "Planifié"
       },
+      "rejection_reason": "Motif de Rejet",
       "empty": {
         "title": "Aucune RefTest trouvée",
         "subtitle": "Commencez par créer vos premiers RefTests",
         "action": "Créer des RefTests"
       },
       "actions": {
-        "reftest_selected": "RefTest sélectionné",
-        "reftests_selected": "RefTests sélectionnés",
+        "reftest_selected": "Sélectionné",
+        "reftests_selected": "Sélectionnés",
         "send_invitation": "Envoyer l'Invitation",
         "send_invitations": "Envoyer les Invitations",
         "send_result": "Envoyer le Résultat",
         "send_results": "Envoyer les Résultats",
         "generate_report": "Envoyer le Rapport",
-        "reset_test": "Réinitialiser le Test",
-        "reset_tests": "Réinitialiser les Tests",
-        "revive_test": "Réactiver le Test",
-        "revive_tests": "Réactiver les Tests",
+        "reset_test": "Réinitialiser",
+        "reset_tests": "Réinitialiser",
+        "revive_test": "Réactiver",
+        "revive_tests": "Réactiver",
+        "approve_test": "Approuver",
+        "approve_tests": "Approuver",
+        "reject_test": "Refuser",
+        "reject_tests": "Refuser",
         "delete": "Supprimer"
       },
       "dialogs": {
@@ -240,6 +253,25 @@
           "ref_tests": "RefTests à réactiver:",
           "confirm": "Réactiver les RefTests",
           "cancel": "Annuler"
+        },
+        "approve": {
+          "title": "Approuver les RefTests",
+          "message": "Approuver {{count}} RefTest(s)?",
+          "info": "Les tests approuvés seront activés et les invitations seront envoyées selon leurs paramètres.",
+          "ref_tests": "RefTests à approuver:",
+          "confirm": "Approuver",
+          "cancel": "Annuler"
+        },
+        "reject": {
+          "title": "Refuser les RefTests",
+          "message": "Refuser {{count}} RefTest(s)?",
+          "warning": "Les tests refusés ne seront pas activés. Le créateur devra redemander une approbation.",
+          "reason_label": "Motif du Refus",
+          "reason_placeholder": "Indiquez un motif de refus...",
+          "reason_required": "Un motif de refus est obligatoire.",
+          "ref_tests": "RefTests à refuser:",
+          "confirm": "Refuser",
+          "cancel": "Annuler"
         }
       },
       "report": {
@@ -257,6 +289,12 @@
       "revive_success": "{{count}} RefTest(s) réactivé(s) avec succès",
       "revive_error": "Échec de la réactivation des RefTests",
       "revive_partial_error": "{{count}} RefTest(s) n'ont pas pu être réactivé(s)",
+      "approve_success": "{{count}} RefTest(s) approuvé(s) avec succès",
+      "approve_error": "Échec de l'approbation des RefTests",
+      "approve_partial_error": "{{count}} RefTest(s) n'ont pas pu être approuvé(s)",
+      "reject_success": "{{count}} RefTest(s) refusé(s) avec succès",
+      "reject_error": "Échec du refus des RefTests",
+      "reject_partial_error": "{{count}} RefTest(s) n'ont pas pu être refusé(s)",
       "invitations_sent": "Invitations envoyées avec succès",
       "invitations_error": "Échec de l'envoi des invitations",
       "results_sent": "Résultats envoyés avec succès",
@@ -386,8 +424,10 @@
       "send_invitations_automatically": "Envoyer les Invitations Automatiquement",
       "send_results_automatically": "Envoyer les Résultats Automatiquement",
       "timeline": "Chronologie",
+      "scheduled_at": "Planifié Le",
       "started_at": "Commencé Le",
       "completed_at": "Terminé Le",
+      "rejection_reason_label": "Motif de Rejet",
       "scores": "Scores du Test",
       "overall_score": "Score Global",
       "passed": "Réussi",
@@ -498,6 +538,11 @@
           "label": "Envoyer les e-mails d'invitation",
           "hint": "Cochez pour envoyer des e-mails d'invitation immédiatement après la création des RefTests",
           "description": "Les participants recevront un e-mail avec leur lien de RefTest"
+        },
+        "scheduled_at": {
+          "label": "Planifier pour",
+          "optional": "(facultatif)",
+          "description": "Laissez vide pour envoyer l'invitation immédiatement. Définissez une date/heure pour retarder jusqu'à ce moment."
         },
         "send_results": {
           "label": "Envoyer les e-mails de résultats",

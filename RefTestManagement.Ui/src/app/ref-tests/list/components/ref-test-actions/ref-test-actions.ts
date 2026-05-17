@@ -22,12 +22,16 @@ export class RefTestActions {
   readonly hasPendingRefTestsSelected = input.required<boolean>();
   readonly hasInProgressOrCompletedRefTestsSelected = input.required<boolean>();
   readonly hasExpiredRefTestsSelected = input.required<boolean>();
+  readonly hasApprovableRefTestsSelected = input.required<boolean>();
+  readonly hasPendingApprovalRefTestsSelected = input.required<boolean>();
   readonly sendingInvitations = input.required<boolean>();
   readonly sendingResults = input.required<boolean>();
   readonly deletingRefTests = input.required<boolean>();
   readonly generatingReport = input.required<boolean>();
   readonly resettingRefTests = input.required<boolean>();
   readonly revivingRefTests = input.required<boolean>();
+  readonly approvingRefTests = input.required<boolean>();
+  readonly rejectingRefTests = input.required<boolean>();
 
   protected readonly sendInvitations = output<void>();
   protected readonly sendResults = output<void>();
@@ -35,6 +39,8 @@ export class RefTestActions {
   protected readonly generateReport = output<void>();
   protected readonly resetSelected = output<void>();
   protected readonly reviveSelected = output<void>();
+  protected readonly approveSelected = output<void>();
+  protected readonly rejectSelected = output<void>();
 
   protected toggleMenu(): void {
     this.menuOpen.set(!this.menuOpen());
@@ -74,5 +80,17 @@ export class RefTestActions {
     event.stopPropagation();
     this.menuOpen.set(false);
     this.reviveSelected.emit();
+  }
+
+  protected onApproveSelected(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen.set(false);
+    this.approveSelected.emit();
+  }
+
+  protected onRejectSelected(event: Event): void {
+    event.stopPropagation();
+    this.menuOpen.set(false);
+    this.rejectSelected.emit();
   }
 }

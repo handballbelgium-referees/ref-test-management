@@ -63,6 +63,20 @@ public class RefTest
     public DateTime? ResultsSentAt { get; private set; }
     public string? Language { get; private set; }
 
+    public string? RejectionReason { get; private set; }
+
+    /// <summary>Name of the Auth0 user who created this RefTest.</summary>
+    public string CreatorName { get; private set; } = string.Empty;
+
+    /// <summary>Email of the Auth0 user who created this RefTest.</summary>
+    public string CreatorEmail { get; private set; } = string.Empty;
+
+    /// <summary>
+    /// The date/time from which this RefTest can be started. Set during approval when
+    /// SendInvitationsAutomatically is true — the invitation email fires at this time.
+    /// </summary>
+    public DateTime? ScheduledAt { get; private set; }
+
     [NotMapped]
     public TimeSpan? Duration => CompletedAt.HasValue && StartedAt.HasValue
         ? CompletedAt.Value - StartedAt.Value
@@ -77,7 +91,11 @@ public class RefTest
         int maxTimeInMinutes,
         List<string> questionIds,
         bool sendInvitationAutomatically,
-        bool sendResultsAutomatically)
+        bool sendResultsAutomatically,
+        bool requiresApproval = false,
+        DateTime? scheduledAt = null,
+        string creatorName = "",
+        string creatorEmail = "")
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name is required", nameof(firstName));
@@ -95,7 +113,38 @@ public class RefTest
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
         return new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
-            questionIds, sendInvitationAutomatically, sendResultsAutomatically);
+            questionIds, sendInvitationAutomatically, sendResultsAutomatically)
+        {
+            Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending,
+            ScheduledAt = scheduledAt,
+            CreatorName = creatorName,
+            CreatorEmail = creatorEmail
+        };
+    }
+
+    public void Approve()
+    {
+        if (Status != RefTestStatus.PendingApproval && Status != RefTestStatus.Rejected)
+            throw new InvalidRefTestStatusException(
+                "Only RefTests in PendingApproval or Rejected status can be approved");
+
+        Status = RefTestStatus.Pending;
+        CreatedAt = DateTime.UtcNow;
+        RejectionReason = null;
+        // ScheduledAt is preserved as set by the creator
+    }
+
+    public void Reject(string reason)
+    {
+        if (Status != RefTestStatus.PendingApproval)
+            throw new InvalidRefTestStatusException(
+                "Only RefTests in PendingApproval status can be rejected");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new RefTestValidationException("Rejection reason is required");
+
+        Status = RefTestStatus.Rejected;
+        RejectionReason = reason;
     }
 
     public void SendInvitation()
@@ -107,6 +156,10 @@ public class RefTest
     {
         if (Status != RefTestStatus.Pending)
             throw new InvalidRefTestStatusException("RefTest can only be started from Pending status");
+
+        if (ScheduledAt.HasValue && ScheduledAt.Value > DateTime.UtcNow)
+            throw new RefTestValidationException(
+                $"This ref test is not yet available. It can be started from {ScheduledAt.Value:yyyy-MM-dd HH:mm} UTC");
 
         Status = RefTestStatus.InProgress;
         StartedAt = DateTime.UtcNow;

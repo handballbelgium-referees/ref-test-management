@@ -95,11 +95,13 @@ export class RefTestFilterState {
     this.updateFilter(performance);
   }
 
-  setDateRange(type: 'started' | 'completed', after?: string, before?: string): void {
+  setDateRange(type: 'started' | 'completed' | 'scheduled', after?: string, before?: string): void {
     if (type === 'started') {
       this.updateFilter({ startedAfter: after, startedBefore: before });
-    } else {
+    } else if (type === 'completed') {
       this.updateFilter({ completedAfter: after, completedBefore: before });
+    } else {
+      this.updateFilter({ scheduledAfter: after, scheduledBefore: before });
     }
   }
 

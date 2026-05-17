@@ -1,20 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { SortEnumType } from '../../../../../../../graphql/generated';
-
-type SortField =
-  | 'title'
-  | 'completedAt'
-  | 'startedAt'
-  | 'email'
-  | 'questionScore'
-  | 'answerScore'
-  | 'percentage'
-  | 'status'
-  | 'numberOfQuestions'
-  | 'invitationSent'
-  | 'resultsSent'
-  | 'maxTimeInMinutes';
+import { SortField } from '../../../services/types';
 
 @Component({
   selector: 'app-sorting-panel',

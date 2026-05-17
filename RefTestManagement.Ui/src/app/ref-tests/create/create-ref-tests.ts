@@ -19,6 +19,7 @@ import {
   GetQuestionsByNumberGQL,
 } from '../../../../graphql/generated';
 import { Banner } from '../../services/banner';
+import { DatetimePicker } from '../../shared/components/datetime-picker/datetime-picker';
 import { runMutation } from '../../shared/utils/apollo-utils';
 import { QuestionImportModal } from './components/question-import-modal/question-import-modal';
 import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
@@ -41,6 +42,8 @@ interface IRefTestFormData {
   specificQuestionNumbers: string;
   sendInvitations: boolean;
   sendResults: boolean;
+  /** "YYYY-MM-DDTHH:mm" local time string from the DatetimePicker, only relevant when sendInvitations is true */
+  scheduledAt: string;
 }
 
 @Component({
@@ -53,6 +56,7 @@ interface IRefTestFormData {
     QuestionSearchAutocomplete,
     QuestionImportModal,
     TitleAutocomplete,
+    DatetimePicker,
   ],
   templateUrl: './create-ref-tests.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -80,6 +84,7 @@ export class CreateRefTests {
     specificQuestionNumbers: '',
     sendInvitations: false,
     sendResults: false,
+    scheduledAt: '',
   });
 
   // Form field tree with validation schema
@@ -370,6 +375,10 @@ export class CreateRefTests {
             specificQuestionNumbers: specificQuestions.length > 0 ? specificQuestions : undefined,
             sendAutomatedInvitations: formData.sendInvitations,
             sendAutomatedResults: formData.sendResults,
+            scheduledAt:
+              formData.sendInvitations && formData.scheduledAt
+                ? new Date(formData.scheduledAt).toISOString()
+                : undefined,
           },
         },
       }),
@@ -406,6 +415,7 @@ export class CreateRefTests {
                 specificQuestionNumbers: '',
                 sendInvitations: false,
                 sendResults: false,
+                scheduledAt: '',
               });
               // Reset form state
               this.refTestForm().reset();
@@ -432,5 +442,9 @@ export class CreateRefTests {
 
   protected cancel(): void {
     this._router.navigate(['/']);
+  }
+
+  protected onScheduledAtChange(value: string): void {
+    this.refTestModel.update((m) => ({ ...m, scheduledAt: value }));
   }
 }

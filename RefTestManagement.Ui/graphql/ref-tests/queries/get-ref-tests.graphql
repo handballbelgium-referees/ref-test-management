@@ -22,6 +22,7 @@ query GetRefTests(
         status
         numberOfQuestions
         maxTimeInMinutes
+        scheduledAt
         startedAt
         completedAt
         questionScore
@@ -29,6 +30,7 @@ query GetRefTests(
         questionTotal
         answerTotal
         percentage
+        rejectionReason
       }
     }
     pageInfo {

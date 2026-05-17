@@ -48,7 +48,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Detail View**: Dedicated detail page with tabbed interface and real-time updates
   - **Edit Dialogs**: Inline editing for participant details, test configuration, notification settings, time extensions, and token regeneration
   - **Reset & Revive**: Soft/hard reset dialogs for test retakes and expired test revival
-  - **Card Components**: Organized information display with ParticipantInfoCard, TestInfoCard, StatusInfoCard, TimelineCard, and ScoresCard
+  - **Card Components**: Organized information display with DetailsCard, TestInfoCard, StatusInfoCard, TimelineCard, and ScoresCard
   - **Question Display**: Detailed question and answer components with visual feedback
   - **Real-time Sync**: Automatic updates via GraphQL subscriptions
 - **Responsive Design**:
@@ -85,6 +85,13 @@ A comprehensive web application for managing and taking IHF (International Handb
   - Always regenerates token and resets expiration timer
   - Automatically resends invitations
   - **Real-time Notifications**: Triggers subscription events on successful revival
+- **Approval Workflow**: Optional pre-activation review for RefTests created by users without `ref-tests:approve`
+  - Tests land in **Pending Approval** status instead of Pending
+  - Approvers receive an email listing all new tests with a direct link to the review queue
+  - Bulk **Approve** (activates tests) or **Reject** (requires reason) from the list view
+  - Rejected tests can be re-approved later; rejection reason is stored and visible to approvers
+  - Approver list is resolved dynamically via the Auth0 Management API at notification time
+  - **Pending Approval** and **Rejected** status tabs visible only to users with `ref-tests:approve`
 - **Status-Aware Rules**: Different capabilities based on RefTest status
   - **Pending**: Full flexibility for updates and resets
   - **InProgress**: Can only extend time and update notification settings
@@ -153,7 +160,7 @@ See [SECURITY.md](SECURITY.md) for the full permission reference, Auth0 setup gu
 - **Global Error Handler**: Centralized error handling with automatic banner notifications
 - **Detail Page Components**: Modular card-based components for enhanced organization
   - **Question & Answer Components**: Dedicated `QuestionCard`, `AnswerItem`, and `AnswersSummary` components
-  - **Info Cards**: Reusable `ParticipantInfoCard`, `TestInfoCard`, `StatusInfoCard`, `TimelineCard`, and `ScoresCard`
+  - **Info Cards**: Reusable `DetailsCard`, `TestInfoCard`, `StatusInfoCard`, `TimelineCard`, and `ScoresCard`
   - **Empty States**: Friendly empty state component when no questions exist
 - **Progressive Enhancement**: Improved navigation with automatic redirection after test creation
 
@@ -287,6 +294,8 @@ Each service has a **single, clear responsibility**:
 - **JobEnqueueService** → Enqueue background jobs
 - **BackgroundJobService** → Process job queue
 - **RefTestExpirationService** → Auto-expire old tests
+- **RefTestSubscriptionService** → Publish real-time events via GraphQL subscriptions
+- **RefTestSessionService** → Manage session locks for concurrent test-taking
 - **TaskPermissionHandler** → Enforce single-permission authorization
 - **AnyTaskPermissionHandler** → Enforce OR-permission authorization
 - **TaskAuthorizationPolicyProvider** → Dynamically resolve permission policies
@@ -304,11 +313,12 @@ Graphql/
 ├── Mutations/                    # All mutations organized by domain
 │   ├── Lifecycle/                (3 files) - Start, Progress, Complete + inputs
 │   ├── Creation/                 (3 files) - CreateRefTests + input/output
+│   ├── Approval/                 (2 files) - ApproveRefTests, RejectRefTests + models
 │   ├── Email/                    (7 files) - Send invitations, results, reports
 │   ├── Update/                   (5 files) - 5 update operations + inputs
 │   ├── Reset/                    (4 files) - Reset & Revive operations + results
 │   ├── Deletion/                 (3 files) - Delete + input/output
-│   └── Shared/                   (1 file)  - Shared User DTO
+│   └── Shared/                   (2 files) - Shared Title and User DTOs
 ├── Queries/                      (2 files) - Queries + DataLoaders
 ├── Subscriptions/                (3 files) - Real-time event subscriptions with authorization
 │   ├── RefTestSubscriptions.cs   - Main subscription resolver with access control
@@ -321,7 +331,7 @@ Graphql/
 #### ✅ Key Benefits
 
 - **From**: 1 monolithic 860-line mutation file
-- **To**: 7 organized subfolders with 28 well-organized files
+- **To**: 8 organized subfolders with 29 well-organized files
 - **Average file size**: ~180 lines (highly maintainable)
 - **Perfect co-location**: Each mutation with its input/output models
 - **Shared DTOs**: Common models in dedicated Shared folder
@@ -329,15 +339,16 @@ Graphql/
 
 #### ✅ Mutation Organization
 
-| Folder        | Files | Mutations | Purpose                                             |
-| ------------- | ----- | --------- | --------------------------------------------------- |
-| **Lifecycle** | 3     | 3         | User test execution (Start, SaveProgress, Complete) |
-| **Creation**  | 3     | 1         | Create multiple tests with question selection       |
-| **Email**     | 7     | 3         | Send invitations, results, and reports via email    |
-| **Update**    | 5     | 5         | Update details, config, time, notifications, token  |
-| **Reset**     | 4     | 2         | Reset tests for retake and revive expired tests     |
-| **Deletion**  | 3     | 1         | Delete operations                                   |
-| **Shared**    | 1     | -         | Shared DTOs (User record) used across mutations     |
+| Folder        | Files | Mutations | Purpose                                                    |
+| ------------- | ----- | --------- | ---------------------------------------------------------- |
+| **Lifecycle** | 3     | 3         | User test execution (Start, SaveProgress, Complete)        |
+| **Creation**  | 3     | 1         | Create multiple tests with question selection              |
+| **Approval**  | 2     | 2         | Approve/reject tests in Pending Approval status            |
+| **Email**     | 7     | 3         | Send invitations, results, and reports via email           |
+| **Update**    | 5     | 5         | Update details, config, time, notifications, token         |
+| **Reset**     | 4     | 2         | Reset tests for retake and revive expired tests            |
+| **Deletion**  | 3     | 1         | Delete operations                                          |
+| **Shared**    | 2     | -         | Shared DTOs (Title and User records) used across mutations |
 
 #### ✅ Developer Experience
 
@@ -479,11 +490,11 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 | Technology                | Version  | Purpose                                                        |
 | ------------------------- | -------- | -------------------------------------------------------------- |
 | **.NET**                  | 10.0     | Latest .NET framework for high-performance APIs                |
-| **Hot Chocolate**         | 15.1.12  | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.5   | ORM for database access with migrations                        |
+| **Hot Chocolate**         | 16.0.3   | GraphQL server with authorization, data loaders, and filtering |
+| **Entity Framework Core** | 10.0.8   | ORM for database access with migrations                        |
 | **SQL Server**            | -        | Primary data store (Azure SQL or local)                        |
 | **ClosedXML**             | 0.105.0  | Excel file generation and manipulation                         |
-| **QuestPDF**              | 2026.2.4 | PDF generation for RefTest results                             |
+| **QuestPDF**              | 2026.5.0 | PDF generation for RefTest results                             |
 | **Auth0**                 | -        | OAuth2/OpenID Connect authentication                           |
 | **Brevo API**             | -        | Email delivery service                                         |
 
@@ -501,9 +512,9 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 | **Angular**                | 21.2.0   | Modern SPA framework with standalone components |
 | **TypeScript**             | 5.9.3    | Strict type-checking for reliability            |
 | **Signals**                | Built-in | Reactive state management                       |
-| **TailwindCSS**            | 4.2.0    | Utility-first CSS framework                     |
+| **TailwindCSS**            | 4.3.0    | Utility-first CSS framework                     |
 | **Apollo Client**          | 4.1.0    | GraphQL client with caching                     |
-| **GraphQL Code Generator** | 6.2.0    | Auto-generate TypeScript types from GraphQL     |
+| **GraphQL Code Generator** | 7.0.0    | Auto-generate TypeScript types from GraphQL     |
 | **ngx-translate**          | 17.0.0   | i18n and localization                           |
 | **Vitest**                 | 4.1.0    | Fast unit testing framework                     |
 | **RxJS**                   | 7.8.2    | Reactive programming                            |
@@ -819,385 +830,20 @@ This regenerates TypeScript types in `graphql/generated.ts`.
 
 ## 📁 Project Structure
 
-```
-ref-test-management/
-├── .github/workflows/                    # CI/CD Pipelines
-│   ├── pr.yml                            # PR validation (lint, test, build)
-│   ├── beta-release.yml                  # Beta pre-release on every push to main
-│   └── stable-release.yml               # Stable release pipeline (manual, from release branch)
-│
-├── .husky/                               # Git Hooks
-│   ├── commit-msg                        # Validates commit format with commitlint
-│   └── pre-commit                        # Runs Angular build before commit
-│
-├── badges/                               # Auto-generated release badge images
-│   ├── release.png                       # Latest stable release badge
-│   └── pre-release.png                   # Latest pre-release badge
-│
-├── RefTestManagement.Api/                   # 🔷 .NET Web API (.NET 10)
-│   ├── Controllers/
-│   │   └── AccountController.cs          # Authentication endpoints
-│   ├── BackgroundServices/               # Background services
-│   │   ├── BackgroundJobService.cs       # Job queue processor (emails, PDFs, reports)
-│   │   └── RefTestExpirationService.cs   # Automatic RefTest expiration (runs every 5 min)
-│   ├── Graphql/                          # Hot Chocolate GraphQL (Clean Architecture)
-│   │   ├── Mutations/                    # 🔷 All GraphQL Mutations (organized by domain)
-│   │   │   ├── Lifecycle/                # User test execution mutations
-│   │   │   │   ├── RefTestLifecycleMutations.cs      # Start, SaveProgress, Complete
-│   │   │   │   ├── SaveRefTestProgressInput.cs       # Progress input model
-│   │   │   │   └── CompleteRefTestInput.cs           # Completion input model
-│   │   │   ├── Creation/                 # Test creation mutations
-│   │   │   │   ├── RefTestCreationMutations.cs       # CreateRefTests
-│   │   │   │   ├── CreateRefTestsInput.cs            # Creation input model
-│   │   │   │   └── CreateRefTestsResult.cs           # Creation result model
-│   │   │   ├── Email/                    # Email operation mutations
-│   │   │   │   ├── RefTestEmailMutations.cs          # Send invitations/results/reports
-│   │   │   │   ├── SendInvitationsInput.cs
-│   │   │   │   ├── SendInvitationsResult.cs
-│   │   │   │   ├── SendResultsInput.cs
-│   │   │   │   ├── SendResultsResult.cs
-│   │   │   │   ├── SendReportInput.cs
-│   │   │   │   └── SendReportResult.cs
-│   │   │   ├── Update/                   # Update operation mutations
-│   │   │   │   ├── RefTestUpdateMutations.cs         # All update operations
-│   │   │   │   ├── UpdateRefTestDetailsInput.cs      # With ResendInvitation flag
-│   │   │   │   ├── UpdateRefTestConfigurationInput.cs
-│   │   │   │   ├── ExtendRefTestTimeInput.cs
-│   │   │   │   └── UpdateRefTestNotificationSettingsInput.cs
-│   │   │   ├── Reset/                    # Reset & revive mutations
-│   │   │   │   ├── RefTestResetMutations.cs          # ResetRefTests, ReviveExpiredRefTests
-│   │   │   │   ├── ResetRefTestsInput.cs             # Input with List<Guid> RefTestIds
-│   │   │   │   ├── ResetRefTestsResult.cs            # Result for reset operations
-│   │   │   │   └── ReviveRefTestsResult.cs           # Result for revive operations
-│   │   │   ├── Deletion/                 # Delete operation mutations
-│   │   │   │   ├── RefTestDeletionMutations.cs       # DeleteRefTests
-│   │   │   │   ├── DeleteRefTestsInput.cs
-│   │   │   │   └── DeleteRefTestsResult.cs
-│   │   │   └── Shared/                   # Shared DTOs used across mutations
-│   │   │       └── Title.cs              # Title DTO (Title Id, or string)
-│   │   │       └── User.cs               # User DTO (FirstName, LastName, Email)
-│   │   ├── Queries/                      # 🔷 All GraphQL Queries
-│   │   │   ├── RefTestQueries.cs         # RefTest queries (list, detail, titles)
-│   │   │   └── DataLoaders.cs            # Batch loading for N+1 optimization
-│   │   ├── Subscriptions/                # 🔷 Real-time event subscriptions
-│   │   │   ├── RefTestSubscriptions.cs   # Subscription definitions with authorization
-│   │   │   ├── RefTestUpdatedEvents.cs   # Event payloads for RefTest updates
-│   │   │   └── RefTestTimeExtended.cs    # Time extension event payload
-│   │   ├── Types/                        # 🔷 GraphQL Type Definitions
-│   │   │   ├── RefTestType.cs            # RefTest GraphQL type
-│   │   │   ├── RefTestTitleType.cs       # RefTestTitle GraphQL type
-│   │   │   ├── QuestionType.cs           # Question GraphQL type
-│   │   │   ├── AnswerType.cs             # Answer GraphQL type
-│   │   │   ├── RefTestFilterType.cs      # RefTest filtering configuration
-│   │   │   ├── RefTestSortType.cs        # RefTest sorting configuration
-│   │   │   ├── RefTestTitleFilterType.cs # RefTestTitle filtering
-│   │   │   └── RefTestTitleSortType.cs   # RefTestTitle sorting
-│   │   └── ReadModels/                   # GraphQL response DTOs
-│   │       ├── RefTestDto.cs             # RefTest read model
-│   │       ├── RefTestMappings.cs        # RefTest mapping extensions
-│   │       ├── RefTestExtensions.cs      # RefTest query extensions
-│   │       ├── RefTestTitleDto.cs        # RefTestTitle read model
-│   │       └── RefTestTitleMappings.cs   # RefTestTitle mapping extensions
-│   ├── Program.cs                        # Application entry point & DI setup
-│   ├── SecurityStartup.cs                # Auth0 JWT configuration
-│   ├── RefTestManagementMigrationExtensions.cs # EF Core migration runner
-│   ├── appsettings.json                  # Configuration (DB, Auth0, Email, etc.)
-│   └── wwwroot/                          # Angular production build (post-build)
-│
-├── RefTestManagement.Application/           # 🔷 Business Logic Layer (.NET 10)
-│   ├── Services/
-│   │   ├── IHFRulesQuestionsService.cs   # StrawberryShake client for IHF questions API
-│   │   └── LanguageConfiguration.cs      # Language settings service
-│   ├── GraphQL/                          # GraphQL schemas and queries for external APIs
-│   │   ├── schema.graphql                # IHF Rules Questions schema
-│   │   ├── schema.extensions.graphql     # Schema extensions
-│   │   └── Queries/                      # GraphQL query definitions
-│   │       ├── calculateScore.graphql
-│   │       ├── getQuestionsById.graphql
-│   │       ├── getQuestionsByNumber.graphql
-│   │       ├── getQuestionsByNumbers.graphql
-│   │       ├── getRandomQuestionIds.graphql
-│   │       └── searchQuestionsByNumber.graphql
-│   ├── Models/                           # Application models (Question, Answer, etc.)
-│   │   └── JobPayloads.cs                # Job payload DTOs (InvitationEmail, ResultEmail, ReportEmail, RefTestExpiration)
-│   ├── Configurations/                   # Configuration models
-│   │   ├── BackgroundJobConfiguration.cs # Job queue settings
-│   │   ├── EmailConfiguration.cs         # Email/Brevo settings
-│   │   ├── ReportConfiguration.cs        # Report recipient settings
-│   │   └── ScoreConfiguration.cs         # Scoring rules settings
-│   └── RefTestManagement.Application.csproj # Dependencies: StrawberryShake.Server
-│
-├── RefTestManagement.Domain/                # 🔷 Domain Layer (.NET 10)
-│   ├── Jobs/                                # Job queue domain entities
-│   │   ├── Job.cs                           # Job queue entity
-│   │   ├── JobStatus.cs                     # Job status enum (Pending, Processing, Completed, Failed)
-│   │   └── JobType.cs                       # Job type enum (InvitationEmail, ResultEmail, ReportEmail, RefTestExpiration)
-│   ├── RefTests/                            # RefTest domain entities
-│   │   ├── RefTest.cs                       # RefTest aggregate root
-│   │   ├── RefTestStatus.cs                 # RefTest status enum
-│   │   └── RefTestExceptions.cs             # Domain exceptions
-│   ├── RefTestTitles/                       # RefTest title domain entities
-│   │   └── RefTestTitle.cs                  # RefTest title entity
-│   └── RefTestManagement.Domain.csproj      # No external dependencies (pure domain)
-│
-├── RefTestManagement.Security/              # 🔐 Security Layer (.NET 10)
-│   ├── Permissions.cs                       # All permission string constants (single source of truth)
-│   ├── TaskPermissionRequirement.cs         # Single-permission authorization requirement
-│   ├── TaskPermissionHandler.cs             # Handles exact match, wildcard, superadmin bypass
-│   ├── AnyTaskPermissionRequirement.cs      # OR-semantics requirement (any of N permissions)
-│   ├── AnyTaskPermissionHandler.cs          # Handles OR authorization logic
-│   ├── TaskAuthorizationPolicyProvider.cs   # Dynamic policy provider (anyof: prefix)
-│   ├── SecurityServiceExtensions.cs         # AddSecurity() DI extension method
-│   └── RefTestManagement.Security.csproj    # No project dependencies (standalone)
-│
-├── RefTestManagement.Infrastructure/        # 🔷 Infrastructure Layer (.NET 10)
-│   ├── RefTestManagementContext.cs          # EF Core DbContext
-│   ├── Migrations/                       # Database migrations
-│   ├── Configurations/                   # EF Core entity configurations
-│   │   ├── RefTestConfiguration.cs
-│   │   ├── RefTestTitleConfiguration.cs
-│   │   └── JobConfiguration.cs           # Job queue configuration
-│   ├── Logging/                          # 📝 Centralized Logging (Source-Generated)
-│   │   └── ServiceLoggerMessages.cs      # 53 reusable logger methods (zero allocation)
-│   ├── Services/                         # 🎯 External service implementations (Single Responsibility)
-│   │   ├── EmailService.cs               # 📧 Send emails via Brevo API (thread-safe, optimized)
-│   │   ├── EmailTemplateService.cs       # 🎨 Generate HTML email templates (singleton, cached)
-│   │   ├── TranslationService.cs         # 🌐 Manage all translations (singleton, 276+ translations)
-│   │   ├── RefTestResultsPdfService.cs   # 📄 Generate PDF test results (QuestPDF)
-│   │   ├── RefTestReportService.cs       # 📊 Generate Excel + PDF system reports
-│   │   ├── LogoService.cs                # 🖼️ Fetch and cache application logo (singleton)
-│   │   ├── JobEnqueueService.cs          # ➕ Enqueue background jobs to database
-│   │   └── RefTestSubscriptionService.cs # 🔔 Pub/sub service for GraphQL subscriptions
-│   └── RefTestManagement.Infrastructure.csproj # Dependencies: EF Core, QuestPDF, ClosedXML
-│
-├── RefTestManagement.Ui/                    # 🅰️ Angular 21 Frontend
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── app.ts                    # Root component (header, router-outlet, footer)
-│   │   │   ├── app.config.ts             # App configuration (providers, i18n, Apollo)
-│   │   │   ├── app.routes.ts             # Route definitions
-│   │   │   │
-│   │   │   ├── auth/                     # 🔐 Authentication & Permissions Module
-│   │   │   │   ├── guards/
-│   │   │   │   │   ├── auth-guard.ts         # Route protection (requires login)
-│   │   │   │   │   └── permission-guard.ts   # Route protection (requires permission)
-│   │   │   │   ├── directives/
-│   │   │   │   │   └── has-permission.directive.ts # Structural directive (*hasPermission)
-│   │   │   │   ├── services/
-│   │   │   │   │   ├── auth.ts               # Auth service (login, logout, user state)
-│   │   │   │   │   └── permissions.ts        # PermissionsService (signal-based, cached)
-│   │   │   │   └── models/
-│   │   │   │       ├── user.ts               # User model
-│   │   │   │       └── permissions.ts        # Permission string constants
-│   │   │   │
-│   │   │   ├── home/                     # 🏠 Home Page
-│   │   │   │   └── home.ts               # Landing page component
-│   │   │   │
-│   │   │   ├── ref-tests/                 # 📋 RefTest Management
-│   │   │   │   ├── create/               # Create RefTests page
-│   │   │   │   │   ├── create-ref-tests.ts
-│   │   │   │   │   └── components/
-│   │   │   │   │       ├── question-import-modal/
-│   │   │   │   │       ├── question-search-autocomplete/
-│   │   │   │   │       ├── ref-test-user-list-item/
-│   │   │   │   │       ├── title-autocomplete/
-│   │   │   │   │       └── user-import-modal/
-│   │   │   │   ├── detail/               # RefTest detail page
-│   │   │   │   │   ├── ref-test-detail.ts
-│   │   │   │   │   ├── services/         # Data service for detail tabs
-│   │   │   │   │   │   └── ref-test-detail-data.service.ts
-│   │   │   │   │   └── components/
-│   │   │   │   │       ├── ref-test-detail-tab/         # Participant & test info tab
-│   │   │   │   │       │   ├── ref-test-detail-tab.ts
-│   │   │   │   │       │   └── components/
-│   │   │   │   │       │       ├── dialogs/             # 💬 Edit Dialogs
-│   │   │   │   │       │       │   ├── edit-participant-dialog/        # Edit name & email
-│   │   │   │   │       │       │   ├── edit-configuration-dialog/      # Edit title, questions, time
-│   │   │   │   │       │       │   ├── edit-notification-settings-dialog/ # Toggle email settings
-│   │   │   │   │       │       │   ├── extend-time-dialog/             # Add time to in-progress tests
-│   │   │   │   │       │       │   ├── regenerate-token-dialog/        # Generate new access token
-│   │   │   │   │       │       │   ├── reset-ref-test-dialog/          # Reset test for retake
-│   │   │   │   │       │       │   └── revive-ref-test-dialog/         # Revive expired test
-│   │   │   │   │       │       ├── participant-info-card/
-│   │   │   │   │       │       ├── scores-card/
-│   │   │   │   │       │       ├── status-info-card/
-│   │   │   │   │       │       ├── test-info-card/
-│   │   │   │   │       │       └── timeline-card/
-│   │   │   │   │       └── ref-test-questions-tab/      # Questions & answers tab
-│   │   │   │   │           ├── ref-test-questions-tab.ts
-│   │   │   │   │           └── components/
-│   │   │   │   │               ├── answer-item/
-│   │   │   │   │               ├── answers-summary/
-│   │   │   │   │               ├── empty-questions-state/
-│   │   │   │   │               └── question-card/
-│   │   │   │   └── list/                 # RefTests list page
-│   │   │   │       ├── list-ref-tests.ts         # Main list component
-│   │   │   │       ├── services/                 # 🎯 Business Logic Services
-│   │   │   │       │   ├── ref-test-data.ts      # Data fetching, mutations, and subscriptions
-│   │   │   │       │   ├── ref-test-filter-state.ts # Filter state management
-│   │   │   │       │   ├── ref-test-filter-actions.ts # Filter action handlers
-│   │   │   │       │   ├── ref-test-query-builder.ts # GraphQL query builder
-│   │   │   │       │   ├── ref-test-local-state-manager.ts # Optimistic UI updates
-│   │   │   │       │   ├── ref-test-operation-manager.ts # Multi-test operations
-│   │   │   │       │   ├── ref-test-selection-manager.ts # Selection state management
-│   │   │   │       │   ├── column-visibility-manager.ts # Column visibility state
-│   │   │   │       │   ├── ref-test-ui-helpers.ts # Status and score display helpers
-│   │   │   │       │   ├── types.ts              # Shared TypeScript types
-│   │   │   │       │   └── constants.ts          # Configuration constants
-│   │   │   │       └── components/
-│   │   │   │           ├── filters/                     # 🔍 Filter Components
-│   │   │   │           │   ├── date-range-filter/       # Reusable date range picker
-│   │   │   │           │   ├── performance-filters/     # Score, percentage, questions
-│   │   │   │           │   ├── ref-test-filters-card/    # Main filter orchestration
-│   │   │   │           │   ├── sorting-panel/           # Collapsible sort controls
-│   │   │   │           │   ├── status-filter-tabs/      # Status tabs with scroll
-│   │   │   │           │   └── title-filter/            # Autocomplete title search
-│   │   │   │           ├── ref-test-display/             # 📱 Display Components
-│   │   │   │           │   ├── ref-test-mobile-card/     # Mobile card view
-│   │   │   │           │   └── ref-test-table-row/       # Desktop table row
-│   │   │   │           ├── ref-test-mobile-list/        # 📱 Mobile view container
-│   │   │   │           ├── ref-test-table/              # 🖥️ Desktop table container
-│   │   │   │           ├── ref-test-list-hero/          # Hero section with title
-│   │   │   │           ├── ref-test-list-toolbar/       # Action toolbar
-│   │   │   │           ├── ref-test-pagination/         # Load more pagination
-│   │   │   │           ├── ref-test-performance-warning/ # Performance alerts
-│   │   │   │           ├── ref-test-report-banner/      # Report status display
-│   │   │   │           ├── ref-test-empty-state/        # Empty state placeholder
-│   │   │   │           ├── dialogs/                     # 💬 Modal Dialogs
-│   │   │   │           │   ├── delete-ref-tests-dialog/
-│   │   │   │           │   ├── send-invitations-dialog/
-│   │   │   │           │   ├── send-results-dialog/
-│   │   │   │           │   ├── generate-report-dialog/
-│   │   │   │           │   ├── reset-ref-tests-dialog/   # Multi-test reset
-│   │   │   │           │   └── revive-ref-tests-dialog/  # Multi-test revival
-│   │   │   │           ├── column-visibility-menu/      # Table column toggles
-│   │   │   │           └── ref-test-actions/        # Operations toolbar
-│   │   │   │
-│   │   │   ├── ref-test/                  # 🎯 RefTest Taking
-│   │   │   │   ├── welcome/              # RefTest start page
-│   │   │   │   │   └── components/       # Instructions, RefTest details, hero
-│   │   │   │   ├── take/                 # RefTest taking page
-│   │   │   │   │   ├── take-ref-test.ts
-│   │   │   │   │   ├── guards/           # Can deactivate guard
-│   │   │   │   │   ├── state/            # State management for ref test taking
-│   │   │   │   │   │   ├── ref-test.facade.ts    # Facade for state operations
-│   │   │   │   │   │   ├── ref-test.models.ts    # State models
-│   │   │   │   │   │   └── ref-test.store.ts     # Signal-based store
-│   │   │   │   │   └── components/       # Question card, navigation, results, etc.
-│   │   │   │   └── components/
-│   │   │   │       └── ref-test-error/    # Error display component
-│   │   │   │
-│   │   │   ├── pipes/                    # 🔧 Custom Pipes
-│   │   │   │   └── translation-pipe.ts   # Translation utilities
-│   │   │   │
-│   │   │   ├── services/                 # 🔧 Global Services
-│   │   │   │   ├── banner.ts             # Banner notification service with isolated managers
-│   │   │   │   ├── global-error-handler.ts # Centralized error handling
-│   │   │   │   ├── language-config.ts    # Language configuration service
-│   │   │   │   └── pwa-update.ts         # Progressive Web App update service
-│   │   │   │
-│   │   │   └── shared/                   # 🔄 Shared Utilities
-│   │   │       ├── components/           # Shared UI components
-│   │   │       │   ├── banner/           # Banner notification component
-│   │   │       │   ├── datepicker/       # Date picker component
-│   │   │       │   └── pull-to-refresh/  # Pull to refresh component
-│   │   │       ├── pipes/                # Additional shared pipes
-│   │   │       └── utils/                # Utility functions
-│   │   │
-│   │   ├── index.html                    # HTML entry point
-│   │   ├── main.ts                       # Bootstrap Angular app
-│   │   ├── styles.css                    # Global TailwindCSS styles
-│   │   └── version.ts                    # Auto-generated version file (gitignored)
-│   │
-│   ├── public/                           # 🌐 Static assets
-│   │   ├── i18n/                         # Translation files (en, nl, fr, de)
-│   │   ├── icons/                        # App icons
-│   │   ├── *.svg                         # Logo files (EHF, IHF, URBH-KBHB, RefTest)
-│   │   ├── favicon.ico
-│   │   ├── manifest.webmanifest          # PWA manifest
-│   │   └── robots.txt
-│   │
-│   ├── graphql/                          # 📡 GraphQL Operations
-│   │   ├── generated.ts                  # 🤖 Auto-generated TypeScript types
-│   │   ├── ref-test/                     # Single RefTest operations (test-taking)
-│   │   │   ├── mutations/
-│   │   │   │   ├── complete-ref-test.graphql      # Complete RefTest mutation
-│   │   │   │   ├── save-ref-test-progress.graphql # Save progress mutation
-│   │   │   │   └── start-ref-test.graphql         # Start RefTest mutation
-│   │   │   ├── subscriptions/
-│   │   │   │   └── ref-test-time-extended.graphql # Time extension subscription
-│   │   │   └── queries/
-│   │   │       ├── get-ref-test-by-token.graphql       # Get RefTest by token query
-│   │   │       ├── get-results-email-delay-minutes.graphql # Get email delay config
-│   │   │       └── get-score-configuration.graphql     # Get score configuration
-│   │   └── ref-tests/                    # Multiple RefTests operations (admin management)
-│   │       ├── mutations/
-│   │       │   ├── create-ref-tests.graphql          # Create RefTests mutation
-│   │       │   ├── delete-ref-tests.graphql          # Delete RefTests mutation
-│   │       │   ├── extend-ref-test-time.graphql      # Extend time mutation
-│   │       │   ├── regenerate-ref-test-token.graphql # Regenerate token mutation
-│   │       │   ├── reset-ref-tests.graphql           # Reset RefTests mutation
-│   │       │   ├── revive-ref-tests.graphql          # Revive expired RefTests mutation
-│   │       │   ├── send-invitations.graphql          # Send email invitations mutation
-│   │       │   ├── send-report.graphql               # Send report mutation
-│   │       │   ├── send-results.graphql              # Send results mutation
-│   │       │   ├── update-ref-test-configuration.graphql # Update test config mutation
-│   │       │   ├── update-ref-test-details.graphql   # Update participant details mutation
-│   │       │   └── update-ref-test-notification-settings.graphql # Update email settings mutation
-│   │       ├── subscriptions/
-│   │       │   ├── ref-test-updated.graphql          # Single RefTest update subscription
-│   │       │   └── ref-tests-updated.graphql         # Multiple RefTests update subscription
-│   │       └── queries/
-│   │           ├── get-enabled-languages.graphql  # Get enabled languages
-│   │           ├── get-questions-by-number.graphql # Get questions by number
-│   │           ├── get-ref-test-by-id.graphql     # Get RefTest by ID query
-│   │           ├── get-ref-tests-all-counts.graphql # Get counts for all filters
-│   │           ├── get-ref-tests.graphql          # List RefTests query
-│   │           ├── get-titles.graphql             # Get RefTest titles
-│   │           └── search-questions-by-number.graphql # Search questions
-│   │
-│   ├── scripts/
-│   │   └── generate-pwa-icons.mjs        # Generate PWA icon assets
-│   │
-│   ├── angular.json                      # Angular CLI configuration
-│   ├── codegen.ts                        # GraphQL Code Generator config
-│   ├── ngsw-config.json                  # Service Worker (PWA) configuration
-│   ├── proxy.conf.json                   # Dev server proxy settings
-│   ├── package.json                      # Frontend dependencies
-│   ├── tsconfig.json                     # TypeScript base config
-│   ├── tsconfig.app.json                 # App TypeScript config
-│   └── tsconfig.spec.json                # Test TypeScript config
-│
-├── scripts/                              # Root-level build/tooling scripts
-│   └── generate-badges.mjs               # Generate release badge PNG files
-│
-├── .releaserc.json                       # Semantic Release config (branches, plugins)
-├── ARCHITECTURE-DIAGRAM.md               # Architecture overview diagram
-├── commitlint.config.mjs                 # Conventional commits validation
-├── dotnet-tools.json                     # .NET local tool manifest (EF Core CLI)
-├── package.json                          # Root dependencies (semantic-release, husky)
-├── renovate.json                         # Renovate dependency update config
-├── RefTestManagement.sln                 # .NET solution file
-├── SECURITY.md                           # Security setup, permissions reference & suggested roles
-└── README.md                             # This file
-```
+See [PROJECT-STRUCTURE.md](PROJECT-STRUCTURE.md) for the full annotated directory tree.
 
-### Key Directories Explained
+**Backend projects:**
 
-| Directory                                              | Purpose                                                                   |
-| ------------------------------------------------------ | ------------------------------------------------------------------------- |
-| `RefTestManagement.Api/Graphql`                        | GraphQL schema, queries, mutations, and type definitions                  |
-| `RefTestManagement.Application/GraphQL`                | External GraphQL client schemas and queries (IHF Rules)                   |
-| `RefTestManagement.Security`                           | Permission constants, authorization handlers and policy provider          |
-| `RefTestManagement.Infrastructure/Services`            | PDF/Excel generation and email delivery (Brevo)                           |
-| `RefTestManagement.Ui/src/app/ref-tests`               | RefTest creation, detail view, and management UI                          |
-| `RefTestManagement.Ui/src/app/ref-tests/list`          | List view with mobile/desktop layouts, filters and operations             |
-| `RefTestManagement.Ui/src/app/ref-tests/list/services` | Business logic services for data, filters, and state management           |
-| `RefTestManagement.Ui/src/app/auth`                    | Auth guard, permission guard, HasPermission directive, PermissionsService |
-| `RefTestManagement.Ui/src/app/ref-test`                | RefTest-taking experience (welcome, take, results)                        |
-| `RefTestManagement.Ui/graphql/ref-test`                | Single RefTest operations (start, progress, complete, get by token)       |
-| `RefTestManagement.Ui/graphql/ref-tests`               | Multiple RefTests operations (create, delete, send emails, queries)       |
-| `.github/workflows`                                    | CI/CD pipelines for automated testing and deployment                      |
+| Project                            | Role                                                                                            |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `RefTestManagement.Api`            | .NET 10 Web API — GraphQL schema, controllers, background services                              |
+| `RefTestManagement.Auth0`          | Auth0 Management API client — resolves approvers by permission at runtime                       |
+| `RefTestManagement.Application`    | Business logic, StrawberryShake IHF client, job payloads, configurations                        |
+| `RefTestManagement.Domain`         | Core entities and domain exceptions (no external dependencies)                                  |
+| `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
+| `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel, subscriptions, background job enqueue                        |
+
+**Frontend:** `RefTestManagement.Ui` — Angular 21, Apollo Client, GraphQL Codegen, Tailwind CSS, PWA.
 
 ## ⚙️ Configuration
 

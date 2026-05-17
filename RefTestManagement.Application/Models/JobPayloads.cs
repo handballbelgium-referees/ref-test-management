@@ -73,6 +73,40 @@ public record RefTestExpirationPayload(
 ) : IJobPayload;
 
 /// <summary>
+/// Payload for approval notification emails sent to approvers when RefTests are awaiting review
+/// </summary>
+public record ApprovalNotificationEmailPayload(
+    string CreatorName,
+    string CreatorEmail,
+    string? TitleValue,
+    List<ApprovalNotificationRefTestItem> RefTests
+) : IJobPayload;
+
+/// <summary>
+/// Per-RefTest entry in an approval notification email
+/// </summary>
+public record ApprovalNotificationRefTestItem(
+    Guid Id,
+    string FirstName,
+    string LastName,
+    string Email,
+    DateTime? ScheduledAt
+);
+
+/// <summary>
+/// Payload for approval-decision confirmation emails sent to the creator when their RefTests are approved or rejected
+/// </summary>
+public record ApprovalDecisionEmailPayload(
+    string CreatorName,
+    string CreatorEmail,
+    string ApproverName,
+    bool IsApproved,
+    string? RejectionReason,
+    string? TitleValue,
+    List<ApprovalNotificationRefTestItem> RefTests
+) : IJobPayload;
+
+/// <summary>
 /// Action to take for an expired RefTest
 /// </summary>
 public enum RefTestExpirationAction

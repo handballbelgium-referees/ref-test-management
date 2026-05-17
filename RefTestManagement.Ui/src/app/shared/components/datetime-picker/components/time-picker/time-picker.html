@@ -1,0 +1,272 @@
+<!-- Trigger input -->
+<div class="relative">
+  <input
+    type="text"
+    [readonly]="isSmallTouchDevice()"
+    [value]="displayValue()"
+    (click)="open()"
+    (focus)="open()"
+    (keydown)="onKeydown($event)"
+    (blur)="onBlur($event)"
+    aria-label="Time"
+    aria-haspopup="dialog"
+    [attr.aria-expanded]="isOpen()"
+    class="datepicker-input w-full py-2 pr-10 pl-3 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white cursor-pointer hover:border-neutral-400 focus:outline-2 focus:outline-primary-600 focus:outline-offset-2 focus:border-primary-600"
+  />
+
+  <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+    <svg
+      class="w-5 h-5 text-neutral-400"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      />
+    </svg>
+  </div>
+</div>
+
+<!-- Mobile modal backdrop -->
+@if (isOpen() && openMode() === 'mobile') {
+  <div
+    class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
+    (click)="close()"
+    aria-hidden="true"
+  >
+    <div
+      class="bg-white rounded-2xl shadow-xl select-none p-3 w-72"
+      (click)="$event.stopPropagation()"
+      (mousedown)="$event.preventDefault()"
+      role="dialog"
+      aria-label="Time picker"
+    >
+      <ng-container *ngTemplateOutlet="panelContent" />
+    </div>
+  </div>
+}
+
+<!-- Desktop dropdown -->
+@if (isOpen() && openMode() === 'desktop') {
+  <div
+    class="absolute z-50 mt-1 right-0 w-64 bg-white border border-neutral-200 rounded-2xl shadow-xl select-none p-3"
+    (mousedown)="$event.preventDefault()"
+    role="dialog"
+    aria-label="Time picker"
+  >
+    <ng-container *ngTemplateOutlet="panelContent" />
+  </div>
+}
+
+<!-- Shared panel content -->
+<ng-template #panelContent>
+  <!-- Header: ← back | HH:MM | × close -->
+  <div class="flex items-center justify-between mb-3">
+    @if (view() === 'minutes') {
+      <button
+        type="button"
+        (click)="view.set('hours')"
+        class="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 transition-colors"
+        aria-label="Back to hours"
+      >
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+        </svg>
+      </button>
+    } @else {
+      <span class="w-7"></span>
+    }
+
+    <!-- Active segment is highlighted in primary colour -->
+    <div class="flex items-center gap-0.5 text-xl font-bold tabular-nums">
+      <span
+        class="px-1 rounded transition-colors"
+        [class.text-primary-600]="view() === 'hours'"
+        [class.text-neutral-900]="view() !== 'hours'"
+        >{{ pad(hourValue()) }}</span
+      >
+      <span class="text-neutral-300 leading-none">:</span>
+      <span
+        class="px-1 rounded transition-colors"
+        [class.text-primary-600]="view() === 'minutes'"
+        [class.text-neutral-900]="view() !== 'minutes'"
+        >{{ pad(minuteValue()) }}</span
+      >
+    </div>
+
+    <button
+      type="button"
+      (click)="close()"
+      class="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400 transition-colors"
+      aria-label="Close time picker"
+    >
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M6 18L18 6M6 6l12 12"
+        />
+      </svg>
+    </button>
+  </div>
+
+  <!-- ── Analog clock face ── -->
+  <div class="relative mx-auto" [style.width.px]="CLOCK" [style.height.px]="CLOCK">
+    <!-- SVG: face circle, tick dots, hand, pivot -->
+    <svg
+      class="absolute inset-0 pointer-events-none"
+      [attr.width]="CLOCK"
+      [attr.height]="CLOCK"
+      aria-hidden="true"
+    >
+      <!-- Face -->
+      <circle cx="112" cy="112" r="108" fill="#f5f5f5" stroke="#e5e5e5" stroke-width="1" />
+
+      <!-- Tick marks at the 12 hour positions -->
+      @for (tick of ticks; track $index) {
+        <circle [attr.cx]="tick.cx" [attr.cy]="tick.cy" r="2.5" fill="#d4d4d4" />
+      }
+
+      <!-- Clock hand -->
+      @if (view() === 'hours') {
+        <line
+          x1="112"
+          y1="112"
+          [attr.x2]="hourHandEnd().x"
+          [attr.y2]="hourHandEnd().y"
+          stroke="#dc2626"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      } @else {
+        <line
+          x1="112"
+          y1="112"
+          [attr.x2]="minuteHandEnd().x"
+          [attr.y2]="minuteHandEnd().y"
+          stroke="#dc2626"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      }
+
+      <!-- Centre pivot -->
+      <circle cx="112" cy="112" r="4" fill="#dc2626" />
+    </svg>
+
+    <!-- ── Hour buttons ── -->
+    @if (view() === 'hours') {
+      <!-- Outer ring: 12, 1–11 -->
+      @for (h of outerHours; track h; let i = $index) {
+        <button
+          type="button"
+          (click)="selectHour(h)"
+          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold transition-colors cursor-pointer z-10"
+          [style]="itemStyle(i, 12, 84)"
+          [class.bg-primary-600]="h === hourValue()"
+          [class.text-white]="h === hourValue()"
+          [class.text-neutral-700]="h !== hourValue()"
+          [class.hover:bg-primary-100]="h !== hourValue()"
+        >
+          {{ h }}
+        </button>
+      }
+
+      <!-- Inner ring: 0, 13–23 -->
+      @for (h of innerHours; track h; let i = $index) {
+        <button
+          type="button"
+          (click)="selectHour(h)"
+          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors cursor-pointer z-10"
+          [style]="itemStyle(i, 12, 52)"
+          [class.bg-primary-600]="h === hourValue()"
+          [class.text-white]="h === hourValue()"
+          [class.text-neutral-500]="h !== hourValue()"
+          [class.hover:bg-primary-100]="h !== hourValue()"
+        >
+          {{ pad(h) }}
+        </button>
+      }
+    }
+
+    <!-- ── Minute buttons (5-min steps) ── -->
+    @if (view() === 'minutes') {
+      @for (m of minuteSteps; track m; let i = $index) {
+        <button
+          type="button"
+          (click)="selectMinuteStep(m)"
+          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold transition-colors cursor-pointer z-10"
+          [style]="itemStyle(i, 12, 84)"
+          [class.bg-primary-600]="m === minuteValue()"
+          [class.text-white]="m === minuteValue()"
+          [class.text-neutral-700]="m !== minuteValue()"
+          [class.hover:bg-primary-100]="m !== minuteValue()"
+        >
+          {{ pad(m) }}
+        </button>
+      }
+    }
+  </div>
+
+  <!-- Fine-tune nudge row (minute view only) -->
+  @if (view() === 'minutes') {
+    <div class="flex items-center justify-between mt-3 pt-3 border-t border-neutral-100">
+      <button
+        type="button"
+        (click)="nudgeMinute(-1)"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 transition-colors"
+        aria-label="Subtract 1 minute"
+      >
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+        </svg>
+        1 min
+      </button>
+
+      <span class="text-sm font-semibold tabular-nums text-neutral-700 w-8 text-center">
+        {{ pad(minuteValue()) }}
+      </span>
+
+      <button
+        type="button"
+        (click)="nudgeMinute(1)"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 transition-colors"
+        aria-label="Add 1 minute"
+      >
+        1 min
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 4v16m8-8H4"
+          />
+        </svg>
+      </button>
+    </div>
+  }
+
+  <!-- Footer: Clear button -->
+  <div
+    class="bg-neutral-100 border-t border-neutral-200 -mx-3 -mb-3 mt-3 px-3 py-2 rounded-b-2xl flex"
+  >
+    <button
+      type="button"
+      class="font-medium rounded-lg transition-all flex-1 border border-neutral-200 cursor-pointer bg-white text-neutral-600 hover:bg-neutral-100 hover:border-neutral-300 hover:text-neutral-900 text-xs py-1.5 px-3"
+      (click)="onClear()"
+    >
+      Clear
+    </button>
+  </div>
+</ng-template>

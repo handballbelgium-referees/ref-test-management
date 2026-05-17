@@ -33,6 +33,11 @@ public class RefTestExpiredException : Exception
 }
 
 /// <summary>
+/// Exception thrown when a RefTest operation receives an invalid argument (e.g. blank rejection reason)
+/// </summary>
+public class RefTestValidationException(string message) : Exception(message);
+
+/// <summary>
 /// Exception thrown when attempting to perform an action on a RefTest with an invalid status
 /// </summary>
 public class InvalidRefTestStatusException : Exception

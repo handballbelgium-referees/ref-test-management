@@ -16,132 +16,141 @@
   </button>
 
   @if (showMenu()) {
-  <div
-    class="absolute left-0 sm:right-0 sm:left-auto mt-2 w-64 bg-white rounded-lg shadow-lg border border-neutral-200 z-50"
-  >
-    <div class="p-4">
-      <div class="text-sm font-semibold text-neutral-900 mb-3">
-        {{ 'ref_tests.list.columns.toggle' | translate }}
-      </div>
-      <div class="space-y-1">
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('title')"
-            (change)="onToggleColumn('title')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.title' | translate
-          }}</span>
-        </label>
-        <label
-          class="hidden md:flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
-        >
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('participant')"
-            (change)="onToggleColumn('participant')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.participant' | translate
-          }}</span>
-        </label>
-        <label
-          class="hidden md:flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
-        >
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('status')"
-            (change)="onToggleColumn('status')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.status' | translate
-          }}</span>
-        </label>
-        <label
-          class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
-        >
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('questions')"
-            (change)="onToggleColumn('questions')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.questions' | translate
-          }}</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('maxTimeInMinutes')"
-            (change)="onToggleColumn('maxTimeInMinutes')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.max_time' | translate
-          }}</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('score')"
-            (change)="onToggleColumn('score')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.score' | translate
-          }}</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('invitation')"
-            (change)="onToggleColumn('invitation')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.invitation' | translate
-          }}</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('results')"
-            (change)="onToggleColumn('results')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.results' | translate
-          }}</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('started')"
-            (change)="onToggleColumn('started')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.started' | translate
-          }}</span>
-        </label>
-        <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
-          <input
-            type="checkbox"
-            [checked]="isColumnVisible('completed')"
-            (change)="onToggleColumn('completed')"
-            class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
-          />
-          <span class="text-sm text-neutral-700">{{
-            'ref_tests.list.columns.completed' | translate
-          }}</span>
-        </label>
+    <div
+      class="absolute left-0 sm:right-0 sm:left-auto mt-2 w-64 bg-white rounded-lg shadow-lg border border-neutral-200 z-50"
+    >
+      <div class="p-4">
+        <div class="text-sm font-semibold text-neutral-900 mb-3">
+          {{ 'ref_tests.list.columns.toggle' | translate }}
+        </div>
+        <div class="space-y-1">
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('title')"
+              (change)="onToggleColumn('title')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.title' | translate
+            }}</span>
+          </label>
+          <label
+            class="hidden md:flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
+          >
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('participant')"
+              (change)="onToggleColumn('participant')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.participant' | translate
+            }}</span>
+          </label>
+          <label
+            class="hidden md:flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded"
+          >
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('status')"
+              (change)="onToggleColumn('status')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.status' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('questions')"
+              (change)="onToggleColumn('questions')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.questions' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('maxTimeInMinutes')"
+              (change)="onToggleColumn('maxTimeInMinutes')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.max_time' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('score')"
+              (change)="onToggleColumn('score')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.score' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('invitation')"
+              (change)="onToggleColumn('invitation')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.invitation' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('results')"
+              (change)="onToggleColumn('results')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.results' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('started')"
+              (change)="onToggleColumn('started')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.started' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('completed')"
+              (change)="onToggleColumn('completed')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.completed' | translate
+            }}</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer hover:bg-neutral-50 p-2 rounded">
+            <input
+              type="checkbox"
+              [checked]="isColumnVisible('scheduled')"
+              (change)="onToggleColumn('scheduled')"
+              class="h-4 w-4 text-primary-600 rounded border-neutral-300 focus:ring-primary-500"
+            />
+            <span class="text-sm text-neutral-700">{{
+              'ref_tests.list.columns.scheduled' | translate
+            }}</span>
+          </label>
+        </div>
       </div>
     </div>
-  </div>
   }
 </div>

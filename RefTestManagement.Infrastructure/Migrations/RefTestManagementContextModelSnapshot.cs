@@ -17,12 +17,12 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.2")
+                .HasAnnotation("ProductVersion", "10.0.8")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Job", b =>
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Jobs.Job", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -69,7 +69,23 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.ToTable("Jobs");
                 });
 
-            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTest", b =>
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Value")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("RefTestTitles");
+                });
+
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTests.RefTest", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -86,6 +102,20 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("CreatorEmail")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasDefaultValue("");
+
+                    b.Property<string>("CreatorName")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(256)
+                        .HasColumnType("nvarchar(256)")
+                        .HasDefaultValue("");
 
                     b.Property<int?>("CurrentQuestionIndex")
                         .HasColumnType("int");
@@ -128,7 +158,14 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.Property<int?>("QuestionScore")
                         .HasColumnType("int");
 
+                    b.Property<string>("RejectionReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<DateTime?>("ResultsSentAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("ScheduledAt")
                         .HasColumnType("datetime2");
 
                     b.Property<string>("SelectedAnswerIds")
@@ -183,25 +220,9 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.ToTable("RefTests");
                 });
 
-            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTestTitle", b =>
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTests.RefTest", b =>
                 {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Value")
-                        .IsRequired()
-                        .HasMaxLength(256)
-                        .HasColumnType("nvarchar(256)");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("RefTestTitles");
-                });
-
-            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTest", b =>
-                {
-                    b.HasOne("Handball.Belgium.RefTestManagement.Domain.RefTestTitle", "Title")
+                    b.HasOne("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", "Title")
                         .WithMany()
                         .HasForeignKey("TitleId")
                         .OnDelete(DeleteBehavior.Cascade)
