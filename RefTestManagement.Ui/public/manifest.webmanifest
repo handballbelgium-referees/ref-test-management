@@ -65,6 +65,5 @@
   "scope": "/",
   "lang": "en",
   "orientation": "portrait",
-  "display_override": ["standalone", "minimal-ui"],
   "categories": ["education", "sports", "utilities"]
 }
