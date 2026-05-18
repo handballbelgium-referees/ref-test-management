@@ -37,7 +37,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **Randomization**: Optional random answer order per RefTest to prevent pattern memorization
 - **Time Management**: Configurable time limits with auto-submit functionality
 - **Automatic Expiration**: Background service automatically expires and completes tests (no extra cost on Azure)
-- **Audit Log**: Every create, update, and delete operation is recorded with actor, timestamp, and field-level diffs
+- **Audit Log**: Domain-event–driven audit trail using a Marten-style event store. Each business operation on a `RefTest` raises a typed domain event (e.g. `RefTestApprovedEvent`, `RefTestDetailsUpdatedEvent`) that is persisted as an immutable `AuditEvent` record with stream ID, per-stream version, actor, and a JSON payload of what changed
 - **Instant Scoring**: Automatic score calculation with detailed answer feedback
 - **PDF Generation**: Professional PDF reports with QuestPDF for RefTest results
 
@@ -197,6 +197,7 @@ This application follows a **clean architecture pattern** with clear separation 
 │   Background Services:                          │
 │     • BackgroundJobService (Email Queue)        │
 │     • RefTestExpirationService (Auto-expire)    │
+│     • AuditLogCleanupService (Archive logs)     │
 └──────────────┬─────────────────────────────────┘
                │
       ┌────────┼──────────────┬───────────────────┐
@@ -206,10 +207,10 @@ This application follows a **clean architecture pattern** with clear separation 
 │   Layer    │ │ │   Models      │  │                         │
 │            │ │ │               │  │ Services:               │
 │• GraphQL   │ │ │• RefTest      │  │ • EmailService          │
-│  Queries   │ │ │• Job          │  │ • TemplateService       │
-│• Payloads  │ │ │• Status       │  │ • TranslationSvc        │
-│• Config    │ │ │  Enums        │  │ • PDFService            │
-│            │ │ │               │  │ • ReportService         │
+│  Queries   │ │ │  (domain      │  │ • TemplateService       │
+│• Payloads  │ │ │   events)     │  │ • TranslationSvc        │
+│• Config    │ │ │• IDomainEvent │  │ • PDFService            │
+│            │ │ │• Job, Status  │  │ • ReportService         │
 │            │ │ └───────────────┘  │ • LogoService           │
 │            │ │                    │ • JobEnqueueSvc         │
 └─────┬──────┘ │                    └──────┬──────────────────┘
@@ -297,6 +298,7 @@ Each service has a **single, clear responsibility**:
 - **RefTestExpirationService** → Auto-expire old tests
 - **RefTestSubscriptionService** → Publish real-time events via GraphQL subscriptions
 - **RefTestSessionService** → Manage session locks for concurrent test-taking
+- **AuditLogCleanupService** → Soft-archive audit events older than retention period
 - **TaskPermissionHandler** → Enforce single-permission authorization
 - **AnyTaskPermissionHandler** → Enforce OR-permission authorization
 - **TaskAuthorizationPolicyProvider** → Dynamically resolve permission policies
@@ -835,15 +837,15 @@ See [PROJECT-STRUCTURE.md](PROJECT-STRUCTURE.md) for the full annotated director
 
 **Backend projects:**
 
-| Project                            | Role                                                                                            |
-| ---------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `RefTestManagement.Api`            | .NET 10 Web API — GraphQL schema, controllers, background services                              |
-| `RefTestManagement.Auth0`          | Auth0 Management API client — resolves approvers by permission at runtime                       |
-| `RefTestManagement.Application`    | Business logic, StrawberryShake IHF client, job payloads, configurations                        |
-| `RefTestManagement.Domain`         | Core entities and domain exceptions (no external dependencies)                                  |
-| `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
-| `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel, subscriptions, background job enqueue                        |
-| `RefTestManagement.AuditLog`       | Self-contained audit log library — EF Core interceptor, entity, retention options, DI extension |
+| Project                            | Role                                                                                                                                                 |
+| ---------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `RefTestManagement.Api`            | .NET 10 Web API — GraphQL schema, controllers, background services                                                                                   |
+| `RefTestManagement.Auth0`          | Auth0 Management API client — resolves approvers by permission at runtime                                                                            |
+| `RefTestManagement.Application`    | Business logic, StrawberryShake IHF client, job payloads, configurations                                                                             |
+| `RefTestManagement.Domain`         | Core entities and domain exceptions; `RefTest` and `RefTestTitle` raise typed domain events via `IHasDomainEvents`                                   |
+| `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies)                                                      |
+| `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel, subscriptions, background job enqueue                                                                             |
+| `RefTestManagement.AuditLog`       | Marten-style event store — `IDomainEvent`, `IDomainEventWithResolution`, `AuditEvent`, EF Core interceptor, entity name resolvers, retention options |
 
 **Frontend:** `RefTestManagement.Ui` — Angular 21, Apollo Client, GraphQL Codegen, Tailwind CSS, PWA.
 
@@ -963,9 +965,9 @@ Complete configuration file structure:
 |                                    | `RetainCompletedJobsDays`        | Keep successful jobs for X days                                           | ⚠️ Optional (defaults to 7)                   |
 |                                    | `RetainFailedJobsDays`           | Keep failed jobs for X days                                               | ⚠️ Optional (defaults to 30)                  |
 | **ReportConfiguration**            | `RecipientEmails`                | Array of emails to receive system reports                                 | ⚠️ Optional (defaults to empty)               |
-| **AuditLogConfiguration**          | `EnableCleanup`                  | Enable automatic cleanup of old audit log entries                         | ⚠️ Optional (defaults to true)                |
+| **AuditLogConfiguration**          | `EnableCleanup`                  | Enable automatic soft-archive of old audit events                         | ⚠️ Optional (defaults to true)                |
 |                                    | `CleanupIntervalHours`           | How often cleanup runs (hours)                                            | ⚠️ Optional (defaults to 24)                  |
-|                                    | `RetentionDays`                  | Delete entries older than this many days                                  | ⚠️ Optional (defaults to 90)                  |
+|                                    | `RetentionDays`                  | Soft-archive events older than this many days                             | ⚠️ Optional (defaults to 90)                  |
 
 ### User Secrets (Development)
 
@@ -1399,7 +1401,7 @@ az webapp log tail --name YourAppName --resource-group YourResourceGroup \\
 
 ### 3. Audit Log Cleanup Service
 
-The `AuditLogCleanupService` periodically deletes audit log entries that are older than the configured retention period.
+The `AuditLogCleanupService` periodically **soft-archives** `AuditEvent` records older than the configured retention period by setting `IsArchived = true` (no rows are hard-deleted).
 
 #### How It Works
 
@@ -1407,8 +1409,8 @@ On startup (after a 10-second delay) and then every `CleanupIntervalHours` hours
 
 1. Opens a scoped `RefTestManagementContext`
 2. Calculates the cutoff date (`UtcNow - RetentionDays`)
-3. Issues a single bulk `ExecuteDeleteAsync` — no entities loaded into memory
-4. Logs the number of deleted rows
+3. Issues a single bulk `ExecuteUpdateAsync` setting `IsArchived = true` — no entities loaded into memory
+4. Logs the number of archived rows
 
 #### Configuration
 
@@ -1422,11 +1424,11 @@ On startup (after a 10-second delay) and then every `CleanupIntervalHours` hours
 }
 ```
 
-| Setting                | Default | Description                                   |
-| ---------------------- | ------- | --------------------------------------------- |
-| `EnableCleanup`        | `true`  | Set to `false` to disable the cleanup service |
-| `CleanupIntervalHours` | `24`    | How often the cleanup runs (in hours)         |
-| `RetentionDays`        | `90`    | Audit log entries older than this are deleted |
+| Setting                | Default | Description                                    |
+| ---------------------- | ------- | ---------------------------------------------- |
+| `EnableCleanup`        | `true`  | Set to `false` to disable the cleanup service  |
+| `CleanupIntervalHours` | `24`    | How often the cleanup runs (in hours)          |
+| `RetentionDays`        | `90`    | Audit events older than this are soft-archived |
 
 - **ResultEmail**: Generates result PDFs and sends them via email
 - **ReportEmail**: Generates Excel-style reports and sends to admins

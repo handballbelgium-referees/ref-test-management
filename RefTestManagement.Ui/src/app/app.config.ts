@@ -177,6 +177,7 @@ export const appConfig: ApplicationConfig = {
               Query: {
                 fields: {
                   refTests: relayStylePagination(['where', 'order']),
+                  auditLogs: relayStylePagination(['where', 'order']),
                 },
               },
             },

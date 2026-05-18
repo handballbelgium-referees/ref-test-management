@@ -1,0 +1,44 @@
+import { NgClass } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
+
+@Component({
+  selector: 'app-audit-log-event-badge',
+  imports: [NgClass, TranslatePipe],
+  template: `
+    <span
+      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+      [ngClass]="badgeClass()"
+    >
+      {{ 'audit-logs.eventType.' + type() | translate }}
+    </span>
+  `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+export class AuditLogEventBadge {
+  readonly type = input.required<string>();
+
+  protected readonly badgeClass = computed(() => {
+    switch (this.type()) {
+      case 'RefTestCreated':
+      case 'RefTestApproved':
+      case 'RefTestRevived':
+      case 'RefTestTitleCreated':
+      case 'EntityCreated':
+        return 'text-green-700 bg-green-100';
+      case 'RefTestDeleted':
+      case 'RefTestRejected':
+      case 'RefTestExpired':
+      case 'EntityDeleted':
+        return 'text-red-700 bg-red-100';
+      case 'RefTestSoftReset':
+      case 'RefTestHardReset':
+      case 'RefTestTokenRegenerated':
+      case 'RefTestInvitationSent':
+      case 'RefTestResultsSent':
+        return 'text-yellow-700 bg-yellow-100';
+      default:
+        return 'text-blue-700 bg-blue-100';
+    }
+  });
+}

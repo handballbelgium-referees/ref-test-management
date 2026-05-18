@@ -17,18 +17,22 @@ public static class AuditLogQueries
     public static IQueryable<AuditLogDto> GetAuditLogs(
         RefTestManagementContext context)
     {
-        return context.AuditLogs
-            .OrderByDescending(a => a.Timestamp)
+        return context.AuditEvents
+            .Where(a => !a.IsArchived)
+            .OrderByDescending(a => a.SeqId)
             .Select(a => new AuditLogDto
             {
+                SeqId = a.SeqId,
                 Id = a.Id,
-                EntityType = a.EntityType,
-                EntityId = a.EntityId,
-                Action = a.Action,
-                Changes = a.Changes,
+                StreamId = a.StreamId,
+                Version = a.Version,
+                Data = a.Data,
+                Type = a.Type,
+                Timestamp = a.Timestamp,
                 ActorName = a.ActorName,
                 ActorEmail = a.ActorEmail,
-                Timestamp = a.Timestamp
+                Headers = a.Headers,
+                IsArchived = a.IsArchived
             });
     }
 }

@@ -54,6 +54,7 @@ public static class RefTestDeletionMutations
                 // Cancel any pending jobs for this RefTest before deletion
                 await jobEnqueueService.CancelPendingJobsForRefTestAsync(id, cancellationToken);
 
+                refTest.MarkDeleted();
                 context.RefTests.Remove(refTest);
                 result.SuccessfullyDeleted++;
                 result.DeletedRefTests.Add(refTest.ToDto());

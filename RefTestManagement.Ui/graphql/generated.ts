@@ -10,27 +10,33 @@ export type ApproveRefTestsInput = {
 };
 
 export type AuditLogDtoFilterInput = {
-  action?: StringOperationFilterInput | null | undefined;
   actorEmail?: StringOperationFilterInput | null | undefined;
   actorName?: StringOperationFilterInput | null | undefined;
   and?: Array<AuditLogDtoFilterInput> | null | undefined;
-  changes?: StringOperationFilterInput | null | undefined;
-  entityId?: StringOperationFilterInput | null | undefined;
-  entityType?: StringOperationFilterInput | null | undefined;
+  data?: StringOperationFilterInput | null | undefined;
+  headers?: StringOperationFilterInput | null | undefined;
   id?: UuidOperationFilterInput | null | undefined;
+  isArchived?: BooleanOperationFilterInput | null | undefined;
   or?: Array<AuditLogDtoFilterInput> | null | undefined;
+  seqId?: LongOperationFilterInput | null | undefined;
+  streamId?: StringOperationFilterInput | null | undefined;
   timestamp?: DateTimeOperationFilterInput | null | undefined;
+  type?: StringOperationFilterInput | null | undefined;
+  version?: LongOperationFilterInput | null | undefined;
 };
 
 export type AuditLogDtoSortInput = {
-  action?: SortEnumType | null | undefined;
   actorEmail?: SortEnumType | null | undefined;
   actorName?: SortEnumType | null | undefined;
-  changes?: SortEnumType | null | undefined;
-  entityId?: SortEnumType | null | undefined;
-  entityType?: SortEnumType | null | undefined;
+  data?: SortEnumType | null | undefined;
+  headers?: SortEnumType | null | undefined;
   id?: SortEnumType | null | undefined;
+  isArchived?: SortEnumType | null | undefined;
+  seqId?: SortEnumType | null | undefined;
+  streamId?: SortEnumType | null | undefined;
   timestamp?: SortEnumType | null | undefined;
+  type?: SortEnumType | null | undefined;
+  version?: SortEnumType | null | undefined;
 };
 
 export type BooleanOperationFilterInput = {
@@ -96,6 +102,21 @@ export type FloatOperationFilterInput = {
 };
 
 export type IntOperationFilterInput = {
+  eq?: number | null | undefined;
+  gt?: number | null | undefined;
+  gte?: number | null | undefined;
+  in?: Array<number | null | undefined> | null | undefined;
+  lt?: number | null | undefined;
+  lte?: number | null | undefined;
+  neq?: number | null | undefined;
+  ngt?: number | null | undefined;
+  ngte?: number | null | undefined;
+  nin?: Array<number | null | undefined> | null | undefined;
+  nlt?: number | null | undefined;
+  nlte?: number | null | undefined;
+};
+
+export type LongOperationFilterInput = {
   eq?: number | null | undefined;
   gt?: number | null | undefined;
   gte?: number | null | undefined;
@@ -361,7 +382,7 @@ export type GetAuditLogsQueryVariables = Exact<{
 }>;
 
 
-export type GetAuditLogsQuery = { auditLogs: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, entityType: string, entityId: string, action: string, changes: string | null, actorName: string, actorEmail: string, timestamp: string } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+export type GetAuditLogsQuery = { auditLogs: { totalCount: number, edges: Array<{ cursor: string, node: { seqId: number, id: string, streamId: string, version: number, data: string | null, type: string, timestamp: string, actorName: string, actorEmail: string, headers: string | null, nodeId: string | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type CompleteRefTestMutationVariables = Exact<{
   input: CompleteRefTestInput;
@@ -640,14 +661,17 @@ export const GetAuditLogsDocument = gql`
     edges {
       cursor
       node {
+        seqId
         id
-        entityType
-        entityId
-        action
-        changes
+        streamId
+        version
+        data
+        type
+        timestamp
         actorName
         actorEmail
-        timestamp
+        headers
+        nodeId
       }
     }
     pageInfo {

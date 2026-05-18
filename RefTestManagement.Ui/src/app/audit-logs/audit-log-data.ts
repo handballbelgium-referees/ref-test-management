@@ -6,20 +6,23 @@ import {
   AuditLogDtoFilterInput,
   AuditLogDtoSortInput,
   GetAuditLogsGQL,
+  SortEnumType,
 } from '../../../graphql/generated';
 
 const PAGE_SIZE = 20;
-
-const DEFAULT_ORDER: AuditLogDtoSortInput[] = [{ timestamp: 'DESC' }];
 
 @Injectable({ providedIn: 'root' })
 export class AuditLogData {
   private readonly _getAuditLogsGQL = inject(GetAuditLogsGQL);
 
+  readonly filter = signal<AuditLogDtoFilterInput | null>(null);
+  readonly sortField = signal<string>('seqId');
+  readonly sortDirection = signal<SortEnumType>('DESC');
+
   private readonly _queryRef = this._getAuditLogsGQL.watch({
     variables: {
       first: PAGE_SIZE,
-      order: DEFAULT_ORDER,
+      order: this._buildOrder(),
     },
   });
 
@@ -34,11 +37,23 @@ export class AuditLogData {
     initialValue: true,
   });
 
-  readonly filter = signal<AuditLogDtoFilterInput | null>(null);
-
   applyFilter(where: AuditLogDtoFilterInput | null): void {
     this.filter.set(where);
-    this._queryRef.setVariables({ first: PAGE_SIZE, order: DEFAULT_ORDER, where });
+    this._queryRef.setVariables({ first: PAGE_SIZE, order: this._buildOrder(), where });
+  }
+
+  applySort(field: string): void {
+    if (this.sortField() === field) {
+      this.sortDirection.update((d) => (d === 'ASC' ? 'DESC' : 'ASC'));
+    } else {
+      this.sortField.set(field);
+      this.sortDirection.set('DESC');
+    }
+    this._queryRef.setVariables({
+      first: PAGE_SIZE,
+      order: this._buildOrder(),
+      where: this.filter(),
+    });
   }
 
   loadMore(): void {
@@ -49,7 +64,7 @@ export class AuditLogData {
       variables: {
         first: PAGE_SIZE,
         after: pageInfo.endCursor,
-        order: DEFAULT_ORDER,
+        order: this._buildOrder(),
         where: this.filter(),
       },
     });
@@ -57,5 +72,9 @@ export class AuditLogData {
 
   refresh(): void {
     this._queryRef.refetch();
+  }
+
+  private _buildOrder(): AuditLogDtoSortInput[] {
+    return [{ [this.sortField()]: this.sortDirection() } as AuditLogDtoSortInput];
   }
 }

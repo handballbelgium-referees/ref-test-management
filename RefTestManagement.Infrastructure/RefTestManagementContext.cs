@@ -12,14 +12,14 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
     public DbSet<RefTest> RefTests { get; set; } = null!;
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
-    public DbSet<AuditLogEntry> AuditLogs { get; set; } = null!;
+    public DbSet<AuditEvent> AuditEvents { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfiguration(new RefTestTitleConfiguration());
         modelBuilder.ApplyConfiguration(new RefTestConfiguration());
         modelBuilder.ApplyConfiguration(new JobConfiguration());
-        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuditLogEntry).Assembly);
+        modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuditEvent).Assembly);
 
         base.OnModelCreating(modelBuilder);
     }

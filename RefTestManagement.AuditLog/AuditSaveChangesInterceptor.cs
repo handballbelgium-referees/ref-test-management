@@ -16,52 +16,123 @@ public class AuditSaveChangesInterceptor(
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
         if (eventData.Context is not null)
-            AddAuditEntries(eventData.Context);
+            await AddAuditEntriesAsync(eventData.Context, cancellationToken);
 
-        return base.SavingChangesAsync(eventData, result, cancellationToken);
+        return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private void AddAuditEntries(DbContext context)
+    private async Task AddAuditEntriesAsync(DbContext context, CancellationToken cancellationToken)
     {
         var (actorName, actorEmail) = GetActor();
         var timestamp = DateTime.UtcNow;
-        var isSystemActor = string.IsNullOrEmpty(actorEmail) && actorName == "System";
 
         var entries = context.ChangeTracker.Entries()
             .Where(e =>
                 e.State is EntityState.Added or EntityState.Modified or EntityState.Deleted &&
-                e.Entity is not AuditLogEntry &&
-                !options.ExcludedEntityTypes.Contains(e.Entity.GetType()) &&
-                !(isSystemActor && options.ExcludedForSystemActorTypes.Contains(e.Entity.GetType())))
+                e.Entity is not AuditEvent &&
+                !options.ExcludedEntityTypes.Contains(e.Entity.GetType()))
             .ToList();
+
+        if (entries.Count == 0) return;
+
+        // Load current max versions from DB for all affected streams so new audit events
+        // continue from the correct version number and don't violate the unique(StreamId, Version) index.
+        var streamIds = entries
+            .Select(GetEntityId)
+            .Where(id => !string.IsNullOrEmpty(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var versionTracker = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+        var existingVersions = await context.Set<AuditEvent>()
+            .Where(a => streamIds.Contains(a.StreamId))
+            .GroupBy(a => a.StreamId)
+            .Select(g => new { StreamId = g.Key, MaxVersion = g.Max(a => a.Version) })
+            .ToListAsync(cancellationToken);
+
+        foreach (var v in existingVersions)
+            versionTracker[v.StreamId] = v.MaxVersion;
 
         foreach (var entry in entries)
         {
-            var auditEntry = new AuditLogEntry
-            {
-                EntityType = entry.Entity.GetType().Name,
-                EntityId = GetEntityId(entry),
-                Action = entry.State switch
-                {
-                    EntityState.Added => "Created",
-                    EntityState.Modified => "Modified",
-                    EntityState.Deleted => "Deleted",
-                    _ => entry.State.ToString()
-                },
-                Changes = BuildChangesJson(entry, context),
-                ActorName = actorName,
-                ActorEmail = actorEmail,
-                Timestamp = timestamp
-            };
+            var streamId = GetEntityId(entry);
 
-            context.Add(auditEntry);
+            if (entry.Entity is IHasDomainEvents hasDomainEvents && hasDomainEvents.DomainEvents.Count > 0)
+            {
+                // Domain event path: one AuditEvent per domain event
+                var headers = JsonSerializer.Serialize(new { entityType = entry.Entity.GetType().Name }, JsonOptions);
+
+                foreach (var domainEvent in hasDomainEvents.DomainEvents)
+                {
+                    var version = NextVersion(versionTracker, streamId);
+                    var changesData = domainEvent is IDomainEventWithResolution resolvable
+                        ? resolvable.GetChanges((entityType, id) =>
+                            options.EntityNameResolvers.TryGetValue(entityType, out var resolver)
+                                ? resolver(id, context)
+                                : null)
+                        : domainEvent.GetChanges();
+                    var auditEvent = new AuditEvent
+                    {
+                        StreamId = streamId,
+                        Version = version,
+                        Type = domainEvent.ActionName,
+                        Data = changesData is null ? null : JsonSerializer.Serialize(changesData, JsonOptions),
+                        Timestamp = domainEvent.OccurredAt,
+                        ActorName = actorName,
+                        ActorEmail = actorEmail,
+                        Headers = headers
+                    };
+                    context.Add(auditEvent);
+                }
+
+                hasDomainEvents.ClearDomainEvents();
+            }
+            else
+            {
+                // Fallback property-diff path for entities without domain events
+                var isSystemActor = string.IsNullOrEmpty(actorEmail) && actorName == "System";
+                if (isSystemActor && options.ExcludedForSystemActorTypes.Contains(entry.Entity.GetType()))
+                    continue;
+
+                var eventType = entry.State switch
+                {
+                    EntityState.Added => "EntityCreated",
+                    EntityState.Modified => "EntityModified",
+                    EntityState.Deleted => "EntityDeleted",
+                    _ => entry.State.ToString()
+                };
+
+                var version = NextVersion(versionTracker, streamId);
+                var headers = JsonSerializer.Serialize(new { entityType = entry.Entity.GetType().Name }, JsonOptions);
+                var auditEvent = new AuditEvent
+                {
+                    StreamId = streamId,
+                    Version = version,
+                    Type = eventType,
+                    Data = BuildChangesJson(entry, context),
+                    Timestamp = timestamp,
+                    ActorName = actorName,
+                    ActorEmail = actorEmail,
+                    Headers = headers
+                };
+                context.Add(auditEvent);
+            }
         }
+    }
+
+    private static long NextVersion(Dictionary<string, long> tracker, string streamId)
+    {
+        var current = tracker.GetValueOrDefault(streamId, 0L);
+        var next = current + 1;
+        tracker[streamId] = next;
+        return next;
     }
 
     private (string name, string email) GetActor()

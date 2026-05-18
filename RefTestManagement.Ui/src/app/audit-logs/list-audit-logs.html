@@ -12,92 +12,8 @@
 <!-- Main Content -->
 <div class="bg-neutral-50 py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto space-y-6">
-    <!-- Filters Card -->
-    <div class="bg-white rounded-xl shadow-sm border border-neutral-200">
-      <div class="px-6 py-4 border-b border-neutral-200">
-        <h2 class="text-base font-semibold text-neutral-900">
-          {{ 'audit-logs.filter.title' | translate }}
-        </h2>
-      </div>
-      <div class="px-6 py-4">
-        <div class="flex flex-wrap gap-3 items-end">
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-neutral-500">
-              {{ 'audit-logs.filter.entityTypeLabel' | translate }}
-            </label>
-            <input
-              type="text"
-              class="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="{{ 'audit-logs.filter.entityTypePlaceholder' | translate }}"
-              [value]="filterEntityType()"
-              (input)="filterEntityType.set($any($event.target).value)"
-            />
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-neutral-500">
-              {{ 'audit-logs.filter.actionLabel' | translate }}
-            </label>
-            <div class="relative">
-              <select
-                title="{{ 'audit-logs.filter.actionLabel' | translate }}"
-                class="rounded-lg border border-neutral-300 pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
-                [value]="filterAction()"
-                (change)="filterAction.set($any($event.target).value)"
-              >
-                <option value="">{{ 'audit-logs.filter.allActions' | translate }}</option>
-                <option value="Created">{{ 'audit-logs.action.created' | translate }}</option>
-                <option value="Modified">{{ 'audit-logs.action.modified' | translate }}</option>
-                <option value="Deleted">{{ 'audit-logs.action.deleted' | translate }}</option>
-              </select>
-              <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
-                <svg
-                  class="h-4 w-4 text-neutral-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </div>
-            </div>
-          </div>
-          <div class="flex flex-col gap-1">
-            <label class="text-xs font-medium text-neutral-500">
-              {{ 'audit-logs.filter.actorLabel' | translate }}
-            </label>
-            <input
-              type="search"
-              class="rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="{{ 'audit-logs.filter.actorPlaceholder' | translate }}"
-              [value]="filterActor()"
-              (input)="filterActor.set($any($event.target).value)"
-            />
-          </div>
-          <div class="flex gap-2 self-end">
-            <button
-              type="button"
-              class="rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition-colors"
-              (click)="applyFilters()"
-            >
-              {{ 'audit-logs.filter.apply' | translate }}
-            </button>
-            <button
-              type="button"
-              class="rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
-              (click)="clearFilters()"
-            >
-              {{ 'audit-logs.filter.clear' | translate }}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
+    <!-- Filters -->
+    <app-audit-log-filter (filterChange)="onFilterChange($event)" />
 
     @if (loading()) {
       <!-- Loading State -->
@@ -108,205 +24,44 @@
         <p class="text-neutral-600">{{ 'audit-logs.loading' | translate }}</p>
       </div>
     } @else {
-      <!-- Table Card -->
-      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
-        <table class="min-w-full divide-y divide-neutral-200 text-sm">
-          <thead class="bg-neutral-50">
-            <tr>
-              <th
-                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
-              >
-                {{ 'audit-logs.column.timestamp' | translate }}
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
-              >
-                {{ 'audit-logs.column.actor' | translate }}
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
-              >
-                {{ 'audit-logs.column.action' | translate }}
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
-              >
-                {{ 'audit-logs.column.entityType' | translate }}
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
-              >
-                {{ 'audit-logs.column.entityId' | translate }}
-              </th>
-              <th
-                class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
-              >
-                {{ 'audit-logs.column.changes' | translate }}
-              </th>
-            </tr>
-          </thead>
-          <tbody class="divide-y divide-neutral-100 bg-white">
-            @for (entry of entries(); track entry.id) {
-              <tr class="hover:bg-neutral-50 transition-colors">
-                <!-- Timestamp -->
-                <td class="px-6 py-4 whitespace-nowrap text-xs text-neutral-500">
-                  {{ entry.timestamp | date: 'dd/MM/yyyy HH:mm:ss' }}
-                </td>
-
-                <!-- Actor -->
-                <td class="px-6 py-4">
-                  <div class="font-medium text-neutral-900">{{ entry.actorName }}</div>
-                  @if (entry.actorEmail) {
-                    <div class="text-xs text-neutral-400">{{ entry.actorEmail }}</div>
-                  }
-                </td>
-
-                <!-- Action badge -->
-                <td class="px-6 py-4">
-                  <span
-                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
-                    [ngClass]="actionClass(entry.action)"
-                  >
-                    {{ 'audit-logs.action.' + entry.action.toLowerCase() | translate }}
-                  </span>
-                </td>
-
-                <!-- Entity Type -->
-                <td class="px-6 py-4 text-neutral-700">{{ entry.entityType }}</td>
-
-                <!-- Entity ID -->
-                <td class="px-6 py-4 font-mono text-xs text-neutral-500">
-                  @if (canViewRefTestDetail() && entry.entityType === 'RefTest') {
-                    <a
-                      [routerLink]="['/ref-tests', entry.entityId]"
-                      class="text-primary-600 hover:text-primary-800 hover:underline"
-                      >{{ entry.entityId }}</a
-                    >
-                  } @else {
-                    {{ entry.entityId }}
-                  }
-                </td>
-
-                <!-- Changes -->
-                <td class="px-6 py-4">
-                  @if (entry.changes) {
-                    <button
-                      type="button"
-                      class="text-xs text-primary-600 hover:underline"
-                      (click)="toggleChanges(entry.id)"
-                    >
-                      {{
-                        isExpanded(entry.id)
-                          ? ('audit-logs.changes.hide' | translate)
-                          : ('audit-logs.changes.show' | translate)
-                      }}
-                    </button>
-                  } @else {
-                    <span class="text-neutral-300">—</span>
-                  }
-                </td>
-              </tr>
-              @if (entry.changes && isExpanded(entry.id)) {
-                <tr class="bg-neutral-50">
-                  <td colspan="6" class="px-6 pb-5 pt-1">
-                    <div class="grid grid-cols-[auto_1fr] gap-x-8 gap-y-1 text-xs">
-                      @for (change of parseChanges(entry.changes); track change.property) {
-                        <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">
-                          {{ change.property }}
-                        </span>
-                        <span class="text-neutral-800 break-all py-0.5">
-                          @if ($any(change.value).added !== undefined) {
-                            @if ($any(change.value).added.length > 0) {
-                              <span class="text-green-600"
-                                >+ {{ formatListValue($any(change.value).added) }}</span
-                              >
-                            }
-                            @if ($any(change.value).removed.length > 0) {
-                              <span class="text-red-500 ml-2"
-                                >− {{ formatListValue($any(change.value).removed) }}</span
-                              >
-                            }
-                          } @else if ($any(change.value).values !== undefined) {
-                            <span>{{ formatListValue($any(change.value).values) }}</span>
-                          } @else if (
-                            $any(change.value).oldValue !== undefined &&
-                            $any(change.value).newValue !== undefined
-                          ) {
-                            <span class="line-through text-red-400 mr-1">{{
-                              formatChangeValue($any(change.value).oldValue)
-                            }}</span>
-                            <span class="text-neutral-400">→</span>
-                            <span class="text-green-600 ml-1">{{
-                              formatChangeValue($any(change.value).newValue)
-                            }}</span>
-                          } @else if ($any(change.value).newValue !== undefined) {
-                            <span>{{ formatChangeValue($any(change.value).newValue) }}</span>
-                          } @else if ($any(change.value).oldValue !== undefined) {
-                            <span>{{ formatChangeValue($any(change.value).oldValue) }}</span>
-                          }
-                        </span>
-                      }
-                    </div>
-                  </td>
-                </tr>
-              }
-            } @empty {
-              <tr>
-                <td colspan="6" class="px-6 py-16 text-center text-neutral-400">
-                  <div class="flex flex-col items-center gap-2">
-                    <svg
-                      class="w-10 h-10 text-neutral-300"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="1.5"
-                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                      />
-                    </svg>
-                    <span class="text-sm">{{ 'audit-logs.empty' | translate }}</span>
-                  </div>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
-      </div>
+      <!-- Table / Cards -->
+      <app-audit-log-table
+        [entries]="entries()"
+        [canLink]="canLink()"
+        [sortField]="sortField()"
+        [sortDirection]="sortDirection()"
+        (sortColumn)="onSortColumn($event)"
+      />
 
       <!-- Pagination -->
-      <div class="mt-6 text-center">
-        <div class="text-sm text-neutral-600 mb-4">
-          @if (totalCount() === 1) {
-            {{
-              'audit-logs.showing' | translate: { displayed: entries().length, total: totalCount() }
-            }}
-          } @else {
-            {{
-              'audit-logs.showing_plural'
-                | translate: { displayed: entries().length, total: totalCount() }
-            }}
+      @if (entries().length > 0) {
+        <div class="mt-6 text-center">
+          <div class="text-sm text-neutral-600 mb-4">
+            @if (totalCount() === 1) {
+              {{
+                'audit-logs.showing'
+                  | translate: { displayed: entries().length, total: totalCount() }
+              }}
+            } @else {
+              {{
+                'audit-logs.showing_plural'
+                  | translate: { displayed: entries().length, total: totalCount() }
+              }}
+            }
+          </div>
+          @if (hasNextPage()) {
+            <button
+              type="button"
+              (click)="loadMore()"
+              [disabled]="loading()"
+              class="mx-auto flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              [attr.aria-label]="'audit-logs.loadMore' | translate"
+            >
+              {{ 'audit-logs.loadMore' | translate }}
+            </button>
           }
         </div>
-        @if (hasNextPage()) {
-          <button
-            type="button"
-            (click)="loadMore()"
-            [disabled]="loading()"
-            class="mx-auto flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
-            [attr.aria-label]="'audit-logs.loadMore' | translate"
-          >
-            @if (loading()) {
-              <div class="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-              {{ 'audit-logs.loadingMore' | translate }}
-            } @else {
-              {{ 'audit-logs.loadMore' | translate }}
-            }
-          </button>
-        }
-      </div>
+      }
     }
   </div>
 </div>
