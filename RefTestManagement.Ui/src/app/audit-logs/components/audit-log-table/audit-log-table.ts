@@ -41,8 +41,22 @@ export class AuditLogTable {
     return this.canLink() && entry.nodeId != null;
   }
 
+  protected canShowDetails(entry: AuditLogEntry): boolean {
+    return !!entry.data || this.canLinkEntry(entry) || this.getEntityType(entry) !== null;
+  }
+
   protected getAriaSort(field: string): 'none' | 'ascending' | 'descending' {
     if (this.sortField() !== field) return 'none';
     return this.sortDirection() === 'ASC' ? 'ascending' : 'descending';
+  }
+
+  protected getEntityType(entry: AuditLogEntry): string | null {
+    if (!entry.headers) return null;
+    try {
+      const h = JSON.parse(entry.headers) as { entityType?: string };
+      return h.entityType ?? null;
+    } catch {
+      return null;
+    }
   }
 }

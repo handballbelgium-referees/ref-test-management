@@ -7,9 +7,15 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [NgClass, TranslatePipe],
   template: `
     <span
-      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+      class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold"
       [ngClass]="badgeClass()"
     >
+      @if (entityType()) {
+        <span class="font-normal opacity-70">{{
+          'audit-logs.entityType.' + entityType() | translate
+        }}</span
+        ><span class="opacity-40">·</span>
+      }
       {{ 'audit-logs.eventType.' + type() | translate }}
     </span>
   `,
@@ -17,6 +23,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 })
 export class AuditLogEventBadge {
   readonly type = input.required<string>();
+  readonly entityType = input<string | null>(null);
 
   protected readonly badgeClass = computed(() => {
     switch (this.type()) {

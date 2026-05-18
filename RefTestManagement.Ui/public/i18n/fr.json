@@ -650,16 +650,16 @@
     "title": "Journal d'audit",
     "subtitle": "Historique complet de toutes les modifications du système",
     "loading": "Chargement du journal d'audit...",
-    "empty": "Aucune entrée trouvée",
+    "empty": "Aucun événement trouvé",
     "loadMore": "Charger plus",
-    "showing": "Affichage de {{displayed}} sur {{total}} entrée",
-    "showing_plural": "Affichage de {{displayed}} sur {{total}} entrées",
+    "showing": "Affichage de {{displayed}} sur {{total}} événement",
+    "showing_plural": "Affichage de {{displayed}} sur {{total}} événements",
     "filter": {
       "title": "Filtres",
       "streamIdLabel": "Id",
       "streamIdPlaceholder": "ex. abc-123...",
       "typeLabel": "Type d'événement",
-      "actorLabel": "Acteur",
+      "actorLabel": "Utilisateur",
       "actorPlaceholder": "Nom ou e-mail",
       "allTypes": "Tous les types d'événements",
       "apply": "Appliquer",
@@ -667,9 +667,10 @@
     },
     "column": {
       "timestamp": "Horodatage",
-      "actor": "Acteur",
+      "actor": "Utilisateur",
       "eventType": "Événement",
       "streamId": "Id",
+      "seqId": "#",
       "data": "Détails"
     },
     "eventType": {
@@ -692,6 +693,17 @@
       "EntityCreated": "Créé",
       "EntityModified": "Modifié",
       "EntityDeleted": "Supprimé"
+    },
+    "entityType": {
+      "RefTest": "RefTest",
+      "RefTestTitle": "Titre RefTest"
+    },
+    "sort": {
+      "title": "Tri",
+      "by": "Trier par",
+      "direction": "Direction",
+      "asc": "Croissant",
+      "desc": "Décroissant"
     },
     "changes": {
       "show": "Afficher les détails",

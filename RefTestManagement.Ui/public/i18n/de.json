@@ -653,16 +653,16 @@
     "title": "Auditprotokoll",
     "subtitle": "Vollständige Historie aller Systemänderungen",
     "loading": "Auditprotokoll wird geladen...",
-    "empty": "Keine Einträge gefunden",
+    "empty": "Keine Ereignisse gefunden",
     "loadMore": "Mehr laden",
-    "showing": "{{displayed}} von {{total}} Eintrag wird angezeigt",
-    "showing_plural": "{{displayed}} von {{total}} Einträge werden angezeigt",
+    "showing": "{{displayed}} von {{total}} Ereignis wird angezeigt",
+    "showing_plural": "{{displayed}} von {{total}} Ereignisse werden angezeigt",
     "filter": {
       "title": "Filter",
       "streamIdLabel": "Id",
       "streamIdPlaceholder": "z. B. abc-123...",
       "typeLabel": "Ereignistyp",
-      "actorLabel": "Akteur",
+      "actorLabel": "Benutzer",
       "actorPlaceholder": "Name oder E-Mail",
       "allTypes": "Alle Ereignistypen",
       "apply": "Anwenden",
@@ -670,9 +670,10 @@
     },
     "column": {
       "timestamp": "Zeitstempel",
-      "actor": "Akteur",
+      "actor": "Benutzer",
       "eventType": "Ereignis",
       "streamId": "Id",
+      "seqId": "#",
       "data": "Details"
     },
     "eventType": {
@@ -695,6 +696,17 @@
       "EntityCreated": "Erstellt",
       "EntityModified": "Geändert",
       "EntityDeleted": "Gelöscht"
+    },
+    "entityType": {
+      "RefTest": "RefTest",
+      "RefTestTitle": "RefTest Titel"
+    },
+    "sort": {
+      "title": "Sortierung",
+      "by": "Sortieren nach",
+      "direction": "Richtung",
+      "asc": "Aufsteigend",
+      "desc": "Absteigend"
     },
     "changes": {
       "show": "Details anzeigen",

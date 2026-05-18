@@ -649,16 +649,16 @@
     "title": "Auditlogboek",
     "subtitle": "Volledige geschiedenis van alle systeemwijzigingen",
     "loading": "Auditlogboek laden...",
-    "empty": "Geen auditlogboek-entries gevonden",
+    "empty": "Geen auditlogboek-gebeurtenissen gevonden",
     "loadMore": "Meer laden",
-    "showing": "{{displayed}} van {{total}} entry weergegeven",
-    "showing_plural": "{{displayed}} van {{total}} entries weergegeven",
+    "showing": "{{displayed}} van {{total}} gebeurtenis weergegeven",
+    "showing_plural": "{{displayed}} van {{total}} gebeurtenissen weergegeven",
     "filter": {
       "title": "Filters",
       "streamIdLabel": "Id",
       "streamIdPlaceholder": "bijv. abc-123...",
       "typeLabel": "Gebeurtenistype",
-      "actorLabel": "Actor",
+      "actorLabel": "Gebruiker",
       "actorPlaceholder": "Naam of e-mail",
       "allTypes": "Alle gebeurtenistypes",
       "apply": "Toepassen",
@@ -666,9 +666,10 @@
     },
     "column": {
       "timestamp": "Tijdstempel",
-      "actor": "Actor",
+      "actor": "Gebruiker",
       "eventType": "Gebeurtenis",
       "streamId": "Id",
+      "seqId": "#",
       "data": "Details"
     },
     "eventType": {
@@ -691,6 +692,17 @@
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
       "EntityDeleted": "Verwijderd"
+    },
+    "entityType": {
+      "RefTest": "RefTest",
+      "RefTestTitle": "RefTest titel"
+    },
+    "sort": {
+      "title": "Sortering",
+      "by": "Sorteren op",
+      "direction": "Richting",
+      "asc": "Oplopend",
+      "desc": "Aflopend"
     },
     "changes": {
       "show": "Details tonen",

@@ -28,6 +28,7 @@
             {{ 'ref_tests.list.sorting.sortBy' | translate }}
           </label>
           <select
+            title="{{ 'ref_tests.list.sorting.sortBy' | translate }}"
             [value]="sortField()"
             (change)="onSortFieldChange($any($event.target).value)"
             class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
@@ -71,6 +72,7 @@
             {{ 'ref_tests.list.sorting.direction' | translate }}
           </label>
           <select
+            title="{{ 'ref_tests.list.sorting.direction' | translate }}"
             [value]="sortDirection()"
             (change)="onSortDirectionChange($any($event.target).value)"
             class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"

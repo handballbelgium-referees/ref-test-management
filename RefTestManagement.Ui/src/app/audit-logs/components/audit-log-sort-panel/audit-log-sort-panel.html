@@ -1,0 +1,62 @@
+<div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+  <button
+    type="button"
+    (click)="togglePanel()"
+    class="w-full px-4 py-3 flex items-center justify-between hover:bg-neutral-50 transition-colors"
+  >
+    <span class="text-sm font-medium text-neutral-900">
+      {{ 'audit-logs.sort.title' | translate }}
+    </span>
+    <svg
+      class="w-5 h-5 text-neutral-500 transition-transform"
+      [class.rotate-180]="expanded()"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+    </svg>
+  </button>
+
+  @if (expanded()) {
+    <div class="px-4 pb-4 border-t border-neutral-200">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+        <!-- Sort Field -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'audit-logs.sort.by' | translate }}
+          </label>
+          <select
+            title="{{ 'audit-logs.sort.by' | translate }}"
+            [value]="sortField()"
+            (change)="onSortFieldChange($any($event.target).value)"
+            class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
+          >
+            <option value="seqId">{{ 'audit-logs.column.seqId' | translate }}</option>
+            <option value="timestamp">{{ 'audit-logs.column.timestamp' | translate }}</option>
+            <option value="actorName">{{ 'audit-logs.column.actor' | translate }}</option>
+            <option value="type">{{ 'audit-logs.column.eventType' | translate }}</option>
+            <option value="streamId">{{ 'audit-logs.column.streamId' | translate }}</option>
+          </select>
+        </div>
+
+        <!-- Sort Direction -->
+        <div>
+          <label class="block text-sm font-medium text-neutral-700 mb-2">
+            {{ 'audit-logs.sort.direction' | translate }}
+          </label>
+          <select
+            title="{{ 'audit-logs.sort.direction' | translate }}"
+            [value]="sortDirection()"
+            (change)="onSortDirectionChange($any($event.target).value)"
+            class="w-full pl-3 pr-8 py-2 border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent appearance-none bg-white"
+          >
+            <option value="DESC">{{ 'audit-logs.sort.desc' | translate }}</option>
+            <option value="ASC">{{ 'audit-logs.sort.asc' | translate }}</option>
+          </select>
+        </div>
+      </div>
+    </div>
+  }
+</div>

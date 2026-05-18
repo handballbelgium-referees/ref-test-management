@@ -22,9 +22,9 @@
   <div class="space-y-3">
     @for (entry of entries(); track entry.seqId) {
       <div class="bg-white rounded-xl border border-neutral-200 p-4 space-y-2.5">
-        <!-- Row 1: badge -->
+        <!-- Row 1: event badge -->
         <div>
-          <app-audit-log-event-badge [type]="entry.type" />
+          <app-audit-log-event-badge [type]="entry.type" [entityType]="getEntityType(entry)" />
         </div>
 
         <!-- Row 2: timestamp -->
@@ -41,7 +41,7 @@
         </div>
 
         <!-- Row 4: data toggle -->
-        @if (entry.data || canLinkEntry(entry)) {
+        @if (canShowDetails(entry)) {
           <button
             type="button"
             class="text-xs text-primary-600 hover:underline"
@@ -227,7 +227,7 @@
 
           <!-- Event type badge -->
           <td class="px-6 py-4">
-            <app-audit-log-event-badge [type]="entry.type" />
+            <app-audit-log-event-badge [type]="entry.type" [entityType]="getEntityType(entry)" />
           </td>
 
           <!-- Stream ID -->
@@ -250,7 +250,7 @@
 
           <!-- Data toggle -->
           <td class="px-6 py-4">
-            @if (entry.data || canLinkEntry(entry)) {
+            @if (canShowDetails(entry)) {
               <button
                 type="button"
                 class="text-xs text-primary-600 hover:underline"
@@ -269,7 +269,7 @@
         </tr>
 
         <!-- Expanded data row -->
-        @if ((entry.data || canLinkEntry(entry)) && isExpanded(entry.seqId.toString())) {
+        @if (canShowDetails(entry) && isExpanded(entry.seqId.toString())) {
           <tr class="bg-neutral-50">
             <td colspan="5" class="px-6 pb-5 pt-2">
               <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs">

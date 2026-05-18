@@ -16,7 +16,22 @@ export class AuditLogFilter {
   protected readonly type = signal('');
   protected readonly actor = signal('');
 
-  protected apply(): void {
+  protected onStreamIdChange(value: string): void {
+    this.streamId.set(value);
+    this._emit();
+  }
+
+  protected onTypeChange(value: string): void {
+    this.type.set(value);
+    this._emit();
+  }
+
+  protected onActorChange(value: string): void {
+    this.actor.set(value);
+    this._emit();
+  }
+
+  private _emit(): void {
     const conditions: AuditLogDtoFilterInput[] = [];
 
     const streamId = this.streamId().trim();
@@ -29,12 +44,5 @@ export class AuditLogFilter {
     if (actor) conditions.push({ actorName: { contains: actor } });
 
     this.filterChange.emit(conditions.length > 0 ? { and: conditions } : null);
-  }
-
-  protected clear(): void {
-    this.streamId.set('');
-    this.type.set('');
-    this.actor.set('');
-    this.filterChange.emit(null);
   }
 }

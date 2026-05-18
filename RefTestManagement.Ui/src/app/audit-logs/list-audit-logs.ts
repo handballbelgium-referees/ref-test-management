@@ -1,17 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
-import { AuditLogDtoFilterInput } from '../../../graphql/generated';
+import { AuditLogDtoFilterInput, SortEnumType } from '../../../graphql/generated';
 import { Permissions } from '../auth/models/permissions';
 import { PermissionsService } from '../auth/services/permissions';
 import { Banner } from '../shared/components/banner/banner';
 import { AuditLogData } from './audit-log-data';
 import { AuditLogFilter } from './components/audit-log-filter/audit-log-filter';
+import { AuditLogSortPanel } from './components/audit-log-sort-panel/audit-log-sort-panel';
 import { AuditLogTable } from './components/audit-log-table/audit-log-table';
 import { AuditLogEntry } from './types';
 
 @Component({
   selector: 'app-audit-logs',
-  imports: [TranslatePipe, Banner, AuditLogFilter, AuditLogTable],
+  imports: [TranslatePipe, Banner, AuditLogFilter, AuditLogSortPanel, AuditLogTable],
   templateUrl: './list-audit-logs.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
@@ -36,6 +37,10 @@ export class ListAuditLogs {
 
   protected onFilterChange(filter: AuditLogDtoFilterInput | null): void {
     this._data.applyFilter(filter);
+  }
+
+  protected onSortingChange(event: { field: string; direction: SortEnumType }): void {
+    this._data.applyFullSort(event.field, event.direction);
   }
 
   protected onSortColumn(field: string): void {

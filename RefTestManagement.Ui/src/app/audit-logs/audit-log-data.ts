@@ -56,6 +56,16 @@ export class AuditLogData {
     });
   }
 
+  applyFullSort(field: string, direction: SortEnumType): void {
+    this.sortField.set(field);
+    this.sortDirection.set(direction);
+    this._queryRef.setVariables({
+      first: PAGE_SIZE,
+      order: this._buildOrder(),
+      where: this.filter(),
+    });
+  }
+
   loadMore(): void {
     const pageInfo = this.queryResult()?.pageInfo;
     if (!pageInfo?.hasNextPage) return;

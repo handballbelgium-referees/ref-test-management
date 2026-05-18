@@ -15,6 +15,13 @@
     <!-- Filters -->
     <app-audit-log-filter (filterChange)="onFilterChange($event)" />
 
+    <!-- Sorting -->
+    <app-audit-log-sort-panel
+      [sortField]="sortField()"
+      [sortDirection]="sortDirection()"
+      (sortingChange)="onSortingChange($event)"
+    />
+
     @if (loading()) {
       <!-- Loading State -->
       <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">

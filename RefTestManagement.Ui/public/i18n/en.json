@@ -649,16 +649,16 @@
     "title": "Audit Log",
     "subtitle": "Complete history of all system changes",
     "loading": "Loading audit log...",
-    "empty": "No audit log entries found",
+    "empty": "No audit log events found",
     "loadMore": "Load more",
-    "showing": "Showing {{displayed}} of {{total}} entry",
-    "showing_plural": "Showing {{displayed}} of {{total}} entries",
+    "showing": "Showing {{displayed}} of {{total}} event",
+    "showing_plural": "Showing {{displayed}} of {{total}} events",
     "filter": {
       "title": "Filters",
       "streamIdLabel": "Id",
       "streamIdPlaceholder": "e.g. abc-123...",
       "typeLabel": "Event type",
-      "actorLabel": "Actor",
+      "actorLabel": "User",
       "actorPlaceholder": "Name or email",
       "allTypes": "All event types",
       "apply": "Apply",
@@ -666,9 +666,10 @@
     },
     "column": {
       "timestamp": "Timestamp",
-      "actor": "Actor",
+      "actor": "User",
       "eventType": "Event",
       "streamId": "Id",
+      "seqId": "#",
       "data": "Details"
     },
     "eventType": {
@@ -691,6 +692,17 @@
       "EntityCreated": "Created",
       "EntityModified": "Modified",
       "EntityDeleted": "Deleted"
+    },
+    "entityType": {
+      "RefTest": "RefTest",
+      "RefTestTitle": "RefTest Title"
+    },
+    "sort": {
+      "title": "Sorting",
+      "by": "Sort by",
+      "direction": "Direction",
+      "asc": "Ascending",
+      "desc": "Descending"
     },
     "changes": {
       "show": "Show details",
