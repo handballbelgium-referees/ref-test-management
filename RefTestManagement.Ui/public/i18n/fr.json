@@ -712,7 +712,7 @@
       "tokenRegenerated": "Jeton régénéré",
       "reason": "Raison",
       "value": "Valeur",
-      "streamId": "ID d'agrégat",
+      "streamId": "Id",
       "version": "Version"
     }
   }

@@ -711,7 +711,7 @@
       "tokenRegenerated": "Token opnieuw gegenereerd",
       "reason": "Reden",
       "value": "Waarde",
-      "streamId": "Aggregaat-ID",
+      "streamId": "Id",
       "version": "Versie"
     }
   }

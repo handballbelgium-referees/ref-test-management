@@ -715,7 +715,7 @@
       "tokenRegenerated": "Token regeneriert",
       "reason": "Grund",
       "value": "Wert",
-      "streamId": "Aggregat-ID",
+      "streamId": "Id",
       "version": "Version"
     }
   }
