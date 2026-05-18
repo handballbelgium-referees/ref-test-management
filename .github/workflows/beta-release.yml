@@ -111,10 +111,10 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore RefTestManagement.sln
+        run: dotnet restore RefTestManagement.slnx
 
       - name: 🏗 Build .NET application
-        run: dotnet build RefTestManagement.sln --configuration Release --no-restore
+        run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
 
       - name: 📦 Publish .NET application
         run: |
