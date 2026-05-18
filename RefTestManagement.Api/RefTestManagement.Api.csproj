@@ -16,15 +16,15 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="16.0.3" />
-        <PackageReference Include="HotChocolate.AspNetCore.CommandLine" Version="16.0.3"/>
-        <PackageReference Include="HotChocolate.AspNetCore" Version="16.0.3"/>
-        <PackageReference Include="HotChocolate.Caching" Version="16.0.3" />
-        <PackageReference Include="HotChocolate.Data.EntityFramework" Version="16.0.3"/>
-        <PackageReference Include="HotChocolate.Types.Analyzers" Version="16.0.3"/>
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" />
-        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.8" />
-        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.8">
+        <PackageReference Include="HotChocolate.AspNetCore.Authorization" />
+        <PackageReference Include="HotChocolate.AspNetCore.CommandLine" />
+        <PackageReference Include="HotChocolate.AspNetCore" />
+        <PackageReference Include="HotChocolate.Caching" />
+        <PackageReference Include="HotChocolate.Data.EntityFramework" />
+        <PackageReference Include="HotChocolate.Types.Analyzers" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
         </PackageReference>

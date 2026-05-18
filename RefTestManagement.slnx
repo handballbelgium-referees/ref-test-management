@@ -1,0 +1,23 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/Solution Items/">
+    <File Path=".gitignore" />
+    <File Path="dotnet-tools.json" />
+    <File Path="README.md" />
+    <File Path="Directory.Packages.props" />
+    <File Path="docs/ARCHITECTURE-DIAGRAM.md" />
+    <File Path="docs/PROJECT-STRUCTURE.md" />
+    <File Path="docs/SECURITY.md" />
+  </Folder>
+  <Project Path="RefTestManagement.Api/RefTestManagement.Api.csproj" />
+  <Project Path="RefTestManagement.Application/RefTestManagement.Application.csproj" />
+  <Project Path="RefTestManagement.AuditLog/RefTestManagement.AuditLog.csproj" />
+  <Project Path="RefTestManagement.Auth0/RefTestManagement.Auth0.csproj" />
+  <Project Path="RefTestManagement.Domain/RefTestManagement.Domain.csproj" />
+  <Project Path="RefTestManagement.Infrastructure/RefTestManagement.Infrastructure.csproj" />
+  <Project Path="RefTestManagement.Security/RefTestManagement.Security.csproj" />
+</Solution>

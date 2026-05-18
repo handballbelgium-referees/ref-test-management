@@ -21,7 +21,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - [Project Structure](#-project-structure)
 - [Configuration](#-configuration)
 - [Background Services](#️-background-services)
-- [Security & Permissions](SECURITY.md)
+- [Security & Permissions](docs/SECURITY.md)
 - [Development Workflow](#-development-workflow)
 - [Deployment](#-deployment)
 - [Contributing](#-contributing)
@@ -130,7 +130,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - **UI Enforcement**: `HasPermission` structural directive hides buttons and cards reactively
 - **OR Permissions**: `AnyTaskPermissionHandler` + dynamic policy provider support field-level OR authorization
 
-See [SECURITY.md](SECURITY.md) for the full permission reference, Auth0 setup guide, and suggested roles.
+See [SECURITY.md](docs/SECURITY.md) for the full permission reference, Auth0 setup guide, and suggested roles.
 
 ### 🌍 Internationalization
 
@@ -273,7 +273,7 @@ This application follows a **clean architecture pattern** with clear separation 
 - **`AnyTaskPermissionHandler`** supports OR-semantics for field-level authorization
 - **`TaskAuthorizationPolicyProvider`** resolves `anyof:perm1|perm2` policy names dynamically at runtime
 - **Permissions propagated via cookie** — `OnTokenValidated` copies Auth0 JWT `permissions` claims into the cookie identity
-- See [SECURITY.md](SECURITY.md) for full setup, permission reference, and suggested roles
+- See [SECURITY.md](docs/SECURITY.md) for full setup, permission reference, and suggested roles
 
 #### 🔄 Background Processing
 
@@ -833,7 +833,7 @@ This regenerates TypeScript types in `graphql/generated.ts`.
 
 ## 📁 Project Structure
 
-See [PROJECT-STRUCTURE.md](PROJECT-STRUCTURE.md) for the full annotated directory tree.
+See [PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md) for the full annotated directory tree.
 
 **Backend projects:**
 
@@ -1561,7 +1561,7 @@ WHERE CompletedAt IS NOT NULL
 ORDER BY CompletedAt DESC;
 ```
 
-**For a detailed technical diagram of the job queue architecture, see [ARCHITECTURE-DIAGRAM.md](./ARCHITECTURE-DIAGRAM.md).**
+**For a detailed technical diagram of the job queue architecture, see [ARCHITECTURE-DIAGRAM.md](./docs/ARCHITECTURE-DIAGRAM.md).**
 
 ### 2. Automatic RefTest Expiration
 

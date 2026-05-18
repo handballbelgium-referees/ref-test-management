@@ -411,17 +411,21 @@ ref-test-management/
 │   ├── tsconfig.app.json
 │   └── tsconfig.spec.json
 │
+├── docs/
+│   ├── ARCHITECTURE-DIAGRAM.md           # Architecture & approval workflow diagrams
+│   ├── PROJECT-STRUCTURE.md              # Full annotated directory tree (this file)
+│   └── SECURITY.md                       # Security setup, permissions reference & suggested roles
+│
 ├── scripts/
 │   └── generate-badges.mjs
 │
 ├── .releaserc.json
-├── ARCHITECTURE-DIAGRAM.md               # Architecture & approval workflow diagrams
 ├── commitlint.config.mjs
+├── Directory.Packages.props              # Centralized NuGet package version management
 ├── dotnet-tools.json
 ├── package.json                          # Root dependencies (semantic-release, husky)
 ├── renovate.json
-├── RefTestManagement.sln
-├── SECURITY.md                           # Security setup, permissions reference & suggested roles
+├── RefTestManagement.slnx
 └── README.md
 ```
 
