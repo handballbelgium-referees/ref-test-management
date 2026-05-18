@@ -16,24 +16,21 @@ public class AuditSaveChangesInterceptor(
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     };
 
-    public override ValueTask<InterceptionResult<int>> SavingChangesAsync(
+    public override async ValueTask<InterceptionResult<int>> SavingChangesAsync(
         DbContextEventData eventData,
         InterceptionResult<int> result,
         CancellationToken cancellationToken = default)
     {
         if (eventData.Context is not null)
-            AddAuditEntries(eventData.Context);
+            await AddAuditEntriesAsync(eventData.Context, cancellationToken);
 
-        return base.SavingChangesAsync(eventData, result, cancellationToken);
+        return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private void AddAuditEntries(DbContext context)
+    private async Task AddAuditEntriesAsync(DbContext context, CancellationToken cancellationToken)
     {
         var (actorName, actorEmail) = GetActor();
         var timestamp = DateTime.UtcNow;
-
-        // Build per-stream version tracker from existing DB versions (best-effort)
-        var versionTracker = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
 
         var entries = context.ChangeTracker.Entries()
             .Where(e =>
@@ -41,6 +38,27 @@ public class AuditSaveChangesInterceptor(
                 e.Entity is not AuditEvent &&
                 !options.ExcludedEntityTypes.Contains(e.Entity.GetType()))
             .ToList();
+
+        if (entries.Count == 0) return;
+
+        // Load current max versions from DB for all affected streams so new audit events
+        // continue from the correct version number and don't violate the unique(StreamId, Version) index.
+        var streamIds = entries
+            .Select(GetEntityId)
+            .Where(id => !string.IsNullOrEmpty(id))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var versionTracker = new Dictionary<string, long>(StringComparer.OrdinalIgnoreCase);
+
+        var existingVersions = await context.Set<AuditEvent>()
+            .Where(a => streamIds.Contains(a.StreamId))
+            .GroupBy(a => a.StreamId)
+            .Select(g => new { StreamId = g.Key, MaxVersion = g.Max(a => a.Version) })
+            .ToListAsync(cancellationToken);
+
+        foreach (var v in existingVersions)
+            versionTracker[v.StreamId] = v.MaxVersion;
 
         foreach (var entry in entries)
         {

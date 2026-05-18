@@ -35,9 +35,15 @@ public sealed record RefTestConfigurationUpdatedEvent(
 
     public object? GetChanges(Func<string, Guid, string?> entityResolver) => new
     {
-        title = new { old = entityResolver("RefTestTitle", OldTitleId), @new = entityResolver("RefTestTitle", NewTitleId) },
-        numberOfQuestions = new { old = OldNumberOfQuestions, @new = NewNumberOfQuestions },
-        maxTimeInMinutes = new { old = OldMaxTimeInMinutes, @new = NewMaxTimeInMinutes },
+        title = OldTitleId != NewTitleId
+            ? new { old = entityResolver("RefTestTitle", OldTitleId), @new = entityResolver("RefTestTitle", NewTitleId) }
+            : (object?)null,
+        numberOfQuestions = OldNumberOfQuestions != NewNumberOfQuestions
+            ? new { old = OldNumberOfQuestions, @new = NewNumberOfQuestions }
+            : (object?)null,
+        maxTimeInMinutes = OldMaxTimeInMinutes != NewMaxTimeInMinutes
+            ? new { old = OldMaxTimeInMinutes, @new = NewMaxTimeInMinutes }
+            : (object?)null,
         questionPoolCount = QuestionPoolCount
     };
 }
