@@ -40,6 +40,13 @@ export class Home {
 
   protected readonly isLoggedIn = computed(() => !!this._auth.isAuthenticated());
 
+  protected readonly isLoading = computed(() => {
+    const isAuthenticated = this._auth.isAuthenticated();
+    if (isAuthenticated === undefined) return true;
+    if (isAuthenticated && this._permissions.permissions() === undefined) return true;
+    return false;
+  });
+
   protected login(): void {
     this._auth.login();
   }
