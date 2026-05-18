@@ -20,6 +20,7 @@ public class AuditLogType : ObjectType<AuditLogDto>
         descriptor.Field(x => x.ActorEmail).Description("Email of the user who triggered the event, or empty for background operations.");
         descriptor.Field(x => x.Headers).Description("JSON metadata headers including the entity CLR type name.");
         descriptor.Field(x => x.IsArchived).Description("Whether this event has been soft-archived by the cleanup service.");
+        descriptor.Field(x => x.RefTestExists).Ignore();
 
         descriptor.Field("nodeId")
             .Type<StringType>()
@@ -35,6 +36,9 @@ public class AuditLogType : ObjectType<AuditLogDto>
                     using var doc = JsonDocument.Parse(dto.Headers);
                     if (!doc.RootElement.TryGetProperty("entityType", out var entityTypeProp)
                         || entityTypeProp.GetString() != "RefTest")
+                        return null;
+
+                    if (!dto.RefTestExists)
                         return null;
 
                     return EncodeRelayId("RefTest", guid);

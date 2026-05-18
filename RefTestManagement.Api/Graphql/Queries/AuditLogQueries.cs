@@ -32,7 +32,8 @@ public static class AuditLogQueries
                 ActorName = a.ActorName,
                 ActorEmail = a.ActorEmail,
                 Headers = a.Headers,
-                IsArchived = a.IsArchived
+                IsArchived = a.IsArchived,
+                RefTestExists = context.RefTests.Any(rt => rt.Id.ToString() == a.StreamId)
             });
     }
 }

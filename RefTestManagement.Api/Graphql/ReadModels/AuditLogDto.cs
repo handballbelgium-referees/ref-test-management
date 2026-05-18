@@ -13,4 +13,6 @@ public class AuditLogDto
     public string ActorEmail { get; init; } = string.Empty;
     public string? Headers { get; init; }
     public bool IsArchived { get; init; }
+    /// <summary>True when the referenced RefTest aggregate still exists in the database.</summary>
+    public bool RefTestExists { get; init; }
 }
