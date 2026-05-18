@@ -1,6 +1,7 @@
-import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
+import { SortEnumType } from '../../../../../graphql/generated';
 import { LocalizedDate } from '../../../shared/pipes/localized-date';
 import { AuditLogEntry } from '../../types';
 import { AuditLogEntryData } from '../audit-log-entry-data/audit-log-entry-data';
@@ -16,6 +17,10 @@ import { AuditLogEventBadge } from '../audit-log-event-badge/audit-log-event-bad
 export class AuditLogTable {
   readonly entries = input.required<AuditLogEntry[]>();
   readonly canLink = input<boolean>(false);
+  readonly sortField = input<string>('seqId');
+  readonly sortDirection = input<SortEnumType>('DESC');
+
+  readonly sortColumn = output<string>();
 
   private readonly _expanded = signal<Set<string>>(new Set());
 
@@ -34,5 +39,10 @@ export class AuditLogTable {
 
   protected canLinkEntry(entry: AuditLogEntry): boolean {
     return this.canLink() && entry.nodeId != null;
+  }
+
+  protected getAriaSort(field: string): 'none' | 'ascending' | 'descending' {
+    if (this.sortField() !== field) return 'none';
+    return this.sortDirection() === 'ASC' ? 'ascending' : 'descending';
   }
 }

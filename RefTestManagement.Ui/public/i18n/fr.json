@@ -656,7 +656,7 @@
     "showing_plural": "Affichage de {{displayed}} sur {{total}} entrées",
     "filter": {
       "title": "Filtres",
-      "streamIdLabel": "ID d'agrégat",
+      "streamIdLabel": "Id",
       "streamIdPlaceholder": "ex. abc-123...",
       "typeLabel": "Type d'événement",
       "actorLabel": "Acteur",
@@ -669,7 +669,7 @@
       "timestamp": "Horodatage",
       "actor": "Acteur",
       "eventType": "Événement",
-      "streamId": "Lien",
+      "streamId": "Id",
       "data": "Détails"
     },
     "eventType": {

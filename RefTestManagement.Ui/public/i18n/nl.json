@@ -655,7 +655,7 @@
     "showing_plural": "{{displayed}} van {{total}} entries weergegeven",
     "filter": {
       "title": "Filters",
-      "streamIdLabel": "Aggregaat-ID",
+      "streamIdLabel": "Id",
       "streamIdPlaceholder": "bijv. abc-123...",
       "typeLabel": "Gebeurtenistype",
       "actorLabel": "Actor",
@@ -668,7 +668,7 @@
       "timestamp": "Tijdstempel",
       "actor": "Actor",
       "eventType": "Gebeurtenis",
-      "streamId": "Link",
+      "streamId": "Id",
       "data": "Details"
     },
     "eventType": {

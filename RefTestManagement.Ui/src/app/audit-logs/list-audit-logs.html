@@ -25,7 +25,13 @@
       </div>
     } @else {
       <!-- Table / Cards -->
-      <app-audit-log-table [entries]="entries()" [canLink]="canLink()" />
+      <app-audit-log-table
+        [entries]="entries()"
+        [canLink]="canLink()"
+        [sortField]="sortField()"
+        [sortDirection]="sortDirection()"
+        (sortColumn)="onSortColumn($event)"
+      />
 
       <!-- Pagination -->
       @if (entries().length > 0) {

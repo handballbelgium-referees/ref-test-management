@@ -31,9 +31,15 @@ export class ListAuditLogs {
   protected readonly canLink = computed(() =>
     this._permissions.hasPermission(Permissions.RefTests.ViewDetail),
   );
+  protected readonly sortField = computed(() => this._data.sortField());
+  protected readonly sortDirection = computed(() => this._data.sortDirection());
 
   protected onFilterChange(filter: AuditLogDtoFilterInput | null): void {
     this._data.applyFilter(filter);
+  }
+
+  protected onSortColumn(field: string): void {
+    this._data.applySort(field);
   }
 
   protected loadMore(): void {
