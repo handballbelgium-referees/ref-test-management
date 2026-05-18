@@ -293,6 +293,7 @@ public class RefTest : IHasDomainEvents
         var oldNumberOfQuestions = NumberOfQuestions;
         var oldMaxTimeInMinutes = MaxTimeInMinutes;
         var oldTitleId = TitleId;
+        var oldQuestionPoolCount = QuestionIds.Count;
 
         TitleId = titleId;
         NumberOfQuestions = numberOfQuestions;
@@ -304,7 +305,7 @@ public class RefTest : IHasDomainEvents
             NewTitleId: titleId,
             oldNumberOfQuestions, numberOfQuestions,
             oldMaxTimeInMinutes, maxTimeInMinutes,
-            QuestionIds.Count));
+            oldQuestionPoolCount, QuestionIds.Count));
     }
 
     public void ExtendTime(int additionalMinutes)

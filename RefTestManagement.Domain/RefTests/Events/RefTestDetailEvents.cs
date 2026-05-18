@@ -27,7 +27,8 @@ public sealed record RefTestConfigurationUpdatedEvent(
     int NewNumberOfQuestions,
     int OldMaxTimeInMinutes,
     int NewMaxTimeInMinutes,
-    int QuestionPoolCount) : DomainEventBase, IDomainEventWithResolution
+    int OldQuestionPoolCount,
+    int NewQuestionPoolCount) : DomainEventBase, IDomainEventWithResolution
 {
     public override string ActionName => "RefTestConfigurationUpdated";
 
@@ -44,7 +45,9 @@ public sealed record RefTestConfigurationUpdatedEvent(
         maxTimeInMinutes = OldMaxTimeInMinutes != NewMaxTimeInMinutes
             ? new { old = OldMaxTimeInMinutes, @new = NewMaxTimeInMinutes }
             : (object?)null,
-        questionPoolCount = QuestionPoolCount
+        questionPoolCount = OldQuestionPoolCount != NewQuestionPoolCount
+            ? new { old = OldQuestionPoolCount, @new = NewQuestionPoolCount }
+            : (object?)null
     };
 }
 
