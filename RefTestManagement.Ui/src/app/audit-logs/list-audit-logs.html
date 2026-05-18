@@ -22,7 +22,7 @@
       (sortingChange)="onSortingChange($event)"
     />
 
-    @if (loading()) {
+    @if (isInitialLoading()) {
       <!-- Loading State -->
       <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
         <div
@@ -64,6 +64,28 @@
               class="mx-auto flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               [attr.aria-label]="'audit-logs.loadMore' | translate"
             >
+              @if (loading()) {
+                <svg
+                  class="animate-spin h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  />
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
+                  />
+                </svg>
+              }
               {{ 'audit-logs.loadMore' | translate }}
             </button>
           }

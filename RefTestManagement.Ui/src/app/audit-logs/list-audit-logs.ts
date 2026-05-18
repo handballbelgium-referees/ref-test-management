@@ -29,6 +29,9 @@ export class ListAuditLogs {
   protected readonly hasNextPage = computed(
     () => this._data.queryResult()?.pageInfo.hasNextPage ?? false,
   );
+  protected readonly isInitialLoading = computed(
+    () => this.loading() && this.entries().length === 0,
+  );
   protected readonly canLink = computed(() =>
     this._permissions.hasPermission(Permissions.RefTests.ViewDetail),
   );
