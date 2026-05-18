@@ -14,6 +14,7 @@ public class AuditLogOptions
     internal HashSet<string> ListPropertyNames { get; } = [];
     internal Dictionary<string, (string OutputKey, Func<object, DbContext, object?> Resolver)> PropertyResolvers { get; } = new();
     internal Dictionary<string, (string OutputKey, string ItemLabel)> ListSummaries { get; } = new();
+    internal Dictionary<string, Func<Guid, DbContext, string?>> EntityNameResolvers { get; } = new();
 
     public AuditLogOptions ExcludeEntity<T>()
     {
@@ -49,6 +50,12 @@ public class AuditLogOptions
     public AuditLogOptions SummarizeList(string propertyName, string outputKey, string itemLabel = "items")
     {
         ListSummaries[propertyName] = (outputKey, itemLabel);
+        return this;
+    }
+
+    public AuditLogOptions RegisterEntityResolver(string entityTypeName, Func<Guid, DbContext, string?> resolver)
+    {
+        EntityNameResolvers[entityTypeName] = resolver;
         return this;
     }
 }

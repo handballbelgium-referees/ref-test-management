@@ -650,38 +650,69 @@
     "subtitle": "Volledige geschiedenis van alle systeemwijzigingen",
     "loading": "Auditlogboek laden...",
     "empty": "Geen auditlogboek-entries gevonden",
-    "totalCount": "{{count}} entries",
     "loadMore": "Meer laden",
-    "loadingMore": "Laden...",
     "showing": "{{displayed}} van {{total}} entry weergegeven",
     "showing_plural": "{{displayed}} van {{total}} entries weergegeven",
     "filter": {
       "title": "Filters",
-      "entityTypeLabel": "Entiteitstype",
-      "entityTypePlaceholder": "bijv. RefTest",
-      "actionLabel": "Actie",
+      "streamIdLabel": "Aggregaat-ID",
+      "streamIdPlaceholder": "bijv. abc-123...",
+      "typeLabel": "Gebeurtenistype",
       "actorLabel": "Actor",
       "actorPlaceholder": "Naam of e-mail",
-      "allActions": "Alle acties",
+      "allTypes": "Alle gebeurtenistypes",
       "apply": "Toepassen",
       "clear": "Wissen"
     },
     "column": {
       "timestamp": "Tijdstempel",
       "actor": "Actor",
-      "action": "Actie",
-      "entityType": "Entiteitstype",
-      "entityId": "Entiteits-ID",
-      "changes": "Wijzigingen"
+      "eventType": "Gebeurtenis",
+      "streamId": "Link",
+      "data": "Details"
     },
-    "action": {
-      "created": "Aangemaakt",
-      "modified": "Gewijzigd",
-      "deleted": "Verwijderd"
+    "eventType": {
+      "RefTestCreated": "Aangemaakt",
+      "RefTestApproved": "Goedgekeurd",
+      "RefTestRejected": "Afgekeurd",
+      "RefTestDetailsUpdated": "Details bijgewerkt",
+      "RefTestConfigurationUpdated": "Configuratie bijgewerkt",
+      "RefTestNotificationSettingsUpdated": "Meldingsinstellingen bijgewerkt",
+      "RefTestTimeExtended": "Tijd verlengd",
+      "RefTestTokenRegenerated": "Token opnieuw gegenereerd",
+      "RefTestSoftReset": "Zachte reset",
+      "RefTestHardReset": "Harde reset",
+      "RefTestRevived": "Hersteld",
+      "RefTestDeleted": "Verwijderd",
+      "RefTestInvitationSent": "Uitnodiging verstuurd",
+      "RefTestResultsSent": "Resultaten verstuurd",
+      "RefTestExpired": "Verlopen",
+      "RefTestTitleCreated": "Titel aangemaakt",
+      "EntityCreated": "Aangemaakt",
+      "EntityModified": "Gewijzigd",
+      "EntityDeleted": "Verwijderd"
     },
     "changes": {
-      "show": "Wijzigingen tonen",
-      "hide": "Wijzigingen verbergen"
+      "show": "Details tonen",
+      "hide": "Details verbergen"
+    },
+    "field": {
+      "firstName": "Voornaam",
+      "lastName": "Achternaam",
+      "email": "E-mail",
+      "title": "Titel",
+      "numberOfQuestions": "Aantal vragen",
+      "maxTimeInMinutes": "Maximale tijd (minuten)",
+      "sendInvitationsAutomatically": "Uitnodigingen automatisch versturen",
+      "sendResultsAutomatically": "Resultaten automatisch versturen",
+      "requiresApproval": "Goedkeuring vereist",
+      "questionPoolCount": "Aantal beschikbare vragen",
+      "additionalMinutes": "Extra minuten",
+      "tokenRegenerated": "Token opnieuw gegenereerd",
+      "reason": "Reden",
+      "value": "Waarde",
+      "streamId": "Aggregaat-ID",
+      "version": "Versie"
     }
   }
 }

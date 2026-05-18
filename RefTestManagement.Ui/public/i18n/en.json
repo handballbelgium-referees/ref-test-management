@@ -650,38 +650,69 @@
     "subtitle": "Complete history of all system changes",
     "loading": "Loading audit log...",
     "empty": "No audit log entries found",
-    "totalCount": "{{count}} entries",
     "loadMore": "Load more",
-    "loadingMore": "Loading...",
     "showing": "Showing {{displayed}} of {{total}} entry",
     "showing_plural": "Showing {{displayed}} of {{total}} entries",
     "filter": {
       "title": "Filters",
-      "entityTypeLabel": "Entity type",
-      "entityTypePlaceholder": "e.g. RefTest",
-      "actionLabel": "Action",
+      "streamIdLabel": "Aggregate ID",
+      "streamIdPlaceholder": "e.g. abc-123...",
+      "typeLabel": "Event type",
       "actorLabel": "Actor",
       "actorPlaceholder": "Name or email",
-      "allActions": "All actions",
+      "allTypes": "All event types",
       "apply": "Apply",
       "clear": "Clear"
     },
     "column": {
       "timestamp": "Timestamp",
       "actor": "Actor",
-      "action": "Action",
-      "entityType": "Entity Type",
-      "entityId": "Entity ID",
-      "changes": "Changes"
+      "eventType": "Event",
+      "streamId": "Link",
+      "data": "Details"
     },
-    "action": {
-      "created": "Created",
-      "modified": "Modified",
-      "deleted": "Deleted"
+    "eventType": {
+      "RefTestCreated": "Created",
+      "RefTestApproved": "Approved",
+      "RefTestRejected": "Rejected",
+      "RefTestDetailsUpdated": "Details Updated",
+      "RefTestConfigurationUpdated": "Configuration Updated",
+      "RefTestNotificationSettingsUpdated": "Notification Settings Updated",
+      "RefTestTimeExtended": "Time Extended",
+      "RefTestTokenRegenerated": "Token Regenerated",
+      "RefTestSoftReset": "Soft Reset",
+      "RefTestHardReset": "Hard Reset",
+      "RefTestRevived": "Revived",
+      "RefTestDeleted": "Deleted",
+      "RefTestInvitationSent": "Invitation Sent",
+      "RefTestResultsSent": "Results Sent",
+      "RefTestExpired": "Expired",
+      "RefTestTitleCreated": "Title Created",
+      "EntityCreated": "Created",
+      "EntityModified": "Modified",
+      "EntityDeleted": "Deleted"
     },
     "changes": {
-      "show": "Show changes",
-      "hide": "Hide changes"
+      "show": "Show details",
+      "hide": "Hide details"
+    },
+    "field": {
+      "firstName": "First Name",
+      "lastName": "Last Name",
+      "email": "Email",
+      "title": "Title",
+      "numberOfQuestions": "Number of Questions",
+      "maxTimeInMinutes": "Max Time (minutes)",
+      "sendInvitationsAutomatically": "Send Invitations Automatically",
+      "sendResultsAutomatically": "Send Results Automatically",
+      "requiresApproval": "Requires Approval",
+      "questionPoolCount": "Question Pool Count",
+      "additionalMinutes": "Additional Minutes",
+      "tokenRegenerated": "Token Regenerated",
+      "reason": "Reason",
+      "value": "Value",
+      "streamId": "Aggregate ID",
+      "version": "Version"
     }
   }
 }

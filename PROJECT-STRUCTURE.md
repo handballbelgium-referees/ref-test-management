@@ -22,7 +22,7 @@ ref-test-management/
 │   │   ├── BackgroundJobService.cs       # Job queue processor (emails, PDFs, reports, approval notifications)
 │   │   ├── PermissionSyncService.cs      # Syncs Auth0 API permissions on startup
 │   │   ├── RefTestExpirationService.cs   # Automatic RefTest expiration (runs every 5 min)
-│   │   └── AuditLogCleanupService.cs     # Deletes audit log entries older than retention period
+│   │   └── AuditLogCleanupService.cs     # Soft-archives audit events older than retention period (sets IsArchived = true)
 │   ├── Graphql/                          # Hot Chocolate GraphQL (Clean Architecture)
 │   │   ├── Mutations/                    # 🔷 All GraphQL Mutations (organized by domain)
 │   │   │   ├── Lifecycle/                # User test execution mutations
@@ -64,7 +64,7 @@ ref-test-management/
 │   │   │       └── User.cs               # User DTO (FirstName, LastName, Email)
 │   │   ├── Queries/                      # 🔷 All GraphQL Queries
 │   │   │   ├── RefTestQueries.cs         # RefTest queries (list, detail, titles)
-│   │   │   ├── AuditLogQueries.cs        # Audit log paginated query (requires audit-logs:view)
+│   │   │   ├── AuditLogQueries.cs        # Audit log paginated query ordered by SeqId DESC (requires audit-logs:view)
 │   │   │   └── DataLoaders.cs            # Batch loading for N+1 optimization
 │   │   ├── Subscriptions/                # 🔷 Real-time event subscriptions
 │   │   │   ├── RefTestSubscriptions.cs   # Subscription definitions with authorization
@@ -92,11 +92,15 @@ ref-test-management/
 │   ├── appsettings.json                  # Configuration (DB, Auth0, Email, etc.)
 │   └── wwwroot/                          # Angular production build (post-build)
 │
-├── RefTestManagement.AuditLog/           # 📋 Audit Log Library (.NET 10)
-│   ├── AuditLogEntry.cs                  # Audit log entity (Id, EntityType, EntityId, Action, Changes, Actor, Timestamp)
-│   ├── AuditLogEntryConfiguration.cs     # EF Core entity configuration with indexes
-│   ├── AuditLogOptions.cs                # Configuration (RetentionDays, CleanupInterval, exclusions, list properties)
-│   ├── AuditSaveChangesInterceptor.cs    # EF Core interceptor — captures all write operations in same transaction
+├── RefTestManagement.AuditLog/           # 📋 Audit Log Library (.NET 10) — Marten-style event store
+│   ├── AuditEvent.cs                     # Immutable event record (SeqId, StreamId, Version, Type, Data JSON, Actor, Timestamp, IsArchived)
+│   ├── AuditEventConfiguration.cs        # EF Core entity configuration (identity key, indexes on StreamId/Type/Timestamp, unique StreamId+Version)
+│   ├── IDomainEvent.cs                   # Domain event interface (ActionName, OccurredAt, GetChanges)
+│   ├── IDomainEventWithResolution.cs     # Optional interface for events that resolve entity IDs to display values via a resolver supplied by the interceptor
+│   ├── IHasDomainEvents.cs               # Aggregate interface — implemented by entities that raise domain events
+│   ├── DomainEventBase.cs                # Abstract base record for domain events
+│   ├── AuditLogOptions.cs                # Configuration (RetentionDays, CleanupInterval, exclusions, entity name resolvers)
+│   ├── AuditSaveChangesInterceptor.cs    # EF Core interceptor — converts domain events (or property diffs) to AuditEvent rows; calls IDomainEventWithResolution.GetChanges(resolver) when available
 │   ├── AuditLogServiceExtensions.cs      # AddAuditLogging() DI extension
 │   └── RefTestManagement.AuditLog.csproj # Depends on EF Core, ASP.NET Core HTTP Abstractions
 │
@@ -144,12 +148,18 @@ ref-test-management/
 │   │   ├── JobStatus.cs                  # Job status enum (Pending, Processing, Completed, Failed)
 │   │   └── JobType.cs                    # Job type enum (incl. ApprovalNotificationEmail)
 │   ├── RefTests/                         # RefTest domain entities
-│   │   ├── RefTest.cs                    # RefTest aggregate root (Approve/Reject methods, RejectionReason)
+│   │   ├── RefTest.cs                    # RefTest aggregate root — implements IHasDomainEvents; raises typed events from every mutating method
 │   │   ├── RefTestStatus.cs              # Status enum (incl. PendingApproval, Rejected)
-│   │   └── RefTestExceptions.cs          # Domain exceptions (incl. RefTestValidationException)
+│   │   ├── RefTestExceptions.cs          # Domain exceptions (incl. RefTestValidationException)
+│   │   └── Events/                       # 🔔 Typed domain events raised by RefTest
+│   │       ├── RefTestCreatedEvent.cs    # Created event with full initial snapshot
+│   │       ├── RefTestSimpleEvents.cs    # Approved, Rejected, Expired, Deleted, Revived, InvitationSent, ResultsSent, TokenRegenerated, HardReset
+│   │       └── RefTestDetailEvents.cs   # DetailsUpdated, ConfigurationUpdated, NotificationSettingsUpdated, TimeExtended, SoftReset
 │   ├── RefTestTitles/                    # RefTest title domain entities
-│   │   └── RefTestTitle.cs               # RefTest title entity
-│   └── RefTestManagement.Domain.csproj   # No external dependencies (pure domain)
+│   │   ├── RefTestTitle.cs               # RefTest title entity — implements IHasDomainEvents
+│   │   └── Events/
+│   │       └── RefTestTitleCreatedEvent.cs  # Raised when a new title is created
+│   └── RefTestManagement.Domain.csproj   # References AuditLog project for IHasDomainEvents
 │
 ├── RefTestManagement.Security/           # 🔐 Security Layer (.NET 10)
 │   ├── Permissions.cs                    # All permission constants (incl. ref-tests:approve)
@@ -162,7 +172,7 @@ ref-test-management/
 │   └── RefTestManagement.Security.csproj # No project dependencies (standalone)
 │
 ├── RefTestManagement.Infrastructure/     # 🔷 Infrastructure Layer (.NET 10)
-│   ├── RefTestManagementContext.cs       # EF Core DbContext (incl. AuditLogs DbSet)
+│   ├── RefTestManagementContext.cs       # EF Core DbContext (incl. AuditEvents DbSet)
 │   ├── Migrations/                       # Database migrations
 │   ├── Configurations/                   # EF Core entity configurations
 │   │   ├── RefTestConfiguration.cs       # Includes RejectionReason column
@@ -206,9 +216,15 @@ ref-test-management/
 │   │   │   │   └── home.ts               # Landing page component (incl. Audit Logs quick action)
 │   │   │   │
 │   │   │   ├── audit-logs/               # 📋 Audit Log
-│   │   │   │   ├── audit-log-data.ts     # Signal-based service (paginated GraphQL query)
-│   │   │   │   ├── list-audit-logs.ts    # List component (filters, expandable changes)
-│   │   │   │   └── list-audit-logs.html  # Template (table, entity linking, list diffs)
+│   │   │   │   ├── audit-log-data.ts     # Signal-based service (paginated GraphQL query, sorted by SeqId DESC)
+│   │   │   │   ├── types.ts              # AuditLogEntry and ParsedChange interfaces
+│   │   │   │   ├── list-audit-logs.ts    # Slim orchestrator component (delegates to sub-components)
+│   │   │   │   ├── list-audit-logs.html  # Template — hero, filter, table/cards, pagination
+│   │   │   │   └── components/
+│   │   │   │       ├── audit-log-filter/          # Filter card (streamId, event type, actor)
+│   │   │   │       ├── audit-log-table/           # Dual-view table: mobile card list + desktop table
+│   │   │   │       ├── audit-log-event-badge/     # Colored badge for each event type
+│   │   │   │       └── audit-log-entry-data/      # Expandable JSON payload display
 │   │   │   │
 │   │   │   ├── ref-tests/                # 📋 RefTest Management
 │   │   │   │   ├── services/             # 🎯 Shared ref-tests services

@@ -1,10 +1,17 @@
 ﻿using System.ComponentModel.DataAnnotations.Schema;
+using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
+using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
 namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
-public class RefTest
+public class RefTest : IHasDomainEvents
 {
+    private readonly List<IDomainEvent> _domainEvents = [];
+    public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
+    public void ClearDomainEvents() => _domainEvents.Clear();
+    private void RaiseDomainEvent(IDomainEvent e) => _domainEvents.Add(e);
+
     private RefTest(
         Guid titleId,
         string firstName,
@@ -112,7 +119,7 @@ public class RefTest
         if (maxTimeInMinutes <= 0)
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
-        return new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
+        var refTest = new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
             questionIds, sendInvitationAutomatically, sendResultsAutomatically)
         {
             Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending,
@@ -120,6 +127,15 @@ public class RefTest
             CreatorName = creatorName,
             CreatorEmail = creatorEmail
         };
+
+        refTest.RaiseDomainEvent(new RefTestCreatedEvent(
+            firstName, lastName, email,
+            TitleId: titleId,
+            numberOfQuestions, maxTimeInMinutes,
+            sendInvitationAutomatically, sendResultsAutomatically,
+            requiresApproval));
+
+        return refTest;
     }
 
     public void Approve()
@@ -132,6 +148,7 @@ public class RefTest
         CreatedAt = DateTime.UtcNow;
         RejectionReason = null;
         // ScheduledAt is preserved as set by the creator
+        RaiseDomainEvent(new RefTestApprovedEvent());
     }
 
     public void Reject(string reason)
@@ -145,11 +162,13 @@ public class RefTest
 
         Status = RefTestStatus.Rejected;
         RejectionReason = reason;
+        RaiseDomainEvent(new RefTestRejectedEvent(reason));
     }
 
     public void SendInvitation()
     {
         InvitationSentAt = DateTime.UtcNow;
+        RaiseDomainEvent(new RefTestInvitationSentEvent());
     }
 
     public void Start()
@@ -198,6 +217,7 @@ public class RefTest
     public void SendResults()
     {
         ResultsSentAt = DateTime.UtcNow;
+        RaiseDomainEvent(new RefTestResultsSentEvent());
     }
 
     public void Expire()
@@ -206,6 +226,7 @@ public class RefTest
             throw new InvalidRefTestStatusException("Only pending RefTests can be marked as expired");
 
         Status = RefTestStatus.Expired;
+        RaiseDomainEvent(new RefTestExpiredEvent());
     }
 
     public bool IsExpired(TimeSpan expirationIfNotStarted)
@@ -240,9 +261,18 @@ public class RefTest
         if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("Email is required", nameof(email));
 
+        var oldFirstName = FirstName;
+        var oldLastName = LastName;
+        var oldEmail = Email;
+
         FirstName = firstName;
         LastName = lastName;
         Email = email;
+
+        RaiseDomainEvent(new RefTestDetailsUpdatedEvent(
+            oldFirstName, firstName,
+            oldLastName, lastName,
+            oldEmail, email));
     }
 
     public void UpdateTestConfiguration(
@@ -260,10 +290,21 @@ public class RefTest
         if (maxTimeInMinutes <= 0)
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
+        var oldNumberOfQuestions = NumberOfQuestions;
+        var oldMaxTimeInMinutes = MaxTimeInMinutes;
+        var oldTitleId = TitleId;
+
         TitleId = titleId;
         NumberOfQuestions = numberOfQuestions;
         MaxTimeInMinutes = maxTimeInMinutes;
         QuestionIds = questionIds ?? [];
+
+        RaiseDomainEvent(new RefTestConfigurationUpdatedEvent(
+            OldTitleId: oldTitleId,
+            NewTitleId: titleId,
+            oldNumberOfQuestions, numberOfQuestions,
+            oldMaxTimeInMinutes, maxTimeInMinutes,
+            QuestionIds.Count));
     }
 
     public void ExtendTime(int additionalMinutes)
@@ -274,13 +315,18 @@ public class RefTest
         if (additionalMinutes <= 0)
             throw new ArgumentException("Additional minutes must be greater than 0", nameof(additionalMinutes));
 
+        var oldMax = MaxTimeInMinutes;
         MaxTimeInMinutes += additionalMinutes;
+        RaiseDomainEvent(new RefTestTimeExtendedEvent(additionalMinutes, oldMax, MaxTimeInMinutes));
     }
 
     public void UpdateNotificationSettings(
         bool? sendInvitationsAutomatically = null,
         bool? sendResultsAutomatically = null)
     {
+        var oldSendInvite = SendInvitationsAutomatically;
+        var oldSendResults = SendResultsAutomatically;
+
         // Can update sendInvitationsAutomatically only if pending and invitation not yet sent
         if (sendInvitationsAutomatically.HasValue &&
             Status == RefTestStatus.Pending &&
@@ -296,6 +342,10 @@ public class RefTest
         {
             SendResultsAutomatically = sendResultsAutomatically.Value;
         }
+
+        RaiseDomainEvent(new RefTestNotificationSettingsUpdatedEvent(
+            oldSendInvite, SendInvitationsAutomatically,
+            oldSendResults, SendResultsAutomatically));
     }
 
     public void RegenerateToken()
@@ -311,6 +361,8 @@ public class RefTest
         {
             InvitationSentAt = null;
         }
+
+        RaiseDomainEvent(new RefTestTokenRegeneratedEvent());
     }
 
     #endregion
@@ -341,7 +393,10 @@ public class RefTest
         Language = null;
 
         if (!regenerateToken)
+        {
+            RaiseDomainEvent(new RefTestSoftResetEvent(TokenRegenerated: false));
             return;
+        }
 
         // Optionally regenerate token
         Token = Guid.NewGuid().ToString("N");
@@ -351,6 +406,7 @@ public class RefTest
 
         // Keep: CreatedAt (for audit trail)
         // Note: InvitationSentAt is cleared if the token is regenerated, preserved otherwise
+        RaiseDomainEvent(new RefTestSoftResetEvent(TokenRegenerated: true));
     }
 
     public void HardReset()
@@ -382,7 +438,8 @@ public class RefTest
 
         // Always regenerate token for security
         Token = Guid.NewGuid().ToString("N");
- }
+        RaiseDomainEvent(new RefTestHardResetEvent());
+    }
 
     public void Revive()
     {
@@ -397,6 +454,12 @@ public class RefTest
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         InvitationSentAt = null;
+        RaiseDomainEvent(new RefTestRevivedEvent());
+    }
+
+    public void MarkDeleted()
+    {
+        RaiseDomainEvent(new RefTestDeletedEvent());
     }
 
     #endregion

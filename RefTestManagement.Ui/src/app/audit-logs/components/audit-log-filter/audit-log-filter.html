@@ -1,0 +1,138 @@
+<div class="bg-white rounded-xl shadow-sm border border-neutral-200">
+  <div class="px-6 py-4 border-b border-neutral-200">
+    <h2 class="text-base font-semibold text-neutral-900">
+      {{ 'audit-logs.filter.title' | translate }}
+    </h2>
+  </div>
+
+  <div class="px-4 sm:px-6 py-4">
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-[1fr_1fr_1fr_auto] gap-3 items-end">
+      <!-- Stream ID -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-neutral-500">
+          {{ 'audit-logs.filter.streamIdLabel' | translate }}
+        </label>
+        <input
+          type="text"
+          class="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          placeholder="{{ 'audit-logs.filter.streamIdPlaceholder' | translate }}"
+          [value]="streamId()"
+          (input)="streamId.set($any($event.target).value)"
+        />
+      </div>
+
+      <!-- Event type -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-neutral-500">
+          {{ 'audit-logs.filter.typeLabel' | translate }}
+        </label>
+        <div class="relative">
+          <select
+            title="{{ 'audit-logs.filter.typeLabel' | translate }}"
+            class="w-full rounded-lg border border-neutral-300 pl-3 pr-8 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 appearance-none bg-white"
+            [value]="type()"
+            (change)="type.set($any($event.target).value)"
+          >
+            <option value="">{{ 'audit-logs.filter.allTypes' | translate }}</option>
+            <option value="RefTestTitleCreated">
+              {{ 'audit-logs.eventType.RefTestTitleCreated' | translate }}
+            </option>
+            <option value="RefTestCreated">
+              {{ 'audit-logs.eventType.RefTestCreated' | translate }}
+            </option>
+            <option value="RefTestApproved">
+              {{ 'audit-logs.eventType.RefTestApproved' | translate }}
+            </option>
+            <option value="RefTestRejected">
+              {{ 'audit-logs.eventType.RefTestRejected' | translate }}
+            </option>
+            <option value="RefTestDetailsUpdated">
+              {{ 'audit-logs.eventType.RefTestDetailsUpdated' | translate }}
+            </option>
+            <option value="RefTestConfigurationUpdated">
+              {{ 'audit-logs.eventType.RefTestConfigurationUpdated' | translate }}
+            </option>
+            <option value="RefTestNotificationSettingsUpdated">
+              {{ 'audit-logs.eventType.RefTestNotificationSettingsUpdated' | translate }}
+            </option>
+            <option value="RefTestTimeExtended">
+              {{ 'audit-logs.eventType.RefTestTimeExtended' | translate }}
+            </option>
+            <option value="RefTestTokenRegenerated">
+              {{ 'audit-logs.eventType.RefTestTokenRegenerated' | translate }}
+            </option>
+            <option value="RefTestSoftReset">
+              {{ 'audit-logs.eventType.RefTestSoftReset' | translate }}
+            </option>
+            <option value="RefTestHardReset">
+              {{ 'audit-logs.eventType.RefTestHardReset' | translate }}
+            </option>
+            <option value="RefTestRevived">
+              {{ 'audit-logs.eventType.RefTestRevived' | translate }}
+            </option>
+            <option value="RefTestDeleted">
+              {{ 'audit-logs.eventType.RefTestDeleted' | translate }}
+            </option>
+            <option value="RefTestInvitationSent">
+              {{ 'audit-logs.eventType.RefTestInvitationSent' | translate }}
+            </option>
+            <option value="RefTestResultsSent">
+              {{ 'audit-logs.eventType.RefTestResultsSent' | translate }}
+            </option>
+            <option value="RefTestExpired">
+              {{ 'audit-logs.eventType.RefTestExpired' | translate }}
+            </option>
+          </select>
+          <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-2">
+            <svg
+              class="h-4 w-4 text-neutral-400"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Actor -->
+      <div class="flex flex-col gap-1">
+        <label class="text-xs font-medium text-neutral-500">
+          {{ 'audit-logs.filter.actorLabel' | translate }}
+        </label>
+        <input
+          type="search"
+          class="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
+          placeholder="{{ 'audit-logs.filter.actorPlaceholder' | translate }}"
+          [value]="actor()"
+          (input)="actor.set($any($event.target).value)"
+        />
+      </div>
+
+      <!-- Buttons -->
+      <div class="flex gap-2 sm:self-end">
+        <button
+          type="button"
+          class="flex-1 sm:flex-none rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition-colors"
+          (click)="apply()"
+        >
+          {{ 'audit-logs.filter.apply' | translate }}
+        </button>
+        <button
+          type="button"
+          class="flex-1 sm:flex-none rounded-lg border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 transition-colors"
+          (click)="clear()"
+        >
+          {{ 'audit-logs.filter.clear' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

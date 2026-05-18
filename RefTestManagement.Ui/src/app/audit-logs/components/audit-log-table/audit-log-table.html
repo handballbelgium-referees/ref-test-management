@@ -1,0 +1,214 @@
+<!-- ─── Mobile: card list (hidden on md+) ─────────────────────────────────── -->
+<div class="md:hidden">
+  @if (entries().length === 0) {
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+      <svg
+        class="h-12 w-12 text-neutral-400 mx-auto mb-4"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+        />
+      </svg>
+      <span class="text-sm text-neutral-600">{{ 'audit-logs.empty' | translate }}</span>
+    </div>
+  }
+
+  <div class="space-y-3">
+    @for (entry of entries(); track entry.seqId) {
+      <div class="bg-white rounded-xl border border-neutral-200 p-4 space-y-2.5">
+        <!-- Row 1: badge -->
+        <div>
+          <app-audit-log-event-badge [type]="entry.type" />
+        </div>
+
+        <!-- Row 2: timestamp -->
+        <div class="text-xs text-neutral-400">
+          {{ entry.timestamp | localizedDate: 'dd/MM/yyyy HH:mm:ss' }}
+        </div>
+
+        <!-- Row 3: actor -->
+        <div>
+          <div class="text-sm font-medium text-neutral-900">{{ entry.actorName }}</div>
+          @if (entry.actorEmail) {
+            <div class="text-xs text-neutral-400">{{ entry.actorEmail }}</div>
+          }
+        </div>
+
+        <!-- Row 4: data toggle -->
+        @if (entry.data || canLinkEntry(entry)) {
+          <button
+            type="button"
+            class="text-xs text-primary-600 hover:underline"
+            (click)="toggle(entry.seqId.toString())"
+          >
+            {{
+              isExpanded(entry.seqId.toString())
+                ? ('audit-logs.changes.hide' | translate)
+                : ('audit-logs.changes.show' | translate)
+            }}
+          </button>
+
+          @if (isExpanded(entry.seqId.toString())) {
+            <div class="mt-1 pt-2.5 border-t border-neutral-100">
+              <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs">
+                <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
+                  'audit-logs.field.version' | translate
+                }}</span>
+                <span class="text-neutral-800 py-0.5">v{{ entry.version }}</span>
+                <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
+                  'audit-logs.field.streamId' | translate
+                }}</span>
+                @if (canLinkEntry(entry)) {
+                  <a
+                    [routerLink]="['/ref-tests', entry.nodeId]"
+                    class="font-mono text-primary-600 hover:text-primary-800 break-all py-0.5"
+                    >{{ entry.streamId }}</a
+                  >
+                } @else {
+                  <span class="font-mono text-neutral-800 break-all py-0.5">{{
+                    entry.streamId
+                  }}</span>
+                }
+                @if (entry.data) {
+                  <app-audit-log-entry-data [data]="entry.data" />
+                }
+              </div>
+            </div>
+          }
+        }
+      </div>
+    }
+  </div>
+</div>
+
+<!-- ─── Desktop: table (visible from md) ──────────────────────────────────── -->
+<div
+  class="hidden md:block bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden"
+>
+  <table class="min-w-full divide-y divide-neutral-200 text-sm">
+    <thead class="bg-neutral-50">
+      <tr>
+        <th
+          class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
+        >
+          {{ 'audit-logs.column.timestamp' | translate }}
+        </th>
+        <th
+          class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
+        >
+          {{ 'audit-logs.column.actor' | translate }}
+        </th>
+        <th
+          class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
+        >
+          {{ 'audit-logs.column.eventType' | translate }}
+        </th>
+        <th
+          class="px-6 py-3 text-left text-xs font-semibold uppercase tracking-wider text-neutral-500"
+        >
+          {{ 'audit-logs.column.data' | translate }}
+        </th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-neutral-100 bg-white">
+      @for (entry of entries(); track entry.seqId) {
+        <tr class="hover:bg-neutral-50 transition-colors">
+          <!-- Timestamp -->
+          <td class="px-6 py-4 whitespace-nowrap text-xs text-neutral-500">
+            {{ entry.timestamp | localizedDate: 'dd/MM/yyyy HH:mm:ss' }}
+          </td>
+
+          <!-- Actor -->
+          <td class="px-6 py-4">
+            <div class="font-medium text-neutral-900">{{ entry.actorName }}</div>
+            @if (entry.actorEmail) {
+              <div class="text-xs text-neutral-400">{{ entry.actorEmail }}</div>
+            }
+          </td>
+
+          <!-- Event type badge -->
+          <td class="px-6 py-4">
+            <app-audit-log-event-badge [type]="entry.type" />
+          </td>
+
+          <!-- Data toggle -->
+          <td class="px-6 py-4">
+            @if (entry.data || canLinkEntry(entry)) {
+              <button
+                type="button"
+                class="text-xs text-primary-600 hover:underline"
+                (click)="toggle(entry.seqId.toString())"
+              >
+                {{
+                  isExpanded(entry.seqId.toString())
+                    ? ('audit-logs.changes.hide' | translate)
+                    : ('audit-logs.changes.show' | translate)
+                }}
+              </button>
+            } @else {
+              <span class="text-neutral-300">—</span>
+            }
+          </td>
+        </tr>
+
+        <!-- Expanded data row -->
+        @if ((entry.data || canLinkEntry(entry)) && isExpanded(entry.seqId.toString())) {
+          <tr class="bg-neutral-50">
+            <td colspan="4" class="px-6 pb-5 pt-2">
+              <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs">
+                <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
+                  'audit-logs.field.version' | translate
+                }}</span>
+                <span class="text-neutral-800 py-0.5">v{{ entry.version }}</span>
+                <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
+                  'audit-logs.field.streamId' | translate
+                }}</span>
+                @if (canLinkEntry(entry)) {
+                  <a
+                    [routerLink]="['/ref-tests', entry.nodeId]"
+                    class="font-mono text-primary-600 hover:text-primary-800 break-all py-0.5"
+                    >{{ entry.streamId }}</a
+                  >
+                } @else {
+                  <span class="font-mono text-neutral-800 break-all py-0.5">{{
+                    entry.streamId
+                  }}</span>
+                }
+                @if (entry.data) {
+                  <app-audit-log-entry-data [data]="entry.data" />
+                }
+              </div>
+            </td>
+          </tr>
+        }
+      } @empty {
+        <tr>
+          <td colspan="4" class="px-6 py-16 text-center">
+            <div class="flex flex-col items-center gap-2">
+              <svg
+                class="h-12 w-12 text-neutral-400"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              <span class="text-sm text-neutral-600">{{ 'audit-logs.empty' | translate }}</span>
+            </div>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>

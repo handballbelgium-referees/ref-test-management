@@ -10,7 +10,7 @@ import {
 
 const PAGE_SIZE = 20;
 
-const DEFAULT_ORDER: AuditLogDtoSortInput[] = [{ timestamp: 'DESC' }];
+const DEFAULT_ORDER: AuditLogDtoSortInput[] = [{ seqId: 'DESC' }];
 
 @Injectable({ providedIn: 'root' })
 export class AuditLogData {

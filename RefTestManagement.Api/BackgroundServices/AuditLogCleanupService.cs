@@ -60,10 +60,10 @@ public class AuditLogCleanupService : BackgroundService
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
         var cutoff = DateTime.UtcNow.AddDays(-_options.RetentionDays);
-        var deleted = await context.AuditLogs
-            .Where(a => a.Timestamp < cutoff)
-            .ExecuteDeleteAsync(cancellationToken);
+        var archived = await context.AuditEvents
+            .Where(a => a.Timestamp < cutoff && !a.IsArchived)
+            .ExecuteUpdateAsync(s => s.SetProperty(e => e.IsArchived, true), cancellationToken);
 
-        ServiceLoggerMessages.LogCleanupCompleted(_logger, "AuditLogs", deleted);
+        ServiceLoggerMessages.LogCleanupCompleted(_logger, "AuditLogs", archived);
     }
 }

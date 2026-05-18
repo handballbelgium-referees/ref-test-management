@@ -654,38 +654,69 @@
     "subtitle": "Vollständige Historie aller Systemänderungen",
     "loading": "Auditprotokoll wird geladen...",
     "empty": "Keine Einträge gefunden",
-    "totalCount": "{{count}} Einträge",
     "loadMore": "Mehr laden",
-    "loadingMore": "Wird geladen...",
     "showing": "{{displayed}} von {{total}} Eintrag wird angezeigt",
     "showing_plural": "{{displayed}} von {{total}} Einträge werden angezeigt",
     "filter": {
       "title": "Filter",
-      "entityTypeLabel": "Entitätstyp",
-      "entityTypePlaceholder": "z. B. RefTest",
-      "actionLabel": "Aktion",
+      "streamIdLabel": "Aggregat-ID",
+      "streamIdPlaceholder": "z. B. abc-123...",
+      "typeLabel": "Ereignistyp",
       "actorLabel": "Akteur",
       "actorPlaceholder": "Name oder E-Mail",
-      "allActions": "Alle Aktionen",
+      "allTypes": "Alle Ereignistypen",
       "apply": "Anwenden",
       "clear": "Löschen"
     },
     "column": {
       "timestamp": "Zeitstempel",
       "actor": "Akteur",
-      "action": "Aktion",
-      "entityType": "Entitätstyp",
-      "entityId": "Entitäts-ID",
-      "changes": "Änderungen"
+      "eventType": "Ereignis",
+      "streamId": "Link",
+      "data": "Details"
     },
-    "action": {
-      "created": "Erstellt",
-      "modified": "Geändert",
-      "deleted": "Gelöscht"
+    "eventType": {
+      "RefTestCreated": "Erstellt",
+      "RefTestApproved": "Genehmigt",
+      "RefTestRejected": "Abgelehnt",
+      "RefTestDetailsUpdated": "Details aktualisiert",
+      "RefTestConfigurationUpdated": "Konfiguration aktualisiert",
+      "RefTestNotificationSettingsUpdated": "Benachrichtigungseinstellungen aktualisiert",
+      "RefTestTimeExtended": "Zeit verlängert",
+      "RefTestTokenRegenerated": "Token regeneriert",
+      "RefTestSoftReset": "Soft-Reset",
+      "RefTestHardReset": "Hard-Reset",
+      "RefTestRevived": "Wiederbelebt",
+      "RefTestDeleted": "Gelöscht",
+      "RefTestInvitationSent": "Einladung gesendet",
+      "RefTestResultsSent": "Ergebnisse gesendet",
+      "RefTestExpired": "Abgelaufen",
+      "RefTestTitleCreated": "Titel erstellt",
+      "EntityCreated": "Erstellt",
+      "EntityModified": "Geändert",
+      "EntityDeleted": "Gelöscht"
     },
     "changes": {
-      "show": "Änderungen anzeigen",
-      "hide": "Änderungen ausblenden"
+      "show": "Details anzeigen",
+      "hide": "Details ausblenden"
+    },
+    "field": {
+      "firstName": "Vorname",
+      "lastName": "Nachname",
+      "email": "E-Mail",
+      "title": "Titel",
+      "numberOfQuestions": "Anzahl Fragen",
+      "maxTimeInMinutes": "Maximale Zeit (Minuten)",
+      "sendInvitationsAutomatically": "Einladungen automatisch senden",
+      "sendResultsAutomatically": "Ergebnisse automatisch senden",
+      "requiresApproval": "Genehmigung erforderlich",
+      "questionPoolCount": "Anzahl verfügbarer Fragen",
+      "additionalMinutes": "Zusätzliche Minuten",
+      "tokenRegenerated": "Token regeneriert",
+      "reason": "Grund",
+      "value": "Wert",
+      "streamId": "Aggregat-ID",
+      "version": "Version"
     }
   }
 }

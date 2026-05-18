@@ -8,14 +8,17 @@ query GetAuditLogs(
     edges {
       cursor
       node {
+        seqId
         id
-        entityType
-        entityId
-        action
-        changes
+        streamId
+        version
+        data
+        type
+        timestamp
         actorName
         actorEmail
-        timestamp
+        headers
+        nodeId
       }
     }
     pageInfo {
