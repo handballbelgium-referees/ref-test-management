@@ -14,7 +14,7 @@
         {{ 'home.hero.subtitle' | translate }}
       </p>
       <div class="flex flex-col sm:flex-row gap-4 justify-center items-center pt-4">
-        @if (!isLoggedIn()) {
+        @if (!isLoading() && !isLoggedIn()) {
           <button
             type="button"
             (click)="login()"
