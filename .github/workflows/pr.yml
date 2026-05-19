@@ -62,9 +62,9 @@ jobs:
           dotnet-version: '${{ env.DOTNET_VERSION }}'
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore RefTestManagement.sln
+        run: dotnet restore RefTestManagement.slnx
         # Makes sure all NuGet packages are restored for .NET projects
 
       - name: 🏗 Build .NET application
-        run: dotnet build RefTestManagement.sln --configuration Release --no-restore
+        run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
         # Validates .NET application can build successfully
