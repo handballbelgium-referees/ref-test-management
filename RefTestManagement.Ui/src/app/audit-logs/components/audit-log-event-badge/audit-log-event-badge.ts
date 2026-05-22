@@ -7,7 +7,7 @@ import { TranslatePipe } from '@ngx-translate/core';
   imports: [NgClass, TranslatePipe],
   template: `
     <span
-      class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold"
+      class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap"
       [ngClass]="badgeClass()"
     >
       @if (entityType()) {

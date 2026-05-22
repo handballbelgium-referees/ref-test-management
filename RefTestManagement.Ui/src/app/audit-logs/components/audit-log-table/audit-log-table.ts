@@ -23,6 +23,7 @@ export class AuditLogTable {
   readonly sortColumn = output<string>();
 
   private readonly _expanded = signal<Set<string>>(new Set());
+  private readonly _copiedId = signal<string | null>(null);
 
   protected toggle(id: string): void {
     this._expanded.update((set) => {
@@ -39,6 +40,18 @@ export class AuditLogTable {
 
   protected canLinkEntry(entry: AuditLogEntry): boolean {
     return this.canLink() && entry.nodeId != null;
+  }
+
+  protected async copyToClipboard(text: string, id: string): Promise<void> {
+    await navigator.clipboard.writeText(text);
+    this._copiedId.set(id);
+    setTimeout(() => {
+      if (this._copiedId() === id) this._copiedId.set(null);
+    }, 2000);
+  }
+
+  protected isCopied(id: string): boolean {
+    return this._copiedId() === id;
   }
 
   protected canShowDetails(entry: AuditLogEntry): boolean {

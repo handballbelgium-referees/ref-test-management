@@ -21,26 +21,26 @@
 
   <div class="space-y-3">
     @for (entry of entries(); track entry.seqId) {
-      <div class="bg-white rounded-xl border border-neutral-200 p-4 space-y-2.5">
+      <div class="bg-white rounded-xl border border-neutral-200 p-4 space-y-2">
         <!-- Row 1: event badge -->
         <div>
           <app-audit-log-event-badge [type]="entry.type" [entityType]="getEntityType(entry)" />
         </div>
 
-        <!-- Row 2: timestamp -->
-        <div class="text-xs text-neutral-400">
-          {{ entry.timestamp | localizedDate: 'dd/MM/yyyy HH:mm:ss' }}
+        <!-- Row 2: actor + timestamp -->
+        <div class="flex items-start justify-between gap-2">
+          <div class="min-w-0">
+            <div class="text-sm font-medium text-neutral-900">{{ entry.actorName }}</div>
+            @if (entry.actorEmail) {
+              <div class="text-xs text-neutral-400 wrap-break-word">{{ entry.actorEmail }}</div>
+            }
+          </div>
+          <span class="text-xs text-neutral-400 whitespace-nowrap pt-0.5">
+            {{ entry.timestamp | localizedDate: 'dd/MM/yyyy HH:mm:ss' }}
+          </span>
         </div>
 
-        <!-- Row 3: actor -->
-        <div>
-          <div class="text-sm font-medium text-neutral-900">{{ entry.actorName }}</div>
-          @if (entry.actorEmail) {
-            <div class="text-xs text-neutral-400">{{ entry.actorEmail }}</div>
-          }
-        </div>
-
-        <!-- Row 4: data toggle -->
+        <!-- Row 3: data toggle -->
         @if (canShowDetails(entry)) {
           <button
             type="button"
@@ -55,30 +55,79 @@
           </button>
 
           @if (isExpanded(entry.seqId.toString())) {
-            <div class="mt-1 pt-2.5 border-t border-neutral-100">
-              <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs">
-                <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
+            <div class="mt-1 pt-2.5 border-t border-neutral-100 space-y-1.5 text-xs">
+              <!-- Version -->
+              <div class="flex items-center justify-between py-1.5 px-2.5 bg-neutral-50 rounded">
+                <span class="text-neutral-500 font-medium">{{
                   'audit-logs.field.version' | translate
                 }}</span>
-                <span class="text-neutral-800 py-0.5">v{{ entry.version }}</span>
-                <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
-                  'audit-logs.field.streamId' | translate
-                }}</span>
+                <span class="font-semibold text-neutral-800">v{{ entry.version }}</span>
+              </div>
+
+              <!-- Stream ID -->
+              <div class="py-1.5 px-2.5 bg-neutral-50 rounded">
+                <div class="flex items-center justify-between gap-2 mb-0.5">
+                  <span class="text-neutral-500 font-medium">{{
+                    'audit-logs.field.streamId' | translate
+                  }}</span>
+                  <button
+                    type="button"
+                    class="shrink-0 p-0.5 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    (click)="copyToClipboard(entry.streamId, entry.seqId.toString())"
+                    [attr.aria-label]="'common.copy' | translate"
+                  >
+                    @if (isCopied(entry.seqId.toString())) {
+                      <svg
+                        class="w-3.5 h-3.5 text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    } @else {
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                    }
+                  </button>
+                </div>
                 @if (canLinkEntry(entry)) {
                   <a
                     [routerLink]="['/ref-tests', entry.nodeId]"
-                    class="font-mono text-primary-600 hover:text-primary-800 break-all py-0.5"
+                    class="font-mono text-primary-600 hover:text-primary-800 wrap-break-word text-xs"
                     >{{ entry.streamId }}</a
                   >
                 } @else {
-                  <span class="font-mono text-neutral-800 break-all py-0.5">{{
+                  <span class="font-mono text-neutral-800 wrap-break-word text-xs">{{
                     entry.streamId
                   }}</span>
                 }
-                @if (entry.data) {
-                  <app-audit-log-entry-data [data]="entry.data" />
-                }
               </div>
+
+              <!-- Data changes -->
+              @if (entry.data) {
+                <div
+                  class="flex flex-col py-1.5 px-2.5 bg-neutral-50 rounded [&_span:nth-child(2n+3)]:mt-2"
+                >
+                  <app-audit-log-entry-data [data]="entry.data" />
+                </div>
+              }
             </div>
           }
         }
@@ -232,20 +281,53 @@
 
           <!-- Stream ID -->
           <td class="px-6 py-4 max-w-48">
-            @if (canLinkEntry(entry)) {
-              <a
-                [routerLink]="['/ref-tests', entry.nodeId]"
-                [title]="entry.streamId"
-                class="font-mono text-xs text-primary-600 hover:text-primary-800 block truncate"
-                >{{ entry.streamId }}</a
+            <div class="flex items-center gap-1 min-w-0">
+              @if (canLinkEntry(entry)) {
+                <a
+                  [routerLink]="['/ref-tests', entry.nodeId]"
+                  [title]="entry.streamId"
+                  class="font-mono text-xs text-primary-600 hover:text-primary-800 truncate"
+                  >{{ entry.streamId }}</a
+                >
+              } @else {
+                <span
+                  [title]="entry.streamId"
+                  class="font-mono text-xs text-neutral-500 truncate"
+                  >{{ entry.streamId }}</span
+                >
+              }
+              <button
+                type="button"
+                class="shrink-0 p-0.5 text-neutral-400 hover:text-neutral-600 transition-colors"
+                (click)="copyToClipboard(entry.streamId, entry.seqId.toString())"
+                [attr.aria-label]="'common.copy' | translate"
               >
-            } @else {
-              <span
-                [title]="entry.streamId"
-                class="font-mono text-xs text-neutral-500 block truncate"
-                >{{ entry.streamId }}</span
-              >
-            }
+                @if (isCopied(entry.seqId.toString())) {
+                  <svg
+                    class="w-3.5 h-3.5 text-green-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                } @else {
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                }
+              </button>
+            </div>
           </td>
 
           <!-- Data toggle -->
@@ -272,7 +354,7 @@
         @if (canShowDetails(entry) && isExpanded(entry.seqId.toString())) {
           <tr class="bg-neutral-50">
             <td colspan="5" class="px-6 pb-5 pt-2">
-              <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs">
+              <div class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-xs min-w-0">
                 <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
                   'audit-logs.field.version' | translate
                 }}</span>
@@ -280,17 +362,55 @@
                 <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">{{
                   'audit-logs.field.streamId' | translate
                 }}</span>
-                @if (canLinkEntry(entry)) {
-                  <a
-                    [routerLink]="['/ref-tests', entry.nodeId]"
-                    class="font-mono text-primary-600 hover:text-primary-800 break-all py-0.5"
-                    >{{ entry.streamId }}</a
+                <span class="flex items-center gap-1 min-w-0 py-0.5">
+                  @if (canLinkEntry(entry)) {
+                    <a
+                      [routerLink]="['/ref-tests', entry.nodeId]"
+                      class="font-mono text-primary-600 hover:text-primary-800 break-words"
+                      >{{ entry.streamId }}</a
+                    >
+                  } @else {
+                    <span class="font-mono text-neutral-800 wrap-break-word">{{
+                      entry.streamId
+                    }}</span>
+                  }
+                  <button
+                    type="button"
+                    class="shrink-0 p-0.5 text-neutral-400 hover:text-neutral-600 transition-colors"
+                    (click)="copyToClipboard(entry.streamId, entry.seqId.toString())"
+                    [attr.aria-label]="'common.copy' | translate"
                   >
-                } @else {
-                  <span class="font-mono text-neutral-800 break-all py-0.5">{{
-                    entry.streamId
-                  }}</span>
-                }
+                    @if (isCopied(entry.seqId.toString())) {
+                      <svg
+                        class="w-3.5 h-3.5 text-green-500"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
+                    } @else {
+                      <svg
+                        class="w-3.5 h-3.5"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="2"
+                          d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                        />
+                      </svg>
+                    }
+                  </button>
+                </span>
                 @if (entry.data) {
                   <app-audit-log-entry-data [data]="entry.data" />
                 }

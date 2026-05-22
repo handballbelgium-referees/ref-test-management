@@ -21,7 +21,9 @@
     "processing": "Bezig...",
     "close": "Sluiten",
     "deleting": "Verwijderen...",
-    "sending": "Verzenden..."
+    "sending": "Verzenden...",
+    "copy": "Kopiëren",
+    "copied": "Gekopieerd"
   },
   "nav": {
     "language": "Taal",

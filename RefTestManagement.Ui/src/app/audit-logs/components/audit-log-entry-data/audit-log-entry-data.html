@@ -2,13 +2,18 @@
   <span class="font-medium text-neutral-500 whitespace-nowrap py-0.5">
     {{ formatLabel(change.property) }}
   </span>
-  <span class="text-neutral-800 break-all py-0.5">
+  <span class="min-w-0 py-0.5">
     @if (isOldNew(change.value)) {
-      <span class="line-through text-red-400 mr-1">{{ formatValue($any(change.value).old) }}</span>
-      <span class="text-neutral-400">→</span>
-      <span class="text-green-600 ml-1">{{ formatValue($any(change.value).new) }}</span>
+      <span class="flex flex-col gap-0.5">
+        <span class="line-through text-red-400 wrap-break-word">{{
+          formatValue($any(change.value).old)
+        }}</span>
+        <span class="text-green-600 wrap-break-word">{{
+          formatValue($any(change.value).new)
+        }}</span>
+      </span>
     } @else {
-      {{ formatValue(change.value) }}
+      <span class="text-neutral-800 wrap-break-word">{{ formatValue(change.value) }}</span>
     }
   </span>
 }

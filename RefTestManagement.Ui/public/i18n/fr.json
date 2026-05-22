@@ -21,7 +21,9 @@
     "processing": "Traitement...",
     "close": "Fermer",
     "deleting": "Suppression...",
-    "sending": "Envoi..."
+    "sending": "Envoi...",
+    "copy": "Copier",
+    "copied": "Copié"
   },
   "nav": {
     "language": "Langue",

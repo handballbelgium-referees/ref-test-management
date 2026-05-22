@@ -21,7 +21,9 @@
     "processing": "Processing...",
     "close": "Close",
     "deleting": "Deleting...",
-    "sending": "Sending..."
+    "sending": "Sending...",
+    "copy": "Copy",
+    "copied": "Copied"
   },
   "nav": {
     "language": "Language",
