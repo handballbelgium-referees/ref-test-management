@@ -366,7 +366,7 @@
                   @if (canLinkEntry(entry)) {
                     <a
                       [routerLink]="['/ref-tests', entry.nodeId]"
-                      class="font-mono text-primary-600 hover:text-primary-800 break-words"
+                      class="font-mono text-primary-600 hover:text-primary-800 wrap-break-word"
                       >{{ entry.streamId }}</a
                     >
                   } @else {
