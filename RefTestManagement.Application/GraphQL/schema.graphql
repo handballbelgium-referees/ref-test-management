@@ -9,8 +9,6 @@ type Query {
   nodes("The list of node IDs." ids: [ID!]!): [Node]!
   "IHF answers of the game"
   answers(
-    "Get answers in random order"
-    random: Boolean! = false
     "Returns the first _n_ elements from the list."
     first: Int
     "Returns the elements in the list that come after the specified cursor."
@@ -19,18 +17,18 @@ type Query {
     last: Int
     "Returns the elements in the list that come before the specified cursor."
     before: String
+    "Get answers in random order"
+    random: Boolean! = false
     where: AnswerFilterInput
     order: [AnswerSortInput!]
-  ): AnswersConnection
+  ): AnswerConnection!
   "IHF answer by id"
   answerById(id: ID!): Answer
   "IHF answers by ids"
-  answersById(ids: [ID!]!): [Answer]
+  answersById(ids: [ID!]!): [Answer]!
   languages: [String!]!
   "IHF questions of the game"
   questions(
-    "Get questions in random order"
-    random: Boolean! = false
     "Returns the first _n_ elements from the list."
     first: Int
     "Returns the elements in the list that come after the specified cursor."
@@ -39,21 +37,21 @@ type Query {
     last: Int
     "Returns the elements in the list that come before the specified cursor."
     before: String
+    "Get questions in random order"
+    random: Boolean! = false
     where: QuestionFilterInput
     order: [QuestionSortInput!]
-  ): QuestionsConnection
+  ): QuestionConnection!
   "IHF question by id"
   questionById(id: ID!): Question
   "IHF questions by ids"
-  questionsById(ids: [ID!]!): [Question]
+  questionsById(ids: [ID!]!): [Question]!
   "IHF question by number"
   questionByNumber(number: String!): Question
   "IHF questions by numbers"
-  questionsByNumber(numbers: [String!]!): [Question]
+  questionsByNumber(numbers: [String!]!): [Question]!
   "IHF Rules of the game"
   rules(
-    "Get rules in random order"
-    random: Boolean! = false
     "Returns the first _n_ elements from the list."
     first: Int
     "Returns the elements in the list that come after the specified cursor."
@@ -62,17 +60,19 @@ type Query {
     last: Int
     "Returns the elements in the list that come before the specified cursor."
     before: String
+    "Get rules in random order"
+    random: Boolean! = false
     where: RuleFilterInput
     order: [RuleSortInput!]
-  ): RulesConnection
+  ): RuleConnection!
   "IHF rule by id"
   ruleById(id: ID!): Rule
   "IHF rules by ids"
-  rulesById(ids: [ID!]!): [Rule]
+  rulesById(ids: [ID!]!): [Rule]!
   "IHF rule by number"
   ruleByNumber(number: String!): Rule
   "IHF rules by numbers"
-  rulesByNumber(numbers: [String!]!): [Rule]
+  rulesByNumber(numbers: [String!]!): [Rule]!
   "Count the score for your questions based on the given answers"
   calculateScore(
     "Answered questions"
@@ -81,8 +81,65 @@ type Query {
     selectedAnswerIds: [ID]
     "Optional score configuration overrides"
     scoreConfigurationInput: ScoreConfigurationInput
-  ): Score
+  ): Score!
   version: String
+}
+
+"A connection to a list of items."
+type AnswerConnection {
+  "A list of edges."
+  edges: [AnswerEdge!]
+  "A flattened list of the nodes"
+  nodes: [Answer!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int!
+}
+
+"A connection to a list of items."
+type QuestionConnection {
+  "A list of edges."
+  edges: [QuestionEdge!]
+  "A flattened list of the nodes"
+  nodes: [Question!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int!
+}
+
+"A connection to a list of items."
+type RuleConnection {
+  "A list of edges."
+  edges: [RuleEdge!]
+  "A flattened list of the nodes"
+  nodes: [Rule!]
+  "Information to aid in pagination."
+  pageInfo: PageInfo!
+  "Identifies the total count of items in the connection."
+  totalCount: Int!
+}
+
+type AnswerEdge {
+  "The item at the end of the edge."
+  node: Answer!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type QuestionEdge {
+  "The item at the end of the edge."
+  node: Question!
+  "A cursor for use in pagination."
+  cursor: String!
+}
+
+type RuleEdge {
+  "The item at the end of the edge."
+  node: Rule!
+  "A cursor for use in pagination."
+  cursor: String!
 }
 
 "Filter answers based on Id, Name, Number or if the answer is correct"
@@ -103,24 +160,6 @@ input AnswerSortInput {
   number: SortEnumType
 }
 
-"IHF rule"
-type Answer implements Node {
-  "The answer id"
-  id: ID!
-  "The answer number"
-  number: String
-  "The answer phrase based on the \"Accept-Language\" HTTP header"
-  phrase: String
-  "The question of this answer"
-  question: Question
-  "The id the the rule"
-  questionId: ID!
-  "True if this is a correct answer, false if not"
-  isCorrect: Boolean!
-  "Answer translations"
-  translations: Any
-}
-
 "Filter questions based on Id, Name or Number"
 input QuestionFilterInput {
   and: [QuestionFilterInput!]
@@ -139,37 +178,6 @@ input QuestionSortInput {
   number: SortEnumType
 }
 
-"IHF question"
-type Question implements Node {
-  "The question id"
-  id: ID!
-  "The question number"
-  number: String
-  "The question phrase based on the \"Accept-Language\" HTTP header"
-  phrase: String
-  "Question answers"
-  answers(
-    "Get answers in random order"
-    random: Boolean
-    "Returns the first _n_ elements from the list."
-    first: Int
-    "Returns the elements in the list that come after the specified cursor."
-    after: String
-    "Returns the last _n_ elements from the list."
-    last: Int
-    "Returns the elements in the list that come before the specified cursor."
-    before: String
-    where: AnswerFilterInput
-    order: [AnswerSortInput!]
-  ): AnswersConnection
-  "The rule of this question"
-  rule: Rule
-  "The id the the rule"
-  ruleId: ID!
-  "Question translations"
-  translations: Any
-}
-
 "Filter rules based on Id, Name or Number"
 input RuleFilterInput {
   and: [RuleFilterInput!]
@@ -177,7 +185,7 @@ input RuleFilterInput {
   "Filter on rule id"
   id: UuidOperationFilterInput
   "Filter on rule number"
-  number: IntOperationFilterInput
+  number: StringOperationFilterInput
 }
 
 "Sort rules based on Id, Name or Number"
@@ -188,18 +196,32 @@ input RuleSortInput {
   number: SortEnumType
 }
 
-"IHF rule"
-type Rule implements Node {
-  "The rule id"
+"IHF answer"
+type Answer implements Node {
+  "The unique identifier of the answer"
   id: ID!
-  "The rule number"
-  number: String
-  "The name of the rule based on the \"Accept-Language\" HTTP header"
-  name: String
-  "Rule questions"
-  questions(
-    "Get questions in random order"
-    random: Boolean
+  "The answer phrase based on the \"Accept-Language\" HTTP header"
+  phrase: String
+  "True if this is a correct answer, false if not"
+  isCorrect: Boolean!
+  "The question of this answer"
+  question: Question
+  "Answer translations"
+  translations: Any
+  "The number of the answer"
+  number: String!
+  "The id of the question"
+  questionId: ID!
+}
+
+"IHF question"
+type Question implements Node {
+  "The unique identifier of the question"
+  id: ID!
+  "The question phrase based on the \"Accept-Language\" HTTP header"
+  phrase: String
+  "Question answers"
+  answers(
     "Returns the first _n_ elements from the list."
     first: Int
     "Returns the elements in the list that come after the specified cursor."
@@ -208,21 +230,56 @@ type Rule implements Node {
     last: Int
     "Returns the elements in the list that come before the specified cursor."
     before: String
-    where: QuestionFilterInput
-    order: [QuestionSortInput!]
-  ): QuestionsConnection
-  "Rule translations"
+    "Get answers in random order"
+    random: Boolean! = false
+    where: AnswerFilterInput
+    order: [AnswerSortInput!]
+  ): AnswerConnection!
+  "The rule of this question"
+  rule: Rule
+  "Question translations"
   translations: Any
+  "The number of the question"
+  number: String!
+  "The id of the rule"
+  ruleId: ID!
 }
 
-"Score calculation based on following configuration:\r\n                Correct: 1,\r\n                Incorrect: -1,\r\n                Not answered: 0,\r\n                Negative score: False,\r\n                Penalize guessing strategy: True"
+"IHF rule"
+type Rule implements Node {
+  "The unique identifier of the rule"
+  id: ID!
+  "The name of the rule based on the \"Accept-Language\" HTTP header"
+  name: String
+  "Rule questions"
+  questions(
+    "Returns the first _n_ elements from the list."
+    first: Int
+    "Returns the elements in the list that come after the specified cursor."
+    after: String
+    "Returns the last _n_ elements from the list."
+    last: Int
+    "Returns the elements in the list that come before the specified cursor."
+    before: String
+    "Get questions in random order"
+    random: Boolean! = false
+    where: QuestionFilterInput
+    order: [QuestionSortInput!]
+  ): QuestionConnection!
+  "Rule translations"
+  translations: Any
+  "The number of the rule"
+  number: String!
+}
+
+"Score calculation"
 type Score {
-  "Your score"
-  score: Int
-  "Total"
-  total: Int
   "Your percentage score"
   percentage: String
+  "Your score"
+  score: Int!
+  "Total number of questions"
+  total: Int!
   "The question ids that are not fully correct"
   wrongQuestionsIds: [ID!]!
   "The answer ids that are not correct answered"
@@ -272,47 +329,16 @@ interface Node {
 "The `Any` scalar type represents any valid GraphQL value."
 scalar Any
 
-"A connection to a list of items."
-type AnswersConnection {
-  "Information to aid in pagination."
-  pageInfo: PageInfo!
-  "A list of edges."
-  edges: [AnswersEdge!]
-  "A flattened list of the nodes."
-  nodes: [Answer]
-  "Identifies the total count of items in the connection."
-  totalCount: Int!
-}
-
-input IntOperationFilterInput {
-  eq: Int
-  neq: Int
-  in: [Int]
-  nin: [Int]
-  gt: Int
-  ngt: Int
-  gte: Int
-  ngte: Int
-  lt: Int
-  nlt: Int
-  lte: Int
-  nlte: Int
-}
-
-"A connection to a list of items."
-type QuestionsConnection {
-  "Information to aid in pagination."
-  pageInfo: PageInfo!
-  "A list of edges."
-  edges: [QuestionsEdge!]
-  "A flattened list of the nodes."
-  nodes: [Question]
-  "Identifies the total count of items in the connection."
-  totalCount: Int!
-}
-
 "The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562."
 scalar UUID
+
+input ScoreConfigurationInput {
+  correct: Int
+  inCorrect: Int
+  notAnswered: Int
+  negativeScore: Boolean
+  penalizeGuessingStrategy: Boolean
+}
 
 "Information about pagination in a connection."
 type PageInfo {
@@ -324,50 +350,27 @@ type PageInfo {
   startCursor: String
   "When paginating forwards, the cursor to continue."
   endCursor: String
+  "A list of cursors to continue paginating forwards."
+  forwardCursors: [PageCursor!]!
+  "A list of cursors to continue paginating backwards."
+  backwardCursors: [PageCursor!]!
 }
 
-"An edge in a connection."
-type AnswersEdge {
-  "A cursor for use in pagination."
+"A cursor that points to a specific page."
+type PageCursor {
+  "The page number."
+  page: Int!
+  "The cursor."
   cursor: String!
-  "The item at the end of the edge."
-  node: Answer
 }
 
-"An edge in a connection."
-type QuestionsEdge {
-  "A cursor for use in pagination."
-  cursor: String!
-  "The item at the end of the edge."
-  node: Question
-}
-
-"A connection to a list of items."
-type RulesConnection {
-  "Information to aid in pagination."
-  pageInfo: PageInfo!
-  "A list of edges."
-  edges: [RulesEdge!]
-  "A flattened list of the nodes."
-  nodes: [Rule]
-  "Identifies the total count of items in the connection."
-  totalCount: Int!
-}
-
-"An edge in a connection."
-type RulesEdge {
-  "A cursor for use in pagination."
-  cursor: String!
-  "The item at the end of the edge."
-  node: Rule
-}
-
-input ScoreConfigurationInput {
-  correct: Int
-  inCorrect: Int
-  notAnswered: Int
-  negativeScore: Boolean
-  penalizeGuessingStrategy: Boolean
+enum ScalarSerializationType {
+  STRING
+  BOOLEAN
+  INT
+  FLOAT
+  OBJECT
+  LIST
 }
 
 "The purpose of the `cost` directive is to define a `weight` for GraphQL types, fields, and arguments. Static analysis can use these weights when calculating the overall cost of a query or response."
@@ -398,3 +401,12 @@ directive @listSize(
 
 "The @lookup directive is used within a source schema to specify output fields\nthat can be used by the distributed GraphQL executor to resolve an entity by\na stable key."
 directive @lookup on FIELD_DEFINITION
+
+directive @shareable repeatable on OBJECT | FIELD_DEFINITION
+
+directive @serializeAs(
+  "The primitive type a scalar is serialized to."
+  type: [ScalarSerializationType!]!
+  "The ECMA-262 regex pattern that the serialized scalar value conforms to."
+  pattern: String
+) on SCALAR

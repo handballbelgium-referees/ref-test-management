@@ -18,7 +18,7 @@ public interface IIhfRulesQuestionsService
         CancellationToken cancellationToken = default);
 
     Task<List<Question>> SearchQuestionsByNumberAsync(string? number, CancellationToken cancellationToken = default);
-    
+
     Task<List<Question>> GetQuestionsByNumberAsync(List<string> numbers, CancellationToken cancellationToken = default);
 
     Task<ScoreCalculation> CalculateScoreAsync(List<string> questionIds, List<string> selectedAnswerIds,
@@ -37,7 +37,7 @@ public class IhfRulesQuestionsService(
         var result = await client.GetRandomQuestionIds.ExecuteAsync(count, cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.Questions?.Nodes?.OfType<IGetRandomQuestionIds_Questions_Nodes>();
+        var nodes = result.Data?.Questions.Nodes?.OfType<IGetRandomQuestionIds_Questions_Nodes>();
         return nodes is null ? [] : nodes.Select(x => x.Id).ToList();
     }
 
@@ -47,14 +47,14 @@ public class IhfRulesQuestionsService(
         var result = await client.GetQuestionsByNumber.ExecuteAsync(numbers.ToList(), cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.QuestionsByNumber?.OfType<IGetQuestionsByNumber_QuestionsByNumber_Question>();
+        var nodes = result.Data?.QuestionsByNumber.OfType<IGetQuestionsByNumber_QuestionsByNumber_Question>();
 
         if (nodes is null)
             return [];
 
         // Convert nodes to dictionary for a fast lookup by number (filter out null numbers)
-        var questionDict = nodes.Where(x => x.Number != null)
-            .ToDictionary(x => x.Number!, x => x.Id);
+        var questionDict = nodes
+            .ToDictionary(x => x.Number, x => x.Id);
 
         // Return question IDs in the same order as the input numbers
         return numbers.Where(questionDict.ContainsKey)
@@ -78,7 +78,7 @@ public class IhfRulesQuestionsService(
                 ], cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.QuestionsById?.OfType<GetQuestionsById_QuestionsById_Question>();
+        var nodes = result.Data?.QuestionsById.OfType<GetQuestionsById_QuestionsById_Question>();
 
         // Convert nodes to dictionary for fast lookup
         var questionDict = nodes?.ToDictionary(x => x.Id, x =>
@@ -88,7 +88,7 @@ public class IhfRulesQuestionsService(
             if (!string.IsNullOrEmpty(x.Phrase))
                 questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
 
-            var answers = x.Answers?.Nodes?.OfType<IGetQuestionsById_QuestionsById_Answers_Nodes>().Select(a =>
+            var answers = x.Answers.Nodes?.OfType<IGetQuestionsById_QuestionsById_Answers_Nodes>().Select(a =>
             {
                 var answerTranslations = a.Translations?.Deserialize<Dictionary<string, string>>() ??
                                          new Dictionary<string, string>();
@@ -119,7 +119,7 @@ public class IhfRulesQuestionsService(
         var result = await client.SearchQuestionsByNumber.ExecuteAsync(number, cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.Questions?.Nodes?.OfType<SearchQuestionsByNumber_Questions_Nodes_Question>();
+        var nodes = result.Data?.Questions.Nodes?.OfType<SearchQuestionsByNumber_Questions_Nodes_Question>();
         return nodes?.Select(x =>
         {
             var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??
@@ -134,19 +134,20 @@ public class IhfRulesQuestionsService(
         }).ToList() ?? [];
     }
 
-    public async Task<List<Question>> GetQuestionsByNumberAsync(List<string> numbers, CancellationToken cancellationToken = default)
+    public async Task<List<Question>> GetQuestionsByNumberAsync(List<string> numbers,
+        CancellationToken cancellationToken = default)
     {
         var result = await client.GetQuestionsByNumbers.ExecuteAsync(numbers, cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.QuestionsByNumber?.OfType<GetQuestionsByNumbers_QuestionsByNumber_Question>();
+        var nodes = result.Data?.QuestionsByNumber.OfType<GetQuestionsByNumbers_QuestionsByNumber_Question>();
         return nodes?.Select(x =>
         {
             var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??
                                   new Dictionary<string, string>();
             if (!string.IsNullOrEmpty(x.Phrase))
                 questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
-        
+
             return new Question(x.Id, questionPhrases, [])
             {
                 Number = x.Number ?? string.Empty
@@ -166,7 +167,7 @@ public class IhfRulesQuestionsService(
             NegativeScore = scoreConfiguration.NegativeScore,
             PenalizeGuessingStrategy = scoreConfiguration.PenalizeGuessingStrategy
         };
-        
+
         var result =
             await client.CalculateScore.ExecuteAsync(questionIds, selectedAnswerIds, scoreConfigInput,
                 cancellationToken);
@@ -177,7 +178,7 @@ public class IhfRulesQuestionsService(
             throw new Exception("Failed to calculate score");
 
         var scoreData = result.Data.CalculateScore;
-        
+
         double percentage;
         var percentageString = scoreData.Percentage;
 
@@ -197,15 +198,15 @@ public class IhfRulesQuestionsService(
 
         // Calculate a question-based score (number of fully correct questions)
         var questionScore = questionIds.Count(id => !scoreData.WrongQuestionsIds.Contains(id));
-        
+
         // Get an answer-based score from API (based on correct +1, incorrect -1, not answered 0)
-        var answerScore = scoreData.Score ?? 0;
+        var answerScore = scoreData.Score;
 
         return new ScoreCalculation(
             questionScore,
             answerScore,
             questionIds.Count,
-            scoreData.Total ?? 0,
+            scoreData.Total,
             percentage,
             scoreData.WrongQuestionsIds.ToList() ?? [],
             scoreData.WrongAnswerIds.ToList() ?? []
