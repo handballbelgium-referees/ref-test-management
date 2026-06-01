@@ -1,0 +1,19 @@
+name: 🧹 Cleanup Old Artifacts
+
+on:
+  schedule:
+    - cron: '0 2 * * 0' # Every Sunday at 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  cleanup:
+    name: 🗑️ Remove Old Artifacts
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 🧹 Delete orphaned artifacts
+        uses: major0/gh-artifact-cleanup@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          newer: 30 # Keep artifacts newer than 30 days
+          older: 7 # Delete artifacts older than 7 days
