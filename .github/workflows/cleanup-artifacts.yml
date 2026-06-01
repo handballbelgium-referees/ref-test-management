@@ -9,6 +9,8 @@ jobs:
   cleanup:
     name: 🗑️ Remove Old Artifacts
     runs-on: ubuntu-latest
+    permissions:
+      actions: write
 
     steps:
       - name: 🧹 Delete orphaned artifacts
