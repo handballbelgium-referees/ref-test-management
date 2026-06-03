@@ -1,5 +1,5 @@
 import { registerLocaleData } from '@angular/common';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withXhr } from '@angular/common/http';
 import {
   ApplicationConfig,
   ErrorHandler,
@@ -61,7 +61,7 @@ export const appConfig: ApplicationConfig = {
     { provide: ErrorHandler, useClass: GlobalErrorHandler },
     provideBrowserGlobalErrorListeners(),
     provideRouter(routes),
-    provideHttpClient(),
+    provideHttpClient(withXhr()),
     provideAppInitializer(() => {
       const languageConfigService = inject(LanguageConfig);
       return registerDynamicLocales().pipe(
@@ -85,7 +85,6 @@ export const appConfig: ApplicationConfig = {
         enforceLoading: true,
       }),
     }),
-    provideHttpClient(),
     provideApollo(
       () => {
         const httpLink = inject(HttpLink);

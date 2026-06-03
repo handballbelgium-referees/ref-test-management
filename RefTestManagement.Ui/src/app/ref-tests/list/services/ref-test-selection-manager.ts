@@ -1,11 +1,11 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, Service, signal } from '@angular/core';
 import { IParticipantInfo, RefTestNode } from './types';
 
 /**
  * Service responsible for managing selection state and computing selection summaries
  * for the ref test list component.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestSelectionManager {
   // ========================================================================
   // STATE

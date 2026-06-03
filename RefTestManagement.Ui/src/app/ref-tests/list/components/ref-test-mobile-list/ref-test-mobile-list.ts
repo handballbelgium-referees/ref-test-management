@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestNode } from '../../services/types';
 import { RefTestMobileCard } from '../ref-test-display/ref-test-mobile-card/ref-test-mobile-card';
@@ -11,7 +11,6 @@ import { RefTestMobileCard } from '../ref-test-display/ref-test-mobile-card/ref-
   selector: 'app-ref-test-mobile-list',
   imports: [TranslatePipe, RefTestMobileCard],
   templateUrl: './ref-test-mobile-list.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

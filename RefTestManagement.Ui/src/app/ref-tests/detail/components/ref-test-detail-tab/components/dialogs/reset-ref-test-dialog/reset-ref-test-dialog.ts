@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -23,7 +22,6 @@ interface IResetOptions {
   selector: 'app-reset-ref-test-dialog',
   imports: [TranslatePipe, FormField, FormsModule, Banner],
   templateUrl: './reset-ref-test-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ResetRefTestDialog {
   protected readonly resetOptionsModel = signal<IResetOptions>({

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../../../../graphql/generated';
 import { HasPermission } from '../../../../../../auth/directives/has-permission.directive';
@@ -8,7 +8,6 @@ import { Permissions } from '../../../../../../auth/models/permissions';
   selector: 'app-details-card',
   imports: [TranslatePipe, HasPermission],
   templateUrl: './details-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class DetailsCard {

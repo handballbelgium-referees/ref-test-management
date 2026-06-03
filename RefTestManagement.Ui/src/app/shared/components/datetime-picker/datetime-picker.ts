@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { Datepicker } from '../datepicker/datepicker';
 import { TimePicker } from './components/time-picker/time-picker';
 
@@ -16,7 +16,6 @@ import { TimePicker } from './components/time-picker/time-picker';
   selector: 'app-datetime-picker',
   imports: [Datepicker, TimePicker],
   templateUrl: './datetime-picker.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DatetimePicker {
   /** Current "YYYY-MM-DDTHH:mm" string, or empty. */

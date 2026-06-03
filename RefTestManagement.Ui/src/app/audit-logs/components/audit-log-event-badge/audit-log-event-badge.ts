@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
@@ -19,7 +19,6 @@ import { TranslatePipe } from '@ngx-translate/core';
       {{ 'audit-logs.eventType.' + type() | translate }}
     </span>
   `,
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AuditLogEventBadge {
   readonly type = input.required<string>();

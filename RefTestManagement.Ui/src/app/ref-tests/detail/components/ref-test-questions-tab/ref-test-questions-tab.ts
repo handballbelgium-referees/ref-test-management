@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { map } from 'rxjs';
@@ -12,7 +12,6 @@ import { IAnswer, IQuestion } from './models/question.interface';
   selector: 'app-ref-test-questions-tab',
   imports: [EmptyQuestionsState, QuestionCard, AnswersSummary],
   templateUrl: './ref-test-questions-tab.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RefTestQuestionsTab {
   private readonly _translate = inject(TranslateService);

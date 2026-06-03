@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   effect,
   inject,
@@ -34,7 +33,6 @@ interface ISearchResult {
   selector: 'app-title-autocomplete',
   imports: [TranslatePipe, LocalizedDate],
   templateUrl: './title-autocomplete.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, inject } from '@angular/core';
+import { DestroyRef, Service, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { SwUpdate } from '@angular/service-worker';
 import { TranslateService } from '@ngx-translate/core';
@@ -9,9 +9,7 @@ import { Banner } from './banner';
  * Service to handle PWA updates
  * Checks for updates and notifies the user
  */
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PwaUpdate {
   private readonly _swUpdate = inject(SwUpdate);
   private readonly _bannerService = inject(Banner);

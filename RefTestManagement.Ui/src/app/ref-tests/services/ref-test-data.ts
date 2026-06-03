@@ -1,4 +1,4 @@
-import { computed, DestroyRef, inject, Injectable, Signal } from '@angular/core';
+import { computed, DestroyRef, inject, Service, Signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApolloCache, ApolloClient, ApolloLink } from '@apollo/client';
 import { Apollo } from 'apollo-angular';
@@ -50,7 +50,7 @@ type DeletionCounts = {
 /* Service                                                                    */
 /* -------------------------------------------------------------------------- */
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestData {
   private readonly _apollo = inject(Apollo);
   private readonly _getRefTestsGQL = inject(GetRefTestsGQL);

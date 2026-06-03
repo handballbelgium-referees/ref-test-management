@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { TranslationPipe } from '../../../../../../pipes/translation-pipe';
 import { IQuestion } from '../../models/question.interface';
 import { AnswerItem } from '../answer-item/answer-item';
@@ -7,7 +7,6 @@ import { AnswerItem } from '../answer-item/answer-item';
   selector: 'app-question-card',
   imports: [TranslationPipe, AnswerItem],
   templateUrl: './question-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class QuestionCard {

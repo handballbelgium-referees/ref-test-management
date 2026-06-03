@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -28,7 +27,6 @@ interface IResetOptions {
   selector: 'app-reset-ref-tests-dialog',
   imports: [TranslatePipe, FormsModule, FormField, Banner],
   templateUrl: './reset-ref-tests-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 interface IQuestion {
@@ -11,7 +11,6 @@ interface IQuestion {
   selector: 'app-ref-test-navigation',
   imports: [TranslatePipe],
   templateUrl: './ref-test-navigation.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

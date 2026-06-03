@@ -1,4 +1,4 @@
-import { computed, DestroyRef, inject, Injectable, Signal, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Service, Signal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Apollo, QueryRef } from 'apollo-angular';
@@ -31,7 +31,7 @@ import { MutationCallbacks, runMutation } from '../../../shared/utils/apollo-uti
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestDetailData {
   private readonly _getRefTestByIdGQL = inject(GetRefTestByIdGQL);
   private readonly _permissions = inject(PermissionsService);

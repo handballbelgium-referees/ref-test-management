@@ -1,6 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -16,7 +15,6 @@ import { Datepicker as DatepickerService } from '../../../datepicker/services/da
   selector: 'app-time-picker',
   imports: [NgTemplateOutlet],
   templateUrl: './time-picker.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [DatepickerService],
   host: {
     class: 'relative block',

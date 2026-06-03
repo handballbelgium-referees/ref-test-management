@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -35,7 +34,6 @@ interface IConfigurationData {
   selector: 'app-update-configuration-dialog',
   imports: [TranslatePipe, FormField, TitleAutocomplete, QuestionSearchAutocomplete, Banner],
   templateUrl: './update-configuration-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UpdateConfigurationDialog {
   private readonly _translate = inject(TranslateService);

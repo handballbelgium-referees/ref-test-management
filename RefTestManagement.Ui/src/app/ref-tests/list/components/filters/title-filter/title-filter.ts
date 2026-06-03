@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   effect,
   inject,
@@ -33,7 +32,6 @@ interface ITitleSearchResult {
   selector: 'app-title-filter',
   imports: [TranslatePipe],
   templateUrl: './title-filter.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

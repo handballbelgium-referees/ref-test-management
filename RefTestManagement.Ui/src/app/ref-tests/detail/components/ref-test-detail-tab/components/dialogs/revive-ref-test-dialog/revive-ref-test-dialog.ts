@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import { Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
@@ -7,7 +7,6 @@ import { Banner } from '../../../../../../../shared/components/banner/banner';
   selector: 'app-revive-ref-test-dialog',
   imports: [TranslatePipe, Banner],
   templateUrl: './revive-ref-test-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ReviveRefTestDialog {
   readonly loading = input.required<boolean>();

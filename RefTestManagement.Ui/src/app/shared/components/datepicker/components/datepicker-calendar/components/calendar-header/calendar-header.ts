@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ViewMode } from '../../../../models/datepicker.types';
 
@@ -6,7 +6,6 @@ import { ViewMode } from '../../../../models/datepicker.types';
   selector: 'app-calendar-header',
   imports: [TranslatePipe],
   templateUrl: './calendar-header.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'bock',
   },

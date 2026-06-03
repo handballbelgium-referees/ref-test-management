@@ -1,4 +1,4 @@
-﻿import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+﻿import { Component, inject, input } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import {
   Banner as BannerService,
@@ -14,7 +14,6 @@ import {
   selector: 'app-banner',
   imports: [TranslatePipe],
   templateUrl: './banner.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   styles: `
     /* Banner animations */

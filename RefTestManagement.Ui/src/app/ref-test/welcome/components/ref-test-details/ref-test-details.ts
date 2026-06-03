@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { DeepPartial } from '@apollo/client/utilities';
 import { TranslatePipe } from '@ngx-translate/core';
 import { GetRefTestByTokenQuery } from '../../../../../../graphql/generated';
@@ -11,7 +11,6 @@ type RefTest = DeepPartial<
   selector: 'app-ref-test-details',
   imports: [TranslatePipe],
   templateUrl: './ref-test-details.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -21,7 +20,6 @@ interface IRefTestInfo {
   selector: 'app-reject-ref-tests-dialog',
   imports: [TranslatePipe, FormsModule, Banner],
   templateUrl: './reject-ref-tests-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

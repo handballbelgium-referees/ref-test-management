@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { HasPermission } from '../auth/directives/has-permission.directive';
 import { Permissions } from '../auth/models/permissions';
@@ -11,7 +11,6 @@ import { Banner } from '../shared/components/banner/banner';
   selector: 'app-home',
   imports: [TranslatePipe, Banner, HasPermission],
   templateUrl: './home.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

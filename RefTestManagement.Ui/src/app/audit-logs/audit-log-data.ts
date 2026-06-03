@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { inject, Service, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { onlyCompleteData } from 'apollo-angular';
 import { map } from 'rxjs';
@@ -11,7 +11,7 @@ import {
 
 const PAGE_SIZE = 20;
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class AuditLogData {
   private readonly _getAuditLogsGQL = inject(GetAuditLogsGQL);
 

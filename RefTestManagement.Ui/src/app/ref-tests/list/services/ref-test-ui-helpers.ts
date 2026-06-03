@@ -1,11 +1,11 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import { RefTestStatus } from '../../../../../graphql/generated';
 
 /**
  * Service providing UI utility methods for ref test display,
  * such as status class mapping and formatting helpers.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestUIHelpers {
   /**
    * Get the CSS class for a ref test status badge

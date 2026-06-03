@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   inject,
@@ -50,7 +49,6 @@ import { TimelineCard } from './components/timeline-card/timeline-card';
   ],
   providers: [RefTestDetailOperationManager],
   templateUrl: './ref-test-detail-tab.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RefTestDetailTab {
   private readonly _dataService = inject(RefTestDetailData);

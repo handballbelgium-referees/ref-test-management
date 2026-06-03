@@ -1,4 +1,4 @@
-﻿import { Injectable, signal } from '@angular/core';
+﻿import { Service, signal } from '@angular/core';
 
 /**
  * Toast notification durations in milliseconds
@@ -129,9 +129,7 @@ export abstract class BannerManagerBase {
   }
 }
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Banner extends BannerManagerBase {
   /**
    * Creates an isolated banner manager for dialogs

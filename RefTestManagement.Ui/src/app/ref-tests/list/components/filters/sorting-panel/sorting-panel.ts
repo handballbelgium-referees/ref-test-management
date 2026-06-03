@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { SortEnumType } from '../../../../../../../graphql/generated';
 import { SortField } from '../../../services/types';
@@ -7,7 +7,6 @@ import { SortField } from '../../../services/types';
   selector: 'app-sorting-panel',
   imports: [TranslatePipe],
   templateUrl: './sorting-panel.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

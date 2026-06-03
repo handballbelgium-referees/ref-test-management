@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import { Component, effect, input, output } from '@angular/core';
 import { TranslateModule } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-leave-ref-test-dialog',
   templateUrl: './leave-ref-test-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslateModule],
   host: {
     class: 'block',

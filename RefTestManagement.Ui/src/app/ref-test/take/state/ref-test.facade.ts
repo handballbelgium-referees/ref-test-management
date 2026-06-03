@@ -1,4 +1,4 @@
-import { DestroyRef, Injectable, inject, signal } from '@angular/core';
+import { DestroyRef, Service, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
 import { EMPTY, catchError, debounceTime, distinctUntilChanged, map, skip, tap } from 'rxjs';
 import {
@@ -18,7 +18,7 @@ import { RefTestStore } from './ref-test.store';
 type StartRefTestPayload = StartRefTestMutation['startRefTest'];
 type CompleteRefTestPayload = CompleteRefTestMutation['completeRefTest']['refTest'];
 
-@Injectable()
+@Service({ autoProvided: false })
 export class RefTestFacade {
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _store = inject(RefTestStore);

@@ -1,4 +1,4 @@
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { RefTestStatus, SortEnumType } from '../../../../../graphql/generated';
 import { RefTestFilterState } from './ref-test-filter-state';
 import { SortField } from './types';
@@ -7,7 +7,7 @@ import { SortField } from './types';
  * Service responsible for handling filter actions and coordinating
  * filter state changes with pagination reset.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestFilterActions {
   private readonly _filterState = inject(RefTestFilterState);
 

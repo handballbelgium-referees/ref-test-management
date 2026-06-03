@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -29,7 +28,6 @@ interface IParticipantData {
   selector: 'app-update-details-dialog',
   imports: [TranslatePipe, FormField, Banner],
   templateUrl: './update-details-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UpdateDetailsDialog {
   protected readonly participantModel = signal<IParticipantData>({

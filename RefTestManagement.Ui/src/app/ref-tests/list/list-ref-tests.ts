@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -80,7 +79,6 @@ import { IResetOptions, RefTestNode, SortField } from './services/types';
   ],
   providers: [RefTestOperationManager],
   templateUrl: './list-ref-tests.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

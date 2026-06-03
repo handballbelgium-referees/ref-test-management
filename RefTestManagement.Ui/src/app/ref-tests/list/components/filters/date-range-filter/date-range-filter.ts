@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { Datepicker } from '../../../../../shared/components/datepicker/datepicker';
 
@@ -11,7 +11,6 @@ export interface IDateRange {
   selector: 'app-date-range-filter',
   imports: [TranslatePipe, Datepicker],
   templateUrl: './date-range-filter.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },
