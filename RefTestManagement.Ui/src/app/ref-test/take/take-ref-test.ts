@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, CanDeactivate, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -20,7 +20,6 @@ import { RefTestStore } from './state/ref-test.store';
 @Component({
   selector: 'app-take-ref-test',
   templateUrl: './take-ref-test.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [RefTestStore, RefTestFacade],
   imports: [
     RefTestHeader,

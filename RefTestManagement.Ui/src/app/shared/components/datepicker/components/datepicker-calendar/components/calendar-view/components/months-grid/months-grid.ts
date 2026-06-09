@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { Datepicker } from '../../../../../../services/datepicker';
 
 @Component({
   selector: 'app-months-grid',
   templateUrl: './months-grid.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

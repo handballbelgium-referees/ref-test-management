@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import { Component, inject, input, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus, SortEnumType } from '../../../../../../../graphql/generated';
@@ -57,7 +57,6 @@ interface IStatusCounts {
     DateRangeFilter,
   ],
   templateUrl: './ref-test-filters-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

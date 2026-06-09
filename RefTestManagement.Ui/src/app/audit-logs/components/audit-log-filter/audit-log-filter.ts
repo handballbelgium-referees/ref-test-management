@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
+import { Component, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuditLogDtoFilterInput } from '../../../../../graphql/generated';
 
@@ -6,7 +6,6 @@ import { AuditLogDtoFilterInput } from '../../../../../graphql/generated';
   selector: 'app-audit-log-filter',
   imports: [TranslatePipe],
   templateUrl: './audit-log-filter.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class AuditLogFilter {

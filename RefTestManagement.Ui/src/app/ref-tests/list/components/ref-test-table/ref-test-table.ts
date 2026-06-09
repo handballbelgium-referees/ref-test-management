@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IRefTestFilter, RefTestNode, SortField } from '../../services/types';
 import { RefTestTableRow } from '../ref-test-display/ref-test-table-row/ref-test-table-row';
@@ -11,7 +11,6 @@ import { RefTestTableRow } from '../ref-test-display/ref-test-table-row/ref-test
   selector: 'app-ref-test-table',
   imports: [TranslatePipe, RefTestTableRow],
   templateUrl: './ref-test-table.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

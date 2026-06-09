@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
 import { map, startWith } from 'rxjs';
@@ -9,7 +9,6 @@ import { ParsedChange } from '../../types';
   selector: 'app-audit-log-entry-data',
   providers: [LocalizedDate],
   templateUrl: './audit-log-entry-data.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
 })
 export class AuditLogEntryData {

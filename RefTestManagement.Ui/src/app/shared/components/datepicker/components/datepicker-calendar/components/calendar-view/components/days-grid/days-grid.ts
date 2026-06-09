@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { CalendarDay } from '../../../../../../models/datepicker.types';
 import { Datepicker } from '../../../../../../services/datepicker';
 
 @Component({
   selector: 'app-days-grid',
   templateUrl: './days-grid.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

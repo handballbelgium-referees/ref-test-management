@@ -1,11 +1,11 @@
-import { Injectable, signal } from '@angular/core';
+import { Service, signal } from '@angular/core';
 import { COLUMNS } from './constants';
 
 /**
  * Service responsible for managing column visibility state for the ref test list table.
  * Handles which columns are shown/hidden and the column menu state.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class ColumnVisibilityManager {
   // ========================================================================
   // STATE

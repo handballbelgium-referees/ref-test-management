@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 /**
@@ -9,7 +9,6 @@ import { TranslatePipe } from '@ngx-translate/core';
   selector: 'app-ref-test-pagination',
   imports: [TranslatePipe],
   templateUrl: './ref-test-pagination.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

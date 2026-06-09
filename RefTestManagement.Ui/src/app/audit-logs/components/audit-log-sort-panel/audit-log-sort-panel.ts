@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { SortEnumType } from '../../../../../graphql/generated';
 
@@ -6,7 +6,6 @@ import { SortEnumType } from '../../../../../graphql/generated';
   selector: 'app-audit-log-sort-panel',
   imports: [TranslatePipe],
   templateUrl: './audit-log-sort-panel.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   styles: `
     select {

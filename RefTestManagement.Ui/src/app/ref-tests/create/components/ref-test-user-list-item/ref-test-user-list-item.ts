@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IUserData } from '../../create-ref-tests';
@@ -7,7 +7,6 @@ import { IUserData } from '../../create-ref-tests';
   selector: 'app-ref-test-user-list-item',
   imports: [TranslatePipe, FormField],
   templateUrl: './ref-test-user-list-item.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

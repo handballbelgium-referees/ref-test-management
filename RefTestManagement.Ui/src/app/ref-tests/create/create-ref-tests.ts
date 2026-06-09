@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
@@ -59,7 +58,6 @@ interface IRefTestFormData {
     DatetimePicker,
   ],
   templateUrl: './create-ref-tests.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

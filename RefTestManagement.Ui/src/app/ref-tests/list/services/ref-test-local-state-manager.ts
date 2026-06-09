@@ -1,4 +1,4 @@
-import { computed, Injectable, signal } from '@angular/core';
+import { computed, Service, signal } from '@angular/core';
 import { RefTestNode } from './types';
 
 /**
@@ -6,7 +6,7 @@ import { RefTestNode } from './types';
  * including deleted items, updated invitations, and updated results.
  * This optimistically updates the UI before the server state is refreshed.
  */
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestLocalStateManager {
   // ========================================================================
   // STATE

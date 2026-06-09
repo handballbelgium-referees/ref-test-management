@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ColumnVisibilityMenu } from '../column-visibility-menu/column-visibility-menu';
 import { HasPermission } from '../../../../auth/directives/has-permission.directive';
@@ -12,7 +12,6 @@ import { Permissions } from '../../../../auth/models/permissions';
   selector: 'app-ref-test-list-toolbar',
   imports: [TranslatePipe, ColumnVisibilityMenu, HasPermission],
   templateUrl: './ref-test-list-toolbar.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

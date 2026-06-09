@@ -1,12 +1,10 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, of, shareReplay, switchMap } from 'rxjs';
 import { User } from '../models/user';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class Auth {
   private readonly _http = inject(HttpClient);
 

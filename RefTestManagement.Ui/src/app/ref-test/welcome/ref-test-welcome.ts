@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -14,7 +14,6 @@ import { RefTestInstructions } from './components/ref-test-instructions/ref-test
   selector: 'app-ref-test-welcome',
   imports: [TranslatePipe, RefTestHero, RefTestError, RefTestDetails, RefTestInstructions],
   templateUrl: './ref-test-welcome.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

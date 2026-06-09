@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { GetRefTestByIdQuery, RefTestStatus } from '../../../../../../../../graphql/generated';
 import { HasPermission } from '../../../../../../auth/directives/has-permission.directive';
@@ -13,7 +13,6 @@ type RefTestTitle = NonNullable<
   selector: 'app-test-info-card',
   imports: [TranslatePipe, HasPermission],
   templateUrl: './test-info-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class TestInfoCard {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { Component, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 /**
@@ -9,7 +9,6 @@ import { TranslatePipe } from '@ngx-translate/core';
   selector: 'app-ref-test-empty-state',
   imports: [TranslatePipe],
   templateUrl: './ref-test-empty-state.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -28,7 +27,6 @@ interface IExtendTimeData {
   selector: 'app-extend-time-dialog',
   imports: [TranslatePipe, FormField, Banner],
   templateUrl: './extend-time-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class ExtendTimeDialog {
   protected readonly extendTimeModel = signal<IExtendTimeData>({

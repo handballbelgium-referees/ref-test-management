@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import { Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IsolatedBannerManager } from '../../../../../services/banner';
 import { Banner } from '../../../../../shared/components/banner/banner';
@@ -12,7 +12,6 @@ interface IRefTestInfo {
   selector: 'app-delete-ref-tests-dialog',
   imports: [TranslatePipe, Banner],
   templateUrl: './delete-ref-tests-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

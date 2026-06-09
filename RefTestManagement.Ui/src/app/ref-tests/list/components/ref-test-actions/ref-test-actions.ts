@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { HasPermission } from '../../../../auth/directives/has-permission.directive';
 import { Permissions } from '../../../../auth/models/permissions';
@@ -8,7 +8,6 @@ import { Permissions } from '../../../../auth/models/permissions';
   imports: [TranslatePipe, HasPermission],
   templateUrl: './ref-test-actions.html',
   styleUrl: './ref-test-actions.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

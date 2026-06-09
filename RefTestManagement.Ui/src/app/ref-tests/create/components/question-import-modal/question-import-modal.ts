@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-question-import-modal',
   imports: [TranslatePipe],
   templateUrl: './question-import-modal.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'host',
   },

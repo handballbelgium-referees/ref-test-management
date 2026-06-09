@@ -1,4 +1,11 @@
-import { Component, computed, DestroyRef, effect, inject, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { ActivatedRoute, NavigationEnd, Router, RouterOutlet } from '@angular/router';
@@ -32,9 +39,9 @@ export class App {
     this._router.events.pipe(
       filter((event) => event instanceof NavigationEnd),
       map(() => this._router.url.startsWith('/ref-test/')),
-      takeUntilDestroyed(this._destroyRef)
+      takeUntilDestroyed(this._destroyRef),
     ),
-    { initialValue: this._router.url.startsWith('/ref-test/') }
+    { initialValue: this._router.url.startsWith('/ref-test/') },
   );
 
   protected readonly isLoggedIn = computed(() => !!this._auth.isAuthenticated());
@@ -46,7 +53,7 @@ export class App {
   protected readonly currentYear = computed(() => new Date().getFullYear());
   protected readonly availableLanguages = toSignal(
     this._languageConfigService.getAvailableLanguages(),
-    { initialValue: [] }
+    { initialValue: [] },
   );
 
   constructor() {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 interface IPerformanceFilters {
@@ -17,7 +17,6 @@ interface IPerformanceFilters {
   selector: 'app-performance-filters',
   imports: [TranslatePipe],
   templateUrl: './performance-filters.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

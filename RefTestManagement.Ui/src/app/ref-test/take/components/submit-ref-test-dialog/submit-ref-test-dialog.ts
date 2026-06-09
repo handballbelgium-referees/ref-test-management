@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
+import { Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-submit-ref-test-dialog',
   imports: [TranslatePipe],
   templateUrl: './submit-ref-test-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

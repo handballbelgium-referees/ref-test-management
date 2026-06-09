@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   ElementRef,
@@ -21,7 +20,6 @@ import { CalendarView } from './components/calendar-view/calendar-view';
   selector: 'app-datepicker-calendar',
   imports: [CalendarHeader, CalendarView, CalendarFooter],
   templateUrl: './datepicker-calendar.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

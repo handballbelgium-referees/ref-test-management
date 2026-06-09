@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { ViewMode } from '../../../../models/datepicker.types';
 import { DaysGrid } from './components/days-grid/days-grid';
 import { MonthsGrid } from './components/months-grid/months-grid';
@@ -8,7 +8,6 @@ import { YearsGrid } from './components/years-grid/years-grid';
   selector: 'app-calendar-view',
   imports: [DaysGrid, MonthsGrid, YearsGrid],
   templateUrl: './calendar-view.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

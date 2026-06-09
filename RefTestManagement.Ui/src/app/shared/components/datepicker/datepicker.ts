@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   DestroyRef,
   effect,
@@ -21,7 +20,6 @@ import { Datepicker as DatePickerService } from './services/datepicker';
     '[attr.tabindex]': '"-1"',
     '(document:keydown.escape)': 'onEscape()',
   },
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Datepicker {
   private readonly _dateService = inject(DatePickerService);

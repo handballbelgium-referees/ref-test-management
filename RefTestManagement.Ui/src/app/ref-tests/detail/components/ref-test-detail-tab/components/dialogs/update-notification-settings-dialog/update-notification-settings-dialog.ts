@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   computed,
   effect,
@@ -32,7 +31,6 @@ interface INotificationSettings {
   selector: 'app-update-notification-settings-dialog',
   imports: [TranslatePipe, FormField, Banner],
   templateUrl: './update-notification-settings-dialog.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class UpdateNotificationSettingsDialog {
   protected readonly settingsModel = signal<INotificationSettings>({

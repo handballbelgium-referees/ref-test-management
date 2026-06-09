@@ -1,9 +1,9 @@
-import { Injectable, signal } from '@angular/core';
+import { Service, signal } from '@angular/core';
 import { RefTestStatus, SortEnumType } from '../../../../../graphql/generated';
 import { REF_TEST_CONFIG } from './constants';
 import { IRefTestFilter, SortField } from './types';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestFilterState {
   private readonly _filter = signal<IRefTestFilter>({
     searchTerm: '',

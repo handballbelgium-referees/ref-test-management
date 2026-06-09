@@ -1,8 +1,8 @@
-import { computed, inject, Injectable, signal } from '@angular/core';
+import { computed, inject, Service, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Answer, Question, RefTestResult } from './ref-test.models';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class RefTestStore {
   private readonly _translate = inject(TranslateService);
   // === CORE STATE =====================================================

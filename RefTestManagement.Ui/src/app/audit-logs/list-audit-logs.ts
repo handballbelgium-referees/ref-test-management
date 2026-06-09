@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { AuditLogDtoFilterInput, SortEnumType } from '../../../graphql/generated';
 import { Permissions } from '../auth/models/permissions';
@@ -14,7 +14,6 @@ import { AuditLogEntry } from './types';
   selector: 'app-audit-logs',
   imports: [TranslatePipe, Banner, AuditLogFilter, AuditLogSortPanel, AuditLogTable],
   templateUrl: './list-audit-logs.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class ListAuditLogs {

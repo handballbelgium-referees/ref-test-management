@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslationPipe } from '../../../../pipes/translation-pipe';
 
 @Component({
   selector: 'app-answer-option',
   templateUrl: './answer-option.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslationPipe],
   host: {
     class: 'block',

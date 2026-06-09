@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable, signal, WritableSignal } from '@angular/core';
+import { DestroyRef, inject, Service, signal, WritableSignal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Banner } from '../../../services/banner';
 import { createDialogOperation } from '../../../shared/utils/dialog-utils';
@@ -11,7 +11,7 @@ import { IResetOptions, RefTestNode } from './types';
  * Service responsible for managing operations on ref tests
  * (delete, send invitations, send results, generate report, reset, revive)
  */
-@Injectable()
+@Service({ autoProvided: false })
 export class RefTestOperationManager {
   private readonly _bannerService = inject(Banner);
   private readonly _translateService = inject(TranslateService);

@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   effect,
   ElementRef,
@@ -27,7 +26,6 @@ interface IStatusCounts {
   selector: 'app-status-filter-tabs',
   imports: [TranslatePipe, HasPermission],
   templateUrl: './status-filter-tabs.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

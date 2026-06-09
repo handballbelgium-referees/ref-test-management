@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject } from '@angular/core';
+import { Component, computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ActivatedRoute,
@@ -38,7 +38,6 @@ import { RefTestDetailOperationManager } from './services/ref-test-detail-operat
   ],
   providers: [RefTestDetailOperationManager],
   templateUrl: './ref-test-detail.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RefTestDetail {
   private readonly _route = inject(ActivatedRoute);

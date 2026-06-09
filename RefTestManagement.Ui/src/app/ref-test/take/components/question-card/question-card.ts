@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { TranslationPipe } from '../../../../pipes/translation-pipe';
 import { AnswerOption } from '../answer-option/answer-option';
@@ -18,7 +18,6 @@ interface IQuestion {
   selector: 'app-question-card',
   imports: [TranslatePipe, TranslationPipe, AnswerOption],
   templateUrl: './question-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

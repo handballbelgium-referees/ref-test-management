@@ -1,6 +1,6 @@
-import { ErrorHandler, Injectable } from '@angular/core';
+import { ErrorHandler, Service } from '@angular/core';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class GlobalErrorHandler implements ErrorHandler {
   handleError(error: Error): void {
     // Filter out the ResizeObserver error which is harmless but noisy

@@ -1,13 +1,11 @@
 import { HttpClient } from '@angular/common/http';
-import { inject, Injectable } from '@angular/core';
+import { inject, Service } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { catchError, merge, of, Subject, switchMap } from 'rxjs';
 import { Permissions } from '../models/permissions';
 import { Auth } from './auth';
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class PermissionsService {
   private readonly _http = inject(HttpClient);
   private readonly _auth = inject(Auth);

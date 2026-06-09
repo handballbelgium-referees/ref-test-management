@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Observable, catchError, first, map, of, shareReplay } from 'rxjs';
 import { GetEnabledLanguagesGQL } from '../../../graphql/generated';
@@ -25,9 +25,7 @@ export const LANGUAGE_NAMES: Record<Language, string> = {
   de: 'Deutsch',
 };
 
-@Injectable({
-  providedIn: 'root',
-})
+@Service()
 export class LanguageConfig {
   private readonly _getEnabledLanguagesGQL = inject(GetEnabledLanguagesGQL);
   private readonly _translate = inject(TranslateService);

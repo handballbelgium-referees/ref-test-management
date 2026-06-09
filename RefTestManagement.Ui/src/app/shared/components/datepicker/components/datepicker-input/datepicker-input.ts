@@ -1,5 +1,4 @@
 import {
-  ChangeDetectionStrategy,
   Component,
   ElementRef,
   input,
@@ -11,7 +10,6 @@ import {
   selector: 'app-datepicker-input',
   templateUrl: './datepicker-input.html',
   styleUrl: './datepicker-input.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

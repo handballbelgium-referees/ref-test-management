@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 /**
@@ -9,7 +9,6 @@ import { TranslatePipe } from '@ngx-translate/core';
   selector: 'app-ref-test-list-hero',
   imports: [TranslatePipe],
   templateUrl: './ref-test-list-hero.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block',
   },

@@ -1,11 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-pull-to-refresh',
   imports: [TranslatePipe],
   templateUrl: './pull-to-refresh.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     class: 'block relative',
   },

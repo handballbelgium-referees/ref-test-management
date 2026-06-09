@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../../../graphql/generated';
@@ -9,7 +9,6 @@ import { RefTestNode } from '../../../services/types';
   selector: 'tr[app-ref-test-table-row]',
   imports: [TranslatePipe, LocalizedDate],
   templateUrl: './ref-test-table-row.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class]':
       'canNavigate() ? "hover:bg-neutral-50 transition-colors cursor-pointer" : "hover:bg-neutral-50 transition-colors cursor-default"',

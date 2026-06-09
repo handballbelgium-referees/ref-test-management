@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Service } from '@angular/core';
 import {
   BooleanOperationFilterInput,
   DateTimeOperationFilterInput,
@@ -11,7 +11,7 @@ import {
 import { PERCENTAGE_RANGES } from './constants';
 import { IRefTestFilter } from './types';
 
-@Injectable({ providedIn: 'root' })
+@Service()
 export class RefTestQueryBuilder {
   buildWhereFilter(
     filter: IRefTestFilter,

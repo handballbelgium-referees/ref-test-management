@@ -4,7 +4,7 @@
 
 # RefTest Management Platform
 
-A comprehensive web application for managing and taking IHF (International Handball Federation) RefTests for Handball Belgium referees. Built with .NET 10 and Angular 21, this platform enables administrators to create RefTests, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed RefTests.
+A comprehensive web application for managing and taking IHF (International Handball Federation) RefTests for Handball Belgium referees. Built with .NET 10 and Angular 22, this platform enables administrators to create RefTests, manage participants, send automated email invitations and results, while providing referees with an intuitive, multilingual interface to take timed RefTests.
 
 <p>
   <a href="https://github.com/handballbelgium-referees/ref-test-management/releases/latest"><img src="badges/release.png" alt="Latest Release" height="20"></a>
@@ -171,7 +171,7 @@ This application follows a **clean architecture pattern** with clear separation 
 
 ```
 ┌─────────────────────────────────────────────────┐
-│         Angular 21 SPA (Frontend)               │
+│         Angular 22 SPA (Frontend)               │
 │  Standalone Components + Signals + i18n         │
 └──────┬──────────────┬───────────────────────────┘
        │              │ GraphQL (Apollo Client)
@@ -508,12 +508,12 @@ ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, count);
 - `RefTestManagement.Domain` - Domain entities, value objects
 - `RefTestManagement.Infrastructure` - Data access, external services (PDF, Email)
 
-#### Frontend (Angular 21)
+#### Frontend (Angular 22)
 
 | Technology                 | Version  | Purpose                                         |
 | -------------------------- | -------- | ----------------------------------------------- |
-| **Angular**                | 21.2.0   | Modern SPA framework with standalone components |
-| **TypeScript**             | 5.9.3    | Strict type-checking for reliability            |
+| **Angular**                | 22.0.0   | Modern SPA framework with standalone components |
+| **TypeScript**             | 6.0.3    | Strict type-checking for reliability            |
 | **Signals**                | Built-in | Reactive state management                       |
 | **TailwindCSS**            | 4.3.0    | Utility-first CSS framework                     |
 | **Apollo Client**          | 4.1.0    | GraphQL client with caching                     |
@@ -847,7 +847,7 @@ See [PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md) for the full annotated dir
 | `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel, subscriptions, background job enqueue                                                                             |
 | `RefTestManagement.AuditLog`       | Marten-style event store — `IDomainEvent`, `IDomainEventWithResolution`, `AuditEvent`, EF Core interceptor, entity name resolvers, retention options |
 
-**Frontend:** `RefTestManagement.Ui` — Angular 21, Apollo Client, GraphQL Codegen, Tailwind CSS, PWA.
+**Frontend:** `RefTestManagement.Ui` — Angular 22, Apollo Client, GraphQL Codegen, Tailwind CSS, PWA.
 
 ## ⚙️ Configuration
 

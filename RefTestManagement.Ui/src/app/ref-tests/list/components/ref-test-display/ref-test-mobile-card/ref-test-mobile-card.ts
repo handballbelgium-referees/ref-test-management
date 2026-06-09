@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
+import { Component, inject, input, output } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestStatus } from '../../../../../../../graphql/generated';
@@ -9,7 +9,6 @@ import { RefTestNode } from '../../../services/types';
   selector: 'app-ref-test-mobile-card',
   imports: [TranslatePipe, LocalizedDate],
   templateUrl: './ref-test-mobile-card.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: {
     '[class]': 'canNavigate() ? "block cursor-pointer" : "block cursor-default"',
     '(click)': 'onCardClick($event)',

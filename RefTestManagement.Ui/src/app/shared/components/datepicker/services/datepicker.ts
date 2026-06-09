@@ -1,8 +1,8 @@
-import { Injectable, inject } from '@angular/core';
+import { Service, inject } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { CalendarDay, MonthItem, ViewMode, YearItem } from '../models/datepicker.types';
 
-@Injectable()
+@Service({ autoProvided: false })
 export class Datepicker {
   private readonly _translate = inject(TranslateService);
 

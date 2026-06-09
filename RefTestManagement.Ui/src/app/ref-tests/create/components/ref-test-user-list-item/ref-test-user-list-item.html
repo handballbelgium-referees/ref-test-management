@@ -22,7 +22,7 @@
         [title]="'ref_tests.create.form.users.first_name' | translate"
         [attr.aria-label]="'ref_tests.create.form.users.first_name' | translate"
         class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
-        [placeholder]="'ref_tests.create.form.users.first_name_placeholder' | translate"
+        placeholder="{{'ref_tests.create.form.users.first_name_placeholder' | translate }}"
       />
       @if (userFormControl().firstName().touched() && userFormControl().firstName().invalid()) {
       <p class="text-xs text-red-600 mt-1">
@@ -51,7 +51,7 @@
         [title]="'ref_tests.create.form.users.last_name' | translate"
         [attr.aria-label]="'ref_tests.create.form.users.last_name' | translate"
         class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
-        [placeholder]="'ref_tests.create.form.users.last_name_placeholder' | translate"
+        placeholder="{{'ref_tests.create.form.users.last_name_placeholder' | translate }}"
       />
       @if (userFormControl().lastName().touched() && userFormControl().lastName().invalid()) {
       <p class="text-xs text-red-600 mt-1">
@@ -80,7 +80,7 @@
         [title]="'ref_tests.create.form.users.email' | translate"
         [attr.aria-label]="'ref_tests.create.form.users.email' | translate"
         class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
-        [placeholder]="'ref_tests.create.form.users.email_placeholder' | translate"
+        placeholder="{{'ref_tests.create.form.users.email_placeholder' | translate }}"
       />
       @if (userFormControl().email().touched() && userFormControl().email().invalid()) {
       <p class="text-xs text-red-600 mt-1">

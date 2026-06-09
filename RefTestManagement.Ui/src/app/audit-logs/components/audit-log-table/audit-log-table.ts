@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { Component, input, output, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { SortEnumType } from '../../../../../graphql/generated';
@@ -11,7 +11,6 @@ import { AuditLogEventBadge } from '../audit-log-event-badge/audit-log-event-bad
   selector: 'app-audit-log-table',
   imports: [TranslatePipe, RouterLink, LocalizedDate, AuditLogEventBadge, AuditLogEntryData],
   templateUrl: './audit-log-table.html',
-  changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
 })
 export class AuditLogTable {

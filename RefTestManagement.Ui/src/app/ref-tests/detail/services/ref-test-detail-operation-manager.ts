@@ -1,4 +1,4 @@
-import { DestroyRef, inject, Injectable } from '@angular/core';
+import { DestroyRef, inject, Service } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import {
@@ -17,7 +17,7 @@ import { RefTestDetailData } from './ref-test-detail-data';
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
-@Injectable()
+@Service({ autoProvided: false })
 export class RefTestDetailOperationManager {
   // ========================================================================
   // INJECTIONS
