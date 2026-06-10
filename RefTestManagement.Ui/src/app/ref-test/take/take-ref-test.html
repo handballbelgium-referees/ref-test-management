@@ -82,7 +82,7 @@
           [question]="question"
           [currentIndex]="store.currentQuestionIndex()"
           [totalQuestions]="store.questions().length"
-          [currentLanguage]="currentLanguage()"
+          [currentLanguage]="currentLanguage() ?? 'en'"
           [selectedAnswerIds]="[...store.selectedAnswers()[question.id]]"
           (answerSelected)="selectAnswer(question.id, $event)"
         />

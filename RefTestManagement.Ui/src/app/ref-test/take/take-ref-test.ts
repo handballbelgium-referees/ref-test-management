@@ -58,10 +58,7 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
     { initialValue: 0 },
   );
 
-  readonly currentLanguage = toSignal(
-    this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
-    { initialValue: this._translate.getCurrentLang() },
-  );
+  readonly currentLanguage = this._translate.currentLang;
 
   constructor() {
     effect(() => {
