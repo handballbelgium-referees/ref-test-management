@@ -27,7 +27,7 @@
     "badge-maker": "~5.0.2",
     "husky": "~9.1.7",
     "semantic-release": "~25.0.3",
-    "sharp": "~0.34.5"
+    "sharp": "~0.35.0"
   },
   "allowScripts": {
     "sharp@0.34.5": true
