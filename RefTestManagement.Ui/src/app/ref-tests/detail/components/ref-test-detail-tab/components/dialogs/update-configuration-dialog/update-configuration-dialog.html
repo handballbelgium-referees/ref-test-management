@@ -46,7 +46,7 @@
             </label>
             <app-question-search-autocomplete
               [selectedQuestions]="selectedQuestions()"
-              [currentLanguage]="currentLanguage()"
+              [currentLanguage]="currentLanguage() ?? 'en'"
               (selectQuestion)="onQuestionSelect($event)"
               (removeQuestion)="onQuestionRemove($event)"
             />

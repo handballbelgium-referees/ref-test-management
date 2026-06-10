@@ -1,10 +1,10 @@
 import { Component, effect, input, output } from '@angular/core';
-import { TranslateModule } from '@ngx-translate/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-leave-ref-test-dialog',
   templateUrl: './leave-ref-test-dialog.html',
-  imports: [TranslateModule],
+  imports: [TranslatePipe],
   host: {
     class: 'block',
   },

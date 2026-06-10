@@ -8,7 +8,7 @@
           <app-question-card
             [question]="question"
             [questionIndex]="questionIdx"
-            [currentLanguage]="currentLanguage()"
+            [currentLanguage]="currentLanguage() ?? 'en'"
             [selectedAnswerIds]="selectedAnswerIdsSet()"
           />
         }

@@ -1,16 +1,6 @@
-import {
-  Component,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-} from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
 import { disabled, form, FormField, min, required } from '@angular/forms/signals';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { map } from 'rxjs';
 import {
   GetRefTestByIdQuery,
   UpdateRefTestConfigurationInput,
@@ -95,12 +85,7 @@ export class UpdateConfigurationDialog {
     return this.configurationModel().title?.name || '';
   });
 
-  protected readonly currentLanguage = toSignal(
-    this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
-    {
-      initialValue: this._translate.getCurrentLang(),
-    },
-  );
+  protected readonly currentLanguage = this._translate.currentLang;
 
   constructor() {
     effect(() => {

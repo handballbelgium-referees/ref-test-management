@@ -164,7 +164,7 @@ export class RefTestFacade {
             token: token,
             currentQuestionIndex: this._store.currentQuestionIndex(),
             selectedAnswerIds: this._store.getSelectedAnswerIds(),
-            language: lang,
+            language: lang ?? 'en',
           },
         },
       }),

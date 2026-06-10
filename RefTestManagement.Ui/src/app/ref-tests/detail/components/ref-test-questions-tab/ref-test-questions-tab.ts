@@ -1,7 +1,5 @@
 import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
-import { map } from 'rxjs';
 import { RefTestDetailData } from '../../services/ref-test-detail-data';
 import { AnswersSummary } from './components/answers-summary/answers-summary';
 import { EmptyQuestionsState } from './components/empty-questions-state/empty-questions-state';
@@ -19,12 +17,7 @@ export class RefTestQuestionsTab {
 
   protected readonly refTest = this._dataService.refTestData;
 
-  protected readonly currentLanguage = toSignal(
-    this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
-    {
-      initialValue: this._translate.getCurrentLang(),
-    },
-  );
+  protected readonly currentLanguage = this._translate.currentLang;
 
   protected readonly questions = computed(() => {
     const questions = this.refTest()?.questions;

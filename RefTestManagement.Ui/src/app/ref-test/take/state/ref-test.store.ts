@@ -29,7 +29,7 @@ export class RefTestStore {
   readonly showProgressRestored = signal(false);
 
   // === CURRENT LANGUAGE ==============================================
-  readonly currentLanguage = signal(this._translate.getCurrentLang());
+  readonly currentLanguage = signal(this._translate.currentLang());
 
   // === COMPUTED =======================================================
   readonly currentQuestion = computed(() => {

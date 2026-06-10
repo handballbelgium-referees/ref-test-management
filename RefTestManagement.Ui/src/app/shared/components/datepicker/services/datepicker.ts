@@ -104,7 +104,7 @@ export class Datepicker {
       const date = new Date(2000, i, 1);
       months.push({
         index: i,
-        name: date.toLocaleDateString(this._translate.currentLang, { month: 'short' }),
+        name: date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', { month: 'short' }),
         isSelected: i === currentDate.getMonth(),
       });
     }
@@ -134,7 +134,9 @@ export class Datepicker {
     for (let i = 0; i < 7; i++) {
       const date = new Date(baseDate);
       date.setDate(baseDate.getDate() + i);
-      days.push(date.toLocaleDateString(this._translate.currentLang, { weekday: 'short' }));
+      days.push(
+        date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', { weekday: 'short' }),
+      );
     }
 
     return days;
@@ -142,7 +144,7 @@ export class Datepicker {
 
   getViewTitle(date: Date, mode: ViewMode): string {
     if (mode === 'days') {
-      return date.toLocaleDateString(this._translate.currentLang, {
+      return date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', {
         month: 'long',
         year: 'numeric',
       });

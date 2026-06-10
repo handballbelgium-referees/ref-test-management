@@ -7,7 +7,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { applyEach, disabled, email, form, FormField, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
@@ -141,12 +141,7 @@ export class CreateRefTests {
   >([]);
   protected readonly showQuestionImport = signal(false);
   protected readonly loadingQuestions = signal(false);
-  readonly currentLanguage = toSignal(
-    this._translate.onLangChange.pipe(map(() => this._translate.getCurrentLang())),
-    {
-      initialValue: this._translate.getCurrentLang(),
-    },
-  );
+  readonly currentLanguage = this._translate.currentLang;
 
   // Computed signals
   protected readonly userCount = computed(() => this.refTestModel().users.length);
