@@ -22,7 +22,7 @@
         <PackageVersion Include="Microsoft.Extensions.Http" Version="10.0.9" />
         <PackageVersion Include="Microsoft.Extensions.Options.ConfigurationExtensions"
             Version="10.0.9" />
-        <PackageVersion Include="QuestPDF" Version="2026.6.1" />
+        <PackageVersion Include="QuestPDF" Version="2026.7.0" />
         <PackageVersion Include="StrawberryShake.Server" Version="16.3.0" />
     </ItemGroup>
 </Project>
