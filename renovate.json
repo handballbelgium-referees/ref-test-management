@@ -11,6 +11,7 @@
   "rangeStrategy": "bump",
   "labels": ["dependencies"],
   "commitMessagePrefix": "chore(deps):",
+  "commitMessageLowerCase": "all",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 5,
   "lockFileMaintenance": {
