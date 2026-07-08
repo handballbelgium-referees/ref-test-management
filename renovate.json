@@ -12,6 +12,7 @@
   "labels": ["dependencies"],
   "commitMessagePrefix": "chore(deps):",
   "commitMessageAction": "update",
+  "commitMessageTopic": "dependency {{{lowercase depName}}}",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 5,
   "lockFileMaintenance": {
