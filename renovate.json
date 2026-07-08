@@ -1,6 +1,83 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "config:recommended"
+    "config:recommended",
+    ":semanticCommits",
+    ":dependencyDashboard"
+  ],
+  "timezone": "Europe/Brussels",
+  "schedule": ["before 4am every weekday"],
+  "skipInstalls": false,
+  "rangeStrategy": "bump",
+  "labels": ["dependencies"],
+  "commitMessagePrefix": "chore(deps):",
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 5,
+  "lockFileMaintenance": {
+    "enabled": true,
+    "schedule": ["before 4am on monday"]
+  },
+  "packageRules": [
+    {
+      "description": "Auto-merge patch-level npm dev dependencies once CI passes",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["devDependencies"],
+      "matchUpdateTypes": ["patch"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Group Angular framework packages together (they release in lockstep)",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["/^@angular/", "/^@angular-devkit/", "/^@angular-eslint/"],
+      "groupName": "Angular monorepo packages",
+      "automerge": false
+    },
+    {
+      "description": "Group remaining npm minor/patch prod deps",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "npm prod dependencies (minor/patch)",
+      "automerge": false
+    },
+    {
+      "description": "Group all Directory.Packages.props NuGet minor/patch updates into one PR",
+      "matchManagers": ["nuget"],
+      "matchUpdateTypes": ["minor", "patch"],
+      "groupName": "NuGet dependencies (minor/patch)",
+      "automerge": false
+    },
+    {
+      "description": "Group Microsoft.Extensions.* / System.* / .NET Core runtime packages together",
+      "matchManagers": ["nuget"],
+      "matchPackageNames": ["/^Microsoft\\./", "/^System\\./"],
+      "groupName": "Microsoft/System NuGet packages",
+      "automerge": false
+    },
+    {
+      "description": "Major updates: isolated, dashboard approval required",
+      "matchUpdateTypes": ["major"],
+      "groupName": null,
+      "labels": ["dependencies", "major-update"],
+      "dependencyDashboardApproval": true
+    },
+    {
+      "description": "Pin GitHub Actions to full SHA for supply-chain security",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true
+    },
+    {
+      "description": "Wait a few days before picking up new releases (avoid yanked/broken versions)",
+      "matchManagers": ["npm", "nuget"],
+      "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Critical runtime packages — always require manual review, never automerge",
+      "matchPackageNames": ["@angular/core", "@angular/cli", "Microsoft.NETCore.App"],
+      "automerge": false,
+      "dependencyDashboardApproval": true
+    }
   ]
 }
