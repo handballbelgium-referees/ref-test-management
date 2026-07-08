@@ -51,12 +51,12 @@
     "@graphql-codegen/cli": "~7.2.0",
     "@graphql-codegen/typescript-apollo-angular": "~5.0.0",
     "@graphql-codegen/typescript-operations": "~6.1.0",
-    "@tailwindcss/postcss": "~4.3.0",
+    "@tailwindcss/postcss": "~4.3.2",
     "cross-env": "~10.1.0",
     "jsdom": "~29.1.0",
     "postcss": "~8.5.3",
     "sharp": "~0.35.0",
-    "tailwindcss": "~4.3.0",
+    "tailwindcss": "~4.3.2",
     "typescript": "~6.0.3",
     "vitest": "~4.1.0"
   }
