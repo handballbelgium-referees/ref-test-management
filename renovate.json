@@ -11,7 +11,6 @@
   "rangeStrategy": "bump",
   "labels": ["dependencies"],
   "commitMessagePrefix": "chore(deps):",
-  "commitMessageLowerCase": "all",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 5,
   "lockFileMaintenance": {
@@ -32,7 +31,7 @@
       "description": "Group Angular framework packages together (they release in lockstep)",
       "matchManagers": ["npm"],
       "matchPackageNames": ["/^@angular/", "/^@angular-devkit/", "/^@angular-eslint/"],
-      "groupName": "Angular monorepo packages",
+      "groupName": "angular monorepo packages",
       "automerge": false
     },
     {
@@ -47,14 +46,14 @@
       "description": "Group all Directory.Packages.props NuGet minor/patch updates into one PR",
       "matchManagers": ["nuget"],
       "matchUpdateTypes": ["minor", "patch"],
-      "groupName": "NuGet dependencies (minor/patch)",
+      "groupName": "nuget dependencies (minor/patch)",
       "automerge": false
     },
     {
       "description": "Group Microsoft.Extensions.* / System.* / .NET Core runtime packages together",
       "matchManagers": ["nuget"],
       "matchPackageNames": ["/^Microsoft\\./", "/^System\\./"],
-      "groupName": "Microsoft/System NuGet packages",
+      "groupName": "microsoft/system nuget packages",
       "automerge": false
     },
     {
