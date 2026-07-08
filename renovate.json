@@ -11,6 +11,7 @@
   "rangeStrategy": "bump",
   "labels": ["dependencies"],
   "commitMessagePrefix": "chore(deps):",
+  "commitMessageAction": "update",
   "prConcurrentLimit": 10,
   "prHourlyLimit": 5,
   "lockFileMaintenance": {
@@ -64,9 +65,10 @@
       "dependencyDashboardApproval": true
     },
     {
-      "description": "Pin GitHub Actions to full SHA for supply-chain security",
+      "description": "Pin GitHub Actions to full SHA for supply-chain security (force lowercase action word)",
       "matchManagers": ["github-actions"],
-      "pinDigests": true
+      "pinDigests": true,
+      "commitMessageAction": "pin"
     },
     {
       "description": "Wait a few days before picking up new releases (avoid yanked/broken versions)",
