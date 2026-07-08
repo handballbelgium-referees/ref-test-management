@@ -16,7 +16,8 @@
   "prHourlyLimit": 5,
   "lockFileMaintenance": {
     "enabled": true,
-    "schedule": ["before 4am on monday"]
+    "schedule": ["before 4am on monday"],
+    "commitMessageAction": "lock file maintenance"
   },
   "packageRules": [
     {
