@@ -68,8 +68,7 @@
       "matchUpdateTypes": ["patch"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true,
-      "matchConfidence": ["high", "very high"]
+      "platformAutomerge": true
     },
     {
       "description": "Preserve proper casing for Node.js in commit messages",
