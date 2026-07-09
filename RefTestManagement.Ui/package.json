@@ -47,7 +47,7 @@
   "devDependencies": {
     "@angular/build": "^22.0.5",
     "@angular/cli": "~22.0.5",
-    "@angular/compiler-cli": "~22.0.5",
+    "@angular/compiler-cli": "~22.0.6",
     "@graphql-codegen/cli": "~7.2.0",
     "@graphql-codegen/typescript-apollo-angular": "~5.0.1",
     "@graphql-codegen/typescript-operations": "~6.1.0",
