@@ -4,8 +4,6 @@
     "config:recommended",
     ":semanticCommits",
     ":dependencyDashboard",
-    ":disableDependencyDashboardApprovalForPatch",
-    ":disableDependencyDashboardApprovalForMinor",
     "helpers:pinGitHubActionDigests",
     "security:openssf-scorecard"
   ],
