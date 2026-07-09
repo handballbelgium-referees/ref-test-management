@@ -3,24 +3,66 @@
   "extends": [
     "config:recommended",
     ":semanticCommits",
-    ":dependencyDashboard"
+    ":dependencyDashboard",
+    ":disableDependencyDashboardApprovalForPatch",
+    ":disableDependencyDashboardApprovalForMinor",
+    "helpers:pinGitHubActionDigests",
+    "security:openssf-scorecard"
   ],
   "timezone": "Europe/Brussels",
   "schedule": ["before 4am every weekday"],
-  "skipInstalls": false,
+  "prConcurrentLimit": 10,
+  "prHourlyLimit": 5,
   "rangeStrategy": "bump",
-  "labels": ["dependencies"],
+  "semanticCommits": "enabled",
   "commitMessagePrefix": "chore(deps):",
   "commitMessageAction": "update",
   "commitMessageTopic": "dependency {{{lowercase depName}}}",
-  "prConcurrentLimit": 10,
-  "prHourlyLimit": 5,
+  "labels": ["dependencies"],
+  "dependencyDashboard": true,
+  "dependencyDashboardTitle": "Renovate Dependency Dashboard",
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "labels": ["security"],
+    "automerge": false,
+    "dependencyDashboardApproval": false,
+    "schedule": ["at any time"]
+  },
+  "osvVulnerabilityAlerts": true,
   "lockFileMaintenance": {
     "enabled": true,
     "schedule": ["before 4am on monday"],
-    "commitMessageAction": "lock file maintenance"
+    "commitMessageAction": "lock file maintenance",
+    "automerge": false
   },
+  "prCreation": "not-pending",
+  "minimumReleaseAge": "3 days",
+  "internalChecksFilter": "strict",
   "packageRules": [
+    {
+      "description": "Pin all GitHub Actions to immutable SHA digests for supply-chain security",
+      "matchManagers": ["github-actions"],
+      "pinDigests": true,
+      "commitMessageAction": "pin"
+    },
+    {
+      "description": "Auto-merge digest updates for GitHub Actions",
+      "matchManagers": ["github-actions"],
+      "matchUpdateTypes": ["digest"],
+      "automerge": true,
+      "automergeType": "pr",
+      "platformAutomerge": true
+    },
+    {
+      "description": "Security/vulnerability fixes bypass schedule and dashboard approval, but still require CI + human merge",
+      "matchDatasources": ["npm", "nuget"],
+      "vulnerabilityAlerts": true,
+      "prPriority": 10,
+      "schedule": ["at any time"],
+      "dependencyDashboardApproval": false,
+      "automerge": false,
+      "labels": ["dependencies", "security"]
+    },
     {
       "description": "Auto-merge patch-level npm dev dependencies once CI passes",
       "matchManagers": ["npm"],
@@ -28,7 +70,13 @@
       "matchUpdateTypes": ["patch"],
       "automerge": true,
       "automergeType": "pr",
-      "platformAutomerge": true
+      "platformAutomerge": true,
+      "matchConfidence": ["high", "very high"]
+    },
+    {
+      "description": "Preserve proper casing for Node.js in commit messages",
+      "matchPackageNames": ["node"],
+      "commitMessageTopic": "dependency {{{depName}}}"
     },
     {
       "description": "Group Angular framework packages together (they release in lockstep)",
@@ -46,7 +94,7 @@
       "automerge": false
     },
     {
-      "description": "Group all Directory.Packages.props NuGet minor/patch updates into one PR",
+      "description": "Group all NuGet minor/patch updates into one PR",
       "matchManagers": ["nuget"],
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "nuget dependencies (minor/patch)",
@@ -60,28 +108,30 @@
       "automerge": false
     },
     {
-      "description": "Major updates: isolated, dashboard approval required",
+      "description": "Major updates: isolated PRs, dashboard approval required, never automerged",
       "matchUpdateTypes": ["major"],
       "groupName": null,
       "labels": ["dependencies", "major-update"],
-      "dependencyDashboardApproval": true
+      "dependencyDashboardApproval": true,
+      "automerge": false,
+      "prPriority": -5
     },
     {
-      "description": "Pin GitHub Actions to full SHA for supply-chain security (force lowercase action word)",
-      "matchManagers": ["github-actions"],
-      "pinDigests": true,
-      "commitMessageAction": "pin"
-    },
-    {
-      "description": "Wait a few days before picking up new releases (avoid yanked/broken versions)",
-      "matchManagers": ["npm", "nuget"],
-      "minimumReleaseAge": "3 days"
-    },
-    {
-      "description": "Critical runtime packages — always require manual review, never automerge",
+      "description": "Critical runtime packages — always require manual review, never automerge, even on minor/patch",
       "matchPackageNames": ["@angular/core", "@angular/cli", "Microsoft.NETCore.App"],
       "automerge": false,
-      "dependencyDashboardApproval": true
+      "dependencyDashboardApproval": true,
+      "prPriority": 5
+    },
+    {
+      "description": "Wait a few days before picking up new npm/nuget releases (avoid yanked/broken versions)",
+      "matchManagers": ["npm", "nuget"],
+      "minimumReleaseAge": "3 days"
     }
+  ],
+  "ignorePaths": [
+    "**/node_modules/**",
+    "**/vendor/**",
+    "**/test/fixtures/**"
   ]
 }
