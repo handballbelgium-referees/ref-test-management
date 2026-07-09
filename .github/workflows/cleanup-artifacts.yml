@@ -15,7 +15,7 @@ jobs:
 
     steps:
       - name: 🧹 Delete orphaned artifacts
-        uses: major0/gh-artifact-cleanup@87876397af2644b88f9bc71f8d2aff5aaa0d2f76 # v1
+        uses: major0/gh-artifact-cleanup@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           newer: 30 # Keep artifacts newer than 30 days
