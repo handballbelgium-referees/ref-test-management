@@ -54,7 +54,9 @@
     {
       "description": "Security/vulnerability fixes bypass schedule and dashboard approval, but still require CI + human merge",
       "matchDatasources": ["npm", "nuget"],
-      "vulnerabilityAlerts": true,
+      "vulnerabilityAlerts": {
+        "enabled": true
+      },
       "prPriority": 10,
       "schedule": ["at any time"],
       "dependencyDashboardApproval": false,
