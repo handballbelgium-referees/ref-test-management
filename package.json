@@ -26,7 +26,7 @@
     "@semantic-release/git": "~10.0.1",
     "badge-maker": "~6.0.0",
     "husky": "~9.1.7",
-    "semantic-release": "~25.0.6",
+    "semantic-release": "~25.0.7",
     "sharp": "~0.35.3"
   },
   "allowScripts": {
