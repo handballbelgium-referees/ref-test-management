@@ -129,6 +129,15 @@
       "description": "Wait a few days before picking up new npm/nuget releases (avoid yanked/broken versions)",
       "matchManagers": ["npm", "nuget"],
       "minimumReleaseAge": "3 days"
+    },
+    {
+      "description": "Angular major updates still get grouped together, but require dashboard approval",
+      "matchManagers": ["npm"],
+      "matchPackageNames": ["/^@angular/", "/^@angular-devkit/", "/^@angular-eslint/"],
+      "matchUpdateTypes": ["major"],
+      "groupName": "angular monorepo packages",
+      "dependencyDashboardApproval": true,
+      "automerge": false
     }
   ],
   "ignorePaths": [
