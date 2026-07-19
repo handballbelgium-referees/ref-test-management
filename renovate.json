@@ -9,7 +9,7 @@
   ],
   "timezone": "Europe/Brussels",
   "schedule": ["before 4am every weekday"],
-  "npmrc": "allow-remote=true\n",
+  "npmrc": "allow-remote=all\n",
   "npmrcMerge": true,
   "prConcurrentLimit": 10,
   "prHourlyLimit": 5,
