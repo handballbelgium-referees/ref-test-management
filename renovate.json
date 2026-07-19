@@ -94,7 +94,11 @@
       "matchUpdateTypes": ["minor", "patch"],
       "groupName": "npm prod dependencies (minor/patch)",
       "automerge": false,
-      "excludePackageNames": ["/^@angular/", "/^@angular-devkit/", "/^@angular-eslint/"]
+      "matchPackageNames": [
+        "!/^@angular/",
+        "!/^@angular-devkit/",
+        "!/^@angular-eslint/"
+      ]
     },
     {
       "description": "Group all NuGet minor/patch updates into one PR",
