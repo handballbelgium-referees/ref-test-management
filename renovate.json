@@ -84,7 +84,8 @@
       "matchManagers": ["npm"],
       "matchPackageNames": ["/^@angular/", "/^@angular-devkit/", "/^@angular-eslint/"],
       "groupName": "angular monorepo packages",
-      "automerge": false
+      "automerge": false,
+      "minimumReleaseAge": "0 days"
     },
     {
       "description": "Group remaining npm minor/patch prod deps",
