@@ -54,7 +54,7 @@
     "@tailwindcss/postcss": "~4.3.3",
     "cross-env": "~10.1.0",
     "jsdom": "~29.1.1",
-    "postcss": "~8.5.19",
+    "postcss": "~8.5.20",
     "sharp": "~0.35.3",
     "tailwindcss": "~4.3.3",
     "typescript": "~6.0.3",
