@@ -23,7 +23,7 @@
     "@commitlint/config-conventional": "~21.2.0",
     "@semantic-release/changelog": "~6.0.3",
     "@semantic-release/exec": "~7.1.0",
-    "@semantic-release/git": "~10.0.1",
+    "@semantic-release/git": "~11.0.0",
     "badge-maker": "~6.0.0",
     "husky": "~9.1.7",
     "semantic-release": "~25.0.8",
