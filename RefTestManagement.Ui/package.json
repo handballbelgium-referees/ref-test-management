@@ -31,7 +31,7 @@
     "@angular/platform-browser": "~22.0.8",
     "@angular/router": "~22.0.8",
     "@angular/service-worker": "~22.0.8",
-    "@apollo/client": "~4.2.7",
+    "@apollo/client": "~4.2.8",
     "@fortawesome/angular-fontawesome": "~5.1.0",
     "@fortawesome/fontawesome-svg-core": "~7.3.1",
     "@fortawesome/free-brands-svg-icons": "~7.3.1",
