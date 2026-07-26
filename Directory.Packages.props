@@ -3,7 +3,7 @@
         <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
     </PropertyGroup>
     <ItemGroup>
-        <PackageVersion Include="ClosedXML" Version="0.105.0" />
+        <PackageVersion Include="ClosedXML" Version="0.105.1" />
         <PackageVersion Include="HotChocolate.Abstractions" Version="16.5.1" />
         <PackageVersion Include="HotChocolate.AspNetCore" Version="16.5.1" />
         <PackageVersion Include="HotChocolate.AspNetCore.Authorization" Version="16.5.1" />
