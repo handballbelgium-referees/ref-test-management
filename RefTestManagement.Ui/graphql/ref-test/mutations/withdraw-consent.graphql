@@ -1,0 +1,14 @@
+mutation WithdrawConsent($input: WithdrawConsentInput!) {
+  withdrawConsent(input: $input) {
+    boolean
+    errors {
+      __typename
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on InvalidRefTestStatusError {
+        message
+      }
+    }
+  }
+}

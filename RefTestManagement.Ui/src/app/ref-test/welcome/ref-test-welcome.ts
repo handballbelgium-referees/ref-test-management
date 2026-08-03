@@ -7,16 +7,25 @@ import {
   AcceptPrivacyNoticeGQL,
   GetPrivacyNoticeGQL,
   GetRefTestByTokenGQL,
+  WithdrawConsentGQL,
 } from '../../../../graphql/generated';
 import { toSnakeCase } from '../../shared/utils/string-utils';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
+import { WithdrawConsentDialog } from '../components/withdraw-consent-dialog/withdraw-consent-dialog';
 import { RefTestDetails } from './components/ref-test-details/ref-test-details';
 import { RefTestHero } from './components/ref-test-hero/ref-test-hero';
 import { RefTestInstructions } from './components/ref-test-instructions/ref-test-instructions';
 
 @Component({
   selector: 'app-ref-test-welcome',
-  imports: [TranslatePipe, RefTestHero, RefTestError, RefTestDetails, RefTestInstructions],
+  imports: [
+    TranslatePipe,
+    RefTestHero,
+    RefTestError,
+    RefTestDetails,
+    RefTestInstructions,
+    WithdrawConsentDialog,
+  ],
   templateUrl: './ref-test-welcome.html',
   host: {
     class: 'block',
@@ -28,11 +37,17 @@ export class RefTestWelcome {
   private readonly _getRefTestByTokenGQL = inject(GetRefTestByTokenGQL);
   private readonly _getPrivacyNoticeGQL = inject(GetPrivacyNoticeGQL);
   private readonly _acceptPrivacyNoticeGQL = inject(AcceptPrivacyNoticeGQL);
+  private readonly _withdrawConsentGQL = inject(WithdrawConsentGQL);
   private readonly _destroyRef = inject(DestroyRef);
 
   readonly privacyAccepted = signal(false);
   readonly acceptingPrivacyNotice = signal(false);
   readonly privacyNoticeError = signal(false);
+
+  readonly showWithdrawDialog = signal(false);
+  readonly withdrawing = signal(false);
+  readonly withdrawError = signal(false);
+  readonly withdrawn = signal(false);
 
   readonly refTestResult = toSignal(
     this._route.paramMap.pipe(
@@ -125,6 +140,35 @@ export class RefTestWelcome {
           return EMPTY;
         }),
         finalize(() => this.acceptingPrivacyNotice.set(false)),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  withdrawConsent(): void {
+    const token = this._token();
+    if (!token) return;
+
+    this.withdrawError.set(false);
+    this.withdrawing.set(true);
+    this._withdrawConsentGQL
+      .mutate({ variables: { input: { token } } })
+      .pipe(
+        take(1),
+        tap((result) => {
+          const errors = result.data?.withdrawConsent.errors;
+          if (errors && errors.length > 0) {
+            this.withdrawError.set(true);
+            return;
+          }
+          this.showWithdrawDialog.set(false);
+          this.withdrawn.set(true);
+        }),
+        catchError(() => {
+          this.withdrawError.set(true);
+          return EMPTY;
+        }),
+        finalize(() => this.withdrawing.set(false)),
         takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();

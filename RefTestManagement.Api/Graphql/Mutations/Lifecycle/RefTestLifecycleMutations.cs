@@ -104,6 +104,37 @@ public static class RefTestLifecycleMutations
     }
 
     /// <summary>
+    /// Lets the holder of a RefTest token withdraw consent and permanently erase their data.
+    /// Not available once the RefTest is Completed; that case requires the verified-identity request process.
+    /// </summary>
+    [Error<RefTestNotFoundException>]
+    [Error<InvalidRefTestStatusException>]
+    public static async Task<bool> WithdrawConsentAsync(
+        string token,
+        RefTestManagementContext context,
+        [Service] IRefTestPrivacyErasureService privacyErasureService,
+        [Service] IRefTestSubscriptionService subscriptionService,
+        CancellationToken cancellationToken)
+    {
+        var refTest = await context.RefTests
+            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
+
+        if (refTest is null)
+            throw new RefTestNotFoundException(token);
+
+        if (refTest.Status == RefTestStatus.Completed)
+            throw new InvalidRefTestStatusException(
+                "Completed RefTests cannot be withdrawn through self-service; contact the privacy contact to request erasure.");
+
+        var refTestId = refTest.Id;
+        var status = refTest.Status;
+        await privacyErasureService.EraseAsync(refTest, cancellationToken);
+        await subscriptionService.PublishRefTestDeletedAsync(refTestId, status, cancellationToken);
+
+        return true;
+    }
+
+    /// <summary>
     /// Save RefTest progress (current question and selected answers)
     /// </summary>
     /// <param name="input"></param>

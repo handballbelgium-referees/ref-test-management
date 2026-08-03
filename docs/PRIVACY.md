@@ -49,20 +49,26 @@ Permanent erasure removes:
 - queued or completed background-job payloads that reference the RefTest
 - audit events in the RefTest's audit stream, including archived events
 
-The standard administrative `deleteRefTests` operation uses this same erasure path. An already delivered email cannot be recalled from a participant's inbox.
+The standard administrative `deleteRefTests` operation and the participant-facing `withdrawConsent` operation both use this same erasure path. An already delivered email cannot be recalled from a participant's inbox.
 
 Backups, email-provider retention, and third-party logs are outside the application's database cleanup. Their retention and deletion procedures must be agreed with the relevant provider and documented by the controller.
 
 ## Handling Requests
 
-Requests are received at `kristof.gilis@outlook.be`. There is no public self-service export or erasure endpoint, because the token in an invitation link is not sufficient proof of identity for a data-subject request.
+Requests are received at `kristof.gilis@outlook.be`. There is no public self-service export endpoint, because the token in an invitation link is not sufficient proof of identity for access, correction, or portability requests.
+
+### Self-service withdrawal (before completion)
+
+A participant who has not yet completed their RefTest can withdraw consent and immediately erase their own data using only their invitation link, via the "withdraw consent" action on the welcome and in-progress pages. This uses the same permanent-erasure path described above (RefTest, jobs, and audit events) and requires no identity verification beyond the token, matching the low bar already used to give consent. It is not available once the RefTest is `Completed`.
+
+### Verified-identity requests (access, correction, completed RefTests)
 
 1. Record the request date, requester contact details, requested right, and RefTest identifier if available.
 2. Verify the requester's identity using a proportionate method before disclosing, correcting, or erasing data. Do not ask for more personal data than necessary.
 3. Locate the RefTest using the authorized administration interface; access to participant details requires the relevant `ref-tests` permission.
 4. For access or portability, prepare a secure copy of the participant's identity, timing, progress, answers, and results. Send it only after identity verification.
 5. For corrections, update the minimum necessary fields through the administration interface.
-6. For erasure or withdrawal of consent, delete the RefTest using the administration interface. This invokes complete application-database erasure.
+6. For erasure or withdrawal of consent on a completed RefTest, delete the RefTest using the administration interface. This invokes complete application-database erasure.
 7. Reply without undue delay and normally within one month. Record the action taken and any lawful reason for a refusal or extension.
 8. Where a processor received relevant data, follow the processor's documented deletion or request-handling process.
 

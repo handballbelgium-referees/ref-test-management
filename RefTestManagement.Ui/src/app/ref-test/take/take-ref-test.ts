@@ -8,6 +8,7 @@ import {
   GetScoreConfigurationGQL,
 } from '../../../../graphql/generated';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
+import { WithdrawConsentDialog } from '../components/withdraw-consent-dialog/withdraw-consent-dialog';
 import { LeaveRefTestDialog } from './components/leave-ref-test-dialog/leave-ref-test-dialog';
 import { QuestionCard } from './components/question-card/question-card';
 import { RefTestHeader } from './components/ref-test-header/ref-test-header';
@@ -27,6 +28,7 @@ import { RefTestStore } from './state/ref-test.store';
     RefTestNavigation,
     SubmitRefTestDialog,
     LeaveRefTestDialog,
+    WithdrawConsentDialog,
     RefTestResults,
     RefTestError,
     TranslatePipe,
@@ -133,6 +135,10 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
   cancelLeave() {
     this._tempLeaveHandlers?.cancel();
     this._tempLeaveHandlers = undefined;
+  }
+
+  withdrawConsent() {
+    this._facade.withdrawConsent();
   }
 
   canDeactivate(): boolean | Promise<boolean> {

@@ -5,6 +5,6 @@ import { TakeRefTest } from '../take-ref-test';
 
 export const refTestGuard: CanDeactivateFn<TakeRefTest> = () => {
   const store = inject(RefTestStore);
-  if (store.completed()) return true;
+  if (store.completed() || store.withdrawn()) return true;
   return confirm('Are you sure you want to leave the test?');
 };

@@ -606,6 +606,10 @@
     "start_button": "Commencer le RefTest",
     "privacy_consent": "J'ai lu et j'accepte la",
     "privacy_consent_error": "Nous n'avons pas pu enregistrer votre acceptation de l'avis de confidentialité. Veuillez réessayer.",
+    "withdraw_link": "Retirer mon consentement et supprimer mes données",
+    "withdraw_error": "Nous n'avons pas pu traiter votre retrait. Veuillez réessayer ou nous contacter.",
+    "withdrawn_title": "Vos données ont été supprimées",
+    "withdrawn_message": "Vous avez retiré votre consentement. Votre RefTest et vos données personnelles ont été définitivement supprimés.",
     "time_remaining": "Temps Restant",
     "progress": "Progrès",
     "question": "Question",
@@ -643,6 +647,13 @@
         "warning": "Votre progression sera perdue si vous n'avez pas soumis le RefTest.",
         "confirm": "Quitter le RefTest",
         "cancel": "Rester sur le RefTest"
+      },
+      "withdraw": {
+        "title": "Retirer votre consentement ?",
+        "message": "Cela supprimera définitivement votre RefTest et toutes les données personnelles associées. Cette action est irréversible.",
+        "warning": "Une fois le RefTest terminé, le retrait n'est plus possible en libre-service.",
+        "confirm": "Retirer et supprimer mes données",
+        "cancel": "Annuler"
       }
     }
   },

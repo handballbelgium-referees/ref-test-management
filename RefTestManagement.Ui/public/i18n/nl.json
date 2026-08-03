@@ -605,6 +605,10 @@
     "start_button": "Start RefTest",
     "privacy_consent": "Ik heb de volgende tekst gelezen en aanvaard:",
     "privacy_consent_error": "We konden uw aanvaarding van de privacyverklaring niet vastleggen. Probeer het opnieuw.",
+    "withdraw_link": "Toestemming intrekken en mijn gegevens verwijderen",
+    "withdraw_error": "We konden uw intrekking niet verwerken. Probeer het opnieuw of neem contact met ons op.",
+    "withdrawn_title": "Uw gegevens zijn verwijderd",
+    "withdrawn_message": "U heeft uw toestemming ingetrokken. Uw RefTest en persoonsgegevens zijn permanent verwijderd.",
     "time_remaining": "Resterende Tijd",
     "progress": "Voortgang",
     "question": "Vraag",
@@ -642,6 +646,13 @@
         "warning": "Je voortgang gaat verloren als je de RefTest niet hebt ingediend.",
         "confirm": "RefTest Verlaten",
         "cancel": "Blijf bij RefTest"
+      },
+      "withdraw": {
+        "title": "Toestemming intrekken?",
+        "message": "Hiermee worden je RefTest en alle bijbehorende persoonsgegevens permanent verwijderd. Dit kan niet ongedaan worden gemaakt.",
+        "warning": "Zodra de RefTest is voltooid, is intrekking niet meer mogelijk via zelfbediening.",
+        "confirm": "Intrekken en mijn gegevens verwijderen",
+        "cancel": "Annuleren"
       }
     }
   },

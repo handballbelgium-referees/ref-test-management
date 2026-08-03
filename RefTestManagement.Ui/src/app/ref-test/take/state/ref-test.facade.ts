@@ -9,6 +9,8 @@ import {
   SaveRefTestProgressGQL,
   StartRefTestGQL,
   StartRefTestMutation,
+  WithdrawConsentGQL,
+  WithdrawConsentMutation,
 } from '../../../../../graphql/generated';
 import { runMutation } from '../../../shared/utils/apollo-utils';
 import { toSnakeCase } from '../../../shared/utils/string-utils';
@@ -17,6 +19,7 @@ import { RefTestStore } from './ref-test.store';
 
 type StartRefTestPayload = StartRefTestMutation['startRefTest'];
 type CompleteRefTestPayload = CompleteRefTestMutation['completeRefTest']['refTest'];
+type WithdrawConsentPayload = WithdrawConsentMutation['withdrawConsent'];
 
 @Service({ autoProvided: false })
 export class RefTestFacade {
@@ -28,6 +31,7 @@ export class RefTestFacade {
   private readonly _saveRefTestProgressGQL = inject(SaveRefTestProgressGQL);
   private readonly _refTestTimeExtendedGQL = inject(RefTestTimeExtendedGQL);
   private readonly _refTestSessionLockGQL = inject(RefTestSessionLockGQL);
+  private readonly _withdrawConsentGQL = inject(WithdrawConsentGQL);
 
   private readonly _saveProgressTrigger = signal(0);
   private _sessionStarted = false;
@@ -185,5 +189,32 @@ export class RefTestFacade {
         takeUntilDestroyed(this._destroyRef),
       )
       .subscribe();
+  }
+
+  withdrawConsent(): void {
+    const token = this._store.token();
+    if (!token) return;
+
+    this._store.withdrawError.set(false);
+
+    runMutation<WithdrawConsentMutation, WithdrawConsentPayload | null>(
+      this._withdrawConsentGQL.mutate({ variables: { input: { token } } }),
+      this._destroyRef,
+      {
+        onStart: () => this._store.withdrawing.set(true),
+        onSuccess: (payload) => {
+          const errors = payload?.errors;
+          if (errors && errors.length > 0) {
+            this._store.withdrawError.set(true);
+            return;
+          }
+          this._store.showWithdrawDialog.set(false);
+          this._store.withdrawn.set(true);
+        },
+        onError: () => this._store.withdrawError.set(true),
+        onComplete: () => this._store.withdrawing.set(false),
+      },
+      (r) => r.data?.withdrawConsent ?? null,
+    );
   }
 }

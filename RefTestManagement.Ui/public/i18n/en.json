@@ -605,6 +605,10 @@
     "start_button": "Start RefTest",
     "privacy_consent": "I have read and accept the",
     "privacy_consent_error": "We could not record your privacy-notice acceptance. Please try again.",
+    "withdraw_link": "Withdraw consent and delete my data",
+    "withdraw_error": "We could not process your withdrawal. Please try again or contact us.",
+    "withdrawn_title": "Your data has been deleted",
+    "withdrawn_message": "You have withdrawn consent. Your RefTest and personal data have been permanently deleted.",
     "time_remaining": "Time Remaining",
     "progress": "Progress",
     "question": "Question",
@@ -642,6 +646,13 @@
         "warning": "Your progress will be lost if you haven't submitted the RefTest.",
         "confirm": "Leave RefTest",
         "cancel": "Stay on RefTest"
+      },
+      "withdraw": {
+        "title": "Withdraw consent?",
+        "message": "This will permanently delete your RefTest and all personal data associated with it. This cannot be undone.",
+        "warning": "Once the RefTest is completed, withdrawal is no longer available through self-service.",
+        "confirm": "Withdraw and delete my data",
+        "cancel": "Cancel"
       }
     }
   },
