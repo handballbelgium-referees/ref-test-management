@@ -157,15 +157,20 @@ export const appConfig: ApplicationConfig = {
           },
         };
 
-        // Retries automatically on network errors. StartRefTest also retries on GraphQL
-        // execution errors (e.g. the external questions provider failing transiently),
-        // since re-issuing it is safe - it just returns the already-started session.
+        // Retries automatically on network errors for everything. Queries also retry on
+        // GraphQL execution errors since re-running a read is always safe, and so does
+        // StartRefTest specifically (it just returns the already-started session). Other
+        // mutations are left alone on GraphQL errors since they may not be idempotent.
         const retryLink = new RetryLink({
           delay: { initial: 300, max: 3000, jitter: true },
           attempts: (count, operation, error) => {
             if (count > 3) return false;
             if (operation.operationName === 'StartRefTest') return true;
-            return !CombinedGraphQLErrors.is(error);
+            const definition = getMainDefinition(operation.query);
+            const isQuery =
+              definition.kind === Kind.OPERATION_DEFINITION &&
+              definition.operation === OperationTypeNode.QUERY;
+            return isQuery || !CombinedGraphQLErrors.is(error);
           },
         });
 
