@@ -12,6 +12,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using QuestPDF.Infrastructure;
 using StrawberryShake;
 using Handball.Belgium.RefTestManagement.Api.Graphql;
@@ -151,6 +152,7 @@ services.AddGraphQLServer()
     .AddQueryConventions()
     .AddMutationConventions()
     .AddInMemorySubscriptions()
+    .AddApplicationService<ILogger<UnhandledExceptionLoggingErrorFilter>>()
     .AddErrorFilter<UnhandledExceptionLoggingErrorFilter>()
     .ModifyPagingOptions(options =>
     {
