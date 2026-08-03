@@ -94,6 +94,17 @@ public interface IRefTestSubscriptionService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Publish an event when a RefTest is anonymized (privacy erasure/consent withdrawal).
+    /// Unlike deletion, the record itself is kept in redacted form.
+    /// </summary>
+    Task PublishRefTestAnonymizedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        string fullName,
+        string email,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Publish an event when a RefTest is reset (soft or hard) back to Pending
     /// </summary>
     Task PublishRefTestResetAsync(
@@ -259,6 +270,21 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         );
     }
 
+    public async Task PublishRefTestAnonymizedAsync(
+        Guid refTestId,
+        RefTestStatus status,
+        string fullName,
+        string email,
+        CancellationToken cancellationToken = default)
+    {
+        var evt = new RefTestAnonymizedEvent(refTestId, status, fullName, email);
+
+        await Task.WhenAll(
+            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
+            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+        );
+    }
+
     public async Task PublishRefTestResetAsync(
         Guid refTestId,
         RefTestStatus oldStatus,
@@ -337,6 +363,8 @@ public record RefTestCompletedEvent(
 public record RefTestExpiredEvent(Guid Id, RefTestStatus Status, DateTime ExpiredAt);
 
 public record RefTestDeletedEvent(Guid Id, RefTestStatus Status);
+
+public record RefTestAnonymizedEvent(Guid Id, RefTestStatus Status, string FullName, string Email);
 
 public record RefTestCreatedEvent(
     Guid Id,

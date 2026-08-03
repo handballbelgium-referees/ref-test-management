@@ -17,7 +17,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 /// RefTest queries
 /// </summary>
 [QueryType]
-public static class RefTestQueries
+public static partial class RefTestQueries
 {
     /// <summary>
     /// Gets the public privacy notice details for test participants.

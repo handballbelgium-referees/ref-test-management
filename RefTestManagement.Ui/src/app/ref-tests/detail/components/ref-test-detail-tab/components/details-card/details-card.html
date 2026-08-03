@@ -18,7 +18,7 @@
       {{ 'ref_tests.detail.participant_info' | translate }}
     </h2>
     <div class="flex items-center gap-2">
-      @if (status() !== 'IN_PROGRESS' && status() !== 'COMPLETED') {
+      @if (!isAnonymized() && status() !== 'IN_PROGRESS' && status() !== 'COMPLETED') {
         <button
           *hasPermission="Permissions.RefTests.UpdateDetails"
           type="button"
@@ -37,7 +37,7 @@
           </svg>
         </button>
       }
-      @if (status() === 'IN_PROGRESS' || status() === 'COMPLETED') {
+      @if (!isAnonymized() && (status() === 'IN_PROGRESS' || status() === 'COMPLETED')) {
         <button
           *hasPermission="Permissions.RefTests.Reset"
           type="button"
@@ -56,7 +56,7 @@
           </svg>
         </button>
       }
-      @if (status() === 'EXPIRED') {
+      @if (!isAnonymized() && status() === 'EXPIRED') {
         <button
           *hasPermission="Permissions.RefTests.Revive"
           type="button"

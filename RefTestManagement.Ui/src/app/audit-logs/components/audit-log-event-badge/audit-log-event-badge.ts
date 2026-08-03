@@ -30,6 +30,7 @@ export class AuditLogEventBadge {
       case 'RefTestApproved':
       case 'RefTestRevived':
       case 'RefTestTitleCreated':
+      case 'RefTestCompleted':
       case 'EntityCreated':
         return 'text-green-700 bg-green-100';
       case 'RefTestDeleted':
@@ -37,11 +38,15 @@ export class AuditLogEventBadge {
       case 'RefTestExpired':
       case 'EntityDeleted':
         return 'text-red-700 bg-red-100';
+      case 'RefTestAnonymized':
+        return 'text-white bg-handball-black';
       case 'RefTestSoftReset':
       case 'RefTestHardReset':
       case 'RefTestTokenRegenerated':
       case 'RefTestInvitationSent':
       case 'RefTestResultsSent':
+      case 'RefTestStarted':
+      case 'RefTestPrivacyNoticeAccepted':
         return 'text-yellow-700 bg-yellow-100';
       default:
         return 'text-blue-700 bg-blue-100';

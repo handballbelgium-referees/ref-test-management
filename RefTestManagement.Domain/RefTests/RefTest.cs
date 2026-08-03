@@ -5,12 +5,18 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
 namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
-public class RefTest : IHasDomainEvents
+public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 {
+    /// <summary>Placeholder used to redact personal data in place — see <see cref="Anonymize"/>.</summary>
+    private const string RedactedValue = "***";
+
     private readonly List<IDomainEvent> _domainEvents = [];
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
     public void ClearDomainEvents() => _domainEvents.Clear();
     private void RaiseDomainEvent(IDomainEvent e) => _domainEvents.Add(e);
+
+    string? IHasParticipantIdentity.ParticipantName => FullName;
+    string? IHasParticipantIdentity.ParticipantEmail => Email;
 
     private RefTest(
         Guid titleId,
@@ -74,6 +80,14 @@ public class RefTest : IHasDomainEvents
     public DateTime? PrivacyNoticeAcceptedAt { get; private set; }
 
     public string? RejectionReason { get; private set; }
+
+    /// <summary>
+    /// True once this RefTest's personal data (name, email, token) has been redacted as part
+    /// of privacy erasure. The record itself and its audit trail are kept for accountability.
+    /// </summary>
+    public bool IsAnonymized { get; private set; }
+
+    public DateTime? AnonymizedAt { get; private set; }
 
     /// <summary>Name of the Auth0 user who created this RefTest.</summary>
     public string CreatorName { get; private set; } = string.Empty;
@@ -181,10 +195,15 @@ public class RefTest : IHasDomainEvents
 
         PrivacyNoticeVersion = noticeVersion;
         PrivacyNoticeAcceptedAt = DateTime.UtcNow;
+
+        RaiseDomainEvent(new RefTestPrivacyNoticeAcceptedEvent(noticeVersion, FirstName, LastName, Email));
     }
 
     public void Start(string requiredPrivacyNoticeVersion)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot start a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.Pending)
             throw new InvalidRefTestStatusException("RefTest can only be started from Pending status");
 
@@ -198,10 +217,15 @@ public class RefTest : IHasDomainEvents
         Status = RefTestStatus.InProgress;
         StartedAt = DateTime.UtcNow;
         CurrentQuestionIndex = 0;
+
+        RaiseDomainEvent(new RefTestStartedEvent(FirstName, LastName, Email));
     }
 
     public void SaveProgress(int currentQuestionIndex, List<string> selectedAnswerIds, string? language = null)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot save progress for a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only save progress for in-progress RefTests");
 
@@ -214,6 +238,9 @@ public class RefTest : IHasDomainEvents
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
         string? language = null)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot complete a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only complete in-progress RefTests");
 
@@ -227,6 +254,10 @@ public class RefTest : IHasDomainEvents
         WrongQuestionIds = wrongQuestionIds;
         WrongAnswerIds = wrongAnswerIds;
         Language = language;
+
+        RaiseDomainEvent(new RefTestCompletedEvent(
+            questionScore, answerScore, answerTotal, percentage,
+            FirstName, LastName, Email));
     }
 
     public void SendResults()
@@ -475,9 +506,42 @@ public class RefTest : IHasDomainEvents
         RaiseDomainEvent(new RefTestRevivedEvent());
     }
 
+    /// <summary>
+    /// Records, purely for the audit trail, that this RefTest was explicitly deleted by staff
+    /// (a "RefTestDeleted" event, distinct from "RefTestAnonymized"). Raise this immediately
+    /// before actually removing the record from the database — the audit trail itself is kept
+    /// and expires on its own per the normal retention schedule, since it carries no reference
+    /// back to the (now-gone) row.
+    /// </summary>
     public void MarkDeleted()
     {
         RaiseDomainEvent(new RefTestDeletedEvent());
+    }
+
+    /// <summary>
+    /// Irreversibly redacts personal data (name, email, token) in place while preserving the
+    /// RefTest record and its audit trail for accountability — used by the public self-service
+    /// "withdraw consent" flow, which (unlike a staff delete) never removes the record itself.
+    /// Idempotent — calling it again once already anonymized is a no-op.
+    /// </summary>
+    public void Anonymize()
+    {
+        if (IsAnonymized)
+            return;
+
+        FirstName = RedactedValue;
+        LastName = RedactedValue;
+        Email = RedactedValue;
+        // Token must stay unique (unique index) — a random placeholder still hides the real
+        // token value while satisfying that constraint, unlike a fixed "***" for every RefTest.
+        Token = $"erased-{Guid.NewGuid():N}";
+        PrivacyNoticeVersion = null;
+        PrivacyNoticeAcceptedAt = null;
+        IsAnonymized = true;
+        AnonymizedAt = DateTime.UtcNow;
+        Status = RefTestStatus.Completed; // Mark as completed so it can't be started again
+
+        RaiseDomainEvent(new RefTestAnonymizedEvent());
     }
 
     #endregion

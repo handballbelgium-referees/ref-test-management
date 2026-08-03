@@ -112,6 +112,14 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
         builder.Property(x => x.RejectionReason)
             .HasMaxLength(1000);
 
+        builder.Property(x => x.IsAnonymized)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.AnonymizedAt);
+
+        builder.HasIndex(x => x.IsAnonymized);
+
         builder.Property(x => x.ScheduledAt);
 
         builder.Property(x => x.CreatorName)

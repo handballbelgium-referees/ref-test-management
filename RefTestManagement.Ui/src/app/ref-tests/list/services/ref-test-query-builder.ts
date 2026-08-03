@@ -56,6 +56,12 @@ export class RefTestQueryBuilder {
       } as BooleanOperationFilterInput;
     }
 
+    if (filter.isAnonymized !== undefined) {
+      filters.isAnonymized = {
+        eq: filter.isAnonymized,
+      } as BooleanOperationFilterInput;
+    }
+
     // Language filter
     if (filter.language) {
       filters.language = { eq: filter.language } as StringOperationFilterInput;

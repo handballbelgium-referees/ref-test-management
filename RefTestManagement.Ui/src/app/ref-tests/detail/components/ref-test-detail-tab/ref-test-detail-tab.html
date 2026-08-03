@@ -6,6 +6,7 @@
         [name]="test.name"
         [email]="test.email"
         [status]="test.status"
+        [isAnonymized]="test.isAnonymized"
         (edit)="operationManager.updateRefTestDetailsDialog.initiate(test)"
         (reset)="operationManager.resetDialog.initiate()"
         (revive)="operationManager.reviveDialog.initiate()"
@@ -18,6 +19,7 @@
         [maxTimeInMinutes]="test.maxTimeInMinutes"
         [language]="test.language"
         [status]="test.status"
+        [isAnonymized]="test.isAnonymized"
         (edit)="operationManager.updateRefTestConfigurationDialog.initiate(test)"
         (regenerateToken)="operationManager.regenerateRefTestTokenDialog.initiate()"
       />
@@ -29,6 +31,7 @@
         [sendInvitationsAutomatically]="test.sendInvitationsAutomatically"
         [sendResultsAutomatically]="test.sendResultsAutomatically"
         [status]="test.status"
+        [isAnonymized]="test.isAnonymized"
         (edit)="operationManager.updateRefTestNotificationSettingsDialog.initiate(test)"
       />
 
@@ -38,6 +41,7 @@
         [startedAt]="test.startedAt ?? undefined"
         [completedAt]="test.completedAt ?? undefined"
         [status]="test.status"
+        [isAnonymized]="test.isAnonymized"
         (extendTime)="operationManager.extendRefTestTimeDialog.initiate(test)"
       />
     </div>

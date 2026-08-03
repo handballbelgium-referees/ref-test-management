@@ -15,7 +15,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Update;
 /// RefTest update mutations
 /// </summary>
 [MutationType]
-public static class RefTestUpdateMutations
+public static partial class RefTestUpdateMutations
 {
     /// <summary>
     /// Update RefTest participant details (firstName, lastName, email)

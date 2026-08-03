@@ -68,12 +68,14 @@ export class RefTestDetail {
   }
 
   // Computed properties for actions
+  protected readonly isAnonymized = computed(() => this.refTestData().isAnonymized);
+
   protected readonly canSendInvitation = computed(() => {
-    return this.refTestData().status === 'PENDING';
+    return this.refTestData().status === 'PENDING' && !this.isAnonymized();
   });
 
   protected readonly canSendResults = computed(() => {
-    return this.refTestData().status === 'COMPLETED';
+    return this.refTestData().status === 'COMPLETED' && !this.isAnonymized();
   });
 
   protected readonly invitationSummary = computed(() => {
@@ -101,10 +103,12 @@ export class RefTestDetail {
 
   protected readonly canApprove = computed(() => {
     const s = this.refTestData().status;
-    return s === 'PENDING_APPROVAL' || s === 'REJECTED';
+    return (s === 'PENDING_APPROVAL' || s === 'REJECTED') && !this.isAnonymized();
   });
 
-  protected readonly canReject = computed(() => this.refTestData().status === 'PENDING_APPROVAL');
+  protected readonly canReject = computed(
+    () => this.refTestData().status === 'PENDING_APPROVAL' && !this.isAnonymized(),
+  );
 
   protected readonly refTestForApproval = computed(() => {
     const refTest = this.refTestData();

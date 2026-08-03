@@ -98,6 +98,7 @@
         "title_search_placeholder": "Rechercher des titres...",
         "no_titles_found": "Aucun titre trouvé",
         "communication_status": "Statut de Communication",
+        "privacy_status": "Statut de Confidentialité",
         "invitation_label": "Statut d'Invitation",
         "invitation_all": "Toutes",
         "invitation_sent": "Envoyée",
@@ -106,6 +107,10 @@
         "results_all": "Toutes",
         "results_sent": "Envoyée",
         "results_not_sent": "Non Envoyée",
+        "anonymized_label": "Anonymisé",
+        "anonymized_all": "Toutes",
+        "anonymized_yes": "Anonymisé",
+        "anonymized_no": "Non Anonymisé",
         "language_label": "Langue",
         "language_all": "Toutes les Langues",
         "question_score_range": "Plage de Score des Questions",
@@ -154,6 +159,8 @@
         "title": "Titre",
         "participant": "Participant",
         "status": "Statut",
+        "anonymized_badge": "Anonymisé",
+        "anonymized_badge_tooltip": "Les données personnelles de ce RefTest ont été anonymisées suite à une demande d'effacement ou de retrait de consentement.",
         "questions": "Questions",
         "max_time": "Temps Max",
         "minutes_short": "min",
@@ -735,10 +742,14 @@
       "RefTestHardReset": "Réinitialisation complète",
       "RefTestRevived": "Réactivé",
       "RefTestDeleted": "Supprimé",
+      "RefTestAnonymized": "Anonymisé",
       "RefTestInvitationSent": "Invitation envoyée",
       "RefTestResultsSent": "Résultats envoyés",
       "RefTestExpired": "Expiré",
       "RefTestTitleCreated": "Titre créé",
+      "RefTestStarted": "Démarré",
+      "RefTestPrivacyNoticeAccepted": "Politique de confidentialité acceptée",
+      "RefTestCompleted": "Terminé",
       "EntityCreated": "Créé",
       "EntityModified": "Modifié",
       "EntityDeleted": "Supprimé"
@@ -774,7 +785,12 @@
       "reason": "Raison",
       "value": "Valeur",
       "streamId": "Id",
-      "version": "Version"
+      "version": "Version",
+      "noticeVersion": "Version de la politique",
+      "questionScore": "Score des questions",
+      "answerScore": "Score des réponses",
+      "answerTotal": "Total des réponses",
+      "percentage": "Pourcentage"
     }
   }
 }

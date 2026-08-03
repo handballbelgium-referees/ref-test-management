@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 
 [QueryType]
-public static class AuditLogQueries
+public static partial class AuditLogQueries
 {
     [Authorize(Policy = Permissions.AuditLogs.View)]
     [UsePaging]

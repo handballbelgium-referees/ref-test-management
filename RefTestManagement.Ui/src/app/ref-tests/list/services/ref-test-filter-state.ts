@@ -42,6 +42,10 @@ export class RefTestFilterState {
     this.updateFilter({ resultsSent });
   }
 
+  setIsAnonymized(isAnonymized?: boolean): void {
+    this.updateFilter({ isAnonymized });
+  }
+
   setLanguage(language?: string): void {
     this._filter.update((current) => {
       const updated = { ...current };

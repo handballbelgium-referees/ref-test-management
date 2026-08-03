@@ -13,7 +13,7 @@ using HotChocolate.Authorization;
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 
 [MutationType]
-public static class RefTestCreationMutations
+public static partial class RefTestCreationMutations
 {
     /// <summary>
     /// Create RefTests for one or more users with the same configuration.

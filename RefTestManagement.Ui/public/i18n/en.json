@@ -98,6 +98,7 @@
         "title_search_placeholder": "Search titles...",
         "no_titles_found": "No titles found",
         "communication_status": "Communication Status",
+        "privacy_status": "Privacy Status",
         "invitation_label": "Invitation Status",
         "invitation_all": "All",
         "invitation_sent": "Sent",
@@ -106,6 +107,10 @@
         "results_all": "All",
         "results_sent": "Sent",
         "results_not_sent": "Not Sent",
+        "anonymized_label": "Anonymized",
+        "anonymized_all": "All",
+        "anonymized_yes": "Anonymized",
+        "anonymized_no": "Not Anonymized",
         "language_label": "Language",
         "language_all": "All Languages",
         "question_score_range": "Question Score Range",
@@ -154,6 +159,8 @@
         "title": "Title",
         "participant": "Participant",
         "status": "Status",
+        "anonymized_badge": "Anonymized",
+        "anonymized_badge_tooltip": "This RefTest's personal data has been redacted following a privacy erasure or consent withdrawal request.",
         "questions": "Questions",
         "max_time": "Max Time",
         "minutes_short": "min",
@@ -734,10 +741,14 @@
       "RefTestHardReset": "Hard Reset",
       "RefTestRevived": "Revived",
       "RefTestDeleted": "Deleted",
+      "RefTestAnonymized": "Anonymized",
       "RefTestInvitationSent": "Invitation Sent",
       "RefTestResultsSent": "Results Sent",
       "RefTestExpired": "Expired",
       "RefTestTitleCreated": "Title Created",
+      "RefTestStarted": "Started",
+      "RefTestPrivacyNoticeAccepted": "Privacy Notice Accepted",
+      "RefTestCompleted": "Completed",
       "EntityCreated": "Created",
       "EntityModified": "Modified",
       "EntityDeleted": "Deleted"
@@ -773,7 +784,12 @@
       "reason": "Reason",
       "value": "Value",
       "streamId": "Id",
-      "version": "Version"
+      "version": "Version",
+      "noticeVersion": "Notice Version",
+      "questionScore": "Question Score",
+      "answerScore": "Answer Score",
+      "answerTotal": "Answer Total",
+      "percentage": "Percentage"
     }
   }
 }

@@ -23,6 +23,7 @@ export class AuditLogData {
     variables: {
       first: PAGE_SIZE,
       order: this._buildOrder(),
+      where: this.filter(),
     },
   });
 

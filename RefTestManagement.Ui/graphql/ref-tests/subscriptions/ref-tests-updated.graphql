@@ -31,6 +31,12 @@ subscription RefTestsUpdated {
       id
       status
     }
+    ... on RefTestAnonymized {
+      id
+      status
+      name
+      email
+    }
     ... on RefTestReset {
       id
       oldStatus

@@ -13,7 +13,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Reset;
 /// RefTest reset mutations
 /// </summary>
 [MutationType]
-public static class RefTestResetMutations
+public static partial class RefTestResetMutations
 {
     /// <summary>
     /// Reset one or more RefTests to allow retake. Soft reset preserves the audit trail, hard reset clears everything.
@@ -21,6 +21,7 @@ public static class RefTestResetMutations
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <param name="jobEnqueueService"></param>
+    /// <param name="subscriptionService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize(Policy = Permissions.RefTests.Reset)]

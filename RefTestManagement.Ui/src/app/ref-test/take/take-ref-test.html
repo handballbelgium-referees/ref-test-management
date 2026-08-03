@@ -1,25 +1,6 @@
 <div class="bg-neutral-50 py-8 px-4">
   @if (store.withdrawn()) {
-    <div
-      class="max-w-2xl mx-auto text-center bg-white rounded-xl shadow-sm border border-neutral-200 p-8"
-    >
-      <div
-        class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-success-100 mb-4"
-      >
-        <svg class="w-8 h-8 text-success-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-          />
-        </svg>
-      </div>
-      <h1 class="text-xl font-bold text-neutral-900 mb-2">
-        {{ 'ref_test.withdrawn_title' | translate }}
-      </h1>
-      <p class="text-neutral-600">{{ 'ref_test.withdrawn_message' | translate }}</p>
-    </div>
+    <app-ref-test-withdrawn />
   } @else if (store.loading()) {
     <div class="flex items-center justify-center min-h-[60vh]">
       <div class="text-center">
@@ -45,6 +26,15 @@
       [emailDelayMinutes]="emailDelayMinutes() ?? 0"
       [sendResultsAutomatically]="store.sendResultsAutomatically()"
     />
+    <div class="mt-4 text-center">
+      <button
+        type="button"
+        (click)="store.showWithdrawDialog.set(true)"
+        class="text-sm text-neutral-500 hover:text-red-600 underline underline-offset-2"
+      >
+        {{ 'ref_test.withdraw_link' | translate }}
+      </button>
+    </div>
   } @else {
     <div class="max-w-4xl mx-auto">
       @if (store.showProgressRestored()) {

@@ -46,6 +46,8 @@ public static class RefTestMappings
                 ? refTest.CompletedAt.Value - refTest.StartedAt.Value
                 : null,
             RejectionReason = refTest.RejectionReason,
-            ScheduledAt = refTest.ScheduledAt
+            ScheduledAt = refTest.ScheduledAt,
+            IsAnonymized = refTest.IsAnonymized,
+            AnonymizedAt = refTest.AnonymizedAt
         };
 }

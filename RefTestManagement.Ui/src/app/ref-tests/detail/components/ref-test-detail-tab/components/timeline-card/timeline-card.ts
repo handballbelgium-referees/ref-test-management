@@ -16,6 +16,7 @@ export class TimelineCard {
   readonly startedAt = input<string | undefined>(undefined);
   readonly completedAt = input<string | undefined>(undefined);
   readonly status = input.required<RefTestStatus>();
+  readonly isAnonymized = input<boolean>(false);
   protected readonly Permissions = Permissions;
 
   protected readonly extendTime = output<void>();

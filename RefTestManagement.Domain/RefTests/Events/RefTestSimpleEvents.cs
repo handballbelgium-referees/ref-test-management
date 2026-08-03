@@ -26,6 +26,13 @@ public sealed record RefTestDeletedEvent : DomainEventBase
     public override object? GetChanges() => null;
 }
 
+public sealed record RefTestAnonymizedEvent : DomainEventBase
+{
+    public const string EventType = "RefTestAnonymized";
+    public override string ActionName => EventType;
+    public override object? GetChanges() => null;
+}
+
 public sealed record RefTestRevivedEvent : DomainEventBase
 {
     public override string ActionName => "RefTestRevived";

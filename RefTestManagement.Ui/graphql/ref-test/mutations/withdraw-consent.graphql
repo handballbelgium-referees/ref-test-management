@@ -6,9 +6,6 @@ mutation WithdrawConsent($input: WithdrawConsentInput!) {
       ... on RefTestNotFoundError {
         message
       }
-      ... on InvalidRefTestStatusError {
-        message
-      }
     }
   }
 }

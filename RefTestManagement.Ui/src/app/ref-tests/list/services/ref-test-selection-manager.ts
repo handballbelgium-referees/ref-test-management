@@ -123,6 +123,18 @@ export class RefTestSelectionManager {
     });
   }
 
+  /**
+   * Create computed for checking if any already-anonymized ref tests are selected.
+   * Only the delete action remains available for anonymized RefTests.
+   */
+  createHasAnonymizedSelectedComputed(allRefTests: () => RefTestNode[]) {
+    return computed(() => {
+      const selected = this.selectedIds();
+      const allTests = allRefTests();
+      return allTests.some((t) => selected.has(t.id) && t.isAnonymized);
+    });
+  }
+
   // ========================================================================
   // SELECTION SUMMARIES
   // ========================================================================

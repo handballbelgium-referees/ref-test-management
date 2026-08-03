@@ -18,7 +18,10 @@
             <button
               type="button"
               [disabled]="
-                !hasPendingRefTestsSelected() || sendingInvitations() || deletingRefTests()
+                !hasPendingRefTestsSelected() ||
+                sendingInvitations() ||
+                deletingRefTests() ||
+                hasAnonymizedRefTestsSelected()
               "
               (click)="onSendInvitations($event)"
               class="fab-button-1 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
@@ -53,7 +56,12 @@
           <ng-container *hasPermission="Permissions.RefTests.SendResults">
             <button
               type="button"
-              [disabled]="!hasCompletedRefTestsSelected() || sendingResults() || deletingRefTests()"
+              [disabled]="
+                !hasCompletedRefTestsSelected() ||
+                sendingResults() ||
+                deletingRefTests() ||
+                hasAnonymizedRefTestsSelected()
+              "
               (click)="onSendResults($event)"
               class="fab-button-2 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-primary-600 hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
               [attr.aria-label]="
@@ -88,7 +96,7 @@
             @if (selectedCount() > 1) {
               <button
                 type="button"
-                [disabled]="generatingReport()"
+                [disabled]="generatingReport() || hasAnonymizedRefTestsSelected()"
                 (click)="onGenerateReport($event)"
                 class="fab-button-3 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-success-600 hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
                 [attr.aria-label]="'ref_tests.list.actions.generate_report' | translate"
@@ -118,7 +126,8 @@
               [disabled]="
                 !hasInProgressOrCompletedRefTestsSelected() ||
                 resettingRefTests() ||
-                deletingRefTests()
+                deletingRefTests() ||
+                hasAnonymizedRefTestsSelected()
               "
               (click)="onResetSelected($event)"
               class="fab-button-4 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-warning-600 hover:bg-warning-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
@@ -153,7 +162,12 @@
           <ng-container *hasPermission="Permissions.RefTests.Revive">
             <button
               type="button"
-              [disabled]="!hasExpiredRefTestsSelected() || revivingRefTests() || deletingRefTests()"
+              [disabled]="
+                !hasExpiredRefTestsSelected() ||
+                revivingRefTests() ||
+                deletingRefTests() ||
+                hasAnonymizedRefTestsSelected()
+              "
               (click)="onReviveSelected($event)"
               class="fab-button-5 flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-info-600 hover:bg-info-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
               [attr.aria-label]="
@@ -188,7 +202,10 @@
             <button
               type="button"
               [disabled]="
-                !hasApprovableRefTestsSelected() || approvingRefTests() || deletingRefTests()
+                !hasApprovableRefTestsSelected() ||
+                approvingRefTests() ||
+                deletingRefTests() ||
+                hasAnonymizedRefTestsSelected()
               "
               (click)="onApproveSelected($event)"
               class="fab-button-6a flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-success-600 hover:bg-success-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
@@ -224,7 +241,10 @@
             <button
               type="button"
               [disabled]="
-                !hasPendingApprovalRefTestsSelected() || rejectingRefTests() || deletingRefTests()
+                !hasPendingApprovalRefTestsSelected() ||
+                rejectingRefTests() ||
+                deletingRefTests() ||
+                hasAnonymizedRefTestsSelected()
               "
               (click)="onRejectSelected($event)"
               class="fab-button-6b flex items-center gap-2 px-4 py-3 rounded-full shadow-lg text-white bg-error-600 hover:bg-error-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 animate-in slide-in-from-bottom-2 fade-in"
@@ -327,7 +347,12 @@
         <button
           *hasPermission="Permissions.RefTests.SendInvitations"
           type="button"
-          [disabled]="!hasPendingRefTestsSelected() || sendingInvitations() || deletingRefTests()"
+          [disabled]="
+            !hasPendingRefTestsSelected() ||
+            sendingInvitations() ||
+            deletingRefTests() ||
+            hasAnonymizedRefTestsSelected()
+          "
           (click)="onSendInvitations($event)"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -352,7 +377,12 @@
         <button
           *hasPermission="Permissions.RefTests.SendResults"
           type="button"
-          [disabled]="!hasCompletedRefTestsSelected() || sendingResults() || deletingRefTests()"
+          [disabled]="
+            !hasCompletedRefTestsSelected() ||
+            sendingResults() ||
+            deletingRefTests() ||
+            hasAnonymizedRefTestsSelected()
+          "
           (click)="onSendResults($event)"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-primary-600 hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -378,7 +408,7 @@
           <button
             *hasPermission="Permissions.RefTests.SendReport"
             type="button"
-            [disabled]="generatingReport()"
+            [disabled]="generatingReport() || hasAnonymizedRefTestsSelected()"
             (click)="onGenerateReport($event)"
             class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
@@ -403,7 +433,10 @@
           *hasPermission="Permissions.RefTests.Reset"
           type="button"
           [disabled]="
-            !hasInProgressOrCompletedRefTestsSelected() || resettingRefTests() || deletingRefTests()
+            !hasInProgressOrCompletedRefTestsSelected() ||
+            resettingRefTests() ||
+            deletingRefTests() ||
+            hasAnonymizedRefTestsSelected()
           "
           (click)="onResetSelected($event)"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-warning-600 hover:bg-warning-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-warning-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -429,7 +462,12 @@
         <button
           *hasPermission="Permissions.RefTests.Revive"
           type="button"
-          [disabled]="!hasExpiredRefTestsSelected() || revivingRefTests() || deletingRefTests()"
+          [disabled]="
+            !hasExpiredRefTestsSelected() ||
+            revivingRefTests() ||
+            deletingRefTests() ||
+            hasAnonymizedRefTestsSelected()
+          "
           (click)="onReviveSelected($event)"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-info-600 hover:bg-info-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-info-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -454,7 +492,12 @@
         <button
           *hasPermission="Permissions.RefTests.Approve"
           type="button"
-          [disabled]="!hasApprovableRefTestsSelected() || approvingRefTests() || deletingRefTests()"
+          [disabled]="
+            !hasApprovableRefTestsSelected() ||
+            approvingRefTests() ||
+            deletingRefTests() ||
+            hasAnonymizedRefTestsSelected()
+          "
           (click)="onApproveSelected($event)"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-success-600 hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
@@ -480,7 +523,10 @@
           *hasPermission="Permissions.RefTests.Approve"
           type="button"
           [disabled]="
-            !hasPendingApprovalRefTestsSelected() || rejectingRefTests() || deletingRefTests()
+            !hasPendingApprovalRefTestsSelected() ||
+            rejectingRefTests() ||
+            deletingRefTests() ||
+            hasAnonymizedRefTestsSelected()
           "
           (click)="onRejectSelected($event)"
           class="inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-error-600 hover:bg-error-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-error-500 disabled:opacity-50 disabled:cursor-not-allowed"

@@ -51,4 +51,7 @@ public sealed class RefTestDto
     public string? RejectionReason { get; init; }
 
     public DateTime? ScheduledAt { get; init; }
+
+    public bool IsAnonymized { get; init; }
+    public DateTime? AnonymizedAt { get; init; }
 }

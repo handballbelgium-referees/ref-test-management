@@ -14,7 +14,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Approval;
 /// Mutations for approving or rejecting RefTests that are awaiting approval
 /// </summary>
 [MutationType]
-public static class RefTestApprovalMutations
+public static partial class RefTestApprovalMutations
 {
     /// <summary>
     /// Approve one or more RefTests that are pending approval (or previously rejected).

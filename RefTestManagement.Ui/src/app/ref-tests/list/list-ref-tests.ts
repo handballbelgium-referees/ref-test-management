@@ -214,6 +214,9 @@ export class ListRefTests {
   protected readonly hasPendingRefTestsSelected =
     this.selectionManager.createHasPendingSelectedComputed(() => this.allLoadedRefTests());
 
+  protected readonly hasAnonymizedRefTestsSelected =
+    this.selectionManager.createHasAnonymizedSelectedComputed(() => this.allLoadedRefTests());
+
   protected readonly hasInProgressOrCompletedRefTestsSelected = computed(() => {
     const selectedIds = this.selectionManager.selectedIds();
     const allRefTests = this.allLoadedRefTests();
@@ -414,6 +417,10 @@ export class ListRefTests {
 
   protected setResultsFilter(resultsSent?: boolean): void {
     this.filterActions.setResultsFilter(resultsSent);
+  }
+
+  protected setIsAnonymizedFilter(isAnonymized?: boolean): void {
+    this.filterActions.setIsAnonymizedFilter(isAnonymized);
   }
 
   protected setLanguageFilter(language?: string): void {

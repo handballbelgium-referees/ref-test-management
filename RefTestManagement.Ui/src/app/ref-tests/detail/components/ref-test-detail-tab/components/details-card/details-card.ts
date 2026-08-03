@@ -14,6 +14,7 @@ export class DetailsCard {
   readonly name = input.required<string>();
   readonly email = input.required<string>();
   readonly status = input.required<RefTestStatus>();
+  readonly isAnonymized = input<boolean>(false);
   protected readonly Permissions = Permissions;
 
   protected readonly edit = output<void>();

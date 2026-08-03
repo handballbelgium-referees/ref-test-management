@@ -14,6 +14,7 @@ interface IRefTestFilter {
   status?: RefTestStatus;
   invitationSent?: boolean;
   resultsSent?: boolean;
+  isAnonymized?: boolean;
   titleValue?: string;
   language?: string;
   searchTerm: string;
@@ -79,6 +80,7 @@ export class RefTestFiltersCard {
   protected readonly titleFilterChange = output<string | undefined>();
   protected readonly invitationFilterChange = output<boolean | undefined>();
   protected readonly resultsFilterChange = output<boolean | undefined>();
+  protected readonly isAnonymizedFilterChange = output<boolean | undefined>();
   protected readonly languageFilterChange = output<string | undefined>();
 
   protected readonly sortingChange = output<{ field: SortField; direction: SortEnumType }>();
@@ -127,6 +129,10 @@ export class RefTestFiltersCard {
 
   protected onResultsChange(value: string): void {
     this.resultsFilterChange.emit(value === '' ? undefined : value === 'true');
+  }
+
+  protected onIsAnonymizedChange(value: string): void {
+    this.isAnonymizedFilterChange.emit(value === '' ? undefined : value === 'true');
   }
 
   protected onLanguageChange(value: string): void {

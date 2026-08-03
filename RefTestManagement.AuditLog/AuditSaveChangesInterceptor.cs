@@ -29,7 +29,7 @@ public class AuditSaveChangesInterceptor(
 
     private async Task AddAuditEntriesAsync(DbContext context, CancellationToken cancellationToken)
     {
-        var (actorName, actorEmail) = GetActor();
+        var (actorName, actorEmail, isAnonymousRequest) = GetActor();
         var timestamp = DateTime.UtcNow;
 
         var entries = context.ChangeTracker.Entries()
@@ -63,8 +63,9 @@ public class AuditSaveChangesInterceptor(
         foreach (var entry in entries)
         {
             var streamId = GetEntityId(entry);
+            var (entryActorName, entryActorEmail) = ResolveEntryActor(entry, actorName, actorEmail, isAnonymousRequest);
 
-            if (entry.Entity is IHasDomainEvents hasDomainEvents && hasDomainEvents.DomainEvents.Count > 0)
+            if (entry.Entity is IHasDomainEvents { DomainEvents.Count: > 0 } hasDomainEvents)
             {
                 // Domain event path: one AuditEvent per domain event
                 var headers = JsonSerializer.Serialize(new { entityType = entry.Entity.GetType().Name }, JsonOptions);
@@ -85,8 +86,8 @@ public class AuditSaveChangesInterceptor(
                         Type = domainEvent.ActionName,
                         Data = changesData is null ? null : JsonSerializer.Serialize(changesData, JsonOptions),
                         Timestamp = domainEvent.OccurredAt,
-                        ActorName = actorName,
-                        ActorEmail = actorEmail,
+                        ActorName = entryActorName,
+                        ActorEmail = entryActorEmail,
                         Headers = headers
                     };
                     context.Add(auditEvent);
@@ -94,10 +95,15 @@ public class AuditSaveChangesInterceptor(
 
                 hasDomainEvents.ClearDomainEvents();
             }
-            else
+            else if (entry.Entity is not IHasDomainEvents)
             {
-                // Fallback property-diff path for entities without domain events
-                var isSystemActor = string.IsNullOrEmpty(actorEmail) && actorName == "System";
+                // Fallback property-diff path — only for entities that don't opt into
+                // domain-event-based auditing at all. Entities implementing IHasDomainEvents
+                // (e.g. RefTest, RefTestTitle) raise a typed event from every mutating method
+                // that should be audited; a state change with zero raised domain events (e.g.
+                // RefTest.SaveProgress) is an intentional signal that it should NOT be audited,
+                // so it's skipped here rather than falling back to a generic property diff.
+                var isSystemActor = string.IsNullOrEmpty(actorEmail) && actorName == "System" && !isAnonymousRequest;
                 if (isSystemActor && options.ExcludedForSystemActorTypes.Contains(entry.Entity.GetType()))
                     continue;
 
@@ -118,8 +124,8 @@ public class AuditSaveChangesInterceptor(
                     Type = eventType,
                     Data = BuildChangesJson(entry, context),
                     Timestamp = timestamp,
-                    ActorName = actorName,
-                    ActorEmail = actorEmail,
+                    ActorName = entryActorName,
+                    ActorEmail = entryActorEmail,
                     Headers = headers
                 };
                 context.Add(auditEvent);
@@ -127,6 +133,23 @@ public class AuditSaveChangesInterceptor(
         }
     }
 
+    /// <summary>
+    /// Resolves the actor for a single audited entry. When the request is anonymous (not an
+    /// authenticated staff user, and not a true "System" background operation) and the entity
+    /// exposes an <see cref="IHasParticipantIdentity"/> (e.g. a RefTest holder using their
+    /// invitation token), the entity's own name/email is used as the actor instead of "System".
+    /// </summary>
+    private static (string name, string email) ResolveEntryActor(
+        EntityEntry entry, string actorName, string actorEmail, bool isAnonymousRequest)
+    {
+        if (isAnonymousRequest &&
+            entry.Entity is IHasParticipantIdentity { ParticipantEmail: { Length: > 0 } participantEmail } participant)
+        {
+            return (participant.ParticipantName ?? participantEmail, participantEmail);
+        }
+
+        return (actorName, actorEmail);
+    }
     private static long NextVersion(Dictionary<string, long> tracker, string streamId)
     {
         var current = tracker.GetValueOrDefault(streamId, 0L);
@@ -135,11 +158,21 @@ public class AuditSaveChangesInterceptor(
         return next;
     }
 
-    private (string name, string email) GetActor()
+    /// <summary>
+    /// Resolves the current actor. Returns ("System", "", false) when there is no HTTP context
+    /// at all (e.g. a background job/service). Returns (name, email, true) — flagged as an
+    /// anonymous request — when there is an HTTP context but no authenticated user (e.g. a
+    /// public token-based RefTest participant action). Otherwise returns the authenticated
+    /// staff user's claims.
+    /// </summary>
+    private (string name, string email, bool isAnonymousRequest) GetActor()
     {
         var user = httpContextAccessor.HttpContext?.User;
         if (user is null)
-            return ("System", string.Empty);
+            return ("System", string.Empty, false);
+
+        if (user.Identity is not { IsAuthenticated: true })
+            return ("System", string.Empty, true);
 
         var name = user.FindFirst("name")?.Value
                     ?? user.FindFirst(ClaimTypes.Name)?.Value
@@ -148,7 +181,7 @@ public class AuditSaveChangesInterceptor(
                    ?? "System";
         var email = user.FindFirst("email")?.Value ?? user.FindFirst(ClaimTypes.Email)?.Value ?? string.Empty;
 
-        return (name, email);
+        return (name, email, false);
     }
 
     private static string GetEntityId(EntityEntry entry)

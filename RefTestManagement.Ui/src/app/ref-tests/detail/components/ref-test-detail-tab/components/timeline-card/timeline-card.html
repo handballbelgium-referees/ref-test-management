@@ -17,7 +17,7 @@
       </svg>
       {{ 'ref_tests.detail.timeline' | translate }}
     </h2>
-    @if (status() === 'IN_PROGRESS') {
+    @if (!isAnonymized() && status() === 'IN_PROGRESS') {
       <button
         *hasPermission="Permissions.RefTests.ExtendTime"
         type="button"

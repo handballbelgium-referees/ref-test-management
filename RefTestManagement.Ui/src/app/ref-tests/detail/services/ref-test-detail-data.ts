@@ -296,6 +296,12 @@ export class RefTestDetailData {
                 this._router.navigate(['/ref-tests']);
                 return;
 
+              case 'RefTestAnonymized':
+                // The record stays (in redacted form) rather than being removed, so just
+                // reflect the new state instead of navigating away.
+                updates = { isAnonymized: true, name: event.name, email: event.email };
+                break;
+
               case 'RefTestCompleted':
                 updates = {
                   status: event.status,

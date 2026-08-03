@@ -12,14 +12,19 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Deletion;
 /// RefTest deletion mutations
 /// </summary>
 [MutationType]
-public static class RefTestDeletionMutations
+public static partial class RefTestDeletionMutations
 {
     /// <summary>
-    /// Delete RefTests
+    /// Delete RefTests. This is an explicit, authorized staff action that permanently deletes
+    /// each RefTest record (see <see cref="IRefTestPrivacyErasureService.DeleteAsync"/>) —
+    /// unlike the public self-service "withdraw consent" flow, which only redacts personal data
+    /// and keeps the record. Its audit trail is left untouched and expires on its own per the
+    /// normal audit-log retention schedule (currently 90 days).
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
     /// <param name="privacyErasureService"></param>
+    /// <param name="subscriptionService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -51,7 +56,8 @@ public static class RefTestDeletionMutations
                 if (refTest is null)
                     throw new RefTestNotFoundException(id.ToString());
 
-                await privacyErasureService.EraseAsync(refTest, cancellationToken);
+                await privacyErasureService.DeleteAsync(refTest, cancellationToken);
+
                 result.SuccessfullyDeleted++;
                 result.DeletedRefTests.Add(refTest.ToDto());
             }

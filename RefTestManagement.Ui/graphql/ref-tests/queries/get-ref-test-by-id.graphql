@@ -28,6 +28,8 @@ query GetRefTestById($id: ID!, $skipQuestions: Boolean! = false) {
       percentage
       selectedAnswerIds
       rejectionReason
+      isAnonymized
+      anonymizedAt
       questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false)
         @skip(if: $skipQuestions) {
         id

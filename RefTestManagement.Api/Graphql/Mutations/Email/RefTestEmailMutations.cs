@@ -15,7 +15,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Email;
 /// RefTest email mutations (send invitations, results, and reports)
 /// </summary>
 [MutationType]
-public static class RefTestEmailMutations
+public static partial class RefTestEmailMutations
 {
     /// <summary>
     /// Send RefTest invitation emails

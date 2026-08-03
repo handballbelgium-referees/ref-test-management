@@ -153,6 +153,8 @@ export type RefTestFilterInput = {
   firstName?: StringOperationFilterInput | null | undefined;
   /** Filter on invitation was sent for the RefTest */
   invitationSent?: BooleanOperationFilterInput | null | undefined;
+  /** Filter on whether the RefTest has been anonymized (privacy erasure/consent withdrawal) */
+  isAnonymized?: BooleanOperationFilterInput | null | undefined;
   /** Filter on language where the RefTest was taken */
   language?: StringOperationFilterInput | null | undefined;
   /** Filter on last name of the user who started the RefTest */
@@ -435,7 +437,6 @@ export type WithdrawConsentMutationVariables = Exact<{
 
 
 export type WithdrawConsentMutation = { withdrawConsent: { boolean: boolean | null, errors: Array<
-      | { __typename: 'InvalidRefTestStatusError', message: string }
       | { __typename: 'RefTestNotFoundError', message: string }
     > | null } };
 
@@ -610,7 +611,7 @@ export type GetRefTestByIdQueryVariables = Exact<{
 
 
 export type GetRefTestByIdQuery = { refTest:
-    | { __typename: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, selectedAnswerIds: Array<string>, rejectionReason: string | null, language: string | null, title: { id: string, value: string } | null, questions?: Array<{ id: string, number: string, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
+    | { __typename: 'RefTest', id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, selectedAnswerIds: Array<string>, rejectionReason: string | null, isAnonymized: boolean, anonymizedAt: string | null, language: string | null, title: { id: string, value: string } | null, questions?: Array<{ id: string, number: string, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
     | { __typename: 'RefTestNotFoundError', message: string }
    };
 
@@ -635,7 +636,7 @@ export type GetRefTestsQueryVariables = Exact<{
 }>;
 
 
-export type GetRefTestsQuery = { refTests: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, rejectionReason: string | null, title: { id: string, value: string } | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+export type GetRefTestsQuery = { refTests: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, rejectionReason: string | null, isAnonymized: boolean, title: { id: string, value: string } | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type GetRefTestTitlesQueryVariables = Exact<{
   first: number;
@@ -664,6 +665,7 @@ export type RefTestUpdatedSubscription = { refTestUpdated:
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestCreated', id: string }
     | { __typename: 'RefTestDeleted', id: string }
+    | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
@@ -681,6 +683,7 @@ export type RefTestsUpdatedSubscription = { refTestsUpdated:
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestCreated', id: string, name: string, email: string, titleId: string | null, titleValue: string | null, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number }
     | { __typename: 'RefTestDeleted', id: string, status: RefTestStatus }
+    | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
@@ -723,7 +726,7 @@ export const GetAuditLogsDocument = gql`
   })
   export class GetAuditLogsGQL extends Apollo.Query<GetAuditLogsQuery, GetAuditLogsQueryVariables> {
     override document = GetAuditLogsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -752,7 +755,7 @@ export const AcceptPrivacyNoticeDocument = gql`
   })
   export class AcceptPrivacyNoticeGQL extends Apollo.Mutation<AcceptPrivacyNoticeMutation, AcceptPrivacyNoticeMutationVariables> {
     override document = AcceptPrivacyNoticeDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -778,7 +781,7 @@ export const CompleteRefTestDocument = gql`
   })
   export class CompleteRefTestGQL extends Apollo.Mutation<CompleteRefTestMutation, CompleteRefTestMutationVariables> {
     override document = CompleteRefTestDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -800,7 +803,7 @@ export const SaveRefTestProgressDocument = gql`
   })
   export class SaveRefTestProgressGQL extends Apollo.Mutation<SaveRefTestProgressMutation, SaveRefTestProgressMutationVariables> {
     override document = SaveRefTestProgressDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -844,7 +847,7 @@ export const StartRefTestDocument = gql`
   })
   export class StartRefTestGQL extends Apollo.Mutation<StartRefTestMutation, StartRefTestMutationVariables> {
     override document = StartRefTestDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -858,9 +861,6 @@ export const WithdrawConsentDocument = gql`
       ... on RefTestNotFoundError {
         message
       }
-      ... on InvalidRefTestStatusError {
-        message
-      }
     }
   }
 }
@@ -871,7 +871,7 @@ export const WithdrawConsentDocument = gql`
   })
   export class WithdrawConsentGQL extends Apollo.Mutation<WithdrawConsentMutation, WithdrawConsentMutationVariables> {
     override document = WithdrawConsentDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -894,7 +894,7 @@ export const GetPrivacyNoticeDocument = gql`
   })
   export class GetPrivacyNoticeGQL extends Apollo.Query<GetPrivacyNoticeQuery, GetPrivacyNoticeQueryVariables> {
     override document = GetPrivacyNoticeDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -929,7 +929,7 @@ export const GetRefTestByTokenDocument = gql`
   })
   export class GetRefTestByTokenGQL extends Apollo.Query<GetRefTestByTokenQuery, GetRefTestByTokenQueryVariables> {
     override document = GetRefTestByTokenDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -945,7 +945,7 @@ export const GetResultsEmailDelayMinutesDocument = gql`
   })
   export class GetResultsEmailDelayMinutesGQL extends Apollo.Query<GetResultsEmailDelayMinutesQuery, GetResultsEmailDelayMinutesQueryVariables> {
     override document = GetResultsEmailDelayMinutesDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -963,7 +963,7 @@ export const GetScoreConfigurationDocument = gql`
   })
   export class GetScoreConfigurationGQL extends Apollo.Query<GetScoreConfigurationQuery, GetScoreConfigurationQueryVariables> {
     override document = GetScoreConfigurationDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -981,7 +981,7 @@ export const RefTestSessionLockDocument = gql`
   })
   export class RefTestSessionLockGQL extends Apollo.Subscription<RefTestSessionLockSubscription, RefTestSessionLockSubscriptionVariables> {
     override document = RefTestSessionLockDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1000,7 +1000,7 @@ export const RefTestTimeExtendedDocument = gql`
   })
   export class RefTestTimeExtendedGQL extends Apollo.Subscription<RefTestTimeExtendedSubscription, RefTestTimeExtendedSubscriptionVariables> {
     override document = RefTestTimeExtendedDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1032,7 +1032,7 @@ export const ApproveRefTestsDocument = gql`
   })
   export class ApproveRefTestsGQL extends Apollo.Mutation<ApproveRefTestsMutation, ApproveRefTestsMutationVariables> {
     override document = ApproveRefTestsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1062,7 +1062,7 @@ export const CreateRefTestsDocument = gql`
   })
   export class CreateRefTestsGQL extends Apollo.Mutation<CreateRefTestsMutation, CreateRefTestsMutationVariables> {
     override document = CreateRefTestsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1092,7 +1092,7 @@ export const DeleteRefTestsDocument = gql`
   })
   export class DeleteRefTestsGQL extends Apollo.Mutation<DeleteRefTestsMutation, DeleteRefTestsMutationVariables> {
     override document = DeleteRefTestsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1121,7 +1121,7 @@ export const ExtendRefTestTimeDocument = gql`
   })
   export class ExtendRefTestTimeGQL extends Apollo.Mutation<ExtendRefTestTimeMutation, ExtendRefTestTimeMutationVariables> {
     override document = ExtendRefTestTimeDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1149,7 +1149,7 @@ export const RegenerateRefTestTokenDocument = gql`
   })
   export class RegenerateRefTestTokenGQL extends Apollo.Mutation<RegenerateRefTestTokenMutation, RegenerateRefTestTokenMutationVariables> {
     override document = RegenerateRefTestTokenDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1180,7 +1180,7 @@ export const RejectRefTestsDocument = gql`
   })
   export class RejectRefTestsGQL extends Apollo.Mutation<RejectRefTestsMutation, RejectRefTestsMutationVariables> {
     override document = RejectRefTestsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1221,7 +1221,7 @@ export const ResetRefTestsDocument = gql`
   })
   export class ResetRefTestsGQL extends Apollo.Mutation<ResetRefTestsMutation, ResetRefTestsMutationVariables> {
     override document = ResetRefTestsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1253,7 +1253,7 @@ export const ReviveRefTestsDocument = gql`
   })
   export class ReviveRefTestsGQL extends Apollo.Mutation<ReviveRefTestsMutation, ReviveRefTestsMutationVariables> {
     override document = ReviveRefTestsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1288,7 +1288,7 @@ export const SendRefTestInvitationsDocument = gql`
   })
   export class SendRefTestInvitationsGQL extends Apollo.Mutation<SendRefTestInvitationsMutation, SendRefTestInvitationsMutationVariables> {
     override document = SendRefTestInvitationsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1310,7 +1310,7 @@ export const SendReportDocument = gql`
   })
   export class SendReportGQL extends Apollo.Mutation<SendReportMutation, SendReportMutationVariables> {
     override document = SendReportDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1345,7 +1345,7 @@ export const SendRefTestResultsDocument = gql`
   })
   export class SendRefTestResultsGQL extends Apollo.Mutation<SendRefTestResultsMutation, SendRefTestResultsMutationVariables> {
     override document = SendRefTestResultsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1390,7 +1390,7 @@ export const UpdateRefTestConfigurationDocument = gql`
   })
   export class UpdateRefTestConfigurationGQL extends Apollo.Mutation<UpdateRefTestConfigurationMutation, UpdateRefTestConfigurationMutationVariables> {
     override document = UpdateRefTestConfigurationDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1422,7 +1422,7 @@ export const UpdateRefTestDetailsDocument = gql`
   })
   export class UpdateRefTestDetailsGQL extends Apollo.Mutation<UpdateRefTestDetailsMutation, UpdateRefTestDetailsMutationVariables> {
     override document = UpdateRefTestDetailsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1449,7 +1449,7 @@ export const UpdateRefTestNotificationSettingsDocument = gql`
   })
   export class UpdateRefTestNotificationSettingsGQL extends Apollo.Mutation<UpdateRefTestNotificationSettingsMutation, UpdateRefTestNotificationSettingsMutationVariables> {
     override document = UpdateRefTestNotificationSettingsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1465,7 +1465,7 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1485,7 +1485,7 @@ export const GetQuestionsByNumberDocument = gql`
   })
   export class GetQuestionsByNumberGQL extends Apollo.Query<GetQuestionsByNumberQuery, GetQuestionsByNumberQueryVariables> {
     override document = GetQuestionsByNumberDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1521,6 +1521,8 @@ export const GetRefTestByIdDocument = gql`
       percentage
       selectedAnswerIds
       rejectionReason
+      isAnonymized
+      anonymizedAt
       questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) @skip(if: $skipQuestions) {
         id
         number
@@ -1546,7 +1548,7 @@ export const GetRefTestByIdDocument = gql`
   })
   export class GetRefTestByIdGQL extends Apollo.Query<GetRefTestByIdQuery, GetRefTestByIdQueryVariables> {
     override document = GetRefTestByIdDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1582,7 +1584,7 @@ export const GetRefTestsAllCountsDocument = gql`
   })
   export class GetRefTestsAllCountsGQL extends Apollo.Query<GetRefTestsAllCountsQuery, GetRefTestsAllCountsQueryVariables> {
     override document = GetRefTestsAllCountsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1616,6 +1618,7 @@ export const GetRefTestsDocument = gql`
         answerTotal
         percentage
         rejectionReason
+        isAnonymized
       }
     }
     pageInfo {
@@ -1632,7 +1635,7 @@ export const GetRefTestsDocument = gql`
   })
   export class GetRefTestsGQL extends Apollo.Query<GetRefTestsQuery, GetRefTestsQueryVariables> {
     override document = GetRefTestsDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1661,7 +1664,7 @@ export const GetRefTestTitlesDocument = gql`
   })
   export class GetRefTestTitlesGQL extends Apollo.Query<GetRefTestTitlesQuery, GetRefTestTitlesQueryVariables> {
     override document = GetRefTestTitlesDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1681,7 +1684,7 @@ export const SearchQuestionsByNumberDocument = gql`
   })
   export class SearchQuestionsByNumberGQL extends Apollo.Query<SearchQuestionsByNumberQuery, SearchQuestionsByNumberQueryVariables> {
     override document = SearchQuestionsByNumberDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1719,6 +1722,12 @@ export const RefTestUpdatedDocument = gql`
     ... on RefTestDeleted {
       id
     }
+    ... on RefTestAnonymized {
+      id
+      status
+      name
+      email
+    }
     ... on RefTestReset {
       id
       oldStatus
@@ -1749,7 +1758,7 @@ export const RefTestUpdatedDocument = gql`
   })
   export class RefTestUpdatedGQL extends Apollo.Subscription<RefTestUpdatedSubscription, RefTestUpdatedSubscriptionVariables> {
     override document = RefTestUpdatedDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1787,6 +1796,12 @@ export const RefTestsUpdatedDocument = gql`
     ... on RefTestDeleted {
       id
       status
+    }
+    ... on RefTestAnonymized {
+      id
+      status
+      name
+      email
     }
     ... on RefTestReset {
       id
@@ -1829,7 +1844,7 @@ export const RefTestsUpdatedDocument = gql`
   })
   export class RefTestsUpdatedGQL extends Apollo.Subscription<RefTestsUpdatedSubscription, RefTestsUpdatedSubscriptionVariables> {
     override document = RefTestsUpdatedDocument;
-    
+
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }

@@ -33,5 +33,6 @@ public class RefTestFilterType : FilterInputType<RefTestDto>
         descriptor.Field(x => x.ResultsSent).Description("Filter on results were sent for the RefTest");
         descriptor.Field(x => x.SendResultsAutomatically).Description("Filter on whether results are sent automatically");
         descriptor.Field(x => x.Language).Description("Filter on language where the RefTest was taken");
+        descriptor.Field(x => x.IsAnonymized).Description("Filter on whether the RefTest has been anonymized (privacy erasure/consent withdrawal)");
     }
 }

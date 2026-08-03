@@ -18,7 +18,7 @@
       {{ 'ref_tests.detail.test_info' | translate }}
     </h2>
     <div class="flex items-center gap-1">
-      @if (status() !== 'IN_PROGRESS' && status() !== 'COMPLETED') {
+      @if (!isAnonymized() && status() !== 'IN_PROGRESS' && status() !== 'COMPLETED') {
         <button
           *hasPermission="Permissions.RefTests.UpdateConfiguration"
           type="button"
@@ -37,7 +37,7 @@
           </svg>
         </button>
       }
-      @if (status() === 'PENDING') {
+      @if (!isAnonymized() && status() === 'PENDING') {
         <button
           *hasPermission="Permissions.RefTests.RegenerateToken"
           type="button"

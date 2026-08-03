@@ -594,6 +594,25 @@ export class RefTestData {
                 });
               break;
             }
+
+            case 'RefTestAnonymized': {
+              // The RefTest record stays (in redacted form) rather than being removed, so we
+              // just patch the normalized entity in place — no status/list movement needed.
+              const entityId = this._apollo.client.cache.identify({
+                __typename: 'RefTest',
+                id: event.id,
+              });
+              if (entityId)
+                this._apollo.client.cache.modify({
+                  id: entityId,
+                  fields: {
+                    isAnonymized: () => true,
+                    name: () => event.name,
+                    email: () => event.email,
+                  },
+                });
+              break;
+            }
           }
         }),
         catchError(() => EMPTY),

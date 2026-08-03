@@ -30,6 +30,12 @@ subscription RefTestUpdated($id: ID!) {
     ... on RefTestDeleted {
       id
     }
+    ... on RefTestAnonymized {
+      id
+      status
+      name
+      email
+    }
     ... on RefTestReset {
       id
       oldStatus

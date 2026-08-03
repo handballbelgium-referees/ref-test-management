@@ -40,6 +40,13 @@ public record RefTestExpired([property: ID<RefTestDto>] Guid Id, RefTestStatus S
 public record RefTestDeleted([property: ID<RefTestDto>] Guid Id, RefTestStatus Status) : IRefTestEvent;
 
 [ObjectType]
+public record RefTestAnonymized(
+    [property: ID<RefTestDto>] Guid Id,
+    RefTestStatus Status,
+    string Name,
+    string Email) : IRefTestEvent;
+
+[ObjectType]
 public record RefTestReset([property: ID<RefTestDto>] Guid Id, RefTestStatus OldStatus) : IRefTestEvent;
 
 [ObjectType]

@@ -10,7 +10,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 /// RefTest subscriptions for real-time updates
 /// </summary>
 [SubscriptionType]
-public static class RefTestSubscriptions
+public static partial class RefTestSubscriptions
 {
     /// <summary>
     /// Subscribe to time extension events for a specific RefTest.
@@ -50,6 +50,7 @@ public static class RefTestSubscriptions
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
             RefTestDeletedEvent e => new RefTestDeleted(e.Id, e.Status),
+            RefTestAnonymizedEvent e => new RefTestAnonymized(e.Id, e.Status, e.FullName, e.Email),
             RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
             RefTestRevivedEvent e => new RefTestRevived(e.Id),
             RefTestCreatedEvent e => new RefTestCreated(e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent, e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions, e.MaxTimeInMinutes),
@@ -81,6 +82,7 @@ public static class RefTestSubscriptions
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
             RefTestDeletedEvent e => new RefTestDeleted(e.Id, e.Status),
+            RefTestAnonymizedEvent e => new RefTestAnonymized(e.Id, e.Status, e.FullName, e.Email),
             RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
             RefTestRevivedEvent e => new RefTestRevived(e.Id),
             RefTestCreatedEvent e => new RefTestCreated(e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent, e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions, e.MaxTimeInMinutes),

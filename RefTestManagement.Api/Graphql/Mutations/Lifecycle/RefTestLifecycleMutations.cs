@@ -13,7 +13,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 /// RefTest lifecycle mutations (start, save progress, complete)
 /// </summary>
 [MutationType]
-public static class RefTestLifecycleMutations
+public static partial class RefTestLifecycleMutations
 {
     /// <summary>
     /// Start a RefTest
@@ -21,6 +21,7 @@ public static class RefTestLifecycleMutations
     /// <param name="token"></param>
     /// <param name="context"></param>
     /// <param name="configuration"></param>
+    /// <param name="privacyConfiguration"></param>
     /// <param name="subscriptionService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -104,11 +105,11 @@ public static class RefTestLifecycleMutations
     }
 
     /// <summary>
-    /// Lets the holder of a RefTest token withdraw consent and permanently erase their data.
-    /// Not available once the RefTest is Completed; that case requires the verified-identity request process.
+    /// Lets the holder of a RefTest token withdraw consent, anonymizing their personal data in
+    /// place. Available regardless of RefTest status, including Completed. The record and its
+    /// audit trail are always kept for accountability — only personal data is redacted.
     /// </summary>
     [Error<RefTestNotFoundException>]
-    [Error<InvalidRefTestStatusException>]
     public static async Task<bool> WithdrawConsentAsync(
         string token,
         RefTestManagementContext context,
@@ -122,14 +123,12 @@ public static class RefTestLifecycleMutations
         if (refTest is null)
             throw new RefTestNotFoundException(token);
 
-        if (refTest.Status == RefTestStatus.Completed)
-            throw new InvalidRefTestStatusException(
-                "Completed RefTests cannot be withdrawn through self-service; contact the privacy contact to request erasure.");
-
         var refTestId = refTest.Id;
         var status = refTest.Status;
         await privacyErasureService.EraseAsync(refTest, cancellationToken);
-        await subscriptionService.PublishRefTestDeletedAsync(refTestId, status, cancellationToken);
+
+        await subscriptionService.PublishRefTestAnonymizedAsync(
+            refTestId, status, refTest.FullName, refTest.Email, cancellationToken);
 
         return true;
     }

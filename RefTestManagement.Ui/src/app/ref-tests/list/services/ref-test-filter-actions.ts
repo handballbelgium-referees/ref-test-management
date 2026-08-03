@@ -45,6 +45,11 @@ export class RefTestFilterActions {
     this._onFilterChange?.();
   }
 
+  setIsAnonymizedFilter(isAnonymized?: boolean): void {
+    this._filterState.setIsAnonymized(isAnonymized);
+    this._onFilterChange?.();
+  }
+
   setLanguageFilter(language?: string): void {
     this._filterState.setLanguage(language);
     this._onFilterChange?.();

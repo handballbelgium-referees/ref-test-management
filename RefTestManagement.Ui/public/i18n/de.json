@@ -98,6 +98,7 @@
         "title_search_placeholder": "Titel suchen...",
         "no_titles_found": "Keine Titel gefunden",
         "communication_status": "Kommunikationsstatus",
+        "privacy_status": "Datenschutzstatus",
         "invitation_label": "Einladungsstatus",
         "invitation_all": "Alle",
         "invitation_sent": "Gesendet",
@@ -106,6 +107,10 @@
         "results_all": "Alle",
         "results_sent": "Gesendet",
         "results_not_sent": "Nicht Gesendet",
+        "anonymized_label": "Anonymisiert",
+        "anonymized_all": "Alle",
+        "anonymized_yes": "Anonymisiert",
+        "anonymized_no": "Nicht Anonymisiert",
         "language_label": "Sprache",
         "language_all": "Alle Sprachen",
         "question_score_range": "Fragen Punktebereich",
@@ -158,6 +163,8 @@
         "title": "Titel",
         "participant": "Teilnehmer",
         "status": "Status",
+        "anonymized_badge": "Anonymisiert",
+        "anonymized_badge_tooltip": "Die personenbezogenen Daten dieses RefTests wurden aufgrund einer Löschanfrage oder eines Widerrufs der Einwilligung geschwärzt.",
         "questions": "Fragen",
         "max_time": "Max. Zeit",
         "minutes_short": "Min",
@@ -738,10 +745,14 @@
       "RefTestHardReset": "Hard-Reset",
       "RefTestRevived": "Wiederbelebt",
       "RefTestDeleted": "Gelöscht",
+      "RefTestAnonymized": "Anonymisiert",
       "RefTestInvitationSent": "Einladung gesendet",
       "RefTestResultsSent": "Ergebnisse gesendet",
       "RefTestExpired": "Abgelaufen",
       "RefTestTitleCreated": "Titel erstellt",
+      "RefTestStarted": "Gestartet",
+      "RefTestPrivacyNoticeAccepted": "Datenschutzhinweis akzeptiert",
+      "RefTestCompleted": "Abgeschlossen",
       "EntityCreated": "Erstellt",
       "EntityModified": "Geändert",
       "EntityDeleted": "Gelöscht"
@@ -777,7 +788,12 @@
       "reason": "Grund",
       "value": "Wert",
       "streamId": "Id",
-      "version": "Version"
+      "version": "Version",
+      "noticeVersion": "Hinweisversion",
+      "questionScore": "Fragen-Score",
+      "answerScore": "Antworten-Score",
+      "answerTotal": "Antworten gesamt",
+      "percentage": "Prozentsatz"
     }
   }
 }

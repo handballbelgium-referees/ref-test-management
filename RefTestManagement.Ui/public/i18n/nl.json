@@ -98,6 +98,7 @@
         "title_search_placeholder": "Titels zoeken...",
         "no_titles_found": "Geen titels gevonden",
         "communication_status": "Communicatiestatus",
+        "privacy_status": "Privacystatus",
         "invitation_label": "Uitnodigingsstatus",
         "invitation_all": "Alle",
         "invitation_sent": "Verzonden",
@@ -106,6 +107,10 @@
         "results_all": "Alle",
         "results_sent": "Verzonden",
         "results_not_sent": "Niet Verzonden",
+        "anonymized_label": "Geanonimiseerd",
+        "anonymized_all": "Alle",
+        "anonymized_yes": "Geanonimiseerd",
+        "anonymized_no": "Niet Geanonimiseerd",
         "language_label": "Taal",
         "language_all": "Alle Talen",
         "question_score_range": "Vragen Score Bereik",
@@ -154,6 +159,8 @@
         "title": "Titel",
         "participant": "Deelnemer",
         "status": "Status",
+        "anonymized_badge": "Geanonimiseerd",
+        "anonymized_badge_tooltip": "De persoonsgegevens van deze RefTest zijn geanonimiseerd naar aanleiding van een privacyverzoek of intrekking van toestemming.",
         "questions": "Vragen",
         "max_time": "Max Tijd",
         "minutes_short": "min",
@@ -734,10 +741,14 @@
       "RefTestHardReset": "Harde reset",
       "RefTestRevived": "Hersteld",
       "RefTestDeleted": "Verwijderd",
+      "RefTestAnonymized": "Geanonimiseerd",
       "RefTestInvitationSent": "Uitnodiging verstuurd",
       "RefTestResultsSent": "Resultaten verstuurd",
       "RefTestExpired": "Verlopen",
       "RefTestTitleCreated": "Titel aangemaakt",
+      "RefTestStarted": "Gestart",
+      "RefTestPrivacyNoticeAccepted": "Privacyverklaring geaccepteerd",
+      "RefTestCompleted": "Voltooid",
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
       "EntityDeleted": "Verwijderd"
@@ -773,7 +784,12 @@
       "reason": "Reden",
       "value": "Waarde",
       "streamId": "Id",
-      "version": "Versie"
+      "version": "Versie",
+      "noticeVersion": "Privacyversie",
+      "questionScore": "Vragenscore",
+      "answerScore": "Antwoordenscore",
+      "answerTotal": "Totaal aantal antwoorden",
+      "percentage": "Percentage"
     }
   }
 }

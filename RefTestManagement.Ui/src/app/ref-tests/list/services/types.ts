@@ -24,6 +24,7 @@ export interface IRefTestFilter {
   status?: RefTestStatus;
   invitationSent?: boolean;
   resultsSent?: boolean;
+  isAnonymized?: boolean;
   titleValue?: string;
   language?: string;
   searchTerm: string;

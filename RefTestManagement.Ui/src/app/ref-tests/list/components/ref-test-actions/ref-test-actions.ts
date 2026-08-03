@@ -23,6 +23,7 @@ export class RefTestActions {
   readonly hasExpiredRefTestsSelected = input.required<boolean>();
   readonly hasApprovableRefTestsSelected = input.required<boolean>();
   readonly hasPendingApprovalRefTestsSelected = input.required<boolean>();
+  readonly hasAnonymizedRefTestsSelected = input.required<boolean>();
   readonly sendingInvitations = input.required<boolean>();
   readonly sendingResults = input.required<boolean>();
   readonly deletingRefTests = input.required<boolean>();

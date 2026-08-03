@@ -66,6 +66,8 @@ public class RefTestType : ObjectType<RefTestDto>
         descriptor.Field(x => x.Language).Description("Language where the RefTest was taken").Authorize();
         descriptor.Field(x => x.RejectionReason).Description("Reason why the RefTest was rejected during approval review").Authorize();
         descriptor.Field(x => x.ScheduledAt).Description("Date/time from which this RefTest can be started; invitation email fires at this time when automated invitations are enabled").Authorize();
+        descriptor.Field(x => x.IsAnonymized).Description("Indication of whether the RefTest has been anonymized (privacy erasure/consent withdrawal)").Authorize();
+        descriptor.Field(x => x.AnonymizedAt).Description("Date/time when the RefTest was anonymized (privacy erasure/consent withdrawal)").Authorize();
     }
 
     /// <summary>
