@@ -73,6 +73,7 @@ type Query {
   ruleByNumber(number: String!): Rule
   "IHF rules by numbers"
   rulesByNumber(numbers: [String!]!): [Rule]!
+  scoreConfiguration: ScoreConfiguration!
   "Count the score for your questions based on the given answers"
   calculateScore(
     "Answered questions"
@@ -83,6 +84,8 @@ type Query {
     scoreConfigurationInput: ScoreConfigurationInput
   ): Score!
   version: String
+  "Version translations for all other languages"
+  versions: Any
 }
 
 "A connection to a list of items."
@@ -286,6 +289,9 @@ type Score {
   wrongAnswerIds: [ID!]!
 }
 
+"The `Any` scalar type represents any valid GraphQL value."
+scalar Any
+
 input UuidOperationFilterInput {
   eq: UUID
   neq: UUID
@@ -326,11 +332,16 @@ interface Node {
   id: ID!
 }
 
-"The `Any` scalar type represents any valid GraphQL value."
-scalar Any
-
 "The `UUID` scalar type represents a Universally Unique Identifier (UUID) as defined by RFC 9562."
 scalar UUID
+
+type ScoreConfiguration {
+  correct: Int!
+  inCorrect: Int!
+  notAnswered: Int!
+  negativeScore: Boolean!
+  penalizeGuessingStrategy: Boolean!
+}
 
 input ScoreConfigurationInput {
   correct: Int
@@ -355,6 +366,8 @@ type PageInfo {
   "A list of cursors to continue paginating backwards."
   backwardCursors: [PageCursor!]!
 }
+
+scalar FieldSelectionSet
 
 "A cursor that points to a specific page."
 type PageCursor {
@@ -398,6 +411,11 @@ directive @listSize(
   "The `requireOneSlicingArgument` argument can be used to inform the static analysis that it should expect that exactly one of the defined slicing arguments is present in a query. If that is not the case (i.e., if none or multiple slicing arguments are present), the static analysis may throw an error."
   requireOneSlicingArgument: Boolean = true
 ) on FIELD_DEFINITION
+
+"The @key directive is used to designate an entity's unique key,\nwhich identifies how to uniquely reference an instance of\nan entity across different source schemas."
+directive @key("The field selection set syntax." fields: FieldSelectionSet!) repeatable on
+  | OBJECT
+  | INTERFACE
 
 "The @lookup directive is used within a source schema to specify output fields\nthat can be used by the distributed GraphQL executor to resolve an entity by\na stable key."
 directive @lookup on FIELD_DEFINITION

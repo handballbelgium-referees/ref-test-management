@@ -12,10 +12,11 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 using QuestPDF.Infrastructure;
 using StrawberryShake;
 using Handball.Belgium.RefTestManagement.Api.Graphql;
+using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 
 // Configure QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
@@ -49,10 +50,10 @@ var auditLogOptions = services.AddAuditLogging(opts =>
     opts.CleanupIntervalHours = section.GetValue("CleanupIntervalHours", 24);
     opts.RetentionDays = section.GetValue("RetentionDays", 90);
 
-    opts.ExcludeEntity<Handball.Belgium.RefTestManagement.Domain.Jobs.Job>();
+    opts.ExcludeEntity<Job>();
     opts.ExcludeProperty("Token");
     opts.RegisterEntityResolver("RefTestTitle", (id, ctx) =>
-        ctx.Set<Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle>().Find(id)?.Value);
+        ctx.Set<RefTestTitle>().Find(id)?.Value);
 });
 
 services.AddDbContextFactory<RefTestManagementContext>((sp, options) =>

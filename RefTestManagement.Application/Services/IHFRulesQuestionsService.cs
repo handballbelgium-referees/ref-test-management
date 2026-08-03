@@ -44,13 +44,13 @@ public class IhfRulesQuestionsService(
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.Questions.Nodes?.OfType<IGetRandomQuestionIds_Questions_Nodes>();
-        return nodes is null ? [] : nodes.Select(x => x.Id).ToList();
+        return nodes is null ? [] : [.. nodes.Select(x => x.Id)];
     }
 
     public async Task<List<string>> GetQuestionIdsByNumberAsync(List<string> numbers,
         CancellationToken cancellationToken = default)
     {
-        var result = await client.GetQuestionsByNumber.ExecuteAsync(numbers.ToList(), cancellationToken);
+        var result = await client.GetQuestionsByNumber.ExecuteAsync([.. numbers], cancellationToken);
         if (result.Errors.Any())
             throw new Exception(result.Errors[0].Message);
         var nodes = result.Data?.QuestionsByNumber.OfType<IGetQuestionsByNumber_QuestionsByNumber_Question>();
@@ -63,9 +63,11 @@ public class IhfRulesQuestionsService(
             .ToDictionary(x => x.Number, x => x.Id);
 
         // Return question IDs in the same order as the input numbers
-        return numbers.Where(questionDict.ContainsKey)
-            .Select(number => questionDict[number])
-            .ToList();
+        return
+        [
+            .. numbers.Where(questionDict.ContainsKey)
+                .Select(number => questionDict[number])
+        ];
     }
 
     public async Task<List<Question>> GetQuestionsByIdAsync(IReadOnlyList<string> ids, bool includeNumber = false,
@@ -74,16 +76,17 @@ public class IhfRulesQuestionsService(
     {
         try
         {
-            var result = await client.GetQuestionsById.ExecuteAsync(ids.ToList(), includeNumber, includeIsCorrect,
-                randomAnswerOrder
-                    ? null
-                    :
-                    [
-                        new AnswerSortInput
-                        {
-                            Number = SortEnumType.Asc
-                        }
-                    ], cancellationToken);
+            // NOTE: The IHF Rules Questions API requires an explicit OrderBy key for cursor pagination
+            // (see api-ihf-rules-questions QuestionNode.GetAnswers). Passing a null order (as previously
+            // done when randomAnswerOrder was true) causes an "Unexpected Execution Error" from the
+            // remote service. We always request a deterministic order and shuffle client-side instead.
+            var result = await client.GetQuestionsById.ExecuteAsync([.. ids], includeNumber, includeIsCorrect,
+                [
+                    new AnswerSortInput
+                    {
+                        Number = SortEnumType.Asc
+                    }
+                ], cancellationToken);
             if (result.Errors.Any())
                 throw new Exception(result.Errors[0].Message);
             var nodes = result.Data?.QuestionsById.OfType<GetQuestionsById_QuestionsById_Question>();
@@ -109,6 +112,12 @@ public class IhfRulesQuestionsService(
                     };
                 }).ToList() ?? [];
 
+                // The remote service always returns answers ordered by number (see the deterministic
+                // order requested above). Shuffle client-side when random order was requested instead
+                // of relying on the remote API to randomize, since that path triggers a paging bug.
+                if (randomAnswerOrder)
+                    answers = [.. answers.OrderBy(_ => Random.Shared.Next())];
+
                 return new Question(x.Id, questionPhrases, answers)
                 {
                     Number = x.Number ?? string.Empty,
@@ -116,9 +125,11 @@ public class IhfRulesQuestionsService(
             }) ?? new Dictionary<string, Question>();
 
             // Return questions in the same order as the input IDs
-            return ids.Where(questionDict.ContainsKey)
-                .Select(id => questionDict[id])
-                .ToList();
+            return
+            [
+                .. ids.Where(questionDict.ContainsKey)
+                    .Select(id => questionDict[id])
+            ];
         }
         catch (Exception ex) when (ex is not OperationCanceledException)
         {
