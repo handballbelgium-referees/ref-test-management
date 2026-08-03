@@ -1,9 +1,13 @@
-import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { map, switchMap, tap } from 'rxjs';
-import { GetRefTestByTokenGQL } from '../../../../graphql/generated';
+import { map, switchMap, take, tap } from 'rxjs';
+import {
+  AcceptPrivacyNoticeGQL,
+  GetPrivacyNoticeGQL,
+  GetRefTestByTokenGQL,
+} from '../../../../graphql/generated';
 import { toSnakeCase } from '../../shared/utils/string-utils';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
 import { RefTestDetails } from './components/ref-test-details/ref-test-details';
@@ -22,6 +26,19 @@ export class RefTestWelcome {
   private readonly _route = inject(ActivatedRoute);
   private readonly _router = inject(Router);
   private readonly _getRefTestByTokenGQL = inject(GetRefTestByTokenGQL);
+  private readonly _getPrivacyNoticeGQL = inject(GetPrivacyNoticeGQL);
+  private readonly _acceptPrivacyNoticeGQL = inject(AcceptPrivacyNoticeGQL);
+  private readonly _destroyRef = inject(DestroyRef);
+
+  readonly privacyAccepted = signal(false);
+  readonly acceptingPrivacyNotice = signal(false);
+  readonly privacyNoticeError = signal(false);
+  readonly privacyNotice = toSignal(
+    this._getPrivacyNoticeGQL
+      .watch()
+      .valueChanges.pipe(map((result) => result.data?.privacyNotice ?? null)),
+    { initialValue: null },
+  );
 
   readonly refTestResult = toSignal(
     this._route.paramMap.pipe(
@@ -74,7 +91,7 @@ export class RefTestWelcome {
 
   readonly canStart = computed(() => {
     const refTest = this.refTest();
-    return refTest !== null && !this.loading();
+    return refTest !== null && !this.loading() && this.privacyNotice() !== null;
   });
 
   private readonly _token = toSignal(
@@ -83,8 +100,27 @@ export class RefTestWelcome {
 
   startRefTest(): void {
     const token = this._token();
-    if (!token || !this.canStart()) return;
+    const noticeVersion = this.privacyNotice()?.noticeVersion;
+    if (!token || !noticeVersion || !this.canStart() || !this.privacyAccepted()) return;
 
-    this._router.navigate(['/ref-test', token, 'take']);
+    this.acceptingPrivacyNotice.set(true);
+    this.privacyNoticeError.set(false);
+    this._acceptPrivacyNoticeGQL
+      .mutate({ variables: { input: { token, noticeVersion } } })
+      .pipe(take(1), takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: (result) => {
+          this.acceptingPrivacyNotice.set(false);
+          if (result.data?.acceptPrivacyNotice.refTest) {
+            this._router.navigate(['/ref-test', token, 'take']);
+            return;
+          }
+          this.privacyNoticeError.set(true);
+        },
+        error: () => {
+          this.acceptingPrivacyNotice.set(false);
+          this.privacyNoticeError.set(true);
+        },
+      });
   }
 }

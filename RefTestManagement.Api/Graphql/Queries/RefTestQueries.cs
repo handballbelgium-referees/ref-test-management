@@ -20,6 +20,19 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 public static class RefTestQueries
 {
     /// <summary>
+    /// Gets the public privacy notice details for test participants.
+    /// </summary>
+    [CacheControl(MaxAge = 3600)]
+    public static PrivacyNoticeDto GetPrivacyNotice([Service] PrivacyConfiguration privacyConfiguration)
+        => new(
+            privacyConfiguration.ControllerName,
+            privacyConfiguration.ControllerAddress,
+            privacyConfiguration.ContactEmail,
+            privacyConfiguration.NoticeVersion,
+            privacyConfiguration.NoticeEffectiveDate,
+            privacyConfiguration.RetentionYears);
+
+    /// <summary>
     /// Get a RefTest by token
     /// </summary>
     /// <param name="token"></param>

@@ -22,6 +22,7 @@ A comprehensive web application for managing and taking IHF (International Handb
 - [Configuration](#-configuration)
 - [Background Services](#️-background-services)
 - [Security & Permissions](docs/SECURITY.md)
+- [Privacy & Data-Subject Requests](docs/PRIVACY.md)
 - [Development Workflow](#-development-workflow)
 - [Deployment](#-deployment)
 - [Contributing](#-contributing)

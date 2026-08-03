@@ -1,0 +1,10 @@
+query GetPrivacyNotice {
+  privacyNotice {
+    controllerName
+    controllerAddress
+    contactEmail
+    noticeVersion
+    noticeEffectiveDate
+    retentionYears
+  }
+}

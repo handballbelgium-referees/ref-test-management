@@ -19,7 +19,7 @@ public static class RefTestDeletionMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
-    /// <param name="jobEnqueueService"></param>
+    /// <param name="privacyErasureService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -27,7 +27,7 @@ public static class RefTestDeletionMutations
     public static async Task<DeleteRefTestsResult> DeleteRefTestsAsync(
         DeleteRefTestsInput input,
         RefTestManagementContext context,
-        [Service] IJobEnqueueService jobEnqueueService,
+        [Service] IRefTestPrivacyErasureService privacyErasureService,
         [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
@@ -51,11 +51,7 @@ public static class RefTestDeletionMutations
                 if (refTest is null)
                     throw new RefTestNotFoundException(id.ToString());
 
-                // Cancel any pending jobs for this RefTest before deletion
-                await jobEnqueueService.CancelPendingJobsForRefTestAsync(id, cancellationToken);
-
-                refTest.MarkDeleted();
-                context.RefTests.Remove(refTest);
+                await privacyErasureService.EraseAsync(refTest, cancellationToken);
                 result.SuccessfullyDeleted++;
                 result.DeletedRefTests.Add(refTest.ToDto());
             }
@@ -69,8 +65,6 @@ public static class RefTestDeletionMutations
                 });
             }
         }
-
-        await context.SaveChangesAsync(cancellationToken);
 
         foreach (var deletedDto in result.DeletedRefTests)
         {

@@ -4,45 +4,48 @@
     <nav class="mx-auto flex items-center justify-between px-4 py-4">
       <!-- Logo and Title -->
       @if (showAuthUI()) {
-      <a href="/" class="flex items-center gap-4 md:gap-8">
-        <img src="/RefTest-logo.svg" alt="RefTest Logo" class="h-9 md:h-12 w-auto shrink-0" />
-        <span class="text-sm sm:text-base lg:text-xl font-bold text-neutral-900 sm:block wrap-break-words" [class.hidden]="isLoggedIn()">
-          {{ 'app.title' | translate }}
-        </span>
-      </a>
+        <a href="/" class="flex items-center gap-4 md:gap-8">
+          <img src="/RefTest-logo.svg" alt="RefTest Logo" class="h-9 md:h-12 w-auto shrink-0" />
+          <span
+            class="text-sm sm:text-base lg:text-xl font-bold text-neutral-900 sm:block wrap-break-words"
+            [class.hidden]="isLoggedIn()"
+          >
+            {{ 'app.title' | translate }}
+          </span>
+        </a>
       } @else {
-      <div class="flex items-center gap-4 md:gap-8">
-        <img src="/RefTest-logo.svg" alt="RefTest Logo" class="h-9 md:h-12 w-auto" />
-        <span class="text-base lg:text-xl font-bold text-neutral-900 hidden sm:block">
-          {{ 'app.title' | translate }}
-        </span>
-      </div>
+        <div class="flex items-center gap-4 md:gap-8">
+          <img src="/RefTest-logo.svg" alt="RefTest Logo" class="h-9 md:h-12 w-auto" />
+          <span class="text-base lg:text-xl font-bold text-neutral-900 hidden sm:block">
+            {{ 'app.title' | translate }}
+          </span>
+        </div>
       }
 
       <!-- Navigation Links -->
       <div class="flex items-center gap-3 md:gap-6">
         @if (showAuthUI() && isLoggedIn() && user(); as user) {
-        <!-- User Profile & Logout -->
-        <div class="flex items-center gap-2 md:gap-4">
-          <div class="flex items-center gap-2">
-            <div
-              class="h-8 w-8 rounded-full bg-linear-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center text-xs font-semibold shadow-sm"
-              [title]="user.name"
-            >
-              {{ getInitials(user.name) }}
+          <!-- User Profile & Logout -->
+          <div class="flex items-center gap-2 md:gap-4">
+            <div class="flex items-center gap-2">
+              <div
+                class="h-8 w-8 rounded-full bg-linear-to-br from-primary-500 to-primary-600 text-white flex items-center justify-center text-xs font-semibold shadow-sm"
+                [title]="user.name"
+              >
+                {{ getInitials(user.name) }}
+              </div>
+              <span class="text-xs md:text-sm font-medium text-neutral-700 hidden lg:inline">{{
+                user.name
+              }}</span>
             </div>
-            <span class="text-xs md:text-sm font-medium text-neutral-700 hidden lg:inline">{{
-              user.name
-            }}</span>
+            <button
+              type="button"
+              (click)="logout()"
+              class="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-3 md:px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+            >
+              {{ 'nav.logout' | translate }}
+            </button>
           </div>
-          <button
-            type="button"
-            (click)="logout()"
-            class="border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-3 md:px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
-          >
-            {{ 'nav.logout' | translate }}
-          </button>
-        </div>
         }
 
         <!-- Language Switcher -->
@@ -88,45 +91,45 @@
           </button>
 
           @if (showLanguageMenu()) {
-          <div
-            class="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-neutral-200 bg-white shadow-lg"
-            role="menu"
-          >
-            @for (lang of availableLanguages(); track lang.code) {
-            <button
-              type="button"
-              (click)="setLanguage(lang.code)"
-              class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-neutral-50 first:rounded-t-lg last:rounded-b-lg"
-              [class.bg-primary-50]="currentLocale === lang.code"
-              [class.font-semibold]="currentLocale === lang.code"
-              [class.text-primary-600]="currentLocale === lang.code"
-              role="menuitem"
+            <div
+              class="absolute right-0 z-50 mt-2 w-48 rounded-lg border border-neutral-200 bg-white shadow-lg"
+              role="menu"
             >
-              <span
-                class="flex h-6 w-6 items-center justify-center rounded bg-neutral-100 text-xs font-bold uppercase"
-              >
-                {{ lang.code }}
-              </span>
-              <span>{{ lang.name }}</span>
-              @if (currentLocale === lang.code) {
-              <svg
-                class="ml-auto h-5 w-5 text-primary-600"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
+              @for (lang of availableLanguages(); track lang.code) {
+                <button
+                  type="button"
+                  (click)="setLanguage(lang.code)"
+                  class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-neutral-50 first:rounded-t-lg last:rounded-b-lg"
+                  [class.bg-primary-50]="currentLocale === lang.code"
+                  [class.font-semibold]="currentLocale === lang.code"
+                  [class.text-primary-600]="currentLocale === lang.code"
+                  role="menuitem"
+                >
+                  <span
+                    class="flex h-6 w-6 items-center justify-center rounded bg-neutral-100 text-xs font-bold uppercase"
+                  >
+                    {{ lang.code }}
+                  </span>
+                  <span>{{ lang.name }}</span>
+                  @if (currentLocale === lang.code) {
+                    <svg
+                      class="ml-auto h-5 w-5 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M5 13l4 4L19 7"
+                      />
+                    </svg>
+                  }
+                </button>
               }
-            </button>
-            }
-          </div>
+            </div>
           }
         </div>
       </div>
@@ -152,21 +155,25 @@
     </div>
     <!-- Copyright Section -->
     <div class="bg-neutral-800 text-neutral-300">
-    <div class="max-w-7xl mx-auto px-4 py-3">
-      <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-center">
-        <span class="text-neutral-300">
-          {{ 'footer.copyright' | translate : { year: currentYear() } }}
-        </span>
-        <span class="text-neutral-600 hidden sm:inline">•</span>
-        <span class="text-neutral-400">{{ 'footer.creator' | translate }}</span>
-        <span class="text-neutral-600 hidden sm:inline">•</span>
-        <span
-          class="font-mono text-neutral-400 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]"
-        >
-          v{{ version }}
-        </span>
+      <div class="max-w-7xl mx-auto px-4 py-3">
+        <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-center">
+          <span class="text-neutral-300">
+            {{ 'footer.copyright' | translate: { year: currentYear() } }}
+          </span>
+          <span class="text-neutral-600 hidden sm:inline">•</span>
+          <span class="text-neutral-400">{{ 'footer.creator' | translate }}</span>
+          <span class="text-neutral-600 hidden sm:inline">•</span>
+          <a href="/privacy" class="text-neutral-300 hover:text-white underline underline-offset-2">
+            {{ 'footer.privacy' | translate }}
+          </a>
+          <span class="text-neutral-600 hidden sm:inline">•</span>
+          <span
+            class="font-mono text-neutral-400 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]"
+          >
+            v{{ version }}
+          </span>
+        </div>
       </div>
-    </div>
     </div>
   </footer>
 </div>

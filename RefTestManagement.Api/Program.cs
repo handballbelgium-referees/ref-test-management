@@ -88,6 +88,10 @@ var reportConfig = configuration.GetSection("ReportConfiguration").Get<ReportCon
                    ?? new ReportConfiguration();
 services.AddSingleton(reportConfig);
 
+var privacyConfig = configuration.GetSection("PrivacyConfiguration").Get<PrivacyConfiguration>()
+                    ?? new PrivacyConfiguration();
+services.AddSingleton(privacyConfig);
+
 var refTestExpirationConfig = configuration.GetSection("RefTestExpirationConfiguration")
                                   .Get<RefTestExpirationConfiguration>()
                               ?? new RefTestExpirationConfiguration();
@@ -113,6 +117,7 @@ services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 services.AddScoped<IJobEnqueueService, JobEnqueueService>();
+services.AddScoped<IRefTestPrivacyErasureService, RefTestPrivacyErasureService>();
 services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
 services.AddSingleton<IRefTestSessionService, RefTestSessionService>();
 
@@ -121,6 +126,7 @@ services.AddAuth0ManagementServices(configuration);
 // Add background services
 services.AddHostedService<PermissionSyncService>();
 services.AddHostedService<RefTestExpirationService>();
+services.AddHostedService<PrivacyRetentionService>();
 services.AddHostedService<BackgroundJobService>();
 if (auditLogOptions.EnableCleanup)
 {

@@ -30,10 +30,12 @@ public static class RefTestLifecycleMutations
     [Error<RefTestNotFoundException>]
     [Error<RefTestExpiredException>]
     [Error<InvalidRefTestStatusException>]
+    [Error<RefTestValidationException>]
     public static async Task<RefTestDto> StartRefTestAsync(
         string token,
         RefTestManagementContext context,
         [Service] RefTestExpirationConfiguration configuration,
+        [Service] PrivacyConfiguration privacyConfiguration,
         [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
@@ -61,7 +63,7 @@ public static class RefTestLifecycleMutations
         if (refTest.Status == RefTestStatus.InProgress)
             return refTest.ToDto();
 
-        refTest.Start();
+        refTest.Start(privacyConfiguration.NoticeVersion);
         await context.SaveChangesAsync(cancellationToken);
         
         // Publish subscription event
@@ -70,6 +72,33 @@ public static class RefTestLifecycleMutations
             refTest.Status,
             refTest.StartedAt!.Value,
             cancellationToken);
+
+        return refTest.ToDto();
+    }
+
+    /// <summary>
+    /// Records explicit acceptance of the currently published privacy notice.
+    /// </summary>
+    [Error<RefTestNotFoundException>]
+    [Error<RefTestValidationException>]
+    public static async Task<RefTestDto> AcceptPrivacyNoticeAsync(
+        string token,
+        string noticeVersion,
+        RefTestManagementContext context,
+        [Service] PrivacyConfiguration privacyConfiguration,
+        CancellationToken cancellationToken)
+    {
+        if (noticeVersion != privacyConfiguration.NoticeVersion)
+            throw new RefTestValidationException("The privacy notice has changed. Please review the current version.");
+
+        var refTest = await context.RefTests
+            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
+
+        if (refTest is null)
+            throw new RefTestNotFoundException(token);
+
+        refTest.AcceptPrivacyNotice(noticeVersion);
+        await context.SaveChangesAsync(cancellationToken);
 
         return refTest.ToDto();
     }
