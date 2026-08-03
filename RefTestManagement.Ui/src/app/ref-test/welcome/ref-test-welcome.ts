@@ -2,7 +2,7 @@ import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
-import { map, switchMap, take, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, map, switchMap, take, tap } from 'rxjs';
 import {
   AcceptPrivacyNoticeGQL,
   GetPrivacyNoticeGQL,
@@ -33,12 +33,6 @@ export class RefTestWelcome {
   readonly privacyAccepted = signal(false);
   readonly acceptingPrivacyNotice = signal(false);
   readonly privacyNoticeError = signal(false);
-  readonly privacyNotice = toSignal(
-    this._getPrivacyNoticeGQL
-      .watch()
-      .valueChanges.pipe(map((result) => result.data?.privacyNotice ?? null)),
-    { initialValue: null },
-  );
 
   readonly refTestResult = toSignal(
     this._route.paramMap.pipe(
@@ -91,7 +85,7 @@ export class RefTestWelcome {
 
   readonly canStart = computed(() => {
     const refTest = this.refTest();
-    return refTest !== null && !this.loading() && this.privacyNotice() !== null;
+    return refTest !== null && !this.loading();
   });
 
   private readonly _token = toSignal(
@@ -100,27 +94,39 @@ export class RefTestWelcome {
 
   startRefTest(): void {
     const token = this._token();
-    const noticeVersion = this.privacyNotice()?.noticeVersion;
-    if (!token || !noticeVersion || !this.canStart() || !this.privacyAccepted()) return;
+    if (!token || !this.canStart() || !this.privacyAccepted()) return;
 
     this.acceptingPrivacyNotice.set(true);
     this.privacyNoticeError.set(false);
-    this._acceptPrivacyNoticeGQL
-      .mutate({ variables: { input: { token, noticeVersion } } })
-      .pipe(take(1), takeUntilDestroyed(this._destroyRef))
-      .subscribe({
-        next: (result) => {
-          this.acceptingPrivacyNotice.set(false);
+    this._getPrivacyNoticeGQL
+      .fetch({ fetchPolicy: 'network-only' })
+      .pipe(
+        take(1),
+        switchMap((noticeResult) => {
+          const noticeVersion = noticeResult.data?.privacyNotice?.noticeVersion;
+          if (!noticeVersion) {
+            this.privacyNoticeError.set(true);
+            return EMPTY;
+          }
+
+          return this._acceptPrivacyNoticeGQL.mutate({
+            variables: { input: { token, noticeVersion } },
+          });
+        }),
+        tap((result) => {
           if (result.data?.acceptPrivacyNotice.refTest) {
             this._router.navigate(['/ref-test', token, 'take']);
             return;
           }
           this.privacyNoticeError.set(true);
-        },
-        error: () => {
-          this.acceptingPrivacyNotice.set(false);
+        }),
+        catchError(() => {
           this.privacyNoticeError.set(true);
-        },
-      });
+          return EMPTY;
+        }),
+        finalize(() => this.acceptingPrivacyNotice.set(false)),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
   }
 }
