@@ -12,25 +12,31 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 {
     public async Task EraseAsync(RefTest refTest, CancellationToken cancellationToken = default)
     {
-        await using var transaction = await context.Database.BeginTransactionAsync(cancellationToken);
+        var strategy = context.Database.CreateExecutionStrategy();
 
-        var refTestId = refTest.Id.ToString();
-        var jobs = await context.Jobs
-            .Where(job => job.Payload.Contains(refTestId))
-            .ToListAsync(cancellationToken);
+        // The retrying execution strategy must own the transaction as a single retriable unit.
+        await strategy.ExecuteAsync(cancellationToken, async ct =>
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync(ct);
 
-        context.Jobs.RemoveRange(jobs);
-        context.AuditEvents.RemoveRange(context.AuditEvents.Where(auditEvent => auditEvent.StreamId == refTestId));
+            var refTestId = refTest.Id.ToString();
+            var jobs = await context.Jobs
+                .Where(job => job.Payload.Contains(refTestId))
+                .ToListAsync(ct);
 
-        refTest.MarkDeleted();
-        context.RefTests.Remove(refTest);
-        await context.SaveChangesAsync(cancellationToken);
+            context.Jobs.RemoveRange(jobs);
+            context.AuditEvents.RemoveRange(context.AuditEvents.Where(auditEvent => auditEvent.StreamId == refTestId));
 
-        // The audit interceptor records RefTestDeleted during SaveChanges; privacy erasure removes that event too.
-        await context.AuditEvents
-            .Where(auditEvent => auditEvent.StreamId == refTestId)
-            .ExecuteDeleteAsync(cancellationToken);
+            refTest.MarkDeleted();
+            context.RefTests.Remove(refTest);
+            await context.SaveChangesAsync(ct);
 
-        await transaction.CommitAsync(cancellationToken);
+            // The audit interceptor records RefTestDeleted during SaveChanges; privacy erasure removes that event too.
+            await context.AuditEvents
+                .Where(auditEvent => auditEvent.StreamId == refTestId)
+                .ExecuteDeleteAsync(ct);
+
+            await transaction.CommitAsync(ct);
+        });
     }
 }
