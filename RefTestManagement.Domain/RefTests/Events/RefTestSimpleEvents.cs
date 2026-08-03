@@ -38,12 +38,6 @@ public sealed record RefTestInvitationSentEvent : DomainEventBase
     public override object? GetChanges() => null;
 }
 
-public sealed record RefTestPrivacyNoticeAcceptedEvent(string NoticeVersion) : DomainEventBase
-{
-    public override string ActionName => "RefTestPrivacyNoticeAccepted";
-    public override object? GetChanges() => new { noticeVersion = NoticeVersion };
-}
-
 public sealed record RefTestResultsSentEvent : DomainEventBase
 {
     public override string ActionName => "RefTestResultsSent";

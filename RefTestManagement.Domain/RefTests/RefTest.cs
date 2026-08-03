@@ -181,7 +181,6 @@ public class RefTest : IHasDomainEvents
 
         PrivacyNoticeVersion = noticeVersion;
         PrivacyNoticeAcceptedAt = DateTime.UtcNow;
-        RaiseDomainEvent(new RefTestPrivacyNoticeAcceptedEvent(noticeVersion));
     }
 
     public void Start(string requiredPrivacyNoticeVersion)
