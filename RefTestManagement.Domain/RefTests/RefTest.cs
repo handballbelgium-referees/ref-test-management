@@ -56,6 +56,7 @@ public class RefTest : IHasDomainEvents
     public DateTime CreatedAt { get; private set; }
     public DateTime? StartedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
+    public DateTime? ExpiredAt { get; private set; }
     public RefTestStatus Status { get; private set; }
     public int? CurrentQuestionIndex { get; private set; }
     public int? QuestionScore { get; private set; }
@@ -69,6 +70,8 @@ public class RefTest : IHasDomainEvents
     public bool SendResultsAutomatically { get; private set; }
     public DateTime? ResultsSentAt { get; private set; }
     public string? Language { get; private set; }
+    public string? PrivacyNoticeVersion { get; private set; }
+    public DateTime? PrivacyNoticeAcceptedAt { get; private set; }
 
     public string? RejectionReason { get; private set; }
 
@@ -171,7 +174,17 @@ public class RefTest : IHasDomainEvents
         RaiseDomainEvent(new RefTestInvitationSentEvent());
     }
 
-    public void Start()
+    public void AcceptPrivacyNotice(string noticeVersion)
+    {
+        if (string.IsNullOrWhiteSpace(noticeVersion))
+            throw new RefTestValidationException("Privacy notice version is required");
+
+        PrivacyNoticeVersion = noticeVersion;
+        PrivacyNoticeAcceptedAt = DateTime.UtcNow;
+        RaiseDomainEvent(new RefTestPrivacyNoticeAcceptedEvent(noticeVersion));
+    }
+
+    public void Start(string requiredPrivacyNoticeVersion)
     {
         if (Status != RefTestStatus.Pending)
             throw new InvalidRefTestStatusException("RefTest can only be started from Pending status");
@@ -179,6 +192,9 @@ public class RefTest : IHasDomainEvents
         if (ScheduledAt.HasValue && ScheduledAt.Value > DateTime.UtcNow)
             throw new RefTestValidationException(
                 $"This ref test is not yet available. It can be started from {ScheduledAt.Value:yyyy-MM-dd HH:mm} UTC");
+
+        if (PrivacyNoticeVersion != requiredPrivacyNoticeVersion || !PrivacyNoticeAcceptedAt.HasValue)
+            throw new RefTestValidationException("The current privacy notice must be accepted before starting");
 
         Status = RefTestStatus.InProgress;
         StartedAt = DateTime.UtcNow;
@@ -226,6 +242,7 @@ public class RefTest : IHasDomainEvents
             throw new InvalidRefTestStatusException("Only pending RefTests can be marked as expired");
 
         Status = RefTestStatus.Expired;
+        ExpiredAt = DateTime.UtcNow;
         RaiseDomainEvent(new RefTestExpiredEvent());
     }
 
@@ -449,6 +466,7 @@ public class RefTest : IHasDomainEvents
 
         Status = RefTestStatus.Pending;
         Token = Guid.NewGuid().ToString("N");
+        ExpiredAt = null;
 
         // Reset CreatedAt so the expiration timer starts fresh
         CreatedAt = DateTime.UtcNow;

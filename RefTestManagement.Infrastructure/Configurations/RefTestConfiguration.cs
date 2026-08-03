@@ -62,6 +62,8 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
         builder.Property(x => x.CreatedAt)
             .IsRequired();
 
+        builder.Property(x => x.ExpiredAt);
+
         builder.Property(x => x.Percentage);
         
         builder.Property(x => x.SelectedAnswerIds)
@@ -101,6 +103,11 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 
         builder.Property(x => x.SendResultsAutomatically);
         builder.Property(x => x.ResultsSentAt);
+
+        builder.Property(x => x.PrivacyNoticeVersion)
+            .HasMaxLength(32);
+
+        builder.Property(x => x.PrivacyNoticeAcceptedAt);
 
         builder.Property(x => x.RejectionReason)
             .HasMaxLength(1000);

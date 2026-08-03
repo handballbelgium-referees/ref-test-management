@@ -420,3 +420,6 @@ FodyWeavers.xsd
 .idea/
 # Root dependencies
 /node_modules
+
+# Codegraph generated files
+.codegraph/

@@ -10,6 +10,10 @@ export const routes: Routes = [
     loadComponent: () => import('./home/home').then((m) => m.Home),
   },
   {
+    path: 'privacy',
+    loadComponent: () => import('./privacy/privacy-notice').then((m) => m.PrivacyNotice),
+  },
+  {
     path: 'ref-tests',
     loadComponent: () => import('./ref-tests/list/list-ref-tests').then((m) => m.ListRefTests),
     canActivate: [authGuard, permissionGuard(Permissions.RefTests.ViewList)],

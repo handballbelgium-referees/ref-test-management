@@ -1,0 +1,16 @@
+mutation AcceptPrivacyNotice($input: AcceptPrivacyNoticeInput!) {
+  acceptPrivacyNotice(input: $input) {
+    refTest {
+      id
+    }
+    errors {
+      __typename
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on RefTestValidationError {
+        message
+      }
+    }
+  }
+}

@@ -603,6 +603,8 @@
     "instruction_single_session": "The RefTest can only be open in one browser tab at a time — opening a second tab will block it",
     "instruction_4": "Complete the RefTests within the time limit",
     "start_button": "Start RefTest",
+    "privacy_consent": "I have read and accept the",
+    "privacy_consent_error": "We could not record your privacy-notice acceptance. Please try again.",
     "time_remaining": "Time Remaining",
     "progress": "Progress",
     "question": "Question",
@@ -645,7 +647,41 @@
   },
   "footer": {
     "copyright": "© {{year}} Handball RefTest Management System. All rights reserved.",
-    "creator": "Owned by Kristof Gilis"
+    "creator": "Owned by Kristof Gilis",
+    "privacy": "Privacy notice"
+  },
+  "privacy": {
+    "eyebrow": "Privacy",
+    "title": "Privacy notice",
+    "updated": "Effective from 3 August 2026 (version 1.0).",
+    "controller": {
+      "title": "Data controller and contact",
+      "body": "Kristof Gilis, Pipelstraat 26, 3800 Sint-Truiden, Belgium, is responsible for this processing. For privacy requests, contact kristof.gilis@outlook.be."
+    },
+    "data": {
+      "title": "Personal data we process",
+      "body": "We process your name, email address, invitation token, assessment progress, answers, result, preferred language, and the dates on which you interact with the assessment. We also retain limited administrator and audit information needed to operate and secure the service."
+    },
+    "purposes": {
+      "title": "Why we process it",
+      "body": "We use this data to invite you, run and score the optional assessment, communicate its result, provide support, prevent misuse, and maintain an audit trail for the service."
+    },
+    "basis": {
+      "title": "Legal basis",
+      "body": "We use legitimate interests to process the contact information needed to send and manage an invitation. Participation in the assessment is optional and requires your explicit acceptance of this notice before it starts; you may withdraw that consent at any time."
+    },
+    "recipients": {
+      "title": "Service providers",
+      "body": "We use Auth0 for authentication, Brevo to deliver emails, and the IHF Rules Questions service to retrieve assessment content and calculate results. These providers process data only as needed to provide their services."
+    },
+    "retention": {
+      "title": "Retention",
+      "body": "We erase assessment and invitation data three years after the assessment is completed or expires. If you withdraw consent after identity verification, we erase your assessment data and queued communications without delay. Email already delivered to your inbox cannot be recalled."
+    },
+    "rights": {
+      "title": "Your rights",
+      "body": "You may request access, correction, erasure, restriction, objection, or a portable copy of your data, and may withdraw consent. Contact kristof.gilis@outlook.be. You may also lodge a complaint with your supervisory authority."
+    }
   },
   "audit-logs": {
     "title": "Audit Log",
