@@ -14,6 +14,7 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
 using StrawberryShake;
+using Handball.Belgium.RefTestManagement.Api.Graphql;
 
 // Configure QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
@@ -150,6 +151,7 @@ services.AddGraphQLServer()
     .AddQueryConventions()
     .AddMutationConventions()
     .AddInMemorySubscriptions()
+    .AddErrorFilter<UnhandledExceptionLoggingErrorFilter>()
     .ModifyPagingOptions(options =>
     {
         options.DefaultPageSize = 20;

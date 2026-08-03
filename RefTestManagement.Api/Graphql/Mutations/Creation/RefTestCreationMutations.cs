@@ -55,7 +55,7 @@ public static class RefTestCreationMutations
             return result;
 
         context.RefTests.AddRange(createdRefTests);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         await PublishCreatedEventsAsync(createdRefTests, titleId, titleValue, subscriptionService, cancellationToken);
 
@@ -102,7 +102,7 @@ public static class RefTestCreationMutations
 
         var title = RefTestTitle.Create(titleInput.Name);
         context.RefTestTitles.Add(title);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
         return (title.Id, title.Value);
     }
 

@@ -124,7 +124,7 @@ public static class RefTestResetMutations
             }
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         foreach (var (refTestId, oldStatus) in resetEvents)
         {
@@ -221,7 +221,7 @@ public static class RefTestResetMutations
             }
         }
 
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         foreach (var refTestId in revivedIds)
         {

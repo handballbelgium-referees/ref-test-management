@@ -46,7 +46,7 @@ public static class RefTestUpdateMutations
         var invitationWasSent = refTest.InvitationSentAt.HasValue;
 
         refTest.UpdateBasicDetails(input.FirstName, input.LastName, input.Email);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         if (!emailChanged || !input.ResendInvitation || !invitationWasSent) 
             return refTest.ToDto();
@@ -127,7 +127,7 @@ public static class RefTestUpdateMutations
             {
                 var title = RefTestTitle.Create(input.Title.Name);
                 context.RefTestTitles.Add(title);
-                await context.SaveChangesAsync(cancellationToken);
+                await context.SaveChangesWithRetryAsync(cancellationToken);
 
                 titleId = title.Id;
                 break;
@@ -142,7 +142,7 @@ public static class RefTestUpdateMutations
             input.MaxTimeInMinutes,
             questionIds);
 
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         await context.Entry(refTest).Reference(r => r.Title).LoadAsync(cancellationToken);
 
@@ -175,7 +175,7 @@ public static class RefTestUpdateMutations
             throw new RefTestNotFoundException(input.Id);
 
         refTest.ExtendTime(input.AdditionalMinutes);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         // Publish subscription event for real-time UI updates
         await subscriptionService.PublishTimeExtendedAsync(
@@ -221,7 +221,7 @@ public static class RefTestUpdateMutations
             input.SendInvitationsAutomatically,
             input.SendResultsAutomatically);
 
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         // If SendInvitationsAutomatically was just enabled (changed from false to true)
         // and the test is Pending and the invitation was never sent, send it now
@@ -301,7 +301,7 @@ public static class RefTestUpdateMutations
         var invitationWasSent = refTest.InvitationSentAt.HasValue;
 
         refTest.RegenerateToken();
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         if (!invitationWasSent) 
             return refTest.ToDto();

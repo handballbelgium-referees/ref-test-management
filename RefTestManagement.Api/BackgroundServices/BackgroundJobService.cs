@@ -140,7 +140,7 @@ public class BackgroundJobService : BackgroundService
         {
             // Lock the job
             job.MarkAsProcessing(_lockDuration);
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
 
             ServiceLoggerMessages.LogProcessingJob(_logger, job.Id, job.JobType, job.Attempts + 1, _maxAttempts);
 
@@ -177,7 +177,7 @@ public class BackgroundJobService : BackgroundService
 
             // Mark as completed
             job.MarkAsCompleted();
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
 
             ServiceLoggerMessages.LogJobCompleted(_logger, job.Id, job.JobType);
         }
@@ -186,7 +186,7 @@ public class BackgroundJobService : BackgroundService
             // Mark as failed
             var errorMessage = ex.Message;
             job.MarkAsFailed(errorMessage, _maxAttempts);
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
 
             if (job.Status == JobStatus.Failed)
             {
@@ -227,7 +227,7 @@ public class BackgroundJobService : BackgroundService
         if (refTest != null)
         {
             refTest.SendInvitation();
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
 
             // Publish subscription event
             await subscriptionService.PublishInvitationSentAsync(
@@ -284,7 +284,7 @@ public class BackgroundJobService : BackgroundService
 
         // Mark the RefTest results as sent
         refTest.SendResults();
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         // Publish subscription event
         await subscriptionService.PublishResultSentAsync(
@@ -378,7 +378,7 @@ public class BackgroundJobService : BackgroundService
                 case RefTestExpirationAction.MarkAsExpired:
                     // Mark as expired (for pending tests)
                     refTest.Expire();
-                    await context.SaveChangesAsync(cancellationToken);
+                    await context.SaveChangesWithRetryAsync(cancellationToken);
 
                     // Publish subscription event
                     await subscriptionService.PublishRefTestExpiredAsync(
@@ -511,7 +511,7 @@ public class BackgroundJobService : BackgroundService
             if (oldJobs.Count > 0)
             {
                 context.Jobs.RemoveRange(oldJobs);
-                await context.SaveChangesAsync(cancellationToken);
+                await context.SaveChangesWithRetryAsync(cancellationToken);
                 ServiceLoggerMessages.LogCleanupCompleted(_logger, "Jobs", oldJobs.Count);
             }
             else

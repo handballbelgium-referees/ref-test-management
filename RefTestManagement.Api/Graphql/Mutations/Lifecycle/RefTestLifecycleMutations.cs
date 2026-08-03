@@ -48,7 +48,7 @@ public static class RefTestLifecycleMutations
         if (refTest.IsExpired(configuration.ExpirationIfNotStarted))
         {
             refTest.Expire();
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
             
             // Publish subscription event
             await subscriptionService.PublishRefTestExpiredAsync(
@@ -64,7 +64,7 @@ public static class RefTestLifecycleMutations
             return refTest.ToDto();
 
         refTest.Start(privacyConfiguration.NoticeVersion);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
         
         // Publish subscription event
         await subscriptionService.PublishRefTestStartedAsync(
@@ -98,7 +98,7 @@ public static class RefTestLifecycleMutations
             throw new RefTestNotFoundException(token);
 
         refTest.AcceptPrivacyNotice(noticeVersion);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         return refTest.ToDto();
     }
@@ -160,7 +160,7 @@ public static class RefTestLifecycleMutations
             throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
 
         refTest.SaveProgress(input.CurrentQuestionIndex, input.SelectedAnswerIds, input.Language);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         return refTest.ToDto();
     }
@@ -217,7 +217,7 @@ public static class RefTestLifecycleMutations
             input.Language
         );
 
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
         
         // Publish subscription event
         await subscriptionService.PublishRefTestCompletedAsync(

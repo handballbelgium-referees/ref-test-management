@@ -71,7 +71,7 @@ public static class RefTestApprovalMutations
                 Errors = errors
             };
 
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         var now = DateTime.UtcNow;
 
@@ -190,7 +190,7 @@ public static class RefTestApprovalMutations
                 Errors = errors
             };
 
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         var now = DateTime.UtcNow;
 

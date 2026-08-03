@@ -5,6 +5,12 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 
 namespace Handball.Belgium.RefTestManagement.Application.Services;
 
+/// <summary>
+/// Thrown when a call to the external IHF Rules questions service fails (network, deserialization, or remote GraphQL errors)
+/// </summary>
+public class RulesQuestionsUnavailableException(string message, Exception innerException)
+    : Exception(message, innerException);
+
 public interface IIhfRulesQuestionsService
 {
     Task<List<string>> GetRandomQuestionIdsAsync(int count, CancellationToken cancellationToken = default);
@@ -66,51 +72,59 @@ public class IhfRulesQuestionsService(
         bool includeIsCorrect = false, bool randomAnswerOrder = true,
         CancellationToken cancellationToken = default)
     {
-        var result = await client.GetQuestionsById.ExecuteAsync(ids.ToList(), includeNumber, includeIsCorrect,
-            randomAnswerOrder
-                ? null
-                :
-                [
-                    new AnswerSortInput
-                    {
-                        Number = SortEnumType.Asc
-                    }
-                ], cancellationToken);
-        if (result.Errors.Any())
-            throw new Exception(result.Errors[0].Message);
-        var nodes = result.Data?.QuestionsById.OfType<GetQuestionsById_QuestionsById_Question>();
-
-        // Convert nodes to dictionary for fast lookup
-        var questionDict = nodes?.ToDictionary(x => x.Id, x =>
+        try
         {
-            var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??
-                                  new Dictionary<string, string>();
-            if (!string.IsNullOrEmpty(x.Phrase))
-                questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
+            var result = await client.GetQuestionsById.ExecuteAsync(ids.ToList(), includeNumber, includeIsCorrect,
+                randomAnswerOrder
+                    ? null
+                    :
+                    [
+                        new AnswerSortInput
+                        {
+                            Number = SortEnumType.Asc
+                        }
+                    ], cancellationToken);
+            if (result.Errors.Any())
+                throw new Exception(result.Errors[0].Message);
+            var nodes = result.Data?.QuestionsById.OfType<GetQuestionsById_QuestionsById_Question>();
 
-            var answers = x.Answers.Nodes?.OfType<IGetQuestionsById_QuestionsById_Answers_Nodes>().Select(a =>
+            // Convert nodes to dictionary for fast lookup
+            var questionDict = nodes?.ToDictionary(x => x.Id, x =>
             {
-                var answerTranslations = a.Translations?.Deserialize<Dictionary<string, string>>() ??
-                                         new Dictionary<string, string>();
-                if (!string.IsNullOrEmpty(a.Phrase))
-                    answerTranslations[languageConfiguration.DefaultPhraseLanguage] = a.Phrase;
-                return new Answer(a.Id, answerTranslations)
+                var questionPhrases = x.Translations?.Deserialize<Dictionary<string, string>>() ??
+                                      new Dictionary<string, string>();
+                if (!string.IsNullOrEmpty(x.Phrase))
+                    questionPhrases[languageConfiguration.DefaultPhraseLanguage] = x.Phrase;
+
+                var answers = x.Answers.Nodes?.OfType<IGetQuestionsById_QuestionsById_Answers_Nodes>().Select(a =>
                 {
-                    Number = a.Number,
-                    IsCorrect = a.IsCorrect ?? false
+                    var answerTranslations = a.Translations?.Deserialize<Dictionary<string, string>>() ??
+                                             new Dictionary<string, string>();
+                    if (!string.IsNullOrEmpty(a.Phrase))
+                        answerTranslations[languageConfiguration.DefaultPhraseLanguage] = a.Phrase;
+                    return new Answer(a.Id, answerTranslations)
+                    {
+                        Number = a.Number,
+                        IsCorrect = a.IsCorrect ?? false
+                    };
+                }).ToList() ?? [];
+
+                return new Question(x.Id, questionPhrases, answers)
+                {
+                    Number = x.Number ?? string.Empty,
                 };
-            }).ToList() ?? [];
+            }) ?? new Dictionary<string, Question>();
 
-            return new Question(x.Id, questionPhrases, answers)
-            {
-                Number = x.Number ?? string.Empty,
-            };
-        }) ?? new Dictionary<string, Question>();
-
-        // Return questions in the same order as the input IDs
-        return ids.Where(questionDict.ContainsKey)
-            .Select(id => questionDict[id])
-            .ToList();
+            // Return questions in the same order as the input IDs
+            return ids.Where(questionDict.ContainsKey)
+                .Select(id => questionDict[id])
+                .ToList();
+        }
+        catch (Exception ex) when (ex is not OperationCanceledException)
+        {
+            throw new RulesQuestionsUnavailableException(
+                "Failed to load questions from the IHF Rules service.", ex);
+        }
     }
 
     public async Task<List<Question>> SearchQuestionsByNumberAsync(string? number,

@@ -16,7 +16,8 @@ import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { GlobalErrorHandler } from './services/global-error-handler';
 
 import { provideServiceWorker } from '@angular/service-worker';
-import { ApolloLink, InMemoryCache } from '@apollo/client';
+import { ApolloLink, CombinedGraphQLErrors, InMemoryCache } from '@apollo/client';
+import { RetryLink } from '@apollo/client/link/retry';
 import { getMainDefinition, relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
 import { HttpLink } from 'apollo-angular/http';
@@ -156,7 +157,19 @@ export const appConfig: ApplicationConfig = {
           },
         };
 
-        // Split link: use SSE for subscriptions, http for everything else
+        // Retries automatically on network errors. StartRefTest also retries on GraphQL
+        // execution errors (e.g. the external questions provider failing transiently),
+        // since re-issuing it is safe - it just returns the already-started session.
+        const retryLink = new RetryLink({
+          delay: { initial: 300, max: 3000, jitter: true },
+          attempts: (count, operation, error) => {
+            if (count > 3) return false;
+            if (operation.operationName === 'StartRefTest') return true;
+            return !CombinedGraphQLErrors.is(error);
+          },
+        });
+
+        // Split link: use SSE for subscriptions, http (with retry) for everything else
         const link = ApolloLink.split(
           ({ query }) => {
             const definition = getMainDefinition(query);
@@ -166,7 +179,7 @@ export const appConfig: ApplicationConfig = {
             );
           },
           sseLink as any,
-          http,
+          ApolloLink.from([retryLink, http]),
         );
 
         return {

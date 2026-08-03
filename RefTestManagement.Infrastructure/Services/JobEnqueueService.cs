@@ -50,7 +50,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         var job = Job.Create(JobType.InvitationEmail, payloadJson, executeAfter);
 
         context.Jobs.Add(job);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogEnqueuedInvitationEmail(logger, job.Id, payload.Email);
     }
@@ -62,7 +62,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         var job = Job.Create(JobType.ResultEmail, payloadJson, executeAfter);
 
         context.Jobs.Add(job);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogEnqueuedResultEmail(logger, job.Id, payload.Email);
     }
@@ -74,7 +74,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         var job = Job.Create(JobType.ReportEmail, payloadJson, executeAfter);
 
         context.Jobs.Add(job);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogEnqueuedReportEmail(logger, job.Id, payload.RecipientEmails.Length);
     }
@@ -86,7 +86,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter);
 
         context.Jobs.Add(job);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.RefTestExpiration, job.Id);
     }
@@ -99,7 +99,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         var job = Job.Create(JobType.ApprovalNotificationEmail, payloadJson);
 
         context.Jobs.Add(job);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalNotificationEmail, job.Id);
     }
@@ -112,7 +112,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         var job = Job.Create(JobType.ApprovalDecisionEmail, payloadJson);
 
         context.Jobs.Add(job);
-        await context.SaveChangesAsync(cancellationToken);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalDecisionEmail, job.Id);
     }
@@ -167,7 +167,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
 
         if (canceledCount > 0)
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
             ServiceLoggerMessages.LogCanceledCountPendingJobsForRefTestRefTestId(logger, canceledCount, refTestId);
         }
     }
@@ -192,7 +192,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
 
         if (canceledCount > 0)
         {
-            await context.SaveChangesAsync(cancellationToken);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
             ServiceLoggerMessages.LogCanceledCountPendingResultEmailJobsForRefTestRefTestId(logger, canceledCount, refTestId);
         }
     }
