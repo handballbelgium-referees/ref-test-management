@@ -114,7 +114,7 @@ export class RefTestWelcome {
     this.acceptingPrivacyNotice.set(true);
     this.privacyNoticeError.set(false);
     this._getPrivacyNoticeGQL
-      .fetch({ fetchPolicy: 'network-only' })
+      .fetch()
       .pipe(
         take(1),
         switchMap((noticeResult) => {
@@ -126,6 +126,7 @@ export class RefTestWelcome {
 
           return this._acceptPrivacyNoticeGQL.mutate({
             variables: { input: { token, noticeVersion } },
+            useMutationLoading: false,
           });
         }),
         tap((result) => {
