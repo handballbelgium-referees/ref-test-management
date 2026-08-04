@@ -343,10 +343,13 @@ public class BackgroundJobService : BackgroundService
             return;
         }
 
-        // Skip if already completed or expired
-        if (refTest.Status == RefTestStatus.Completed || refTest.Status == RefTestStatus.Expired)
+        // Skip if already completed, expired, or its consent has been withdrawn
+        if (refTest.Status == RefTestStatus.Completed || refTest.Status == RefTestStatus.Expired ||
+            refTest.IsAnonymized)
         {
-            _logger.LogDebug("RefTest {Id} already in status {Status}, skipping", refTest.Id, refTest.Status);
+            _logger.LogDebug(
+                "RefTest {Id} already in status {Status} or anonymized ({IsAnonymized}), skipping",
+                refTest.Id, refTest.Status, refTest.IsAnonymized);
             return;
         }
 

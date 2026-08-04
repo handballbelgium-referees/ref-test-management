@@ -52,6 +52,9 @@ public static partial class RefTestEmailMutations
                 if (refTest is null)
                     throw new RefTestNotFoundException(id.ToString());
 
+                if (refTest.IsAnonymized)
+                    throw new InvalidRefTestStatusException("Cannot send an invitation for a RefTest whose consent has been withdrawn");
+
                 if (refTest.Status != RefTestStatus.Pending)
                     throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Pending);
 
@@ -124,6 +127,9 @@ public static partial class RefTestEmailMutations
             {
                 if (refTest is null)
                     throw new RefTestNotFoundException(id.ToString());
+
+                if (refTest.IsAnonymized)
+                    throw new InvalidRefTestStatusException("Cannot send results for a RefTest whose consent has been withdrawn");
 
                 if (refTest.Status != RefTestStatus.Completed)
                     throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Completed);

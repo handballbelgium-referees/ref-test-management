@@ -157,6 +157,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void Approve()
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot approve a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.PendingApproval && Status != RefTestStatus.Rejected)
             throw new InvalidRefTestStatusException(
                 "Only RefTests in PendingApproval or Rejected status can be approved");
@@ -170,6 +173,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void Reject(string reason)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot reject a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.PendingApproval)
             throw new InvalidRefTestStatusException(
                 "Only RefTests in PendingApproval status can be rejected");
@@ -268,6 +274,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void Expire()
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot expire a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.Pending)
             throw new InvalidRefTestStatusException("Only pending RefTests can be marked as expired");
 
@@ -297,6 +306,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void UpdateBasicDetails(string firstName, string lastName, string email)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot update details for a RefTest whose consent has been withdrawn");
+
         if (!CanUpdateBasicDetails())
             throw new InvalidRefTestStatusException(
                 "Cannot update participant details for in-progress or completed tests");
@@ -328,6 +340,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         int maxTimeInMinutes,
         List<string> questionIds)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot update configuration for a RefTest whose consent has been withdrawn");
+
         if (!CanUpdateTestConfiguration())
             throw new InvalidRefTestStatusException(
                 "Cannot update test configuration for in-progress or completed tests");
@@ -357,6 +372,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void ExtendTime(int additionalMinutes)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot extend time for a RefTest whose consent has been withdrawn");
+
         if (!CanExtendTime())
             throw new InvalidRefTestStatusException("Can only extend time for in-progress tests");
 
@@ -377,6 +395,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
         // Can update sendInvitationsAutomatically only if pending and invitation not yet sent
         if (sendInvitationsAutomatically.HasValue &&
+            !IsAnonymized &&
             Status == RefTestStatus.Pending &&
             !InvitationSentAt.HasValue)
         {
@@ -385,6 +404,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
         // Can update sendResultsAutomatically only if results not yet sent and not expired
         if (sendResultsAutomatically.HasValue &&
+            !IsAnonymized &&
             Status != RefTestStatus.Expired &&
             !ResultsSentAt.HasValue)
         {
@@ -398,6 +418,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void RegenerateToken()
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot regenerate token for a RefTest whose consent has been withdrawn");
+
         if (!CanRegenerateToken())
             throw new InvalidRefTestStatusException(
                 "Can only regenerate token for pending or expired tests");
@@ -419,6 +442,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void SoftReset(bool regenerateToken = false)
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot reset a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.InProgress && Status != RefTestStatus.Completed)
             throw new InvalidRefTestStatusException(
                 "Cannot reset a pending or expired test - it's already in initial state when state is pending, when expired use revive instead");
@@ -459,6 +485,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void HardReset()
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot hard reset a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.InProgress && Status != RefTestStatus.Completed)
             throw new InvalidRefTestStatusException(
                 "Cannot hard reset a pending or expired test - use update operations instead when status is pending, when expired use revive instead");
@@ -491,6 +520,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void Revive()
     {
+        if (IsAnonymized)
+            throw new InvalidRefTestStatusException("Cannot revive a RefTest whose consent has been withdrawn");
+
         if (Status != RefTestStatus.Expired)
             throw new InvalidRefTestStatusException("Can only revive expired tests");
 
@@ -539,7 +571,6 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         PrivacyNoticeAcceptedAt = null;
         IsAnonymized = true;
         AnonymizedAt = DateTime.UtcNow;
-        Status = RefTestStatus.Completed; // Mark as completed so it can't be started again
 
         RaiseDomainEvent(new RefTestAnonymizedEvent());
     }

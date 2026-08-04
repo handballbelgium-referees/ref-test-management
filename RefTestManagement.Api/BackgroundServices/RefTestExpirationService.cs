@@ -74,7 +74,7 @@ public class RefTestExpirationService : BackgroundService
 
         // Find all tests that might be expired - only load what we need for checking
         var potentiallyExpiredTests = await context.RefTests
-            .Where(rt => rt.Status != RefTestStatus.Completed && rt.Status != RefTestStatus.Expired)
+            .Where(rt => rt.Status != RefTestStatus.Completed && rt.Status != RefTestStatus.Expired && !rt.IsAnonymized)
             .Select(rt => new { rt.Id, rt.Status, rt.StartedAt, rt.CreatedAt, rt.MaxTimeInMinutes })
             .ToListAsync(cancellationToken);
 
