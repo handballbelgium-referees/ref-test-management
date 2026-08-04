@@ -1,419 +1,130 @@
-# BackgroundJobService Architecture Diagram
+# Architecture Diagrams
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         BackgroundJobService Flow                           │
-└─────────────────────────────────────────────────────────────────────────────┘
+Detailed flow diagrams for the background services and authorization system referenced from the [README](../README.md#background-services).
 
-┌───────────────────┐
-│   Application     │
-│   Code / GraphQL  │
-│   Mutations       │
-└─────────┬─────────┘
-          │
-          │ 1. Enqueue Job
-          ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  IJobEnqueueService                                                          │
-│  ┌─────────────────────────────────────────────────────────────────────┐     │
-│  │ - EnqueueInvitationEmailAsync(payload, executeAfter?)               │     │
-│  │ - EnqueueResultEmailAsync(payload, executeAfter?)                   │     │
-│  │ - EnqueueReportEmailAsync(payload, executeAfter?)                   │     │
-│  └─────────────────────────────────────────────────────────────────────┘     │
-└────────────────────────────────┬─────────────────────────────────────────────┘
-                                 │
-                                 │ 2. Serialize & Save to DB
-                                 ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  SQL Database - Jobs Table                                                   │
-│  ┌────────────────────────────────────────────────────────────────────┐      │
-│  │ Id | JobType | Payload | Status | Attempts | LockedUntil | ...     │      │
-│  ├────────────────────────────────────────────────────────────────────┤      │
-│  │ guid1 | InvitationEmail | {...} | Pending | 0 | null | ...         │      │
-│  │ guid2 | ResultEmail     | {...} | Pending | 0 | null | ...         │      │
-│  │ guid3 | ReportEmail     | {...} | Processing | 1 | 2026-... | ...  │      │
-│  └────────────────────────────────────────────────────────────────────┘      │
-│  Indexes:                                                                    │
-│  - IX_Jobs_Status_ExecuteAfter_LockedUntil (composite)                       │
-│  - IX_Jobs_CreatedAt                                                         │
-└────────────────────────────────┬─────────────────────────────────────────────┘
-                                 │
-                                 │ 3. Poll every 5s (configurable)
-                                 ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  BackgroundJobService (Hosted Service)                                       │
-│  ┌─────────────────────────────────────────────────────────────────────┐     │
-│  │  Loop:                                                              │     │
-│  │    1. Query: WHERE Status = Pending                                 │     │
-│  │              AND ExecuteAfter <= NOW                                │     │
-│  │              AND (LockedUntil IS NULL OR LockedUntil <= NOW)        │     │
-│  │              ORDER BY ExecuteAfter                                  │     │
-│  │              TAKE @BatchSize (default 10)                           │     │
-│  │                                                                     │     │
-│  │    2. For each job:                                                 │     │
-│  │       a. Lock: Status = Processing, LockedUntil = NOW + 5min        │     │
-│  │       b. Deserialize Payload to DTO                                 │     │
-│  │       c. Process based on JobType                                   │     │
-│  │       d. On Success: Status = Completed                             │     │
-│  │       e. On Failure: Attempts++, Status = Failed/Pending            │     │
-│  │                                                                     │     │
-│  │    3. Wait 5 seconds (if no jobs) or continue                       │     │
-│  └─────────────────────────────────────────────────────────────────────┘     │
-└────────────────────────────────┬─────────────────────────────────────────────┘
-                                 │
-                                 │ 4. Process Job
-                                 ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  Job Processing (Switch on JobType)                                          │
-│                                                                              │
-│  ┌────────────────────┐  ┌────────────────────┐  ┌────────────────────┐      │
-│  │ InvitationEmail    │  │ ResultEmail        │  │ ReportEmail        │      │
-│  ├────────────────────┤  ├────────────────────┤  ├────────────────────┤      │
-│  │ 1. Deserialize     │  │ 1. Deserialize     │  │ 1. Deserialize     │      │
-│  │    to Invitation   │  │    to Result       │  │    to Report       │      │
-│  │    EmailPayload    │  │    EmailPayload    │  │    EmailPayload    │      │
-│  │                    │  │                    │  │                    │      │
-│  │ 2. Call Email      │  │ 2. Get Questions   │  │ 2. Convert Data    │      │
-│  │    Service         │  │    Service         │  │                    │      │
-│  │    .SendRefTest    │  │                    │  │ 3. Call Report     │      │
-│  │    InvitationAsync │  │ 3. Call Email      │  │    Service         │      │
-│  │                    │  │    Service         │  │    .SendReport     │      │
-│  │ 3. On Success:     │  │    .SendRefTest    │  │    Async           │      │
-│  │    Update RefTest  │  │    ResultsAsync    │  │                    │      │
-│  │    InvitationSentAt│  │                    │  │                    │      │
-│  │    = DateTime.Now  │  │ 4. On Success:     │  │                    │      │
-│  │                    │  │    Update RefTest  │  │                    │      │
-│  │                    │  │    ResultsSentAt   │  │                    │      │
-│  │                    │  │    = DateTime.Now  │  │                    │      │
-│  └────────────────────┘  └────────────────────┘  └────────────────────┘      │
-└────────────────────────────────┬─────────────────────────────────────────────┘
-                                 │
-                                 │ 5. Send Email
-                                 ▼
-┌──────────────────────────────────────────────────────────────────────────────┐
-│  EmailService / ReportService                                                │
-│  ┌─────────────────────────────────────────────────────────────────────┐     │
-│  │ - Generate email content                                            │     │
-│  │ - Generate PDFs (if needed)                                         │     │
-│  │ - Send via Brevo API                                                │     │
-│  └─────────────────────────────────────────────────────────────────────┘     │
-└──────────────────────────────────────────────────────────────────────────────┘
+## Background Services Overview
 
-═══════════════════════════════════════════════════════════════════════════════
+All five hosted services run in-process alongside the API — no extra Azure resources or cost.
 
-Concurrency Control (Multiple Instances)
+```mermaid
+flowchart LR
+    subgraph Hosted["Hosted background services"]
+        BJS["BackgroundJobService\npoll every 5s"]
+        RES["RefTestExpirationService\nevery 5 min"]
+        PRS["PrivacyRetentionService\ndaily"]
+        ALCS["AuditLogCleanupService\nevery 24h"]
+        PSS["PermissionSyncService\non startup"]
+    end
 
-Instance 1:                     Instance 2:
-┌────────────────┐             ┌────────────────┐
-│ Poll DB        │             │ Poll DB        │
-└────────┬───────┘             └────────┬───────┘
-         │                              │
-         │ Lock Job A                   │ Try Lock Job A
-         │ (LockedUntil = NOW+5min)     │ (SKIP - Locked)
-         ▼                              │
-┌────────────────┐                      │ Lock Job B
-│ Process Job A  │                      │ (LockedUntil = NOW+5min)
-└────────┬───────┘                      ▼
-         │                     ┌────────────────┐
-         │ Complete            │ Process Job B  │
-         ▼                     └────────┬───────┘
-┌────────────────┐                      │ Complete
-│ Status =       │                      ▼
-│ Completed      │             ┌────────────────┐
-└────────────────┘             │ Status =       │
-                               │ Completed      │
-                               └────────────────┘
+    Jobs[("Jobs table")]
+    RefTests[("RefTests table")]
+    AuditEvents[("AuditEvents table")]
+    Auth0API[("Auth0 API resource")]
 
-═══════════════════════════════════════════════════════════════════════════════
-
-Retry Logic
-
-Attempt 1:                 Attempt 2:                 Attempt 3:
-┌────────────────┐        ┌────────────────┐        ┌────────────────┐
-│ Process Job    │        │ Process Job    │        │ Process Job    │
-│ Attempts = 0   │        │ Attempts = 1   │        │ Attempts = 2   │
-└────────┬───────┘        └────────┬───────┘        └────────┬───────┘
-         │                         │                         │
-         │ FAIL                    │ FAIL                    │ FAIL
-         ▼                         ▼                         ▼
-┌────────────────┐        ┌────────────────┐        ┌────────────────┐
-│ Attempts = 1   │        │ Attempts = 2   │        │ Attempts = 3   │
-│ Status =       │        │ Status =       │        │ Status =       │
-│   Pending      │        │   Pending      │        │   Failed       │
-│ LockedUntil =  │        │ LockedUntil =  │        │   (PERMANENT)  │
-│   null         │        │   null         │        │                │
-│ ErrorMessage   │        │ ErrorMessage   │        │ ErrorMessage   │
-│   stored       │        │   stored       │        │   stored       │
-└────────────────┘        └────────────────┘        └────────────────┘
-         │                         │
-         │ Retry                   │ Retry
-         └─────────────────────────┘
-
-═══════════════════════════════════════════════════════════════════════════════
-
-Scheduled Execution
-
-Now: 10:00 AM                                          Now: 11:00 AM
-┌────────────────────────────────────┐               ┌──────────────────┐
-│ Job Created                        │               │ Time to Process! │
-│ ExecuteAfter = 11:00 AM            │ ... Wait ...  │                  │
-│ Status = Pending                   │───────────────▶ Process Job      │
-│                                    │               │                  │
-│ Background service sees job but    │               └──────────────────┘
-│ skips it (ExecuteAfter > NOW)      │
-└────────────────────────────────────┘
-
-═══════════════════════════════════════════════════════════════════════════════
-
-Automatic Cleanup (Every 24 Hours by Default)
-
-┌────────────────────────────────────────────────────────────────────────────┐
-│ Cleanup Process                                                            │
-│                                                                            │
-│ 1. Check if cleanup is due (last run + 24 hours)                           │
-│    └─ If yes, continue to step 2                                           │
-│                                                                            │
-│ 2. Query old jobs:                                                         │
-│    WHERE (Status = 'Completed' AND CompletedAt < NOW - 7 days)             │
-│       OR (Status = 'Failed' AND CompletedAt < NOW - 30 days)               │
-│                                                                            │
-│ 3. Delete old jobs in batch                                                │
-│                                                                            │
-│ 4. Log cleanup results                                                     │
-│                                                                            │
-│ Configurable via appsettings.json:                                         │
-│ - RetainCompletedJobsDays (default: 7)                                     │
-│ - RetainFailedJobsDays (default: 30)                                       │
-│ - CleanupIntervalHours (default: 24)                                       │
-│ - EnableCleanup (default: true)                                            │
-└────────────────────────────────────────────────────────────────────────────┘
-
-═══════════════════════════════════════════════════════════════════════════════
-
-Performance Features
-
-✓ Indexed Queries:          Fast job lookup with composite index
-✓ Batch Processing:         Process up to 10 jobs per cycle
-✓ Low CPU Usage:            5-second sleep when no jobs
-✓ Optimistic Locking:       LockedUntil prevents double-processing
-✓ Scoped Services:          Fresh DI scope per job
-✓ Async Throughout:         Non-blocking I/O operations
-✓ Source-Gen Logging:       Minimal logging overhead
-✓ Graceful Shutdown:        Cancellation token support
-✓ Auto Cleanup:             Old jobs automatically purged (configurable retention)
-✓ DateTime Tracking:        Precise timestamps when emails are delivered
+    BJS -->|processes| Jobs
+    RES -->|enqueues jobs into| Jobs
+    PRS -->|anonymizes| RefTests
+    ALCS -->|soft-archives| AuditEvents
+    PSS -->|syncs permission list to| Auth0API
 ```
 
----
+## Job Queue Flow (`BackgroundJobService`)
 
-# Security & Authorization Architecture
+```mermaid
+sequenceDiagram
+    participant M as GraphQL Mutation
+    participant Q as IJobEnqueueService
+    participant DB as Jobs table
+    participant W as BackgroundJobService
+    participant E as EmailService / PDF
 
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                     Authentication & Permission Flow                        │
-└─────────────────────────────────────────────────────────────────────────────┘
+    M->>Q: EnqueueInvitationEmailAsync(payload)
+    Q->>DB: INSERT Job (Status = Pending)
+    Note over M: API returns immediately
 
-Browser Login Flow
-══════════════════
-
-┌──────────────┐     1. GET /Account/Login      ┌──────────────────────────────┐
-│   Angular    │ ─────────────────────────────▶ │  .NET API (AccountController)│
-│   SPA        │                                └──────────────┬───────────────┘
-└──────────────┘                                               │ 2. Challenge (OIDC redirect)
-                                                               ▼
-                                                ┌──────────────────────────────┐
-                                                │         Auth0                │
-                                                │  - Authenticate user         │
-                                                │  - Issue JWT access token    │
-                                                │    with permissions[] claim  │
-                                                └──────────────┬───────────────┘
-                                                               │ 3. Redirect with code
-                                                               ▼
-                                                ┌──────────────────────────────┐
-                                                │  .NET API (OIDC callback)    │
-                                                │  OnTokenValidated:           │
-                                                │  - Decode JWT access token   │
-                                                │  - Read permissions[] claims │
-                                                │  - Copy into cookie identity │
-                                                │  - Set auth cookie           │
-                                                └──────────────┬───────────────┘
-                                                               │ 4. Redirect to Angular app
-                                                               ▼
-                                                ┌──────────────────────────────┐
-                                                │   Angular SPA loaded         │
-                                                │   Auth cookie set on browser │
-                                                └──────────────────────────────┘
-
-
-Frontend Permission Loading
-═══════════════════════════
-
-┌──────────────┐  isAuthenticated?  ┌──────────────────────────────────────┐
-│ Angular SPA  │ ──────────────────▶│ GET /Account/IsAuthenticated         │
-│              │ ◀──────────────────│ → true                               │
-│              │                    └──────────────────────────────────────┘
-│              │
-│              │  fetch permissions ┌──────────────────────────────────────┐
-│              │ ──────────────────▶│ GET /Account/Permissions             │
-│              │ ◀──────────────────│ → ["ref-tests:create",               │
-│              │                    │    "ref-tests:view-list", ...]       │
-│              │                    └──────────────────────────────────────┘
-│              │
-│  PermissionsService (singleton)
-│  ┌───────────────────────────────────────────────────────────────┐
-│  │ permissions = signal<string[] | undefined>                    │
-│  │   undefined = still loading                                   │
-│  │   []        = loaded, no permissions                          │
-│  │   [...]     = loaded with permissions                         │
-│  │                                                               │
-│  │ hasPermission(p):                                             │
-│  │   1. superadmin? → true                                       │
-│  │   2. exact match? → true                                      │
-│  │   3. namespace wildcard (ref-tests:*)? → true                 │
-│  │   else → false                                                │
-│  └───────────────────────────────────────────────────────────────┘
-│              │
-│  ┌───────────┴────────────────────────────────────────────────┐
-│  │ HasPermission directive          permissionGuard factory   │
-│  │ *hasPermission="Permissions.X"   canActivate: [            │
-│  │                                    authGuard,              │
-│  │ Structural directive that shows    permissionGuard(P)      │
-│  │ / hides elements reactively.     ]                         │
-│  │ Waits for signal ≠ undefined.                              │
-│  │ Re-evaluates on permission       Guard waits for           │
-│  │ signal change.                   permissions signal ≠      │
-│  │                                  undefined, then checks.   │
-│  └────────────────────────────────────────────────────────────┘
-└──────────────┘
-
-
-Backend Authorization (per GraphQL request)
-═══════════════════════════════════════════
-
-GraphQL Request (cookie or JWT Bearer)
-           │
-           ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  HotChocolate                                                            │
-│  [Authorize(Policy = "ref-tests:create")]  ← exact policy name           │
-│  [Authorize(Policy = "anyof:perm1|perm2")] ← OR policy (dynamic)         │
-└──────────────────────────┬───────────────────────────────────────────────┘
-                           │
-                           ▼
-┌──────────────────────────────────────────────────────────────────────────┐
-│  TaskAuthorizationPolicyProvider                                         │
-│  - "ref-tests:create"     → DefaultAuthorizationPolicyProvider           │
-│  - "anyof:perm1|perm2"    → builds AnyTaskPermissionRequirement at       │
-│                             runtime (no upfront registration needed)     │
-└──────────────────────────┬───────────────────────────────────────────────┘
-                           │
-           ┌───────────────┴────────────────┐
-           ▼                                ▼
-┌──────────────────────┐          ┌───────────────────────────┐
-│ TaskPermissionHandler│          │ AnyTaskPermissionHandler  │
-│ (single permission)  │          │ (OR across N permissions) │
-│                      │          │                           │
-│ 1. superadmin? → ✓   │          │ 1. superadmin? → ✓        │
-│ 2. exact match? → ✓  │          │ 2. any exact match? → ✓   │
-│ 3. ns wildcard? → ✓  │          │ 3. any ns wildcard? → ✓   │
-│ else → ✗             │          │ else → ✗                  │
-└──────────────────────┘          └───────────────────────────┘
-
-
-Permission Sources in the JWT (Auth0)
-══════════════════════════════════════
-
-┌─────────────────────────────────────────────────────────────────────────┐
-│  Auth0 JWT access token                                                 │
-│  {                                                                      │
-│    "sub": "auth0|...",                                                  │
-│    "permissions": [                                                     │
-│      "ref-tests:create",          ← single permission                   │
-│      "ref-tests:view-list",                                             │
-│      "ref-tests:*",               ← wildcard: all ref-tests ops         │
-│      "superadmin"                 ← bypasses ALL checks                 │
-│    ]                                                                    │
-│  }                                                                      │
-└──────────────────────────────┬──────────────────────────────────────────┘
-                               │ OnTokenValidated (OIDC event)
-                               │ Copies permissions into cookie ClaimsIdentity
-                               ▼
-                    Cookie session carries
-                    same permissions claims
-                    for browser requests
+    loop every 5s (configurable)
+        W->>DB: SELECT TOP N WHERE Status = Pending AND ExecuteAfter <= now
+        DB-->>W: pending jobs (batch size 10)
+        W->>DB: UPDATE Status = Processing, LockedUntil = now + 5min
+        W->>E: send email / generate PDF
+        alt success
+            W->>DB: UPDATE Status = Completed
+        else failure
+            W->>DB: UPDATE Attempts += 1, Status = Pending or Failed
+        end
+    end
 ```
 
----
+### Job Status Lifecycle
 
-# Approval Workflow Diagram
-
+```mermaid
+stateDiagram-v2
+    [*] --> Pending
+    Pending --> Processing: picked up by poll
+    Processing --> Completed: success
+    Processing --> Pending: failure, attempts < max (3)
+    Processing --> Failed: failure, attempts = max
+    Completed --> [*]: cleaned up after retention (7 days)
+    Failed --> [*]: cleaned up after retention (30 days)
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        RefTest Approval Workflow                            │
-└─────────────────────────────────────────────────────────────────────────────┘
 
-   Creator (has ref-tests:create, NOT ref-tests:approve)
-   ┌────────────────────────────────────────────────────────────────────────┐
-   │  createRefTests mutation                                               │
-   │  → requiresApproval = true  (creator lacks ref-tests:approve)         │
-   │  → RefTest.Status = PendingApproval                                   │
-   └───────────────────────────┬────────────────────────────────────────────┘
-                               │
-                               │ 1. RefTestCreated subscription event fired
-                               │    (status = PENDING_APPROVAL)
-                               │
-                               │ 2. ApprovalNotificationEmail job enqueued
-                               ▼
-   ┌────────────────────────────────────────────────────────────────────────┐
-   │  BackgroundJobService                                                  │
-   │  JobType = ApprovalNotificationEmail                                   │
-   │                                                                        │
-   │  1. IAuth0ManagementService.GetUsersWithPermissionAsync(               │
-   │       "ref-tests:approve")                                             │
-   │     → Fetches approver list via Auth0 Management API (M2M token)       │
-   │                                                                        │
-   │  2. For each approver:                                                 │
-   │     IEmailService.SendApprovalNotificationAsync(...)                   │
-   │     → HTML email with list of pending tests                            │
-   │     → "Review Pending Tests" button → /ref-tests?status=PENDING_APPROVAL│
-   └───────────────────────────┬────────────────────────────────────────────┘
-                               │
-                   ┌───────────┴───────────┐
-                   ▼                       ▼
-   Approver clicks Approve          Approver clicks Reject
-   ┌────────────────────┐           ┌────────────────────────────────────┐
-   │ approveRefTests    │           │ rejectRefTests mutation            │
-   │ mutation           │           │ (requires reason string)           │
-   │ [Authorize:        │           │ [Authorize:                        │
-   │  ref-tests:approve]│           │  ref-tests:approve]                │
-   └─────────┬──────────┘           └───────────────┬────────────────────┘
-             │                                      │
-             │ RefTest.Approve()                    │ RefTest.Reject(reason)
-             │ Status → Pending                     │ Status → Rejected
-             │                                      │ RejectionReason saved
-             ▼                                      ▼
-   RefTestApproved event              RefTestRejected event
-   (subscription SSE)                 (subscription SSE)
-             │                                      │
-             ▼                                      ▼
-   Cache: move PENDING_APPROVAL     Cache: move PENDING_APPROVAL
-          → PENDING list                   → REJECTED list
-   Tab counts updated               Tab counts updated
+## Authentication & Authorization Flow
 
-   ┌────────────────────────────────────────────────────────────────────────┐
-   │  Frontend UI (list page)                                               │
-   │                                                                        │
-   │  Status tabs (approvers only):                                         │
-   │  [All] [Pending] [In Progress] [Completed] [Expired]                   │
-   │  [Pending Approval ✦] (amber, shown when count > 0)                    │
-   │  [Rejected ✦] (red, shown when count > 0)                              │
-   │                                                                        │
-   │  Bulk actions bar (approvers only, via *hasPermission):                │
-   │  [Approve Tests]  [Reject Tests]                                       │
-   └────────────────────────────────────────────────────────────────────────┘
+```mermaid
+sequenceDiagram
+    participant SPA as Angular SPA
+    participant API as .NET API
+    participant Auth0 as Auth0
 
-   Status state machine (relevant transitions):
-   PendingApproval ──Approve()──► Pending
-   PendingApproval ──Reject()───► Rejected
-   Rejected        ──Approve()──► Pending   (re-approve after rejection)
+    SPA->>API: GET /Account/Login
+    API->>Auth0: OIDC challenge (redirect)
+    Auth0-->>API: authorization code
+    API->>Auth0: exchange code for tokens
+    Auth0-->>API: JWT access token (permissions[] claim)
+    API->>API: OnTokenValidated copies permissions[] into cookie identity
+    API-->>SPA: redirect, auth cookie set
+
+    SPA->>API: GraphQL request (cookie or Bearer token)
+    API->>API: [Authorize(Policy="ref-tests:create")] or "anyof:a|b"
+    API->>API: TaskAuthorizationPolicyProvider resolves the policy
+    API->>API: TaskPermissionHandler / AnyTaskPermissionHandler evaluates claims
+    Note over API: superadmin bypass, exact match, or namespace wildcard (ref-tests:*)
+    API-->>SPA: 200 OK or 403 Forbidden
+```
+
+See [SECURITY.md](SECURITY.md) for the full permission reference and Auth0 setup.
+
+## Approval Workflow
+
+```mermaid
+sequenceDiagram
+    participant C as Creator (no ref-tests:approve)
+    participant API as .NET API
+    participant Job as BackgroundJobService
+    participant Auth0 as Auth0 Management API
+    participant Ap as Approver
+
+    C->>API: createRefTests mutation
+    API->>API: RefTest.Status = PendingApproval
+    API->>Job: enqueue ApprovalNotificationEmail job
+    Job->>Auth0: GetUsersWithPermissionAsync("ref-tests:approve")
+    Auth0-->>Job: approver list
+    Job->>Ap: email with link to the review queue
+
+    alt approve
+        Ap->>API: approveRefTests mutation
+        API->>API: Status: PendingApproval -> Pending
+    else reject
+        Ap->>API: rejectRefTests mutation (reason required)
+        API->>API: Status: PendingApproval -> Rejected
+    end
+    API-->>Ap: RefTestApproved / RefTestRejected subscription event
+```
+
+```mermaid
+stateDiagram-v2
+    [*] --> PendingApproval
+    PendingApproval --> Pending: Approve()
+    PendingApproval --> Rejected: Reject(reason)
+    Rejected --> Pending: Approve() (re-approve)
 ```
