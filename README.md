@@ -93,16 +93,16 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 <!-- versions:backend:start -->
 
-| Technology                | Version  | Purpose                                                        |
-| ------------------------- | -------- | -------------------------------------------------------------- |
-| **.NET**                  | 10.0     | Runtime and framework for the Web API                          |
-| **Hot Chocolate**         | 16.6.0   | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.10  | ORM for data access and migrations                             |
-| **ClosedXML**             | 0.105.1  | Excel report generation                                        |
-| **QuestPDF**              | 2026.7.2 | PDF report generation                                          |
-| **SQL Server**            | –        | Primary data store (Azure SQL or local)                        |
-| **Auth0**                 | –        | OAuth2 / OpenID Connect authentication                         |
-| **Brevo API**             | –        | Transactional email delivery                                   |
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **.NET** | 10.0 | Runtime and framework for the Web API |
+| **Hot Chocolate** | 16.6.0 | GraphQL server with authorization, data loaders, and filtering |
+| **Entity Framework Core** | 10.0.10 | ORM for data access and migrations |
+| **ClosedXML** | 0.105.1 | Excel report generation |
+| **QuestPDF** | 2026.7.2 | PDF report generation |
+| **Database** | – | SQL Server, PostgreSQL, SQLite, or MySQL (selectable via config) |
+| **Auth0** | – | OAuth2 / OpenID Connect authentication |
+| **Brevo API** | – | Transactional email delivery |
 
 <!-- versions:backend:end -->
 
@@ -110,17 +110,17 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 <!-- versions:frontend:start -->
 
-| Technology                 | Version | Purpose                                              |
-| -------------------------- | ------- | ---------------------------------------------------- |
-| **Angular**                | 22.1.1  | SPA framework with standalone components and signals |
-| **TypeScript**             | 6.0.3   | Strict type-checking                                 |
-| **Apollo Client**          | 4.2.10  | GraphQL client with normalized caching               |
-| **apollo-angular**         | 14.1.0  | Angular integration for Apollo Client                |
-| **ngx-translate**          | 18.0.0  | i18n and localization                                |
-| **Tailwind CSS**           | 4.3.3   | Utility-first styling                                |
-| **GraphQL Code Generator** | 7.2.0   | Generates TypeScript types from the GraphQL schema   |
-| **Vitest**                 | 4.1.10  | Unit testing framework                               |
-| **RxJS**                   | 7.8.2   | Reactive programming                                 |
+| Technology | Version | Purpose |
+| --- | --- | --- |
+| **Angular** | 22.1.1 | SPA framework with standalone components and signals |
+| **TypeScript** | 6.0.3 | Strict type-checking |
+| **Apollo Client** | 4.2.10 | GraphQL client with normalized caching |
+| **apollo-angular** | 14.1.0 | Angular integration for Apollo Client |
+| **ngx-translate** | 18.0.0 | i18n and localization |
+| **Tailwind CSS** | 4.3.3 | Utility-first styling |
+| **GraphQL Code Generator** | 7.2.0 | Generates TypeScript types from the GraphQL schema |
+| **Vitest** | 4.1.10 | Unit testing framework |
+| **RxJS** | 7.8.2 | Reactive programming |
 
 <!-- versions:frontend:end -->
 
