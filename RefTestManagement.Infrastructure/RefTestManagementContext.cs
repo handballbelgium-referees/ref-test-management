@@ -21,6 +21,19 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
         modelBuilder.ApplyConfiguration(new JobConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuditEvent).Assembly);
 
+        // MySQL maps VARCHAR(n) in utf8mb4 to n×4 bytes toward the 65535-byte row size limit.
+        // These comma-separated ID list columns are not indexed, so LONGTEXT is safe and necessary.
+        if (Database.ProviderName == "MySql.EntityFrameworkCore")
+        {
+            modelBuilder.Entity<RefTest>(b =>
+            {
+                b.Property(x => x.QuestionIds).HasColumnType("longtext");
+                b.Property(x => x.SelectedAnswerIds).HasColumnType("longtext");
+                b.Property(x => x.WrongQuestionIds).HasColumnType("longtext");
+                b.Property(x => x.WrongAnswerIds).HasColumnType("longtext");
+            });
+        }
+
         base.OnModelCreating(modelBuilder);
     }
 }

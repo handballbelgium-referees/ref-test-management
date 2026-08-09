@@ -11,8 +11,17 @@
     <ItemGroup>
         <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
         <ProjectReference Include="..\RefTestManagement.Auth0\RefTestManagement.Auth0.csproj" />
-        <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj"/>
-        <ProjectReference Include="..\RefTestManagement.Security\RefTestManagement.Security.csproj"/>
+        <ProjectReference
+            Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
+        <ProjectReference
+            Include="..\RefTestManagement.Migrations.MySQL\RefTestManagement.Migrations.MySQL.csproj" />
+        <ProjectReference
+            Include="..\RefTestManagement.Migrations.PostgreSQL\RefTestManagement.Migrations.PostgreSQL.csproj" />
+        <ProjectReference
+            Include="..\RefTestManagement.Migrations.SQLite\RefTestManagement.Migrations.SQLite.csproj" />
+        <ProjectReference
+            Include="..\RefTestManagement.Migrations.SqlServer\RefTestManagement.Migrations.SqlServer.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Security\RefTestManagement.Security.csproj" />
     </ItemGroup>
 
     <ItemGroup>

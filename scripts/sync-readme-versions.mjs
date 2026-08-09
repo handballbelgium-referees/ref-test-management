@@ -88,9 +88,9 @@ const backendRows = [
     purpose: 'PDF report generation',
   },
   {
-    label: 'SQL Server',
+    label: 'Database',
     version: '–',
-    purpose: 'Primary data store (Azure SQL or local)',
+    purpose: 'SQL Server, PostgreSQL, SQLite, or MySQL (selectable via config)',
   },
   {
     label: 'Auth0',
