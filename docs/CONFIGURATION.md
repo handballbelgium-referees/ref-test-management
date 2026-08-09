@@ -6,6 +6,7 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
 
 ```json
 {
+  "DatabaseProvider": "SqlServer",
   "ConnectionStrings": {
     "RefTestManagement": "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
   },
@@ -77,11 +78,26 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
 
 ## Sections
 
+### DatabaseProvider
+
+| Key                | Description                           | Required | Default       |
+| ------------------ | ------------------------------------- | -------- | ------------- |
+| `DatabaseProvider` | Selects the EF Core database provider | No       | `"SqlServer"` |
+
+Valid values:
+
+| Value        | Provider                                        | Connection string format                                                       |
+| ------------ | ----------------------------------------------- | ------------------------------------------------------------------------------ |
+| `SqlServer`  | SQL Server / Azure SQL                          | `Server=...;Database=...;Trusted_Connection=True;TrustServerCertificate=True;` |
+| `PostgreSQL` | PostgreSQL (via Npgsql)                         | `Host=...;Database=...;Username=...;Password=...`                              |
+| `SQLite`     | SQLite                                          | `Data Source=RefTestManagement.db`                                             |
+| `MySQL`      | MySQL / MariaDB (via MySql.EntityFrameworkCore) | `Server=...;Database=...;User=...;Password=...;`                               |
+
 ### ConnectionStrings
 
-| Key                 | Description                               | Required |
-| ------------------- | ----------------------------------------- | -------- |
-| `RefTestManagement` | SQL Server or Azure SQL connection string | Yes      |
+| Key                 | Description                                                       | Required |
+| ------------------- | ----------------------------------------------------------------- | -------- |
+| `RefTestManagement` | Database connection string (format depends on `DatabaseProvider`) | Yes      |
 
 ### Auth0
 
@@ -179,6 +195,79 @@ See [docs/PRIVACY.md](PRIVACY.md) for how retention and erasure actually work.
 | `EnableCleanup`        | Enable automatic soft-archiving of old audit events | `true`  |
 | `CleanupIntervalHours` | How often cleanup runs                              | `24`    |
 | `RetentionDays`        | Audit events older than this are soft-archived      | `90`    |
+
+## Managing Migrations
+
+Each provider has its own migrations project. Migrations must be generated separately per provider because the DDL (identity columns, data types, etc.) differs between databases.
+
+### Adding migrations
+
+When setting up a new provider for the first time, generate its initial migration. The EF CLI uses the startup project's DI to resolve the `DbContext`, so you must override both `DatabaseProvider` **and** the connection string to match the target provider — environment variables override user secrets and `appsettings.json`.
+
+**SQL Server** (default — no env vars needed if user secrets already hold a SQL Server connection string):
+
+```bash
+dotnet ef migrations add Initial \
+  --project RefTestManagement.Migrations.SqlServer \
+  --startup-project RefTestManagement.Api
+```
+
+**PostgreSQL:**
+
+```bash
+DatabaseProvider=PostgreSQL \
+ConnectionStrings__RefTestManagement="Host=localhost;Database=RefTestManagement;Username=postgres;Password=postgres" \
+dotnet ef migrations add Initial \
+  --project RefTestManagement.Migrations.PostgreSQL \
+  --startup-project RefTestManagement.Api
+```
+
+**SQLite:**
+
+```bash
+DatabaseProvider=SQLite \
+ConnectionStrings__RefTestManagement="Data Source=RefTestManagement.db" \
+dotnet ef migrations add Initial \
+  --project RefTestManagement.Migrations.SQLite \
+  --startup-project RefTestManagement.Api
+```
+
+**MySQL:**
+
+```bash
+DatabaseProvider=MySQL \
+ConnectionStrings__RefTestManagement="Server=localhost;Database=RefTestManagement;User=root;Password=root;" \
+dotnet ef migrations add Initial \
+  --project RefTestManagement.Migrations.MySQL \
+  --startup-project RefTestManagement.Api
+```
+
+> `ConnectionStrings__RefTestManagement` uses double underscores (`__`) because that is how .NET maps environment variables to nested configuration keys (`ConnectionStrings:RefTestManagement`).
+
+### Applying migrations
+
+Migrations are applied automatically on startup via `MigrateAsync()`. No manual `dotnet ef database update` is needed in production.
+
+For local development you can still run it manually:
+
+```bash
+DatabaseProvider=PostgreSQL \
+ConnectionStrings__RefTestManagement="Host=localhost;Database=RefTestManagement;Username=postgres;Password=postgres" \
+dotnet ef database update \
+  --project RefTestManagement.Migrations.PostgreSQL \
+  --startup-project RefTestManagement.Api
+```
+
+### Listing applied migrations
+
+```bash
+# SQL Server (no env vars needed if user secrets are set)
+dotnet ef migrations list \
+  --project RefTestManagement.Migrations.SqlServer \
+  --startup-project RefTestManagement.Api
+
+# Other providers — add the same env var pair as shown above
+```
 
 ## Using User Secrets
 

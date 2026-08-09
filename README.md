@@ -93,16 +93,16 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 <!-- versions:backend:start -->
 
-| Technology | Version | Purpose |
-| --- | --- | --- |
-| **.NET** | 10.0 | Runtime and framework for the Web API |
-| **Hot Chocolate** | 16.6.0 | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.10 | ORM for data access and migrations |
-| **ClosedXML** | 0.105.1 | Excel report generation |
-| **QuestPDF** | 2026.7.2 | PDF report generation |
-| **SQL Server** | – | Primary data store (Azure SQL or local) |
-| **Auth0** | – | OAuth2 / OpenID Connect authentication |
-| **Brevo API** | – | Transactional email delivery |
+| Technology                | Version  | Purpose                                                        |
+| ------------------------- | -------- | -------------------------------------------------------------- |
+| **.NET**                  | 10.0     | Runtime and framework for the Web API                          |
+| **Hot Chocolate**         | 16.6.0   | GraphQL server with authorization, data loaders, and filtering |
+| **Entity Framework Core** | 10.0.10  | ORM for data access and migrations                             |
+| **ClosedXML**             | 0.105.1  | Excel report generation                                        |
+| **QuestPDF**              | 2026.7.2 | PDF report generation                                          |
+| **SQL Server**            | –        | Primary data store (Azure SQL or local)                        |
+| **Auth0**                 | –        | OAuth2 / OpenID Connect authentication                         |
+| **Brevo API**             | –        | Transactional email delivery                                   |
 
 <!-- versions:backend:end -->
 
@@ -110,17 +110,17 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 <!-- versions:frontend:start -->
 
-| Technology | Version | Purpose |
-| --- | --- | --- |
-| **Angular** | 22.1.1 | SPA framework with standalone components and signals |
-| **TypeScript** | 6.0.3 | Strict type-checking |
-| **Apollo Client** | 4.2.10 | GraphQL client with normalized caching |
-| **apollo-angular** | 14.1.0 | Angular integration for Apollo Client |
-| **ngx-translate** | 18.0.0 | i18n and localization |
-| **Tailwind CSS** | 4.3.3 | Utility-first styling |
-| **GraphQL Code Generator** | 7.2.0 | Generates TypeScript types from the GraphQL schema |
-| **Vitest** | 4.1.10 | Unit testing framework |
-| **RxJS** | 7.8.2 | Reactive programming |
+| Technology                 | Version | Purpose                                              |
+| -------------------------- | ------- | ---------------------------------------------------- |
+| **Angular**                | 22.1.1  | SPA framework with standalone components and signals |
+| **TypeScript**             | 6.0.3   | Strict type-checking                                 |
+| **Apollo Client**          | 4.2.10  | GraphQL client with normalized caching               |
+| **apollo-angular**         | 14.1.0  | Angular integration for Apollo Client                |
+| **ngx-translate**          | 18.0.0  | i18n and localization                                |
+| **Tailwind CSS**           | 4.3.3   | Utility-first styling                                |
+| **GraphQL Code Generator** | 7.2.0   | Generates TypeScript types from the GraphQL schema   |
+| **Vitest**                 | 4.1.10  | Unit testing framework                               |
+| **RxJS**                   | 7.8.2   | Reactive programming                                 |
 
 <!-- versions:frontend:end -->
 
@@ -194,13 +194,13 @@ flowchart TB
 
 ### Prerequisites
 
-| Requirement   | Version                 |
-| ------------- | ----------------------- |
-| .NET SDK      | 10.0+                   |
-| Node.js       | 22.x+                   |
-| SQL Server    | 2019+ or Azure SQL      |
-| Auth0 account | –                       |
-| Brevo account | – (optional, for email) |
+| Requirement   | Version                                                         |
+| ------------- | --------------------------------------------------------------- |
+| .NET SDK      | 10.0+                                                           |
+| Node.js       | 22.x+                                                           |
+| Database      | SQL Server 2019+ / Azure SQL, PostgreSQL, SQLite, or MySQL 8.0+ |
+| Auth0 account | –                                                               |
+| Brevo account | – (optional, for email)                                         |
 
 ### Quick Start
 
@@ -209,16 +209,19 @@ git clone https://github.com/handballbelgium-referees/ref-test-management.git
 cd ref-test-management
 ```
 
-**1. Database** — create a database and apply migrations:
+**1. Database** — set `DatabaseProvider` in your secrets (defaults to `SqlServer`), create a database, and apply migrations:
 
 ```bash
 cd RefTestManagement.Api
-dotnet ef database update
+dotnet ef database update --project ../RefTestManagement.Migrations.SqlServer
 ```
+
+Replace `RefTestManagement.Migrations.SqlServer` with the project matching your chosen `DatabaseProvider` (`RefTestManagement.Migrations.PostgreSQL`, `RefTestManagement.Migrations.SQLite`, `RefTestManagement.Migrations.MySQL`). See [docs/CONFIGURATION.md#databaseprovider](docs/CONFIGURATION.md#databaseprovider) for connection string formats.
 
 **2. Secrets** (development) — configure the minimum required settings via user secrets:
 
 ```bash
+dotnet user-secrets set "DatabaseProvider" "SqlServer"
 dotnet user-secrets set "ConnectionStrings:RefTestManagement" "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
 dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
 dotnet user-secrets set "Auth0:ClientId" "your-client-id"

@@ -11,7 +11,7 @@ using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
-using Microsoft.EntityFrameworkCore;
+using Handball.Belgium.RefTestManagement.Api.Extensions;
 using QuestPDF.Infrastructure;
 using StrawberryShake;
 using Handball.Belgium.RefTestManagement.Api.Graphql;
@@ -56,17 +56,7 @@ var auditLogOptions = services.AddAuditLogging(opts =>
         ctx.Set<RefTestTitle>().Find(id)?.Value);
 });
 
-services.AddDbContextFactory<RefTestManagementContext>((sp, options) =>
-{
-    options.UseSqlServer(configuration.GetConnectionString("RefTestManagement"),
-        x => x
-            .EnableRetryOnFailure()
-            .MigrationsAssembly(typeof(RefTestManagementContext).Assembly.GetName().Name));
-    options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
-#if DEBUG
-    options.EnableSensitiveDataLogging();
-#endif
-});
+services.AddDatabaseProvider(configuration);
 
 // Add services
 var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>()

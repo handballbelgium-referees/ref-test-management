@@ -8,16 +8,17 @@
     </PropertyGroup>
 
     <ItemGroup>
-    <PackageReference Include="ClosedXML" />
-    <PackageReference Include="HotChocolate.Abstractions" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
-    <PackageReference Include="QuestPDF" />
+        <PackageReference Include="ClosedXML" />
+        <PackageReference Include="HotChocolate.Abstractions" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+        <PackageReference Include="QuestPDF" />
     </ItemGroup>
 
     <ItemGroup>
-      <ProjectReference Include="..\RefTestManagement.Application\RefTestManagement.Application.csproj" />
-    <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
+        <ProjectReference
+            Include="..\RefTestManagement.Application\RefTestManagement.Application.csproj" />
+        <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
     </ItemGroup>
 
 </Project>
