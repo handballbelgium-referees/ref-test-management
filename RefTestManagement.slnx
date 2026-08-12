@@ -8,6 +8,7 @@
     <File Path=".gitignore" />
     <File Path="dotnet-tools.json" />
     <File Path="README.md" />
+    <File Path="Directory.Build.props" />
     <File Path="Directory.Packages.props" />
     <File Path="docs/ARCHITECTURE-DIAGRAM.md" />
     <File Path="docs/PROJECT-STRUCTURE.md" />
@@ -20,10 +21,8 @@
   <Project Path="RefTestManagement.Domain/RefTestManagement.Domain.csproj" />
   <Project Path="RefTestManagement.Infrastructure/RefTestManagement.Infrastructure.csproj" />
   <Project Path="RefTestManagement.Migrations.MySQL/RefTestManagement.Migrations.MySQL.csproj" />
-  <Project
-    Path="RefTestManagement.Migrations.PostgreSQL/RefTestManagement.Migrations.PostgreSQL.csproj" />
+  <Project Path="RefTestManagement.Migrations.PostgreSQL/RefTestManagement.Migrations.PostgreSQL.csproj" />
   <Project Path="RefTestManagement.Migrations.SQLite/RefTestManagement.Migrations.SQLite.csproj" />
-  <Project
-    Path="RefTestManagement.Migrations.SqlServer/RefTestManagement.Migrations.SqlServer.csproj" />
+  <Project Path="RefTestManagement.Migrations.SqlServer/RefTestManagement.Migrations.SqlServer.csproj" />
   <Project Path="RefTestManagement.Security/RefTestManagement.Security.csproj" />
 </Solution>
