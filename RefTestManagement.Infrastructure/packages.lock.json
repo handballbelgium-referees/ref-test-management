@@ -52,9 +52,9 @@
       },
       "QuestPDF": {
         "type": "Direct",
-        "requested": "[2026.7.2, )",
-        "resolved": "2026.7.2",
-        "contentHash": "GSPOoErqB4Yh7mnbV4m/ykHOF6erHdm5qyMRHDr4sjk+fvrtkEL+RoG5YpOqiWrS833jEiktC1Uthyy5/QMNQA=="
+        "requested": "[2026.7.3, )",
+        "resolved": "2026.7.3",
+        "contentHash": "MYpJrSLwUkgaX/POQj+9GY8QreFoLXjHCiUPCNl0XrHF+nLDT9KeUFZbeaUNu1P5spt5QeYzCbf2tDF0z5idHg=="
       },
       "ClosedXML.Parser": {
         "type": "Transitive",
