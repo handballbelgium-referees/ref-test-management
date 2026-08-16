@@ -96,7 +96,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 | Technology | Version | Purpose |
 | --- | --- | --- |
 | **.NET** | 10.0 | Runtime and framework for the Web API |
-| **Hot Chocolate** | 16.6.0 | GraphQL server with authorization, data loaders, and filtering |
+| **Hot Chocolate** | 16.6.1 | GraphQL server with authorization, data loaders, and filtering |
 | **Entity Framework Core** | 10.0.11 | ORM for data access and migrations |
 | **ClosedXML** | 0.105.1 | Excel report generation |
 | **QuestPDF** | 2026.7.3 | PDF report generation |
