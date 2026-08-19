@@ -119,7 +119,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 | **ngx-translate** | 18.0.0 | i18n and localization |
 | **Tailwind CSS** | 4.3.3 | Utility-first styling |
 | **GraphQL Code Generator** | 7.2.0 | Generates TypeScript types from the GraphQL schema |
-| **Vitest** | 4.1.10 | Unit testing framework |
+| **Vitest** | 4.1.11 | Unit testing framework |
 | **RxJS** | 7.8.2 | Reactive programming |
 
 <!-- versions:frontend:end -->
