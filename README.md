@@ -99,7 +99,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 | **Hot Chocolate** | 16.6.1 | GraphQL server with authorization, data loaders, and filtering |
 | **Entity Framework Core** | 10.0.11 | ORM for data access and migrations |
 | **ClosedXML** | 0.105.1 | Excel report generation |
-| **QuestPDF** | 2026.7.3 | PDF report generation |
+| **QuestPDF** | 2026.8.0 | PDF report generation |
 | **Database** | – | SQL Server, PostgreSQL, SQLite, or MySQL (selectable via config) |
 | **Auth0** | – | OAuth2 / OpenID Connect authentication |
 | **Brevo API** | – | Transactional email delivery |
