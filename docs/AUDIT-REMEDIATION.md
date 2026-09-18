@@ -1563,7 +1563,7 @@ and cannot carry participant data. It is commented as such so it is not "tidied"
 > is now about breadth — integration coverage over the DbContext, GraphQL resolvers and the
 > background services — not about standing the harness up.
 
-## WP-23 — Backend test project and CI wiring
+## WP-23 — Backend test project and CI wiring ✅
 
 **Findings:** #5 (🟠 High), #10 (🟡 Medium) · **Size:** L
 
@@ -1604,6 +1604,49 @@ Highest-value targets, in order — these are exactly the paths where the audit 
 - The audit's Phase 1 findings make ideal first tests — write them as regression tests *after* the
   corresponding fix ships, so each one demonstrably fails against the old code.
 - CI time will grow; the `validate` job already builds both stacks.
+
+### Outcome ✅
+
+The harness and CI step already existed (built during Phase 1b, WP-32). This package closed the
+three coverage gaps the table above names as highest-value. **110 → 151 tests**, all passing.
+
+**`RefTestPrivacyErasureService` — 17 tests** (`RefTestPrivacyErasureServiceTests`). This is the
+code that answers a GDPR erasure request, and it is the one place where being wrong is
+unrecoverable in *both* directions: under-erasing leaves a name in a queued job payload or an audit
+row after the organisation has told the participant it deleted their data, while over-erasing
+destroys the record of who performed the erasure — the accountability evidence that makes the
+deletion defensible. Neither failure is visible in the UI, since the RefTest looks erased either
+way. The tests therefore assert past the aggregate into both side-tables: job cancellation scoped
+to the right id (and *not* to another participant's job, nor to already-completed jobs), audit
+redaction scoped by `StreamId`, idempotency on a second withdraw-consent call, and
+`EraseAndDeleteAsync` still redacting the audit trail it has no foreign key to.
+
+The `ErasureInitiator` rule is pinned from both sides, which was the WP-01 defect area: a
+participant withdrawal attributes the anonymization event to the participant — whose name has
+already been replaced in memory by then — so its actor must be redacted, whereas an operator or
+retention-sweep erasure must keep the actor or the record of *who erased* is lost.
+
+**Retention predicate — 10 tests** (`PrivacyRetentionQueriesTests`). The predicate was a private
+method inside a `BackgroundService` and so untestable in place. Extracted to
+`Infrastructure/Queries/PrivacyRetentionQueries.IsDueForErasure(cutoff)`, matching the existing
+`RefTestExpirationQueries` pattern, and covered including the four-provider SQL-translation theory
+— an `Expression` that works in LINQ-to-Objects but cannot be translated by one provider fails only
+in production, on that provider.
+
+**Scoring — 12 tests** (`ScorePercentageTests`). Scoring itself is delegated to an external GraphQL
+service, so the testable surface is the boundary where its string answer becomes the number stored
+on a participant's result. Extracted to `Application/Services/ScorePercentage`. The regression
+worth naming: the parse must stay culture-invariant, because under a comma-decimal server locale a
+culture-sensitive parse reads `"85.5"` as `855` and reports an eight-hundred-percent pass. Malformed
+input now throws `FormatException` rather than the previous bare `Exception`, and is still rejected
+rather than defaulted — silently scoring zero would look like a failed exam instead of a failed
+integration.
+
+**Near-miss worth recording.** The four-provider theory failed for MySQL and PostgreSQL with
+`Incorrect value in Connection String near '******'`. The placeholder connection strings had been
+copied from the neighbouring test file *as rendered in tool output*, where the credential-shaped
+segment is masked — so the literal `******` was written into the source. Copying code out of
+displayed output can silently substitute a redaction for the real value.
 
 ---
 
