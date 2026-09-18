@@ -14,9 +14,11 @@ import { provideRouter } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { GlobalErrorHandler } from './services/global-error-handler';
+import { ErrorReporter } from './services/error-reporter';
 
 import { provideServiceWorker } from '@angular/service-worker';
 import { ApolloLink, CombinedGraphQLErrors, InMemoryCache } from '@apollo/client';
+import { ErrorLink } from '@apollo/client/link/error';
 import { RetryLink } from '@apollo/client/link/retry';
 import { getMainDefinition, relayStylePagination } from '@apollo/client/utilities';
 import { provideApollo } from 'apollo-angular';
@@ -89,6 +91,7 @@ export const appConfig: ApplicationConfig = {
     provideApollo(
       () => {
         const httpLink = inject(HttpLink);
+        const reporter = inject(ErrorReporter);
 
         // HTTP link for queries and mutations
         const http = httpLink.create({
@@ -174,8 +177,19 @@ export const appConfig: ApplicationConfig = {
           },
         });
 
+        // Every GraphQL and network failure passes through here on its way back up the chain, so
+        // this is the one place that knows an operation failed. It only observes — returning a
+        // value would retry the operation, which is RetryLink's job. Components still handle their
+        // own errors; this exists so a failure nobody handled is not completely invisible.
+        //
+        // The operation name is safe to record because it is developer-authored. The error itself
+        // is not, so it goes through ErrorReporter, which withholds the contents in production.
+        const errorLink = new ErrorLink(({ error, operation }) => {
+          reporter.report(`graphql:${operation.operationName ?? 'anonymous'}`, error);
+        });
+
         // Split link: use SSE for subscriptions, http (with retry) for everything else
-        const link = ApolloLink.split(
+        const transport = ApolloLink.split(
           ({ query }) => {
             const definition = getMainDefinition(query);
             return (
@@ -186,6 +200,11 @@ export const appConfig: ApplicationConfig = {
           sseLink as any,
           ApolloLink.from([retryLink, http]),
         );
+
+        // errorLink sits above the split so subscription failures are reported too, and above
+        // retryLink so an operation is reported once after its retries are exhausted rather than
+        // once per failed attempt.
+        const link = ApolloLink.from([errorLink, transport]);
 
         return {
           link,

@@ -62,7 +62,7 @@ that exists rather than creating one.
 | **1b** ✅ | Phase 1 regression fixes | WP-28 → WP-32, WP-35 | 3×M, 3×S | **Done** — regressions introduced by Phase 1 |
 | **2** ✅ | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | **Done** — hardening; no evidence of exploitation |
 | **3** ✅ | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | **Done** — WP-19 deferred to after Phase 5 |
-| **4** | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | User-visible quality |
+| **4** ✅ | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | **Done** — user-visible quality |
 | **5** | Test foundation | WP-23 → WP-24 | 2×L | Stops everything above from regressing |
 | **6** | Supply chain & documentation | WP-25 → WP-27 | 3×S | Housekeeping |
 
@@ -1485,7 +1485,7 @@ exits non-zero so it can gate CI, and that path was verified by deliberately bre
 
 ---
 
-## WP-22 — Frontend hygiene batch
+## WP-22 — Frontend hygiene batch ✅
 
 **Findings:** #27 (⚪ Low), #30 (⚪ Low), #31 (⚪ Low) · **Size:** S
 
@@ -1513,6 +1513,41 @@ exits non-zero so it can gate CI, and that path was verified by deliberately bre
 ### Watch out for
 - Adding `keyFields` changes cache behaviour app-wide and can surface latent bugs where components
   relied on unnormalised copies. Worth its own PR if the other three are trivial.
+
+### Outcome
+
+**Change 2 was not made, because the finding is wrong.** `InMemoryCache` already normalises: the
+default `dataIdFromObject` in the installed Apollo 4.2.9 keys any object carrying `__typename` and
+`id` as `Type:id`, and every document in `graphql/` selects `id` on every entity it reads. Declaring
+`keyFields: ['id']` would restate the default and change nothing. The package warned this step could
+destabilise the cache app-wide; the actual risk was making a no-op edit and believing a real problem
+had been fixed. The absence of a `typePolicies` entry means the defaults apply — not that
+normalisation is off.
+
+The other three were real. They now share one seam: `ErrorReporter` is the single place a failure is
+observed, and both the Angular `ErrorHandler` and the new Apollo `ErrorLink` go through it.
+
+The privacy gate is not a simple `isDevMode()` mute. Silencing production entirely would mean the
+app reports nothing when it breaks, and "it just stopped working" is the least actionable bug report
+there is. Instead production logs the *shape* of the failure — the operation name and the error
+class — both authored by us and structurally incapable of carrying participant data, while the error
+object itself is printed only in development. That matters here specifically because the risk is not
+abstract: participants sit these tests on machines the organisation does not control, where the
+console is readable by whoever is at the keyboard.
+
+The `ErrorLink` is mounted above the subscription/HTTP split rather than inside the HTTP branch, so
+SSE subscription failures are reported too — mounting it inside the branch, which is the obvious
+reading of "add an ErrorLink", would have left every subscription error invisible. It is also above
+`RetryLink`, so an operation is reported once after its retries are exhausted instead of once per
+attempt.
+
+The `setTimeout` fix cancels on destroy *and* before rescheduling. The destroy case is the one the
+audit found; the reschedule case is a second bug in the same line, where restoring progress twice
+in quick succession left the first timer alive to dismiss the second notice early.
+
+One `console.error` remains, in `main.ts`. It is kept deliberately: if bootstrap rejects there is no
+injector to report through and nothing has loaded, so the error is a startup fault in our own code
+and cannot carry participant data. It is commented as such so it is not "tidied" later.
 
 ---
 

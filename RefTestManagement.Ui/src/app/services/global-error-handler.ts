@@ -1,7 +1,10 @@
-import { ErrorHandler, Service } from '@angular/core';
+import { ErrorHandler, inject, Service } from '@angular/core';
+import { ErrorReporter } from './error-reporter';
 
 @Service({ autoProvided: false })
 export class GlobalErrorHandler implements ErrorHandler {
+  private readonly _reporter = inject(ErrorReporter);
+
   handleError(error: Error): void {
     // Filter out the ResizeObserver error which is harmless but noisy
     if (
@@ -14,6 +17,6 @@ export class GlobalErrorHandler implements ErrorHandler {
     }
 
     // Log other errors to the console
-    console.error('An error occurred:', error);
+    this._reporter.report('unhandled', error);
   }
 }

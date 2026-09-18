@@ -18,4 +18,7 @@ if (typeof window !== 'undefined' && window.innerWidth > 1024 && 'ontouchstart' 
   }
 }
 
-bootstrapApplication(App, appConfig).catch((err) => console.error(err));
+// This is the one console call left in production, deliberately. If bootstrap rejects there is no
+// injector to report through, and nothing has loaded yet, so the error cannot carry participant
+// data — it is a startup fault in our own code. Everything after bootstrap goes via ErrorReporter.
+bootstrapApplication(App, appConfig).catch((err) => console.error('[bootstrap]', err));
