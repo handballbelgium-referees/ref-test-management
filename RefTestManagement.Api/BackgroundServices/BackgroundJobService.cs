@@ -114,30 +114,102 @@ public class BackgroundJobService : BackgroundService
         // Processing jobs whose lock has expired are reclaimed too. Nothing else recovers them:
         // a worker that dies, or throws on its way into MarkAsFailed, leaves the row Processing
         // forever, and cleanup only ever deletes Completed/Failed/Cancelled rows.
+        //
+        // Only the ids are read. The row itself is loaded after the claim succeeds, because
+        // claiming is what decides whether this worker may touch it at all.
         var now = DateTime.UtcNow;
-        var jobs = await context.Jobs
+        var candidateIds = await context.Jobs
             .Where(j => (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing)
                         && j.ExecuteAfter <= now
                         && j.Attempts < _maxAttempts
                         && (j.LockedUntil == null || j.LockedUntil <= now))
             .OrderBy(j => j.ExecuteAfter)
             .Take(_batchSize)
+            .Select(j => j.Id)
             .ToListAsync(cancellationToken);
 
-        if (jobs.Count == 0)
+        if (candidateIds.Count == 0)
         {
             ServiceLoggerMessages.LogNoJobsAvailable(_logger);
             return;
         }
 
-        ServiceLoggerMessages.LogJobsFound(_logger, jobs.Count);
+        ServiceLoggerMessages.LogJobsFound(_logger, candidateIds.Count);
 
-        // Process only jobs that are ready (defensive check using domain method)
-        foreach (var job in jobs.Where(j => j.IsReadyToProcess())
-                     .TakeWhile(_ => !cancellationToken.IsCancellationRequested))
+        foreach (var candidateId in candidateIds.TakeWhile(_ => !cancellationToken.IsCancellationRequested))
         {
+            var job = await ClaimJobAsync(context, candidateId, _maxAttempts, _lockDuration, cancellationToken);
+
+            // Lost the race — another instance holds the lock now.
+            if (job is null)
+                continue;
+
             await ProcessJobAsync(job, scope.ServiceProvider, context, cancellationToken);
         }
+    }
+
+    /// <summary>
+    /// Takes exclusive ownership of a job, or returns <c>null</c> if another worker got there
+    /// first.
+    /// </summary>
+    /// <remarks>
+    /// The claim is a single conditional <c>UPDATE</c>. Reading a job and then locking it in a
+    /// second round trip lets two instances read the same row before either persists the lock,
+    /// which sends the same invitation or result email twice. Here the eligibility test and the
+    /// lock are one statement, so the database decides the winner: the loser's <c>UPDATE</c>
+    /// matches no rows because the row no longer satisfies the predicate.
+    ///
+    /// <c>ExecuteUpdateAsync</c> is used rather than a provider-specific <c>UPDATE … OUTPUT</c> or
+    /// <c>RETURNING</c>, because the application supports SQL Server, PostgreSQL, MySQL and SQLite
+    /// and MySQL has neither. The affected-row count carries the same information.
+    ///
+    /// The attempt counter mirrors <see cref="Job.MarkAsProcessing"/>: re-claiming a row that is
+    /// already <see cref="JobStatus.Processing"/> means its previous lock expired without the
+    /// worker reporting back, so that counts as a spent attempt. The <c>CASE</c> reads the
+    /// pre-update status, which is what an SQL <c>UPDATE</c> guarantees.
+    ///
+    /// Static and <c>internal</c> so the race can be exercised directly from tests against a real
+    /// provider — the translation of that <c>CASE</c> is the part worth proving.
+    /// </remarks>
+    internal static async Task<Job?> ClaimJobAsync(
+        RefTestManagementContext context,
+        Guid jobId,
+        int maxAttempts,
+        TimeSpan lockDuration,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+        var lockedUntil = now.Add(lockDuration);
+
+        var claimed = await context.Jobs
+            .Where(j => j.Id == jobId
+                        && (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing)
+                        && j.ExecuteAfter <= now
+                        && j.Attempts < maxAttempts
+                        && (j.LockedUntil == null || j.LockedUntil <= now))
+            .ExecuteUpdateAsync(setters => setters
+                    .SetProperty(j => j.Attempts, j => j.Status == JobStatus.Processing ? j.Attempts + 1 : j.Attempts)
+                    .SetProperty(j => j.Status, JobStatus.Processing)
+                    .SetProperty(j => j.LockedUntil, lockedUntil),
+                cancellationToken);
+
+        if (claimed == 0)
+            return null;
+
+        // ExecuteUpdateAsync writes straight to the database without going through the change
+        // tracker, so anything this context already tracks for the row still holds the values from
+        // before the claim. Querying again would not help: EF resolves a tracked entity from its
+        // identity map and keeps the tracked values. Reload is what actually re-reads the row.
+        var tracked = context.ChangeTracker.Entries<Job>()
+            .FirstOrDefault(entry => entry.Entity.Id == jobId);
+
+        if (tracked is not null)
+        {
+            await tracked.ReloadAsync(cancellationToken);
+            return tracked.Entity;
+        }
+
+        return await context.Jobs.FirstOrDefaultAsync(j => j.Id == jobId, cancellationToken);
     }
 
     private async Task ProcessJobAsync(
@@ -148,10 +220,8 @@ public class BackgroundJobService : BackgroundService
     {
         try
         {
-            // Lock the job
-            job.MarkAsProcessing(_lockDuration);
-            await context.SaveChangesWithRetryAsync(cancellationToken);
-
+            // The job is already locked — ClaimJobAsync took ownership in a single statement
+            // before this method was reached.
             ServiceLoggerMessages.LogProcessingJob(_logger, job.Id, job.JobType, job.Attempts + 1, _maxAttempts);
 
             // Process based on a job type

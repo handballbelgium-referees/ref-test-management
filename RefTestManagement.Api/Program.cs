@@ -128,7 +128,16 @@ if (graphQlLimitsConfig.EnableRateLimiting)
     });
 }
 
-services.AddHttpClient<ILogoService, LogoService>();
+// Outbound HTTP is guarded in three places below. The shape is deliberately the same each time:
+// an explicit timeout, because HttpClient's 100-second default is far longer than any of these
+// calls should take, and the standard resilience handler, which adds a per-attempt timeout, a
+// small retry with backoff and a circuit breaker. Every call made through these clients is a read
+// or an idempotent write, so retrying cannot duplicate anything.
+services.AddHttpClient<ILogoService, LogoService>(client =>
+    {
+        client.Timeout = TimeSpan.FromSeconds(15);
+    })
+    .AddStandardResilienceHandler();
 services.AddSingleton<ITranslationService, TranslationService>();
 services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
 {
@@ -138,6 +147,10 @@ services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
     client.BaseAddress = new Uri(emailCfg.BrevoApiUrl);
     client.Timeout = TimeSpan.FromSeconds(30);
 });
+// Deliberately no resilience handler here. Sending an email is the one outbound call that is not
+// idempotent: a retry after a response that was sent but never received delivers the message
+// twice. The job queue already owns retry for this path, and it retries the whole job rather than
+// the HTTP call, so it can tell the difference.
 services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
 services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();
@@ -160,13 +173,21 @@ if (auditLogOptions.EnableCleanup)
 }
 
 // Add IHF Rules Questions GraphQL client
+// This one sits on the test-creation path, so an upstream hang without a timeout fails test
+// creation after a two-minute wait with nothing to show for it. The client only issues GraphQL
+// queries, never mutations, so retrying is safe.
 services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
-    .ConfigureHttpClient((sp, c) =>
-    {
-        c.BaseAddress = new Uri(configuration["RulesQuestions:Url"]!);
-        var langConfig = sp.GetRequiredService<LanguageConfiguration>();
-        c.DefaultRequestHeaders.Add("Accept-Language", langConfig.DefaultPhraseLanguage);
-    });
+    .ConfigureHttpClient(
+        (sp, c) =>
+        {
+            c.BaseAddress = new Uri(configuration["RulesQuestions:Url"]!);
+            var langConfig = sp.GetRequiredService<LanguageConfiguration>();
+            c.DefaultRequestHeaders.Add("Accept-Language", langConfig.DefaultPhraseLanguage);
+            c.Timeout = TimeSpan.FromSeconds(30);
+        },
+        // StrawberryShake wraps the registration in its own builder, so the resilience handler has
+        // to be added through this hook rather than chained off the call.
+        clientBuilder => clientBuilder.AddStandardResilienceHandler());
 
 services.AddGraphQLServer()
     .AddQueryType()

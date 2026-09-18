@@ -951,7 +951,7 @@ objects, or stop passing the raw exception on paths that can carry an address.
 > Most of this phase is latent on a single App Service instance. It becomes real the moment the
 > app scales out, which is worth knowing before that happens rather than after.
 
-## WP-13 — Make job claiming atomic
+## WP-13 — Make job claiming atomic ✅
 
 **Findings:** #14 (🟡 Medium) · **Size:** M
 
@@ -978,6 +978,36 @@ succeeds if the row is still `Pending`, or a provider-appropriate `UPDATE … OU
   neither. A conditional `ExecuteUpdateAsync` returning an affected-row count is the portable
   option.
 - Depends on WP-14 if you implement the claim via a version column.
+
+### Outcome
+
+`ProcessJobsAsync` now selects candidate **ids** only, then claims each one through a new
+`ClaimJobAsync` that issues a single conditional `ExecuteUpdateAsync`. The claim re-checks every
+eligibility condition in the `WHERE` clause, so a row another worker took between the candidate
+query and the claim simply reports zero affected rows and is skipped. `MarkAsProcessing` +
+`SaveChangesAsync` were removed from `ProcessJobAsync`; `Job.MarkAsProcessing` is kept for
+completeness with a `<remarks>` noting the worker no longer calls it.
+
+The attempt counter is incremented conditionally inside the same statement —
+`SetProperty(j => j.Attempts, j => j.Status == JobStatus.Processing ? j.Attempts + 1 : j.Attempts)`.
+SQL evaluates all right-hand sides against pre-update values, so a first claim of a `Pending` job
+spends no attempt while reclaiming an expired lease does. That preserves the previous retry
+semantics exactly.
+
+`ExecuteUpdateAsync` was chosen over `UPDATE … OUTPUT` / `RETURNING` because MySQL supports
+neither. The existing `IX_Jobs_Status_ExecuteAfter_LockedUntil` index already serves the candidate
+query, so no migration was needed.
+
+**A real bug surfaced while testing this.** `ExecuteUpdateAsync` bypasses the change tracker, so
+re-querying the row afterwards returns the *stale tracked* instance from EF's identity map — the
+claimed job reported `Attempts = 0` while the database held `1`. `ClaimJobAsync` now looks for an
+existing `ChangeTracker.Entries<Job>()` entry and `ReloadAsync`es it before returning. Worth
+remembering anywhere else `ExecuteUpdateAsync` is followed by a read in the same context.
+
+Seven tests in `JobClaimTests.cs` cover this against a real SQLite database (new
+`SqliteTestDatabase` helper hands out independent contexts over one shared in-memory connection,
+which is what makes the two-worker race testable). Verified live: the boot log shows the new
+`SELECT "j"."Id" FROM "Jobs" …` candidate query running on the five-second cadence.
 
 ---
 
@@ -1039,7 +1069,7 @@ share the unit of work. Insert the job row in the **same** `SaveChangesAsync` as
 
 ---
 
-## WP-16 — Add timeouts and resilience to outbound HTTP
+## WP-16 — Add timeouts and resilience to outbound HTTP ✅
 
 **Findings:** #17 (🟡 Medium) · **Size:** S
 
@@ -1068,9 +1098,35 @@ the test-creation path, so a transient upstream hang fails test creation with no
 - Retries on a non-idempotent call can double-submit. Confirm the IHF calls are reads before
   enabling retry.
 
+### Outcome
+
+`Microsoft.Extensions.Http.Resilience` 10.10.0 was added centrally and referenced by the Api and
+Auth0 projects. Three clients now carry an explicit timeout plus `AddStandardResilienceHandler()`:
+Auth0 management (30s), the logo client (15s) and the IHF GraphQL client (30s).
+
+**Brevo was deliberately left without retry.** It keeps its timeout, but sending email is the one
+outbound call here that is not safe to repeat — a retry after a response that was sent but never
+received delivers the message twice. The job queue already owns retry at a layer that can tell the
+difference, and a comment in `Program.cs` records that reasoning so it is not "fixed" later.
+
+Retry was confirmed safe for the other two: IHF only issues GraphQL queries, and the Auth0 PATCH
+sends the complete desired scope set rather than a delta, so replaying it is idempotent.
+
+One snag worth recording: StrawberryShake's `ConfigureHttpClient` returns `IClientBuilder<T>`, not
+`IHttpClientBuilder`, so the handler cannot be chained onto it (CS1929). The two-argument overload
+takes a `configureClientBuilder` lambda, which is where the resilience handler belongs.
+
+Verified live against real Auth0 calls — the boot log shows
+`Polly … Source: 'IAuth0ManagementService-standard//Standard-Retry'` on the pipeline.
+
+Note for later: the standard handler's defaults are 30s total / 10s per attempt, so the logo
+client's 15s `HttpClient.Timeout` sits *below* the pipeline's total budget. Startup does not fail
+and the effective behaviour is simply the tighter limit, but if that client ever needs real retry
+headroom the client timeout has to rise first.
+
 ---
 
-## WP-17 — Push retention and expiration predicates into SQL
+## WP-17 — Push retention and expiration predicates into SQL ✅
 
 **Findings:** #18 (🟡 Medium), #23 (⚪ Low), #24 (⚪ Low) · **Size:** M
 
@@ -1103,6 +1159,32 @@ Three related inefficiencies:
 - Adding indexes is a migration across four providers.
 - Item 2 changes which rows the retention sweep sees; pair it with WP-02, which changes the same
   predicate.
+
+### Outcome
+
+All three items are done.
+
+**1 — expiration predicate.** The in-process `IsExpired()` method is gone. Its logic now lives in
+`RefTestManagement.Infrastructure/Queries/RefTestExpirationQueries.IsDueForExpiration(now,
+unstartedCutoff)`, which returns an `Expression<Func<RefTest, bool>>` the sweep composes into its
+query and projects down to `{ Id, Status }`. Translating it preserved each branch exactly, and the
+`<remarks>` on the method spells out why every *excluded* status is excluded — that list is the
+part a future reader is most likely to get wrong.
+
+**2 — retention sweep.** The `&& !refTest.IsAnonymized` clause turned out to be already present;
+WP-02 added it in Phase 1. Verified rather than re-applied.
+
+**3 — indexes.** Four composite indexes were added to `RefTestConfiguration`
+(`Status, IsAnonymized` + `StartedAt` / `CreatedAt` / `CompletedAt` / `ExpiredAt`), each with an
+explicit `HasDatabaseName`, and migrations were generated in **all four** migration projects.
+
+Verified two ways. `RefTestExpirationQueriesTests.cs` asserts the behaviour on SQLite and then
+runs a `[Theory]` that calls `ToQueryString()` against SQL Server, PostgreSQL, MySQL and SQLite —
+this needs no live database, only a syntactically valid connection string, and it is the cheapest
+way to prove a background-sweep predicate never silently falls back to client evaluation. Then a
+live SQLite boot confirmed the migrations apply and the sweep now emits a single
+`SELECT "r"."Id", "r"."Status" FROM "RefTests" WHERE NOT ("r"."IsAnonymized") AND (…)` instead of
+materialising the table. Full suite: 97 passing.
 
 ---
 

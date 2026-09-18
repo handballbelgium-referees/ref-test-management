@@ -19,6 +19,13 @@
 
     <ItemGroup>
         <PackageReference Include="xunit.v3" />
+        <!--
+            Claiming a job and expiring a ref test are both expressed as SQL the database executes,
+            so proving them needs a real provider rather than an in-memory fake. SQLite runs
+            in-process and supports ExecuteUpdate, which makes it the cheapest one that still
+            exercises the translation.
+        -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
     </ItemGroup>
 
     <ItemGroup>

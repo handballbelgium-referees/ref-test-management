@@ -41,6 +41,12 @@ public class Job
     /// reporting back, so that counts as a spent attempt — otherwise a job that strands on every
     /// pass would be reclaimed forever.
     /// </summary>
+    /// <remarks>
+    /// The worker does not call this. Claiming a job has to be a single conditional statement or
+    /// two instances can claim the same row, so <c>BackgroundJobService.ClaimJobAsync</c> expresses
+    /// the same transition in SQL. This method remains the readable definition of that transition
+    /// and the one the unit tests pin; keep the two in step.
+    /// </remarks>
     public void MarkAsProcessing(TimeSpan lockDuration)
     {
         if (Status == JobStatus.Processing)

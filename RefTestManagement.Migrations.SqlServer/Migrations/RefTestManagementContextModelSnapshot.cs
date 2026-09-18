@@ -304,6 +304,18 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.HasIndex("Token")
                         .IsUnique();
 
+                    b.HasIndex("Status", "IsAnonymized", "CompletedAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_CompletedAt");
+
+                    b.HasIndex("Status", "IsAnonymized", "CreatedAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_CreatedAt");
+
+                    b.HasIndex("Status", "IsAnonymized", "ExpiredAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_ExpiredAt");
+
+                    b.HasIndex("Status", "IsAnonymized", "StartedAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_StartedAt");
+
                     b.ToTable("RefTests");
                 });
 
