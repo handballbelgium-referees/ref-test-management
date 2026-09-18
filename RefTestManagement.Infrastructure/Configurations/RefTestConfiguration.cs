@@ -10,6 +10,12 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
     public void Configure(EntityTypeBuilder<RefTest> builder)
     {
         builder.HasKey(x => x.Id);
+
+        // Optimistic concurrency. EF adds Version to the WHERE clause of every UPDATE and DELETE,
+        // so a save built from a stale read affects zero rows and raises
+        // DbUpdateConcurrencyException instead of overwriting a concurrent edit.
+        builder.Property(x => x.Version)
+            .IsConcurrencyToken();
         
         builder.HasOne(x => x.Title)
             .WithMany()

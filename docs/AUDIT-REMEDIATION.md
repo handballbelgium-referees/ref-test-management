@@ -1011,7 +1011,7 @@ which is what makes the two-worker race testable). Verified live: the boot log s
 
 ---
 
-## WP-14 — Add concurrency tokens
+## WP-14 — Add concurrency tokens ✅
 
 **Findings:** #15 (🟡 Medium) · **Size:** M
 
@@ -1038,6 +1038,48 @@ change. Add a rowversion/xmin-equivalent per provider and handle
   projects.
 - Every existing update path needs a retry or a user-facing conflict message. Scoping this to
   `RefTest` first and `Job` second keeps the PR reviewable.
+
+### Outcome
+
+Both entities carry a `long Version` marked `IsConcurrencyToken()`. The plan suggested a native
+token per provider; that was rejected. `rowversion` is SQL Server only and `xmin` is PostgreSQL
+only, so a native token would have meant four mappings and four migration shapes for one
+behaviour. A counter column is identical everywhere — `bigint` on three providers, `INTEGER` on
+SQLite — and the migration is the same `AddColumn` in all four projects.
+
+A counter rather than a random value because the safety does not come from the value being
+unguessable. EF compares the **original** value it loaded, so two writers who both read version 5
+both emit `WHERE Version = 5` and only one can match; the next value they intend is irrelevant. A
+counter is half the width of a GUID, orders naturally, and says something useful when read.
+
+Nothing advances the token by itself, so `ConcurrencyTokenInterceptor` does it for every `Modified`
+entry during `SavingChanges`. Putting it in an interceptor rather than in each domain method means
+a mutation written later cannot forget. It derives the next value from `OriginalValue`, so the
+counter advances exactly once per save even if something had already touched the property.
+
+**The claim path needed doing by hand.** `BackgroundJobService.ClaimJobAsync` uses
+`ExecuteUpdateAsync`, which bypasses the change tracker and therefore every interceptor. It now
+sets `Version = Version + 1` in the same statement. Without that, a context that had loaded the job
+before the claim could still have saved over it. The existing `ReloadAsync` after a successful
+claim already re-reads every column, so the worker's later completion write carries the post-claim
+version.
+
+Conflicts reach the client through `ConcurrencyErrorFilter` as code `CONCURRENT_MODIFICATION` with
+a message that says what to do, instead of HotChocolate's masked "Unexpected Execution Error". It
+is registered **before** the logging filter and clears the exception, so contention is logged at
+warning level — it is expected behaviour under load, not a fault. The worker's outer `catch` already
+swallows and continues, so a conflict there just lets the lease expire and the job retry.
+
+`ConcurrencyTokenTests` covers it: a stale write throws `DbUpdateConcurrencyException`, the first
+writer's values are the ones that survive, the version advances by exactly one per save, an
+unchanged entity does not advance it, and a bulk claim still advances the job's token. The test
+harness registers the interceptor for the same reason production does — without it the tests would
+have reported success for something that does not work.
+
+One trap worth recording: the first version of the stale-write test passed values the second
+context had already loaded. EF saw nothing modified, issued no `UPDATE`, and no conflict could
+occur. A concurrency test has to change the value to something genuinely different or it proves
+nothing.
 
 ---
 

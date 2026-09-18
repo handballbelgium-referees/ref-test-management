@@ -17,6 +17,18 @@ public class Job
     }
 
     public Guid Id { get; private set; }
+
+    /// <summary>
+    /// Optimistic concurrency token — see <c>RefTest.Version</c> for why it is a plain counter
+    /// rather than a database-native rowversion.
+    /// </summary>
+    /// <remarks>
+    /// This does not guard the worker's claim: claiming is a conditional <c>UPDATE</c> that
+    /// re-checks the job's state in SQL (see <c>BackgroundJobService.ClaimJobAsync</c>), which is
+    /// atomic on its own. The token guards the ordinary tracked updates — completing, failing and
+    /// cancelling a job — against a concurrent write built from a stale read.
+    /// </remarks>
+    public long Version { get; private set; } = 1;
     public JobType JobType { get; private set; }
     public string Payload { get; private set; }
     public JobStatus Status { get; private set; }

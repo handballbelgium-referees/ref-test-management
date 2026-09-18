@@ -118,6 +118,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt")
@@ -271,6 +275,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("TEXT");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
 
                     b.Property<string>("WrongAnswerIds")
                         .IsRequired()

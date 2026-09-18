@@ -79,6 +79,23 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public Guid Id { get; private set; } = Guid.NewGuid();
 
+    /// <summary>
+    /// Optimistic concurrency token. Incremented on every update by the infrastructure layer, so a
+    /// save built from a stale read fails instead of silently overwriting someone else's edit.
+    /// </summary>
+    /// <remarks>
+    /// A plain counter rather than a database-native token because the application supports SQL
+    /// Server, PostgreSQL, MySQL and SQLite: <c>rowversion</c> is SQL Server only and <c>xmin</c>
+    /// is PostgreSQL only, so a native token would mean four different mappings and four different
+    /// migration shapes for one behaviour.
+    ///
+    /// Incrementing is safe against concurrent writers even though two of them may compute the
+    /// same next value: EF compares the <em>original</em> value it loaded, so both would emit
+    /// <c>WHERE Version = 5</c> and only one can match. It is preferred over a random token
+    /// because it is half the width, orders naturally, and says something useful when read.
+    /// </remarks>
+    public long Version { get; private set; } = 1;
+
     public Guid TitleId { get; private set; }
     public RefTestTitle? Title { get; init; }
     public string FirstName { get; private set; }

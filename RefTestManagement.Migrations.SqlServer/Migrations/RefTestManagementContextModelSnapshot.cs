@@ -125,6 +125,10 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(450)");
 
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
                     b.HasKey("Id");
 
                     b.HasIndex("CreatedAt")
@@ -278,6 +282,10 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(50)
                         .HasColumnType("nvarchar(50)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
 
                     b.Property<string>("WrongAnswerIds")
                         .IsRequired()

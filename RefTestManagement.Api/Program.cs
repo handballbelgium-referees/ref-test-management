@@ -198,6 +198,10 @@ services.AddGraphQLServer()
     .AddMutationConventions()
     .AddInMemorySubscriptions()
     .AddApplicationService<ILogger<UnhandledExceptionLoggingErrorFilter>>()
+    .AddApplicationService<ILogger<ConcurrencyErrorFilter>>()
+    // Order matters: the concurrency filter handles and unwraps its exception, so the logging
+    // filter below no longer sees contention as an unhandled fault.
+    .AddErrorFilter<ConcurrencyErrorFilter>()
     .AddErrorFilter<UnhandledExceptionLoggingErrorFilter>()
     .ModifyPagingOptions(options =>
     {

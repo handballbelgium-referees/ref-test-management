@@ -190,7 +190,11 @@ public class BackgroundJobService : BackgroundService
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(j => j.Attempts, j => j.Status == JobStatus.Processing ? j.Attempts + 1 : j.Attempts)
                     .SetProperty(j => j.Status, JobStatus.Processing)
-                    .SetProperty(j => j.LockedUntil, lockedUntil),
+                    .SetProperty(j => j.LockedUntil, lockedUntil)
+                    // Bulk updates bypass the change tracker, so ConcurrencyTokenInterceptor never
+                    // sees this write. Advance the token here or a tracked reader that loaded the
+                    // job before the claim would still be able to save over it.
+                    .SetProperty(j => j.Version, j => j.Version + 1),
                 cancellationToken);
 
         if (claimed == 0)

@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Interceptors;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
@@ -44,10 +45,18 @@ internal sealed class SqliteTestDatabase : IDisposable
     /// Opens an independent context over the same database. Each one has its own change tracker,
     /// which is how a second worker is represented.
     /// </summary>
+    /// <remarks>
+    /// <see cref="ConcurrencyTokenInterceptor"/> is registered here for the same reason the real
+    /// composition root registers it: without it nothing advances the version column, and a test
+    /// would conclude that optimistic concurrency works when in production it would not. The audit
+    /// interceptor is deliberately left out — it needs the request context, and none of this
+    /// harness's tests are about auditing.
+    /// </remarks>
     public RefTestManagementContext CreateContext()
     {
         var options = new DbContextOptionsBuilder<RefTestManagementContext>()
             .UseSqlite(_connection)
+            .AddInterceptors(new ConcurrencyTokenInterceptor())
             .Options;
 
         return new RefTestManagementContext(options);
