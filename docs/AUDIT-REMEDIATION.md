@@ -1,31 +1,20 @@
 # Audit Remediation Plan
 
-> **Correction — 18 September 2026, third audit ([`AUDIT-R3.md`](AUDIT-R3.md), commit `555c149`).**
-> This document's summary states *"46 closed · 0 open"*. That is no longer accurate. All 39 work
-> packages were implemented, but adversarial verification found that three did not fully deliver the
-> outcome their findings required:
->
-> - **WP-15** (transactional job enqueue) — holds for the participant path, broken for the
->   expiration handler by WP-19's `DbContext` split. See R3-02.
-> - **WP-20** (dialog accessibility) — only 7 of 18 dialogs received modal semantics, and no dialog
->   received focus management. See R3-08.
-> - **WP-35** (privacy notice) — the documentation was delivered; the participant-facing in-app
->   notice was not brought to parity. See R3-09.
->
-> The accurate position at `555c149` is **43 closed · 3 re-opened · 14 new findings from R3**. The
-> per-package sections below are left as written — they record what was done at the time, and are
-> more useful as evidence than as a running scoreboard.
+> **Status at a glance —** Phases 1 → 6 have shipped. The third audit
+> ([`AUDIT-R3.md`](AUDIT-R3.md), commit `555c149`) added 14 findings and re-opened three work
+> packages, which are planned as **Phases 7 → 9** below. **WP-40 blocks production.**
 
-Companion to [docs/AUDIT.md](AUDIT.md) and its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md). Those
-documents say *what* is wrong and *why*; this one says *what to do about it*, as discrete units
-of work.
+Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md) and the third
+audit [docs/AUDIT-R3.md](AUDIT-R3.md). Those documents say *what* is wrong and *why*; this one says
+*what to do about it*, as discrete units of work.
 
-**Source audits:** commit `8763854` ([`AUDIT.md`](AUDIT.md)) and commit `6c574ce`
-([`AUDIT-R2.md`](AUDIT-R2.md)), 18 September 2026
-**Coverage:** all 46 findings — the original 34 plus 12 from the re-audit — mapped to 39 work
-packages across 7 phases
-**Status:** Phase 1 complete (WP-01 → WP-07). Phase 1b complete (WP-28 → WP-32, WP-35). Phase 2
-onward is open.
+**Source audits:** commit `8763854` ([`AUDIT.md`](AUDIT.md)), commit `6c574ce`
+([`AUDIT-R2.md`](AUDIT-R2.md)) and commit `555c149` ([`AUDIT-R3.md`](AUDIT-R3.md)),
+18 September 2026
+**Coverage:** all 60 findings — the original 34, 12 from the re-audit and 14 from the third audit —
+mapped to 51 work packages across 10 phases
+**Status:** Phases 1, 1b, 2, 3, 4, 5 and 6 complete (WP-01 → WP-39). Phases 7, 8 and 9
+(WP-40 → WP-51) are open. **43 findings closed · 3 re-opened · 14 open.**
 
 ---
 
@@ -38,7 +27,7 @@ Each package has:
 
 | Field | Meaning |
 | --- | --- |
-| **Findings** | Back-reference to the numbered findings in `AUDIT.md` §3 (`#n`) or `AUDIT-R2.md` §3.1 (`Nn`) |
+| **Findings** | Back-reference to the numbered findings in `AUDIT.md` §3 (`#n`), `AUDIT-R2.md` §3.1 (`Nn`) or `AUDIT-R3.md` §3 (`R3-nn`) |
 | **Size** | Relative effort: **S** (an hour or two), **M** (half a day), **L** (multi-day) |
 | **Files** | The exact paths to change, with line references as of the audited commit |
 | **Change** | What to do |
@@ -47,26 +36,39 @@ Each package has:
 
 **There is no "tests to add" field.** When this plan was written the repository had no test
 harness (finding #5), so acceptance criteria are written to be verifiable by code inspection or
-by manually exercising the affected path. WP-32 has since shipped a narrow xUnit project covering
-redaction and the job state machine; broadening it is still its own work — see **WP-23** and
-**WP-24**.
+by manually exercising the affected path. WP-32 shipped a narrow xUnit project covering
+redaction and the job state machine; WP-23 and WP-24 broadened it to 160 backend and 33 frontend
+tests. The gaps that remain are now themselves work packages — see **WP-48** and **WP-49**.
 
 ### Sequencing
 
-Phase 1, Phase 1b and Phase 2 have shipped. Phase 1b existed because the re-audit found that the
-Phase 1 change set introduced two High-severity regressions, one of which silently prevented its
-own fix from applying to data that already existed.
+Phases 1 through 6 have shipped — WP-01 → WP-39. Phase 1b existed because the re-audit found that
+the Phase 1 change set introduced two High-severity regressions, one of which silently prevented
+its own fix from applying to data that already existed.
 
-Phase 3 onward is unchanged in intent: correctness under load, frontend quality, test coverage
-and housekeeping — none of which are actively accumulating exposure.
+Phases 7 → 9 come from the third audit. The ordering principle changes here, because the exposure
+profile changed: **Phase 7 blocks production.** WP-40 closes an unauthenticated read path to
+participant names, e-mail addresses, scores and submitted answers; until it ships, no other
+package matters. The rest of Phase 7 is small and mechanical, so it ships alongside rather than
+after.
 
-Test infrastructure deliberately sits in Phase 5 rather than Phase 0. It is the durable fix —
+Phase 8 is correctness and privacy parity — real defects, none of them externally exploitable.
+Phase 9 is the durable half: the tests that would have caught Phase 7's findings automatically,
+plus CI and logging hygiene.
+
+**WP-48 ships *with* WP-40, not after it.** This is the same argument the plan already made for
+pairing WP-29 with WP-28. R3-01 is not a coding mistake; it is authorization drift — `ImplementsNode`
+was added in one change, per-field `.Authorize()` in another, and nothing held the two together.
+A snapshot test of what an anonymous caller can reach is the only thing that stops the same drift
+recurring, and it is worth far less if it lands a phase later.
+
+Test infrastructure deliberately sat in Phase 5 rather than Phase 0. It is the durable fix —
 every Phase 1 finding was one assertion away from being caught automatically — but gating urgent
 privacy fixes behind building a test project would delay them without making them safer. **WP-32
 was the exception**: a deliberately narrow package covering only the pure logic the two
 regressions live in, so that Phase 1b cannot silently regress again. It shipped a real test
-project and wired `dotnet test` into the PR workflow, so WP-23 and WP-24 now extend a harness
-that exists rather than creating one.
+project and wired `dotnet test` into the PR workflow, so WP-23 and WP-24 extended a harness that
+existed rather than creating one — and WP-48 → WP-50 now extend it again.
 
 ---
 
@@ -81,6 +83,9 @@ that exists rather than creating one.
 | **4** ✅ | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | **Done** — user-visible quality |
 | **5** ✅ | Test foundation | WP-23 → WP-24 | 2×L | **Done** — 110 → 151 backend, 0 → 33 frontend |
 | **6** ✅ | Supply chain & documentation | WP-25 → WP-27 | 3×S | **Done** — CodeQL, hook split, README |
+| **7** 🔴 | Exposure — blocks production | WP-40 → WP-43 | 1×M, 3×S | **Open** — WP-40 is an unauthenticated read of participant PII |
+| **8** 🟡 | Correctness & privacy parity | WP-44 → WP-47 | 2×M, 2×S | **Open** — real defects, none externally exploitable |
+| **9** 🟡 | Tests & hygiene | WP-48 → WP-51 | 1×M, 3×S | **Open** — WP-48 ships *with* WP-40, not after |
 
 ---
 
@@ -544,6 +549,11 @@ Wire `dotnet test` into the PR workflow.
 ---
 
 ## WP-35 — Disclose staff and approver recipients in the privacy notice ✅
+
+> ⚠️ **Re-opened by R3 ([R3-09](AUDIT-R3.md)).** `docs/PRIVACY.md` was updated as specified. The
+> participant-facing in-app notice was not — it still omits the internal recipient categories that
+> `PRIVACY.md` itself now says Art. 13(1)(e) requires. The document a participant is actually
+> shown is the one the Article governs. **Fixed by [WP-46](#wp-46--bring-the-in-app-privacy-notice-to-parity).**
 
 **Findings:** N7 (🟡 Medium) · **Size:** S
 
@@ -1101,6 +1111,13 @@ nothing.
 
 ## WP-15 — Make write-then-enqueue atomic ✅
 
+> ⚠️ **Re-opened by R3 ([R3-02](AUDIT-R3.md)).** The atomicity this package established holds for
+> the participant-facing mutations listed below. It does **not** hold for the expiration handler:
+> WP-19 later gave `RefTestExpirationJobHandler` its own `DbContext` from `IDbContextFactory`,
+> while the injected `IJobEnqueueService` kept the worker scope's context. The two saves are now
+> separate transactions, so a crash between them completes a RefTest with no result e-mail job —
+> and the handler's status guard makes the retry a no-op. **Fixed by [WP-41](#wp-41--restore-transactional-enqueue-in-the-expiration-handler).**
+
 **Findings:** #16 (🟡 Medium) · **Size:** M
 
 ### Files
@@ -1422,6 +1439,14 @@ coverage at all:
 Backend suite 151 → 160. `JobClaimTests` unchanged and still passing, which is the evidence that
 the claim semantics survived the move.
 
+> ⚠️ **Side effect found by R3 ([R3-02](AUDIT-R3.md)).** `RefTestExpirationJobHandler` takes its
+> own `DbContext` from `IDbContextFactory` — deliberately, and documented in its `<remarks>` —
+> but the `IJobEnqueueService` injected alongside it is scoped and holds the *worker's* context.
+> The handler stages the result-email job with `saveChanges:false` and then saves only its own
+> context, so WP-15's single-transaction guarantee no longer covers this path. Nothing in the move
+> itself was wrong; the two changes were simply never checked against each other. **Fixed by
+> [WP-41](#wp-41--restore-transactional-enqueue-in-the-expiration-handler).**
+
 **Tooling note.** `dotnet test` intermittently reports "Zero tests ran" on this machine — the test
 host starts, never completes its named-pipe handshake with the CLI, and exits in under 200 ms. It
 reproduces on an untouched checkout and is independent of configuration, working directory and SDK
@@ -1434,6 +1459,12 @@ results above were confirmed. Worth knowing before anyone reads a zero-test run 
 # Phase 4 — Frontend, accessibility & i18n
 
 ## WP-20 — Accessibility batch ✅
+
+> ⚠️ **Re-opened by R3 ([R3-08](AUDIT-R3.md)).** The three findings this package was scoped to
+> were closed. The dialog work was not carried across the component set: 7 of 18 dialogs received
+> `role="dialog"` and `aria-modal`, and **no** dialog received focus trapping, Escape-to-close or
+> focus restore. A per-dialog fix would leave the same gap next time; **[WP-47](#wp-47--one-accessible-dialog-wrapper-for-all-18-dialogs)**
+> replaces it with a single shared wrapper.
 
 **Findings:** #19 (🟡 Medium), #25 (⚪ Low), #26 (⚪ Low) · **Size:** S
 
@@ -1938,6 +1969,437 @@ hand-editing it would have been reverted by the next pre-commit hook.
 
 ---
 
+# Phase 7 — Exposure 🔴 Blocks production
+
+> Four packages from [`AUDIT-R3.md`](AUDIT-R3.md). **WP-40 is the one that matters** — everything
+> else in this document is housekeeping until an anonymous caller can no longer read participant
+> names, e-mail addresses, scores and submitted answers. The other three are small, so they ship
+> alongside rather than behind it.
+
+## WP-40 — Close the `node(id:)` bypass and make field authorization permission-based
+
+**Findings:** R3-01 (🔴 High) · **Size:** M
+
+### Files
+- `RefTestManagement.Api/Program.cs:235-236`
+- `RefTestManagement.Api/Graphql/Types/RefTestType.cs:21-24, 30-77`
+- `RefTestManagement.Api/Graphql/Queries/DataLoaders.cs:9-21`
+
+### Change
+
+`AddGlobalObjectIdentification(true)` publishes a `node(id:)` field. `RefTestType.ImplementsNode()`
+resolves it through `RefTestByIdDataLoader`, which applies no authorization filter, and
+`AddAuthorization()` is registered bare — no `FallbackPolicy`, no `DefaultPolicy`, no
+`RequireAuthorization()` on the GraphQL endpoint. Anything reachable from that node and not
+individually attributed is anonymous.
+
+Two distinct defects, and both need fixing:
+
+1. **The bypass.** Either drop `ImplementsNode()` from `RefTestType` — nothing in the UI issues a
+   `node` query — or resolve it through a loader that filters by the caller's permissions.
+   Removing it is the smaller, more auditable change; take it unless Relay-style refetch is
+   actually wanted.
+2. **The inconsistency the bypass exposed.** `FirstName` and `LastName` carry `.Authorize()`;
+   the concatenated `name` field and `Email` do not. Neither do `Percentage`, the score fields,
+   `SelectedAnswerIds`, `WrongQuestionIds`, `WrongAnswerIds` or `questions`. Separately, a bare
+   `.Authorize()` means *authenticated*, not *permitted* — it does not consult the
+   `Permissions.RefTests.*` policies the rest of the API is built on. Give every PII-bearing and
+   score-bearing field an explicit policy.
+
+### Acceptance
+- An anonymous `node(id: "...")` query against a RefTest global id returns an authorization error,
+  not data.
+- No field on `RefTestType` that exposes a name, an e-mail address, a score or an answer is
+  readable without a `Permissions.RefTests.*` policy.
+- `name` and `Email` are guarded at least as strictly as `FirstName`/`LastName` are today.
+- The anonymous participant flow — `refTestByToken`, time extension, session lock — is unchanged.
+
+### Watch out for
+- **Verify before assuming.** The finding is argued from schema wiring, not from a demonstrated
+  request. Issue one anonymous `node` query against a running instance first; it settles the
+  severity in a minute.
+- `refTestByToken` is legitimately anonymous and returns a projection to the participant. Do not
+  "fix" it by requiring authentication — read WP-33's reasoning before touching it.
+- Global ids are base64 of `RefTest:{guid}`, so they are not brute-forceable. They *do* leak: staff
+  URLs, the participant's own token response, approval e-mails. Do not treat the GUID as the
+  control.
+- Ship **[WP-48](#wp-48--authorization-tests-and-an-anonymous-field-exposure-snapshot)** in the same
+  release. Without it this fix has nothing holding it in place.
+
+---
+
+## WP-41 — Restore transactional enqueue in the expiration handler
+
+**Findings:** R3-02 (🔴 High, re-opens [WP-15](#wp-15--make-write-then-enqueue-atomic-)) · **Size:** S
+
+### Files
+- `RefTestManagement.Api/BackgroundServices/JobHandlers/RefTestExpirationJobHandler.cs:23-35, 63-74`
+- `RefTestManagement.Api/Graphql/Mutations/Lifecycle/RefTestLifecycleMutations.cs:263-288`
+- `RefTestManagement.Infrastructure/Services/JobEnqueueService.cs:57, 85-87`
+- `RefTestManagement.Api/BackgroundServices/BackgroundJobService.cs:235-238`
+
+### Change
+
+The handler creates its own `DbContext` from `IDbContextFactory` — deliberately, and documented in
+its `<remarks>`. The `IJobEnqueueService` injected next to it is scoped and holds the *worker's*
+context. `CompleteRefTestCoreAsync` stages the result-email job with `saveChanges:false`, then
+saves only the handler's context. Two transactions where WP-15 guaranteed one.
+
+The failure is quiet and it costs a participant their result: crash between the handler's save and
+the worker's `MarkAsCompleted`, and the RefTest is `Completed` with no result-email job. The retry
+hits the handler's own status guard and returns early, so nothing repairs it.
+
+Make the enqueue use the same context the handler saves. Either have the enqueue service accept an
+explicit context, or construct a handler-scoped enqueue service from the same factory instance.
+
+### Acceptance
+- The RefTest status change and the result-email job row are written in one `SaveChangesAsync`.
+- A simulated failure between the two former saves leaves either both or neither.
+- WP-15's participant-path guarantees are unchanged.
+
+### Watch out for
+- The factory context is there for a reason — the handler outlives the request scope. Do not
+  "simplify" it back to the scoped context.
+- The status guard that makes the retry a no-op is correct behaviour for a completed test. The bug
+  is the missing job, not the guard.
+- Do this before **[WP-45](#wp-45--unify-the-deadline-predicates-and-fix-the-expiration-action)** —
+  same handler, and WP-45's changes are easier to reason about on a single transaction.
+
+---
+
+## WP-42 — Trust forwarded IPs, and validate `returnUrl`
+
+**Findings:** R3-03 (🔴 High), R3-10 (🟡 Medium) · **Size:** S
+
+### Files
+- `RefTestManagement.Api/Program.cs:108-130, 251-254`
+- `RefTestManagement.Api/Controllers/AccountController.cs:13-17, 31-37`
+
+### Change
+
+Two independent items, batched because both are a handful of lines in the request pipeline.
+
+**Forwarded headers.** The rate limiter partitions on `Connection.RemoteIpAddress`, but
+`UseForwardedHeaders` enables only `XForwardedProto`. Behind any reverse proxy every caller shares
+one bucket — one participant's retries can lock out everyone. The comment at `Program.cs:116-118`
+claims the opposite, so fix that too. Enable `XForwardedFor` with an explicit
+`KnownProxies`/`KnownNetworks` allow-list; do **not** enable it unconditionally, or the header
+becomes attacker-controlled and the limiter becomes trivially evadable.
+
+**Open redirect.** `AccountController.Login`/`Logout` pass `returnUrl` straight through. Reject
+anything that is not a local path — `Url.IsLocalUrl(returnUrl)`, falling back to `/`.
+
+### Acceptance
+- Two clients behind the same proxy with different `X-Forwarded-For` values get independent
+  buckets; a spoofed header from an untrusted hop does not.
+- `Program.cs`'s comment describes what the code does.
+- `/Account/Login?returnUrl=https://evil.example` redirects to `/`.
+
+### Watch out for
+- `KnownProxies` must be configurable per environment. Hard-coding the production proxy makes local
+  development silently take the untrusted path.
+- Check the deployment topology before choosing `ForwardLimit` — a wrong hop count is worse than
+  not forwarding at all.
+
+---
+
+## WP-43 — Guard auto-submit against re-entry
+
+**Findings:** R3-04 (🔴 High) · **Size:** S
+
+### Files
+- `RefTestManagement.Ui/src/app/ref-test/take/take-ref-test.ts:80-94`
+- `RefTestManagement.Ui/src/app/ref-test/take/state/ref-test.store.ts:170-177`
+
+### Change
+
+`updateRemainingTime()` clamps with `Math.max(0, ...)` — deliberate, with a test asserting it — so
+once the deadline passes, `timeRemainingSeconds() === 0` is true on every subsequent tick. The
+countdown effect calls `submit()` with no in-flight guard. If the call does not resolve, the client
+submits once per second, indefinitely.
+
+Add an in-flight flag (or a `hasAutoSubmitted` signal) so auto-submit fires at most once per
+session, and keep it set across failure — a retry loop is what makes this harmful.
+
+### Acceptance
+- With the submit call stalled, exactly one request is issued.
+- A failed auto-submit surfaces an error to the participant instead of retrying silently.
+- Manual submit still works, and the clamp test still passes.
+
+### Watch out for
+- Do not remove the clamp to fix this. It is intentional and covered.
+- This compounds **[WP-42](#wp-42--trust-forwarded-ips-and-validate-returnurl)**: a per-second loop
+  from many participants behind one proxy shares a single rate-limit bucket today.
+- Sequence with the other frontend packages (WP-47, WP-50) rather than running them in parallel.
+
+---
+
+# Phase 8 — Correctness & privacy parity 🟡
+
+> Four packages. Real defects, none of them externally exploitable — which is exactly why they are
+> the ones that survive a release if they are not written down.
+
+## WP-44 — Put a RefTest id on report-email payloads
+
+**Findings:** R3-05 (🟡 Medium) · **Size:** S
+
+### Files
+- `RefTestManagement.Application/Models/JobPayloads.cs:42-65`
+- `RefTestManagement.Infrastructure/Services/RefTestPrivacyErasureService.cs:132-134, 198-215`
+
+### Change
+
+Erasure finds job rows by `Payload.Contains(refTestId)`. `ReportEmailPayload` /
+`RefTestReportPayloadData` is the only payload that carries no RefTest id, so the match can never
+succeed and those payloads — which hold participant names and results — survive erasure. That is
+an **Art. 17** gap.
+
+Add `RefTestId` to the payload and backfill or sweep existing rows.
+
+### Acceptance
+- A new report-email job's payload contains its RefTest id.
+- Erasing a participant removes or anonymises their report-email payloads.
+- Pre-existing rows are handled explicitly — either migrated or covered by a documented sweep.
+
+### Watch out for
+- **This is the WP-04 trap again.** That fix worked perfectly on new data and never reached rows a
+  previous deployment had already written; WP-28 existed solely to clean up after it. Decide the
+  existing-row story *before* writing the payload change.
+- Payload shape is serialized — a rename is a compatibility break for in-flight jobs.
+- Ship near **[WP-41](#wp-41--restore-transactional-enqueue-in-the-expiration-handler)**; both touch
+  how report/result jobs are staged.
+
+---
+
+## WP-45 — Unify the deadline predicates and fix the expiration action
+
+**Findings:** R3-06 (🟡 Medium), R3-07 (🟡 Medium) · **Size:** M
+
+### Files
+- `RefTestManagement.Domain/RefTests/RefTest.cs:45, 333-344, 346-361, 664-666`
+- `RefTestManagement.Infrastructure/Queries/RefTestExpirationQueries.cs:39-52`
+- `RefTestManagement.Api/Graphql/Queries/RefTestQueries.cs:71-79`
+- `RefTestManagement.Api/BackgroundServices/JobHandlers/RefTestExpirationJobHandler.cs:63-80`
+
+### Change
+
+**Three predicates, no two agreeing.** `HasPassedDeadline` allows a 60-second grace; `IsExpired`
+and `IsDueForExpiration` do not. A test can therefore be simultaneously "past the deadline" by one
+definition and not by another, which is how R3-07 arises.
+
+**A guaranteed-throwing action.** `GetRefTestByTokenAsync` reaches its expiry branch only when the
+test *is* expired, and unconditionally enqueues `MarkAsExpired` — but `Expire()` throws for an
+`InProgress` test, every time.
+
+Collapse the three predicates to one source of truth, deciding the grace period once and applying
+it everywhere. Then make the enqueued action depend on status: `InProgress` auto-completes,
+`NotStarted` expires.
+
+### Acceptance
+- One predicate, used by domain, queries and the handler alike.
+- The grace-period decision is stated in a comment, once.
+- An in-progress test past its deadline completes; a not-started one expires. Neither throws.
+- The existing expiration-predicate tests — which assert EF translation survives — still pass.
+
+### Watch out for
+- Those tests check that each branch **translates to SQL**. A predicate that only works in memory
+  will pass a naive unit test and fail against four providers.
+- Changing the grace period changes participant-visible behaviour at the boundary. Pick the
+  60-second variant unless there is a reason not to.
+- Land **[WP-41](#wp-41--restore-transactional-enqueue-in-the-expiration-handler)** first.
+
+---
+
+## WP-46 — Bring the in-app privacy notice to parity
+
+**Findings:** R3-09 (🟡 Medium, re-opens [WP-35](#wp-35--disclose-staff-and-approver-recipients-in-the-privacy-notice-)) · **Size:** S
+
+### Files
+- `RefTestManagement.Ui/public/i18n/en.json` (`privacy.recipients.*`) and every translated
+  counterpart
+- Reference: `docs/PRIVACY.md:33-40`
+
+### Change
+
+WP-35 updated `docs/PRIVACY.md` and stopped there. The in-app notice — the document a participant
+is actually shown, and therefore the one Art. 13(1)(e) governs — still omits the internal recipient
+categories that `PRIVACY.md` itself says must be named: staff who receive approval requests and
+decisions, and the recipients of batch staff reports.
+
+Mirror the `PRIVACY.md` recipient list into the notice, in every locale.
+
+### Acceptance
+- The in-app notice names the same recipient categories as `docs/PRIVACY.md`.
+- `npm run check:i18n` passes — no locale left behind.
+- A reviewer can diff the two documents and find no substantive divergence.
+
+### Watch out for
+- All locales, not just `en.json`. A partial translation is the failure mode the i18n check exists
+  to catch.
+- Keep `PRIVACY.md` as the source and the notice as the derivative, so the next change has an
+  obvious direction.
+
+---
+
+## WP-47 — One accessible dialog wrapper for all 18 dialogs
+
+**Findings:** R3-08 (🟡 Medium, re-opens [WP-20](#wp-20--accessibility-batch-)) · **Size:** M
+
+### Files
+- `RefTestManagement.Ui/src/app/ref-tests/detail/.../components/dialogs/*` (7, already have modal
+  semantics)
+- `RefTestManagement.Ui/src/app/ref-tests/list/components/dialogs/*` (8)
+- `RefTestManagement.Ui/src/app/ref-test/take/components/submit-ref-test-dialog/`,
+  `.../leave-ref-test-dialog/`, `.../ref-test/components/withdraw-consent-dialog/`
+
+### Change
+
+WP-20 added `role="dialog"` and `aria-modal` to the seven detail-tab dialogs. The other eleven
+never got them, and **no** dialog anywhere has focus trapping, Escape-to-close or focus restore.
+
+Fixing eighteen templates individually reproduces exactly the drift that caused this. Build one
+wrapper component that owns modal semantics, focus trap, Escape and focus restore, and route every
+dialog through it.
+
+### Acceptance
+- All 18 dialogs expose `role="dialog"` and `aria-modal="true"`.
+- Tab is trapped inside an open dialog; Escape closes it; focus returns to the trigger.
+- A new dialog gets all of this by using the wrapper, without remembering to.
+
+### Watch out for
+- The seven compliant dialogs must be migrated too, or the divergence just moves.
+- Escape must not bypass confirmation on destructive dialogs — treat it as cancel, never confirm.
+- Largest frontend diff in the plan; do not overlap it with **WP-43** or **WP-50**.
+
+---
+
+# Phase 9 — Tests & hygiene 🟡
+
+> The durable half. **WP-48 is not optional and does not belong at the end** — it ships in the same
+> release as WP-40.
+
+## WP-48 — Authorization tests and an anonymous field-exposure snapshot
+
+**Findings:** R3-11 (🟡 Medium, authorization half) · **Size:** M
+
+### Files
+- `RefTestManagement.UnitTests/` — new test files
+
+### Change
+
+A search across the 160-test suite for `Authorize`, `Permission` or `policy` matches only
+`BackgroundJobProcessingTests.cs`, incidentally. Nothing asserts that
+`Permissions.RefTests.ViewDetail` guards what it claims to, that `IsCorrect` and `Number` stay
+hidden from participants, or that role-to-permission mapping is right.
+
+R3-01 is the direct cost. Add:
+
+1. Policy-level tests over the `Permissions.RefTests.*` mapping.
+2. **A snapshot of the anonymously-readable field set**, compared against an expected list. This is
+   the important one — it would have caught the `name`/`Email` gap the moment it appeared, and it
+   is what makes WP-40 stay fixed.
+
+### Acceptance
+- A test enumerates every field an unauthenticated caller can reach and fails when that set grows.
+- Adding an unguarded PII field to `RefTestType` fails the suite.
+- `IsCorrect` and `Question.Number` are asserted hidden from participants.
+
+### Watch out for
+- **Ship with WP-40, not after.** Same argument the plan made for pairing WP-29 with WP-28.
+- The snapshot must fail *open* — a new unguarded field breaks the build. A test that only checks
+  known fields is worth nothing here.
+- `refTestByToken` and the anonymous participant fields belong in the expected set. Document why,
+  next to the list.
+
+---
+
+## WP-49 — Audit interceptor and retention tests
+
+**Findings:** R3-11 (🟡 Medium, audit half) · **Size:** S
+
+### Files
+- `RefTestManagement.UnitTests/` — new test files
+
+### Change
+
+A search for `AuditLogCleanup`, `RedactedAt` or `AuditSaveChangesInterceptor` matches **nothing**.
+The audit interceptor and the retention sweep are both GDPR-load-bearing and both untested. WP-23
+went where the defects were and skipped them.
+
+Cover: the interceptor writes the rows it should and omits what it should not; the retention sweep
+selects the right rows by age; redaction sets `RedactedAt` and does not resurrect erased values.
+
+### Acceptance
+- The interceptor is exercised directly, not incidentally.
+- The retention window is asserted at its boundary.
+- Redaction is asserted idempotent.
+
+### Watch out for
+- Retention queries run on four providers. Assert translation, as the expiration-predicate tests do.
+- Do not assert on wall-clock `DateTime.UtcNow`; inject the clock.
+
+---
+
+## WP-50 — Handle the five ignored subscription union members
+
+**Findings:** R3-12 (🟡 Medium) · **Size:** S
+
+### Files
+- `RefTestManagement.Ui/src/app/ref-tests/detail/data/ref-test-detail-data.ts:292-328`
+
+### Change
+
+The detail view's subscription handler switches on the payload union and returns `{}` for anything
+unrecognised. `RefTestApproved`, `RefTestRejected`, `RefTestReset`, `RefTestRevived` and
+`RefTestCreated` all fall through — so a staff member watching a detail page while a colleague
+approves that assessment sees nothing, and the page diverges silently until reload.
+
+Handle all five. Make the `default` branch loud, so the next added member cannot be ignored quietly.
+
+### Acceptance
+- Approve, reject, reset and revive all update an open detail view without a reload.
+- An unhandled union member produces a visible diagnostic rather than `{}`.
+
+### Watch out for
+- The list view's cache patching already works — do not duplicate its logic; reuse it.
+- Sequence with **WP-43** and **WP-47** rather than running all three at once.
+
+---
+
+## WP-51 — CI permissions and error-filter masking
+
+**Findings:** R3-13 (⚪ Low), R3-14 (⚪ Low) · **Size:** S
+
+### Files
+- `.github/workflows/pr.yml:100-126`
+- `RefTestManagement.Api/Graphql/UnhandledExceptionLoggingErrorFilter.cs`
+
+### Change
+
+**CI.** The README-sync job runs PR-branch code while holding `contents: write`. The trigger is
+`pull_request`, not `pull_request_target`, so a fork gets a read-only token and the practical
+exposure is limited to same-repo branches — hence Low. Still: either drop the write permission and
+have the job fail with a diff, or move the sync to a `push`-triggered workflow on trusted code.
+
+**Logging.** The filter passes `error.Exception` straight to the logger while the job pipeline
+deliberately masks with `LogRedaction.MaskEmailsInText(...)` first. R3 confirmed this does **not**
+leak invitation tokens today — every token-bearing throw site declares `[Error<T>]`, so
+HotChocolate's conventions map them to typed payload errors and they never reach this filter. The
+risk is that the convention is invisible: one throw site without the attribute and the guarantee
+is gone. Apply the same masking here.
+
+### Acceptance
+- No workflow job combines `contents: write` with unreviewed PR-branch code.
+- The error filter masks e-mail addresses before logging, matching the job pipeline.
+- An exception carrying a token or address logs redacted.
+
+### Watch out for
+- Do not flip the trigger to `pull_request_target` — that grants forks the very token this is about.
+- **The `[Error<T>]` convention is the real control**; masking is defence in depth. Do not let this
+  package be read as making the attributes optional.
+
+---
+
 # Coverage matrix
 
 Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one work package.
@@ -1961,10 +2423,10 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | 13 | 🟡 Medium | Domain depends on EF Core | WP-18 | ✅ Done |
 | 14 | 🟡 Medium | Job claim not atomic | WP-13 | ✅ Done |
 | 15 | 🟡 Medium | No concurrency token | WP-14 | ✅ Done |
-| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15 | ✅ Done |
+| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15, **WP-41** | ⚠️ Re-opened (R3-02) |
 | 17 | 🟡 Medium | No HTTP timeout or resilience | WP-16 | ✅ Done |
 | 18 | 🟡 Medium | Expiration evaluates client-side | WP-17 | ✅ Done |
-| 19 | 🟡 Medium | Positive `tabindex` | WP-20 | ✅ Done |
+| 19 | 🟡 Medium | Positive `tabindex` | WP-20, **WP-47** | ⚠️ Finding closed; WP-20 re-opened (R3-08) |
 | 20 | 🟡 Medium | Hardcoded English `confirm()` | WP-21 | ✅ Done |
 | 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 | ✅ Done |
 | 22 | ⚪ Low | Consent proof nulled | WP-06 | ✅ Done |
@@ -1991,17 +2453,44 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | N4 | 🟡 Medium | Regex timeout strands a job in `Processing` | WP-31 | ✅ Done |
 | N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 | ✅ Done |
 | N6 | 🟡 Medium | Erase and delete not atomic | WP-33 | ✅ Done |
-| N7 | 🟡 Medium | Undisclosed email recipients | WP-35 | ✅ Done |
+| N7 | 🟡 Medium | Undisclosed email recipients | WP-35, **WP-46** | ⚠️ Re-opened (R3-09) |
 | N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 | ✅ Done |
 | N9 | 🟡 Medium | Invitation token in the URL | WP-37 | ✅ Done |
 | N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 | ✅ Done |
 | N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 | ✅ Done |
 | N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 | ✅ Done |
 
-**46 findings · 39 work packages · none dropped.**
-**46 closed · 0 open.** One carries a manual follow-up outside the repository: **#12**, which is
-complete in code but only takes effect once a maintainer creates the GitHub App.
-**39 of 39 work packages shipped.**
+### Third audit (`AUDIT-R3.md`)
+
+| # | Severity | Finding | Package | Status |
+|---|---|---|---|---|
+| R3-01 | 🔴 High | `node(id:)` returns participant PII unauthenticated | WP-40 | ⛔ Open — **blocks production** |
+| R3-02 | 🔴 High | Expiration stages result email in the wrong `DbContext` | WP-41 | ⛔ Open |
+| R3-03 | 🔴 High | Rate limit collapses to one bucket behind a proxy | WP-42 | ⛔ Open |
+| R3-04 | 🔴 High | Auto-submit repeats once per second | WP-43 | ⛔ Open |
+| R3-05 | 🟡 Medium | Report payloads unreachable by erasure (Art. 17) | WP-44 | ⛔ Open |
+| R3-06 | 🟡 Medium | Three divergent deadline predicates | WP-45 | ⛔ Open |
+| R3-07 | 🟡 Medium | `MarkAsExpired` enqueued where `Expire()` always throws | WP-45 | ⛔ Open |
+| R3-08 | 🟡 Medium | 11 of 18 dialogs not modal; none manage focus | WP-47 | ⛔ Open |
+| R3-09 | 🟡 Medium | In-app privacy notice omits internal recipients | WP-46 | ⛔ Open |
+| R3-10 | 🟡 Medium | Open redirect via unvalidated `returnUrl` | WP-42 | ⛔ Open |
+| R3-11 | 🟡 Medium | No authorization tests, no audit-retention tests | WP-48, WP-49 | ⛔ Open |
+| R3-12 | 🟡 Medium | Detail subscription ignores five union members | WP-50 | ⛔ Open |
+| R3-13 | ⚪ Low | README-sync job runs PR code with `contents: write` | WP-51 | ⛔ Open |
+| R3-14 | ⚪ Low | Error filter logs raw exception objects | WP-51 | ⛔ Open |
+
+**60 findings · 51 work packages · none dropped.**
+**43 closed · 3 re-opened · 14 open.**
+
+Three packages did not fully hold under R3's adversarial verification — **WP-15**, **WP-20** and
+**WP-35** — and are superseded by **WP-41**, **WP-47** and **WP-46** respectively. Their original
+findings are annotated above; the package sections themselves are left as written, because they
+record what was done at the time and are more useful as evidence than as a scoreboard.
+
+One closed item carries a manual follow-up outside the repository: **#12**, complete in code but
+only effective once a maintainer creates the GitHub App.
+
+**39 of 51 work packages shipped.**
 
 ---
 
@@ -2024,6 +2513,11 @@ graph LR
     WP24[WP-24 Frontend tests] --> WP27[WP-27 README]
     WP08[WP-08 Cost limits] -.pairs.-> WP36[WP-36 Input validation]
     WP10[WP-10 CSPRNG tokens] -.pairs.-> WP37[WP-37 Token in URL]
+    WP40[WP-40 node bypass] --> WP48[WP-48 Authz tests]
+    WP41[WP-41 Expiration txn] --> WP45[WP-45 Deadline predicates]
+    WP41 -.pairs.-> WP44[WP-44 Report payload id]
+    WP43[WP-43 Auto-submit guard] -.sequence.-> WP47[WP-47 Dialog wrapper]
+    WP47 -.sequence.-> WP50[WP-50 Subscription union]
 ```
 
 - **WP-29 with WP-28, not after it** — WP-28's first run sweeps the entire historical backlog,
@@ -2039,13 +2533,44 @@ graph LR
 - **WP-18 after Phase 1** — it moves types that WP-04 and WP-28 modify.
 - **WP-19 ideally after WP-23** — a large pure refactor with no tests is the one place where the
   missing harness genuinely raises risk.
+- **WP-48 with WP-40, not after it** — same argument as WP-29/WP-28. R3-01 was authorization
+  drift, not a coding mistake; the snapshot test is the thing that stops it recurring, and it is
+  worth far less a phase later.
+- **WP-45 after WP-41** — same handler, and WP-45 is easier to reason about once the two saves are
+  one transaction again.
+- **WP-44 near WP-41** — both change how result/report jobs are staged.
+- **WP-43, WP-47 and WP-50 sequence, not parallelise** — all frontend, and WP-47 touches all
+  eighteen dialog templates.
 
 ---
 
 ## Suggested next release
 
-**All 39 work packages have shipped.** Every finding in `AUDIT.md` and `AUDIT-R2.md` is closed, and
-the ordering constraints above are now a record of how the work was sequenced rather than a plan.
+**Phases 1 → 6 have shipped: 39 work packages, closing every finding in `AUDIT.md` and
+`AUDIT-R2.md` except the three the third audit re-opened.** The ordering constraints above are
+partly a record of how that work was sequenced and partly a plan for what remains.
+
+**The third audit rates the service NOT production-ready**, on one finding: **R3-01**, an
+unauthenticated read path to participant names, e-mail addresses, scores and submitted answers.
+
+### Do this first
+
+**Verify R3-01 against a running instance.** The finding is argued from schema wiring —
+`AddGlobalObjectIdentification(true)`, an unfiltered `RefTestByIdDataLoader`, a bare
+`AddAuthorization()` — not from a request anyone issued. A single anonymous `node(id:)` query
+settles it in a minute, and the answer decides whether the next release is one package or four.
+
+### Then: Phase 7, as one release
+
+**WP-40 + WP-48** together, plus **WP-41**, **WP-42** and **WP-43**. The last three are each an
+hour or two and touch unrelated files, so they cost little to carry alongside. WP-48 is not
+optional and does not belong in a later phase — without the anonymous-field snapshot, WP-40 has
+nothing holding it in place.
+
+Phase 8 and Phase 9 follow in order. Neither is externally exploitable, and both are the kind of
+work that quietly disappears if it is not written down — which is the reason for this document.
+
+### Still outstanding from earlier phases
 
 One item is not finishable from inside the repository. **WP-12** removed the long-lived `GH_PAT`
 from the release workflow in favour of a GitHub App token, but the swap only takes effect once a
@@ -2058,9 +2583,11 @@ requests are handled for every caller:
 
 - **GraphQL cost limits and rate limiting** (WP-08). The limits were measured against the real
   schema and leave roughly 5× headroom, but a query shape nobody exercised during measurement
-  could still be rejected. The error carries the measured cost, so tuning is mechanical.
+  could still be rejected. The error carries the measured cost, so tuning is mechanical. Note that
+  **WP-42** changes how callers are partitioned, so soak the two together.
 - **The server-side deadline** (WP-09). Submissions more than 60 seconds past the deadline are now
-  refused rather than silently accepted until the expiration sweep.
+  refused rather than silently accepted until the expiration sweep. **WP-45** revisits which
+  60-second grace applies where.
 
 One change is invisible until it matters, and is worth a deliberate look in staging:
 
@@ -2075,7 +2602,7 @@ One change is invisible until it matters, and is worth a deliberate look in stag
 | --- | --- | --- |
 | Job claiming and leases | `JobClaimTests` | Real SQL on SQLite; the concurrency case is the point |
 | Job failure policy | `BackgroundJobProcessingTests` | Retry vs permanent, masking, cancellation |
-| Job enqueue atomicity | `JobEnqueueUnitOfWorkTests` | Write and enqueue share one transaction |
+| Job enqueue atomicity | `JobEnqueueUnitOfWorkTests` | Write and enqueue share one transaction — **participant path only**, see R3-02 |
 | Erasure and anonymization | `RefTestPrivacyErasureServiceTests`, `RefTestAnonymizationTests` | The WP-01 defect area |
 | Retention predicates | `PrivacyRetentionQueriesTests`, `RefTestExpirationQueriesTests` | Translated on all four providers |
 | Log and audit redaction | `LogRedactionTests`, `AuditPiiRedactorTests` | Case-insensitive key matching included |
@@ -2083,10 +2610,12 @@ One change is invisible until it matters, and is worth a deliberate look in stag
 | Domain invariants | `RefTestDeadlineTests`, `JobTests`, `RefTestTokenTests`, `ParticipantInputTests` | |
 | Architecture | `DomainDependencyTests` | Fails the build if Domain regains an EF Core reference |
 | Participant flow (UI) | `ref-test.store.spec.ts`, `can-deactivate-ref-test.guard.spec.ts` | Countdown, autosave, unsaved-work guard |
+| **Authorization** | — | **Nothing.** No policy, permission or field-exposure test exists — **WP-48** |
+| **Audit interceptor and retention** | — | **Nothing.** `AuditSaveChangesInterceptor`, `AuditLogCleanup` and `RedactedAt` are untested — **WP-49** |
 
 Both suites run in CI on every pull request, alongside translation parity and CodeQL.
 
-The gap that remains is deliberate rather than overlooked: there are **no integration tests** that
-exercise a GraphQL request end to end against a real database, and none of the email or PDF
-rendering paths are covered. Both need infrastructure this plan did not set out to build. If a
-Phase 8 is ever wanted, that is where it starts.
+Two gaps remain beyond those. There are **no integration tests** that exercise a GraphQL request
+end to end against a real database, and none of the email or PDF rendering paths are covered. Both
+need infrastructure this plan did not set out to build, and both are a natural **Phase 10** once
+Phases 7 → 9 are clear.
