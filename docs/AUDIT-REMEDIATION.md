@@ -1,5 +1,21 @@
 # Audit Remediation Plan
 
+> **Correction — 18 September 2026, third audit ([`AUDIT-R3.md`](AUDIT-R3.md), commit `555c149`).**
+> This document's summary states *"46 closed · 0 open"*. That is no longer accurate. All 39 work
+> packages were implemented, but adversarial verification found that three did not fully deliver the
+> outcome their findings required:
+>
+> - **WP-15** (transactional job enqueue) — holds for the participant path, broken for the
+>   expiration handler by WP-19's `DbContext` split. See R3-02.
+> - **WP-20** (dialog accessibility) — only 7 of 18 dialogs received modal semantics, and no dialog
+>   received focus management. See R3-08.
+> - **WP-35** (privacy notice) — the documentation was delivered; the participant-facing in-app
+>   notice was not brought to parity. See R3-09.
+>
+> The accurate position at `555c149` is **43 closed · 3 re-opened · 14 new findings from R3**. The
+> per-package sections below are left as written — they record what was done at the time, and are
+> more useful as evidence than as a running scoreboard.
+
 Companion to [docs/AUDIT.md](AUDIT.md) and its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md). Those
 documents say *what* is wrong and *why*; this one says *what to do about it*, as discrete units
 of work.
