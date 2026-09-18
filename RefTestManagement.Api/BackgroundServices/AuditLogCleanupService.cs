@@ -35,7 +35,9 @@ public class AuditLogCleanupService : BackgroundService
             }
             catch (Exception ex)
             {
-                ServiceLoggerMessages.LogCleanupError(_logger, ex, "AuditLogs");
+                // A database failure here is raised while reading and rewriting the audit
+                // Data column, which holds the personal data this service exists to redact.
+                ServiceLoggerMessages.LogCleanupError(_logger, LogRedaction.MaskEmails(ex), "AuditLogs");
             }
 
             try

@@ -80,4 +80,57 @@ public class LogRedactionTests
 
         Assert.Equal(text, LogRedaction.MaskEmailsInText(text));
     }
+
+    [Fact]
+    public void MaskEmails_MasksTheExceptionMessage()
+    {
+        var masked = LogRedaction.MaskEmails(new InvalidOperationException("rejected john.doe@example.com"));
+
+        Assert.DoesNotContain("john.doe@example.com", masked.Message, StringComparison.Ordinal);
+        Assert.Contains("j***@example.com", masked.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MaskEmails_MasksTheRenderedExceptionText()
+    {
+        // Logging providers render the exception object via ToString(), which re-exposes the
+        // raw message and every inner exception's alongside it. Masking only Message is not
+        // enough.
+        var inner = new InvalidOperationException("inner a@x.be");
+        var outer = new InvalidOperationException("outer b@x.be", inner);
+
+        var text = LogRedaction.MaskEmails(outer).ToString();
+
+        Assert.DoesNotContain("a@x.be", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("b@x.be", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MaskEmails_KeepsTheStackTrace()
+    {
+        // Masking must not cost diagnosability, otherwise it will be removed the first time
+        // someone has to debug a failing send.
+        Exception thrown;
+        try
+        {
+            throw new InvalidOperationException("boom a@x.be");
+        }
+        catch (InvalidOperationException ex)
+        {
+            thrown = ex;
+        }
+
+        var masked = LogRedaction.MaskEmails(thrown);
+
+        Assert.NotNull(masked.StackTrace);
+        Assert.Contains(nameof(MaskEmails_KeepsTheStackTrace), masked.StackTrace, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MaskEmails_LeavesExceptionsWithoutAnAddressReadable()
+    {
+        var masked = LogRedaction.MaskEmails(new InvalidOperationException("connection reset"));
+
+        Assert.Equal("connection reset", masked.Message);
+    }
 }

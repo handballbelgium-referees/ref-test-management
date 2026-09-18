@@ -17,6 +17,8 @@ using StrawberryShake;
 using Handball.Belgium.RefTestManagement.Api.Graphql;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.RateLimiting;
 
 // Configure QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
@@ -95,6 +97,37 @@ var backgroundJobConfig = configuration.GetSection("BackgroundJobConfiguration")
                           ?? new BackgroundJobConfiguration();
 services.AddSingleton(backgroundJobConfig);
 
+var graphQlLimitsConfig = configuration.GetSection("GraphQlLimitsConfiguration")
+                              .Get<GraphQlLimitsConfiguration>()
+                          ?? new GraphQlLimitsConfiguration();
+services.AddSingleton(graphQlLimitsConfig);
+
+const string graphQlRateLimiterPolicy = "graphql";
+
+if (graphQlLimitsConfig.EnableRateLimiting)
+{
+    services.AddRateLimiter(options =>
+    {
+        options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+
+        // Partitioned by client address: the participant flow is anonymous, so there is no user
+        // to key on, and a single shared bucket would let one abusive client lock out everyone.
+        // Behind a proxy this is the proxy's address unless UseForwardedHeaders (configured
+        // below) has restored the original — hence EnableRateLimiting, for deployments that
+        // already limit at the edge.
+        options.AddPolicy(graphQlRateLimiterPolicy, httpContext =>
+            RateLimitPartition.GetFixedWindowLimiter(
+                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                _ => new FixedWindowRateLimiterOptions
+                {
+                    PermitLimit = graphQlLimitsConfig.RateLimitPermitLimit,
+                    Window = TimeSpan.FromSeconds(graphQlLimitsConfig.RateLimitWindowSeconds),
+                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
+                    QueueLimit = graphQlLimitsConfig.RateLimitQueueLimit
+                }));
+    });
+}
+
 services.AddHttpClient<ILogoService, LogoService>();
 services.AddSingleton<ITranslationService, TranslationService>();
 services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
@@ -152,7 +185,12 @@ services.AddGraphQLServer()
         options.MaxPageSize = 100;
         options.AllowBackwardPagination = true;
     })
-    .ModifyCostOptions(o => o.EnforceCostLimits = false)
+    .ModifyCostOptions(o =>
+    {
+        o.EnforceCostLimits = graphQlLimitsConfig.EnforceCostLimits;
+        o.MaxFieldCost = graphQlLimitsConfig.MaxFieldCost;
+        o.MaxTypeCost = graphQlLimitsConfig.MaxTypeCost;
+    })
     .RegisterDbContextFactory<RefTestManagementContext>()
     .AddProjections()
     .AddFiltering()
@@ -180,6 +218,22 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedProto
 });
 
+// Sent as real response headers rather than <meta http-equiv> tags. Browsers ignore
+// X-Frame-Options and X-Content-Type-Options when they appear in markup, so the tags in
+// index.html look like protection without providing any; and a meta Referrer-Policy only takes
+// effect once the parser reaches it, which is too late for anything the document requests first.
+//
+// no-referrer matters more here than it usually would: a participant's invitation token travels
+// in the URL path, so any weaker policy puts a working credential into another site's logs.
+app.Use(async (context, next) =>
+{
+    var headers = context.Response.Headers;
+    headers["Referrer-Policy"] = "no-referrer";
+    headers["X-Content-Type-Options"] = "nosniff";
+    headers["X-Frame-Options"] = "DENY";
+    await next();
+});
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 
@@ -191,6 +245,11 @@ if (app.Environment.IsDevelopment())
 
 app.UseRouting();
 
+if (graphQlLimitsConfig.EnableRateLimiting)
+{
+    app.UseRateLimiter();
+}
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -199,7 +258,13 @@ app.MapControllerRoute(
     "{controller}/{action=Index}/{id?}"
 );
 
-app.MapGraphQL();
+var graphQlEndpoint = app.MapGraphQL();
+
+if (graphQlLimitsConfig.EnableRateLimiting)
+{
+    graphQlEndpoint.RequireRateLimiting(graphQlRateLimiterPolicy);
+}
+
 app.MapFallbackToFile("index.html");
 
 app.RunWithGraphQLCommands(args);

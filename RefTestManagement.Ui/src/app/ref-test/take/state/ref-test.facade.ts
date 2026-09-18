@@ -141,7 +141,11 @@ export class RefTestFacade {
       {
         onStart: () => this._store.loading.set(true),
         onSuccess: (refTest) => {
+          // A null payload means the server rejected the submission (an expired time limit, or
+          // input it refused), not that nothing happened. Without this the participant sees the
+          // spinner stop and no change at all.
           if (refTest) this._store.complete(refTest);
+          else this._store.error.set('submit_failed');
         },
         onError: () => this._store.error.set('submit_failed'),
         onComplete: () => this._store.loading.set(false),

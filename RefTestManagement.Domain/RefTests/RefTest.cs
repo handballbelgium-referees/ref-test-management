@@ -1,14 +1,48 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
 namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
+/// <summary>
+/// Who is completing a RefTest. The only thing this decides is whether the participant's time
+/// limit is enforced.
+/// </summary>
+public enum RefTestCompletionSource
+{
+    /// <summary>
+    /// The participant submitted the test themselves. The time limit is enforced.
+    /// </summary>
+    Participant,
+
+    /// <summary>
+    /// The expiration service auto-completing an overdue test with the answers already saved.
+    /// It runs precisely because the deadline has passed, so enforcing the deadline here would
+    /// make every overdue test permanently unfinishable.
+    /// </summary>
+    ExpirationService
+}
+
 public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 {
     /// <summary>Placeholder used to redact personal data in place — see <see cref="Anonymize"/>.</summary>
     private const string RedactedValue = "***";
+
+    /// <summary>
+    /// Length in characters of a generated invitation token. 32 hex characters is 128 bits of
+    /// entropy, and matches the width of the value this used to produce
+    /// (<c>Guid.NewGuid().ToString("N")</c>) so stored tokens and invitation URLs are unaffected.
+    /// </summary>
+    private const int TokenLength = 32;
+
+    /// <summary>
+    /// Latency and clock-skew allowance applied to the server-side deadline check. A submission
+    /// is composed slightly before it arrives, and the participant's clock is not the server's;
+    /// without this, an answer sent a fraction of a second before the deadline would be rejected.
+    /// </summary>
+    private static readonly TimeSpan DeadlineGrace = TimeSpan.FromSeconds(60);
 
     private readonly List<IDomainEvent> _domainEvents = [];
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -37,7 +71,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         NumberOfQuestions = numberOfQuestions;
         MaxTimeInMinutes = maxTimeInMinutes;
         QuestionIds = questionIds ?? [];
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
         CreatedAt = DateTime.UtcNow;
         Status = RefTestStatus.Pending;
         SendResultsAutomatically = sendResultsAutomatically;
@@ -235,6 +269,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only save progress for in-progress RefTests");
 
+        if (HasPassedDeadline())
+            throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
+
         CurrentQuestionIndex = currentQuestionIndex;
         SelectedAnswerIds = selectedAnswerIds ?? [];
         Language = language;
@@ -242,13 +279,17 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void Complete(int questionScore, int answerScore, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
-        string? language = null)
+        string? language = null,
+        RefTestCompletionSource source = RefTestCompletionSource.Participant)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot complete a RefTest whose consent has been withdrawn");
 
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only complete in-progress RefTests");
+
+        if (source == RefTestCompletionSource.Participant && HasPassedDeadline())
+            throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
 
         Status = RefTestStatus.Completed;
         CompletedAt = DateTime.UtcNow;
@@ -425,7 +466,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException(
                 "Can only regenerate token for pending or expired tests");
 
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         if (InvitationSentAt.HasValue)
@@ -473,7 +514,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         }
 
         // Optionally regenerate token
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         InvitationSentAt = null;
@@ -514,7 +555,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         CreatedAt = DateTime.UtcNow;
 
         // Always regenerate token for security
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
         RaiseDomainEvent(new RefTestHardResetEvent());
     }
 
@@ -527,7 +568,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException("Can only revive expired tests");
 
         Status = RefTestStatus.Pending;
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
         ExpiredAt = null;
 
         // Reset CreatedAt so the expiration timer starts fresh
@@ -592,6 +633,28 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     private bool CanRegenerateToken() =>
         Status == RefTestStatus.Pending;
+
+    /// <summary>
+    /// True once the participant's time limit has elapsed, including any admin extension
+    /// (<see cref="ExtendTime"/> raises <see cref="MaxTimeInMinutes"/> in place) plus
+    /// <see cref="DeadlineGrace"/>.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="RefTestStatus.InProgress"/> on its own does not mean the test is still open:
+    /// overdue tests are only closed when the expiration service next runs, so without this check
+    /// a participant can keep answering during the gap between the deadline and that sweep.
+    /// </remarks>
+    public bool HasPassedDeadline() =>
+        StartedAt.HasValue &&
+        DateTime.UtcNow > StartedAt.Value.AddMinutes(MaxTimeInMinutes).Add(DeadlineGrace);
+
+    /// <summary>
+    /// Generates an invitation token. Tokens are the only credential guarding a participant's
+    /// personal data and results, so they come from a cryptographic RNG — a GUID is unique but
+    /// makes no secrecy guarantee.
+    /// </summary>
+    private static string GenerateToken() =>
+        RandomNumberGenerator.GetHexString(TokenLength, lowercase: true);
 
     #endregion
 }

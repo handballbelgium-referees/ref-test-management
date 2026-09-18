@@ -20,7 +20,7 @@ public static partial class RefTestDeletionMutations
     /// redacts personal data and keeps the record. Personal data is redacted from the RefTest's
     /// audit trail first (see <see cref="IRefTestPrivacyErasureService.EraseAsync"/>), so a
     /// staff delete leaves no personal data behind anywhere; the row itself is then removed
-    /// (see <see cref="IRefTestPrivacyErasureService.DeleteAsync"/>).
+    /// (see <see cref="IRefTestPrivacyErasureService.EraseAndDeleteAsync"/>).
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
@@ -62,14 +62,11 @@ public static partial class RefTestDeletionMutations
                 // participant's details the caller expects back.
                 var deletedDto = refTest.ToDto();
 
-                // Redact personal data from the audit trail before removing the row. DeleteAsync
-                // only removes the RefTest record; audit events carry no FK to it and would
-                // otherwise retain the participant's name and email until audit retention
-                // expires them.
-                if (!refTest.IsAnonymized)
-                    await privacyErasureService.EraseAsync(refTest, cancellationToken);
-
-                await privacyErasureService.DeleteAsync(refTest, cancellationToken);
+                // Redact personal data from the audit trail before removing the row, in one
+                // transaction. DeleteAsync only removes the RefTest record; audit events carry no
+                // FK to it and would otherwise retain the participant's name and email until audit
+                // retention expires them.
+                await privacyErasureService.EraseAndDeleteAsync(refTest, ErasureInitiator.Operator, cancellationToken);
 
                 result.SuccessfullyDeleted++;
                 result.DeletedRefTests.Add(deletedDto);

@@ -84,7 +84,9 @@ public class BackgroundJobService : BackgroundService
             }
             catch (Exception ex)
             {
-                ServiceLoggerMessages.LogServiceError(_logger, ex, nameof(BackgroundJobService));
+                // Anything raised while processing jobs can have travelled through a payload or
+                // an email provider response, so mask before the exception reaches a log sink.
+                ServiceLoggerMessages.LogServiceError(_logger, LogRedaction.MaskEmails(ex), nameof(BackgroundJobService));
             }
 
             try
@@ -402,13 +404,14 @@ public class BackgroundJobService : BackgroundService
                     var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
                     var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
 
-                    await RefTestLifecycleMutations.CompleteRefTestAsync(
+                    await RefTestLifecycleMutations.CompleteRefTestCoreAsync(
                         new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
                         context,
                         ihfRulesQuestionsService,
                         jobEnqueueService,
                         emailConfiguration,
                         subscriptionService,
+                        RefTestCompletionSource.ExpirationService,
                         cancellationToken);
 
                     ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id);
@@ -522,7 +525,9 @@ public class BackgroundJobService : BackgroundService
         }
         catch (JsonException ex)
         {
-            ServiceLoggerMessages.LogJobDeserializationError(_logger, ex, job.Id);
+            // The payload carries the participant's name and email; a deserialization failure
+            // can quote the offending fragment back in its message.
+            ServiceLoggerMessages.LogJobDeserializationError(_logger, LogRedaction.MaskEmails(ex), job.Id);
             throw new JobPayloadException($"Job {job.Id} has a payload that could not be deserialized", ex);
         }
     }

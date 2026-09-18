@@ -176,7 +176,9 @@ public class EmailService(
         }
         catch (Exception ex)
         {
-            ServiceLoggerMessages.LogEmailError(logger, ex, LogRedaction.MaskEmail(toEmail));
+            // The provider's client can surface the rejected address in its exception text, and
+            // that text is outside the privacy erasure path once a log sink has it.
+            ServiceLoggerMessages.LogEmailError(logger, LogRedaction.MaskEmails(ex), LogRedaction.MaskEmail(toEmail));
             throw new EmailException(toEmail);
         }
     }

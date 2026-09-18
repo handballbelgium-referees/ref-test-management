@@ -12,19 +12,39 @@ jobs:
     name: 🚀 Promote main to release
     runs-on: ubuntu-latest
     environment: promote
+    # Pushes are made with a short-lived token, not GITHUB_TOKEN, so this job needs no write
+    # scope of its own.
+    permissions:
+      contents: read
 
     steps:
       - name: 🔒 Verify branch
         if: github.ref_name != 'release'
+        # REF_NAME is passed as data: a ${{ }} expression is substituted before the shell parses
+        # the line, and git allows backticks and $( ) in branch names.
+        env:
+          REF_NAME: ${{ github.ref_name }}
         run: |
-          echo "❌ This workflow must be triggered from the 'release' branch, not '${{ github.ref_name }}'."
+          echo "❌ This workflow must be triggered from the 'release' branch, not '$REF_NAME'."
           exit 1
+
+      # Mints an installation token that expires in an hour and carries only the permissions
+      # granted to the app, instead of a long-lived personal access token tied to one human.
+      # See docs/CONFIGURATION.md for the one-time setup; until RELEASE_APP_ID is set the steps
+      # below fall back to GH_PAT so releases keep working.
+      - name: 🔑 Mint release token
+        id: release-token
+        if: vars.RELEASE_APP_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.release-token.outputs.token || secrets.GH_PAT }}
 
       - name: 🔧 Configure git
         run: |
@@ -51,12 +71,20 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: 🔑 Mint release token
+        id: release-token
+        if: vars.RELEASE_APP_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
           ref: release
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.release-token.outputs.token || secrets.GH_PAT }}
 
       - name: 🔧 Fetch main branch
         run: git fetch origin main:main
@@ -172,11 +200,19 @@ jobs:
       contents: write
 
     steps:
+      - name: 🔑 Mint release token
+        id: release-token
+        if: vars.RELEASE_APP_ID != ''
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
+        with:
+          app-id: ${{ vars.RELEASE_APP_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          token: ${{ secrets.GH_PAT }}
+          token: ${{ steps.release-token.outputs.token || secrets.GH_PAT }}
 
       - name: 🔧 Configure git
         run: |

@@ -77,15 +77,37 @@ public class AuditPiiRedactorTests
         Assert.Equal(data, AuditPiiRedactor.RedactData(data));
     }
 
-    [Fact]
-    public void RedactData_DoesNotMatchKeysOnDifferentCasing()
+    [Theory]
+    [InlineData("""{"FirstName":"John"}""", "FirstName")]
+    [InlineData("""{"LastName":"Doe"}""", "LastName")]
+    [InlineData("""{"EMAIL":"john@example.com"}""", "EMAIL")]
+    public void RedactData_MatchesPiiKeysRegardlessOfCasing(string data, string key)
     {
-        // Documents current behaviour rather than endorsing it: payloads are serialized with
-        // camelCase naming, so only that casing is produced. If a payload ever arrives in
-        // PascalCase this test is the thing that fails and says so.
-        const string data = """{"FirstName":"John"}""";
+        // Domain events serialize camelCase, but the audit interceptor's property-diff path
+        // writes raw PascalCase EF property names. Both have to be redacted.
+        var node = JsonNode.Parse(AuditPiiRedactor.RedactData(data)!)!.AsObject();
 
-        Assert.Equal(data, AuditPiiRedactor.RedactData(data));
+        Assert.Equal(AuditPiiRedactor.RedactedValue, (string?)node[key]);
+    }
+
+    [Fact]
+    public void RedactData_MatchesDiffKeysRegardlessOfCasing()
+    {
+        var redacted = AuditPiiRedactor.RedactData("""{"Email":{"Old":"a@x.be","New":"b@x.be"}}""");
+
+        Assert.DoesNotContain("a@x.be", redacted, StringComparison.Ordinal);
+        Assert.DoesNotContain("b@x.be", redacted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RedactData_PreservesTheOriginalKeyCasing()
+    {
+        // Redaction must not rename properties: the audit UI and any downstream reader still
+        // key off the original names.
+        var node = JsonNode.Parse(AuditPiiRedactor.RedactData("""{"FirstName":"John"}""")!)!.AsObject();
+
+        Assert.True(node.ContainsKey("FirstName"));
+        Assert.Single(node);
     }
 
     [Fact]

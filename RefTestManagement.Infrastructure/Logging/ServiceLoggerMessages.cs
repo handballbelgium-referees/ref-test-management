@@ -44,10 +44,56 @@ public static partial class LogRedaction
             ? text
             : EmailPattern().Replace(text, match => MaskEmail(match.Value));
 
+    /// <summary>
+    /// Wraps an exception so a logging provider cannot render an unmasked email address from it.
+    /// <para>
+    /// Masking an exception's <i>message string</i> is not enough: logging providers render the
+    /// exception object itself, and <see cref="Exception.ToString"/> re-exposes the raw message
+    /// along with every inner exception's. Pass the result of this method wherever an exception
+    /// is handed to <c>ILogger</c> on a path that can carry a participant's address — the email
+    /// provider's client and anything that deserializes a job payload.
+    /// </para>
+    /// <para>
+    /// The stack trace is preserved as text rather than dropped, so diagnosis is unaffected.
+    /// Never throws: it is only ever called from a catch block, where a secondary failure would
+    /// lose the original error entirely.
+    /// </para>
+    /// </summary>
+    public static Exception MaskEmails(Exception exception)
+    {
+        try
+        {
+            return new RedactedException(
+                MaskEmailsInText(exception.Message) ?? string.Empty,
+                MaskEmailsInText(exception.ToString()) ?? string.Empty,
+                MaskEmailsInText(exception.StackTrace));
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            // Masking is the whole point of this call; if it cannot be done, log a placeholder
+            // rather than the original text.
+            return new RedactedException(MaskingFailed, MaskingFailed, exception.StackTrace);
+        }
+    }
+
+    private const string MaskingFailed = "(exception text withheld: personal-data masking failed)";
+
     // Deliberately broad rather than RFC-exact: the goal is to catch anything that looks like
     // an address, and over-matching only costs a few masked characters in a diagnostic string.
     [GeneratedRegex(@"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", RegexOptions.None, matchTimeoutMilliseconds: 250)]
     private static partial Regex EmailPattern();
+}
+
+/// <summary>
+/// A masked stand-in for an exception on its way to a logging provider. Produced by
+/// <see cref="LogRedaction.MaskEmails"/>; it carries the original's text with every email
+/// address masked, and its stack trace verbatim.
+/// </summary>
+public sealed class RedactedException(string message, string text, string? stackTrace) : Exception(message)
+{
+    public override string? StackTrace { get; } = stackTrace;
+
+    public override string ToString() => text;
 }
 
 /// <summary>

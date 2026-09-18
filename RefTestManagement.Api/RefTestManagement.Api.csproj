@@ -25,6 +25,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Lets the unit test project exercise internal input validation directly. -->
+        <InternalsVisibleTo Include="RefTestManagement.UnitTests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="HotChocolate.AspNetCore.Authorization" />
         <PackageReference Include="HotChocolate.AspNetCore.CommandLine" />
         <PackageReference Include="HotChocolate.AspNetCore" />

@@ -37,12 +37,12 @@ redaction and the job state machine; broadening it is still its own work — see
 
 ### Sequencing
 
-Phase 1 and Phase 1b have shipped. Phase 1b existed because the re-audit found that the Phase 1
-change set introduced two High-severity regressions, one of which silently prevented its own fix
-from applying to data that already existed.
+Phase 1, Phase 1b and Phase 2 have shipped. Phase 1b existed because the re-audit found that the
+Phase 1 change set introduced two High-severity regressions, one of which silently prevented its
+own fix from applying to data that already existed.
 
-Phase 2 onward is unchanged in intent: hardening and latent defects, none of which are actively
-accumulating exposure.
+Phase 3 onward is unchanged in intent: correctness under load, frontend quality, test coverage
+and housekeeping — none of which are actively accumulating exposure.
 
 Test infrastructure deliberately sits in Phase 5 rather than Phase 0. It is the durable fix —
 every Phase 1 finding was one assertion away from being caught automatically — but gating urgent
@@ -60,7 +60,7 @@ that exists rather than creating one.
 | --- | --- | --- | --- | --- |
 | **1** ✅ | GDPR remediation | WP-01 → WP-07 | 1×M, 6×S | **Done** — shipped in `29dba7c` |
 | **1b** ✅ | Phase 1 regression fixes | WP-28 → WP-32, WP-35 | 3×M, 3×S | **Done** — regressions introduced by Phase 1 |
-| **2** | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | Hardening; no evidence of exploitation |
+| **2** ✅ | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | **Done** — hardening; no evidence of exploitation |
 | **3** | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | Mostly latent until the app scales out |
 | **4** | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | User-visible quality |
 | **5** | Test foundation | WP-23 → WP-24 | 2×L | Stops everything above from regressing |
@@ -552,9 +552,38 @@ Handball Belgium) and the purpose for which they receive the data.
 
 ---
 
-# Phase 2 — Security & assessment integrity
+# Phase 2 — Security & assessment integrity ✅ Complete
 
-## WP-08 — Enable GraphQL cost limits and add rate limiting
+> All eleven packages have shipped. Two of them changed in substance while being implemented, and
+> both changes are worth knowing about:
+>
+> - **WP-08's limits were measured, not guessed.** The first attempt set `MaxTypeCost` to 50,000
+>   and left `MaxFieldCost` at HotChocolate's 1,000,000 default, reasoning about query shape
+>   rather than measuring it. Running the real schema showed the heaviest legitimate query costs
+>   303 type / 3,667 field, and an amplification query built from 141 aliased 100-item pages
+>   passed those limits comfortably. The limits are now 5,000 / 20,000, which that same
+>   amplification query fails. The measurements are recorded in `docs/CONFIGURATION.md` so the
+>   next person to hit a cost error can tune from data.
+> - **WP-09 nearly broke test completion entirely.** The expiration background job auto-completes
+>   overdue tests through the same mutation a participant uses, and it runs *after* the deadline
+>   by definition. An unconditional deadline check would have made every overdue test permanently
+>   unfinishable. The check is therefore scoped by a `RefTestCompletionSource` that only the
+>   internal path can supply, and `RefTestDeadlineTests` guards the distinction.
+>
+> Three fixes outside the plan were made along the way:
+>
+> - **The test project ran zero tests.** `dotnet test` reported "Zero tests ran" and exit code 5,
+>   because the project referenced `Microsoft.NET.Test.Sdk` without a runner the
+>   `Microsoft.Testing.Platform` setting in `global.json` could use. The PR workflow's test step
+>   would have failed on the next run. Fixed in the test `.csproj`.
+> - **A failed submission was silent in the UI.** The complete-test mutation returning a null
+>   payload left the participant looking at an unchanged screen. The facade now raises
+>   `submit_failed`.
+> - **Two security `<meta>` tags did nothing.** `X-Frame-Options` and `X-Content-Type-Options` are
+>   ignored by browsers when they appear in markup, so `index.html` looked protected without being
+>   protected. All three headers are now sent by the API as real response headers.
+
+## WP-08 — Enable GraphQL cost limits and add rate limiting ✅
 
 **Findings:** #7 (🟡 Medium) · **Size:** M
 
@@ -588,7 +617,7 @@ add ASP.NET rate limiting scoped to the unauthenticated participant operations.
 
 ---
 
-## WP-09 — Enforce the test deadline server-side
+## WP-09 — Enforce the test deadline server-side ✅
 
 **Findings:** #8 (🟡 Medium) · **Size:** S
 
@@ -623,7 +652,7 @@ if (StartedAt.HasValue && DateTime.UtcNow > StartedAt.Value.AddMinutes(MaxTimeIn
 
 ---
 
-## WP-10 — Generate tokens from an explicit CSPRNG
+## WP-10 — Generate tokens from an explicit CSPRNG ✅
 
 **Findings:** #21 (⚪ Low) · **Size:** S
 
@@ -652,7 +681,7 @@ Token = RandomNumberGenerator.GetHexString(32, lowercase: true);
 
 ---
 
-## WP-11 — Fix the PR-title script injection and pin workflow permissions
+## WP-11 — Fix the PR-title script injection and pin workflow permissions ✅
 
 **Findings:** #9 (🟡 Medium) · **Size:** S
 
@@ -698,7 +727,7 @@ permissions:
 
 ---
 
-## WP-12 — Replace `GH_PAT` with a scoped credential
+## WP-12 — Replace `GH_PAT` with a scoped credential ✅
 
 **Findings:** #12 (🟡 Medium) · **Size:** M
 
@@ -725,9 +754,21 @@ fine-grained PAT restricted to this repository and the specific permissions need
   `contents: write` at least.
 - If a GitHub App is used, its token must be minted per-job; it expires in an hour.
 
+### Outcome
+Both workflows now mint a GitHub App installation token per job and use it for `actions/checkout`.
+Because the App itself has to be created and installed in the organisation — which cannot be done
+from the repository — the change is gated on a `RELEASE_APP_ID` repository variable and falls back
+to `GH_PAT` until that variable is set. Setting the variable and the private key secret is
+therefore the whole switch-over; no workflow edit is needed, and releases keep working in the
+meantime. The one-time setup, including the branch-protection bypass and the order in which to
+revoke `GH_PAT`, is written up in `docs/CONFIGURATION.md` § Release Credentials.
+
+**This package is not finished until that setup is done.** The repository side is complete; the
+organisation side is a manual step for a maintainer with admin rights.
+
 ---
 
-## WP-33 — Make erase-then-delete atomic
+## WP-33 — Make erase-then-delete atomic ✅
 
 **Findings:** N6 (🟡 Medium) · **Size:** S
 
@@ -754,7 +795,7 @@ half-done state explicitly in `DeleteRefTestError` so staff know the data was al
 
 ---
 
-## WP-34 — Match audit PII keys case-insensitively
+## WP-34 — Match audit PII keys case-insensitively ✅
 
 **Findings:** N5 (🟡 Medium) · **Size:** S
 
@@ -779,7 +820,7 @@ PascalCase variants.
 
 ---
 
-## WP-36 — Validate the public participant mutation inputs
+## WP-36 — Validate the public participant mutation inputs ✅
 
 **Findings:** N8 (🟡 Medium) · **Size:** S
 
@@ -806,7 +847,7 @@ token to its expected length before it reaches the database.
 
 ---
 
-## WP-37 — Reduce invitation-token exposure in the URL
+## WP-37 — Reduce invitation-token exposure in the URL ✅
 
 **Findings:** N9 (🟡 Medium) · **Size:** M
 
@@ -833,9 +874,25 @@ Ideally exchange the token for a short-lived session on first load and drop it f
   deliberate decision to record, not an automatic rewrite.
 - Pairs with **WP-10** (CSPRNG tokens) — both concern the same credential.
 
+### Outcome
+Taken as the recorded decision rather than the rewrite. The API now sends
+`Referrer-Policy: no-referrer` on every response, so the token cannot reach another site's logs,
+and the only link on a token-bearing page was already same-origin with `rel="noreferrer"`.
+
+Two things turned up while confirming this. The policy was previously set only through a
+`<meta http-equiv>` tag, which applies from the point the parser reaches it rather than to the
+document request itself; and the neighbouring `X-Frame-Options` and `X-Content-Type-Options` meta
+tags were doing nothing at all, because browsers ignore both outside a real HTTP header. All three
+are now response headers set by the API, with the meta tags kept only as a fallback for hosts that
+do not set them.
+
+The residual risk — the token in browser history and in access logs that record full paths — is
+accepted and written up in `docs/SECURITY.md` § The Participant Invitation Token, together with
+what a real fix would involve if that ever stops being acceptable.
+
 ---
 
-## WP-38 — Preserve admin accountability on erasure, and correct the retention comment
+## WP-38 — Preserve admin accountability on erasure, and correct the retention comment ✅
 
 **Findings:** N10, N11 (⚪ Low) · **Size:** S
 
@@ -866,7 +923,7 @@ Two small corrections left by Phase 1:
 
 ---
 
-## WP-39 — Mask exceptions logged as objects
+## WP-39 — Mask exceptions logged as objects ✅
 
 **Findings:** N12 (⚪ Low) · **Size:** S
 
@@ -1382,12 +1439,12 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | 4 | 🟠 High | `PendingApproval`/`Rejected` never erased | WP-02 | ✅ Done |
 | 5 | 🟠 High | No automated tests | WP-32, WP-23, WP-24 | 🟡 Partial |
 | 6 | 🟡 Medium | Job payload PII / in-flight sends | WP-05 | ✅ Done |
-| 7 | 🟡 Medium | Cost limits disabled, no rate limiting | WP-08 | Open |
-| 8 | 🟡 Medium | Post-deadline submission window | WP-09 | Open |
-| 9 | 🟡 Medium | PR-title script injection | WP-11 | Open |
+| 7 | 🟡 Medium | Cost limits disabled, no rate limiting | WP-08 | Fixed |
+| 8 | 🟡 Medium | Post-deadline submission window | WP-09 | Fixed |
+| 9 | 🟡 Medium | PR-title script injection | WP-11 | Fixed |
 | 10 | 🟡 Medium | PR workflow runs no tests | WP-32, WP-23 | ✅ Done |
 | 11 | 🟡 Medium | README overstates testing | WP-24, WP-27 | Open |
-| 12 | 🟡 Medium | Long-lived `GH_PAT` | WP-12 | Open |
+| 12 | 🟡 Medium | Long-lived `GH_PAT` | WP-12 | Fixed — org setup pending |
 | 13 | 🟡 Medium | Domain depends on EF Core | WP-18 | Open |
 | 14 | 🟡 Medium | Job claim not atomic | WP-13 | Open |
 | 15 | 🟡 Medium | No concurrency token | WP-14 | Open |
@@ -1396,7 +1453,7 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | 18 | 🟡 Medium | Expiration evaluates client-side | WP-17 | Open |
 | 19 | 🟡 Medium | Positive `tabindex` | WP-20 | Open |
 | 20 | 🟡 Medium | Hardcoded English `confirm()` | WP-21 | Open |
-| 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 | Open |
+| 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 | Fixed |
 | 22 | ⚪ Low | Consent proof nulled | WP-06 | ✅ Done |
 | 23 | ⚪ Low | Missing composite index | WP-17 | Open |
 | 24 | ⚪ Low | Retention re-scans anonymized rows | WP-02 (delivered) | ✅ Done |
@@ -1419,18 +1476,18 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | N2 | 🟠 High | Cleared payload breaks reset/revive | WP-30 | ✅ Done |
 | N3 | 🟡 Medium | Redaction loop never clears change tracker | WP-29 | ✅ Done |
 | N4 | 🟡 Medium | Regex timeout strands a job in `Processing` | WP-31 | ✅ Done |
-| N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 | Open |
-| N6 | 🟡 Medium | Erase and delete not atomic | WP-33 | Open |
+| N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 | Fixed |
+| N6 | 🟡 Medium | Erase and delete not atomic | WP-33 | Fixed |
 | N7 | 🟡 Medium | Undisclosed email recipients | WP-35 | ✅ Done |
-| N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 | Open |
-| N9 | 🟡 Medium | Invitation token in the URL | WP-37 | Open |
-| N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 | Open |
-| N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 | Open |
-| N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 | Open |
+| N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 | Fixed |
+| N9 | 🟡 Medium | Invitation token in the URL | WP-37 | Fixed |
+| N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 | Fixed |
+| N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 | Fixed |
+| N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 | Fixed |
 
 **46 findings · 39 work packages · none dropped.**
 **13 closed · 1 partially closed (#5 — a narrow suite now exists; WP-23 and WP-24 remain) · 32 open.**
-**13 of 39 work packages shipped: WP-01 → WP-07, WP-28 → WP-32, WP-35.**
+**24 of 39 work packages shipped: WP-01 → WP-12, WP-28 → WP-39.**
 
 ---
 
@@ -1473,19 +1530,28 @@ graph LR
 
 ## Suggested next release
 
-Phase 1 and Phase 1b have shipped. WP-28 → WP-32 and WP-35 closed all five re-audit findings that
-Phase 1 introduced or left open, and WP-32 left behind a real test project wired into the PR
-workflow.
+Phases 1, 1b and 2 have shipped: every finding from `AUDIT.md` and `AUDIT-R2.md` rated Medium or
+above in the GDPR, security and assessment-integrity categories is now closed, along with the
+regressions Phase 1 introduced. One package carries a manual follow-up: **WP-12** is complete in
+the repository but only takes effect once a maintainer creates the GitHub App and sets
+`RELEASE_APP_ID` (see `docs/CONFIGURATION.md` § Release Credentials).
 
-The next release should start Phase 2. Suggested first cut:
+Two behavioural changes in this release deserve a beta soak before a stable promotion, because
+they change how requests are handled for every caller:
+
+- **GraphQL cost limits and rate limiting** (WP-08). The limits were measured against the real
+  schema and leave roughly 5× headroom, but a query shape nobody exercised during measurement
+  could still be rejected. The error carries the measured cost, so tuning is mechanical.
+- **The server-side deadline** (WP-09). Submissions more than 60 seconds past the deadline are now
+  refused rather than silently accepted until the expiration sweep.
+
+The next release should start Phase 3. Suggested first cut:
 
 | Package | Why |
 | --- | --- |
-| **WP-34** | Same file family as the audit work just shipped; case-sensitive PII key matching means some personal data survives redaction |
-| **WP-33** | Erase-then-delete is not atomic, so a failure between the two steps leaves un-anonymized rows behind |
-| **WP-36** | Unbounded public mutation inputs are the cheapest remaining abuse vector |
-| **WP-38** | **S**, documentation-and-comment sized, and restores admin accountability on erasure |
-| **WP-39** | **S**, completes the log-masking work from WP-03 |
+| **WP-13** | Job claiming is not atomic; this is the root of the remaining correctness risk under load |
+| **WP-14** | Concurrency tokens make WP-13 verifiable rather than merely likely-correct |
+| **WP-17** | Small, and the retention predicate it fixes was already touched by WP-02 |
 
-**WP-08** (cost limits and rate limiting) is the largest remaining exposure in Phase 2 and should
-follow as its own release, since it changes request-handling behaviour for every caller.
+**WP-19** (decomposing `BackgroundJobService`) should wait for **WP-23**. It is a large pure
+refactor, and it is the one place in the plan where the thin test coverage genuinely raises risk.

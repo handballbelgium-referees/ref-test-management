@@ -1,6 +1,7 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,9 @@ public sealed class PrivacyRetentionService(
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Privacy retention cleanup failed");
+                // This loop reads and rewrites participant names and addresses, so an exception
+                // raised inside it can quote them back.
+                logger.LogError(LogRedaction.MaskEmails(exception), "Privacy retention cleanup failed");
             }
 
             try
@@ -51,18 +54,21 @@ public sealed class PrivacyRetentionService(
                 !refTest.IsAnonymized &&
                 ((refTest.Status == RefTestStatus.Completed && refTest.CompletedAt < cutoff) ||
                  (refTest.Status == RefTestStatus.Expired && refTest.ExpiredAt < cutoff) ||
-                 // PendingApproval and Rejected are terminal too: RefTestExpirationService never
-                 // transitions them, so without this clause they would retain personal data
-                 // forever. Neither status stamps a completion timestamp, so retention runs from
-                 // CreatedAt — a RefTest left unapproved for the entire retention window is
-                 // abandoned, and keeping personal data for it has no lawful basis.
+                 // Neither status is reached by RefTestExpirationService, so without this clause
+                 // they would retain personal data forever. PendingApproval is genuinely
+                 // terminal; Rejected is not — RefTest.Approve() accepts a rejected test and
+                 // returns it to Pending — but a test still sitting rejected after the entire
+                 // retention window is abandoned, and keeping personal data for it has no lawful
+                 // basis. Erasure makes that permanent: Approve() throws once IsAnonymized, so a
+                 // rejected test cannot be revived afterwards. Neither status stamps a
+                 // completion timestamp, so retention runs from CreatedAt.
                  ((refTest.Status == RefTestStatus.PendingApproval ||
                    refTest.Status == RefTestStatus.Rejected) && refTest.CreatedAt < cutoff)))
             .ToListAsync(cancellationToken);
 
         foreach (var refTest in refTests)
         {
-            await erasureService.EraseAsync(refTest, cancellationToken);
+            await erasureService.EraseAsync(refTest, ErasureInitiator.Operator, cancellationToken);
         }
 
         if (refTests.Count > 0)

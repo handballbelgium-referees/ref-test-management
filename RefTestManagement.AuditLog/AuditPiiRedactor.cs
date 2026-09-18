@@ -22,10 +22,12 @@ public static class AuditPiiRedactor
     /// carries a token value, add the key here.
     /// </para>
     /// </summary>
-    private static readonly string[] PiiKeys = ["firstName", "lastName", "email"];
+    private static readonly HashSet<string> PiiKeys =
+        new(StringComparer.OrdinalIgnoreCase) { "firstName", "lastName", "email" };
 
     /// <summary>Keys used by the old/new diff payload shape.</summary>
-    private static readonly string[] DiffKeys = ["old", "new", "oldValue", "newValue"];
+    private static readonly HashSet<string> DiffKeys =
+        new(StringComparer.OrdinalIgnoreCase) { "old", "new", "oldValue", "newValue" };
 
     /// <summary>
     /// Replaces known personal-data keys (name/email) inside an audit event's JSON <c>Data</c>
@@ -39,6 +41,13 @@ public static class AuditPiiRedactor
     /// The redacted JSON, or the input unchanged when it is null, empty, or not a JSON object.
     /// Reference-equal to the input when nothing needed redacting.
     /// </returns>
+    /// <remarks>
+    /// Key matching is case-insensitive and driven by the payload's own property names rather
+    /// than by looking the known keys up: domain events serialize camelCase, but the audit
+    /// interceptor's property-diff path writes raw PascalCase EF property names, and
+    /// <see cref="JsonObject"/> lookups are case-sensitive. Matching on what the payload
+    /// actually contains keeps both shapes covered without having to enumerate every casing.
+    /// </remarks>
     public static string? RedactData(string? data)
     {
         if (string.IsNullOrEmpty(data))
@@ -49,16 +58,21 @@ public static class AuditPiiRedactor
 
         var changed = false;
 
-        foreach (var key in PiiKeys)
+        // Materialize the property names first: the loop assigns back into the same object.
+        foreach (var key in node.Select(property => property.Key).ToArray())
         {
-            if (!node.TryGetPropertyValue(key, out var value) || value is null)
+            if (!PiiKeys.Contains(key))
+                continue;
+
+            var value = node[key];
+            if (value is null)
                 continue;
 
             if (value is JsonObject diff)
             {
-                foreach (var diffKey in DiffKeys)
+                foreach (var diffKey in diff.Select(property => property.Key).ToArray())
                 {
-                    if (!diff.ContainsKey(diffKey))
+                    if (!DiffKeys.Contains(diffKey))
                         continue;
 
                     diff[diffKey] = RedactedValue;

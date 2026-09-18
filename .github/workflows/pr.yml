@@ -9,6 +9,12 @@ env:
   DOTNET_VERSION: 10.0.x
   NODE_VERSION: 24
 
+# Least privilege by default. Only sync-readme-versions needs to write, and it asks for it
+# explicitly below. Without this block every job inherits the repository default, which may be
+# read-and-write.
+permissions:
+  contents: read
+
 jobs:
   validate-pr-title:
     name: 📝 Validate PR Title
@@ -27,7 +33,13 @@ jobs:
         run: npm ci
 
       - name: ✅ Validate PR title
-        run: echo "${{ github.event.pull_request.title }}" | npx commitlint
+        # The title must reach the shell as data, never as source. A ${{ }} expression is
+        # substituted by the runner before the shell parses the line, so a title containing a
+        # backtick or $(...) would execute on the runner — and this workflow triggers on
+        # `edited`, so a title can be weaponised after review has started.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | npx commitlint
         # Ensures PR title follows Conventional Commits or your commitlint rules
 
   validate:
