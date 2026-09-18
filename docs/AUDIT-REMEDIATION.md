@@ -1,11 +1,15 @@
 # Audit Remediation Plan
 
-Companion to [docs/AUDIT.md](AUDIT.md). That document says *what* is wrong and *why*; this one
-says *what to do about it*, as discrete units of work.
+Companion to [docs/AUDIT.md](AUDIT.md) and its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md). Those
+documents say *what* is wrong and *why*; this one says *what to do about it*, as discrete units
+of work.
 
-**Source audit:** commit `8763854` (`main`), 18 September 2026
-**Coverage:** all 34 audit findings, mapped to 27 work packages across 6 phases
-**Status:** not started
+**Source audits:** commit `8763854` ([`AUDIT.md`](AUDIT.md)) and commit `6c574ce`
+([`AUDIT-R2.md`](AUDIT-R2.md)), 18 September 2026
+**Coverage:** all 46 findings — the original 34 plus 12 from the re-audit — mapped to 39 work
+packages across 7 phases
+**Status:** Phase 1 complete (WP-01 → WP-07). **Phase 1b is outstanding and blocks the merge of
+`docs/audit-and-remediation-plan`.**
 
 ---
 
@@ -18,7 +22,7 @@ Each package has:
 
 | Field | Meaning |
 | --- | --- |
-| **Findings** | Back-reference to the numbered findings in `AUDIT.md` §3 |
+| **Findings** | Back-reference to the numbered findings in `AUDIT.md` §3 (`#n`) or `AUDIT-R2.md` §3.1 (`Nn`) |
 | **Size** | Relative effort: **S** (an hour or two), **M** (half a day), **L** (multi-day) |
 | **Files** | The exact paths to change, with line references as of the audited commit |
 | **Change** | What to do |
@@ -31,13 +35,19 @@ affected path. Building the harness is itself a work package — see **WP-23** a
 
 ### Sequencing
 
-Phase 1 comes first and is not negotiable: those are **live exposures** on a deployed system
-(`v5.5.6`), not latent defects. Specifically, WP-01, WP-02, and WP-03 should ship in the next
-release.
+Phase 1 has shipped. **Phase 1b now comes first, and it is not optional:** the re-audit found
+that the Phase 1 change set introduced two High-severity regressions, one of which silently
+prevents its own fix from applying to data that already exists. WP-28 and WP-30 should block the
+merge of `docs/audit-and-remediation-plan`.
+
+Phase 2 onward is unchanged in intent: hardening and latent defects, none of which are actively
+accumulating exposure.
 
 Test infrastructure deliberately sits in Phase 5 rather than Phase 0. It is the durable fix —
-every Phase 1 finding is one assertion away from being caught automatically — but gating urgent
-privacy fixes behind building a test project would delay them without making them safer.
+every Phase 1 finding was one assertion away from being caught automatically — but gating urgent
+privacy fixes behind building a test project would delay them without making them safer. **WP-32
+is the exception**: a deliberately narrow package covering only the pure logic the two
+regressions live in, so that Phase 1b cannot silently regress again.
 
 ---
 
@@ -45,8 +55,9 @@ privacy fixes behind building a test project would delay them without making the
 
 | Phase | Theme | Packages | Size | Why this order |
 | --- | --- | --- | --- | --- |
-| **1** | GDPR remediation | WP-01 → WP-07 | 1×M, 6×S | Live exposures; the system is processing real data now |
-| **2** | Security & assessment integrity | WP-08 → WP-12 | 2×M, 3×S | Hardening; no evidence of exploitation |
+| **1** ✅ | GDPR remediation | WP-01 → WP-07 | 1×M, 6×S | **Done** — shipped in `29dba7c` |
+| **1b** | Phase 1 regression fixes | WP-28 → WP-32, WP-35 | 3×M, 3×S | Regressions introduced by Phase 1; blocks merge |
+| **2** | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | Hardening; no evidence of exploitation |
 | **3** | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | Mostly latent until the app scales out |
 | **4** | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | User-visible quality |
 | **5** | Test foundation | WP-23 → WP-24 | 2×L | Stops everything above from regressing |
@@ -54,11 +65,13 @@ privacy fixes behind building a test project would delay them without making the
 
 ---
 
-# Phase 1 — GDPR remediation
+# Phase 1 — GDPR remediation ✅ Complete
 
-> These seven packages close the gaps that make the system **not currently GDPR-compliant**
-> (`AUDIT.md` §4). WP-01 through WP-03 are the priority: each is a small, contained change, and
-> each currently causes personal data to persist that the privacy notice promises is gone.
+> Shipped in commit `29dba7c`. These seven packages closed five of the six GDPR gaps in
+> `AUDIT.md` §4 outright and partially closed the sixth. **WP-04's fix is incomplete** — it does
+> not reach audit rows a previous deployment had already archived. That remaining exposure is
+> tracked as finding N1 and fixed by **WP-28**. See `AUDIT-R2.md` §4.1 for the verification of
+> each gap.
 
 ## WP-01 — Admin delete must anonymize before deleting
 
@@ -335,6 +348,205 @@ an accurate disclosure of a gap is defensible; an inaccurate promise is not.
 
 ---
 
+# Phase 1b — Phase 1 regression fixes
+
+> **This phase exists because Phase 1 introduced it.** The re-audit (`AUDIT-R2.md`) found that
+> commit `29dba7c` shipped two High-severity regressions. WP-28 is the more serious: the audit
+> redaction it added never reaches rows that a previous deployment had already archived, so the
+> headline GDPR fix works only for data created from that commit onward. WP-28 and WP-30 should
+> block the merge of this branch.
+
+## WP-28 — Redact audit events a previous deployment already archived
+
+**Findings:** N1 (🟠 High), and the open half of #2 · **Size:** M
+
+### Files
+- `RefTestManagement.AuditLog/AuditEvent.cs:15`
+- `RefTestManagement.AuditLog/AuditEventConfiguration.cs:43,50`
+- `RefTestManagement.Api/BackgroundServices/AuditLogCleanupService.cs:77-101`
+- A migration in **all four** provider projects (`SqlServer`, `PostgreSQL`, `MySQL`, `SQLite`)
+
+### Change
+The cleanup loop currently selects `a.Timestamp < cutoff && !a.IsArchived`. The implementation it
+replaced set `IsArchived = true` and redacted nothing, so every row archived by an earlier
+deployment is permanently excluded from redaction.
+
+The root cause is that `IsArchived` is doing double duty: "retention applied" and "redaction
+applied". Split them.
+
+- Add `RedactedAt` (`DateTime?`) to `AuditEvent` and configure it, with an index on `RedactedAt`
+  or a composite `(Timestamp, RedactedAt)`.
+- Change the loop's cursor to `a.Timestamp < cutoff && a.RedactedAt == null`.
+- Keep setting `IsArchived = true`, and additionally stamp `RedactedAt` on every row redacted.
+- Add the migration to each provider project.
+
+### Acceptance
+- A row with `IsArchived = true`, `RedactedAt == null` and a timestamp past the cutoff has its
+  `Data`, `ActorName` and `ActorEmail` redacted on the next run.
+- After a full sweep, no `AuditEvents` row older than the retention window contains a participant
+  name or email address.
+- The admin audit log UI shows exactly the same rows as before the change.
+
+### Watch out for
+- **Do not reset `IsArchived`.** `AuditLogQueries.cs:21` filters `!a.IsArchived`, so archived
+  events are deliberately hidden from the admin UI. Flipping the flag back to sweep old rows
+  would resurface 90-day-old audit events in the UI — a visible behaviour change.
+- `AuditEvent` properties are `init`-only. Write through
+  `context.Entry(x).Property(...).CurrentValue`, as the existing loop already does.
+- The first run after deployment processes the entire historical backlog in one pass. Ship
+  **WP-29** with this package, not after it.
+- All four provider projects must stay in lockstep; a migration in only `SqlServer` will break the
+  others at startup.
+
+---
+
+## WP-29 — Make the redaction loop safe at backlog scale
+
+**Findings:** N3 (🟡 Medium) · **Size:** S · **Depends on:** WP-28 (same loop)
+
+### Files
+- `RefTestManagement.Api/BackgroundServices/AuditLogCleanupService.cs:74-101`
+
+### Change
+The batched loop reuses one `DbContext` and never clears it, so tracked entities accumulate across
+every batch and `DetectChanges` degrades to O(N²/500) with memory growing for the whole run. Call
+`context.ChangeTracker.Clear()` after each batch's `SaveChangesAsync`.
+
+### Acceptance
+- Per-batch duration and process memory stay flat while redacting a multi-thousand-row backlog.
+
+### Watch out for
+- Clear **after** saving, never mid-batch — clearing first discards the pending modifications.
+- This replaced a single `ExecuteUpdateAsync`, so it is a genuine regression rather than a
+  pre-existing weakness. Consider a per-run batch cap so the first run cannot monopolise the
+  daily window.
+
+---
+
+## WP-30 — Stop a cancelled job's empty payload from breaking mutations
+
+**Findings:** N2 (🟠 High) · **Size:** M
+
+### Files
+- `RefTestManagement.Domain/Jobs/JobStatus.cs`
+- `RefTestManagement.Domain/Jobs/Job.cs:61-67,77-84`
+- `RefTestManagement.Infrastructure/Services/JobEnqueueService.cs:124-152,178-190`
+- `RefTestManagement.Api/BackgroundServices/BackgroundJobService.cs:477-496,514-515`
+
+### Change
+`Cancel()` now clears `Payload`, but `MarkAsFailed` returns a job to `Pending` whenever
+`Attempts < MaxAttempts`. A job cancelled while a worker holds it can therefore end up `Pending`
+with an empty payload, and both `JobEnqueueService` loops deserialize the payload of every
+`Pending`/`Processing` job of the relevant type with no error handling.
+
+- Append `Cancelled` to `JobStatus` and have `Cancel()` set it.
+- Make `MarkAsFailed` refuse to move a `Cancelled` job back to `Pending`.
+- Skip empty payloads defensively at the top of both `JobEnqueueService` loops.
+- Make `DeserializePayload` fail safe rather than burning all three retry attempts.
+- Extend `CleanupOldJobsAsync` to delete `Cancelled` jobs.
+
+### Acceptance
+- Cancelling a job that is mid-`Processing` and then failing it cannot leave a `Pending` row with
+  an empty payload.
+- `resetRefTest` and `reviveRefTest` succeed even with an empty-payload row already in the table.
+- Cancelled jobs are deleted on the same retention schedule as failed ones.
+
+### Watch out for
+- **Append `Cancelled` at the end of the enum.** `JobStatus` declares no explicit values, so EF
+  stores it as an ordinal `int`; inserting a value anywhere else silently reinterprets every
+  existing row.
+- `CleanupOldJobsAsync:514-515` matches only `Completed`/`Failed`. Without the new status added,
+  cancelled jobs are retained forever — the opposite of what WP-05 intended.
+- Check whether `JobStatus` is projected through GraphQL before changing its shape.
+
+---
+
+## WP-31 — Never let the failure path throw
+
+**Findings:** N4 (🟡 Medium) · **Size:** S
+
+### Files
+- `RefTestManagement.Api/BackgroundServices/BackgroundJobService.cs:110-112,186-192`
+
+### Change
+`LogRedaction.MaskEmailsInText(ex.Message)` is the first statement in the `catch` block and can
+throw `RegexMatchTimeoutException`. If it does, `MarkAsFailed` and the save never run and the row
+is stranded at `Status = Processing` — which nothing recovers, because the claim query selects
+only `Pending` and cleanup deletes only `Completed`/`Failed`.
+
+- Wrap the masking call in its own try/catch with a constant fallback message so `MarkAsFailed`
+  always runs.
+- Extend the claim predicate to also reclaim `Processing` jobs whose `LockedUntil` has expired.
+
+### Acceptance
+- An exception thrown while masking still results in a saved, failed job.
+- A job orphaned in `Processing` is picked up on a later poll rather than stranded forever.
+
+### Watch out for
+- Reclaim must respect `Attempts`/`MaxAttempts`, or a half-sent email can be re-sent repeatedly.
+- This overlaps **WP-13** (atomic claim), which rewrites the same predicate. Sequence the two
+  deliberately rather than letting them conflict.
+
+---
+
+## WP-32 — Narrow unit tests for redaction and the job state machine
+
+**Findings:** supports N1–N4; a deliberate subset of #5 (🟠 High) · **Size:** M
+
+### Files
+- A new test project
+- `RefTestManagement.slnx`
+- `.github/workflows/pr.yml`
+
+### Change
+Both Phase 1b regressions live in pure, dependency-free logic, which is the cheapest possible
+place to start testing. Cover only:
+
+- `AuditPiiRedactor.RedactData` — flat and diff payload shapes, key casing, null `Data`.
+- `LogRedaction.MaskEmail` and `MaskEmailsInText` — plus-addressing, embedded JSON, null/empty.
+- The `Job` state machine — specifically that `Cancel()` followed by `MarkAsFailed` cannot produce
+  a `Pending` job with an empty payload.
+- `RefTest.Anonymize()` — that consent version and timestamp survive.
+
+Wire `dotnet test` into the PR workflow.
+
+### Acceptance
+- The suite fails if WP-30's state-machine guard is reverted.
+- The PR workflow runs the suite and fails the check on a failing test.
+
+### Watch out for
+- **Keep it narrow.** No database, no host, no fixtures. Integration and frontend coverage remain
+  WP-23 and WP-24; this package exists so Phase 1b cannot regress, not to build the harness.
+- Adding a test project changes the solution build — confirm the pre-commit hook and release
+  workflows still succeed.
+
+---
+
+## WP-35 — Disclose staff and approver recipients in the privacy notice
+
+**Findings:** N7 (🟡 Medium) · **Size:** S
+
+### Files
+- `docs/PRIVACY.md:36-42`
+- Evidence only: `BackgroundJobService.cs:435-470`, `EmailService.cs:186-216`
+
+### Change
+The notice lists the three processors (Auth0, Brevo, IHF) but never states that participant names,
+email addresses, scheduled times and scores are emailed to internal staff — approval-request and
+approval-decision notifications, and batch staff reports. That is an **Art. 13(1)(e)** omission.
+
+Add a "Recipients" subsection naming the category (assessment administrators and approvers within
+Handball Belgium) and the purpose for which they receive the data.
+
+### Acceptance
+- Every outbound email path that carries participant data maps to a disclosed recipient category.
+
+### Watch out for
+- The **published** notice must be updated too, not only the file in this repository.
+- Same review rule as WP-07: this is participant-facing compliance text, not a routine docs tweak.
+
+---
+
 # Phase 2 — Security & assessment integrity
 
 ## WP-08 — Enable GraphQL cost limits and add rate limiting
@@ -507,6 +719,168 @@ fine-grained PAT restricted to this repository and the specific permissions need
 - semantic-release pushes tags *and* commits (version badges, README sync) — the replacement needs
   `contents: write` at least.
 - If a GitHub App is used, its token must be minted per-job; it expires in an hour.
+
+---
+
+## WP-33 — Make erase-then-delete atomic
+
+**Findings:** N6 (🟡 Medium) · **Size:** S
+
+### Files
+- `RefTestManagement.Api/Graphql/Mutations/Deletion/RefTestDeletionMutations.cs:70-72`
+- `RefTestManagement.Infrastructure/Services/RefTestPrivacyErasureService.cs:63,110`
+
+### Change
+WP-01 made admin delete call `EraseAsync` then `DeleteAsync`. Each opens its **own** execution-
+strategy transaction, so a delete that fails on a constraint, a transient fault or cancellation
+leaves the record anonymized but present, showing `***` in the admin UI, while the mutation
+returns only a generic failure for that id.
+
+Either combine the two into a single `EraseAndDeleteAsync` sharing one transaction, or surface the
+half-done state explicitly in `DeleteRefTestError` so staff know the data was already destroyed.
+
+### Acceptance
+- A failed delete either rolls the erasure back, or reports unambiguously that the record was
+  erased but not removed.
+
+### Watch out for
+- `EraseAsync` creates its own execution strategy and calls `ReloadAsync` per attempt. Do not
+  simply wrap the existing calls in an outer transaction — that conflicts with the retry strategy.
+
+---
+
+## WP-34 — Match audit PII keys case-insensitively
+
+**Findings:** N5 (🟡 Medium) · **Size:** S
+
+### Files
+- `RefTestManagement.AuditLog/AuditPiiRedactor.cs:25,52`
+
+### Change
+`PiiKeys` holds camelCase names and `JsonObject.TryGetPropertyValue` is case-sensitive, but the
+audit interceptor's property-diff path writes raw PascalCase EF property names, and `JsonOptions`
+sets `PropertyNamingPolicy` without `DictionaryKeyPolicy`. Match case-insensitively, or add the
+PascalCase variants.
+
+### Acceptance
+- A diff payload containing `"FirstName"` or `"Email"` is redacted identically to one containing
+  `"firstName"` or `"email"`.
+
+### Watch out for
+- This is **latent, not active**: every audited entity currently implements `IHasDomainEvents`, so
+  the diff path is unreachable, and `Job` is excluded from auditing entirely (`Program.cs:53`).
+  The trap is the next audited entity that carries a name or address.
+- Naturally pairs with WP-28/WP-29 — same file family, same review.
+
+---
+
+## WP-36 — Validate the public participant mutation inputs
+
+**Findings:** N8 (🟡 Medium) · **Size:** S
+
+### Files
+- `RefTestManagement.Api/Graphql/Mutations/Lifecycle/SaveRefTestProgressInput.cs`
+- `RefTestManagement.Api/Graphql/Mutations/Lifecycle/CompleteRefTestInput.cs`
+- `RefTestManagement.Api/Graphql/Mutations/Lifecycle/RefTestLifecycleMutations.cs:147-182`
+
+### Change
+Both inputs accept `SelectedAnswerIds`, `CurrentQuestionIndex` and `Token` with no length, size or
+range validation, and are reachable anonymously with only an invitation token. Bound the
+collection size, validate the question index against the actual question count, and constrain the
+token to its expected length before it reaches the database.
+
+### Acceptance
+- An oversized `SelectedAnswerIds` list is rejected at the input boundary, not after the query.
+- An out-of-range `CurrentQuestionIndex` is rejected rather than persisted.
+
+### Watch out for
+- Pairs with **WP-08**: cost limits and rate limiting are the other half of this exposure, and
+  neither alone is sufficient.
+- Reject with a typed GraphQL error, not an unhandled exception — this is a participant-facing
+  path and the message is visible.
+
+---
+
+## WP-37 — Reduce invitation-token exposure in the URL
+
+**Findings:** N9 (🟡 Medium) · **Size:** M
+
+### Files
+- `RefTestManagement.Ui/src/app/app.routes.ts:60-65`
+- `RefTestManagement.Ui/src/app/ref-test/welcome/ref-test-welcome.ts:106`
+- `RefTestManagement.Ui/src/app/ref-test/take/take-ref-test.ts:49`
+- `RefTestManagement.Ui/src/app/ref-test/take/state/ref-test.store.ts:12`
+
+### Change
+The participant route is `/ref-test/:token` and the token is a bearer credential granting full
+access to the assessment. In the path it is exposed to browser history, shoulder surfing,
+screenshots and `Referer` headers.
+
+At minimum set a strict `Referrer-Policy` and remove outbound links from token-bearing pages.
+Ideally exchange the token for a short-lived session on first load and drop it from the URL.
+
+### Acceptance
+- No outbound request from a token-bearing page carries the token in `Referer`.
+- If the session exchange is implemented, the token no longer appears in browser history.
+
+### Watch out for
+- This is inherent to emailing a clickable link and is a common, accepted design. Treat it as a
+  deliberate decision to record, not an automatic rewrite.
+- Pairs with **WP-10** (CSPRNG tokens) — both concern the same credential.
+
+---
+
+## WP-38 — Preserve admin accountability on erasure, and correct the retention comment
+
+**Findings:** N10, N11 (⚪ Low) · **Size:** S
+
+### Files
+- `RefTestManagement.Infrastructure/Services/RefTestPrivacyErasureService.cs:55`
+- `RefTestManagement.Api/BackgroundServices/PrivacyRetentionService.cs:54-58`
+
+### Change
+Two small corrections left by Phase 1:
+
+- `ParticipantActorEventTypes` includes `RefTestAnonymizedEvent`, so a staff-initiated delete now
+  overwrites the **admin's** actor with `***`, losing the "who erased this" record. Redact the
+  actor only when the request was anonymous.
+- The comment justifying WP-02's new clause claims `PendingApproval` and `Rejected` are terminal.
+  `RefTest.Approve()` explicitly accepts a `Rejected` test and returns it to `Pending`
+  (`RefTest.cs:163`), so `Rejected` is **not** terminal. Correct the comment and confirm the
+  intent.
+
+### Acceptance
+- After an admin delete, the audit trail still identifies which administrator performed it.
+- No comment in the retention predicate asserts something the domain model contradicts.
+
+### Watch out for
+- The actor loss is currently mitigated because the later `RefTestDeleted` event keeps the admin
+  identity — verify that still holds before deciding the severity.
+- The retention behaviour itself is defensible; only the stated reasoning is wrong. Note that once
+  erased, `Approve()` throws on `IsAnonymized`, so revival becomes impossible.
+
+---
+
+## WP-39 — Mask exceptions logged as objects
+
+**Findings:** N12 (⚪ Low) · **Size:** S
+
+### Files
+- `RefTestManagement.Infrastructure/Services/EmailService.cs:179`
+- `RefTestManagement.Api/BackgroundServices/BackgroundJobService.cs:81,486`
+
+### Change
+WP-03 scrubbed exception *message strings*, but the full exception object is still passed to
+`ILogger` and its `ToString()` is not masked. Apply the same treatment to exceptions logged as
+objects, or stop passing the raw exception on paths that can carry an address.
+
+### Acceptance
+- No log sink receives an unmasked email address from an exception on the email or job paths.
+
+### Watch out for
+- Whether a provider exception can actually carry an address is provider-dependent — this is a
+  completeness gap rather than a confirmed leak. Verify before expanding the scope.
+- Removing the exception argument entirely loses the stack trace; mask rather than drop.
 
 ---
 
@@ -986,46 +1360,66 @@ real setup.
 
 # Coverage matrix
 
-Every finding in `AUDIT.md` §3 maps to exactly one work package.
+Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one work package.
+
+### Original audit (`AUDIT.md`)
+
+| # | Severity | Finding | Package | Status |
+|---|---|---|---|---|
+| 1 | 🟠 High | Admin delete skips anonymization | WP-01 | ✅ Done |
+| 2 | 🟠 High | Audit events never deleted | WP-04, **WP-28** | 🟡 Partial |
+| 3 | 🟠 High | PII and tokens in logs | WP-03 | ✅ Done |
+| 4 | 🟠 High | `PendingApproval`/`Rejected` never erased | WP-02 | ✅ Done |
+| 5 | 🟠 High | No automated tests | WP-32, WP-23, WP-24 | Open |
+| 6 | 🟡 Medium | Job payload PII / in-flight sends | WP-05 | ✅ Done |
+| 7 | 🟡 Medium | Cost limits disabled, no rate limiting | WP-08 | Open |
+| 8 | 🟡 Medium | Post-deadline submission window | WP-09 | Open |
+| 9 | 🟡 Medium | PR-title script injection | WP-11 | Open |
+| 10 | 🟡 Medium | PR workflow runs no tests | WP-32, WP-23 | Open |
+| 11 | 🟡 Medium | README overstates testing | WP-24, WP-27 | Open |
+| 12 | 🟡 Medium | Long-lived `GH_PAT` | WP-12 | Open |
+| 13 | 🟡 Medium | Domain depends on EF Core | WP-18 | Open |
+| 14 | 🟡 Medium | Job claim not atomic | WP-13 | Open |
+| 15 | 🟡 Medium | No concurrency token | WP-14 | Open |
+| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15 | Open |
+| 17 | 🟡 Medium | No HTTP timeout or resilience | WP-16 | Open |
+| 18 | 🟡 Medium | Expiration evaluates client-side | WP-17 | Open |
+| 19 | 🟡 Medium | Positive `tabindex` | WP-20 | Open |
+| 20 | 🟡 Medium | Hardcoded English `confirm()` | WP-21 | Open |
+| 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 | Open |
+| 22 | ⚪ Low | Consent proof nulled | WP-06 | ✅ Done |
+| 23 | ⚪ Low | Missing composite index | WP-17 | Open |
+| 24 | ⚪ Low | Retention re-scans anonymized rows | WP-02 (delivered) | ✅ Done |
+| 25 | ⚪ Low | Datepicker keyboard access | WP-20 | Open |
+| 26 | ⚪ Low | Unlabelled `<select>` | WP-20 | Open |
+| 27 | ⚪ Low | Production `console.error` | WP-22 | Open |
+| 28 | ⚪ Low | i18n key typos | WP-21 | Open |
+| 29 | ⚪ Low | Untranslated strings | WP-21 | Open |
+| 30 | ⚪ Low | No Apollo `keyFields`/`ErrorLink` | WP-22 | Open |
+| 31 | ⚪ Low | Bare `setTimeout` | WP-22 | Open |
+| 32 | ⚪ Low | `BackgroundJobService` god class | WP-19 | Open |
+| 33 | ⚪ Low | Stale `sharp` pin | WP-26 | Open |
+| 34 | ⚪ Low | No Dependabot/CodeQL | WP-25 | Open |
+
+### Re-audit (`AUDIT-R2.md`)
 
 | # | Severity | Finding | Package |
 |---|---|---|---|
-| 1 | 🟠 High | Admin delete skips anonymization | WP-01 |
-| 2 | 🟠 High | Audit events never deleted | WP-04 |
-| 3 | 🟠 High | PII and tokens in logs | WP-03 |
-| 4 | 🟠 High | `PendingApproval`/`Rejected` never erased | WP-02 |
-| 5 | 🟠 High | No automated tests | WP-23, WP-24 |
-| 6 | 🟡 Medium | Job payload PII / in-flight sends | WP-05 |
-| 7 | 🟡 Medium | Cost limits disabled, no rate limiting | WP-08 |
-| 8 | 🟡 Medium | Post-deadline submission window | WP-09 |
-| 9 | 🟡 Medium | PR-title script injection | WP-11 |
-| 10 | 🟡 Medium | PR workflow runs no tests | WP-23 |
-| 11 | 🟡 Medium | README overstates testing | WP-24, WP-27 |
-| 12 | 🟡 Medium | Long-lived `GH_PAT` | WP-12 |
-| 13 | 🟡 Medium | Domain depends on EF Core | WP-18 |
-| 14 | 🟡 Medium | Job claim not atomic | WP-13 |
-| 15 | 🟡 Medium | No concurrency token | WP-14 |
-| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15 |
-| 17 | 🟡 Medium | No HTTP timeout or resilience | WP-16 |
-| 18 | 🟡 Medium | Expiration evaluates client-side | WP-17 |
-| 19 | 🟡 Medium | Positive `tabindex` | WP-20 |
-| 20 | 🟡 Medium | Hardcoded English `confirm()` | WP-21 |
-| 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 |
-| 22 | ⚪ Low | Consent proof nulled | WP-06 |
-| 23 | ⚪ Low | Missing composite index | WP-17 |
-| 24 | ⚪ Low | Retention re-scans anonymized rows | WP-17 |
-| 25 | ⚪ Low | Datepicker keyboard access | WP-20 |
-| 26 | ⚪ Low | Unlabelled `<select>` | WP-20 |
-| 27 | ⚪ Low | Production `console.error` | WP-22 |
-| 28 | ⚪ Low | i18n key typos | WP-21 |
-| 29 | ⚪ Low | Untranslated strings | WP-21 |
-| 30 | ⚪ Low | No Apollo `keyFields`/`ErrorLink` | WP-22 |
-| 31 | ⚪ Low | Bare `setTimeout` | WP-22 |
-| 32 | ⚪ Low | `BackgroundJobService` god class | WP-19 |
-| 33 | ⚪ Low | Stale `sharp` pin | WP-26 |
-| 34 | ⚪ Low | No Dependabot/CodeQL | WP-25 |
+| N1 | 🟠 High | Historical audit rows never redacted | WP-28 |
+| N2 | 🟠 High | Cleared payload breaks reset/revive | WP-30 |
+| N3 | 🟡 Medium | Redaction loop never clears change tracker | WP-29 |
+| N4 | 🟡 Medium | Regex timeout strands a job in `Processing` | WP-31 |
+| N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 |
+| N6 | 🟡 Medium | Erase and delete not atomic | WP-33 |
+| N7 | 🟡 Medium | Undisclosed email recipients | WP-35 |
+| N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 |
+| N9 | 🟡 Medium | Invitation token in the URL | WP-37 |
+| N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 |
+| N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 |
+| N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 |
 
-**34 findings · 27 work packages · none dropped.**
+**46 findings · 39 work packages · none dropped.**
+**6 closed · 1 partially closed (#2, remainder tracked as N1) · 39 open.**
 
 ---
 
@@ -1035,39 +1429,49 @@ Most packages are independent. The exceptions:
 
 ```mermaid
 graph LR
-    WP01[WP-01 Admin delete] --> WP07[WP-07 PRIVACY.md]
-    WP04[WP-04 Audit retention] --> WP07
-    WP05[WP-05 Job payloads] --> WP07
+    WP28[WP-28 Audit backfill] --> WP29[WP-29 Change tracker]
+    WP30[WP-30 Cancelled status] --> WP32[WP-32 Narrow tests]
+    WP31[WP-31 Failure path] -.conflicts.-> WP13[WP-13 Atomic claim]
+    WP28 --> WP34[WP-34 PII key casing]
     WP02[WP-02 Retention statuses] --> WP17[WP-17 SQL predicates]
-    WP14[WP-14 Concurrency tokens] -.optional.-> WP13[WP-13 Atomic claim]
+    WP14[WP-14 Concurrency tokens] -.optional.-> WP13
     WP13 --> WP19[WP-19 Decompose service]
     WP15[WP-15 Outbox] --> WP19
-    WP04 --> WP18[WP-18 Decouple Domain]
+    WP04[WP-04 Audit retention] --> WP18[WP-18 Decouple Domain]
     WP23[WP-23 Backend tests] -.enables.-> WP19
     WP24[WP-24 Frontend tests] --> WP27[WP-27 README]
+    WP08[WP-08 Cost limits] -.pairs.-> WP36[WP-36 Input validation]
+    WP10[WP-10 CSPRNG tokens] -.pairs.-> WP37[WP-37 Token in URL]
 ```
 
-- **WP-07 last in Phase 1** — the documentation should describe the code as it will be after
-  WP-01, WP-04, and WP-05 land.
+- **WP-29 with WP-28, not after it** — WP-28's first run sweeps the entire historical backlog,
+  which is exactly the case WP-29 makes safe. Shipping WP-28 alone turns a correctness fix into a
+  performance incident.
+- **WP-32 after WP-30** — the state-machine test only has something to assert once `Cancelled`
+  exists.
+- **WP-31 and WP-13 conflict** — both rewrite the job claim predicate. Sequence them; do not
+  develop them in parallel.
+- **WP-34 with WP-28/WP-29** — same file family, same reviewer, same release.
 - **WP-17 after WP-02** — both edit the same retention predicate.
 - **WP-19 last in Phase 3** — WP-13 and WP-15 both touch `BackgroundJobService`.
-- **WP-18 after Phase 1** — it moves types that WP-04 modifies.
+- **WP-18 after Phase 1** — it moves types that WP-04 and WP-28 modify.
 - **WP-19 ideally after WP-23** — a large pure refactor with no tests is the one place where the
   missing harness genuinely raises risk.
 
 ---
 
-## Suggested first release
+## Suggested next release
 
-If only one release is possible before the next scheduled deployment, it should contain:
+Phase 1 has shipped. The next release should close the regressions it introduced:
 
 | Package | Why |
 | --- | --- |
-| **WP-01** | Admin deletions currently leave participant PII in `AuditEvents` permanently |
-| **WP-02** | Rejected and unapproved tests accumulate PII and live tokens with no expiry |
-| **WP-03** | Invitation tokens — bearer credentials — are in Application Insights at default verbosity |
-| **WP-07** | The privacy notice must not promise behaviour the code does not deliver |
+| **WP-28** | The Phase 1 audit fix does not reach rows an earlier deployment already archived, so historical participant PII is still retained indefinitely |
+| **WP-29** | Ships with WP-28 — without it, the first backlog sweep degrades badly |
+| **WP-30** | A cancelled job's empty payload can break `resetRefTest`/`reviveRefTest` for unrelated tests |
+| **WP-31** | A throw in the failure path strands jobs in `Processing` with no recovery |
+| **WP-35** | Closes the last GDPR documentation gap; **S**, and independent of the rest |
 
-All four are **S**. Together they move the GDPR status in `AUDIT.md` §4 from ❌ to a defensible
-position, and they are the only findings in the report that are actively accumulating exposure
-while the system runs.
+WP-28 and WP-30 should block the merge of `docs/audit-and-remediation-plan`. **WP-32** should
+follow immediately: both regressions in this list are the kind an assertion catches for free, and
+shipping the fixes without it leaves the same gap that produced them.
