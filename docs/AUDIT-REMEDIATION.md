@@ -63,7 +63,7 @@ that exists rather than creating one.
 | **2** ✅ | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | **Done** — hardening; no evidence of exploitation |
 | **3** ✅ | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | **Done** — WP-19 deferred to after Phase 5 |
 | **4** ✅ | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | **Done** — user-visible quality |
-| **5** | Test foundation | WP-23 → WP-24 | 2×L | Stops everything above from regressing |
+| **5** ✅ | Test foundation | WP-23 → WP-24 | 2×L | **Done** — 110 → 151 backend, 0 → 33 frontend |
 | **6** | Supply chain & documentation | WP-25 → WP-27 | 3×S | Housekeeping |
 
 ---
@@ -1650,7 +1650,7 @@ displayed output can silently substitute a redaction for the real value.
 
 ---
 
-## WP-24 — Frontend test setup
+## WP-24 — Frontend test setup ✅
 
 **Findings:** #5 (🟠 High, frontend half), #11 (🟡 Medium) · **Size:** L
 
@@ -1674,6 +1674,48 @@ first, since that is the path with no server-side safety net.
 ### Watch out for
 - Pairs with WP-27 — whichever runner you choose, the README must describe it accurately.
 - Angular 22 + Vitest wiring is the fiddly part; budget for it.
+
+### Outcome ✅
+
+The wiring turned out to be already in place — `angular.json` points at the `@angular/build:unit-test`
+builder and Angular 22 defaults it to Vitest with jsdom, so no `vitest.config.*` was needed. That was
+verified with a throwaway spec before writing anything real, rather than assumed. **33 frontend
+tests**, all passing.
+
+**Coverage went to the participant flow**, as the acceptance criteria asked, because that is the one
+path with no server-side safety net during the attempt: the countdown, the answer set and the
+navigation gate all live in the browser until submission. The failures there do not throw — they
+quietly give one participant more time than another, let them read ahead, or lose an answer.
+
+`ref-test.store.spec.ts` (27 tests) pins the rules rather than the mechanics:
+
+- **The countdown is derived from the start timestamp, not decremented per tick.** The test advances
+  the system clock *without* ticking, which is what a throttled or backgrounded tab does — a
+  drifting counter would hand that participant extra minutes.
+- **It clamps at zero.** Auto-submit keys off `=== 0`, so a negative overrun would mean the equality
+  never matches and the assessment never ends.
+- **Extending time credits against elapsed time** instead of restarting the clock.
+- **`goToQuestion` refuses unvisited questions** — skipping ahead would let a participant read the
+  whole paper before answering any of it.
+- **The answer map is replaced, not mutated** — the signal holds `Set`s, so an in-place update would
+  leave the reference unchanged and the view would not repaint the selection just made.
+- **Restoring progress** maps a flat list of answer ids back onto their owning questions, marks
+  everything up to the resume point as seen, and ignores unknown ids.
+- The "progress restored" notice **cannot be dismissed early by a previous timer** — the regression
+  fixed in WP-22.
+
+`can-deactivate-ref-test.guard.spec.ts` (6 tests) pins the gate from both sides: prompting when
+there is nothing to lose trains participants to click through the dialog, and not prompting when
+there is discards the attempt silently. It also asserts the guard *delegates* rather than decides,
+including returning the component's pending promise unresolved — that is what keeps the translated
+dialog in play instead of the hardcoded English `confirm()` this replaced.
+
+**CI:** `pr.yml`'s `validate` job now runs `npm test` and `npm run check:i18n` alongside the Angular
+build. A missing translation is not a build error, so nothing else catches a key that renders raw to
+a Dutch participant.
+
+**WP-27 (README accuracy) is closed by the same change** — the README's step 6 now names both
+runners and the parity check instead of only `dotnet test`.
 
 ---
 

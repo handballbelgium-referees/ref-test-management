@@ -255,13 +255,14 @@ Available at `http://localhost:4200` (proxies `/graphql`, `/Account`, and `/call
 npm run codegen
 ```
 
-**6. Run the .NET unit tests:**
+**6. Run the tests:**
 
 ```bash
-dotnet test --solution RefTestManagement.slnx
+dotnet test --solution RefTestManagement.slnx   # backend
+cd RefTestManagement.Ui && npm test             # frontend
 ```
 
-`--solution` is required because `global.json` selects the Microsoft.Testing.Platform runner that xUnit v3 builds on. The same command runs on every pull request.
+`--solution` is required because `global.json` selects the Microsoft.Testing.Platform runner that xUnit v3 builds on. The frontend uses the `@angular/build:unit-test` builder on Vitest. Both commands run on every pull request, alongside `npm run check:i18n`, which fails the build if the four locale files drift out of sync.
 
 ## Background Services
 

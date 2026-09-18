@@ -68,6 +68,17 @@ jobs:
         run: npm run build -- --configuration production
         # Ensures that UI builds successfully in PR
 
+      - name: 🌍 Check translation parity
+        working-directory: ./RefTestManagement.Ui
+        run: npm run check:i18n
+        # A key present in one locale and missing from another renders as a raw key to that
+        # participant. Nothing else catches it: a missing translation is not a build error.
+
+      - name: 🧪 Run Angular unit tests
+        working-directory: ./RefTestManagement.Ui
+        run: npm test
+        # The participant test-taking flow has no server-side safety net during the attempt
+
       - name: ⚡ Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
