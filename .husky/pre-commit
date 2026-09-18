@@ -1,7 +1,13 @@
 #!/usr/bin/env sh
 
-# Skip hooks during CI or when message contains [skip ci]
-if [ -n "$CI" ] || git log -1 --pretty=%B | grep -q "\[skip ci\]"; then
+# Skip during CI. Automated commits (e.g. semantic-release) run there, so they never need the
+# local README sync or UI build.
+#
+# Do not add a "[skip ci]" check here: a pre-commit hook runs before the commit exists, so
+# `git log -1` reads the PREVIOUS commit. That made this hook disable itself for every commit
+# following a release commit. To skip deliberately, use `HUSKY=0 git commit ...` or
+# `git commit --no-verify`.
+if [ -n "$CI" ]; then
   exit 0
 fi
 
