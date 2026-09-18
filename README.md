@@ -297,6 +297,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)       | Annotated directory tree                                   |
 | [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md) | Background job-queue flow in detail                        |
 | [docs/AUDIT.md](docs/AUDIT.md)                               | Full-stack audit findings and GDPR compliance assessment   |
+| [docs/AUDIT-R2.md](docs/AUDIT-R2.md)                         | Re-audit after Phase 1 remediation; current finding status |
 | [docs/AUDIT-REMEDIATION.md](docs/AUDIT-REMEDIATION.md)       | Phased remediation plan for the audit findings             |
 
 ## License

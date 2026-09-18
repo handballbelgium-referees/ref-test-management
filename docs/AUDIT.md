@@ -6,6 +6,11 @@
 **Scope:** full-stack — security, GDPR, backend architecture, frontend/a11y, testing, CI/CD
 **Type:** read-only audit. No code was changed.
 
+> **Superseded.** This report remains the baseline record of the original 34 findings, but their
+> current status is tracked in [`AUDIT-R2.md`](./AUDIT-R2.md), a re-audit at commit `6c574ce`
+> after the Phase 1 remediation. Six findings here are now fixed and one is partially fixed; the
+> re-audit also records twelve new findings, two of them High severity.
+
 > This is a point-in-time assessment. Findings reference `file:line` positions as they existed at
 > the commit above; line numbers drift as the code evolves. Re-run the audit after significant
 > changes rather than treating this document as a live status page.
