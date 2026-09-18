@@ -8,8 +8,8 @@ of work.
 ([`AUDIT-R2.md`](AUDIT-R2.md)), 18 September 2026
 **Coverage:** all 46 findings — the original 34 plus 12 from the re-audit — mapped to 39 work
 packages across 7 phases
-**Status:** Phase 1 complete (WP-01 → WP-07). **Phase 1b is outstanding and blocks the merge of
-`docs/audit-and-remediation-plan`.**
+**Status:** Phase 1 complete (WP-01 → WP-07). Phase 1b complete (WP-28 → WP-32, WP-35). Phase 2
+onward is open.
 
 ---
 
@@ -29,16 +29,17 @@ Each package has:
 | **Acceptance** | Observable conditions that must hold when the package is done |
 | **Watch out for** | Known traps and side effects specific to this change |
 
-**There is no "tests to add" field.** The repository has no test harness (finding #5), so
-acceptance criteria are written to be verifiable by code inspection or by manually exercising the
-affected path. Building the harness is itself a work package — see **WP-23** and **WP-24**.
+**There is no "tests to add" field.** When this plan was written the repository had no test
+harness (finding #5), so acceptance criteria are written to be verifiable by code inspection or
+by manually exercising the affected path. WP-32 has since shipped a narrow xUnit project covering
+redaction and the job state machine; broadening it is still its own work — see **WP-23** and
+**WP-24**.
 
 ### Sequencing
 
-Phase 1 has shipped. **Phase 1b now comes first, and it is not optional:** the re-audit found
-that the Phase 1 change set introduced two High-severity regressions, one of which silently
-prevents its own fix from applying to data that already exists. WP-28 and WP-30 should block the
-merge of `docs/audit-and-remediation-plan`.
+Phase 1 and Phase 1b have shipped. Phase 1b existed because the re-audit found that the Phase 1
+change set introduced two High-severity regressions, one of which silently prevented its own fix
+from applying to data that already existed.
 
 Phase 2 onward is unchanged in intent: hardening and latent defects, none of which are actively
 accumulating exposure.
@@ -46,8 +47,10 @@ accumulating exposure.
 Test infrastructure deliberately sits in Phase 5 rather than Phase 0. It is the durable fix —
 every Phase 1 finding was one assertion away from being caught automatically — but gating urgent
 privacy fixes behind building a test project would delay them without making them safer. **WP-32
-is the exception**: a deliberately narrow package covering only the pure logic the two
-regressions live in, so that Phase 1b cannot silently regress again.
+was the exception**: a deliberately narrow package covering only the pure logic the two
+regressions live in, so that Phase 1b cannot silently regress again. It shipped a real test
+project and wired `dotnet test` into the PR workflow, so WP-23 and WP-24 now extend a harness
+that exists rather than creating one.
 
 ---
 
@@ -56,7 +59,7 @@ regressions live in, so that Phase 1b cannot silently regress again.
 | Phase | Theme | Packages | Size | Why this order |
 | --- | --- | --- | --- | --- |
 | **1** ✅ | GDPR remediation | WP-01 → WP-07 | 1×M, 6×S | **Done** — shipped in `29dba7c` |
-| **1b** | Phase 1 regression fixes | WP-28 → WP-32, WP-35 | 3×M, 3×S | Regressions introduced by Phase 1; blocks merge |
+| **1b** ✅ | Phase 1 regression fixes | WP-28 → WP-32, WP-35 | 3×M, 3×S | **Done** — regressions introduced by Phase 1 |
 | **2** | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | Hardening; no evidence of exploitation |
 | **3** | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | Mostly latent until the app scales out |
 | **4** | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | User-visible quality |
@@ -348,15 +351,17 @@ an accurate disclosure of a gap is defensible; an inaccurate promise is not.
 
 ---
 
-# Phase 1b — Phase 1 regression fixes
+# Phase 1b — Phase 1 regression fixes ✅ Complete
 
 > **This phase exists because Phase 1 introduced it.** The re-audit (`AUDIT-R2.md`) found that
-> commit `29dba7c` shipped two High-severity regressions. WP-28 is the more serious: the audit
-> redaction it added never reaches rows that a previous deployment had already archived, so the
-> headline GDPR fix works only for data created from that commit onward. WP-28 and WP-30 should
-> block the merge of this branch.
+> commit `29dba7c` shipped two High-severity regressions. WP-28 was the more serious: the audit
+> redaction it added never reached rows that a previous deployment had already archived, so the
+> headline GDPR fix worked only for data created from that commit onward.
+>
+> All six packages have shipped. WP-32 also left the repository with its first test project and a
+> `dotnet test` step in the PR workflow.
 
-## WP-28 — Redact audit events a previous deployment already archived
+## WP-28 — Redact audit events a previous deployment already archived ✅
 
 **Findings:** N1 (🟠 High), and the open half of #2 · **Size:** M
 
@@ -400,7 +405,7 @@ applied". Split them.
 
 ---
 
-## WP-29 — Make the redaction loop safe at backlog scale
+## WP-29 — Make the redaction loop safe at backlog scale ✅
 
 **Findings:** N3 (🟡 Medium) · **Size:** S · **Depends on:** WP-28 (same loop)
 
@@ -423,7 +428,7 @@ every batch and `DetectChanges` degrades to O(N²/500) with memory growing for t
 
 ---
 
-## WP-30 — Stop a cancelled job's empty payload from breaking mutations
+## WP-30 — Stop a cancelled job's empty payload from breaking mutations ✅
 
 **Findings:** N2 (🟠 High) · **Size:** M
 
@@ -461,7 +466,7 @@ with an empty payload, and both `JobEnqueueService` loops deserialize the payloa
 
 ---
 
-## WP-31 — Never let the failure path throw
+## WP-31 — Never let the failure path throw ✅
 
 **Findings:** N4 (🟡 Medium) · **Size:** S
 
@@ -489,7 +494,7 @@ only `Pending` and cleanup deletes only `Completed`/`Failed`.
 
 ---
 
-## WP-32 — Narrow unit tests for redaction and the job state machine
+## WP-32 — Narrow unit tests for redaction and the job state machine ✅
 
 **Findings:** supports N1–N4; a deliberate subset of #5 (🟠 High) · **Size:** M
 
@@ -522,7 +527,7 @@ Wire `dotnet test` into the PR workflow.
 
 ---
 
-## WP-35 — Disclose staff and approver recipients in the privacy notice
+## WP-35 — Disclose staff and approver recipients in the privacy notice ✅
 
 **Findings:** N7 (🟡 Medium) · **Size:** S
 
@@ -1207,6 +1212,11 @@ loop thin.
 > automatically, and the audit's conclusion is that they existed precisely because nothing could
 > catch them. Both packages are **L** — but WP-23 delivers value from the first test onward and
 > does not need to be completed in one pass.
+>
+> **Partly started.** WP-32 already created `RefTestManagement.UnitTests` (xUnit v3, running on
+> Microsoft.Testing.Platform via `global.json`) and added a `dotnet test` step to `pr.yml`. WP-23
+> is now about breadth — integration coverage over the DbContext, GraphQL resolvers and the
+> background services — not about standing the harness up.
 
 ## WP-23 — Backend test project and CI wiring
 
@@ -1367,15 +1377,15 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | # | Severity | Finding | Package | Status |
 |---|---|---|---|---|
 | 1 | 🟠 High | Admin delete skips anonymization | WP-01 | ✅ Done |
-| 2 | 🟠 High | Audit events never deleted | WP-04, **WP-28** | 🟡 Partial |
+| 2 | 🟠 High | Audit events never deleted | WP-04, **WP-28** | ✅ Done |
 | 3 | 🟠 High | PII and tokens in logs | WP-03 | ✅ Done |
 | 4 | 🟠 High | `PendingApproval`/`Rejected` never erased | WP-02 | ✅ Done |
-| 5 | 🟠 High | No automated tests | WP-32, WP-23, WP-24 | Open |
+| 5 | 🟠 High | No automated tests | WP-32, WP-23, WP-24 | 🟡 Partial |
 | 6 | 🟡 Medium | Job payload PII / in-flight sends | WP-05 | ✅ Done |
 | 7 | 🟡 Medium | Cost limits disabled, no rate limiting | WP-08 | Open |
 | 8 | 🟡 Medium | Post-deadline submission window | WP-09 | Open |
 | 9 | 🟡 Medium | PR-title script injection | WP-11 | Open |
-| 10 | 🟡 Medium | PR workflow runs no tests | WP-32, WP-23 | Open |
+| 10 | 🟡 Medium | PR workflow runs no tests | WP-32, WP-23 | ✅ Done |
 | 11 | 🟡 Medium | README overstates testing | WP-24, WP-27 | Open |
 | 12 | 🟡 Medium | Long-lived `GH_PAT` | WP-12 | Open |
 | 13 | 🟡 Medium | Domain depends on EF Core | WP-18 | Open |
@@ -1403,23 +1413,24 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 
 ### Re-audit (`AUDIT-R2.md`)
 
-| # | Severity | Finding | Package |
-|---|---|---|---|
-| N1 | 🟠 High | Historical audit rows never redacted | WP-28 |
-| N2 | 🟠 High | Cleared payload breaks reset/revive | WP-30 |
-| N3 | 🟡 Medium | Redaction loop never clears change tracker | WP-29 |
-| N4 | 🟡 Medium | Regex timeout strands a job in `Processing` | WP-31 |
-| N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 |
-| N6 | 🟡 Medium | Erase and delete not atomic | WP-33 |
-| N7 | 🟡 Medium | Undisclosed email recipients | WP-35 |
-| N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 |
-| N9 | 🟡 Medium | Invitation token in the URL | WP-37 |
-| N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 |
-| N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 |
-| N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 |
+| # | Severity | Finding | Package | Status |
+|---|---|---|---|---|
+| N1 | 🟠 High | Historical audit rows never redacted | WP-28 | ✅ Done |
+| N2 | 🟠 High | Cleared payload breaks reset/revive | WP-30 | ✅ Done |
+| N3 | 🟡 Medium | Redaction loop never clears change tracker | WP-29 | ✅ Done |
+| N4 | 🟡 Medium | Regex timeout strands a job in `Processing` | WP-31 | ✅ Done |
+| N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 | Open |
+| N6 | 🟡 Medium | Erase and delete not atomic | WP-33 | Open |
+| N7 | 🟡 Medium | Undisclosed email recipients | WP-35 | ✅ Done |
+| N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 | Open |
+| N9 | 🟡 Medium | Invitation token in the URL | WP-37 | Open |
+| N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 | Open |
+| N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 | Open |
+| N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 | Open |
 
 **46 findings · 39 work packages · none dropped.**
-**6 closed · 1 partially closed (#2, remainder tracked as N1) · 39 open.**
+**13 closed · 1 partially closed (#5 — a narrow suite now exists; WP-23 and WP-24 remain) · 32 open.**
+**13 of 39 work packages shipped: WP-01 → WP-07, WP-28 → WP-32, WP-35.**
 
 ---
 
@@ -1462,16 +1473,19 @@ graph LR
 
 ## Suggested next release
 
-Phase 1 has shipped. The next release should close the regressions it introduced:
+Phase 1 and Phase 1b have shipped. WP-28 → WP-32 and WP-35 closed all five re-audit findings that
+Phase 1 introduced or left open, and WP-32 left behind a real test project wired into the PR
+workflow.
+
+The next release should start Phase 2. Suggested first cut:
 
 | Package | Why |
 | --- | --- |
-| **WP-28** | The Phase 1 audit fix does not reach rows an earlier deployment already archived, so historical participant PII is still retained indefinitely |
-| **WP-29** | Ships with WP-28 — without it, the first backlog sweep degrades badly |
-| **WP-30** | A cancelled job's empty payload can break `resetRefTest`/`reviveRefTest` for unrelated tests |
-| **WP-31** | A throw in the failure path strands jobs in `Processing` with no recovery |
-| **WP-35** | Closes the last GDPR documentation gap; **S**, and independent of the rest |
+| **WP-34** | Same file family as the audit work just shipped; case-sensitive PII key matching means some personal data survives redaction |
+| **WP-33** | Erase-then-delete is not atomic, so a failure between the two steps leaves un-anonymized rows behind |
+| **WP-36** | Unbounded public mutation inputs are the cheapest remaining abuse vector |
+| **WP-38** | **S**, documentation-and-comment sized, and restores admin accountability on erasure |
+| **WP-39** | **S**, completes the log-masking work from WP-03 |
 
-WP-28 and WP-30 should block the merge of `docs/audit-and-remediation-plan`. **WP-32** should
-follow immediately: both regressions in this list are the kind an assertion catches for free, and
-shipping the fixes without it leaves the same gap that produced them.
+**WP-08** (cost limits and rate limiting) is the largest remaining exposure in Phase 2 and should
+follow as its own release, since it changes request-handling behaviour for every caller.

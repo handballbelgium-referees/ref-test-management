@@ -192,9 +192,9 @@ See [docs/PRIVACY.md](PRIVACY.md) for how retention and erasure actually work.
 
 | Key                    | Description                                         | Default |
 | ---------------------- | --------------------------------------------------- | ------- |
-| `EnableCleanup`        | Enable automatic soft-archiving of old audit events | `true`  |
+| `EnableCleanup`        | Enable automatic redaction of old audit events      | `true`  |
 | `CleanupIntervalHours` | How often cleanup runs                              | `24`    |
-| `RetentionDays`        | Audit events older than this are soft-archived      | `90`    |
+| `RetentionDays`        | Audit events older than this are redacted           | `90`    |
 
 ## Managing Migrations
 

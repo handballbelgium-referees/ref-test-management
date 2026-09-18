@@ -131,6 +131,12 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         var canceledCount = 0;
         foreach (var job in pendingJobs)
         {
+            // A job cancelled earlier keeps its row but not its payload. There is nothing to
+            // match on, and deserializing an empty string throws — which would break this
+            // mutation for every other RefTest in the table, not just this one.
+            if (string.IsNullOrEmpty(job.Payload))
+                continue;
+
             bool shouldCancel;
 
             // Check if this job is for the specific RefTest based on job type
@@ -182,6 +188,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
 
         var canceledCount = 0;
         foreach (var job in from job in pendingResultJobs
+                 where !string.IsNullOrEmpty(job.Payload)
                  let payload = JsonSerializer.Deserialize<ResultEmailPayload>(job.Payload, _jsonOptions)
                  where payload?.RefTestId == refTestId
                  select job)

@@ -15,7 +15,7 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.10");
+            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.AuditLog.AuditEvent", b =>
                 {
@@ -45,6 +45,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("RedactedAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("StreamId")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -73,6 +76,8 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
                     b.HasIndex("StreamId", "Version")
                         .IsUnique();
+
+                    b.HasIndex("Timestamp", "RedactedAt");
 
                     b.ToTable("AuditEvents");
                 });

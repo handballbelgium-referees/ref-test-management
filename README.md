@@ -255,6 +255,14 @@ Available at `http://localhost:4200` (proxies `/graphql`, `/Account`, and `/call
 npm run codegen
 ```
 
+**6. Run the .NET unit tests:**
+
+```bash
+dotnet test --solution RefTestManagement.slnx
+```
+
+`--solution` is required because `global.json` selects the Microsoft.Testing.Platform runner that xUnit v3 builds on. The same command runs on every pull request.
+
 ## Background Services
 
 Five hosted services run in-process — no extra infrastructure or cost on Azure.
@@ -264,7 +272,7 @@ Five hosted services run in-process — no extra infrastructure or cost on Azure
 | `BackgroundJobService`     | poll every 5s | Processes the async job queue: invitation/result/report/approval emails  |
 | `RefTestExpirationService` | every 5 min   | Auto-expires pending tests, auto-completes overdue in-progress tests     |
 | `PrivacyRetentionService`  | daily         | Anonymizes completed/expired RefTests past the retention period          |
-| `AuditLogCleanupService`   | every 24h     | Soft-archives audit events past the retention period                     |
+| `AuditLogCleanupService`   | every 24h     | Redacts personal data from audit events past the retention period       |
 | `PermissionSyncService`    | on startup    | Syncs all permissions to the Auth0 API resource (additive, non-blocking) |
 
 For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md).

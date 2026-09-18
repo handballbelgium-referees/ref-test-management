@@ -29,6 +29,15 @@ The service processes participant name, email address, invitation token, assessm
 
 The application requires an affirmative acceptance of the current privacy-notice version before a participant can start an assessment. The server persists the accepted version and timestamp, and rejects attempts to start without it. Because the controller must be able to demonstrate that consent was given (Art. 7(1)), the accepted version and timestamp are retained when a record is anonymized — on their own, detached from the redacted name and email, they no longer identify anyone.
 
+### Recipients
+
+Beyond the service providers above, participant data is disclosed to people inside Handball Belgium as part of running an assessment. Art. 13(1)(e) requires these recipient categories to be named:
+
+- **Assessment administrators.** Staff who create, schedule, and manage assessments see the participant's name, email address, scheduled time, status, and score in the application, and receive batch report emails summarising assessment results.
+- **Approvers.** Where an assessment requires approval, the designated approvers receive an approval-request email and an approval-decision email. Both carry the participant's name, email address, and scheduled time.
+
+No participant data is disclosed to any other recipient, and none is sold or used for marketing.
+
 ### Service Providers
 
 The notice identifies the following service providers:

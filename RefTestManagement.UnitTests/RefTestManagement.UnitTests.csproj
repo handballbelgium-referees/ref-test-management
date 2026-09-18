@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Handball.Belgium.RefTestManagement.UnitTests</RootNamespace>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.NET.Test.Sdk" />
+        <PackageReference Include="xunit.v3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Domain\RefTestManagement.Domain.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>

@@ -8,5 +8,9 @@ public enum JobStatus
     Pending,
     Processing,
     Completed,
-    Failed
+    Failed,
+
+    // Must stay last: no explicit values are declared, so EF persists this enum by ordinal and
+    // inserting a member anywhere else would silently reinterpret every existing row.
+    Cancelled
 }

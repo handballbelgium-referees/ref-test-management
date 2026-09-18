@@ -162,6 +162,10 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Error, "Failed to deserialize job payload for job {jobId}")]
     public static partial void LogJobDeserializationError(ILogger logger, Exception ex, Guid jobId);
 
+    [LoggerMessage(LogLevel.Error,
+        "Failed to mask personal data in the error message for job {jobId} - a placeholder was stored instead")]
+    public static partial void LogErrorMessageMaskingFailed(ILogger logger, Exception ex, Guid jobId);
+
     // ========================================
     // Report Service Operations
     // ========================================
@@ -251,6 +255,10 @@ public static partial class ServiceLoggerMessages
 
     [LoggerMessage(LogLevel.Error, "Error during cleanup of {resourceType}")]
     public static partial void LogCleanupError(ILogger logger, Exception ex, string resourceType);
+
+    [LoggerMessage(LogLevel.Information,
+        "Cleanup for {resourceType} hit its per-run limit after {count} items - the remainder is processed on the next run")]
+    public static partial void LogCleanupBatchLimitReached(ILogger logger, string resourceType, int count);
 
     // ========================================
     // External API Operations

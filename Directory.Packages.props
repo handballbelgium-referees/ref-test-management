@@ -30,5 +30,7 @@
             Version="10.0.12" />
         <PackageVersion Include="QuestPDF" Version="2026.8.0" />
         <PackageVersion Include="StrawberryShake.Server" Version="16.6.4" />
+        <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="18.3.0" />
+        <PackageVersion Include="xunit.v3" Version="4.0.1" />
     </ItemGroup>
 </Project>

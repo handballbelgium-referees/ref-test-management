@@ -36,10 +36,16 @@ public class Job
     }
 
     /// <summary>
-    /// Marks the job as processing and locks it
+    /// Marks the job as processing and locks it. Re-locking a job that is already
+    /// <see cref="JobStatus.Processing"/> means its previous lock expired without the worker
+    /// reporting back, so that counts as a spent attempt — otherwise a job that strands on every
+    /// pass would be reclaimed forever.
     /// </summary>
     public void MarkAsProcessing(TimeSpan lockDuration)
     {
+        if (Status == JobStatus.Processing)
+            Attempts++;
+
         Status = JobStatus.Processing;
         LockedUntil = DateTime.UtcNow.Add(lockDuration);
     }
@@ -60,23 +66,50 @@ public class Job
     /// </summary>
     public void MarkAsFailed(string errorMessage, int maxAttempts)
     {
+        // A cancelled job is terminal. Without this guard a worker that was already holding the
+        // job when it was cancelled would return it to Pending on its next failure, and because
+        // Cancel() clears the payload that leaves a runnable job with nothing to deserialize.
+        if (Status == JobStatus.Cancelled)
+            return;
+
         Attempts++;
         ErrorMessage = errorMessage;
 
         Status = Attempts >= maxAttempts ? JobStatus.Failed : JobStatus.Pending;
 
+        // Stamp the terminal transition: cleanup keys its retention window off CompletedAt, so a
+        // failed job that never sets it is retained forever.
+        if (Status == JobStatus.Failed)
+            CompletedAt = DateTime.UtcNow;
+
         LockedUntil = null;
     }
 
     /// <summary>
-    /// Cancels the job by marking it as failed. Clears <see cref="Payload"/>: a cancelled job
-    /// will never run, so its payload has no further use, and for participant-facing jobs it
-    /// holds personal data (name, email, invitation token, scores, answers) that must not
-    /// survive an erasure request. Callers that need the payload must read it before cancelling.
+    /// Fails the job immediately, without leaving retries on the table. For errors that cannot
+    /// possibly succeed on a retry — a payload that does not parse is the same payload next time.
+    /// </summary>
+    public void MarkAsPermanentlyFailed(string errorMessage)
+    {
+        if (Status == JobStatus.Cancelled)
+            return;
+
+        Attempts++;
+        ErrorMessage = errorMessage;
+        Status = JobStatus.Failed;
+        CompletedAt = DateTime.UtcNow;
+        LockedUntil = null;
+    }
+
+    /// <summary>
+    /// Cancels the job. Clears <see cref="Payload"/>: a cancelled job will never run, so its
+    /// payload has no further use, and for participant-facing jobs it holds personal data (name,
+    /// email, invitation token, scores, answers) that must not survive an erasure request.
+    /// Callers that need the payload must read it before cancelling.
     /// </summary>
     public void Cancel(string reason)
     {
-        Status = JobStatus.Failed;
+        Status = JobStatus.Cancelled;
         ErrorMessage = reason;
         LockedUntil = null;
         CompletedAt = DateTime.UtcNow;
@@ -84,12 +117,15 @@ public class Job
     }
 
     /// <summary>
-    /// Checks if the job is ready to be processed
+    /// Checks if the job is ready to be processed. A <see cref="JobStatus.Processing"/> job whose
+    /// lock has expired is included: its worker never reported back, and nothing else recovers it.
     /// </summary>
     public bool IsReadyToProcess()
     {
-        return Status == JobStatus.Pending
-               && ExecuteAfter <= DateTime.UtcNow
+        if (Status != JobStatus.Pending && Status != JobStatus.Processing)
+            return false;
+
+        return ExecuteAfter <= DateTime.UtcNow
                && (LockedUntil == null || LockedUntil <= DateTime.UtcNow);
     }
 }

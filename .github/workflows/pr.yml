@@ -69,6 +69,10 @@ jobs:
         run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
         # Validates .NET application can build successfully
 
+      - name: 🧪 Run .NET unit tests
+        run: dotnet test --solution RefTestManagement.slnx --configuration Release --no-build -p:TestingPlatformShowTestsFailure=true
+        # Fails the check on a failing test. --solution is required by the MTP mode of dotnet test
+
   sync-readme-versions:
     name: 📄 Sync README Versions
     runs-on: ubuntu-latest

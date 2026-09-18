@@ -17,7 +17,7 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -52,6 +52,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("boolean");
 
+                    b.Property<DateTime?>("RedactedAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("StreamId")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -80,6 +83,8 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
 
                     b.HasIndex("StreamId", "Version")
                         .IsUnique();
+
+                    b.HasIndex("Timestamp", "RedactedAt");
 
                     b.ToTable("AuditEvents");
                 });

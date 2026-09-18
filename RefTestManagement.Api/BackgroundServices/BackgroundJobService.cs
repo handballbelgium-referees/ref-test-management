@@ -38,6 +38,9 @@ public class BackgroundJobService : BackgroundService
         PropertyNameCaseInsensitive = true
     };
 
+    private const string MaskingFailedMessage =
+        "Job failed. The original error message was withheld because it could not be scrubbed of personal data.";
+
     public BackgroundJobService(
         IServiceProvider serviceProvider,
         ILogger<BackgroundJobService> logger,
@@ -105,10 +108,15 @@ public class BackgroundJobService : BackgroundService
 
         // Find jobs that are ready to be processed
         // Note: This query mirrors the logic in Job.IsReadyToProcess() for database-level filtering
+        //
+        // Processing jobs whose lock has expired are reclaimed too. Nothing else recovers them:
+        // a worker that dies, or throws on its way into MarkAsFailed, leaves the row Processing
+        // forever, and cleanup only ever deletes Completed/Failed/Cancelled rows.
         var now = DateTime.UtcNow;
         var jobs = await context.Jobs
-            .Where(j => j.Status == JobStatus.Pending
+            .Where(j => (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing)
                         && j.ExecuteAfter <= now
+                        && j.Attempts < _maxAttempts
                         && (j.LockedUntil == null || j.LockedUntil <= now))
             .OrderBy(j => j.ExecuteAfter)
             .Take(_batchSize)
@@ -186,8 +194,32 @@ public class BackgroundJobService : BackgroundService
             // Mark as failed. The message is persisted to Job.ErrorMessage and that column is not
             // reached by the privacy erasure path, so scrub any address an exception or a
             // third-party API response may have embedded before it is stored or logged.
-            var errorMessage = LogRedaction.MaskEmailsInText(ex.Message) ?? string.Empty;
-            job.MarkAsFailed(errorMessage, _maxAttempts);
+            //
+            // Masking runs a regex with a timeout, so it can throw in its own right. If that were
+            // allowed to escape, MarkAsFailed and the save below would never run and the job
+            // would be stranded at Processing.
+            string errorMessage;
+            try
+            {
+                errorMessage = LogRedaction.MaskEmailsInText(ex.Message) ?? string.Empty;
+            }
+            catch (Exception maskEx)
+            {
+                ServiceLoggerMessages.LogErrorMessageMaskingFailed(_logger, maskEx, job.Id);
+                errorMessage = MaskingFailedMessage;
+            }
+
+            if (ex is JobPayloadException)
+            {
+                // The payload will not parse on a retry either, so stop here instead of holding a
+                // slot in the queue for two more passes.
+                job.MarkAsPermanentlyFailed(errorMessage);
+            }
+            else
+            {
+                job.MarkAsFailed(errorMessage, _maxAttempts);
+            }
+
             await context.SaveChangesWithRetryAsync(cancellationToken);
 
             if (job.Status == JobStatus.Failed)
@@ -476,16 +508,22 @@ public class BackgroundJobService : BackgroundService
 
     private T DeserializePayload<T>(Job job) where T : IJobPayload
     {
+        // A cancelled job has its payload cleared, and a job that was cancelled while a worker
+        // held it can still reach a handler. Treat that as terminal rather than letting
+        // JsonException burn every retry attempt.
+        if (string.IsNullOrEmpty(job.Payload))
+            throw new JobPayloadException($"Job {job.Id} has no payload to deserialize");
+
         try
         {
             var payload = JsonSerializer.Deserialize<T>(job.Payload, _jsonSerializerOptions);
 
-            return payload ?? throw new InvalidOperationException("Deserialized payload is null");
+            return payload ?? throw new JobPayloadException($"Job {job.Id} deserialized to a null payload");
         }
-        catch (Exception ex)
+        catch (JsonException ex)
         {
             ServiceLoggerMessages.LogJobDeserializationError(_logger, ex, job.Id);
-            throw;
+            throw new JobPayloadException($"Job {job.Id} has a payload that could not be deserialized", ex);
         }
     }
 
@@ -512,7 +550,8 @@ public class BackgroundJobService : BackgroundService
             var oldJobs = await context.Jobs
                 .Where(j =>
                     (j.Status == JobStatus.Completed && j.CompletedAt != null && j.CompletedAt < completedCutoff) ||
-                    (j.Status == JobStatus.Failed && j.CompletedAt != null && j.CompletedAt < failedCutoff))
+                    ((j.Status == JobStatus.Failed || j.Status == JobStatus.Cancelled)
+                     && j.CompletedAt != null && j.CompletedAt < failedCutoff))
                 .ToListAsync(cancellationToken);
 
             if (oldJobs.Count > 0)
