@@ -296,6 +296,8 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md)               | Full `appsettings.json` reference                          |
 | [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)       | Annotated directory tree                                   |
 | [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md) | Background job-queue flow in detail                        |
+| [docs/AUDIT.md](docs/AUDIT.md)                               | Full-stack audit findings and GDPR compliance assessment   |
+| [docs/AUDIT-REMEDIATION.md](docs/AUDIT-REMEDIATION.md)       | Phased remediation plan for the audit findings             |
 
 ## License
 
