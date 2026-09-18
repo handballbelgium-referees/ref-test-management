@@ -22,6 +22,8 @@ jobs:
       # Required to upload results to the Security tab.
       security-events: write
       contents: read
+      # Required for the CodeQL action to read workflow-run metadata used in status reporting.
+      actions: read
 
     strategy:
       fail-fast: false
