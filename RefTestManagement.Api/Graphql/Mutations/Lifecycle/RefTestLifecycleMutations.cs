@@ -260,8 +260,33 @@ public static partial class RefTestLifecycleMutations
             source
         );
 
+        // The completion and the result email it owes are committed together: a completed test
+        // whose result job was lost never reports back to the participant.
+        if (refTest.SendResultsAutomatically)
+        {
+            var payload = new ResultEmailPayload(
+                refTest.Id,
+                refTest.FullName,
+                refTest.Email,
+                refTest.QuestionScore ?? 0,
+                refTest.AnswerScore ?? 0,
+                refTest.QuestionTotal,
+                refTest.AnswerTotal ?? 0,
+                refTest.Percentage ?? 0,
+                refTest.SelectedAnswerIds,
+                refTest.WrongQuestionIds,
+                refTest.WrongAnswerIds
+            );
+
+            DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
+                ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
+                : null;
+            await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt, cancellationToken,
+                saveChanges: false);
+        }
+
         await context.SaveChangesWithRetryAsync(cancellationToken);
-        
+
         // Publish subscription event
         await subscriptionService.PublishRefTestCompletedAsync(
             refTest.Id,
@@ -274,29 +299,6 @@ public static partial class RefTestLifecycleMutations
             refTest.Percentage ?? 0,
             language ?? "",
             cancellationToken);
-
-        if (!refTest.SendResultsAutomatically)
-            return refTest.ToDto();
-
-        // Enqueue result email job
-        var payload = new ResultEmailPayload(
-            refTest.Id,
-            refTest.FullName,
-            refTest.Email,
-            refTest.QuestionScore ?? 0,
-            refTest.AnswerScore ?? 0,
-            refTest.QuestionTotal,
-            refTest.AnswerTotal ?? 0,
-            refTest.Percentage ?? 0,
-            refTest.SelectedAnswerIds,
-            refTest.WrongQuestionIds,
-            refTest.WrongAnswerIds
-        );
-
-        DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
-            ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
-            : null;
-        await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt, cancellationToken);
 
         return refTest.ToDto();
     }

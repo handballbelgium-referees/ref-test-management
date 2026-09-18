@@ -48,7 +48,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 | Directory                                                        | Purpose                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `RefTestManagement.AuditLog`                                     | Self-contained audit log library — interceptor, entity, options, DI extension |
+| `RefTestManagement.AuditLog`                                     | Audit log library — interceptor, entity, options, DI extension. Depends on `Domain` for the event abstractions, never the reverse |
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |

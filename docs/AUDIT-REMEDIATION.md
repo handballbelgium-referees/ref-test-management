@@ -1041,7 +1041,7 @@ change. Add a rowversion/xmin-equivalent per provider and handle
 
 ---
 
-## WP-15 — Make write-then-enqueue atomic
+## WP-15 — Make write-then-enqueue atomic ✅
 
 **Findings:** #16 (🟡 Medium) · **Size:** M
 
@@ -1066,6 +1066,40 @@ share the unit of work. Insert the job row in the **same** `SaveChangesAsync` as
 - Check whether `BackgroundJobService` needs a notification to pick the job up promptly, or whether
   it polls. If it polls, this is purely a persistence change.
 - Bulk creation paths enqueue many jobs — keep the batch in one transaction.
+
+### Outcome
+
+`IJobEnqueueService` gained a trailing optional `saveChanges` flag (default `true`). Callers that
+also persist an entity pass `false` and let their own `SaveChangesWithRetryAsync` commit the entity
+and its job rows in one transaction. The flag is last in the signature deliberately so adding it
+disturbed no existing positional call site.
+
+Converted paths: creation (invitations and approval notifications), approval and rejection
+(invitations plus the creator's decision email), update (email change with resend, notification
+settings enabling an invitation or result email, token regeneration), completion (the result
+email), and reset/revive.
+
+Two paths were deliberately left on the immediate default: `RefTestEmailMutations`, `RefTestQueries`
+and `RefTestExpirationService` only ask for an email — they have no accompanying entity write, so
+there is nothing to be atomic with.
+
+**Reset turned out to be worse than the finding described.** Its loop processes several RefTests
+and saves once at the end, but each `Enqueue`/`Cancel` call inside the loop was issuing its own
+`SaveChanges` — which committed the partially-mutated reset state of every RefTest handled so far.
+A failure midway through left some tests reset and some not, with no error surfaced for the
+committed ones. Deferring those saves fixed it as a side effect, so `CancelPendingJobsForRefTestAsync`
+and `CancelPendingResultEmailsAsync` gained the same flag.
+
+The catch blocks in creation are now only reachable for payload serialization, so their messages
+changed from "RefTest created but … enqueue failed" to "… could not be prepared" — the old wording
+described a state that can no longer occur. A commit failure now fails the whole mutation, which
+is the point.
+
+`JobEnqueueUnitOfWorkTests` covers this against real SQLite: a staged job is invisible to a second
+connection until the caller saves, entity and job land together, a failed commit leaves neither,
+immediate mode still writes on its own, and staged cancellation defers too. One wrinkle worth
+noting for future tests — the RefTest → RefTestTitle foreign key is enforced, so the title must be
+seeded first.
 
 ---
 
@@ -1188,7 +1222,7 @@ materialising the table. Full suite: 97 passing.
 
 ---
 
-## WP-18 — Decouple `Domain` from `AuditLog`
+## WP-18 — Decouple `Domain` from `AuditLog` ✅
 
 **Findings:** #13 (🟡 Medium) · **Size:** L
 
@@ -1215,6 +1249,26 @@ project; leave the interceptor and anything EF-aware in `Infrastructure`.
 - Touches many files by namespace change alone; keep it mechanical and avoid mixing in behaviour
   changes.
 - Do this **after** Phase 1 — it would create conflicts with WP-04's changes to the audit path.
+
+### Outcome
+
+Smaller than the plan estimated. The five abstractions the domain actually needed —
+`IDomainEvent`, `DomainEventBase`, `IHasDomainEvents`, `IDomainEventWithResolution` and
+`IHasParticipantIdentity` — were nothing but contracts with no dependencies of their own, so
+instead of creating a third project they moved *into* `Domain` as `Domain.Events` and the project
+reference was reversed: `AuditLog` now references `Domain`.
+
+That is the right direction anyway. The audit trail is a consumer of domain events; the domain has
+no reason to know an audit trail exists. `AuditSaveChangesInterceptor` and everything EF-aware
+stayed where they were, so no behaviour moved.
+
+`Domain.csproj` now has **no** `ItemGroup` at all — no project references, no packages. The
+transitive EF Core and ASP.NET Core HTTP dependencies are gone.
+
+`DomainDependencyTests` asserts this from the compiled assembly's reference list, covering both
+`RefTestManagement.AuditLog` and the two infrastructure packages it dragged in. The guard matters
+because the regression is a two-second accident: add one `using`, accept the IDE's offer to add the
+project reference, and the cycle is back with nothing to notice it.
 
 ---
 

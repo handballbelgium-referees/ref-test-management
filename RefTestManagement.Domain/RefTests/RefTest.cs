@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
-using Handball.Belgium.RefTestManagement.AuditLog;
+using Handball.Belgium.RefTestManagement.Domain.Events;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
