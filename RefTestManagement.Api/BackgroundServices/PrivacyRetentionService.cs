@@ -48,8 +48,16 @@ public sealed class PrivacyRetentionService(
 
         var refTests = await context.RefTests
             .Where(refTest =>
-                (refTest.Status == RefTestStatus.Completed && refTest.CompletedAt < cutoff) ||
-                (refTest.Status == RefTestStatus.Expired && refTest.ExpiredAt < cutoff))
+                !refTest.IsAnonymized &&
+                ((refTest.Status == RefTestStatus.Completed && refTest.CompletedAt < cutoff) ||
+                 (refTest.Status == RefTestStatus.Expired && refTest.ExpiredAt < cutoff) ||
+                 // PendingApproval and Rejected are terminal too: RefTestExpirationService never
+                 // transitions them, so without this clause they would retain personal data
+                 // forever. Neither status stamps a completion timestamp, so retention runs from
+                 // CreatedAt — a RefTest left unapproved for the entire retention window is
+                 // abandoned, and keeping personal data for it has no lawful basis.
+                 ((refTest.Status == RefTestStatus.PendingApproval ||
+                   refTest.Status == RefTestStatus.Rejected) && refTest.CreatedAt < cutoff)))
             .ToListAsync(cancellationToken);
 
         foreach (var refTest in refTests)

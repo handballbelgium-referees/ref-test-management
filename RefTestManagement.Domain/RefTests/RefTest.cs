@@ -567,8 +567,10 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         // Token must stay unique (unique index) — a random placeholder still hides the real
         // token value while satisfying that constraint, unlike a fixed "***" for every RefTest.
         Token = $"erased-{Guid.NewGuid():N}";
-        PrivacyNoticeVersion = null;
-        PrivacyNoticeAcceptedAt = null;
+        // PrivacyNoticeVersion and PrivacyNoticeAcceptedAt are deliberately retained. GDPR
+        // Art. 7(1) requires the controller to be able to demonstrate that consent was given;
+        // neither field identifies the participant once name, email and token are erased, so
+        // keeping them costs nothing in privacy terms and preserves the evidence.
         IsAnonymized = true;
         AnonymizedAt = DateTime.UtcNow;
 

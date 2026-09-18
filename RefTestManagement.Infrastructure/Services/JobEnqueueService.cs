@@ -52,7 +52,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         context.Jobs.Add(job);
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
-        ServiceLoggerMessages.LogEnqueuedInvitationEmail(logger, job.Id, payload.Email);
+        ServiceLoggerMessages.LogEnqueuedInvitationEmail(logger, job.Id, payload.RefTestId);
     }
 
     public async Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null,
@@ -64,7 +64,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         context.Jobs.Add(job);
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
-        ServiceLoggerMessages.LogEnqueuedResultEmail(logger, job.Id, payload.Email);
+        ServiceLoggerMessages.LogEnqueuedResultEmail(logger, job.Id, payload.RefTestId);
     }
 
     public async Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null,

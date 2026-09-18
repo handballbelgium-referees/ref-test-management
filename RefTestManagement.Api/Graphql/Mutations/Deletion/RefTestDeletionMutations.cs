@@ -16,10 +16,11 @@ public static partial class RefTestDeletionMutations
 {
     /// <summary>
     /// Delete RefTests. This is an explicit, authorized staff action that permanently deletes
-    /// each RefTest record (see <see cref="IRefTestPrivacyErasureService.DeleteAsync"/>) —
-    /// unlike the public self-service "withdraw consent" flow, which only redacts personal data
-    /// and keeps the record. Its audit trail is left untouched and expires on its own per the
-    /// normal audit-log retention schedule (currently 90 days).
+    /// each RefTest record — unlike the public self-service "withdraw consent" flow, which only
+    /// redacts personal data and keeps the record. Personal data is redacted from the RefTest's
+    /// audit trail first (see <see cref="IRefTestPrivacyErasureService.EraseAsync"/>), so a
+    /// staff delete leaves no personal data behind anywhere; the row itself is then removed
+    /// (see <see cref="IRefTestPrivacyErasureService.DeleteAsync"/>).
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
@@ -56,10 +57,22 @@ public static partial class RefTestDeletionMutations
                 if (refTest is null)
                     throw new RefTestNotFoundException(id.ToString());
 
+                // Capture the DTO before erasing: EraseAsync anonymizes the entity in memory,
+                // so reading it afterwards would return redacted placeholders instead of the
+                // participant's details the caller expects back.
+                var deletedDto = refTest.ToDto();
+
+                // Redact personal data from the audit trail before removing the row. DeleteAsync
+                // only removes the RefTest record; audit events carry no FK to it and would
+                // otherwise retain the participant's name and email until audit retention
+                // expires them.
+                if (!refTest.IsAnonymized)
+                    await privacyErasureService.EraseAsync(refTest, cancellationToken);
+
                 await privacyErasureService.DeleteAsync(refTest, cancellationToken);
 
                 result.SuccessfullyDeleted++;
-                result.DeletedRefTests.Add(refTest.ToDto());
+                result.DeletedRefTests.Add(deletedDto);
             }
             catch (Exception e)
             {

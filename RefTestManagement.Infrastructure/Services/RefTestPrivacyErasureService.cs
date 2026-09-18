@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
@@ -13,31 +12,33 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 public interface IRefTestPrivacyErasureService
 {
     /// <summary>
-    /// Erases a RefTest's personal data: cancels any still-pending background jobs referencing
-    /// it (so no invitation/result email goes out afterwards) and redacts personal data (name,
-    /// email, token) in place, both on the record itself and in its audit trail. The RefTest
-    /// record and its (redacted) audit trail are always kept for accountability — this never
-    /// deletes the row itself. Idempotent: calling it again on an already-anonymized RefTest is
-    /// a no-op. Used by the public self-service "withdraw consent" flow.
+    /// Erases a RefTest's personal data: cancels any background job referencing it that is still
+    /// pending or in flight (so no invitation/result email goes out afterwards, and the job's
+    /// payload — which carries name, email and token — is cleared) and redacts personal data
+    /// (name, email, token) in place, both on the record itself and in its audit trail. The
+    /// RefTest record and its (redacted) audit trail are always kept for accountability — this
+    /// never deletes the row itself. Idempotent: calling it again on an already-anonymized
+    /// RefTest is a no-op. Used by the public self-service "withdraw consent" flow, and by a
+    /// staff delete before the row is removed.
     /// </summary>
     Task EraseAsync(RefTest refTest, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Permanently deletes a RefTest — a real, authorized staff "Delete" action. Cancels any
-    /// still-pending background jobs referencing it first, then removes the row itself. Its
-    /// audit trail is left untouched (it carries no FK to the RefTest row) and expires on its
-    /// own per the normal audit-log retention schedule (<see cref="AuditLogOptions.RetentionDays"/>),
-    /// rather than being redacted immediately here.
+    /// background job referencing it that is still pending or in flight, then removes the row
+    /// itself.
+    /// <para>
+    /// This removes only the RefTest record. Audit events carry no FK to it and are
+    /// <b>not</b> touched here, so callers deleting a RefTest that still holds personal data
+    /// must call <see cref="EraseAsync"/> first — otherwise the participant's name and email
+    /// survive in the audit trail until audit retention expires them.
+    /// </para>
     /// </summary>
     Task DeleteAsync(RefTest refTest, CancellationToken cancellationToken = default);
 }
 
 public sealed class RefTestPrivacyErasureService(RefTestManagementContext context) : IRefTestPrivacyErasureService
 {
-    /// <summary>Property keys whose values are considered personal data in audit event JSON payloads.</summary>
-    private static readonly string[] PiiKeys = ["firstName", "lastName", "email"];
-    private const string RedactedValue = "***";
-
     /// <summary>
     /// Event types raised for anonymous, token-based participant actions (see
     /// <see cref="AuditSaveChangesInterceptor"/>), whose ActorName/ActorEmail are attributed to
@@ -66,13 +67,21 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 
             var refTestId = refTest.Id.ToString();
 
-            // Cancel any jobs still waiting to run (e.g. a scheduled invitation/result email)
-            // so nothing gets sent out referencing a record that's about to be gone.
-            var pendingJobs = await context.Jobs
-                .Where(job => job.Status == JobStatus.Pending && job.Payload.Contains(refTestId))
+            // Cancel any job still waiting to run or already in flight (e.g. a scheduled
+            // invitation/result email) so nothing gets sent out referencing a record that's
+            // about to be gone. Cancelling clears the job payload, which carries the
+            // participant's name, email and token.
+            // Processing jobs are included deliberately: a worker may be mid-send, so this
+            // narrows the window rather than closing it, but leaving them out guarantees the
+            // email goes out. A batch ReportEmail job whose payload mentions this RefTest is
+            // cancelled too — that is the existing behaviour and is intentional, since the
+            // report would otherwise deliver the deleted participant's details to staff.
+            var cancellableJobs = await context.Jobs
+                .Where(job => (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing)
+                              && job.Payload.Contains(refTestId))
                 .ToListAsync(ct);
 
-            foreach (var job in pendingJobs)
+            foreach (var job in cancellableJobs)
                 job.Cancel("RefTest was deleted");
 
             refTest.MarkDeleted();
@@ -111,15 +120,21 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 
             var refTestId = refTest.Id.ToString();
 
-            // Cancel any jobs still waiting to run (e.g. a scheduled invitation/result email)
-            // so nothing gets sent out referencing the erased data. Jobs that already ran are
+            // Cancel any job still waiting to run or already in flight (e.g. a scheduled
+            // invitation/result email) so nothing gets sent out referencing the erased data.
+            // Cancelling also clears the job payload, which holds the participant's name,
+            // email, token, scores and answers — erasing the RefTest row alone would leave all
+            // of that sitting in the Jobs table.
+            // Processing jobs are included deliberately: a worker may already be mid-send, so
+            // this narrows the window rather than closing it. Jobs that already completed are
             // left untouched — they carry their own accountability value and are handled by the
             // normal retention/cleanup schedule instead.
-            var pendingJobs = await context.Jobs
-                .Where(job => job.Status == JobStatus.Pending && job.Payload.Contains(refTestId))
+            var cancellableJobs = await context.Jobs
+                .Where(job => (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing)
+                              && job.Payload.Contains(refTestId))
                 .ToListAsync(ct);
 
-            foreach (var job in pendingJobs)
+            foreach (var job in cancellableJobs)
                 job.Cancel("RefTest personal data was erased");
 
             // Redact personal data in place, keep the record and its audit trail for accountability.
@@ -132,7 +147,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 
             foreach (var auditEvent in auditEvents)
             {
-                var redacted = RedactPii(auditEvent.Data);
+                var redacted = AuditPiiRedactor.RedactData(auditEvent.Data);
                 if (redacted != auditEvent.Data)
                     context.Entry(auditEvent).Property(e => e.Data).CurrentValue = redacted;
 
@@ -144,8 +159,8 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
                 if (!ParticipantActorEventTypes.Contains(auditEvent.Type))
                     continue;
 
-                context.Entry(auditEvent).Property(e => e.ActorName).CurrentValue = RedactedValue;
-                context.Entry(auditEvent).Property(e => e.ActorEmail).CurrentValue = RedactedValue;
+                context.Entry(auditEvent).Property(e => e.ActorName).CurrentValue = AuditPiiRedactor.RedactedValue;
+                context.Entry(auditEvent).Property(e => e.ActorEmail).CurrentValue = AuditPiiRedactor.RedactedValue;
             }
 
             await context.SaveChangesAsync(ct);
@@ -153,43 +168,4 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
             await transaction.CommitAsync(ct);
         });
     }
-
-    /// <summary>
-    /// Replaces known personal-data keys (name/email) inside an audit event's JSON <c>Data</c>
-    /// payload with a redaction placeholder, leaving the rest of the event (type, timestamp,
-    /// actor, other fields) intact. Handles both the flat shape used by
-    /// <c>RefTestCreatedEvent</c> (e.g. <c>{"firstName":"John",...}</c>) and the old/new diff
-    /// shape used by <c>RefTestDetailsUpdatedEvent</c>
-    /// (e.g. <c>{"firstName":{"old":"John","new":"Jane"},...}</c>).
-    /// </summary>
-    private static string? RedactPii(string? data)
-    {
-        if (string.IsNullOrEmpty(data))
-            return data;
-
-        if (JsonNode.Parse(data) is not JsonObject node)
-            return data;
-
-        foreach (var key in PiiKeys)
-        {
-            if (!node.TryGetPropertyValue(key, out var value) || value is null)
-                continue;
-
-            if (value is JsonObject diff)
-            {
-                foreach (var diffKey in new[] { "old", "new", "oldValue", "newValue" })
-                {
-                    if (diff.ContainsKey(diffKey))
-                        diff[diffKey] = RedactedValue;
-                }
-            }
-            else
-            {
-                node[key] = RedactedValue;
-            }
-        }
-
-        return node.ToJsonString();
-    }
 }
-

@@ -69,7 +69,10 @@ public class Job
     }
 
     /// <summary>
-    /// Cancels the job by marking it as failed
+    /// Cancels the job by marking it as failed. Clears <see cref="Payload"/>: a cancelled job
+    /// will never run, so its payload has no further use, and for participant-facing jobs it
+    /// holds personal data (name, email, invitation token, scores, answers) that must not
+    /// survive an erasure request. Callers that need the payload must read it before cancelling.
     /// </summary>
     public void Cancel(string reason)
     {
@@ -77,6 +80,7 @@ public class Job
         ErrorMessage = reason;
         LockedUntil = null;
         CompletedAt = DateTime.UtcNow;
+        Payload = string.Empty;
     }
 
     /// <summary>

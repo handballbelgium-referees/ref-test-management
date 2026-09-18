@@ -183,8 +183,10 @@ public class BackgroundJobService : BackgroundService
         }
         catch (Exception ex)
         {
-            // Mark as failed
-            var errorMessage = ex.Message;
+            // Mark as failed. The message is persisted to Job.ErrorMessage and that column is not
+            // reached by the privacy erasure path, so scrub any address an exception or a
+            // third-party API response may have embedded before it is stored or logged.
+            var errorMessage = LogRedaction.MaskEmailsInText(ex.Message) ?? string.Empty;
             job.MarkAsFailed(errorMessage, _maxAttempts);
             await context.SaveChangesWithRetryAsync(cancellationToken);
 
@@ -210,9 +212,10 @@ public class BackgroundJobService : BackgroundService
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
         var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
-        ServiceLoggerMessages.LogSendingInvitationEmail(_logger, payload.Email);
+        ServiceLoggerMessages.LogSendingInvitationEmail(_logger, payload.RefTestId);
 
         await emailService.SendRefTestInvitationAsync(
+            payload.RefTestId,
             payload.Name,
             payload.Email,
             payload.Token,
@@ -248,7 +251,7 @@ public class BackgroundJobService : BackgroundService
         var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
         var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
 
-        ServiceLoggerMessages.LogSendingResultEmail(_logger, payload.Email);
+        ServiceLoggerMessages.LogSendingResultEmail(_logger, payload.RefTestId);
 
         // Get the RefTest to retrieve all question IDs
         var refTest = await context.RefTests
@@ -268,6 +271,7 @@ public class BackgroundJobService : BackgroundService
             cancellationToken: cancellationToken);
 
         await emailService.SendRefTestResultsAsync(
+            payload.RefTestId,
             payload.Name,
             payload.Email,
             payload.QuestionScore,
@@ -375,7 +379,7 @@ public class BackgroundJobService : BackgroundService
                         subscriptionService,
                         cancellationToken);
 
-                    ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id, refTest.Email);
+                    ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id);
                     break;
                 }
                 case RefTestExpirationAction.MarkAsExpired:
@@ -390,13 +394,13 @@ public class BackgroundJobService : BackgroundService
                         DateTime.UtcNow,
                         cancellationToken);
 
-                    ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status, refTest.Email);
+                    ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status);
                     break;
             }
         }
         catch (Exception ex)
         {
-            ServiceLoggerMessages.LogAutoCompleteFailed(_logger, ex, refTest.Id, refTest.Email);
+            ServiceLoggerMessages.LogAutoCompleteFailed(_logger, ex, refTest.Id);
             throw; // Re-throw so the job can be retried
         }
     }
@@ -466,7 +470,7 @@ public class BackgroundJobService : BackgroundService
         ServiceLoggerMessages.LogApprovalDecisionEmailSent(
             _logger,
             payload.IsApproved ? "approved" : "rejected",
-            payload.CreatorEmail,
+            LogRedaction.MaskEmail(payload.CreatorEmail),
             payload.RefTests.Count);
     }
 

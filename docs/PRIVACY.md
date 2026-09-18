@@ -27,7 +27,7 @@ The service processes participant name, email address, invitation token, assessm
 | Optional assessment    | Run, score, and communicate an assessment result   | Explicit consent     |
 | Service security       | Prevent misuse and investigate operational changes | Legitimate interests |
 
-The application requires an affirmative acceptance of the current privacy-notice version before a participant can start an assessment. The server persists the accepted version and timestamp, and rejects attempts to start without it.
+The application requires an affirmative acceptance of the current privacy-notice version before a participant can start an assessment. The server persists the accepted version and timestamp, and rejects attempts to start without it. Because the controller must be able to demonstrate that consent was given (Art. 7(1)), the accepted version and timestamp are retained when a record is anonymized — on their own, detached from the redacted name and email, they no longer identify anyone.
 
 ### Service Providers
 
@@ -41,14 +41,23 @@ Before production use, the controller must confirm each provider's data-processi
 
 ## Retention and Erasure
 
-The configured retention period is three years. The application records both completion and expiry timestamps. A daily `PrivacyRetentionService` erases completed or expired RefTests after the retention period.
+The configured retention period is three years. The application records both completion and expiry timestamps. A daily `PrivacyRetentionService` erases RefTests that have reached a terminal state after the retention period: `Completed` and `Expired` (measured from their completion/expiry timestamp), and `PendingApproval` and `Rejected` (measured from creation, since neither records a completion timestamp).
 
 Erasure is a two-step, irreversible process:
 
-1. **Anonymize (first request).** The RefTest record is kept, but its name, email, and access token are redacted in place (`***`/equivalent placeholders), and the same redaction is applied to personal-data fields recorded in its historical audit trail (e.g. the name/email captured when the RefTest was created or last updated). Queued or completed background-job payloads (invitation/result email content) referencing the RefTest are deleted outright, since they hold transient personal data with no accountability value once processed. The record and its (now redacted) audit trail remain visible to staff, so it stays clear *when* and *why* a RefTest was anonymized. Once anonymized, only the delete/erase action remains available for that RefTest — all other operations are disabled.
-2. **Permanent delete (a subsequent request against an already-anonymized RefTest).** The RefTest row itself is removed entirely. Its audit trail no longer contains personal data (it was redacted in step 1), so it is left in place and simply follows the normal audit-log retention/cleanup schedule (see `AuditLogConfiguration.RetentionDays`) rather than being force-deleted.
+1. **Anonymize (first request).** The RefTest record is kept, but its name, email, and access token are redacted in place (`***`/equivalent placeholders), and the same redaction is applied to personal-data fields recorded in its historical audit trail (e.g. the name/email captured when the RefTest was created or last updated). Background jobs referencing the RefTest that are still queued or in flight (invitation/result emails) are cancelled and their payloads cleared. The record and its (now redacted) audit trail remain visible to staff, so it stays clear *when* and *why* a RefTest was anonymized. Once anonymized, only the delete/erase action remains available for that RefTest — all other operations are disabled.
+2. **Permanent delete.** The RefTest row itself is removed entirely. Personal data is redacted from its audit trail first, so nothing identifying is left behind; the (now redacted) trail then follows the normal audit-log retention schedule (see `AuditLogConfiguration.RetentionDays`) rather than being force-deleted.
 
-The standard administrative `deleteRefTests` operation and the participant-facing `withdrawConsent` operation both use this same erasure path, and both trigger step 1 or step 2 depending on whether the RefTest was already anonymized. An already delivered email cannot be recalled from a participant's inbox.
+The standard administrative `deleteRefTests` operation and the participant-facing `withdrawConsent` operation both use this same erasure path. `withdrawConsent` performs step 1; `deleteRefTests` performs step 1 followed by step 2, so a staff delete leaves no personal data whether or not the RefTest was already anonymized. An already delivered email cannot be recalled from a participant's inbox.
+
+### Known limits of erasure
+
+These are bounded, deliberate limits rather than gaps, and are disclosed here so the picture is complete:
+
+- **A job already being processed may still deliver.** Cancellation marks an in-flight job terminal, but a worker that has already handed the message to the email provider cannot be stopped. The window is seconds.
+- **Jobs that already ran keep their payload briefly.** A completed job is not rewritten by erasure; its payload (which held name, email, and score) is removed when the job row is deleted on the normal schedule — 7 days for completed jobs, 30 for failed ones.
+- **Audit events lose personal data on the audit retention schedule, not on request.** Erasing or deleting a specific RefTest redacts *that* RefTest's audit trail immediately. For every other record, the daily audit cleanup redacts the payload and actor identity once the event passes `AuditLogConfiguration.RetentionDays` (90 days by default), keeping only what happened and when.
+- **Application logs.** Logs no longer record participant names, email addresses, invitation tokens, test URLs, or scores; records are identified by their RefTest id, and recipient addresses are masked. Logs written before this change may still contain personal data and are subject to the hosting provider's own retention, not the application's.
 
 Backups, email-provider retention, and third-party logs are outside the application's database cleanup. Their retention and deletion procedures must be agreed with the relevant provider and documented by the controller.
 
@@ -67,7 +76,7 @@ A participant can withdraw consent and immediately anonymize their own data usin
 3. Locate the RefTest using the authorized administration interface; access to participant details requires the relevant `ref-tests` permission.
 4. For access or portability, prepare a secure copy of the participant's identity, timing, progress, answers, and results. Send it only after identity verification.
 5. For corrections, update the minimum necessary fields through the administration interface.
-6. For erasure or withdrawal of consent (any status, if the participant no longer has their token or prefers not to use self-service), delete the RefTest using the administration interface. This anonymizes the record; request a second delete to permanently remove the anonymized row once no further need to retain it is identified.
+6. For erasure or withdrawal of consent (any status, if the participant no longer has their token or prefers not to use self-service), delete the RefTest using the administration interface. A staff delete anonymizes the record and removes the row in a single action, leaving a redacted audit trail behind as proof that the erasure happened.
 7. Reply without undue delay and normally within one month. Record the action taken and any lawful reason for a refusal or extension.
 8. Where a processor received relevant data, follow the processor's documented deletion or request-handling process.
 
