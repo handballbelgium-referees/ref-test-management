@@ -64,7 +64,7 @@ that exists rather than creating one.
 | **3** ✅ | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | **Done** — WP-19 deferred to after Phase 5 |
 | **4** ✅ | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | **Done** — user-visible quality |
 | **5** ✅ | Test foundation | WP-23 → WP-24 | 2×L | **Done** — 110 → 151 backend, 0 → 33 frontend |
-| **6** | Supply chain & documentation | WP-25 → WP-27 | 3×S | Housekeeping |
+| **6** ✅ | Supply chain & documentation | WP-25 → WP-27 | 3×S | **Done** — CodeQL, hook split, README |
 
 ---
 
@@ -1721,7 +1721,7 @@ runners and the parity check instead of only `dotnet test`.
 
 # Phase 6 — Supply chain & documentation
 
-## WP-25 — Add CodeQL and Dependabot
+## WP-25 — Add CodeQL and Dependabot ✅
 
 **Findings:** #34 (⚪ Low) · **Size:** S
 
@@ -1743,9 +1743,29 @@ security-advisory PRs if you want the GitHub-native path as well.
 ### Watch out for
 - CodeQL on a large solution is slow. Schedule it weekly plus on-PR rather than on every push.
 
+### Outcome ✅
+
+Added `.github/workflows/codeql.yml`: C# via `autobuild`, TypeScript via `build-mode: none`, both
+on PRs to `main` plus a weekly cron and `workflow_dispatch`. Per-push was deliberately skipped —
+C# analysis builds the whole solution, so it would duplicate the PR run for no new signal; the
+schedule exists to catch newly published queries against unchanged code.
+
+`security-extended` is enabled rather than the default suite. It adds lower-precision queries, but
+for an application holding participants' personal data a false positive costs a review while a
+missed injection costs a breach notification.
+
+Dependabot was **not** added. Renovate already covers updates including `vulnerabilityAlerts` and
+`osvVulnerabilityAlerts`, and running both produces duplicate PRs for the same bump — the package's
+own guidance.
+
+**Note on the pinned digest:** the `github/codeql-action` SHA was resolved through the API rather
+than written from memory, and the `v4` tag is *annotated*, so `git/ref/tags/v4` returns the tag
+object's SHA, not the commit's. Pinning that value would reference an object Actions cannot check
+out. The commit SHA is the result of dereferencing it via `git/tags/{sha}`.
+
 ---
 
-## WP-26 — Supply chain housekeeping
+## WP-26 — Supply chain housekeeping ✅
 
 **Findings:** #33 (⚪ Low) · **Size:** S
 
@@ -1770,9 +1790,40 @@ security-advisory PRs if you want the GitHub-native path as well.
 - Renovate will bump `sharp` again; consider whether the pin should reference a range or be
   removed entirely.
 
+### Outcome ✅
+
+**Both halves of this finding changed shape once measured.**
+
+**1. The `allowScripts` pin was not stale — it was inert.** The block was removed rather than
+updated to `0.35.4`. Nothing reads it: `@lavamoat/allow-scripts` is not a dependency, there is no
+`.npmrc`, and npm silently ignores unknown top-level `package.json` keys. Bumping the version would
+have "fixed" the finding while preserving the illusion that something enforces an install-script
+allowlist. Making it real was considered and rejected: it needs `ignore-scripts=true`, which also
+suppresses `prepare` and would stop husky installing its own hooks.
+
+**2. The "slow pre-commit build" premise did not survive measurement.** The production build runs in
+**~6.1s**, and a *development* build in **~6.4s** — so bundling and minification are not the cost;
+Angular's compilation is. There is nothing to strip out, and 6s is not slow enough to invite
+`--no-verify`. It is also the only full template type check in the toolchain, so removing it in
+favour of `tsc --noEmit` (2.5s) would have traded away template checking for 3.6s.
+
+What the hook genuinely lacked was tests and any translation check, so the work split by cost
+instead:
+
+| Hook | Runs | Cost |
+| --- | --- | --- |
+| `pre-commit` | README sync, `check:i18n`, Angular build | ~6.5s |
+| `pre-push` *(new)* | `dotnet test`, `npm test` | ~12s total |
+
+Translation parity sits at commit time because it costs 0.4s and a missing key is not a build
+error — it renders as a raw key to that participant, and nothing else notices. The suites sit at
+push time because a hook slow enough to be skipped protects nothing: the commit where somebody is
+in a hurry is the one that most needs checking. Husky 9 already ships a `pre-push` shim in
+`.husky/_/`, so no reinstall is required; both hooks were executed directly to confirm they pass.
+
 ---
 
-## WP-27 — Correct the documented testing story
+## WP-27 — Correct the documented testing story ✅
 
 **Findings:** #11 (🟡 Medium) · **Size:** S
 
@@ -1795,6 +1846,17 @@ real setup.
 ### Watch out for
 - `.husky/pre-commit` runs a README sync script; check whether the tech-stack table is
   generated before editing it by hand.
+
+### Outcome ✅
+
+Resolved the honest way — by making the claim true rather than by softening it. WP-24 showed Vitest
+*is* wired (through the `@angular/build:unit-test` builder), so the tech-stack entry was accurate
+about the tool and wrong only about there being anything to run. There are now 33 specs.
+
+README step 6 was rewritten from "Run the .NET unit tests" to cover both suites, name the builder
+and runner, and mention `npm run check:i18n`. The tech-stack table was left alone: it is generated
+by `scripts/sync-readme-versions.mjs` from `package.json`, as the warning above anticipated, so
+hand-editing it would have been reverted by the next pre-commit hook.
 
 ---
 

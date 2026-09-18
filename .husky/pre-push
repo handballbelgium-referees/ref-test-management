@@ -1,0 +1,19 @@
+#!/usr/bin/env sh
+
+# Tests run at push time rather than on every commit.
+#
+# The split is deliberate: pre-commit holds the checks that are cheap enough to never be worth
+# skipping (README sync, translation parity, the Angular template type check), while the two test
+# suites — which together cost appreciably more — run once before the work leaves the machine.
+# A hook slow enough to invite `--no-verify` protects nothing, because it is the commit where
+# somebody is in a hurry that most needs checking.
+#
+# To skip deliberately: `HUSKY=0 git push ...` or `git push --no-verify`.
+if [ -n "$CI" ]; then
+  exit 0
+fi
+
+dotnet test --solution RefTestManagement.slnx
+
+cd RefTestManagement.Ui
+npm test

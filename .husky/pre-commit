@@ -16,4 +16,13 @@ node scripts/sync-readme-versions.mjs
 git add README.md
 
 cd RefTestManagement.Ui
+
+# Translation parity is checked here rather than at push time because it costs ~0.4s and a
+# missing key is not a build error: it renders as a raw key to that participant and nothing
+# else in the toolchain notices.
+npm run check:i18n
+
+# The Angular build is the only full template type check there is. It was measured at ~6s
+# (and a development build at ~6.4s, so the bundling is not the cost — compilation is), which
+# is cheap enough to keep on every commit. The test suites run in .husky/pre-push instead.
 npm run build
