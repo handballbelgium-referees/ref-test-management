@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Api;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -167,6 +168,15 @@ services.AddHostedService<PermissionSyncService>();
 services.AddHostedService<RefTestExpirationService>();
 services.AddHostedService<PrivacyRetentionService>();
 services.AddHostedService<BackgroundJobService>();
+
+// Job handlers, keyed by the job type BackgroundJobService dispatches on. A job type with no
+// handler registered here fails as "Unknown job type" rather than silently doing nothing.
+services.AddKeyedScoped<IJobHandler, InvitationEmailJobHandler>(JobType.InvitationEmail);
+services.AddKeyedScoped<IJobHandler, ResultEmailJobHandler>(JobType.ResultEmail);
+services.AddKeyedScoped<IJobHandler, ReportEmailJobHandler>(JobType.ReportEmail);
+services.AddKeyedScoped<IJobHandler, RefTestExpirationJobHandler>(JobType.RefTestExpiration);
+services.AddKeyedScoped<IJobHandler, ApprovalNotificationEmailJobHandler>(JobType.ApprovalNotificationEmail);
+services.AddKeyedScoped<IJobHandler, ApprovalDecisionEmailJobHandler>(JobType.ApprovalDecisionEmail);
 if (auditLogOptions.EnableCleanup)
 {
     services.AddHostedService<AuditLogCleanupService>();

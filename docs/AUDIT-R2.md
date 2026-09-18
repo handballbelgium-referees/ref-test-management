@@ -12,6 +12,12 @@ security, GDPR, backend, frontend, testing and CI/CD issues
 > the commit above. This report **supersedes** `AUDIT.md`, which remains valid as the baseline
 > record of the original 34 findings.
 
+> **Superseded by remediation.** Every finding in this report and in `AUDIT.md` — 46 in total —
+> has since been closed across 39 work packages. The verdicts below, including the production
+> readiness and GDPR ratings, describe the repository as it stood on the audit date and are left
+> unedited so the record stays honest. For what is true now, read
+> [`AUDIT-REMEDIATION.md`](./AUDIT-REMEDIATION.md).
+
 ---
 
 ## 1. Executive summary
@@ -104,6 +110,12 @@ expected to be unchanged — and were re-verified rather than assumed.
 | N12 | ⚪ Low | GDPR | `EmailService.cs:179`, `BackgroundJobService.cs:81,486` | Raw exception objects still logged unmasked, unlike their message strings |
 
 ### 3.2 Status of the original 34 findings
+
+> **This table is a snapshot taken at the time of this re-audit**, when only Phase 1 and the two
+> extra gap fixes had shipped. It is left unedited on purpose: a report that is quietly updated
+> stops being evidence of what was true when it was written. For current status see the finding
+> tables in [`AUDIT-REMEDIATION.md`](AUDIT-REMEDIATION.md) — all 46 findings across both reports
+> are now closed, with the single external follow-up noted there against #12.
 
 | # | Original finding | Status | Evidence |
 |---|---|---|---|

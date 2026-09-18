@@ -1,16 +1,8 @@
-﻿using System.Text.Json;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
+﻿using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
-using Handball.Belgium.RefTestManagement.Auth0;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
-using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
-using Handball.Belgium.RefTestManagement.Infrastructure.Services;
-using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
@@ -32,11 +24,6 @@ public class BackgroundJobService : BackgroundService
     private readonly TimeSpan _retainCompletedJobs;
     private readonly TimeSpan _retainFailedJobs;
     private DateTime _lastCleanupTime;
-
-    private readonly JsonSerializerOptions _jsonSerializerOptions = new()
-    {
-        PropertyNameCaseInsensitive = true
-    };
 
     private const string MaskingFailedMessage =
         "Job failed. The original error message was withheld because it could not be scrubbed of personal data.";
@@ -144,7 +131,7 @@ public class BackgroundJobService : BackgroundService
             if (job is null)
                 continue;
 
-            await ProcessJobAsync(job, scope.ServiceProvider, context, cancellationToken);
+            await ProcessJobAsync(job, scope.ServiceProvider, context, _logger, _maxAttempts, cancellationToken);
         }
     }
 
@@ -216,54 +203,41 @@ public class BackgroundJobService : BackgroundService
         return await context.Jobs.FirstOrDefaultAsync(j => j.Id == jobId, cancellationToken);
     }
 
-    private async Task ProcessJobAsync(
+    /// <summary>
+    /// Runs one claimed job and records the outcome.
+    /// </summary>
+    /// <remarks>
+    /// Static and internal for the same reason <see cref="ClaimJobAsync"/> is: this is the failure
+    /// policy, and it is worth pinning with tests without standing up the hosted service and its
+    /// polling loop. The work itself lives behind <see cref="IJobHandler"/>, so a test supplies a
+    /// handler that throws whatever it wants to assert about.
+    /// </remarks>
+    internal static async Task ProcessJobAsync(
         Job job,
         IServiceProvider serviceProvider,
         RefTestManagementContext context,
+        ILogger logger,
+        int maxAttempts,
         CancellationToken cancellationToken)
     {
         try
         {
             // The job is already locked — ClaimJobAsync took ownership in a single statement
             // before this method was reached.
-            ServiceLoggerMessages.LogProcessingJob(_logger, job.Id, job.JobType, job.Attempts + 1, _maxAttempts);
+            ServiceLoggerMessages.LogProcessingJob(logger, job.Id, job.JobType, job.Attempts + 1, maxAttempts);
 
-            // Process based on a job type
-            switch (job.JobType)
-            {
-                case JobType.InvitationEmail:
-                    await ProcessInvitationEmailJobAsync(job, serviceProvider, cancellationToken);
-                    break;
+            // Resolved by key rather than through GetRequiredKeyedService so an unregistered job
+            // type still reports itself by name instead of as a DI resolution failure.
+            var handler = serviceProvider.GetKeyedService<IJobHandler>(job.JobType)
+                          ?? throw new InvalidOperationException($"Unknown job type: {job.JobType}");
 
-                case JobType.ResultEmail:
-                    await ProcessResultEmailJobAsync(job, serviceProvider, cancellationToken);
-                    break;
-
-                case JobType.ReportEmail:
-                    await ProcessReportEmailJobAsync(job, serviceProvider, cancellationToken);
-                    break;
-
-                case JobType.RefTestExpiration:
-                    await ProcessRefTestExpirationJobAsync(job, serviceProvider, cancellationToken);
-                    break;
-
-                case JobType.ApprovalNotificationEmail:
-                    await ProcessApprovalNotificationEmailJobAsync(job, serviceProvider, cancellationToken);
-                    break;
-
-                case JobType.ApprovalDecisionEmail:
-                    await ProcessApprovalDecisionEmailJobAsync(job, serviceProvider, cancellationToken);
-                    break;
-
-                default:
-                    throw new InvalidOperationException($"Unknown job type: {job.JobType}");
-            }
+            await handler.HandleAsync(job, cancellationToken);
 
             // Mark as completed
             job.MarkAsCompleted();
             await context.SaveChangesWithRetryAsync(cancellationToken);
 
-            ServiceLoggerMessages.LogJobCompleted(_logger, job.Id, job.JobType);
+            ServiceLoggerMessages.LogJobCompleted(logger, job.Id, job.JobType);
         }
         catch (Exception ex)
         {
@@ -281,7 +255,7 @@ public class BackgroundJobService : BackgroundService
             }
             catch (Exception maskEx)
             {
-                ServiceLoggerMessages.LogErrorMessageMaskingFailed(_logger, maskEx, job.Id);
+                ServiceLoggerMessages.LogErrorMessageMaskingFailed(logger, maskEx, job.Id);
                 errorMessage = MaskingFailedMessage;
             }
 
@@ -293,316 +267,20 @@ public class BackgroundJobService : BackgroundService
             }
             else
             {
-                job.MarkAsFailed(errorMessage, _maxAttempts);
+                job.MarkAsFailed(errorMessage, maxAttempts);
             }
 
             await context.SaveChangesWithRetryAsync(cancellationToken);
 
             if (job.Status == JobStatus.Failed)
             {
-                ServiceLoggerMessages.LogJobFailedPermanently(_logger, job.Id, job.JobType, job.Attempts);
+                ServiceLoggerMessages.LogJobFailedPermanently(logger, job.Id, job.JobType, job.Attempts);
             }
             else
             {
-                ServiceLoggerMessages.LogJobFailed(_logger, job.Id, job.JobType, job.Attempts, _maxAttempts,
+                ServiceLoggerMessages.LogJobFailed(logger, job.Id, job.JobType, job.Attempts, maxAttempts,
                     errorMessage);
             }
-        }
-    }
-
-    private async Task ProcessInvitationEmailJobAsync(
-        Job job,
-        IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
-    {
-        var payload = DeserializePayload<InvitationEmailPayload>(job);
-        var emailService = serviceProvider.GetRequiredService<IEmailService>();
-        var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
-        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
-
-        ServiceLoggerMessages.LogSendingInvitationEmail(_logger, payload.RefTestId);
-
-        await emailService.SendRefTestInvitationAsync(
-            payload.RefTestId,
-            payload.Name,
-            payload.Email,
-            payload.Token,
-            payload.NumberOfQuestions,
-            payload.MaxTimeInMinutes,
-            cancellationToken);
-
-        // Mark the RefTest invitation as sent
-        var refTest = await context.RefTests
-            .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
-
-        if (refTest != null)
-        {
-            refTest.SendInvitation();
-            await context.SaveChangesWithRetryAsync(cancellationToken);
-
-            // Publish subscription event
-            await subscriptionService.PublishInvitationSentAsync(
-                refTest.Id,
-                refTest.InvitationSentAt!.Value,
-                cancellationToken);
-        }
-    }
-
-    private async Task ProcessResultEmailJobAsync(
-        Job job,
-        IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
-    {
-        var payload = DeserializePayload<ResultEmailPayload>(job);
-        var emailService = serviceProvider.GetRequiredService<IEmailService>();
-        var questionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
-        var context = serviceProvider.GetRequiredService<RefTestManagementContext>();
-        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
-
-        ServiceLoggerMessages.LogSendingResultEmail(_logger, payload.RefTestId);
-
-        // Get the RefTest to retrieve all question IDs
-        var refTest = await context.RefTests
-            .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
-
-        if (refTest == null)
-        {
-            throw new InvalidOperationException($"RefTest {payload.RefTestId} not found");
-        }
-
-        // Get ALL questions with correct answers (not just the wrong ones)
-        var questionsWithCorrectAnswers = await questionsService.GetQuestionsByIdAsync(
-            refTest.QuestionIds,
-            includeNumber: true,
-            includeIsCorrect: true,
-            randomAnswerOrder: false,
-            cancellationToken: cancellationToken);
-
-        await emailService.SendRefTestResultsAsync(
-            payload.RefTestId,
-            payload.Name,
-            payload.Email,
-            payload.QuestionScore,
-            payload.AnswerScore,
-            payload.TotalQuestions,
-            payload.AnswerTotal,
-            payload.Percentage,
-            payload.SelectedAnswerIds,
-            payload.WrongQuestionIds,
-            payload.WrongAnswerIds,
-            questionsWithCorrectAnswers,
-            scheduleEmail: false,
-            cancellationToken); // Already scheduled via the job system
-
-        // Mark the RefTest results as sent
-        refTest.SendResults();
-        await context.SaveChangesWithRetryAsync(cancellationToken);
-
-        // Publish subscription event
-        await subscriptionService.PublishResultSentAsync(
-            refTest.Id,
-            refTest.ResultsSentAt!.Value,
-            cancellationToken);
-    }
-
-    private async Task ProcessReportEmailJobAsync(
-        Job job,
-        IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
-    {
-        var payload = DeserializePayload<ReportEmailPayload>(job);
-        var reportService = serviceProvider.GetRequiredService<IRefTestReportService>();
-
-        ServiceLoggerMessages.LogSendingReportEmail(_logger, payload.RecipientEmails.Length);
-
-        // Convert payload data to service data
-        var refTests = payload.RefTests.Select(r => new RefTestReportData(
-            r.TitleName,
-            r.FirstName,
-            r.LastName,
-            r.StartedAt,
-            r.CompletedAt,
-            r.QuestionScore,
-            r.QuestionTotal,
-            r.AnswerScore,
-            r.AnswerTotal,
-            r.Percentage,
-            r.Passed,
-            r.Language,
-            r.Duration)).ToList();
-
-        await reportService.SendReportAsync(refTests, payload.RecipientEmails, cancellationToken);
-    }
-
-    private async Task ProcessRefTestExpirationJobAsync(
-        Job job,
-        IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
-    {
-        var payload = DeserializePayload<RefTestExpirationPayload>(job);
-
-        var contextFactory = serviceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
-        await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        var subscriptionService = serviceProvider.GetRequiredService<IRefTestSubscriptionService>();
-
-        // Load the specific RefTest
-        var refTest = await context.RefTests
-            .FirstOrDefaultAsync(rt => rt.Id == payload.RefTestId, cancellationToken);
-
-        if (refTest == null)
-        {
-            _logger.LogWarning("RefTest {Id} not found for expiration job", payload.RefTestId);
-            return;
-        }
-
-        // Skip if already completed, expired, or its consent has been withdrawn
-        if (refTest.Status == RefTestStatus.Completed || refTest.Status == RefTestStatus.Expired ||
-            refTest.IsAnonymized)
-        {
-            _logger.LogDebug(
-                "RefTest {Id} already in status {Status} or anonymized ({IsAnonymized}), skipping",
-                refTest.Id, refTest.Status, refTest.IsAnonymized);
-            return;
-        }
-
-        ServiceLoggerMessages.LogRefTestExpirationCheck(_logger, refTest.Id, true, refTest.Status);
-
-        try
-        {
-            switch (payload.Action)
-            {
-                case RefTestExpirationAction.AutoComplete when refTest.Status == RefTestStatus.InProgress:
-                {
-                    // Auto-complete the in-progress test
-                    var ihfRulesQuestionsService = serviceProvider.GetRequiredService<IIhfRulesQuestionsService>();
-                    var jobEnqueueService = serviceProvider.GetRequiredService<IJobEnqueueService>();
-                    var emailConfiguration = serviceProvider.GetRequiredService<EmailConfiguration>();
-
-                    await RefTestLifecycleMutations.CompleteRefTestCoreAsync(
-                        new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
-                        context,
-                        ihfRulesQuestionsService,
-                        jobEnqueueService,
-                        emailConfiguration,
-                        subscriptionService,
-                        RefTestCompletionSource.ExpirationService,
-                        cancellationToken);
-
-                    ServiceLoggerMessages.LogAutoCompleted(_logger, refTest.Id);
-                    break;
-                }
-                case RefTestExpirationAction.MarkAsExpired:
-                    // Mark as expired (for pending tests)
-                    refTest.Expire();
-                    await context.SaveChangesWithRetryAsync(cancellationToken);
-
-                    // Publish subscription event
-                    await subscriptionService.PublishRefTestExpiredAsync(
-                        refTest.Id,
-                        refTest.Status,
-                        DateTime.UtcNow,
-                        cancellationToken);
-
-                    ServiceLoggerMessages.LogExpired(_logger, refTest.Id, refTest.Status);
-                    break;
-            }
-        }
-        catch (Exception ex)
-        {
-            ServiceLoggerMessages.LogAutoCompleteFailed(_logger, ex, refTest.Id);
-            throw; // Re-throw so the job can be retried
-        }
-    }
-
-    private async Task ProcessApprovalNotificationEmailJobAsync(
-        Job job,
-        IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
-    {
-        var payload = DeserializePayload<ApprovalNotificationEmailPayload>(job);
-        var auth0Service = serviceProvider.GetRequiredService<IAuth0ManagementService>();
-        var emailService = serviceProvider.GetRequiredService<IEmailService>();
-        var emailConfig = serviceProvider.GetRequiredService<EmailConfiguration>();
-
-        var approvers = await auth0Service.GetUsersWithPermissionAsync(
-            Permissions.RefTests.Approve, cancellationToken);
-
-        if (approvers.Count == 0)
-        {
-            _logger.LogWarning(
-                "No approvers found for permission '{Permission}' — approval notification email not sent",
-                Permissions.RefTests.Approve);
-            return;
-        }
-
-        var items = payload.RefTests
-            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email, rt.ScheduledAt))
-            .ToList();
-
-        foreach (var approver in approvers)
-        {
-            await emailService.SendApprovalNotificationAsync(
-                approver.Name,
-                approver.Email,
-                payload.CreatorName,
-                payload.TitleValue,
-                items,
-                emailConfig.BaseUrl,
-                cancellationToken);
-        }
-
-        ServiceLoggerMessages.LogApprovalNotificationSent(_logger, approvers.Count, payload.RefTests.Count);
-    }
-
-    private async Task ProcessApprovalDecisionEmailJobAsync(
-        Job job,
-        IServiceProvider serviceProvider,
-        CancellationToken cancellationToken)
-    {
-        var payload = DeserializePayload<ApprovalDecisionEmailPayload>(job);
-        var emailService = serviceProvider.GetRequiredService<IEmailService>();
-
-        var items = payload.RefTests
-            .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email, rt.ScheduledAt))
-            .ToList();
-
-        await emailService.SendApprovalDecisionAsync(
-            payload.CreatorName,
-            payload.CreatorEmail,
-            payload.ApproverName,
-            payload.IsApproved,
-            payload.RejectionReason,
-            payload.TitleValue,
-            items,
-            cancellationToken);
-
-        ServiceLoggerMessages.LogApprovalDecisionEmailSent(
-            _logger,
-            payload.IsApproved ? "approved" : "rejected",
-            LogRedaction.MaskEmail(payload.CreatorEmail),
-            payload.RefTests.Count);
-    }
-
-    private T DeserializePayload<T>(Job job) where T : IJobPayload
-    {
-        // A cancelled job has its payload cleared, and a job that was cancelled while a worker
-        // held it can still reach a handler. Treat that as terminal rather than letting
-        // JsonException burn every retry attempt.
-        if (string.IsNullOrEmpty(job.Payload))
-            throw new JobPayloadException($"Job {job.Id} has no payload to deserialize");
-
-        try
-        {
-            var payload = JsonSerializer.Deserialize<T>(job.Payload, _jsonSerializerOptions);
-
-            return payload ?? throw new JobPayloadException($"Job {job.Id} deserialized to a null payload");
-        }
-        catch (JsonException ex)
-        {
-            // The payload carries the participant's name and email; a deserialization failure
-            // can quote the offending fragment back in its message.
-            ServiceLoggerMessages.LogJobDeserializationError(_logger, LogRedaction.MaskEmails(ex), job.Id);
-            throw new JobPayloadException($"Job {job.Id} has a payload that could not be deserialized", ex);
         }
     }
 

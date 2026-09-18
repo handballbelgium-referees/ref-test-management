@@ -61,7 +61,7 @@ that exists rather than creating one.
 | **1** ✅ | GDPR remediation | WP-01 → WP-07 | 1×M, 6×S | **Done** — shipped in `29dba7c` |
 | **1b** ✅ | Phase 1 regression fixes | WP-28 → WP-32, WP-35 | 3×M, 3×S | **Done** — regressions introduced by Phase 1 |
 | **2** ✅ | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | **Done** — hardening; no evidence of exploitation |
-| **3** ✅ | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | **Done** — WP-19 deferred to after Phase 5 |
+| **3** ✅ | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | **Done** |
 | **4** ✅ | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | **Done** — user-visible quality |
 | **5** ✅ | Test foundation | WP-23 → WP-24 | 2×L | **Done** — 110 → 151 backend, 0 → 33 frontend |
 | **6** ✅ | Supply chain & documentation | WP-25 → WP-27 | 3×S | **Done** — CodeQL, hook split, README |
@@ -1314,7 +1314,7 @@ project reference, and the cycle is back with nothing to notice it.
 
 ---
 
-## WP-19 — Decompose `BackgroundJobService` ⏸️
+## WP-19 — Decompose `BackgroundJobService` ✅
 
 **Findings:** #32 (⚪ Low) · **Size:** L
 
@@ -1350,6 +1350,68 @@ The three preceding work packages (WP-13, WP-15, WP-14) all changed this file's 
 the refactor now would mean reviewing a large structural diff on top of three fresh behavioural
 ones, with only `JobClaimTests` underneath it. WP-23 and WP-24 build the handler-level coverage
 that would make this refactor checkable rather than merely careful, so it runs after them.
+
+### Outcome
+
+**The stated precondition was not met, and saying so is the honest part of this entry.** The plan
+deferred this refactor until WP-23 and WP-24 had built "the handler-level coverage that would make
+it checkable". They did not: WP-23 went where the defects were — erasure, retention and score
+parsing — and WP-24 covered the participant flow in the browser. When this package started,
+`BackgroundJobService` still had exactly the coverage it had in Phase 3: `JobClaimTests`, and
+nothing above the claim.
+
+So the order was inverted. Rather than wait for coverage that would have to be written through a
+hosted service and a live SMTP client to exist at all, the refactor was done first *because* it is
+what makes the coverage reachable — and the tests were written immediately after, in the same
+change. That is a defensible inversion only because the move itself is mechanical: the six handler
+bodies were relocated verbatim, with `serviceProvider.GetRequiredService<T>()` calls becoming
+constructor parameters and nothing else touched.
+
+**What moved.** Six handlers left the 530-line file for
+`BackgroundServices/JobHandlers/`, one class each, behind a two-member `IJobHandler`. They are
+registered keyed by `JobType` and resolved from the same per-iteration scope they were resolved
+from before, so lifetime semantics are unchanged. The shared payload reader became `JobPayload`,
+keeping both behaviours that are easy to lose in a move: an absent payload is classified as
+terminal rather than retryable, because `Cancel()` clears the payload and a cancelled job can still
+reach a handler; and a deserialization failure is masked before it is logged, because the payload
+carries the participant's name and email.
+
+**What deliberately stayed.** The polling loop, the lease and reclaim logic, `ClaimJobAsync`, the
+cleanup sweep, and the entire failure policy. Handlers signal failure by throwing and nothing else
+— they never set job state. Dispatch resolves with `GetKeyedService` and throws explicitly rather
+than using `GetRequiredKeyedService`, purely to keep the existing `"Unknown job type: {x}"`
+message: a DI resolution error would report a missing service and leave the operator to work out
+which job type it meant.
+
+**The payoff, which is the only reason a ⚪ Low refactor earns its place.** `ProcessJobAsync` became
+`internal static`, matching `ClaimJobAsync`, and with the work behind an interface a test can now
+register a handler that throws exactly what it wants to ask about. Nine tests in
+`BackgroundJobProcessingTests` pin the branch that decides retry-versus-give-up — the branch most
+likely to strand a job or mail a participant twice, and the one branch in the queue that had no
+coverage at all:
+
+- a handler that returns marks the job `Completed` and releases the lease;
+- a transient failure returns it to `Pending` with the lock cleared, not left at `Processing`;
+- a handler exception never escapes to the polling loop, which would otherwise abandon the batch;
+- repeated failures stop at `MaxAttempts` and stamp `CompletedAt`, which cleanup keys its retention
+  window off;
+- a `JobPayloadException` fails permanently on the first attempt instead of burning two more;
+- an address embedded in a failure message is masked before it reaches `ErrorMessage`, a column
+  the erasure path does not visit;
+- an unregistered job type fails by name;
+- a handler keyed to one job type is not reached by another;
+- a job cancelled while a worker held it stays `Cancelled` rather than returning to the queue with
+  a payload `Cancel()` has already cleared.
+
+Backend suite 151 → 160. `JobClaimTests` unchanged and still passing, which is the evidence that
+the claim semantics survived the move.
+
+**Tooling note.** `dotnet test` intermittently reports "Zero tests ran" on this machine — the test
+host starts, never completes its named-pipe handshake with the CLI, and exits in under 200 ms. It
+reproduces on an untouched checkout and is independent of configuration, working directory and SDK
+feature band, so it is a local IPC flake rather than anything in the repository. The module runs
+deterministically when executed directly (`dotnet run` in the test project), which is how the 160
+results above were confirmed. Worth knowing before anyone reads a zero-test run as a green one.
 
 ---
 
@@ -1872,36 +1934,36 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | 2 | 🟠 High | Audit events never deleted | WP-04, **WP-28** | ✅ Done |
 | 3 | 🟠 High | PII and tokens in logs | WP-03 | ✅ Done |
 | 4 | 🟠 High | `PendingApproval`/`Rejected` never erased | WP-02 | ✅ Done |
-| 5 | 🟠 High | No automated tests | WP-32, WP-23, WP-24 | 🟡 Partial |
+| 5 | 🟠 High | No automated tests | WP-32, WP-23, WP-24 | ✅ Done |
 | 6 | 🟡 Medium | Job payload PII / in-flight sends | WP-05 | ✅ Done |
-| 7 | 🟡 Medium | Cost limits disabled, no rate limiting | WP-08 | Fixed |
-| 8 | 🟡 Medium | Post-deadline submission window | WP-09 | Fixed |
-| 9 | 🟡 Medium | PR-title script injection | WP-11 | Fixed |
+| 7 | 🟡 Medium | Cost limits disabled, no rate limiting | WP-08 | ✅ Done |
+| 8 | 🟡 Medium | Post-deadline submission window | WP-09 | ✅ Done |
+| 9 | 🟡 Medium | PR-title script injection | WP-11 | ✅ Done |
 | 10 | 🟡 Medium | PR workflow runs no tests | WP-32, WP-23 | ✅ Done |
-| 11 | 🟡 Medium | README overstates testing | WP-24, WP-27 | Open |
-| 12 | 🟡 Medium | Long-lived `GH_PAT` | WP-12 | Fixed — org setup pending |
-| 13 | 🟡 Medium | Domain depends on EF Core | WP-18 | Open |
-| 14 | 🟡 Medium | Job claim not atomic | WP-13 | Open |
-| 15 | 🟡 Medium | No concurrency token | WP-14 | Open |
-| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15 | Open |
-| 17 | 🟡 Medium | No HTTP timeout or resilience | WP-16 | Open |
-| 18 | 🟡 Medium | Expiration evaluates client-side | WP-17 | Open |
-| 19 | 🟡 Medium | Positive `tabindex` | WP-20 | Open |
-| 20 | 🟡 Medium | Hardcoded English `confirm()` | WP-21 | Open |
-| 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 | Fixed |
+| 11 | 🟡 Medium | README overstates testing | WP-24, WP-27 | ✅ Done |
+| 12 | 🟡 Medium | Long-lived `GH_PAT` | WP-12 | 🟡 Org setup pending |
+| 13 | 🟡 Medium | Domain depends on EF Core | WP-18 | ✅ Done |
+| 14 | 🟡 Medium | Job claim not atomic | WP-13 | ✅ Done |
+| 15 | 🟡 Medium | No concurrency token | WP-14 | ✅ Done |
+| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15 | ✅ Done |
+| 17 | 🟡 Medium | No HTTP timeout or resilience | WP-16 | ✅ Done |
+| 18 | 🟡 Medium | Expiration evaluates client-side | WP-17 | ✅ Done |
+| 19 | 🟡 Medium | Positive `tabindex` | WP-20 | ✅ Done |
+| 20 | 🟡 Medium | Hardcoded English `confirm()` | WP-21 | ✅ Done |
+| 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 | ✅ Done |
 | 22 | ⚪ Low | Consent proof nulled | WP-06 | ✅ Done |
-| 23 | ⚪ Low | Missing composite index | WP-17 | Open |
+| 23 | ⚪ Low | Missing composite index | WP-17 | ✅ Done |
 | 24 | ⚪ Low | Retention re-scans anonymized rows | WP-02 (delivered) | ✅ Done |
-| 25 | ⚪ Low | Datepicker keyboard access | WP-20 | Open |
-| 26 | ⚪ Low | Unlabelled `<select>` | WP-20 | Open |
-| 27 | ⚪ Low | Production `console.error` | WP-22 | Open |
-| 28 | ⚪ Low | i18n key typos | WP-21 | Open |
-| 29 | ⚪ Low | Untranslated strings | WP-21 | Open |
-| 30 | ⚪ Low | No Apollo `keyFields`/`ErrorLink` | WP-22 | Open |
-| 31 | ⚪ Low | Bare `setTimeout` | WP-22 | Open |
-| 32 | ⚪ Low | `BackgroundJobService` god class | WP-19 | Open |
-| 33 | ⚪ Low | Stale `sharp` pin | WP-26 | Open |
-| 34 | ⚪ Low | No Dependabot/CodeQL | WP-25 | Open |
+| 25 | ⚪ Low | Datepicker keyboard access | WP-20 | ✅ Done |
+| 26 | ⚪ Low | Unlabelled `<select>` | WP-20 | ✅ Done |
+| 27 | ⚪ Low | Production `console.error` | WP-22 | ✅ Done |
+| 28 | ⚪ Low | i18n key typos | WP-21 | ✅ Done |
+| 29 | ⚪ Low | Untranslated strings | WP-21 | ✅ Done |
+| 30 | ⚪ Low | No Apollo `keyFields`/`ErrorLink` | WP-22 | ✅ Done (keyFields: false positive) |
+| 31 | ⚪ Low | Bare `setTimeout` | WP-22 | ✅ Done |
+| 32 | ⚪ Low | `BackgroundJobService` god class | WP-19 | ✅ Done |
+| 33 | ⚪ Low | Stale `sharp` pin | WP-26 | ✅ Done (pin was inert) |
+| 34 | ⚪ Low | No Dependabot/CodeQL | WP-25 | ✅ Done (CodeQL; Renovate covers deps) |
 
 ### Re-audit (`AUDIT-R2.md`)
 
@@ -1911,18 +1973,19 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | N2 | 🟠 High | Cleared payload breaks reset/revive | WP-30 | ✅ Done |
 | N3 | 🟡 Medium | Redaction loop never clears change tracker | WP-29 | ✅ Done |
 | N4 | 🟡 Medium | Regex timeout strands a job in `Processing` | WP-31 | ✅ Done |
-| N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 | Fixed |
-| N6 | 🟡 Medium | Erase and delete not atomic | WP-33 | Fixed |
+| N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 | ✅ Done |
+| N6 | 🟡 Medium | Erase and delete not atomic | WP-33 | ✅ Done |
 | N7 | 🟡 Medium | Undisclosed email recipients | WP-35 | ✅ Done |
-| N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 | Fixed |
-| N9 | 🟡 Medium | Invitation token in the URL | WP-37 | Fixed |
-| N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 | Fixed |
-| N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 | Fixed |
-| N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 | Fixed |
+| N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 | ✅ Done |
+| N9 | 🟡 Medium | Invitation token in the URL | WP-37 | ✅ Done |
+| N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 | ✅ Done |
+| N11 | ⚪ Low | Wrong `Rejected`-is-terminal comment | WP-38 | ✅ Done |
+| N12 | ⚪ Low | Exceptions logged as objects unmasked | WP-39 | ✅ Done |
 
 **46 findings · 39 work packages · none dropped.**
-**13 closed · 1 partially closed (#5 — a narrow suite now exists; WP-23 and WP-24 remain) · 32 open.**
-**24 of 39 work packages shipped: WP-01 → WP-12, WP-28 → WP-39.**
+**46 closed · 0 open.** One carries a manual follow-up outside the repository: **#12**, which is
+complete in code but only takes effect once a maintainer creates the GitHub App.
+**39 of 39 work packages shipped.**
 
 ---
 
@@ -1965,14 +2028,17 @@ graph LR
 
 ## Suggested next release
 
-Phases 1, 1b and 2 have shipped: every finding from `AUDIT.md` and `AUDIT-R2.md` rated Medium or
-above in the GDPR, security and assessment-integrity categories is now closed, along with the
-regressions Phase 1 introduced. One package carries a manual follow-up: **WP-12** is complete in
-the repository but only takes effect once a maintainer creates the GitHub App and sets
-`RELEASE_APP_ID` (see `docs/CONFIGURATION.md` § Release Credentials).
+**All 39 work packages have shipped.** Every finding in `AUDIT.md` and `AUDIT-R2.md` is closed, and
+the ordering constraints above are now a record of how the work was sequenced rather than a plan.
 
-Two behavioural changes in this release deserve a beta soak before a stable promotion, because
-they change how requests are handled for every caller:
+One item is not finishable from inside the repository. **WP-12** removed the long-lived `GH_PAT`
+from the release workflow in favour of a GitHub App token, but the swap only takes effect once a
+maintainer creates and installs the App and sets `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY`
+(see `docs/CONFIGURATION.md` § Release Credentials). **Until that is done, do not revoke the
+existing PAT** — the release workflow still depends on it.
+
+Two behavioural changes deserve a beta soak before a stable promotion, because they change how
+requests are handled for every caller:
 
 - **GraphQL cost limits and rate limiting** (WP-08). The limits were measured against the real
   schema and leave roughly 5× headroom, but a query shape nobody exercised during measurement
@@ -1980,13 +2046,31 @@ they change how requests are handled for every caller:
 - **The server-side deadline** (WP-09). Submissions more than 60 seconds past the deadline are now
   refused rather than silently accepted until the expiration sweep.
 
-The next release should start Phase 3. Suggested first cut:
+One change is invisible until it matters, and is worth a deliberate look in staging:
 
-| Package | Why |
-| --- | --- |
-| **WP-13** | Job claiming is not atomic; this is the root of the remaining correctness risk under load |
-| **WP-14** | Concurrency tokens make WP-13 verifiable rather than merely likely-correct |
-| **WP-17** | Small, and the retention predicate it fixes was already touched by WP-02 |
+- **Optimistic concurrency** (WP-14). Every aggregate now carries a `Version` column advanced by an
+  interceptor. A concurrent edit that previously last-write-wins now raises
+  `DbUpdateConcurrencyException`. The paths that could realistically collide were reviewed, but
+  staff editing the same RefTest simultaneously is the scenario to try by hand.
 
-**WP-19** (decomposing `BackgroundJobService`) should wait for **WP-23**. It is a large pure
-refactor, and it is the one place in the plan where the thin test coverage genuinely raises risk.
+### Where the coverage now sits
+
+| Area | Covered by | Notes |
+| --- | --- | --- |
+| Job claiming and leases | `JobClaimTests` | Real SQL on SQLite; the concurrency case is the point |
+| Job failure policy | `BackgroundJobProcessingTests` | Retry vs permanent, masking, cancellation |
+| Job enqueue atomicity | `JobEnqueueUnitOfWorkTests` | Write and enqueue share one transaction |
+| Erasure and anonymization | `RefTestPrivacyErasureServiceTests`, `RefTestAnonymizationTests` | The WP-01 defect area |
+| Retention predicates | `PrivacyRetentionQueriesTests`, `RefTestExpirationQueriesTests` | Translated on all four providers |
+| Log and audit redaction | `LogRedactionTests`, `AuditPiiRedactorTests` | Case-insensitive key matching included |
+| Scoring | `ScorePercentageTests` | Includes a non-invariant culture |
+| Domain invariants | `RefTestDeadlineTests`, `JobTests`, `RefTestTokenTests`, `ParticipantInputTests` | |
+| Architecture | `DomainDependencyTests` | Fails the build if Domain regains an EF Core reference |
+| Participant flow (UI) | `ref-test.store.spec.ts`, `can-deactivate-ref-test.guard.spec.ts` | Countdown, autosave, unsaved-work guard |
+
+Both suites run in CI on every pull request, alongside translation parity and CodeQL.
+
+The gap that remains is deliberate rather than overlooked: there are **no integration tests** that
+exercise a GraphQL request end to end against a real database, and none of the email or PDF
+rendering paths are covered. Both need infrastructure this plan did not set out to build. If a
+Phase 8 is ever wanted, that is where it starts.

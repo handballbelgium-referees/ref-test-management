@@ -15,6 +15,11 @@
 > the commit above; line numbers drift as the code evolves. Re-run the audit after significant
 > changes rather than treating this document as a live status page.
 
+> **Superseded by remediation.** All 34 findings below have since been closed, together with the
+> 12 raised by the follow-up re-audit in [`AUDIT-R2.md`](./AUDIT-R2.md). The verdicts here describe
+> the repository on the audit date and are left unedited so the record stays honest. For what is
+> true now, read [`AUDIT-REMEDIATION.md`](./AUDIT-REMEDIATION.md).
+
 ---
 
 ## 1. Executive summary
