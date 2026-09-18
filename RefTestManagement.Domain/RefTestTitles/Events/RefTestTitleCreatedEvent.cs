@@ -1,4 +1,4 @@
-using Handball.Belgium.RefTestManagement.AuditLog;
+using Handball.Belgium.RefTestManagement.Domain.Events;
 
 namespace Handball.Belgium.RefTestManagement.Domain.RefTestTitles.Events;
 

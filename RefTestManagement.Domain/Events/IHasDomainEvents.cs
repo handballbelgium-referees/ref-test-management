@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.AuditLog;
+namespace Handball.Belgium.RefTestManagement.Domain.Events;
 
 public interface IHasDomainEvents
 {

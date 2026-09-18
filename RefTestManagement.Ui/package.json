@@ -7,6 +7,7 @@
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
+    "check:i18n": "node scripts/check-i18n.mjs",
     "codegen": "cross-env NODE_TLS_REJECT_UNAUTHORIZED=0 graphql-codegen"
   },
   "prettier": {

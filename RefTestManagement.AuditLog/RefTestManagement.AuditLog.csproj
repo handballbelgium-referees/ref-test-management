@@ -13,4 +13,10 @@
         <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- AuditLog consumes the domain-event abstractions that now live in Domain. The
+             dependency points this way so the domain does not depend on the audit trail. -->
+        <ProjectReference Include="..\RefTestManagement.Domain\RefTestManagement.Domain.csproj" />
+    </ItemGroup>
+
 </Project>

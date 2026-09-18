@@ -40,6 +40,8 @@ public static partial class RefTestLifecycleMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
+        ParticipantInput.Token(token);
+
         var refTest = await context.RefTests
             .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
 
@@ -92,6 +94,8 @@ public static partial class RefTestLifecycleMutations
         if (noticeVersion != privacyConfiguration.NoticeVersion)
             throw new RefTestValidationException("The privacy notice has changed. Please review the current version.");
 
+        ParticipantInput.Token(token);
+
         var refTest = await context.RefTests
             .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
 
@@ -110,6 +114,7 @@ public static partial class RefTestLifecycleMutations
     /// audit trail are always kept for accountability — only personal data is redacted.
     /// </summary>
     [Error<RefTestNotFoundException>]
+    [Error<RefTestValidationException>]
     public static async Task<bool> WithdrawConsentAsync(
         string token,
         RefTestManagementContext context,
@@ -117,6 +122,8 @@ public static partial class RefTestLifecycleMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
+        ParticipantInput.Token(token);
+
         var refTest = await context.RefTests
             .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
 
@@ -125,7 +132,7 @@ public static partial class RefTestLifecycleMutations
 
         var refTestId = refTest.Id;
         var status = refTest.Status;
-        await privacyErasureService.EraseAsync(refTest, cancellationToken);
+        await privacyErasureService.EraseAsync(refTest, ErasureInitiator.Participant, cancellationToken);
 
         await subscriptionService.PublishRefTestAnonymizedAsync(
             refTestId, status, refTest.FullName, refTest.Email, cancellationToken);
@@ -144,13 +151,18 @@ public static partial class RefTestLifecycleMutations
     /// <exception cref="InvalidRefTestStatusException"></exception>
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
+    [Error<RefTestValidationException>]
     public static async Task<RefTestDto> SaveRefTestProgressAsync(
         SaveRefTestProgressInput input,
         RefTestManagementContext context,
         CancellationToken cancellationToken)
     {
+        var token = ParticipantInput.Token(input.Token);
+        var selectedAnswerIds = ParticipantInput.AnswerIds(input.SelectedAnswerIds);
+        var language = ParticipantInput.Language(input.Language);
+
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(s => s.Token == input.Token, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
 
         if (refTest == null)
             throw new RefTestNotFoundException(input.Token);
@@ -158,7 +170,9 @@ public static partial class RefTestLifecycleMutations
         if (refTest.Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
 
-        refTest.SaveProgress(input.CurrentQuestionIndex, input.SelectedAnswerIds, input.Language);
+        var currentQuestionIndex = ParticipantInput.QuestionIndex(input.CurrentQuestionIndex, refTest);
+
+        refTest.SaveProgress(currentQuestionIndex, selectedAnswerIds, language);
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
         return refTest.ToDto();
@@ -179,17 +193,46 @@ public static partial class RefTestLifecycleMutations
     /// <exception cref="InvalidRefTestStatusException"></exception>
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
-    public static async Task<RefTestDto> CompleteRefTestAsync(
+    [Error<RefTestValidationException>]
+    public static Task<RefTestDto> CompleteRefTestAsync(
         CompleteRefTestInput input,
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] EmailConfiguration emailConfiguration,
         [Service] IRefTestSubscriptionService subscriptionService,
+        CancellationToken cancellationToken) =>
+        CompleteRefTestCoreAsync(
+            input,
+            context,
+            ihfRulesQuestionsService,
+            jobEnqueueService,
+            emailConfiguration,
+            subscriptionService,
+            RefTestCompletionSource.Participant,
+            cancellationToken);
+
+    /// <summary>
+    /// Shared body behind <see cref="CompleteRefTestAsync"/>. Kept internal so it stays out of the
+    /// GraphQL schema: <paramref name="source"/> decides whether the participant's time limit is
+    /// enforced, and that is not something a caller of the API may choose.
+    /// </summary>
+    internal static async Task<RefTestDto> CompleteRefTestCoreAsync(
+        CompleteRefTestInput input,
+        RefTestManagementContext context,
+        IIhfRulesQuestionsService ihfRulesQuestionsService,
+        IJobEnqueueService jobEnqueueService,
+        EmailConfiguration emailConfiguration,
+        IRefTestSubscriptionService subscriptionService,
+        RefTestCompletionSource source,
         CancellationToken cancellationToken)
     {
+        var token = ParticipantInput.Token(input.Token);
+        var selectedAnswerIds = ParticipantInput.AnswerIds(input.SelectedAnswerIds);
+        var language = ParticipantInput.Language(input.Language);
+
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(s => s.Token == input.Token, cancellationToken);
+            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
 
         if (refTest is null)
             throw new RefTestNotFoundException(input.Token);
@@ -200,7 +243,7 @@ public static partial class RefTestLifecycleMutations
         // Use existing score calculation logic
         var scoreResult = await ihfRulesQuestionsService.CalculateScoreAsync(
             refTest.QuestionIds,
-            input.SelectedAnswerIds,
+            selectedAnswerIds,
             cancellationToken
         );
 
@@ -210,14 +253,40 @@ public static partial class RefTestLifecycleMutations
             scoreResult.AnswerScore,
             scoreResult.AnswerTotal,
             scoreResult.Percentage,
-            input.SelectedAnswerIds,
+            selectedAnswerIds,
             scoreResult.WrongQuestionIds,
             scoreResult.WrongAnswerIds,
-            input.Language
+            language,
+            source
         );
 
+        // The completion and the result email it owes are committed together: a completed test
+        // whose result job was lost never reports back to the participant.
+        if (refTest.SendResultsAutomatically)
+        {
+            var payload = new ResultEmailPayload(
+                refTest.Id,
+                refTest.FullName,
+                refTest.Email,
+                refTest.QuestionScore ?? 0,
+                refTest.AnswerScore ?? 0,
+                refTest.QuestionTotal,
+                refTest.AnswerTotal ?? 0,
+                refTest.Percentage ?? 0,
+                refTest.SelectedAnswerIds,
+                refTest.WrongQuestionIds,
+                refTest.WrongAnswerIds
+            );
+
+            DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
+                ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
+                : null;
+            await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt, cancellationToken,
+                saveChanges: false);
+        }
+
         await context.SaveChangesWithRetryAsync(cancellationToken);
-        
+
         // Publish subscription event
         await subscriptionService.PublishRefTestCompletedAsync(
             refTest.Id,
@@ -228,31 +297,8 @@ public static partial class RefTestLifecycleMutations
             refTest.AnswerScore ?? 0,
             refTest.AnswerTotal ?? 0,
             refTest.Percentage ?? 0,
-            input.Language ?? "",
+            language ?? "",
             cancellationToken);
-
-        if (!refTest.SendResultsAutomatically)
-            return refTest.ToDto();
-
-        // Enqueue result email job
-        var payload = new ResultEmailPayload(
-            refTest.Id,
-            refTest.FullName,
-            refTest.Email,
-            refTest.QuestionScore ?? 0,
-            refTest.AnswerScore ?? 0,
-            refTest.QuestionTotal,
-            refTest.AnswerTotal ?? 0,
-            refTest.Percentage ?? 0,
-            refTest.SelectedAnswerIds,
-            refTest.WrongQuestionIds,
-            refTest.WrongAnswerIds
-        );
-
-        DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
-            ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
-            : null;
-        await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt, cancellationToken);
 
         return refTest.ToDto();
     }

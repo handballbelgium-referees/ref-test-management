@@ -23,6 +23,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 - **`RefTestManagement.Domain/`** — 🔷 Domain entities: RefTest, RefTestTitle, Job, and their domain events
 - **`RefTestManagement.Security/`** — 🔐 Permission constants, authorization handlers, dynamic policy provider
 - **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, migrations, PDF/Excel/email service implementations
+- **`RefTestManagement.UnitTests/`** — 🧪 xUnit tests for privacy redaction and the background-job state machine
 
 <details open>
 <summary><strong><code>RefTestManagement.Ui/</code></strong> — 🅰️ Angular frontend</summary>
@@ -47,13 +48,14 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 | Directory                                                        | Purpose                                                                       |
 | ---------------------------------------------------------------- | ----------------------------------------------------------------------------- |
-| `RefTestManagement.AuditLog`                                     | Self-contained audit log library — interceptor, entity, options, DI extension |
+| `RefTestManagement.AuditLog`                                     | Audit log library — interceptor, entity, options, DI extension. Depends on `Domain` for the event abstractions, never the reverse |
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |
 | `RefTestManagement.Application/GraphQL`                          | External GraphQL client schemas and queries (IHF Rules)                       |
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
+| `RefTestManagement.UnitTests`                                    | Unit tests for audit/log redaction, job state machine, RefTest anonymization  |
 | `RefTestManagement.Ui/src/app/ref-tests`                         | RefTest creation, detail view, and management UI                              |
 | `RefTestManagement.Ui/src/app/ref-tests/list`                    | List view with mobile/desktop layouts, filters and operations                 |
 | `RefTestManagement.Ui/src/app/ref-tests/list/services`           | Business logic services for data, filters, state and operations               |

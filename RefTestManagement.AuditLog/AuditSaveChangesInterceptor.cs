@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
+using Handball.Belgium.RefTestManagement.Domain.Events;
 
 namespace Handball.Belgium.RefTestManagement.AuditLog;
 

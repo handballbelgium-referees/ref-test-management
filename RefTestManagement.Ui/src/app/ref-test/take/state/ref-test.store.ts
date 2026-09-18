@@ -1,10 +1,26 @@
-import { computed, inject, Service, signal } from '@angular/core';
+import { computed, DestroyRef, inject, Service, signal } from '@angular/core';
 import { TranslateService } from '@ngx-translate/core';
 import { Answer, Question, RefTestResult } from './ref-test.models';
+
+/** How long the "your progress was restored" notice stays on screen. */
+const PROGRESS_RESTORED_VISIBLE_MS = 10_000;
 
 @Service({ autoProvided: false })
 export class RefTestStore {
   private readonly _translate = inject(TranslateService);
+
+  /**
+   * Handle for the pending "progress restored" dismissal, so it can be cancelled.
+   *
+   * This store is provided by the take-RefTest component, so DestroyRef here is that component's:
+   * the timer dies with the page that scheduled it.
+   */
+  private _progressRestoredTimer?: ReturnType<typeof setTimeout>;
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this._progressRestoredTimer));
+  }
+
   // === CORE STATE =====================================================
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
@@ -89,8 +105,24 @@ export class RefTestStore {
 
     if (index > 0 || selectedAnswerIds.length > 0) {
       this.showProgressRestored.set(true);
-      setTimeout(() => this.showProgressRestored.set(false), 10000);
+      this.scheduleProgressRestoredDismissal();
     }
+  }
+
+  /**
+   * Hides the "progress restored" notice after a delay.
+   *
+   * The timer is cancelled on destroy and before rescheduling. Without that, navigating away
+   * within the window left a callback holding this store alive to write a signal nobody was
+   * reading, and restoring twice in quick succession left the first timer running to dismiss the
+   * second notice early.
+   */
+  private scheduleProgressRestoredDismissal(): void {
+    clearTimeout(this._progressRestoredTimer);
+    this._progressRestoredTimer = setTimeout(
+      () => this.showProgressRestored.set(false),
+      PROGRESS_RESTORED_VISIBLE_MS,
+    );
   }
 
   selectAnswer(questionId: string, answerId: string): void {

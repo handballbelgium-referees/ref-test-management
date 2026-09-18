@@ -11,10 +11,10 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
 public interface IEmailService
 {
-    Task SendRefTestInvitationAsync(string name, string email, string token, int numberOfQuestions,
+    Task SendRefTestInvitationAsync(Guid refTestId, string name, string email, string token, int numberOfQuestions,
         int maxTimeInMinutes, CancellationToken cancellationToken);
 
-    Task SendRefTestResultsAsync(string name, string email, int questionScore, int answerScore, int totalQuestions,
+    Task SendRefTestResultsAsync(Guid refTestId, string name, string email, int questionScore, int answerScore, int totalQuestions,
         int answerTotal, double percentage, List<string> selectedAnswerIds, List<string> wrongQuestionIds,
         List<string> wrongAnswerIds, List<Question> questionsWithCorrectAnswers, bool scheduleEmail,
         CancellationToken cancellationToken);
@@ -58,7 +58,7 @@ public class EmailService(
     private static readonly Regex HtmlTagRegex = new("<[^>]*>", RegexOptions.Compiled);
     private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
 
-    public async Task SendRefTestInvitationAsync(string name, string email, string token, int numberOfQuestions,
+    public async Task SendRefTestInvitationAsync(Guid refTestId, string name, string email, string token, int numberOfQuestions,
         int maxTimeInMinutes, CancellationToken cancellationToken)
     {
         var enabledLanguages = GetEnabledLanguagesForInvitation(token);
@@ -68,18 +68,15 @@ public class EmailService(
             await templateService.BuildCompleteInvitationEmailAsync(enabledLanguages, name, numberOfQuestions,
                 maxTimeInMinutes);
 
-        var firstRefTestUrl =
-            enabledLanguages.FirstOrDefault()?.RefTestUrl ?? $"{configuration.BaseUrl}/ref-test/{token}";
-
-        ServiceLoggerMessages.LogSendingRefTestInvitation(logger, email, token, numberOfQuestions, maxTimeInMinutes,
-            firstRefTestUrl);
+        ServiceLoggerMessages.LogSendingRefTestInvitation(logger, refTestId, LogRedaction.MaskEmail(email),
+            numberOfQuestions, maxTimeInMinutes);
 
         await SendEmailAsync(email, subject, emailBody, cancellationToken: cancellationToken);
 
-        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, email);
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(email));
     }
 
-    public async Task SendRefTestResultsAsync(string name, string email, int questionScore, int answerScore,
+    public async Task SendRefTestResultsAsync(Guid refTestId, string name, string email, int questionScore, int answerScore,
         int totalQuestions, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
         List<Question> questionsWithCorrectAnswers, bool scheduleEmail, CancellationToken cancellationToken)
@@ -109,12 +106,11 @@ public class EmailService(
                     questionsWithCorrectAnswers)
             select new EmailAttachment($"RefTest_Results_{langUpper}.pdf", pdfBytes)).ToList();
 
-        ServiceLoggerMessages.LogSendingRefTestResults(logger, email, questionScore, totalQuestions, answerScore,
-            answerTotal, percentage);
+        ServiceLoggerMessages.LogSendingRefTestResults(logger, refTestId, LogRedaction.MaskEmail(email));
 
         await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail, cancellationToken);
 
-        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, email);
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(email));
     }
 
 
@@ -122,7 +118,7 @@ public class EmailService(
         List<EmailAttachment>? attachments = null, bool scheduleEmail = false,
         CancellationToken cancellationToken = default)
     {
-        ServiceLoggerMessages.LogSendingEmail(logger, toEmail, subject);
+        ServiceLoggerMessages.LogSendingEmail(logger, LogRedaction.MaskEmail(toEmail), subject);
 
         if (string.IsNullOrWhiteSpace(configuration.BrevoApiKey))
         {
@@ -169,17 +165,20 @@ public class EmailService(
 
             if (response.IsSuccessStatusCode)
             {
-                ServiceLoggerMessages.LogEmailSentSuccessfully(logger, toEmail);
+                ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(toEmail));
             }
             else
             {
                 var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
-                ServiceLoggerMessages.LogEmailFailed(logger, toEmail, (int)response.StatusCode, responseBody);
+                ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
+                    (int)response.StatusCode, LogRedaction.MaskEmailsInText(responseBody) ?? string.Empty);
             }
         }
         catch (Exception ex)
         {
-            ServiceLoggerMessages.LogEmailError(logger, ex, toEmail);
+            // The provider's client can surface the rejected address in its exception text, and
+            // that text is outside the privacy erasure path once a log sink has it.
+            ServiceLoggerMessages.LogEmailError(logger, LogRedaction.MaskEmails(ex), LogRedaction.MaskEmail(toEmail));
             throw new EmailException(toEmail);
         }
     }
@@ -205,7 +204,7 @@ public class EmailService(
 
         await SendEmailAsync(recipientEmail, subject, emailBody, attachments, cancellationToken: cancellationToken);
 
-        ServiceLoggerMessages.LogReportEmailSent(logger, recipientEmail);
+        ServiceLoggerMessages.LogReportEmailSent(logger, LogRedaction.MaskEmail(recipientEmail));
     }
 
     public async Task SendApprovalNotificationAsync(
@@ -231,7 +230,7 @@ public class EmailService(
 
         await SendEmailAsync(approverEmail, subject, emailBody, cancellationToken: cancellationToken);
 
-        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, approverEmail);
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(approverEmail));
     }
 
     public async Task SendApprovalDecisionAsync(
@@ -258,7 +257,7 @@ public class EmailService(
 
         await SendEmailAsync(creatorEmail, subject, emailBody, cancellationToken: cancellationToken);
 
-        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, creatorEmail);
+        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(creatorEmail));
     }
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
@@ -303,6 +302,16 @@ public class EmailService(
     }
 }
 
-public class EmailException(string email) : Exception($"An error occurred while sending the email to {email}");
+/// <summary>
+/// Thrown when an email could not be handed to the provider.
+/// </summary>
+/// <remarks>
+/// The recipient address is masked because this message gets persisted: a failing background job
+/// stores <see cref="Exception.Message"/> in <c>Job.ErrorMessage</c>, and that column is not
+/// reached by the privacy erasure path, so an address written here would outlive the
+/// participant's erasure request. Identify the affected record through the job's RefTest id.
+/// </remarks>
+public class EmailException(string email)
+    : Exception($"An error occurred while sending the email to {LogRedaction.MaskEmail(email)}");
 
 public record EmailAttachment(string FileName, byte[] Content);

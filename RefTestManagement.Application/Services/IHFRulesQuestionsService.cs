@@ -1,4 +1,3 @@
-﻿using System.Globalization;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -204,22 +203,7 @@ public class IhfRulesQuestionsService(
 
         var scoreData = result.Data.CalculateScore;
 
-        double percentage;
-        var percentageString = scoreData.Percentage;
-
-        if (percentageString != null && percentageString.EndsWith('%'))
-        {
-            // Remove the '%' sign and parse using invariant culture to ensure decimal point is correctly interpreted
-            if (!double.TryParse(percentageString.TrimEnd('%'), NumberStyles.Float, CultureInfo.InvariantCulture,
-                    out percentage))
-            {
-                throw new Exception("Invalid percentage format");
-            }
-        }
-        else if (!double.TryParse(percentageString, NumberStyles.Float, CultureInfo.InvariantCulture, out percentage))
-        {
-            throw new Exception("Invalid percentage format");
-        }
+        var percentage = ScorePercentage.Parse(scoreData.Percentage);
 
         // Calculate a question-based score (number of fully correct questions)
         var questionScore = questionIds.Count(id => !scoreData.WrongQuestionsIds.Contains(id));

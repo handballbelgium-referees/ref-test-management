@@ -10,6 +10,12 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
     public void Configure(EntityTypeBuilder<RefTest> builder)
     {
         builder.HasKey(x => x.Id);
+
+        // Optimistic concurrency. EF adds Version to the WHERE clause of every UPDATE and DELETE,
+        // so a save built from a stale read affects zero rows and raises
+        // DbUpdateConcurrencyException instead of overwriting a concurrent edit.
+        builder.Property(x => x.Version)
+            .IsConcurrencyToken();
         
         builder.HasOne(x => x.Title)
             .WithMany()
@@ -133,5 +139,29 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreatedAt);
+
+        // Both background sweeps filter on a combination, not on any one of these columns, and a
+        // single-column index cannot serve a combination. Without these the expiration sweep scans
+        // the table every five minutes and the retention sweep scans it every day.
+        //
+        // Column order follows selectivity: Status narrows hardest, and IsAnonymized then removes
+        // the rows erasure has already dealt with.
+        builder
+            .HasIndex(x => new { x.Status, x.IsAnonymized, x.StartedAt })
+            .HasDatabaseName("IX_RefTests_Status_IsAnonymized_StartedAt");
+
+        builder
+            .HasIndex(x => new { x.Status, x.IsAnonymized, x.CreatedAt })
+            .HasDatabaseName("IX_RefTests_Status_IsAnonymized_CreatedAt");
+
+        // Retention keys off whichever timestamp marks the end of the test's life, and which one
+        // that is depends on the status.
+        builder
+            .HasIndex(x => new { x.Status, x.IsAnonymized, x.CompletedAt })
+            .HasDatabaseName("IX_RefTests_Status_IsAnonymized_CompletedAt");
+
+        builder
+            .HasIndex(x => new { x.Status, x.IsAnonymized, x.ExpiredAt })
+            .HasDatabaseName("IX_RefTests_Status_IsAnonymized_ExpiredAt");
     }
 }

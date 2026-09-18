@@ -1,6 +1,7 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
+using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,7 +26,9 @@ public sealed class PrivacyRetentionService(
             }
             catch (Exception exception)
             {
-                logger.LogError(exception, "Privacy retention cleanup failed");
+                // This loop reads and rewrites participant names and addresses, so an exception
+                // raised inside it can quote them back.
+                logger.LogError(LogRedaction.MaskEmails(exception), "Privacy retention cleanup failed");
             }
 
             try
@@ -47,14 +50,12 @@ public sealed class PrivacyRetentionService(
         var cutoff = DateTime.UtcNow.AddYears(-privacyConfiguration.RetentionYears);
 
         var refTests = await context.RefTests
-            .Where(refTest =>
-                (refTest.Status == RefTestStatus.Completed && refTest.CompletedAt < cutoff) ||
-                (refTest.Status == RefTestStatus.Expired && refTest.ExpiredAt < cutoff))
+            .Where(PrivacyRetentionQueries.IsDueForErasure(cutoff))
             .ToListAsync(cancellationToken);
 
         foreach (var refTest in refTests)
         {
-            await erasureService.EraseAsync(refTest, cancellationToken);
+            await erasureService.EraseAsync(refTest, ErasureInitiator.Operator, cancellationToken);
         }
 
         if (refTests.Count > 0)

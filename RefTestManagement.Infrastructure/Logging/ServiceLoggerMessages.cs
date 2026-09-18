@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
@@ -6,8 +7,105 @@ using Microsoft.Extensions.Logging;
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 
 /// <summary>
+/// Helpers for keeping personal data out of log output.
+/// </summary>
+public static partial class LogRedaction
+{
+    /// <summary>
+    /// Masks the local part of an email address so log lines stay useful for operational
+    /// diagnosis (which domain, which provider) without recording who the recipient was.
+    /// <c>john.doe@example.com</c> becomes <c>j***@example.com</c>. Use this wherever no
+    /// RefTest id is available to identify the record instead.
+    /// </summary>
+    public static string MaskEmail(string? email)
+    {
+        if (string.IsNullOrWhiteSpace(email))
+            return "(none)";
+
+        var separator = email.IndexOf('@');
+
+        return separator <= 0
+            ? "***"
+            : $"{email[0]}***{email[separator..]}";
+    }
+
+    /// <summary>
+    /// Masks every email address embedded anywhere in free-form text, using the same
+    /// <see cref="MaskEmail"/> shape.
+    /// <para>
+    /// Use this on text the application did not compose itself — exception messages and
+    /// third-party API responses — before it is logged or, more importantly, persisted.
+    /// Those strings are outside the privacy erasure path, so an address that reaches them
+    /// would survive a participant's erasure request.
+    /// </para>
+    /// </summary>
+    public static string? MaskEmailsInText(string? text) =>
+        string.IsNullOrEmpty(text)
+            ? text
+            : EmailPattern().Replace(text, match => MaskEmail(match.Value));
+
+    /// <summary>
+    /// Wraps an exception so a logging provider cannot render an unmasked email address from it.
+    /// <para>
+    /// Masking an exception's <i>message string</i> is not enough: logging providers render the
+    /// exception object itself, and <see cref="Exception.ToString"/> re-exposes the raw message
+    /// along with every inner exception's. Pass the result of this method wherever an exception
+    /// is handed to <c>ILogger</c> on a path that can carry a participant's address — the email
+    /// provider's client and anything that deserializes a job payload.
+    /// </para>
+    /// <para>
+    /// The stack trace is preserved as text rather than dropped, so diagnosis is unaffected.
+    /// Never throws: it is only ever called from a catch block, where a secondary failure would
+    /// lose the original error entirely.
+    /// </para>
+    /// </summary>
+    public static Exception MaskEmails(Exception exception)
+    {
+        try
+        {
+            return new RedactedException(
+                MaskEmailsInText(exception.Message) ?? string.Empty,
+                MaskEmailsInText(exception.ToString()) ?? string.Empty,
+                MaskEmailsInText(exception.StackTrace));
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            // Masking is the whole point of this call; if it cannot be done, log a placeholder
+            // rather than the original text.
+            return new RedactedException(MaskingFailed, MaskingFailed, exception.StackTrace);
+        }
+    }
+
+    private const string MaskingFailed = "(exception text withheld: personal-data masking failed)";
+
+    // Deliberately broad rather than RFC-exact: the goal is to catch anything that looks like
+    // an address, and over-matching only costs a few masked characters in a diagnostic string.
+    [GeneratedRegex(@"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", RegexOptions.None, matchTimeoutMilliseconds: 250)]
+    private static partial Regex EmailPattern();
+}
+
+/// <summary>
+/// A masked stand-in for an exception on its way to a logging provider. Produced by
+/// <see cref="LogRedaction.MaskEmails"/>; it carries the original's text with every email
+/// address masked, and its stack trace verbatim.
+/// </summary>
+public sealed class RedactedException(string message, string text, string? stackTrace) : Exception(message)
+{
+    public override string? StackTrace { get; } = stackTrace;
+
+    public override string ToString() => text;
+}
+
+/// <summary>
 /// Centralized source-generated logger messages for common service operations.
 /// Reduces boilerplate code across services while maintaining zero-allocation logging.
+/// <para>
+/// These templates must never interpolate personal data — no names, email addresses,
+/// invitation tokens, test URLs or assessment scores. Logs are retained far longer than the
+/// records they describe and are not covered by the privacy erasure path, so anything written
+/// here survives a participant's erasure request. Identify records by their RefTest id, and
+/// mask recipient addresses with <see cref="LogRedaction.MaskEmail"/> where no id is available.
+/// </para>
 /// </summary>
 public static partial class ServiceLoggerMessages
 {
@@ -28,29 +126,35 @@ public static partial class ServiceLoggerMessages
     // Email Service Operations
     // ========================================
 
-    [LoggerMessage(LogLevel.Information, "Sending email to {email} with subject: {subject}")]
-    public static partial void LogSendingEmail(ILogger logger, string email, string subject);
+    [LoggerMessage(LogLevel.Information, "Sending email to {recipient} with subject: {subject}")]
+    public static partial void LogSendingEmail(ILogger logger, string recipient, string subject);
 
-    [LoggerMessage(LogLevel.Information, "Email sent successfully to {email}")]
-    public static partial void LogEmailSentSuccessfully(ILogger logger, string email);
+    [LoggerMessage(LogLevel.Information, "Email sent successfully to {recipient}")]
+    public static partial void LogEmailSentSuccessfully(ILogger logger, string recipient);
 
-    [LoggerMessage(LogLevel.Warning, "Email to {email} failed with status code {statusCode}: {responseBody}")]
-    public static partial void LogEmailFailed(ILogger logger, string email, int statusCode, string responseBody);
+    // responseBody is the email provider's raw error payload, logged for diagnosis. It can echo
+    // back the address that was rejected, so callers must scrub it with
+    // LogRedaction.MaskEmailsInText before passing it in.
+    [LoggerMessage(LogLevel.Warning, "Email to {recipient} failed with status code {statusCode}: {responseBody}")]
+    public static partial void LogEmailFailed(ILogger logger, string recipient, int statusCode, string responseBody);
 
-    [LoggerMessage(LogLevel.Error, "Error sending email to {email}")]
-    public static partial void LogEmailError(ILogger logger, Exception ex, string email);
+    [LoggerMessage(LogLevel.Error, "Error sending email to {recipient}")]
+    public static partial void LogEmailError(ILogger logger, Exception ex, string recipient);
 
     [LoggerMessage(LogLevel.Warning, "API key not configured. Email not sent.")]
     public static partial void LogApiKeyNotConfigured(ILogger logger);
 
-    [LoggerMessage(LogLevel.Information, "Sending RefTest invitation to {email}. Token: {token}, Questions: {questions}, Time: {time} minutes. URL: {url}")]
-    public static partial void LogSendingRefTestInvitation(ILogger logger, string email, string token, int questions, int time, string url);
+    // The invitation token is a bearer credential: it grants access to the participant's test,
+    // their results and their withdraw-consent action. Neither it nor the test URL that embeds
+    // it may ever be logged.
+    [LoggerMessage(LogLevel.Information, "Sending RefTest invitation for {refTestId} to {recipient}. Questions: {questions}, Time: {time} minutes")]
+    public static partial void LogSendingRefTestInvitation(ILogger logger, Guid refTestId, string recipient, int questions, int time);
 
-    [LoggerMessage(LogLevel.Information, "Sending RefTest results to {email}. QuestionScore: {questionScore}/{totalQuestions}, AnswerScore: {answerScore}/{answerTotal} ({percentage:F1}%)")]
-    public static partial void LogSendingRefTestResults(ILogger logger, string email, int questionScore, int totalQuestions, int answerScore, int answerTotal, double percentage);
+    [LoggerMessage(LogLevel.Information, "Sending RefTest results for {refTestId} to {recipient}")]
+    public static partial void LogSendingRefTestResults(ILogger logger, Guid refTestId, string recipient);
 
-    [LoggerMessage(LogLevel.Information, "Report email sent to {email}")]
-    public static partial void LogReportEmailSent(ILogger logger, string email);
+    [LoggerMessage(LogLevel.Information, "Report email sent to {recipient}")]
+    public static partial void LogReportEmailSent(ILogger logger, string recipient);
 
     // ========================================
     // Job Processing Operations
@@ -77,20 +181,20 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Information, "Enqueued {jobType} job {jobId}")]
     public static partial void LogJobEnqueued(ILogger logger, JobType jobType, Guid jobId);
 
-    [LoggerMessage(LogLevel.Information, "Enqueued invitation email job {jobId} for {email}")]
-    public static partial void LogEnqueuedInvitationEmail(ILogger logger, Guid jobId, string email);
+    [LoggerMessage(LogLevel.Information, "Enqueued invitation email job {jobId} for RefTest {refTestId}")]
+    public static partial void LogEnqueuedInvitationEmail(ILogger logger, Guid jobId, Guid refTestId);
 
-    [LoggerMessage(LogLevel.Information, "Enqueued result email job {jobId} for {email}")]
-    public static partial void LogEnqueuedResultEmail(ILogger logger, Guid jobId, string email);
+    [LoggerMessage(LogLevel.Information, "Enqueued result email job {jobId} for RefTest {refTestId}")]
+    public static partial void LogEnqueuedResultEmail(ILogger logger, Guid jobId, Guid refTestId);
 
     [LoggerMessage(LogLevel.Information, "Enqueued report email job {jobId} for {recipientCount} recipients")]
     public static partial void LogEnqueuedReportEmail(ILogger logger, Guid jobId, int recipientCount);
 
-    [LoggerMessage(LogLevel.Debug, "Sending invitation email to {email}")]
-    public static partial void LogSendingInvitationEmail(ILogger logger, string email);
+    [LoggerMessage(LogLevel.Debug, "Sending invitation email for RefTest {refTestId}")]
+    public static partial void LogSendingInvitationEmail(ILogger logger, Guid refTestId);
 
-    [LoggerMessage(LogLevel.Debug, "Sending result email to {email}")]
-    public static partial void LogSendingResultEmail(ILogger logger, string email);
+    [LoggerMessage(LogLevel.Debug, "Sending result email for RefTest {refTestId}")]
+    public static partial void LogSendingResultEmail(ILogger logger, Guid refTestId);
 
     [LoggerMessage(LogLevel.Debug, "Sending report email to {count} recipients")]
     public static partial void LogSendingReportEmail(ILogger logger, int count);
@@ -98,11 +202,15 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Information, "Approval notification sent to {approverCount} approver(s) for {refTestCount} RefTest(s)")]
     public static partial void LogApprovalNotificationSent(ILogger logger, int approverCount, int refTestCount);
 
-    [LoggerMessage(LogLevel.Information, "Approval decision ({decision}) email sent to creator {creatorEmail} for {refTestCount} RefTest(s)")]
-    public static partial void LogApprovalDecisionEmailSent(ILogger logger, string decision, string creatorEmail, int refTestCount);
+    [LoggerMessage(LogLevel.Information, "Approval decision ({decision}) email sent to creator {recipient} for {refTestCount} RefTest(s)")]
+    public static partial void LogApprovalDecisionEmailSent(ILogger logger, string decision, string recipient, int refTestCount);
 
     [LoggerMessage(LogLevel.Error, "Failed to deserialize job payload for job {jobId}")]
     public static partial void LogJobDeserializationError(ILogger logger, Exception ex, Guid jobId);
+
+    [LoggerMessage(LogLevel.Error,
+        "Failed to mask personal data in the error message for job {jobId} - a placeholder was stored instead")]
+    public static partial void LogErrorMessageMaskingFailed(ILogger logger, Exception ex, Guid jobId);
 
     // ========================================
     // Report Service Operations
@@ -131,14 +239,14 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Debug, "RefTest {refTestId} is expired: {isExpired}, Status: {status}")]
     public static partial void LogRefTestExpirationCheck(ILogger logger, Guid refTestId, bool isExpired, RefTestStatus status);
 
-    [LoggerMessage(LogLevel.Information, "Auto-completed expired RefTest {refTestId} for {email}")]
-    public static partial void LogAutoCompleted(ILogger logger, Guid refTestId, string email);
+    [LoggerMessage(LogLevel.Information, "Auto-completed expired RefTest {refTestId}")]
+    public static partial void LogAutoCompleted(ILogger logger, Guid refTestId);
 
-    [LoggerMessage(LogLevel.Error, "Failed to auto-complete expired RefTest {refTestId} for {email}")]
-    public static partial void LogAutoCompleteFailed(ILogger logger, Exception ex, Guid refTestId, string email);
+    [LoggerMessage(LogLevel.Error, "Failed to auto-complete expired RefTest {refTestId}")]
+    public static partial void LogAutoCompleteFailed(ILogger logger, Exception ex, Guid refTestId);
 
-    [LoggerMessage(LogLevel.Information, "Expired RefTest {refTestId} in status {status} for {email}")]
-    public static partial void LogExpired(ILogger logger, Guid refTestId, RefTestStatus status, string email);
+    [LoggerMessage(LogLevel.Information, "Expired RefTest {refTestId} in status {status}")]
+    public static partial void LogExpired(ILogger logger, Guid refTestId, RefTestStatus status);
 
     [LoggerMessage(LogLevel.Information, "Processed {totalCount} expired RefTests: {expiredCount} expired, {completedCount} auto-completed")]
     public static partial void LogProcessingSummary(ILogger logger, int totalCount, int expiredCount, int completedCount);
@@ -193,6 +301,10 @@ public static partial class ServiceLoggerMessages
 
     [LoggerMessage(LogLevel.Error, "Error during cleanup of {resourceType}")]
     public static partial void LogCleanupError(ILogger logger, Exception ex, string resourceType);
+
+    [LoggerMessage(LogLevel.Information,
+        "Cleanup for {resourceType} hit its per-run limit after {count} items - the remainder is processed on the next run")]
+    public static partial void LogCleanupBatchLimitReached(ILogger logger, string resourceType, int count);
 
     // ========================================
     // External API Operations

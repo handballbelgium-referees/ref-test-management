@@ -25,6 +25,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Lets the unit test project exercise internal input validation directly. -->
+        <InternalsVisibleTo Include="RefTestManagement.UnitTests" />
+    </ItemGroup>
+
+    <ItemGroup>
         <PackageReference Include="HotChocolate.AspNetCore.Authorization" />
         <PackageReference Include="HotChocolate.AspNetCore.CommandLine" />
         <PackageReference Include="HotChocolate.AspNetCore" />
@@ -33,6 +38,7 @@
         <PackageReference Include="HotChocolate.Types.Analyzers" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />
+        <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design">
             <PrivateAssets>all</PrivateAssets>
             <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

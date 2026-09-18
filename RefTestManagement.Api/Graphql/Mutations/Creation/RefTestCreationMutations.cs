@@ -55,21 +55,22 @@ public static partial class RefTestCreationMutations
             return result;
 
         context.RefTests.AddRange(createdRefTests);
+
+        // The RefTests and the jobs they owe are staged together and committed by the single
+        // SaveChanges below, so a persisted RefTest can never exist without its invitation or
+        // approval-notification job. Payloads can be built before the save because ids are
+        // domain-generated, not database-generated.
+        if (requiresApproval)
+            await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
+                jobEnqueueService, result, cancellationToken);
+        else if (input.SendAutomatedInvitations)
+            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, result, cancellationToken);
+
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
         await PublishCreatedEventsAsync(createdRefTests, titleId, titleValue, subscriptionService, cancellationToken);
 
-        if (requiresApproval)
-        {
-            await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
-                jobEnqueueService, result, cancellationToken);
-            result.CreatedRefTests.AddRange(createdRefTests.Select(rt => rt.ToDto()));
-            return result;
-        }
-
-        if (input.SendAutomatedInvitations)
-            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, result, cancellationToken);
-        else
+        if (requiresApproval || !input.SendAutomatedInvitations)
             result.CreatedRefTests.AddRange(createdRefTests.Select(rt => rt.ToDto()));
 
         return result;
@@ -214,8 +215,8 @@ public static partial class RefTestCreationMutations
     }
 
     /// <summary>
-    /// Enqueue approval notification emails for all created RefTests. The notification is sent to the creator and includes details of all RefTests awaiting approval. If enqueuing the notification fails, the error is recorded but does not prevent the RefTests from being created.
-    /// This ensures that the approval process can proceed even if the notification system experiences issues, while still providing visibility into any problems with sending notifications.
+    /// Stage the approval notification email for all created RefTests. The notification is sent to the creator and includes details of all RefTests awaiting approval.
+    /// The job row is added to the same unit of work as the RefTests, so it is committed with them or not at all.
     /// </summary>
     /// <param name="refTests">The list of created RefTests.</param>
     /// <param name="creatorName">The name of the RefTest creator.</param>
@@ -240,21 +241,25 @@ public static partial class RefTestCreationMutations
 
         try
         {
-            await jobEnqueueService.EnqueueApprovalNotificationAsync(payload, cancellationToken);
+            await jobEnqueueService.EnqueueApprovalNotificationAsync(payload, cancellationToken,
+                saveChanges: false);
         }
         catch (Exception ex)
         {
+            // Staging no longer touches the database, so this only catches payload serialization.
+            // A failure to commit surfaces from SaveChanges and fails the whole mutation by design.
             result.Errors.Add(new CreateRefTestsError
             {
                 User = new User(creatorName, string.Empty, creatorEmail),
-                ErrorMessage = $"RefTests created but approval notification enqueue failed: {ex.Message}"
+                ErrorMessage = $"Approval notification could not be prepared: {ex.Message}"
             });
         }
     }
 
     /// <summary>
-    /// Enqueue invitation emails for all created RefTests.
+    /// Stage invitation emails for all created RefTests.
     /// If SendAutomatedInvitations is false, the RefTests are created but the emails are not sent.
+    /// The job rows are added to the same unit of work as the RefTests.
     /// </summary>
     /// <param name="refTests">The list of created RefTests.</param>
     /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
@@ -275,7 +280,8 @@ public static partial class RefTestCreationMutations
                         refTest.Id, refTest.FullName, refTest.Email,
                         refTest.Token, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes),
                     executeAfter: refTest.ScheduledAt,
-                    cancellationToken: cancellationToken);
+                    cancellationToken: cancellationToken,
+                    saveChanges: false);
 
                 result.CreatedRefTests.Add(refTest.ToDto());
             }
@@ -284,7 +290,7 @@ public static partial class RefTestCreationMutations
                 result.Errors.Add(new CreateRefTestsError
                 {
                     User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = $"RefTest created but email job enqueue failed: {ex.Message}"
+                    ErrorMessage = $"Invitation email could not be prepared: {ex.Message}"
                 });
             }
         }

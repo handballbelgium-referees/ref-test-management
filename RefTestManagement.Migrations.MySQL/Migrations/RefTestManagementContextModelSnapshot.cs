@@ -16,7 +16,7 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.10")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.AuditLog.AuditEvent", b =>
@@ -47,6 +47,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.Property<bool>("IsArchived")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<DateTime?>("RedactedAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<string>("StreamId")
                         .IsRequired()
                         .HasMaxLength(256)
@@ -75,6 +78,8 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 
                     b.HasIndex("StreamId", "Version")
                         .IsUnique();
+
+                    b.HasIndex("Timestamp", "RedactedAt");
 
                     b.ToTable("AuditEvents");
                 });
@@ -114,6 +119,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -269,6 +278,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("varchar(50)");
 
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
                     b.Property<string>("WrongAnswerIds")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -293,6 +306,18 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 
                     b.HasIndex("Token")
                         .IsUnique();
+
+                    b.HasIndex("Status", "IsAnonymized", "CompletedAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_CompletedAt");
+
+                    b.HasIndex("Status", "IsAnonymized", "CreatedAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_CreatedAt");
+
+                    b.HasIndex("Status", "IsAnonymized", "ExpiredAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_ExpiredAt");
+
+                    b.HasIndex("Status", "IsAnonymized", "StartedAt")
+                        .HasDatabaseName("IX_RefTests_Status_IsAnonymized_StartedAt");
 
                     b.ToTable("RefTests");
                 });
