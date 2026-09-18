@@ -1,15 +1,5 @@
-import {
-  Component,
-  DestroyRef,
-  ElementRef,
-  computed,
-  effect,
-  inject,
-  input,
-  output,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, DestroyRef, ElementRef, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { ViewMode } from '../../models/datepicker.types';
 import { Datepicker } from '../../services/datepicker';
 import { CalendarFooter } from './components/calendar-footer/calendar-footer';
@@ -18,7 +8,7 @@ import { CalendarView } from './components/calendar-view/calendar-view';
 
 @Component({
   selector: 'app-datepicker-calendar',
-  imports: [CalendarHeader, CalendarView, CalendarFooter],
+  imports: [CalendarHeader, CalendarView, CalendarFooter, TranslatePipe],
   templateUrl: './datepicker-calendar.html',
   host: {
     class: 'block',

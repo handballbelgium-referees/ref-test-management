@@ -4,7 +4,6 @@
     <input
       id="questionSearch"
       type="text"
-      tabindex="2200"
       [value]="searchTerm()"
       (input)="onSearchInput($event)"
       (keydown)="onKeyDown($event)"
@@ -94,7 +93,6 @@
               <td class="px-4 py-3 text-right">
                 <button
                   type="button"
-                  [attr.tabindex]="2200 + i"
                   title="{{
                     'ref_tests.create.form.specific_question_numbers.remove_question' | translate
                   }}"

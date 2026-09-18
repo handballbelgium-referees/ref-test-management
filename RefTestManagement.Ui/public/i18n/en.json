@@ -10,6 +10,7 @@
   "common": {
     "cancel": "Cancel",
     "today": "Today",
+    "choose_date": "Choose a date",
     "clear": "Clear",
     "previous": "Previous",
     "next": "Next",
@@ -621,6 +622,9 @@
     "question": "Question",
     "of": "of",
     "answered": "answered",
+    "jump_to_question": "Jump to question",
+    "time_warning_five_minutes": "Five minutes remaining",
+    "time_warning_one_minute": "One minute remaining",
     "previous": "Previous",
     "next": "Next",
     "submit": "Submit RefTest",

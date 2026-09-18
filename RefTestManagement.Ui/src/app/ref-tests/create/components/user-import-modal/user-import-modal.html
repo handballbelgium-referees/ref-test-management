@@ -6,7 +6,6 @@
       </label>
       <textarea
         id="text"
-        tabindex="2"
         [value]="text()"
         (input)="text.set($any($event.target).value)"
         rows="6"
@@ -22,7 +21,6 @@
     <div class="flex gap-2">
       <button
         type="button"
-        tabindex="3"
         (click)="onImport()"
         class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors"
       >
@@ -30,7 +28,6 @@
       </button>
       <button
         type="button"
-        tabindex="4"
         (click)="onCancel()"
         class="px-4 py-2 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium text-sm transition-colors"
       >

@@ -61,7 +61,7 @@ that exists rather than creating one.
 | **1** ✅ | GDPR remediation | WP-01 → WP-07 | 1×M, 6×S | **Done** — shipped in `29dba7c` |
 | **1b** ✅ | Phase 1 regression fixes | WP-28 → WP-32, WP-35 | 3×M, 3×S | **Done** — regressions introduced by Phase 1 |
 | **2** ✅ | Security & assessment integrity | WP-08 → WP-12, WP-33 → WP-34, WP-36 → WP-39 | 4×M, 7×S | **Done** — hardening; no evidence of exploitation |
-| **3** | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | Mostly latent until the app scales out |
+| **3** ✅ | Correctness under load & architecture | WP-13 → WP-19 | 3×M, 2×L, 2×S | **Done** — WP-19 deferred to after Phase 5 |
 | **4** | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | User-visible quality |
 | **5** | Test foundation | WP-23 → WP-24 | 2×L | Stops everything above from regressing |
 | **6** | Supply chain & documentation | WP-25 → WP-27 | 3×S | Housekeeping |
@@ -1314,7 +1314,7 @@ project reference, and the cycle is back with nothing to notice it.
 
 ---
 
-## WP-19 — Decompose `BackgroundJobService`
+## WP-19 — Decompose `BackgroundJobService` ⏸️
 
 **Findings:** #32 (⚪ Low) · **Size:** L
 
@@ -1338,11 +1338,24 @@ loop thin.
   guarantees conflicts.
 - Pure refactor with no test harness to catch mistakes — consider deferring until after Phase 5.
 
+### Status — deferred to after Phase 5
+
+Taken deliberately, not skipped. This is the only ⚪ Low item in the phase and the only one with no
+behavioural payload: done perfectly, the system behaves exactly as it does now. Against that, it
+restructures the file that owns polling, leases, dispatch and retry — the component whose failure
+modes are hardest to notice, because a broken worker looks like a quiet system rather than an
+error.
+
+The three preceding work packages (WP-13, WP-15, WP-14) all changed this file's semantics. Doing
+the refactor now would mean reviewing a large structural diff on top of three fresh behavioural
+ones, with only `JobClaimTests` underneath it. WP-23 and WP-24 build the handler-level coverage
+that would make this refactor checkable rather than merely careful, so it runs after them.
+
 ---
 
 # Phase 4 — Frontend, accessibility & i18n
 
-## WP-20 — Accessibility batch
+## WP-20 — Accessibility batch ✅
 
 **Findings:** #19 (🟡 Medium), #25 (⚪ Low), #26 (⚪ Low) · **Size:** S
 
@@ -1374,9 +1387,38 @@ loop thin.
   screen-reader users on a timed assessment. Consider a polite `aria-live` announcement at 5
   minutes and 1 minute remaining — not every second.
 
+### Outcome
+
+**18 positive `tabindex` values, not the 10 the audit listed.** Five files carried literals from `1`
+to `2801`, and two more computed them: `index() * 4 + 5` on every field of every user row, and
+`2200 + i` on every search result. The computed ones were the worse half — they scale with list
+length, so a 40-user test generated tab positions into the hundreds, each one jumping ahead of the
+site navigation. All 18 sat on natively focusable elements (`button`, `input`, `textarea`), so
+removing the attribute was sufficient: they stay focusable, in DOM order, which here matches the
+visual order.
+
+**The datepicker's premise was wrong.** Escape already closed it — `Datepicker` has a
+`(document:keydown.escape)` host binding. And a focus trap would have been actively harmful: the
+desktop calendar opens on input *focus*, so trapping would mean tabbing into a date field made the
+rest of the form unreachable. The desktop popup is therefore labelled `role="dialog"` **without**
+`aria-modal`, because claiming modality would tell a screen reader the rest of the page had gone
+away while it is still perfectly usable. The mobile branch genuinely is modal and says so. The
+input now advertises the popup with `aria-haspopup` and `aria-expanded`.
+
+The calendar's own controls remain `tabindex="-1"`. Reaching them properly needs the ARIA grid
+pattern — roving tabindex with arrow-key navigation — not 42 day buttons dumped into the tab
+order, which would be worse than the current state. Keyboard users can already type a date into the
+input, which accepts digits and `/`, so the *function* is keyboard-accessible today. The grid
+pattern is left as a deliberate follow-up rather than half-implemented.
+
+The navigation `<select>` and the user avatar both gained accessible names. The countdown now has a
+polite live region driven by a translation key rather than by the second count, so the text only
+changes when a threshold is crossed and the warning is announced exactly twice — at five minutes
+and at one minute — instead of once per tick.
+
 ---
 
-## WP-21 — i18n batch
+## WP-21 — i18n batch ✅
 
 **Findings:** #20 (🟡 Medium), #28 (⚪ Low), #29 (⚪ Low) · **Size:** S
 
@@ -1407,6 +1449,39 @@ loop thin.
 - The `confirm()` is in a `CanDeactivate` guard, which cannot easily await a component dialog —
   the guard must return an `Observable<boolean>`, not a `boolean`. This is the only non-trivial
   part of the package.
+
+### Outcome
+
+The hard part turned out not to exist. `TakeRefTest` already had a `canDeactivate()` that opens the
+translated `LeaveRefTestDialog` and returns a `Promise<boolean>` — and `CanDeactivateFn` receives
+the component instance as its first argument. The guard was simply ignoring it and calling
+`confirm()` instead, which means `LeaveRefTestDialog` had been unreachable dead code: nothing else
+ever set `showLeaveDialog`. The fix is one delegated call. The finding was reported as a missing
+translation; the real defect was a finished feature that had never been wired up.
+
+Instead of fixing only the two key defects the audit happened to spot, the four locale files were
+diffed key-by-key against English. That confirmed the audit exactly — `fr` had one typo'd key and
+`de` had one typo plus four orphans — and confirmed there were no others. All four files now carry
+identical key sets, so a future divergence is a real regression rather than noise.
+
+The "identical to English" strings were mostly false positives and were left alone: French
+*Instructions*, German *Name*, and French *participant / participants* genuinely are those words,
+and `1.1, 1.2, 2.3` is a numeric example with nothing to translate. Filtering to multi-word values
+found three genuinely untranslated Dutch strings — `Reset Type`, `Test Scores` and
+`Start RefTest` — which were translated. Flagging a translation as missing because it matches
+English is a heuristic, and treating its output as a defect list would have corrupted correct
+translations.
+
+The key-parity check is kept as `npm run check:i18n` (`RefTestManagement.Ui/scripts/check-i18n.mjs`)
+rather than thrown away, because it earned its place twice during this package. It first found the
+reported defects; it then caught two regressions introduced *while fixing them*. A bulk insert
+anchored on a string that occurred twice silently added three keys to `ref_test.dialog.submit` as
+well as `ref_test`, in all four files — and because all four were corrupted identically, a
+cross-locale diff alone reported a clean result. Only re-reading the diff against the original
+revealed it. This is the failure mode the script exists for: a divergent locale file is still valid
+JSON and still compiles, so neither `ng build` nor a JSON linter can see it, and the only symptom is
+a raw key rendered to the users of one language — the audience least likely to report it. The script
+exits non-zero so it can gate CI, and that path was verified by deliberately breaking a key.
 
 ---
 

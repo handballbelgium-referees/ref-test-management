@@ -10,6 +10,7 @@
   "common": {
     "cancel": "Annuler",
     "today": "Aujourd'hui",
+    "choose_date": "Choisir une date",
     "clear": "Effacer",
     "previous": "Précédent",
     "next": "Suivant",
@@ -230,7 +231,7 @@
           "title": "Supprimer les RefTests",
           "message": "Êtes-vous sûr de vouloir supprimer {{count}} RefTest(s)?",
           "warning": "Cette action ne peut pas être annulée.",
-          "reftests": "RefTests à supprimer:",
+          "ref_tests": "RefTests à supprimer:",
           "confirm": "Supprimer",
           "cancel": "Annuler"
         },
@@ -622,6 +623,9 @@
     "question": "Question",
     "of": "sur",
     "answered": "répondu",
+    "jump_to_question": "Aller à la question",
+    "time_warning_five_minutes": "Cinq minutes restantes",
+    "time_warning_one_minute": "Une minute restante",
     "previous": "Précédent",
     "next": "Suivant",
     "submit": "Soumettre le RefTest",
