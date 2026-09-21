@@ -31,6 +31,7 @@ public class AuthorizationSchemaTests
                 "answerTotal",
                 "currentQuestionIndex",
                 "email",
+                "id",
                 "maxTimeInMinutes",
                 "name",
                 "numberOfQuestions",

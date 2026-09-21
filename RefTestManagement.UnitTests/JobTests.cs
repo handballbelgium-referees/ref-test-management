@@ -4,9 +4,9 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 /// <summary>
 /// Covers the job state machine. The regression these tests exist for: cancelling a job clears
-/// its payload, so any transition that returns a cancelled job to <see cref="JobStatus.Pending"/>
+/// its payload, so any transition that returns a canceled job to <see cref="JobStatus.Pending"/>
 /// produces a runnable job with nothing to deserialize — which broke <c>resetRefTest</c> and
-/// <c>reviveRefTest</c> for every other RefTest in the table, not just the cancelled one.
+/// <c>reviveRefTest</c> for every other RefTest in the table, not just the canceled one.
 /// </summary>
 public class JobTests
 {

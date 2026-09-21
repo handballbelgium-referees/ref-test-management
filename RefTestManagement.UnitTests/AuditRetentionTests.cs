@@ -149,7 +149,7 @@ public class AuditRetentionTests
         }
 
         using var cancellation = new CancellationTokenSource();
-        cancellation.Cancel();
+        await cancellation.CancelAsync();
 
         await using (var context = database.CreateContext())
         {

@@ -35,6 +35,7 @@ public class UnhandledExceptionLoggingErrorFilterTests
 
         Assert.NotNull(executor);
     }
+
     [Fact]
     public void OnErrorMasksEmailAddressesBeforeLoggingTheException()
     {
@@ -43,6 +44,7 @@ public class UnhandledExceptionLoggingErrorFilterTests
             builder
                 .AddProvider(provider)
                 .SetMinimumLevel(LogLevel.Trace));
+
         var httpContext = new DefaultHttpContext { TraceIdentifier = "trace-id" };
         var filter = new UnhandledExceptionLoggingErrorFilter(
             loggerFactory.CreateLogger<UnhandledExceptionLoggingErrorFilter>(),
