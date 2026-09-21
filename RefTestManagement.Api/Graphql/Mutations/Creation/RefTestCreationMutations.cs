@@ -65,9 +65,9 @@ public static partial class RefTestCreationMutations
         // domain-generated, not database-generated.
         if (requiresApproval)
             await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
-                jobEnqueueService, result, logger, correlationId, cancellationToken);
+                jobEnqueueService, context, result, logger, correlationId, cancellationToken);
         else if (input.SendAutomatedInvitations)
-            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, result, logger, correlationId,
+            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, context, result, logger, correlationId,
                 cancellationToken);
 
         await context.SaveChangesWithRetryAsync(cancellationToken);
@@ -242,6 +242,7 @@ public static partial class RefTestCreationMutations
         string creatorEmail,
         string? titleValue,
         IJobEnqueueService jobEnqueueService,
+        RefTestManagementContext context,
         CreateRefTestsResult result,
         ILogger logger,
         string correlationId,
@@ -254,8 +255,8 @@ public static partial class RefTestCreationMutations
 
         try
         {
-            await jobEnqueueService.EnqueueApprovalNotificationAsync(payload, cancellationToken,
-                saveChanges: false, unitOfWorkContext: context);
+            await jobEnqueueService.EnqueueApprovalNotificationAsync(payload,
+                saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
         }
         catch (Exception ex)
         {
@@ -280,6 +281,7 @@ public static partial class RefTestCreationMutations
     private static async Task EnqueueInvitationEmailsAsync(
         List<RefTest> refTests,
         IJobEnqueueService jobEnqueueService,
+        RefTestManagementContext context,
         CreateRefTestsResult result,
         ILogger logger,
         string correlationId,
@@ -294,9 +296,9 @@ public static partial class RefTestCreationMutations
                         refTest.Id, refTest.FullName, refTest.Email,
                         refTest.Token, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes),
                     executeAfter: refTest.ScheduledAt,
-                    cancellationToken: cancellationToken,
                     saveChanges: false,
-                    unitOfWorkContext: context);
+                    unitOfWorkContext: context,
+                    cancellationToken: cancellationToken);
 
                 result.CreatedRefTests.Add(refTest.ToDto());
             }

@@ -281,9 +281,10 @@ public static partial class RefTestLifecycleMutations
             DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
                 ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
                 : null;
-            await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt, cancellationToken,
+            await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt,
                 saveChanges: false,
-                unitOfWorkContext: context);
+                unitOfWorkContext: context,
+                cancellationToken: cancellationToken);
         }
 
         await context.SaveChangesWithRetryAsync(cancellationToken);

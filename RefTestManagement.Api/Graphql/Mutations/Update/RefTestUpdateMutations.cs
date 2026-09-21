@@ -62,8 +62,9 @@ public static partial class RefTestUpdateMutations
             );
 
             await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
-                cancellationToken: cancellationToken, saveChanges: false,
-                unitOfWorkContext: context);
+                saveChanges: false,
+                unitOfWorkContext: context,
+                cancellationToken: cancellationToken);
         }
 
         await context.SaveChangesWithRetryAsync(cancellationToken);
@@ -246,8 +247,9 @@ public static partial class RefTestUpdateMutations
             );
 
             await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
-                cancellationToken: cancellationToken, saveChanges: false,
-                unitOfWorkContext: context);
+                saveChanges: false,
+                unitOfWorkContext: context,
+                cancellationToken: cancellationToken);
         }
 
         // If SendResultsAutomatically was just enabled (changed from false to true)
@@ -273,8 +275,9 @@ public static partial class RefTestUpdateMutations
             );
 
             await jobEnqueueService.EnqueueResultEmailAsync(resultPayload,
-                cancellationToken: cancellationToken, saveChanges: false,
-                unitOfWorkContext: context);
+                saveChanges: false,
+                unitOfWorkContext: context,
+                cancellationToken: cancellationToken);
         }
 
         await context.SaveChangesWithRetryAsync(cancellationToken);
@@ -326,8 +329,9 @@ public static partial class RefTestUpdateMutations
             );
 
             await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
-                cancellationToken: cancellationToken, saveChanges: false,
-                unitOfWorkContext: context);
+                saveChanges: false,
+                unitOfWorkContext: context,
+                cancellationToken: cancellationToken);
         }
 
         await context.SaveChangesWithRetryAsync(cancellationToken);

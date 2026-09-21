@@ -62,7 +62,7 @@ public sealed class JobEnqueueUnitOfWorkTests
         await using var context = db.CreateContext();
 
         await Service(context).EnqueueInvitationEmailAsync(
-            Payload(Guid.NewGuid()), cancellationToken: ct, saveChanges: false);
+            Payload(Guid.NewGuid()), saveChanges: false, cancellationToken: ct);
 
         // A second context reads the database, not the first context's change tracker.
         await using (var observer = db.CreateContext())
@@ -84,7 +84,7 @@ public sealed class JobEnqueueUnitOfWorkTests
         var refTest = await NewRefTestAsync(db, ct);
         context.RefTests.Add(refTest);
         await Service(context).EnqueueInvitationEmailAsync(
-            Payload(refTest.Id), cancellationToken: ct, saveChanges: false);
+            Payload(refTest.Id), saveChanges: false, cancellationToken: ct);
 
         await context.SaveChangesAsync(ct);
 
@@ -103,9 +103,9 @@ public sealed class JobEnqueueUnitOfWorkTests
 
         await Service(serviceContext).EnqueueInvitationEmailAsync(
             Payload(Guid.NewGuid()),
-            cancellationToken: ct,
             saveChanges: false,
-            unitOfWorkContext: mutationContext);
+            unitOfWorkContext: mutationContext,
+            cancellationToken: ct);
 
         await mutationContext.SaveChangesAsync(ct);
 
@@ -123,7 +123,7 @@ public sealed class JobEnqueueUnitOfWorkTests
         var refTest = await NewRefTestAsync(db, ct);
         context.RefTests.Add(refTest);
         await Service(context).EnqueueInvitationEmailAsync(
-            Payload(refTest.Id), cancellationToken: ct, saveChanges: false);
+            Payload(refTest.Id), saveChanges: false, cancellationToken: ct);
 
         // Force the single SaveChanges to fail: a duplicate primary key is the cheapest way to
         // make the database reject the batch that carries both rows.
@@ -168,7 +168,8 @@ public sealed class JobEnqueueUnitOfWorkTests
         }
 
         await using var context = db.CreateContext();
-        await Service(context).CancelPendingJobsForRefTestAsync(refTestId, ct, saveChanges: false);
+        await Service(context).CancelPendingJobsForRefTestAsync(refTestId, saveChanges: false,
+            cancellationToken: ct);
 
         await using (var observer = db.CreateContext())
             Assert.Equal(JobStatus.Pending, (await observer.Jobs.SingleAsync(ct)).Status);
