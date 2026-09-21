@@ -693,8 +693,8 @@
       "body": "We gebruiken gerechtvaardigde belangen om de contactgegevens te verwerken die nodig zijn om een uitnodiging te versturen en te beheren. Deelname aan de toets is optioneel en vereist uw uitdrukkelijke aanvaarding van deze verklaring voordat de toets start; u kunt die toestemming op elk moment intrekken."
     },
     "recipients": {
-      "title": "Dienstverleners",
-      "body": "We gebruiken Auth0 voor authenticatie, Brevo voor e-mailbezorging en de IHF Rules Questions-dienst om toetsinhoud op te halen en resultaten te berekenen. Deze dienstverleners verwerken gegevens alleen voor zover dat nodig is om hun diensten te leveren."
+      "title": "Ontvangers en dienstverleners",
+      "body": "Persoonsgegevens worden gedeeld met toetsbeheerders van Handbal België die toetsen beheren en resultatenrapporten ontvangen, en wanneer goedkeuring vereist is met aangewezen goedkeurders die goedkeuringsmeldingen ontvangen. We gebruiken ook Auth0 voor authenticatie, Brevo voor e-mailbezorging en de IHF Rules Questions-dienst om toetsinhoud op te halen en resultaten te berekenen. Deze ontvangers en dienstverleners krijgen alleen gegevens die nodig zijn voor deze doelen."
     },
     "retention": {
       "title": "Bewaartermijn",

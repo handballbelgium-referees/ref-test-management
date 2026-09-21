@@ -2,6 +2,7 @@ import { Component, computed, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IsolatedBannerManager } from '../../../../../services/banner';
 import { Banner } from '../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../shared/components/dialog/dialog';
 
 interface IReportSummary {
   refTests: Array<{ name: string; email: string }>;
@@ -9,7 +10,7 @@ interface IReportSummary {
 
 @Component({
   selector: 'app-generate-report-dialog',
-  imports: [TranslatePipe, Banner],
+  imports: [TranslatePipe, Banner, Dialog],
   templateUrl: './generate-report-dialog.html',
   host: {
     class: 'host',

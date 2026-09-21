@@ -72,8 +72,12 @@ public static partial class RefTestQueries
             return refTest.ToDto();
 
         // Enqueue a specific job to handle this expired test
+        var action = refTest.Status == RefTestStatus.InProgress
+            ? RefTestExpirationAction.AutoComplete
+            : RefTestExpirationAction.MarkAsExpired;
+
         await jobEnqueueService.EnqueueRefTestExpirationAsync(
-            new RefTestExpirationPayload(refTest.Id, RefTestExpirationAction.MarkAsExpired),
+            new RefTestExpirationPayload(refTest.Id, action),
             cancellationToken: cancellationToken);
 
         throw new RefTestExpiredException(token);

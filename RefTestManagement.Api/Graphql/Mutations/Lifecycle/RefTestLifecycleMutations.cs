@@ -48,6 +48,9 @@ public static partial class RefTestLifecycleMutations
         if (refTest == null)
             throw new RefTestNotFoundException(token);
 
+        if (refTest.Status == RefTestStatus.InProgress)
+            return refTest.ToDto();
+
         if (refTest.IsExpired(configuration.ExpirationIfNotStarted))
         {
             refTest.Expire();
@@ -62,9 +65,6 @@ public static partial class RefTestLifecycleMutations
             
             throw new RefTestExpiredException(token);
         }
-
-        if (refTest.Status == RefTestStatus.InProgress)
-            return refTest.ToDto();
 
         refTest.Start(privacyConfiguration.NoticeVersion);
         await context.SaveChangesWithRetryAsync(cancellationToken);
@@ -303,4 +303,3 @@ public static partial class RefTestLifecycleMutations
         return refTest.ToDto();
     }
 }
-

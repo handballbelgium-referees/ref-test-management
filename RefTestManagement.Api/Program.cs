@@ -19,6 +19,7 @@ using Handball.Belgium.RefTestManagement.Api.Graphql;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using System.Threading.RateLimiting;
+using System.Net;
 using Microsoft.AspNetCore.RateLimiting;
 
 // Configure QuestPDF license
@@ -103,6 +104,10 @@ var graphQlLimitsConfig = configuration.GetSection("GraphQlLimitsConfiguration")
                           ?? new GraphQlLimitsConfiguration();
 services.AddSingleton(graphQlLimitsConfig);
 
+var forwardedHeadersConfig = configuration.GetSection("ForwardedHeadersConfiguration")
+                                  .Get<ForwardedHeadersConfiguration>()
+                              ?? new ForwardedHeadersConfiguration();
+
 const string graphQlRateLimiterPolicy = "graphql";
 
 if (graphQlLimitsConfig.EnableRateLimiting)
@@ -113,9 +118,6 @@ if (graphQlLimitsConfig.EnableRateLimiting)
 
         // Partitioned by client address: the participant flow is anonymous, so there is no user
         // to key on, and a single shared bucket would let one abusive client lock out everyone.
-        // Behind a proxy this is the proxy's address unless UseForwardedHeaders (configured
-        // below) has restored the original — hence EnableRateLimiting, for deployments that
-        // already limit at the edge.
         options.AddPolicy(graphQlRateLimiterPolicy, httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
                 httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -246,12 +248,41 @@ services.AddGraphQLServer()
 
 var app = builder.Build();
 
+var forwardedHeadersOptions = new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
+    ForwardLimit = forwardedHeadersConfig.ForwardLimit
+};
+if (forwardedHeadersConfig.ForwardLimit < 1)
+    throw new InvalidOperationException("ForwardedHeadersConfiguration:ForwardLimit must be at least 1.");
+
+forwardedHeadersOptions.KnownProxies.Clear();
+forwardedHeadersOptions.KnownIPNetworks.Clear();
+
+foreach (var value in forwardedHeadersConfig.KnownProxies)
+{
+    if (!IPAddress.TryParse(value, out var address))
+        throw new InvalidOperationException($"Invalid forwarded-header proxy address: '{value}'.");
+
+    forwardedHeadersOptions.KnownProxies.Add(address);
+}
+
+foreach (var value in forwardedHeadersConfig.KnownNetworks)
+{
+    var parts = value.Split('/', 2, StringSplitOptions.TrimEntries);
+    if (parts.Length != 2 ||
+        !IPAddress.TryParse(parts[0], out var address) ||
+        !int.TryParse(parts[1], out var prefixLength) ||
+        prefixLength < 0 ||
+        prefixLength > address.GetAddressBytes().Length * 8)
+        throw new InvalidOperationException($"Invalid forwarded-header network: '{value}'.");
+
+    forwardedHeadersOptions.KnownIPNetworks.Add(new System.Net.IPNetwork(address, prefixLength));
+}
+
 await app.MigrateRefTestManagementDatabase();
 
-app.UseForwardedHeaders(new ForwardedHeadersOptions
-{
-    ForwardedHeaders = ForwardedHeaders.XForwardedProto
-});
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 // Sent as real response headers rather than <meta http-equiv> tags. Browsers ignore
 // X-Frame-Options and X-Content-Type-Options when they appear in markup, so the tags in

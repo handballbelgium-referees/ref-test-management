@@ -39,6 +39,7 @@ export class RefTestStore {
   readonly completed = signal(false);
   readonly result = signal<RefTestResult | null>(null);
   readonly sendResultsAutomatically = signal<boolean>(false);
+  readonly autoSubmitAttempted = signal(false);
 
   readonly showSubmitDialog = signal(false);
   readonly showLeaveDialog = signal(false);
@@ -183,6 +184,13 @@ export class RefTestStore {
     this.showSubmitDialog.set(false);
   }
 
+  beginAutoSubmit(): boolean {
+    if (this.autoSubmitAttempted()) return false;
+
+    this.autoSubmitAttempted.set(true);
+    return true;
+  }
+
   getSelectedAnswerIds(): string[] {
     return Object.values(this.selectedAnswers()).flatMap((s) => [...s]);
   }
@@ -196,6 +204,7 @@ export class RefTestStore {
     this.currentQuestionIndex.set(0);
     this.completed.set(false);
     this.result.set(null);
+    this.autoSubmitAttempted.set(false);
     this.showLeaveDialog.set(false);
     this.showSubmitDialog.set(false);
     this.showProgressRestored.set(false);

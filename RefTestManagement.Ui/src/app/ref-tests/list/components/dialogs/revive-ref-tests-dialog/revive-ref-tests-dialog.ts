@@ -2,6 +2,7 @@ import { Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IsolatedBannerManager } from '../../../../../services/banner';
 import { Banner } from '../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../shared/components/dialog/dialog';
 
 interface IRefTestInfo {
   name: string;
@@ -10,7 +11,7 @@ interface IRefTestInfo {
 
 @Component({
   selector: 'app-revive-ref-tests-dialog',
-  imports: [TranslatePipe, Banner],
+  imports: [TranslatePipe, Banner, Dialog],
   templateUrl: './revive-ref-tests-dialog.html',
   host: {
     class: 'host',

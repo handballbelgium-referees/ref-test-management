@@ -12,6 +12,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { RefTestResetType } from '../../../../../../../graphql/generated';
 import { IsolatedBannerManager } from '../../../../../services/banner';
 import { Banner } from '../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../shared/components/dialog/dialog';
 
 interface IRefTestInfo {
   name: string;
@@ -25,7 +26,7 @@ interface IResetOptions {
 
 @Component({
   selector: 'app-reset-ref-tests-dialog',
-  imports: [TranslatePipe, FormsModule, FormField, Banner],
+  imports: [TranslatePipe, FormsModule, FormField, Banner, Dialog],
   templateUrl: './reset-ref-tests-dialog.html',
   host: {
     class: 'host',

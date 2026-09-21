@@ -240,9 +240,23 @@ being rejected, the error carries the measured cost (`extensions.fieldCost` /
 #### Rate limiting behind a proxy
 
 The limiter partitions on the client's remote address. `UseForwardedHeaders` is configured for
-`X-Forwarded-Proto` only, so behind a reverse proxy every request is attributed to the proxy's
-address and the limit becomes global. In that topology, rate limit at the proxy instead and set
+`X-Forwarded-For` and `X-Forwarded-Proto`, but only from the explicitly configured trusted proxy
+addresses and networks below. If the deployment already rate limits at the edge, set
 `EnableRateLimiting` to `false`.
+
+### ForwardedHeadersConfiguration
+
+Controls which reverse proxies may supply the client address used by the rate limiter. Forwarded
+headers from any other source are ignored.
+
+| Key | Description | Default |
+| --- | --- | --- |
+| `ForwardLimit` | Number of trusted proxy hops to process | `1` |
+| `KnownProxies` | Exact proxy IP addresses allowed to supply forwarded headers | `[]` |
+| `KnownNetworks` | CIDR networks allowed to supply forwarded headers | `[]` |
+
+Configure the actual ingress addresses per environment. Leaving both allow-lists empty is the safe
+default for direct/local access; it does not trust arbitrary `X-Forwarded-For` headers.
 
 ## Managing Migrations
 

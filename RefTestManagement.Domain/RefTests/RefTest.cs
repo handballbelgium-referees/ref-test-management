@@ -37,13 +37,6 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     /// </summary>
     private const int TokenLength = 32;
 
-    /// <summary>
-    /// Latency and clock-skew allowance applied to the server-side deadline check. A submission
-    /// is composed slightly before it arrives, and the participant's clock is not the server's;
-    /// without this, an answer sent a fraction of a second before the deadline would be rejected.
-    /// </summary>
-    private static readonly TimeSpan DeadlineGrace = TimeSpan.FromSeconds(60);
-
     private readonly List<IDomainEvent> _domainEvents = [];
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
     public void ClearDomainEvents() => _domainEvents.Clear();
@@ -345,19 +338,16 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public bool IsExpired(TimeSpan expirationIfNotStarted)
     {
-        if (Status == RefTestStatus.Completed)
-            return false;
+        var now = DateTime.UtcNow;
 
-        if (StartedAt.HasValue)
+        return Status switch
         {
-            // In-progress tests that exceed the time limit are auto-completed, not expired
-            var elapsedTime = DateTime.UtcNow - StartedAt.Value;
-            return elapsedTime.TotalMinutes > MaxTimeInMinutes;
-        }
-
-        // RefTest expires after configured time if not started (Pending status only)
-        var timeSinceCreation = DateTime.UtcNow - CreatedAt;
-        return timeSinceCreation > expirationIfNotStarted;
+            RefTestStatus.InProgress when StartedAt.HasValue =>
+                RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, now),
+            RefTestStatus.Pending =>
+                RefTestExpirationRules.IsPendingDue(CreatedAt, expirationIfNotStarted, now),
+            _ => false
+        };
     }
 
     #region Update Methods
@@ -663,7 +653,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     /// </remarks>
     public bool HasPassedDeadline() =>
         StartedAt.HasValue &&
-        DateTime.UtcNow > StartedAt.Value.AddMinutes(MaxTimeInMinutes).Add(DeadlineGrace);
+        RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, DateTime.UtcNow);
 
     /// <summary>
     /// Generates an invitation token. Tokens are the only credential guarding a participant's

@@ -256,6 +256,15 @@ describe('RefTestStore', () => {
   });
 
   describe('completion', () => {
+    it('starts auto-submit only once until the attempt is reset', () => {
+      expect(store.beginAutoSubmit()).toBe(true);
+      expect(store.beginAutoSubmit()).toBe(false);
+
+      store.reset();
+
+      expect(store.beginAutoSubmit()).toBe(true);
+    });
+
     it('records the result and closes the confirmation dialog', () => {
       store.showSubmitDialog.set(true);
       store.complete({ percentage: 85.5, sendResultsAutomatically: true });

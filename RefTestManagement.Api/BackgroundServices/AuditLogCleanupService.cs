@@ -5,21 +5,14 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 
-public class AuditLogCleanupService : BackgroundService
+public class AuditLogCleanupService(
+    IServiceProvider serviceProvider,
+    ILogger<AuditLogCleanupService> logger,
+    AuditLogOptions options) : BackgroundService
 {
-    private readonly IServiceProvider _serviceProvider;
-    private readonly ILogger<AuditLogCleanupService> _logger;
-    private readonly AuditLogOptions _options;
-
-    public AuditLogCleanupService(
-        IServiceProvider serviceProvider,
-        ILogger<AuditLogCleanupService> logger,
-        AuditLogOptions options)
-    {
-        _serviceProvider = serviceProvider;
-        _logger = logger;
-        _options = options;
-    }
+    private readonly IServiceProvider _serviceProvider = serviceProvider;
+    private readonly ILogger<AuditLogCleanupService> _logger = logger;
+    private readonly AuditLogOptions _options = options;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -67,7 +60,25 @@ public class AuditLogCleanupService : BackgroundService
         var contextFactory = scope.ServiceProvider.GetRequiredService<IDbContextFactory<RefTestManagementContext>>();
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
 
-        var cutoff = DateTime.UtcNow.AddDays(-_options.RetentionDays);
+        var archived = await RedactOldAuditLogsAsync(
+            context,
+            _options,
+            DateTime.UtcNow,
+            cancellationToken);
+
+        if (archived >= MaxRedactionsPerRun)
+            ServiceLoggerMessages.LogCleanupBatchLimitReached(_logger, "AuditLogs", archived);
+
+        ServiceLoggerMessages.LogCleanupCompleted(_logger, "AuditLogs", archived);
+    }
+
+    internal static async Task<int> RedactOldAuditLogsAsync(
+        RefTestManagementContext context,
+        AuditLogOptions options,
+        DateTime now,
+        CancellationToken cancellationToken)
+    {
+        var cutoff = now.AddDays(-options.RetentionDays);
         var archived = 0;
 
         // Archiving must strip the personal data, not just flag the row: past the retention
@@ -94,8 +105,6 @@ public class AuditLogCleanupService : BackgroundService
             if (batch.Count == 0)
                 break;
 
-            var redactedAt = DateTime.UtcNow;
-
             foreach (var auditEvent in batch)
             {
                 // AuditEvent is init-only by design, so write through the change tracker.
@@ -109,7 +118,7 @@ public class AuditLogCleanupService : BackgroundService
                 entry.Property(e => e.ActorEmail).CurrentValue = AuditPiiRedactor.RedactedValue;
 
                 entry.Property(e => e.IsArchived).CurrentValue = true;
-                entry.Property(e => e.RedactedAt).CurrentValue = redactedAt;
+                entry.Property(e => e.RedactedAt).CurrentValue = now;
             }
 
             await context.SaveChangesAsync(cancellationToken);
@@ -122,11 +131,10 @@ public class AuditLogCleanupService : BackgroundService
 
             if (archived >= MaxRedactionsPerRun)
             {
-                ServiceLoggerMessages.LogCleanupBatchLimitReached(_logger, "AuditLogs", archived);
                 break;
             }
         }
 
-        ServiceLoggerMessages.LogCleanupCompleted(_logger, "AuditLogs", archived);
+        return archived;
     }
 }

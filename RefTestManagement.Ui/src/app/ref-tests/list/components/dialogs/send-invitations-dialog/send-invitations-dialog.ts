@@ -2,6 +2,7 @@ import { Component, computed, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IsolatedBannerManager } from '../../../../../services/banner';
 import { Banner } from '../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../shared/components/dialog/dialog';
 
 interface IInvitationSummary {
   newInvitations: Array<{ name: string; email: string }>;
@@ -10,7 +11,7 @@ interface IInvitationSummary {
 
 @Component({
   selector: 'app-send-invitations-dialog',
-  imports: [TranslatePipe, Banner],
+  imports: [TranslatePipe, Banner, Dialog],
   templateUrl: './send-invitations-dialog.html',
   host: {
     class: 'host',

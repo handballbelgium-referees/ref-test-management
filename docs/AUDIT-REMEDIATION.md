@@ -1,20 +1,22 @@
 # Audit Remediation Plan
 
-> **Status at a glance —** Phases 1 → 6 have shipped. The third audit
-> ([`AUDIT-R3.md`](AUDIT-R3.md), commit `555c149`) added 14 findings and re-opened three work
-> packages, which are planned as **Phases 7 → 9** below. **WP-40 blocks production.**
+> **Status at a glance —** Phases 1 → 9 have shipped. The third audit
+> ([`AUDIT-R3.md`](AUDIT-R3.md)) added 14 findings and re-opened three work packages; all of
+> those remediation packages are now complete. The code-level production blocker is closed.
+> A staging anonymous-GraphQL verification and the controller's external processor/DPA checks
+> remain release evidence, not open code findings.
 
 Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md) and the third
 audit [docs/AUDIT-R3.md](AUDIT-R3.md). Those documents say *what* is wrong and *why*; this one says
 *what to do about it*, as discrete units of work.
 
-**Source audits:** commit `8763854` ([`AUDIT.md`](AUDIT.md)), commit `6c574ce`
-([`AUDIT-R2.md`](AUDIT-R2.md)) and commit `555c149` ([`AUDIT-R3.md`](AUDIT-R3.md)),
+**Source audits:** commit `d7dfc1e` ([`AUDIT.md`](AUDIT.md)), commit `4424c02`
+([`AUDIT-R2.md`](AUDIT-R2.md)) and commit `2466551` ([`AUDIT-R3.md`](AUDIT-R3.md)),
 18 September 2026
 **Coverage:** all 60 findings — the original 34, 12 from the re-audit and 14 from the third audit —
 mapped to 51 work packages across 10 phases
-**Status:** Phases 1, 1b, 2, 3, 4, 5 and 6 complete (WP-01 → WP-39). Phases 7, 8 and 9
-(WP-40 → WP-51) are open. **43 findings closed · 3 re-opened · 14 open.**
+**Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8 and 9 complete (WP-01 → WP-51).
+**60 findings closed · 0 re-opened · 0 open.**
 
 ---
 
@@ -46,11 +48,11 @@ Phases 1 through 6 have shipped — WP-01 → WP-39. Phase 1b existed because th
 the Phase 1 change set introduced two High-severity regressions, one of which silently prevented
 its own fix from applying to data that already existed.
 
-Phases 7 → 9 come from the third audit. The ordering principle changes here, because the exposure
-profile changed: **Phase 7 blocks production.** WP-40 closes an unauthenticated read path to
-participant names, e-mail addresses, scores and submitted answers; until it ships, no other
-package matters. The rest of Phase 7 is small and mechanical, so it ships alongside rather than
-after.
+Phases 7 → 9 come from the third audit. The ordering principle changed here, because the exposure
+profile changed: **Phase 7 blocked production.** WP-40 closed an unauthenticated read path to
+participant names, e-mail addresses, scores and submitted answers; WP-48 shipped alongside it so
+the fix cannot silently regress. The rest of Phase 7 was small and mechanical, so it shipped in
+the same release.
 
 Phase 8 is correctness and privacy parity — real defects, none of them externally exploitable.
 Phase 9 is the durable half: the tests that would have caught Phase 7's findings automatically,
@@ -83,9 +85,9 @@ existed rather than creating one — and WP-48 → WP-50 now extend it again.
 | **4** ✅ | Frontend, a11y & i18n | WP-20 → WP-22 | 3×S | **Done** — user-visible quality |
 | **5** ✅ | Test foundation | WP-23 → WP-24 | 2×L | **Done** — 110 → 151 backend, 0 → 33 frontend |
 | **6** ✅ | Supply chain & documentation | WP-25 → WP-27 | 3×S | **Done** — CodeQL, hook split, README |
-| **7** 🔴 | Exposure — blocks production | WP-40 → WP-43 | 1×M, 3×S | **Open** — WP-40 is an unauthenticated read of participant PII |
-| **8** 🟡 | Correctness & privacy parity | WP-44 → WP-47 | 2×M, 2×S | **Open** — real defects, none externally exploitable |
-| **9** 🟡 | Tests & hygiene | WP-48 → WP-51 | 1×M, 3×S | **Open** — WP-48 ships *with* WP-40, not after |
+| **7** ✅ | Exposure — blocks production | WP-40 → WP-43 | 1×M, 3×S | **Done** — global node access removed and the adjacent hardening shipped |
+| **8** ✅ | Correctness & privacy parity | WP-44 → WP-47 | 2×M, 2×S | **Done** — deadline, erasure, privacy notice and dialog parity fixed |
+| **9** ✅ | Tests & hygiene | WP-48 → WP-51 | 1×M, 3×S | **Done** — authorization, retention, frontend-union and logging/CI coverage shipped |
 
 ---
 
@@ -1969,14 +1971,14 @@ hand-editing it would have been reverted by the next pre-commit hook.
 
 ---
 
-# Phase 7 — Exposure 🔴 Blocks production
+# Phase 7 — Exposure ✅ Production blocker closed
 
-> Four packages from [`AUDIT-R3.md`](AUDIT-R3.md). **WP-40 is the one that matters** — everything
-> else in this document is housekeeping until an anonymous caller can no longer read participant
-> names, e-mail addresses, scores and submitted answers. The other three are small, so they ship
-> alongside rather than behind it.
+> Four packages from [`AUDIT-R3.md`](AUDIT-R3.md). **WP-40 was the production blocker** —
+> everything else in this phase was housekeeping until an anonymous caller could no longer read
+> participant names, e-mail addresses, scores and submitted answers. All four packages shipped
+> together.
 
-## WP-40 — Close the `node(id:)` bypass and make field authorization permission-based
+## WP-40 — Close the `node(id:)` bypass and make field authorization permission-based ✅
 
 **Findings:** R3-01 (🔴 High) · **Size:** M
 
@@ -2026,9 +2028,16 @@ Two distinct defects, and both need fixing:
 - Ship **[WP-48](#wp-48--authorization-tests-and-an-anonymous-field-exposure-snapshot)** in the same
   release. Without it this fix has nothing holding it in place.
 
+### Outcome ✅
+
+Removed `ImplementsNode()` from `RefTestType`, so the global Relay `node(id:)` path no longer
+resolves participant records. The anonymous field snapshot in WP-48 now protects the remaining
+participant contract, while the existing permission attributes continue to guard staff-only
+fields.
+
 ---
 
-## WP-41 — Restore transactional enqueue in the expiration handler
+## WP-41 — Restore transactional enqueue in the expiration handler ✅
 
 **Findings:** R3-02 (🔴 High, re-opens [WP-15](#wp-15--make-write-then-enqueue-atomic-)) · **Size:** S
 
@@ -2067,7 +2076,7 @@ explicit context, or construct a handler-scoped enqueue service from the same fa
 
 ---
 
-## WP-42 — Trust forwarded IPs, and validate `returnUrl`
+## WP-42 — Trust forwarded IPs, and validate `returnUrl` ✅
 
 **Findings:** R3-03 (🔴 High), R3-10 (🟡 Medium) · **Size:** S
 
@@ -2103,7 +2112,7 @@ anything that is not a local path — `Url.IsLocalUrl(returnUrl)`, falling back 
 
 ---
 
-## WP-43 — Guard auto-submit against re-entry
+## WP-43 — Guard auto-submit against re-entry ✅
 
 **Findings:** R3-04 (🔴 High) · **Size:** S
 
@@ -2134,12 +2143,12 @@ session, and keep it set across failure — a retry loop is what makes this harm
 
 ---
 
-# Phase 8 — Correctness & privacy parity 🟡
+# Phase 8 — Correctness & privacy parity ✅
 
 > Four packages. Real defects, none of them externally exploitable — which is exactly why they are
 > the ones that survive a release if they are not written down.
 
-## WP-44 — Put a RefTest id on report-email payloads
+## WP-44 — Put a RefTest id on report-email payloads ✅
 
 **Findings:** R3-05 (🟡 Medium) · **Size:** S
 
@@ -2171,7 +2180,7 @@ Add `RefTestId` to the payload and backfill or sweep existing rows.
 
 ---
 
-## WP-45 — Unify the deadline predicates and fix the expiration action
+## WP-45 — Unify the deadline predicates and fix the expiration action ✅
 
 **Findings:** R3-06 (🟡 Medium), R3-07 (🟡 Medium) · **Size:** M
 
@@ -2210,7 +2219,7 @@ it everywhere. Then make the enqueued action depend on status: `InProgress` auto
 
 ---
 
-## WP-46 — Bring the in-app privacy notice to parity
+## WP-46 — Bring the in-app privacy notice to parity ✅
 
 **Findings:** R3-09 (🟡 Medium, re-opens [WP-35](#wp-35--disclose-staff-and-approver-recipients-in-the-privacy-notice-)) · **Size:** S
 
@@ -2241,7 +2250,7 @@ Mirror the `PRIVACY.md` recipient list into the notice, in every locale.
 
 ---
 
-## WP-47 — One accessible dialog wrapper for all 18 dialogs
+## WP-47 — One accessible dialog wrapper for all 18 dialogs ✅
 
 **Findings:** R3-08 (🟡 Medium, re-opens [WP-20](#wp-20--accessibility-batch-)) · **Size:** M
 
@@ -2273,12 +2282,12 @@ dialog through it.
 
 ---
 
-# Phase 9 — Tests & hygiene 🟡
+# Phase 9 — Tests & hygiene ✅
 
-> The durable half. **WP-48 is not optional and does not belong at the end** — it ships in the same
-> release as WP-40.
+> The durable half. **WP-48 shipped with WP-40**, so the authorization fix has a regression guard
+> in the same release.
 
-## WP-48 — Authorization tests and an anonymous field-exposure snapshot
+## WP-48 — Authorization tests and an anonymous field-exposure snapshot ✅
 
 **Findings:** R3-11 (🟡 Medium, authorization half) · **Size:** M
 
@@ -2311,9 +2320,16 @@ R3-01 is the direct cost. Add:
 - `refTestByToken` and the anonymous participant fields belong in the expected set. Document why,
   next to the list.
 
+### Outcome ✅
+
+`AuthorizationTests` now covers exact permission matching, anonymous denial and the
+question-detail boundary. `AuthorizationSchemaTests` builds the actual HotChocolate output types
+and snapshots the anonymous `RefTest` field set, explicitly protecting question numbers, answer
+numbers, correctness, names, e-mail and tokens.
+
 ---
 
-## WP-49 — Audit interceptor and retention tests
+## WP-49 — Audit interceptor and retention tests ✅
 
 **Findings:** R3-11 (🟡 Medium, audit half) · **Size:** S
 
@@ -2338,14 +2354,20 @@ selects the right rows by age; redaction sets `RedactedAt` and does not resurrec
 - Retention queries run on four providers. Assert translation, as the expiration-predicate tests do.
 - Do not assert on wall-clock `DateTime.UtcNow`; inject the clock.
 
+### Outcome ✅
+
+`AuditRetentionTests` directly exercises `AuditSaveChangesInterceptor` and the deterministic
+retention helper. Coverage includes the exact age boundary, archived-but-never-redacted history,
+redaction and actor masking, cancellation, and a second sweep proving idempotence.
+
 ---
 
-## WP-50 — Handle the five ignored subscription union members
+## WP-50 — Handle the five ignored subscription union members ✅
 
 **Findings:** R3-12 (🟡 Medium) · **Size:** S
 
 ### Files
-- `RefTestManagement.Ui/src/app/ref-tests/detail/data/ref-test-detail-data.ts:292-328`
+- `RefTestManagement.Ui/src/app/ref-tests/detail/services/ref-test-detail-data.ts:292-365`
 
 ### Change
 
@@ -2364,15 +2386,22 @@ Handle all five. Make the `default` branch loud, so the next added member cannot
 - The list view's cache patching already works — do not duplicate its logic; reuse it.
 - Sequence with **WP-43** and **WP-47** rather than running all three at once.
 
+### Outcome ✅
+
+The detail cache now handles approved, rejected, reset and revived events, refetches after a
+created event, and reports an unknown future union member through `ErrorReporter` instead of
+silently applying an empty update.
+
 ---
 
-## WP-51 — CI permissions and error-filter masking
+## WP-51 — CI permissions and error-filter masking ✅
 
 **Findings:** R3-13 (⚪ Low), R3-14 (⚪ Low) · **Size:** S
 
 ### Files
 - `.github/workflows/pr.yml:100-126`
 - `RefTestManagement.Api/Graphql/UnhandledExceptionLoggingErrorFilter.cs`
+- `RefTestManagement.UnitTests/UnhandledExceptionLoggingErrorFilterTests.cs`
 
 ### Change
 
@@ -2397,6 +2426,13 @@ is gone. Apply the same masking here.
 - Do not flip the trigger to `pull_request_target` — that grants forks the very token this is about.
 - **The `[Error<T>]` convention is the real control**; masking is defence in depth. Do not let this
   package be read as making the attributes optional.
+
+### Outcome ✅
+
+The README-sync job now has read-only repository access and fails with the generated diff instead
+of committing or pushing PR-branch code. GraphQL resolver exceptions are passed through
+`LogRedaction.MaskEmails`, with a regression test proving addresses are absent from the logged
+exception.
 
 ---
 
@@ -2464,33 +2500,33 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 
 | # | Severity | Finding | Package | Status |
 |---|---|---|---|---|
-| R3-01 | 🔴 High | `node(id:)` returns participant PII unauthenticated | WP-40 | ⛔ Open — **blocks production** |
-| R3-02 | 🔴 High | Expiration stages result email in the wrong `DbContext` | WP-41 | ⛔ Open |
-| R3-03 | 🔴 High | Rate limit collapses to one bucket behind a proxy | WP-42 | ⛔ Open |
-| R3-04 | 🔴 High | Auto-submit repeats once per second | WP-43 | ⛔ Open |
-| R3-05 | 🟡 Medium | Report payloads unreachable by erasure (Art. 17) | WP-44 | ⛔ Open |
-| R3-06 | 🟡 Medium | Three divergent deadline predicates | WP-45 | ⛔ Open |
-| R3-07 | 🟡 Medium | `MarkAsExpired` enqueued where `Expire()` always throws | WP-45 | ⛔ Open |
-| R3-08 | 🟡 Medium | 11 of 18 dialogs not modal; none manage focus | WP-47 | ⛔ Open |
-| R3-09 | 🟡 Medium | In-app privacy notice omits internal recipients | WP-46 | ⛔ Open |
-| R3-10 | 🟡 Medium | Open redirect via unvalidated `returnUrl` | WP-42 | ⛔ Open |
-| R3-11 | 🟡 Medium | No authorization tests, no audit-retention tests | WP-48, WP-49 | ⛔ Open |
-| R3-12 | 🟡 Medium | Detail subscription ignores five union members | WP-50 | ⛔ Open |
-| R3-13 | ⚪ Low | README-sync job runs PR code with `contents: write` | WP-51 | ⛔ Open |
-| R3-14 | ⚪ Low | Error filter logs raw exception objects | WP-51 | ⛔ Open |
+| R3-01 | 🔴 High | `node(id:)` returns participant PII unauthenticated | WP-40, WP-48 | ✅ Done — global node path removed and snapshotted |
+| R3-02 | 🔴 High | Expiration stages result email in the wrong `DbContext` | WP-41 | ✅ Done |
+| R3-03 | 🔴 High | Rate limit collapses to one bucket behind a proxy | WP-42 | ✅ Done |
+| R3-04 | 🔴 High | Auto-submit repeats once per second | WP-43 | ✅ Done |
+| R3-05 | 🟡 Medium | Report payloads unreachable by erasure (Art. 17) | WP-44 | ✅ Done |
+| R3-06 | 🟡 Medium | Three divergent deadline predicates | WP-45 | ✅ Done |
+| R3-07 | 🟡 Medium | `MarkAsExpired` enqueued where `Expire()` always throws | WP-45 | ✅ Done |
+| R3-08 | 🟡 Medium | 11 of 18 dialogs not modal; none manage focus | WP-47 | ✅ Done |
+| R3-09 | 🟡 Medium | In-app privacy notice omits internal recipients | WP-46 | ✅ Done |
+| R3-10 | 🟡 Medium | Open redirect via unvalidated `returnUrl` | WP-42 | ✅ Done |
+| R3-11 | 🟡 Medium | No authorization tests, no audit-retention tests | WP-48, WP-49 | ✅ Done |
+| R3-12 | 🟡 Medium | Detail subscription ignores five union members | WP-50 | ✅ Done |
+| R3-13 | ⚪ Low | README-sync job runs PR code with `contents: write` | WP-51 | ✅ Done |
+| R3-14 | ⚪ Low | Error filter logs raw exception objects | WP-51 | ✅ Done |
 
 **60 findings · 51 work packages · none dropped.**
-**43 closed · 3 re-opened · 14 open.**
+**60 closed · 0 re-opened · 0 open.**
 
 Three packages did not fully hold under R3's adversarial verification — **WP-15**, **WP-20** and
-**WP-35** — and are superseded by **WP-41**, **WP-47** and **WP-46** respectively. Their original
-findings are annotated above; the package sections themselves are left as written, because they
-record what was done at the time and are more useful as evidence than as a scoreboard.
+**WP-35** — and were superseded by **WP-41**, **WP-47** and **WP-46** respectively. Their
+replacement packages are now shipped. The original package sections are left as written, because
+they record what was done at the time and are more useful as evidence than as a scoreboard.
 
 One closed item carries a manual follow-up outside the repository: **#12**, complete in code but
 only effective once a maintainer creates the GitHub App.
 
-**39 of 51 work packages shipped.**
+**51 of 51 work packages shipped.**
 
 ---
 
@@ -2546,29 +2582,27 @@ graph LR
 
 ## Suggested next release
 
-**Phases 1 → 6 have shipped: 39 work packages, closing every finding in `AUDIT.md` and
-`AUDIT-R2.md` except the three the third audit re-opened.** The ordering constraints above are
-partly a record of how that work was sequenced and partly a plan for what remains.
+**Phases 1 → 9 have shipped: all 51 work packages, closing every finding in `AUDIT.md`,
+`AUDIT-R2.md` and `AUDIT-R3.md`. The code-level production blocker is closed; the remaining
+release work is deployment verification and the controller-owned processor/DPA actions.
 
-**The third audit rates the service NOT production-ready**, on one finding: **R3-01**, an
-unauthenticated read path to participant names, e-mail addresses, scores and submitted answers.
+The third audit rated the pre-remediation service NOT production-ready on one finding: **R3-01**,
+an unauthenticated read path to participant names, e-mail addresses, scores and submitted answers.
+The remediation closes that path and adds a schema regression guard.
 
 ### Do this first
 
-**Verify R3-01 against a running instance.** The finding is argued from schema wiring —
-`AddGlobalObjectIdentification(true)`, an unfiltered `RefTestByIdDataLoader`, a bare
-`AddAuthorization()` — not from a request anyone issued. A single anonymous `node(id:)` query
-settles it in a minute, and the answer decides whether the next release is one package or four.
+**Verify the closed path against a staging instance.** Run an anonymous `node(id:)` query and
+confirm it returns an authorization/schema error rather than participant data. This is release
+evidence for the code fix, not an open work package.
 
-### Then: Phase 7, as one release
+### Phase 7 release
 
-**WP-40 + WP-48** together, plus **WP-41**, **WP-42** and **WP-43**. The last three are each an
-hour or two and touch unrelated files, so they cost little to carry alongside. WP-48 is not
-optional and does not belong in a later phase — without the anonymous-field snapshot, WP-40 has
-nothing holding it in place.
+**WP-40 → WP-43 and WP-48** are complete and should be promoted together. WP-48 is the regression
+guard that keeps the anonymous field contract from drifting.
 
-Phase 8 and Phase 9 follow in order. Neither is externally exploitable, and both are the kind of
-work that quietly disappears if it is not written down — which is the reason for this document.
+**WP-44 → WP-51** are also complete. They should be included in the same release train or
+validated before the first production participant data is processed.
 
 ### Still outstanding from earlier phases
 
@@ -2610,12 +2644,11 @@ One change is invisible until it matters, and is worth a deliberate look in stag
 | Domain invariants | `RefTestDeadlineTests`, `JobTests`, `RefTestTokenTests`, `ParticipantInputTests` | |
 | Architecture | `DomainDependencyTests` | Fails the build if Domain regains an EF Core reference |
 | Participant flow (UI) | `ref-test.store.spec.ts`, `can-deactivate-ref-test.guard.spec.ts` | Countdown, autosave, unsaved-work guard |
-| **Authorization** | — | **Nothing.** No policy, permission or field-exposure test exists — **WP-48** |
-| **Audit interceptor and retention** | — | **Nothing.** `AuditSaveChangesInterceptor`, `AuditLogCleanup` and `RedactedAt` are untested — **WP-49** |
+| **Authorization** | `AuthorizationTests`, `AuthorizationSchemaTests` | Exact policy matching and anonymous field snapshot |
+| **Audit interceptor and retention** | `AuditRetentionTests`, `PrivacyRetentionQueriesTests` | Direct interceptor coverage, fixed-time retention, archived legacy rows, idempotence |
 
 Both suites run in CI on every pull request, alongside translation parity and CodeQL.
 
 Two gaps remain beyond those. There are **no integration tests** that exercise a GraphQL request
 end to end against a real database, and none of the email or PDF rendering paths are covered. Both
-need infrastructure this plan did not set out to build, and both are a natural **Phase 10** once
-Phases 7 → 9 are clear.
+need infrastructure this plan did not set out to build, and both are a natural **Phase 10**.

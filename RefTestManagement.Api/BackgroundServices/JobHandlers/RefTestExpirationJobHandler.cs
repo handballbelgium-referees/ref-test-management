@@ -19,14 +19,16 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 /// This handler uses <see cref="IDbContextFactory{TContext}"/> rather than the scoped context. The
 /// auto-complete path runs the same mutation core participants do, which tracks a graph of its own,
 /// and it must not share a change tracker with the worker loop that owns the job row.
+/// The enqueue service is built on this same context so completion and its result-email outbox row
+/// commit together.
 /// </remarks>
 public sealed class RefTestExpirationJobHandler(
     IDbContextFactory<RefTestManagementContext> contextFactory,
     IRefTestSubscriptionService subscriptionService,
     IIhfRulesQuestionsService ihfRulesQuestionsService,
-    IJobEnqueueService jobEnqueueService,
     EmailConfiguration emailConfiguration,
-    ILogger<RefTestExpirationJobHandler> logger) : IJobHandler
+    ILogger<RefTestExpirationJobHandler> logger,
+    ILogger<JobEnqueueService> jobEnqueueLogger) : IJobHandler
 {
     public async Task HandleAsync(Job job, CancellationToken cancellationToken)
     {
@@ -62,6 +64,7 @@ public sealed class RefTestExpirationJobHandler(
             {
                 case RefTestExpirationAction.AutoComplete when refTest.Status == RefTestStatus.InProgress:
                 {
+                    var jobEnqueueService = new JobEnqueueService(context, jobEnqueueLogger);
                     await RefTestLifecycleMutations.CompleteRefTestCoreAsync(
                         new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
                         context,
@@ -76,7 +79,15 @@ public sealed class RefTestExpirationJobHandler(
                     break;
                 }
                 case RefTestExpirationAction.MarkAsExpired:
-                    // Mark as expired (for pending tests)
+                    if (refTest.Status != RefTestStatus.Pending)
+                    {
+                        logger.LogWarning(
+                            "Ignoring MarkAsExpired for RefTest {Id} in status {Status}",
+                            refTest.Id,
+                            refTest.Status);
+                        break;
+                    }
+
                     refTest.Expire();
                     await context.SaveChangesWithRetryAsync(cancellationToken);
 
@@ -88,6 +99,12 @@ public sealed class RefTestExpirationJobHandler(
                         cancellationToken);
 
                     ServiceLoggerMessages.LogExpired(logger, refTest.Id, refTest.Status);
+                    break;
+                case RefTestExpirationAction.AutoComplete:
+                    logger.LogWarning(
+                        "Ignoring AutoComplete for RefTest {Id} in status {Status}",
+                        refTest.Id,
+                        refTest.Status);
                     break;
             }
         }

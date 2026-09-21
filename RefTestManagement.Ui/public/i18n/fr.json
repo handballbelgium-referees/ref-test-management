@@ -694,8 +694,8 @@
       "body": "Nous utilisons l'intérêt légitime pour traiter les coordonnées nécessaires à l'envoi et à la gestion d'une invitation. La participation à l'évaluation est facultative et exige votre acceptation explicite de cet avis avant son démarrage ; vous pouvez retirer ce consentement à tout moment."
     },
     "recipients": {
-      "title": "Prestataires de services",
-      "body": "Nous utilisons Auth0 pour l'authentification, Brevo pour l'envoi d'e-mails et le service IHF Rules Questions pour obtenir le contenu de l'évaluation et calculer les résultats. Ces prestataires traitent les données uniquement dans la mesure nécessaire à la fourniture de leurs services."
+      "title": "Destinataires et prestataires de services",
+      "body": "Les données des participants sont partagées avec les administrateurs des évaluations de Handball Belgique qui les gèrent et reçoivent les rapports de résultats, et, lorsqu'une approbation est requise, avec les approbateurs désignés qui reçoivent les notifications d'approbation. Nous utilisons également Auth0 pour l'authentification, Brevo pour l'envoi d'e-mails et le service IHF Rules Questions pour obtenir le contenu de l'évaluation et calculer les résultats. Ces destinataires et prestataires ne reçoivent que les données nécessaires à ces fins."
     },
     "retention": {
       "title": "Conservation",

@@ -74,6 +74,13 @@ public class RefTestPrivacyErasureServiceTests
             type,
             $$"""{"refTestId":"{{refTestId}}","email":"{{ParticipantEmail}}","name":"{{ParticipantFirstName}}"}""");
 
+    private static Job ReportJobFor(Guid refTestId, bool legacy = false) =>
+        Job.Create(
+            JobType.ReportEmail,
+            legacy
+                ? """{"recipientEmails":["staff@example.org"],"refTests":[{"firstName":"Ada"}],"timestamp":"2026-09-21"}"""
+                : $$"""{"recipientEmails":["staff@example.org"],"refTests":[{"refTestId":"{{refTestId}}","firstName":"Ada"}],"timestamp":"2026-09-21"}""");
+
     private static async Task<Guid> SeedRefTestAsync(SqliteTestDatabase database, Guid titleId)
     {
         await using var context = database.CreateContext();
@@ -195,6 +202,61 @@ public class RefTestPrivacyErasureServiceTests
 
         Assert.Equal(JobStatus.Cancelled, cancelled.Status);
         Assert.DoesNotContain(ParticipantEmail, cancelled.Payload, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ErasureCancelsReportJobsWithTheRefTestId()
+    {
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await SeedRefTestAsync(database, titleId);
+        var otherId = await SeedRefTestAsync(database, titleId);
+
+        Guid reportJobId;
+        Guid otherReportJobId;
+        await using (var context = database.CreateContext())
+        {
+            var reportJob = ReportJobFor(id);
+            var otherReportJob = ReportJobFor(otherId);
+            context.Jobs.AddRange(reportJob, otherReportJob);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+            reportJobId = reportJob.Id;
+            otherReportJobId = otherReportJob.Id;
+        }
+
+        await EraseAsync(database, id, ErasureInitiator.Operator);
+
+        await using var after = database.CreateContext();
+        Assert.Equal(
+            JobStatus.Cancelled,
+            (await after.Jobs.SingleAsync(j => j.Id == reportJobId, TestContext.Current.CancellationToken)).Status);
+        Assert.Equal(
+            JobStatus.Pending,
+            (await after.Jobs.SingleAsync(j => j.Id == otherReportJobId, TestContext.Current.CancellationToken)).Status);
+    }
+
+    [Fact]
+    public async Task ErasureCancelsLegacyReportJobsConservatively()
+    {
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await SeedRefTestAsync(database, titleId);
+
+        Guid jobId;
+        await using (var context = database.CreateContext())
+        {
+            var job = ReportJobFor(id, legacy: true);
+            context.Jobs.Add(job);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+            jobId = job.Id;
+        }
+
+        await EraseAsync(database, id, ErasureInitiator.Operator);
+
+        await using var after = database.CreateContext();
+        Assert.Equal(
+            JobStatus.Cancelled,
+            (await after.Jobs.SingleAsync(j => j.Id == jobId, TestContext.Current.CancellationToken)).Status);
     }
 
     /// <summary>

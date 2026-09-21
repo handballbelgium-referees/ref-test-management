@@ -9,9 +9,7 @@ env:
   DOTNET_VERSION: 10.0.x
   NODE_VERSION: 24
 
-# Least privilege by default. Only sync-readme-versions needs to write, and it asks for it
-# explicitly below. Without this block every job inherits the repository default, which may be
-# read-and-write.
+# Least privilege by default. No pull-request check needs to write to the repository.
 permissions:
   contents: read
 
@@ -99,8 +97,6 @@ jobs:
   sync-readme-versions:
     name: 📄 Sync README Versions
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: 📥 Checkout code
@@ -112,15 +108,12 @@ jobs:
         run: node scripts/sync-readme-versions.mjs
         # Covers bot-authored PRs (e.g. Renovate) that skip the local pre-commit hook
 
-      - name: 📤 Commit changes if needed
+      - name: ❌ Fail if README needs changes
         run: |
           if ! git diff --quiet README.md; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add README.md
-            git commit -m "docs: sync README version tables"
-            git push
+            echo "::error::README.md is out of sync. Run node scripts/sync-readme-versions.mjs and commit the result."
+            git diff -- README.md
+            exit 1
           else
             echo "README.md already up to date"
           fi
-        # Only works for same-repo PR branches; GITHUB_TOKEN can't push to fork branches

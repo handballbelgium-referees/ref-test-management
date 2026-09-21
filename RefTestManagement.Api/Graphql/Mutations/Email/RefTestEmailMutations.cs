@@ -207,6 +207,7 @@ public static partial class RefTestEmailMutations
         }
 
         var reportData = refTests.Select(s => new RefTestReportPayloadData(
+            s.Id,
             s.Title?.Value ?? "Unknown",
             s.FirstName,
             s.LastName,
@@ -262,4 +263,3 @@ public static partial class RefTestEmailMutations
         }
     }
 }
-

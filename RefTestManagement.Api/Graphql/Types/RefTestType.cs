@@ -1,4 +1,3 @@
-﻿using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -17,11 +16,6 @@ public class RefTestType : ObjectType<RefTestDto>
         descriptor.Description("RefTest");
 
         descriptor.BindFieldsExplicitly();
-
-        descriptor.ImplementsNode()
-            .IdField(x => x.Id)
-            .ResolveNode((ctx, id) => ctx.DataLoader<RefTestByIdDataLoader>().LoadAsync(id, ctx.RequestAborted))
-            .Description("The RefTest id");
 
         descriptor.Field(x => x.Title)
             .Description("Title of the RefTest");

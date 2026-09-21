@@ -13,6 +13,8 @@ public class AccountController : Controller
     [HttpGet("Login")]
     public Task Login(string returnUrl = "/")
     {
+        if (!Url.IsLocalUrl(returnUrl)) returnUrl = "/";
+
         return HttpContext.ChallengeAsync("Auth0", new AuthenticationProperties { RedirectUri = returnUrl });
     }
     
@@ -32,6 +34,8 @@ public class AccountController : Controller
     [HttpGet("Logout")]
     public async Task Logout(string returnUrl = "/")
     {
+        if (!Url.IsLocalUrl(returnUrl)) returnUrl = "/";
+
         await HttpContext.SignOutAsync("Auth0", new AuthenticationProperties { RedirectUri = returnUrl });
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }

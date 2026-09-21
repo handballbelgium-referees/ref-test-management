@@ -35,6 +35,7 @@ public static class RefTestExpirationQueries
         // every provider can parameterise. Adding the window to CreatedAt instead would put date
         // arithmetic on a column for no benefit.
         var unstartedCutoff = now - expirationIfNotStarted;
+        var deadlineGraceSeconds = RefTestExpirationRules.DeadlineGrace.TotalSeconds;
 
         return refTest =>
             // An anonymized test has no participant left to expire, and erasure already moved it
@@ -45,7 +46,9 @@ public static class RefTestExpirationQueries
                     // test is in progress, so this arithmetic has to read the column.
                     refTest.Status == RefTestStatus.InProgress
                     && refTest.StartedAt != null
-                    && refTest.StartedAt.Value.AddMinutes(refTest.MaxTimeInMinutes) <= now)
+                    && refTest.StartedAt.Value
+                        .AddMinutes(refTest.MaxTimeInMinutes)
+                        .AddSeconds(deadlineGraceSeconds) <= now)
                 || (
                     // Never started, and out of time to start.
                     refTest.Status == RefTestStatus.Pending

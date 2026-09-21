@@ -2,6 +2,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Interceptors;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -52,11 +53,12 @@ internal sealed class SqliteTestDatabase : IDisposable
     /// interceptor is deliberately left out — it needs the request context, and none of this
     /// harness's tests are about auditing.
     /// </remarks>
-    public RefTestManagementContext CreateContext()
+    public RefTestManagementContext CreateContext(params IInterceptor[] interceptors)
     {
         var options = new DbContextOptionsBuilder<RefTestManagementContext>()
             .UseSqlite(_connection)
             .AddInterceptors(new ConcurrencyTokenInterceptor())
+            .AddInterceptors(interceptors)
             .Options;
 
         return new RefTestManagementContext(options);

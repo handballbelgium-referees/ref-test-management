@@ -693,8 +693,8 @@
       "body": "Wir nutzen berechtigte Interessen für die Verarbeitung der Kontaktdaten, die zum Versand und zur Verwaltung einer Einladung erforderlich sind. Die Teilnahme am Test ist freiwillig und setzt Ihre ausdrückliche Annahme dieses Hinweises vor Beginn voraus; Sie können diese Einwilligung jederzeit widerrufen."
     },
     "recipients": {
-      "title": "Dienstleister",
-      "body": "Wir verwenden Auth0 für die Authentifizierung, Brevo für den E-Mail-Versand und den Dienst IHF Rules Questions, um Testinhalte abzurufen und Ergebnisse zu berechnen. Diese Dienstleister verarbeiten Daten nur, soweit dies zur Erbringung ihrer Dienste erforderlich ist."
+      "title": "Empfänger und Dienstleister",
+      "body": "Teilnehmerdaten werden an die Prüfungsadministratoren von Handball Belgien weitergegeben, die Prüfungen verwalten und Ergebnisberichte erhalten, sowie, wenn eine Genehmigung erforderlich ist, an die benannten Genehmiger, die Genehmigungsmitteilungen erhalten. Wir verwenden außerdem Auth0 zur Authentifizierung, Brevo für den E-Mail-Versand und den Dienst IHF Rules Questions, um Testinhalte abzurufen und Ergebnisse zu berechnen. Diese Empfänger und Dienstleister erhalten nur die für diese Zwecke erforderlichen Daten."
     },
     "retention": {
       "title": "Speicherdauer",

@@ -118,21 +118,11 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
     /// </summary>
     private async Task DeleteCoreAsync(RefTest refTest, CancellationToken ct)
     {
-        var refTestId = refTest.Id.ToString();
-
         // Cancel any job still waiting to run or already in flight (e.g. a scheduled
         // invitation/result email) so nothing gets sent out referencing a record that's
-        // about to be gone. Cancelling clears the job payload, which carries the
-        // participant's name, email and token.
-        // Processing jobs are included deliberately: a worker may be mid-send, so this
-        // narrows the window rather than closing it, but leaving them out guarantees the
-        // email goes out. A batch ReportEmail job whose payload mentions this RefTest is
-        // cancelled too — that is the existing behaviour and is intentional, since the
-        // report would otherwise deliver the deleted participant's details to staff.
-        var cancellableJobs = await context.Jobs
-            .Where(job => (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing)
-                          && job.Payload.Contains(refTestId))
-            .ToListAsync(ct);
+        // about to be gone. The helper also handles report jobs written before RefTestId was
+        // added to their payload.
+        var cancellableJobs = await FindCancellableJobsAsync(refTest.Id, ct);
 
         foreach (var job in cancellableJobs)
             job.Cancel("RefTest was deleted");
@@ -199,17 +189,8 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 
         // Cancel any job still waiting to run or already in flight (e.g. a scheduled
         // invitation/result email) so nothing gets sent out referencing the erased data.
-        // Cancelling also clears the job payload, which holds the participant's name,
-        // email, token, scores and answers — erasing the RefTest row alone would leave all
-        // of that sitting in the Jobs table.
-        // Processing jobs are included deliberately: a worker may already be mid-send, so
-        // this narrows the window rather than closing it. Jobs that already completed are
-        // left untouched — they carry their own accountability value and are handled by the
-        // normal retention/cleanup schedule instead.
-        var cancellableJobs = await context.Jobs
-            .Where(job => (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing)
-                          && job.Payload.Contains(refTestId))
-            .ToListAsync(ct);
+        // Completed jobs are left untouched and follow normal retention cleanup.
+        var cancellableJobs = await FindCancellableJobsAsync(refTest.Id, ct);
 
         foreach (var job in cancellableJobs)
             job.Cancel("RefTest personal data was erased");
@@ -242,4 +223,21 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 
         await context.SaveChangesAsync(ct);
     }
+
+    private async Task<List<Job>> FindCancellableJobsAsync(Guid refTestId, CancellationToken ct)
+    {
+        var id = refTestId.ToString();
+        var candidates = await context.Jobs
+            .Where(job => (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing)
+                          && (job.Payload.Contains(id) || job.JobType == JobType.ReportEmail))
+            .ToListAsync(ct);
+
+        return candidates
+            .Where(job => job.Payload.Contains(id, StringComparison.OrdinalIgnoreCase)
+                          || (job.JobType == JobType.ReportEmail && IsLegacyReportPayload(job.Payload)))
+            .ToList();
+    }
+
+    private static bool IsLegacyReportPayload(string payload)
+        => payload.IndexOf("\"refTestId\"", StringComparison.OrdinalIgnoreCase) < 0;
 }
