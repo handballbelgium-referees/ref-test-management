@@ -101,7 +101,7 @@ public class RefTestExpirationService : BackgroundService
             await jobEnqueueService.EnqueueRefTestExpirationAsync(
                 new RefTestExpirationPayload(test.Id, action),
                 executeAfter: null,
-                cancellationToken);
+                cancellationToken: cancellationToken);
 
             ServiceLoggerMessages.LogEnqueuedExpirationJob(_logger, action, test.Id);
         }

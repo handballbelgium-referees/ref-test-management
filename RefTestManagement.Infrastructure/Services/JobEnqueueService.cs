@@ -23,35 +23,50 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 /// whose invitation is never sent.
 /// </para>
 /// <para>
-/// <c>saveChanges</c> is deliberately the last parameter so that adding it did not disturb any
-/// existing positional call site.
+/// Callers that need the job staged into some other unit of work can pass that
+/// <see cref="RefTestManagementContext"/> explicitly; otherwise the service uses its injected
+/// scoped context.
 /// </para>
 /// </remarks>
 public interface IJobEnqueueService
 {
     Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true);
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 
     Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true);
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 
     Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true);
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 
     Task EnqueueRefTestExpirationAsync(RefTestExpirationPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true);
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 
     Task EnqueueApprovalNotificationAsync(ApprovalNotificationEmailPayload payload,
-        CancellationToken cancellationToken = default, bool saveChanges = true);
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 
     Task EnqueueApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload,
-        CancellationToken cancellationToken = default, bool saveChanges = true);
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 
-    Task CancelPendingJobsForRefTestAsync(Guid refTestId, CancellationToken cancellationToken = default,
-        bool saveChanges = true);
+    Task CancelPendingJobsForRefTestAsync(Guid refTestId,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 
-    Task CancelPendingResultEmailsAsync(Guid refTestId, CancellationToken cancellationToken = default,
-        bool saveChanges = true);
+    Task CancelPendingResultEmailsAsync(Guid refTestId,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
 }
 
 public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqueueService> logger)
@@ -63,92 +78,115 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         WriteIndented = false
     };
 
+    private IJobPersistenceContext ResolveContext(IJobPersistenceContext? unitOfWorkContext) =>
+        unitOfWorkContext ?? context;
+
     public async Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true)
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
         var job = Job.Create(JobType.InvitationEmail, payloadJson, executeAfter);
 
-        context.Jobs.Add(job);
+        dbContext.Jobs.Add(job);
         if (saveChanges)
-            await context.SaveChangesWithRetryAsync(cancellationToken);
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogEnqueuedInvitationEmail(logger, job.Id, payload.RefTestId);
     }
 
     public async Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true)
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
         var job = Job.Create(JobType.ResultEmail, payloadJson, executeAfter);
 
-        context.Jobs.Add(job);
+        dbContext.Jobs.Add(job);
         if (saveChanges)
-            await context.SaveChangesWithRetryAsync(cancellationToken);
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogEnqueuedResultEmail(logger, job.Id, payload.RefTestId);
     }
 
     public async Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true)
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
         var job = Job.Create(JobType.ReportEmail, payloadJson, executeAfter);
 
-        context.Jobs.Add(job);
+        dbContext.Jobs.Add(job);
         if (saveChanges)
-            await context.SaveChangesWithRetryAsync(cancellationToken);
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogEnqueuedReportEmail(logger, job.Id, payload.RecipientEmails.Length);
     }
 
     public async Task EnqueueRefTestExpirationAsync(RefTestExpirationPayload payload, DateTime? executeAfter = null,
-        CancellationToken cancellationToken = default, bool saveChanges = true)
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
         var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter);
 
-        context.Jobs.Add(job);
+        dbContext.Jobs.Add(job);
         if (saveChanges)
-            await context.SaveChangesWithRetryAsync(cancellationToken);
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.RefTestExpiration, job.Id);
     }
 
     public async Task EnqueueApprovalNotificationAsync(
         ApprovalNotificationEmailPayload payload,
-        CancellationToken cancellationToken = default, bool saveChanges = true)
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
         var job = Job.Create(JobType.ApprovalNotificationEmail, payloadJson);
 
-        context.Jobs.Add(job);
+        dbContext.Jobs.Add(job);
         if (saveChanges)
-            await context.SaveChangesWithRetryAsync(cancellationToken);
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalNotificationEmail, job.Id);
     }
 
     public async Task EnqueueApprovalDecisionEmailAsync(
         ApprovalDecisionEmailPayload payload,
-        CancellationToken cancellationToken = default, bool saveChanges = true)
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
         var job = Job.Create(JobType.ApprovalDecisionEmail, payloadJson);
 
-        context.Jobs.Add(job);
+        dbContext.Jobs.Add(job);
         if (saveChanges)
-            await context.SaveChangesWithRetryAsync(cancellationToken);
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalDecisionEmail, job.Id);
     }
 
-    public async Task CancelPendingJobsForRefTestAsync(Guid refTestId, CancellationToken cancellationToken = default,
-        bool saveChanges = true)
+    public async Task CancelPendingJobsForRefTestAsync(Guid refTestId,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         // Find all pending or processing jobs that could reference this RefTest
         // (InvitationEmail, ResultEmail, RefTestExpiration - but NOT ReportEmail as it's a batch operation)
-        var pendingJobs = await context.Jobs
+        var pendingJobs = await dbContext.Jobs
             .Where(j => (j.JobType == JobType.InvitationEmail
                          || j.JobType == JobType.ResultEmail
                          || j.JobType == JobType.RefTestExpiration)
@@ -201,16 +239,18 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         if (canceledCount > 0)
         {
             if (saveChanges)
-                await context.SaveChangesWithRetryAsync(cancellationToken);
+                await dbContext.SaveChangesWithRetryAsync(cancellationToken);
             ServiceLoggerMessages.LogCanceledCountPendingJobsForRefTestRefTestId(logger, canceledCount, refTestId);
         }
     }
 
-    public async Task CancelPendingResultEmailsAsync(Guid refTestId, CancellationToken cancellationToken = default,
-        bool saveChanges = true)
+    public async Task CancelPendingResultEmailsAsync(Guid refTestId,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
     {
+        var dbContext = ResolveContext(unitOfWorkContext);
         // Find all pending or processing result email jobs for this RefTest
-        var pendingResultJobs = await context.Jobs
+        var pendingResultJobs = await dbContext.Jobs
             .Where(j => j.JobType == JobType.ResultEmail
                         && (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing))
             .ToListAsync(cancellationToken);
@@ -229,7 +269,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         if (canceledCount > 0)
         {
             if (saveChanges)
-                await context.SaveChangesWithRetryAsync(cancellationToken);
+                await dbContext.SaveChangesWithRetryAsync(cancellationToken);
             ServiceLoggerMessages.LogCanceledCountPendingResultEmailJobsForRefTestRefTestId(logger, canceledCount, refTestId);
         }
     }

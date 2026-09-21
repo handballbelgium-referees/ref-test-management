@@ -71,13 +71,15 @@ public static partial class RefTestResetMutations
                 if (willRegenerateToken)
                 {
                     // Cancel all pending jobs (invitations with old token, results, expiration checks)
-                    await jobEnqueueService.CancelPendingJobsForRefTestAsync(id, cancellationToken, saveChanges: false);
+                    await jobEnqueueService.CancelPendingJobsForRefTestAsync(id,
+                        saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
                 }
                 else
                 {
                     // Soft reset without token regeneration: only cancel result emails
                     // Keep pending invitation emails (token is still valid) and expiration jobs
-                    await jobEnqueueService.CancelPendingResultEmailsAsync(id, cancellationToken, saveChanges: false);
+                    await jobEnqueueService.CancelPendingResultEmailsAsync(id,
+                        saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
                 }
 
                 // Check if the invitation was previously sent
@@ -111,7 +113,9 @@ public static partial class RefTestResetMutations
                     );
 
                     await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
-                        cancellationToken: cancellationToken, saveChanges: false);
+                        saveChanges: false,
+                        unitOfWorkContext: context,
+                        cancellationToken: cancellationToken);
                 }
 
                 successCount++;
@@ -193,7 +197,8 @@ public static partial class RefTestResetMutations
 
                 // Cancel any pending jobs for this RefTest to prevent outdated operations
                 // (invitations with old token, results with old scores, expiration checks)
-                await jobEnqueueService.CancelPendingJobsForRefTestAsync(id, cancellationToken, saveChanges: false);
+                await jobEnqueueService.CancelPendingJobsForRefTestAsync(id,
+                    saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
 
                 // Check if the invitation was previously sent
                 var invitationWasSent = refTest.InvitationSentAt.HasValue;
@@ -214,7 +219,9 @@ public static partial class RefTestResetMutations
                     );
 
                     await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
-                        cancellationToken: cancellationToken, saveChanges: false);
+                        saveChanges: false,
+                        unitOfWorkContext: context,
+                        cancellationToken: cancellationToken);
                 }
 
                 successCount++;
