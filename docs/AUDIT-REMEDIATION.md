@@ -5,18 +5,23 @@
 > replacement packages are now complete. The code-level production blocker is closed.
 > A staging anonymous-GraphQL verification and the controller's external processor/DPA checks
 > remain release evidence, not open code findings.
+>
+> **Updated for the 2026-09-21 audit** — the current repository review added five follow-up findings in
+> [`AUDIT-R4.md`](./AUDIT-R4.md). They are not historical backlog; they are the next
+> remediation wave and should be tracked as a dedicated follow-up phase.
 
-Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md) and the third
-audit [docs/AUDIT-R3.md](AUDIT-R3.md). Those documents say *what* is wrong and *why*; this one says
+Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md), the third
+audit [docs/AUDIT-R3.md](AUDIT-R3.md), and the current deep review in
+[`AUDIT-R4.md`](./AUDIT-R4.md). Those documents say *what* is wrong and *why*; this one says
 *what to do about it*, as discrete units of work.
 
 **Source audits:** commit `d7dfc1e` ([`AUDIT.md`](AUDIT.md)), commit `4424c02`
-([`AUDIT-R2.md`](AUDIT-R2.md)) and commit `2466551` ([`AUDIT-R3.md`](AUDIT-R3.md)),
-18 September 2026
-**Coverage:** all 60 findings — the original 34, 12 from the re-audit and 14 from the third audit —
-mapped to 51 work packages across 10 phases
-**Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8 and 9 complete (WP-01 → WP-51).
-**60 findings closed · 0 re-opened · 0 open.**
+([`AUDIT-R2.md`](AUDIT-R2.md)), commit `2466551` ([`AUDIT-R3.md`](AUDIT-R3.md)), and the 2026-09-21
+review documented in [`AUDIT-R4.md`](./AUDIT-R4.md)
+**Coverage:** all 60 historical findings plus the 5 follow-up findings from the current audit, mapped to
+51 historical work packages and 5 immediate remediation packages for the current review
+**Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8 and 9 complete (WP-01 → WP-51); the 2026-09-21 findings are tracked below as WP-52 → WP-56.
+**60 historical findings closed · 0 re-opened · 5 follow-up findings open.**
 
 ---
 
@@ -71,6 +76,115 @@ was the exception**: a deliberately narrow package covering only the pure logic 
 regressions live in, so that Phase 1b cannot silently regress again. It shipped a real test
 project and wired `dotnet test` into the PR workflow, so WP-23 and WP-24 extended a harness that
 existed rather than creating one — and WP-48 → WP-50 now extend it again.
+
+---
+
+## Current audit follow-up plan (2026-09-21)
+
+The current review did not uncover a Critical or High-severity code issue, but it did identify a small set of medium- and low-risk findings that should be fixed before declaring the application release-ready. These are the next work packages.
+
+### WP-52 — Fix the withdrawal confirmation so it matches the actual anonymization lifecycle
+
+**Findings:** A-01 (🟡 Medium)
+**Size:** S
+**Priority:** P1
+
+**Files**
+- `RefTestManagement.Ui/public/i18n/en.json`
+- `RefTestManagement.Ui/public/i18n/nl.json`
+- `RefTestManagement.Ui/public/i18n/fr.json`
+- `RefTestManagement.Ui/public/i18n/de.json`
+- `RefTestManagement.Ui/src/app/ref-test/take/state/ref-test.facade.ts`
+- `RefTestManagement.Infrastructure/Services/RefTestPrivacyErasureService.cs`
+
+**Change**
+- Replace the claim that data was “permanently deleted” with wording that says consent was withdrawn and identifying data was anonymized/redacted.
+- Keep the underlying lifecycle unchanged unless product intent is explicitly to hard-delete the record; the current code path is anonymize-first and retained for audit reasons.
+- Add a regression test that asserts the public message matches the behavior of `EraseAsync()`.
+
+**Acceptance**
+- The four locale files no longer say “permanently deleted”.
+- The participant-facing message is accurate under GDPR and consistent with `docs/PRIVACY.md`.
+- A UI/unit test verifies the message matches the anonymization workflow.
+
+### WP-53 — Remove unnecessary OIDC token persistence and document any required exception
+
+**Findings:** A-03 (🟡 Medium)
+**Size:** S
+**Priority:** P1
+
+**Files**
+- `RefTestManagement.Api/SecurityStartup.cs`
+- `RefTestManagement.Api/Program.cs` (if startup validation is added)
+- `docs/CONFIGURATION.md` or equivalent deployment notes
+
+**Change**
+- Remove `offline_access` and `SaveTokens = true` unless the product has a documented requirement for refresh-token renewal or downstream API access.
+- If the tokens are retained for a specific reason, document the security controls, session expiration, rotation, and revocation model.
+- Consider a startup warning or health-check when a proxy/rate-limiter setup is enabled with untrusted forwarded headers.
+
+**Acceptance**
+- The OIDC configuration no longer stores tokens that are not used by the application.
+- If any token retention is required, it is explicitly documented and reviewed.
+- The application does not keep more bearer credential material than necessary.
+
+### WP-54 — Replace raw exception text with a redacted, stable failure response
+
+**Findings:** A-04 (🟡 Medium)
+**Size:** S
+**Priority:** P1
+
+**Files**
+- `RefTestManagement.Api/Graphql/Mutations/Email/RefTestEmailMutations.cs`
+- related GraphQL error logging / result-shaping code
+
+**Change**
+- Catch exceptions and log a sanitized server-side error with a correlation id.
+- Return a generic GraphQL error message to the caller instead of `ex.Message`.
+- Keep the response contract intact while removing internal implementation details from API output.
+
+**Acceptance**
+- caller-visible GraphQL responses never include provider/database/filesystem exception strings.
+- A correlation id is available for support investigation without exposing raw internals.
+- A regression test confirms a failure path returns the generic message.
+
+### WP-55 — Validate trusted proxy/rate-limit configuration before production release
+
+**Findings:** A-02 (🟡 Medium)
+**Size:** M
+**Priority:** P1
+
+**Files**
+- `RefTestManagement.Api/Program.cs`
+- `RefTestManagement.Api/appsettings.json`
+- deployment manifests or infrastructure config
+
+**Change**
+- Confirm the production ingress/proxy is listed in `KnownProxies` and/or `KnownNetworks`.
+- Add a startup or deployment validation that warns or fails when rate limiting is enabled without the expected trusted forwarder configuration.
+- Keep the allow-list model and never trust arbitrary client-supplied forwarded headers.
+
+**Acceptance**
+- Deployment configuration for proxy trust is explicit and environment-specific.
+- The application cannot silently run with a misconfigured rate limiter behind an untrusted proxy.
+- The rate-limit behavior remains per-client rather than per-proxy.
+
+### WP-56 — Remove the EF1002 SQL warning by making the helper provider-safe
+
+**Findings:** A-05 (⚪ Low)
+**Size:** S
+**Priority:** P2
+
+**Files**
+- `RefTestManagement.UnitTests/PrivacyRetentionQueriesTests.cs`
+
+**Change**
+- Replace raw SQL dynamic-column construction with a fixed-column switch or provider-safe query pattern.
+- Keep the test intent equivalent without suppressing EF1002 warnings without justification.
+
+**Acceptance**
+- The test project builds without EF1002 warnings from the helper.
+- The helper cannot be reused with untrusted SQL identifiers.
 
 ---
 
