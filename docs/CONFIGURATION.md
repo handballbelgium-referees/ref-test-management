@@ -199,26 +199,26 @@ See [docs/PRIVACY.md](PRIVACY.md) for how retention and erasure actually work.
 
 ### AuditLogConfiguration
 
-| Key                    | Description                                         | Default |
-| ---------------------- | --------------------------------------------------- | ------- |
-| `EnableCleanup`        | Enable automatic redaction of old audit events      | `true`  |
-| `CleanupIntervalHours` | How often cleanup runs                              | `24`    |
-| `RetentionDays`        | Audit events older than this are redacted           | `90`    |
+| Key                    | Description                                    | Default |
+| ---------------------- | ---------------------------------------------- | ------- |
+| `EnableCleanup`        | Enable automatic redaction of old audit events | `true`  |
+| `CleanupIntervalHours` | How often cleanup runs                         | `24`    |
+| `RetentionDays`        | Audit events older than this are redacted      | `90`    |
 
 ### GraphQlLimitsConfiguration
 
 Protects `/graphql` from abuse. The participant test-taking flow is reachable without signing
 in, so the endpoint cannot rely on authorization alone.
 
-| Key                     | Description                                                    | Default |
-| ----------------------- | -------------------------------------------------------------- | ------- |
-| `EnforceCostLimits`     | Reject queries whose analysed cost exceeds the limits below     | `true`  |
-| `MaxFieldCost`          | Maximum analysed field cost per operation                       | `20000` |
-| `MaxTypeCost`           | Maximum analysed type cost per operation                        | `5000`  |
-| `EnableRateLimiting`    | Apply the per-address rate limiter to `/graphql`                | `true`  |
-| `RateLimitPermitLimit`  | Requests allowed per address within the window                  | `300`   |
-| `RateLimitWindowSeconds`| Length of the rate limit window, in seconds                     | `60`    |
-| `RateLimitQueueLimit`   | Requests queued once the limit is reached, instead of rejected  | `20`    |
+| Key                      | Description                                                    | Default |
+| ------------------------ | -------------------------------------------------------------- | ------- |
+| `EnforceCostLimits`      | Reject queries whose analysed cost exceeds the limits below    | `true`  |
+| `MaxFieldCost`           | Maximum analysed field cost per operation                      | `20000` |
+| `MaxTypeCost`            | Maximum analysed type cost per operation                       | `5000`  |
+| `EnableRateLimiting`     | Apply the per-address rate limiter to `/graphql`               | `true`  |
+| `RateLimitPermitLimit`   | Requests allowed per address within the window                 | `300`   |
+| `RateLimitWindowSeconds` | Length of the rate limit window, in seconds                    | `60`    |
+| `RateLimitQueueLimit`    | Requests queued once the limit is reached, instead of rejected | `20`    |
 
 #### Tuning the cost limits
 
@@ -226,10 +226,10 @@ The defaults were measured against this schema, not guessed. For reference:
 
 | Operation                                         | Field cost | Type cost |
 | ------------------------------------------------- | ---------- | --------- |
-| `GetRefTests` (100 per page, filtered and sorted)  | 3,667      | 303       |
-| `GetAuditLogs` (100 per page)                      | 1,122      | 203       |
-| `GetRefTestById` including questions and answers   | 43         | 5         |
-| `GetRefTestByToken` (participant)                  | small      | 2         |
+| `GetRefTests` (100 per page, filtered and sorted) | 3,667      | 303       |
+| `GetAuditLogs` (100 per page)                     | 1,122      | 203       |
+| `GetRefTestById` including questions and answers  | 43         | 5         |
+| `GetRefTestByToken` (participant)                 | small      | 2         |
 
 Filter and sort arguments dominate field cost, and they are charged from the query document,
 so passing filters as variables costs the same as omitting them. If a legitimate query starts
@@ -249,11 +249,11 @@ addresses and networks below. If the deployment already rate limits at the edge,
 Controls which reverse proxies may supply the client address used by the rate limiter. Forwarded
 headers from any other source are ignored.
 
-| Key | Description | Default |
-| --- | --- | --- |
-| `ForwardLimit` | Number of trusted proxy hops to process | `1` |
-| `KnownProxies` | Exact proxy IP addresses allowed to supply forwarded headers | `[]` |
-| `KnownNetworks` | CIDR networks allowed to supply forwarded headers | `[]` |
+| Key             | Description                                                  | Default |
+| --------------- | ------------------------------------------------------------ | ------- |
+| `ForwardLimit`  | Number of trusted proxy hops to process                      | `1`     |
+| `KnownProxies`  | Exact proxy IP addresses allowed to supply forwarded headers | `[]`    |
+| `KnownNetworks` | CIDR networks allowed to supply forwarded headers            | `[]`    |
 
 Configure the actual ingress addresses per environment. Leaving both allow-lists empty is the safe
 default for direct/local access; it does not trust arbitrary `X-Forwarded-For` headers.
@@ -364,11 +364,11 @@ limited to the permissions the app was granted. One-time setup:
 4. Add the app to the branch protection bypass list for `main` and `release`, the same way
    `GH_PAT`'s owner was.
 5. In the repository settings add:
-   - a **variable** `RELEASE_APP_ID` holding the app's numeric App ID;
+   - a **variable** `RELEASE_APP_CLIENT_ID` holding the app's numeric Client ID;
    - a **secret** `RELEASE_APP_PRIVATE_KEY` holding the full contents of the `.pem`.
 6. Run a beta release to confirm it pushes, then delete the `GH_PAT` secret and revoke the token.
 
-Until `RELEASE_APP_ID` is set, the workflows fall back to `GH_PAT`, so adding these values is
+Until `RELEASE_APP_CLIENT_ID` is set, the workflows fall back to `GH_PAT`, so adding these values is
 what switches them over — no workflow edit is needed, and nothing breaks in the meantime.
 Because the fallback is what keeps releases working today, `GH_PAT` should only be revoked after
 step 6 has actually succeeded.
