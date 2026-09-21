@@ -119,9 +119,8 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
     private async Task DeleteCoreAsync(RefTest refTest, CancellationToken ct)
     {
         // Cancel any job still waiting to run or already in flight (e.g. a scheduled
-        // invitation/result email) so nothing gets sent out referencing a record that's
-        // about to be gone. The helper also handles report jobs written before RefTestId was
-        // added to their payload.
+        // invitation/result/report email) so nothing gets sent out referencing a record that's
+        // about to be gone. Report payloads are required to carry RefTestId for this association.
         var cancellableJobs = await FindCancellableJobsAsync(refTest.Id, ct);
 
         foreach (var job in cancellableJobs)
@@ -229,15 +228,11 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         var id = refTestId.ToString();
         var candidates = await context.Jobs
             .Where(job => (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing)
-                          && (job.Payload.Contains(id) || job.JobType == JobType.ReportEmail))
+                          && job.Payload.Contains(id))
             .ToListAsync(ct);
 
         return candidates
-            .Where(job => job.Payload.Contains(id, StringComparison.OrdinalIgnoreCase)
-                          || (job.JobType == JobType.ReportEmail && IsLegacyReportPayload(job.Payload)))
+            .Where(job => job.Payload.Contains(id, StringComparison.OrdinalIgnoreCase))
             .ToList();
     }
-
-    private static bool IsLegacyReportPayload(string payload)
-        => payload.IndexOf("\"refTestId\"", StringComparison.OrdinalIgnoreCase) < 0;
 }

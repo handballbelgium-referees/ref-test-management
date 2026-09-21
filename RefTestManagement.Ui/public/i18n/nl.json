@@ -613,7 +613,7 @@
     "start_button": "RefTest starten",
     "privacy_consent": "Ik heb de volgende tekst gelezen en aanvaard:",
     "privacy_consent_error": "We konden uw aanvaarding van de privacyverklaring niet vastleggen. Probeer het opnieuw.",
-    "withdraw_link": "Toestemming intrekken en mijn gegevens verwijderen",
+    "withdraw_link": "Toestemming intrekken en mijn gegevens anonimiseren",
     "withdraw_error": "We konden uw intrekking niet verwerken. Probeer het opnieuw of neem contact met ons op.",
     "withdrawn_title": "Toestemming ingetrokken",
     "withdrawn_message": "U heeft uw toestemming ingetrokken. Uw identificerende gegevens zijn geanonimiseerd en het RefTest-record is geredigeerd om de audittrail te bewaren.",
@@ -660,9 +660,9 @@
       },
       "withdraw": {
         "title": "Toestemming intrekken?",
-        "message": "Hiermee worden je RefTest en alle bijbehorende persoonsgegevens permanent verwijderd. Dit kan niet ongedaan worden gemaakt.",
-        "warning": "Zodra de RefTest is voltooid, is intrekking niet meer mogelijk via zelfbediening.",
-        "confirm": "Intrekken en mijn gegevens verwijderen",
+        "message": "Door je toestemming in te trekken, worden je identificerende gegevens geanonimiseerd en wordt het RefTest-record geredigeerd. Het geanonimiseerde record kan voor auditdoeleinden worden bewaard.",
+        "warning": "Je toestemming wordt ingetrokken en je identificerende gegevens worden geanonimiseerd. Een geanonimiseerd RefTest-record kan voor auditdoeleinden bewaard blijven.",
+        "confirm": "Toestemming intrekken en gegevens anonimiseren",
         "cancel": "Annuleren"
       }
     }

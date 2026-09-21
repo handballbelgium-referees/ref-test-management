@@ -16,6 +16,12 @@ public sealed class ReportEmailJobHandler(
     {
         var payload = JobPayload.Deserialize<ReportEmailPayload>(job, logger);
 
+        if (payload.RefTests.Any(report => report.RefTestId == Guid.Empty))
+        {
+            throw new LegacyReportPayloadException(
+                $"Report job {job.Id} has no per-RefTest association and was quarantined");
+        }
+
         ServiceLoggerMessages.LogSendingReportEmail(logger, payload.RecipientEmails.Length);
 
         // Convert payload data to service data

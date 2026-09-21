@@ -1,5 +1,8 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using HotChocolate;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -15,7 +18,8 @@ public class UnhandledExceptionLoggingErrorFilterTests
                 .AddProvider(provider)
                 .SetMinimumLevel(LogLevel.Trace));
         var filter = new UnhandledExceptionLoggingErrorFilter(
-            loggerFactory.CreateLogger<UnhandledExceptionLoggingErrorFilter>());
+            loggerFactory.CreateLogger<UnhandledExceptionLoggingErrorFilter>(),
+            new HttpContextAccessor { HttpContext = new DefaultHttpContext() });
         var error = ErrorBuilder.New()
             .SetMessage("Unhandled resolver failure")
             .SetException(new InvalidOperationException("failed for john.doe@example.com"))
@@ -53,5 +57,37 @@ public class UnhandledExceptionLoggingErrorFilterTests
                 Func<TState, Exception?, string> formatter) =>
                 provider.Exceptions.Add(exception);
         }
+    }
+}
+
+public class MutationErrorHandlingTests
+{
+    [Fact]
+    public void GetUserSafeMessage_PreservesDeliberateValidationMessages()
+    {
+        const string expected = "A rejection reason is required.";
+        var exception = new RefTestValidationException(expected);
+
+        Assert.Equal(expected, MutationErrorHandling.GetUserSafeMessage(exception));
+    }
+
+    [Fact]
+    public void GetUserSafeMessage_UsesStableMessageForUnexpectedExceptionText()
+    {
+        const string sentinel = "Sensitive SQL: SELECT * FROM dbo.Users WHERE email = 'john.doe@example.com';";
+        var exception = new InvalidOperationException(sentinel);
+
+        var message = MutationErrorHandling.GetUserSafeMessage(exception);
+
+        Assert.Equal(MutationErrorHandling.GenericFailure, message);
+        Assert.DoesNotContain(sentinel, message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void GetUserSafeMessage_UsesNotFoundMessageForNotFoundExceptions()
+    {
+        var exception = new RefTestNotFoundException(Guid.NewGuid());
+
+        Assert.Equal(MutationErrorHandling.NotFoundFailure, MutationErrorHandling.GetUserSafeMessage(exception));
     }
 }

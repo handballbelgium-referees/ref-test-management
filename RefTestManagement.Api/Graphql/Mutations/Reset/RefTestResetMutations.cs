@@ -1,11 +1,14 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Reset;
 
@@ -30,8 +33,12 @@ public static partial class RefTestResetMutations
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] IRefTestSubscriptionService subscriptionService,
+        [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger(nameof(RefTestResetMutations));
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
         var result = new ResetRefTestsResult
         {
             TotalRequested = input.Ids.Count,
@@ -120,8 +127,9 @@ public static partial class RefTestResetMutations
                 errors.Add(new ResetRefTestsError
                 {
                     RefTestId = id,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
                 });
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ResetRefTestsAsync), correlationId, id);
             }
         }
 
@@ -154,8 +162,12 @@ public static partial class RefTestResetMutations
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] IRefTestSubscriptionService subscriptionService,
+        [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger(nameof(RefTestResetMutations));
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
         var result = new ReviveRefTestsResult
         {
             TotalRequested = ids.Count,
@@ -217,8 +229,9 @@ public static partial class RefTestResetMutations
                 errors.Add(new ReviveRefTestsError
                 {
                     RefTestId = id,
-                    ErrorMessage = ex.Message
+                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
                 });
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ReviveRefTestsAsync), correlationId, id);
             }
         }
 

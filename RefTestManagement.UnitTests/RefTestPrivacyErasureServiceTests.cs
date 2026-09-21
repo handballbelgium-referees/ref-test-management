@@ -236,7 +236,7 @@ public class RefTestPrivacyErasureServiceTests
     }
 
     [Fact]
-    public async Task ErasureCancelsLegacyReportJobsConservatively()
+    public async Task ErasureLeavesUnidentifiableLegacyReportJobsForQuarantine()
     {
         var (database, titleId) = await SeedTitleAsync();
         using var _ = database;
@@ -254,9 +254,9 @@ public class RefTestPrivacyErasureServiceTests
         await EraseAsync(database, id, ErasureInitiator.Operator);
 
         await using var after = database.CreateContext();
-        Assert.Equal(
-            JobStatus.Cancelled,
-            (await after.Jobs.SingleAsync(j => j.Id == jobId, TestContext.Current.CancellationToken)).Status);
+        var legacyJob = await after.Jobs.SingleAsync(j => j.Id == jobId, TestContext.Current.CancellationToken);
+        Assert.Equal(JobStatus.Pending, legacyJob.Status);
+        Assert.NotEmpty(legacyJob.Payload);
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Extensions;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
@@ -6,7 +7,9 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Approval;
 
@@ -34,9 +37,12 @@ public static partial class RefTestApprovalMutations
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger(nameof(RefTestApprovalMutations));
         var approverName = (httpContextAccessor.HttpContext?.User).GetDisplayName();
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
 
         var refTests = await context.RefTests
             .Where(rt => input.Ids.Contains(rt.Id))
@@ -57,7 +63,12 @@ public static partial class RefTestApprovalMutations
             }
             catch (Exception ex)
             {
-                errors.Add(new ApproveRefTestsError { RefTestId = id, ErrorMessage = ex.Message });
+                errors.Add(new ApproveRefTestsError
+                {
+                    RefTestId = id,
+                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
+                });
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ApproveRefTestsAsync), correlationId, id);
             }
         }
 
@@ -99,8 +110,9 @@ public static partial class RefTestApprovalMutations
                 errors.Add(new ApproveRefTestsError
                 {
                     RefTestId = refTest.Id,
-                    ErrorMessage = $"Invitation email could not be prepared: {ex.Message}"
+                    ErrorMessage = $"Invitation email could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
                 });
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ApproveRefTestsAsync), correlationId, refTest.Id);
             }
         }
 
@@ -159,9 +171,12 @@ public static partial class RefTestApprovalMutations
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger(nameof(RefTestApprovalMutations));
         var approverName = (httpContextAccessor.HttpContext?.User).GetDisplayName();
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
 
         var refTests = await context.RefTests
             .Where(rt => input.Ids.Contains(rt.Id))
@@ -182,7 +197,12 @@ public static partial class RefTestApprovalMutations
             }
             catch (Exception ex)
             {
-                errors.Add(new RejectRefTestsError { RefTestId = id, ErrorMessage = ex.Message });
+                errors.Add(new RejectRefTestsError
+                {
+                    RefTestId = id,
+                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
+                });
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(RejectRefTestsAsync), correlationId, id);
             }
         }
 

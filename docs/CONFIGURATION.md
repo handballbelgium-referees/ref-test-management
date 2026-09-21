@@ -350,25 +350,22 @@ Any key from the sections above can be set the same way, using `:` to nest secti
 
 ## Release Credentials
 
-The release workflows push to protected branches, which `GITHUB_TOKEN` cannot do. They used a
-long-lived personal access token (`GH_PAT`) for that: a credential tied to one person, valid
-until it is rotated by hand, and carrying every permission that person has on the repository.
+The release workflows push to protected branches and create GitHub releases with a short-lived
+GitHub App installation token. They are **App-only**: each release job fails before checkout if
+either required App credential is missing, and there is no personal-access-token fallback.
 
-The workflows now prefer a GitHub App installation token, which expires after an hour and is
-limited to the permissions the app was granted. One-time setup:
-
-1. Create a GitHub App in the organisation. It needs **Contents: Read and write** — nothing else
-   — and does not need to be public.
+1. Create a GitHub App in the organisation. Grant it only **Contents: Read and write**, **Issues:
+   Read and write**, and **Pull requests: Read and write**; it does not need to be public. The
+   workflows request only Contents for branch promotion/synchronization and request the additional
+   Issues/Pull requests permissions for semantic-release.
 2. Install the app on `handballbelgium-referees/ref-test-management`.
 3. Generate a private key for the app and download the `.pem`.
 4. Add the app to the branch protection bypass list for `main` and `release`, the same way
-   `GH_PAT`'s owner was.
+   the former release credential's owner was.
 5. In the repository settings add:
    - a **secret** `RELEASE_APP_CLIENT_ID` holding the app's numeric Client ID;
    - a **secret** `RELEASE_APP_PRIVATE_KEY` holding the full contents of the `.pem`.
-6. Run a beta release to confirm it pushes, then delete the `GH_PAT` secret and revoke the token.
 
-Until `RELEASE_APP_CLIENT_ID` is set, the workflows fall back to `GH_PAT`, so adding these values is
-what switches them over — no workflow edit is needed, and nothing breaks in the meantime.
-Because the fallback is what keeps releases working today, `GH_PAT` should only be revoked after
-step 6 has actually succeeded.
+The former `GH_PAT` repository secret and its personal access token have already been deleted and
+revoked. Do not recreate that secret. Preserve the App's least-privilege permissions and keep the
+workflow action references SHA-pinned.
