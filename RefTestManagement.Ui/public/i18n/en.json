@@ -10,6 +10,7 @@
   "common": {
     "cancel": "Cancel",
     "today": "Today",
+    "choose_date": "Choose a date",
     "clear": "Clear",
     "previous": "Previous",
     "next": "Next",
@@ -621,6 +622,9 @@
     "question": "Question",
     "of": "of",
     "answered": "answered",
+    "jump_to_question": "Jump to question",
+    "time_warning_five_minutes": "Five minutes remaining",
+    "time_warning_one_minute": "One minute remaining",
     "previous": "Previous",
     "next": "Next",
     "submit": "Submit RefTest",
@@ -689,8 +693,8 @@
       "body": "We use legitimate interests to process the contact information needed to send and manage an invitation. Participation in the assessment is optional and requires your explicit acceptance of this notice before it starts; you may withdraw that consent at any time."
     },
     "recipients": {
-      "title": "Service providers",
-      "body": "We use Auth0 for authentication, Brevo to deliver emails, and the IHF Rules Questions service to retrieve assessment content and calculate results. These providers process data only as needed to provide their services."
+      "title": "Recipients and service providers",
+      "body": "Participant data is shared with Handball Belgium assessment administrators who manage assessments and receive result reports, and, where approval is required, with designated approvers who receive approval notifications. We also use Auth0 for authentication, Brevo to deliver emails, and the IHF Rules Questions service to retrieve assessment content and calculate results. These recipients and providers receive data only as needed for these purposes."
     },
     "retention": {
       "title": "Retention",

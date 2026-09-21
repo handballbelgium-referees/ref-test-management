@@ -49,6 +49,7 @@ public record ReportEmailPayload(
 /// RefTest data for report email payload
 /// </summary>
 public record RefTestReportPayloadData(
+    Guid RefTestId,
     string TitleName,
     string FirstName,
     string LastName,
@@ -121,4 +122,3 @@ public enum RefTestExpirationAction
     /// </summary>
     AutoComplete
 }
-

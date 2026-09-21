@@ -10,6 +10,7 @@
   "common": {
     "cancel": "Abbrechen",
     "today": "Heute",
+    "choose_date": "Datum auswählen",
     "clear": "Löschen",
     "previous": "Zurück",
     "next": "Weiter",
@@ -115,9 +116,6 @@
         "language_all": "Alle Sprachen",
         "question_score_range": "Fragen Punktebereich",
         "answer_score_range": "Antworten Punktebereich",
-        "score_range": "Punktebereich",
-        "min_score": "Min Punkte",
-        "max_score": "Max Punkte",
         "percentage_range": "Prozentbereich",
         "percentage_all": "Alle",
         "percentage_low": "0-50%",
@@ -141,7 +139,6 @@
         "max_time_in_minutes": "Max. Zeit",
         "question_score": "Fragen Punktzahl",
         "answer_score": "Antworten Punktzahl",
-        "score": "Ergebnis",
         "invitation_sent": "Einladung",
         "results_sent": "Ergebnisse",
         "started_at": "Startdatum",
@@ -541,7 +538,7 @@
           "import_label": "Fragennummern einfügen (eine pro Zeile oder durch Kommas getrennt)",
           "import_hint": "Format: Eine Fragennummer pro Zeile oder durch Kommas getrennt",
           "import_button": "Importieren",
-          "import_importing": "Importiert...",
+          "importing": "Importiert...",
           "no_results": "Keine Fragen gefunden",
           "table_number": "Nummer",
           "table_question": "Frage",
@@ -625,6 +622,9 @@
     "question": "Frage",
     "of": "von",
     "answered": "beantwortet",
+    "jump_to_question": "Zu Frage springen",
+    "time_warning_five_minutes": "Noch fünf Minuten",
+    "time_warning_one_minute": "Noch eine Minute",
     "previous": "Zurück",
     "next": "Weiter",
     "submit": "RefTest Einreichen",
@@ -693,8 +693,8 @@
       "body": "Wir nutzen berechtigte Interessen für die Verarbeitung der Kontaktdaten, die zum Versand und zur Verwaltung einer Einladung erforderlich sind. Die Teilnahme am Test ist freiwillig und setzt Ihre ausdrückliche Annahme dieses Hinweises vor Beginn voraus; Sie können diese Einwilligung jederzeit widerrufen."
     },
     "recipients": {
-      "title": "Dienstleister",
-      "body": "Wir verwenden Auth0 für die Authentifizierung, Brevo für den E-Mail-Versand und den Dienst IHF Rules Questions, um Testinhalte abzurufen und Ergebnisse zu berechnen. Diese Dienstleister verarbeiten Daten nur, soweit dies zur Erbringung ihrer Dienste erforderlich ist."
+      "title": "Empfänger und Dienstleister",
+      "body": "Teilnehmerdaten werden an die Prüfungsadministratoren von Handball Belgien weitergegeben, die Prüfungen verwalten und Ergebnisberichte erhalten, sowie, wenn eine Genehmigung erforderlich ist, an die benannten Genehmiger, die Genehmigungsmitteilungen erhalten. Wir verwenden außerdem Auth0 zur Authentifizierung, Brevo für den E-Mail-Versand und den Dienst IHF Rules Questions, um Testinhalte abzurufen und Ergebnisse zu berechnen. Diese Empfänger und Dienstleister erhalten nur die für diese Zwecke erforderlichen Daten."
     },
     "retention": {
       "title": "Speicherdauer",

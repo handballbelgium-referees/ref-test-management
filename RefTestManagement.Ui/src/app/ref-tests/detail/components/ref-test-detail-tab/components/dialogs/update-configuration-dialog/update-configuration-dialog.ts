@@ -7,6 +7,7 @@ import {
 } from '../../../../../../../../../graphql/generated';
 import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../../../shared/components/dialog/dialog';
 import { QuestionSearchAutocomplete } from '../../../../../../create/components/question-search-autocomplete/question-search-autocomplete';
 import { TitleAutocomplete } from '../../../../../../create/components/title-autocomplete/title-autocomplete';
 
@@ -22,7 +23,14 @@ interface IConfigurationData {
 
 @Component({
   selector: 'app-update-configuration-dialog',
-  imports: [TranslatePipe, FormField, TitleAutocomplete, QuestionSearchAutocomplete, Banner],
+  imports: [
+    TranslatePipe,
+    FormField,
+    TitleAutocomplete,
+    QuestionSearchAutocomplete,
+    Banner,
+    Dialog,
+  ],
   templateUrl: './update-configuration-dialog.html',
 })
 export class UpdateConfigurationDialog {

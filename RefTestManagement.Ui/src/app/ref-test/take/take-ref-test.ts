@@ -88,7 +88,11 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
       this.store.updateRemainingTime();
 
       // Auto-submit when timer reaches 0
-      if (this.store.timeRemainingSeconds() === 0 && !this.store.completed()) {
+      if (
+        this.store.timeRemainingSeconds() === 0 &&
+        !this.store.completed() &&
+        this.store.beginAutoSubmit()
+      ) {
         this._facade.submit();
       }
     });

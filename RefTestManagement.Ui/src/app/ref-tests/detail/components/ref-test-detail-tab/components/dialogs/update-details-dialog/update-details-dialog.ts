@@ -14,6 +14,7 @@ import {
 } from '../../../../../../../../../graphql/generated';
 import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../../../shared/components/dialog/dialog';
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
@@ -26,7 +27,7 @@ interface IParticipantData {
 
 @Component({
   selector: 'app-update-details-dialog',
-  imports: [TranslatePipe, FormField, Banner],
+  imports: [TranslatePipe, FormField, Banner, Dialog],
   templateUrl: './update-details-dialog.html',
 })
 export class UpdateDetailsDialog {

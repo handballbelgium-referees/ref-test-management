@@ -25,4 +25,5 @@
   <Project Path="RefTestManagement.Migrations.SQLite/RefTestManagement.Migrations.SQLite.csproj" />
   <Project Path="RefTestManagement.Migrations.SqlServer/RefTestManagement.Migrations.SqlServer.csproj" />
   <Project Path="RefTestManagement.Security/RefTestManagement.Security.csproj" />
+  <Project Path="RefTestManagement.UnitTests/RefTestManagement.UnitTests.csproj" />
 </Solution>

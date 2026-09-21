@@ -14,7 +14,6 @@
       <input
         [id]="'firstName-' + index()"
         type="text"
-        [attr.tabindex]="index() * 4 + 5"
         [formField]="userFormControl().firstName"
         [class.border-red-500]="
           userFormControl().firstName().touched() && userFormControl().firstName().invalid()
@@ -43,7 +42,6 @@
       <input
         [id]="'lastName-' + index()"
         type="text"
-        [attr.tabindex]="index() * 4 + 6"
         [formField]="userFormControl().lastName"
         [class.border-red-500]="
           userFormControl().lastName().touched() && userFormControl().lastName().invalid()
@@ -72,7 +70,6 @@
       <input
         [id]="'email-' + index()"
         type="email"
-        [attr.tabindex]="index() * 4 + 7"
         [formField]="userFormControl().email"
         [class.border-red-500]="
           userFormControl().email().touched() && userFormControl().email().invalid()
@@ -94,7 +91,6 @@
   @if (showRemove()) {
   <button
     type="button"
-    [attr.tabindex]="index() * 4 + 8"
     title="{{ 'ref_tests.create.form.users.remove_participant' | translate }}"
     (click)="remove.emit()"
     class="mt-6 p-1.5 text-neutral-400 focus:text-red-600 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors opacity-100 sm:opacity-0 group-hover:opacity-100 focus:opacity-100"

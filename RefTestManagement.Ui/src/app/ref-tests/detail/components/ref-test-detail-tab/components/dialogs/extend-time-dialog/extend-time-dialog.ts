@@ -14,6 +14,7 @@ import {
 } from '../../../../../../../../../graphql/generated';
 import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../../../shared/components/dialog/dialog';
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
@@ -25,7 +26,7 @@ interface IExtendTimeData {
 
 @Component({
   selector: 'app-extend-time-dialog',
-  imports: [TranslatePipe, FormField, Banner],
+  imports: [TranslatePipe, FormField, Banner, Dialog],
   templateUrl: './extend-time-dialog.html',
 })
 export class ExtendTimeDialog {

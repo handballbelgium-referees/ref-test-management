@@ -1,9 +1,10 @@
 import { Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { Dialog } from '../../../../shared/components/dialog/dialog';
 
 @Component({
   selector: 'app-submit-ref-test-dialog',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, Dialog],
   templateUrl: './submit-ref-test-dialog.html',
   host: {
     class: 'block',

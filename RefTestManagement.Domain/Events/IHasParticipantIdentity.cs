@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.AuditLog;
+namespace Handball.Belgium.RefTestManagement.Domain.Events;
 
 /// <summary>
 /// Implemented by entities that can be acted upon anonymously (e.g. a RefTest holder using

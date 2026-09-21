@@ -4,6 +4,9 @@
   <div
     class="bg-white w-[85vw] max-h-[90vh] rounded-xl shadow-lg flex flex-col overflow-hidden"
     (click)="$event.stopPropagation()"
+    role="dialog"
+    aria-modal="true"
+    [attr.aria-label]="'common.choose_date' | translate"
   >
     <app-calendar-header
       [viewMode]="viewMode()"
@@ -29,6 +32,12 @@
 </div>
 } @else {
 <!-- Desktop Dropdown -->
+<!--
+  Desktop opens on input focus and leaves focus in the input, so the user can keep typing a date
+  and can Tab straight past it. That is a non-modal popup: aria-modal="true" is deliberately not
+  set here, because claiming modality would tell a screen reader the rest of the page had gone
+  away while it is still perfectly reachable. The mobile branch above really is modal and says so.
+-->
 <div
   #calendar
   class="fixed z-9999 bg-white border border-neutral-200 shadow-lg select-none w-[96vw] min-w-80 max-w-105 max-h-[85vh] rounded-xl flex flex-col transition-opacity duration-100"
@@ -37,6 +46,8 @@
   (click)="$event.stopPropagation()"
   (mousedown)="$event.preventDefault()"
   tabindex="-1"
+  role="dialog"
+  [attr.aria-label]="'common.choose_date' | translate"
 >
   <app-calendar-header
     [viewMode]="viewMode()"

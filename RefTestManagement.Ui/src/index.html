@@ -21,13 +21,19 @@
     <link rel="preconnect" href="graphql" crossorigin />
     <link rel="dns-prefetch" href="graphql" />
 
-    <!-- Security Headers -->
+    <!--
+      Security headers. These are also sent as real HTTP response headers by the API, which is
+      what actually enforces them: browsers ignore X-Content-Type-Options and X-Frame-Options in
+      markup, and a meta Referrer-Policy only applies once the parser reaches it. They are kept
+      here so the app degrades sensibly if it is ever served by a host that does not set them.
+    -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self' https:; script-src 'self' 'unsafe-inline'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' wss:; img-src 'self' data: https:; font-src 'self' data:; base-uri 'self'; form-action 'self';"
     />
     <meta http-equiv="X-Content-Type-Options" content="nosniff" />
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    <!-- An invitation token travels in the URL path, so it must never reach a Referer header. -->
+    <meta name="referrer" content="no-referrer" />
 
     <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
     <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png" />

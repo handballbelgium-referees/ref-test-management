@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <OutputType>Exe</OutputType>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Handball.Belgium.RefTestManagement.UnitTests</RootNamespace>
+        <IsPackable>false</IsPackable>
+        <IsTestProject>true</IsTestProject>
+        <!--
+            global.json selects the Microsoft.Testing.Platform runner for `dotnet test`. xunit.v3
+            only exposes that entry point when this is set; without it the produced executable is
+            the standalone xunit console runner and `dotnet test` discovers nothing.
+        -->
+        <UseMicrosoftTestingPlatformRunner>true</UseMicrosoftTestingPlatformRunner>
+        <TestingPlatformDotnetTestSupport>true</TestingPlatformDotnetTestSupport>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="xunit.v3" />
+        <!--
+            Claiming a job and expiring a ref test are both expressed as SQL the database executes,
+            so proving them needs a real provider rather than an in-memory fake. SQLite runs
+            in-process and supports ExecuteUpdate, which makes it the cheapest one that still
+            exercises the translation.
+        -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RefTestManagement.Api\RefTestManagement.Api.csproj" />
+        <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Domain\RefTestManagement.Domain.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>

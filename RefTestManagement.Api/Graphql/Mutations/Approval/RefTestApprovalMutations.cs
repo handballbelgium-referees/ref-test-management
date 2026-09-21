@@ -71,43 +71,40 @@ public static partial class RefTestApprovalMutations
                 Errors = errors
             };
 
-        await context.SaveChangesWithRetryAsync(cancellationToken);
-
         var now = DateTime.UtcNow;
 
+        // Approvals and the emails they owe are staged into one unit of work: an approved RefTest
+        // whose invitation job was lost would silently never reach the participant.
         foreach (var refTest in approved)
         {
-            // Enqueue invitation email if the RefTest is configured for automated invitations
-            if (refTest.SendInvitationsAutomatically)
-            {
-                try
-                {
-                    await jobEnqueueService.EnqueueInvitationEmailAsync(
-                        new InvitationEmailPayload(
-                            refTest.Id,
-                            refTest.FullName,
-                            refTest.Email,
-                            refTest.Token,
-                            refTest.NumberOfQuestions,
-                            refTest.MaxTimeInMinutes),
-                        executeAfter: refTest.ScheduledAt,
-                        cancellationToken: cancellationToken);
-                }
-                catch (Exception ex)
-                {
-                    errors.Add(new ApproveRefTestsError
-                    {
-                        RefTestId = refTest.Id,
-                        ErrorMessage = $"RefTest approved but invitation email enqueue failed: {ex.Message}"
-                    });
-                }
-            }
+            if (!refTest.SendInvitationsAutomatically)
+                continue;
 
-            await subscriptionService.PublishRefTestApprovedAsync(
-                refTest.Id, refTest.Status, now, cancellationToken);
+            try
+            {
+                await jobEnqueueService.EnqueueInvitationEmailAsync(
+                    new InvitationEmailPayload(
+                        refTest.Id,
+                        refTest.FullName,
+                        refTest.Email,
+                        refTest.Token,
+                        refTest.NumberOfQuestions,
+                        refTest.MaxTimeInMinutes),
+                    executeAfter: refTest.ScheduledAt,
+                    cancellationToken: cancellationToken,
+                    saveChanges: false);
+            }
+            catch (Exception ex)
+            {
+                errors.Add(new ApproveRefTestsError
+                {
+                    RefTestId = refTest.Id,
+                    ErrorMessage = $"Invitation email could not be prepared: {ex.Message}"
+                });
+            }
         }
 
-        // Send decision confirmation email to each distinct creator
+        // Stage a decision confirmation email for each distinct creator
         foreach (var creatorGroup in approved.GroupBy(rt => rt.CreatorEmail))
         {
             var first = creatorGroup.First();
@@ -123,7 +120,16 @@ public static partial class RefTestApprovalMutations
                     RejectionReason: null,
                     TitleValue: null,
                     items),
-                cancellationToken);
+                cancellationToken,
+                saveChanges: false);
+        }
+
+        await context.SaveChangesWithRetryAsync(cancellationToken);
+
+        foreach (var refTest in approved)
+        {
+            await subscriptionService.PublishRefTestApprovedAsync(
+                refTest.Id, refTest.Status, now, cancellationToken);
         }
 
         return new ApproveRefTestsResult
@@ -190,17 +196,10 @@ public static partial class RefTestApprovalMutations
                 Errors = errors
             };
 
-        await context.SaveChangesWithRetryAsync(cancellationToken);
-
         var now = DateTime.UtcNow;
 
-        foreach (var refTest in rejected)
-        {
-            await subscriptionService.PublishRefTestRejectedAsync(
-                refTest.Id, refTest.Status, input.Reason, now, cancellationToken);
-        }
-
-        // Send decision confirmation email to each distinct creator
+        // Stage a decision confirmation email for each distinct creator, committed together with
+        // the rejections themselves.
         foreach (var creatorGroup in rejected.GroupBy(rt => rt.CreatorEmail))
         {
             var first = creatorGroup.First();
@@ -216,7 +215,16 @@ public static partial class RefTestApprovalMutations
                     RejectionReason: input.Reason,
                     TitleValue: null,
                     items),
-                cancellationToken);
+                cancellationToken,
+                saveChanges: false);
+        }
+
+        await context.SaveChangesWithRetryAsync(cancellationToken);
+
+        foreach (var refTest in rejected)
+        {
+            await subscriptionService.PublishRefTestRejectedAsync(
+                refTest.Id, refTest.Status, input.Reason, now, cancellationToken);
         }
 
         return new RejectRefTestsResult

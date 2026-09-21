@@ -10,6 +10,7 @@ import { FormsModule } from '@angular/forms';
 import { TranslatePipe } from '@ngx-translate/core';
 import { IsolatedBannerManager } from '../../../../../services/banner';
 import { Banner } from '../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../shared/components/dialog/dialog';
 
 interface IRefTestInfo {
   name: string;
@@ -18,7 +19,7 @@ interface IRefTestInfo {
 
 @Component({
   selector: 'app-reject-ref-tests-dialog',
-  imports: [TranslatePipe, FormsModule, Banner],
+  imports: [TranslatePipe, FormsModule, Banner, Dialog],
   templateUrl: './reject-ref-tests-dialog.html',
   host: {
     class: 'host',

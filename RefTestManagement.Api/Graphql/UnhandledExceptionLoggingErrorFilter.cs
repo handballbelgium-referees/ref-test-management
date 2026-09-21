@@ -1,5 +1,6 @@
 using HotChocolate;
 using HotChocolate.Execution;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
@@ -13,7 +14,10 @@ public sealed partial class UnhandledExceptionLoggingErrorFilter(
     public IError OnError(IError error)
     {
         if (error.Exception is not null)
-            LogUnhandledGraphQlException(logger, error.Exception, error.Path?.ToString() ?? "(none)");
+            LogUnhandledGraphQlException(
+                logger,
+                LogRedaction.MaskEmails(error.Exception),
+                error.Path?.ToString() ?? "(none)");
 
         return error;
     }

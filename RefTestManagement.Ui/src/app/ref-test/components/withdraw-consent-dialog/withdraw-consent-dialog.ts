@@ -1,10 +1,11 @@
 import { Component, effect, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
+import { Dialog } from '../../../shared/components/dialog/dialog';
 
 @Component({
   selector: 'app-withdraw-consent-dialog',
   templateUrl: './withdraw-consent-dialog.html',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, Dialog],
   host: {
     class: 'block',
   },

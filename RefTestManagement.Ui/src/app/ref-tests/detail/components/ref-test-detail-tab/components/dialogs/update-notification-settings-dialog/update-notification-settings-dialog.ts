@@ -15,6 +15,7 @@ import {
 } from '../../../../../../../../../graphql/generated';
 import { IsolatedBannerManager } from '../../../../../../../services/banner';
 import { Banner } from '../../../../../../../shared/components/banner/banner';
+import { Dialog } from '../../../../../../../shared/components/dialog/dialog';
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
@@ -29,7 +30,7 @@ interface INotificationSettings {
 
 @Component({
   selector: 'app-update-notification-settings-dialog',
-  imports: [TranslatePipe, FormField, Banner],
+  imports: [TranslatePipe, FormField, Banner, Dialog],
   templateUrl: './update-notification-settings-dialog.html',
 })
 export class UpdateNotificationSettingsDialog {

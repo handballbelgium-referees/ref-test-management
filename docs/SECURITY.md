@@ -182,3 +182,41 @@ Protected routes use `permissionGuard` after `authGuard`. The guard waits for pe
 | `/ref-tests`        | `ref-tests:view-list`   |
 | `/ref-tests/create` | `ref-tests:create`      |
 | `/ref-tests/:id`    | `ref-tests:view-detail` |
+
+## The Participant Invitation Token
+
+A participant takes their test through a link containing an invitation token. The token *is* the
+credential: there is no sign-in on that flow, because participants are not Auth0 users.
+
+Putting a credential in a URL is a deliberate trade-off, made because requiring an account for a
+one-off test would keep most participants from ever taking it. The risks that choice carries are
+mitigated rather than ignored:
+
+| Risk                                       | Mitigation                                                                                                     |
+| ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| Token leaks through the `Referer` header   | The API sends `Referrer-Policy: no-referrer` on every response, and the only link on a token-bearing page is same-origin with `rel="noreferrer"`. |
+| Token guessed                              | Tokens are 32 hex characters from `RandomNumberGenerator`, not `Guid.NewGuid()` — 128 bits of cryptographic randomness. |
+| Token replayed after the test is over      | Every participant mutation re-checks status, and the server enforces the deadline independently of status.       |
+| Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
+| Oversized or malformed token in a lookup   | Tokens are length-checked before they reach the database.                                                        |
+
+Residual risk that is accepted: the token appears in browser history and in any server access log
+that records full request paths. Anyone who can read those can resume that one participant's
+test. If that becomes unacceptable, the fix is to move the token out of the path — deliver it as
+a one-time link that exchanges the token for a cookie-backed session — which is a larger change
+than this flow has so far justified.
+
+## Response Security Headers
+
+The API sets these on every response, including the SPA it serves:
+
+| Header                   | Value         | Why                                                                     |
+| ------------------------ | ------------- | ----------------------------------------------------------------------- |
+| `Referrer-Policy`        | `no-referrer` | Keeps invitation tokens out of other sites' logs.                        |
+| `X-Content-Type-Options` | `nosniff`     | Stops content-type sniffing.                                             |
+| `X-Frame-Options`        | `DENY`        | Blocks framing, so the test cannot be clickjacked.                       |
+
+`index.html` carries matching `<meta>` tags, but they are a fallback only: browsers ignore
+`X-Frame-Options` and `X-Content-Type-Options` when they appear in markup, and a meta
+`Referrer-Policy` applies only from the point the parser reaches it. The response headers are
+what actually enforce the policy.

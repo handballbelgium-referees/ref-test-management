@@ -10,6 +10,7 @@
   "common": {
     "cancel": "Annuleren",
     "today": "Vandaag",
+    "choose_date": "Kies een datum",
     "clear": "Wissen",
     "previous": "Vorige",
     "next": "Volgende",
@@ -406,7 +407,7 @@
         "reset_button": "Test resetten",
         "warning_title": "Waarschuwing",
         "warning_message": "Resetten zal de voortgang van de deelnemer wissen. Deze actie kan niet ongedaan worden gemaakt.",
-        "reset_type_label": "Reset Type",
+        "reset_type_label": "Type reset",
         "soft_reset_label": "Zachte Reset",
         "soft_reset_description": "Wis voortgang en resultaten, behoud de aanmaakdatum",
         "hard_reset_label": "Harde Reset",
@@ -441,7 +442,7 @@
       "started_at": "Gestart Op",
       "completed_at": "Voltooid Op",
       "rejection_reason_label": "Reden van Afwijzing",
-      "scores": "Test Scores",
+      "scores": "Testscores",
       "overall_score": "Totaalscore",
       "passed": "Geslaagd",
       "failed": "Niet Geslaagd",
@@ -609,7 +610,7 @@
     "instruction_progress_saved": "Je voortgang wordt automatisch opgeslagen, maar de timer loopt door, zelfs als je de pagina sluit",
     "instruction_single_session": "De RefTest kan slechts in één browsertabblad tegelijk geopend worden — een tweede tabblad wordt geblokkeerd",
     "instruction_4": "Voltooi de RefTest binnen de tijdslimiet",
-    "start_button": "Start RefTest",
+    "start_button": "RefTest starten",
     "privacy_consent": "Ik heb de volgende tekst gelezen en aanvaard:",
     "privacy_consent_error": "We konden uw aanvaarding van de privacyverklaring niet vastleggen. Probeer het opnieuw.",
     "withdraw_link": "Toestemming intrekken en mijn gegevens verwijderen",
@@ -621,6 +622,9 @@
     "question": "Vraag",
     "of": "van",
     "answered": "beantwoord",
+    "jump_to_question": "Ga naar vraag",
+    "time_warning_five_minutes": "Nog vijf minuten",
+    "time_warning_one_minute": "Nog een minuut",
     "previous": "Vorige",
     "next": "Volgende",
     "submit": "RefTest Indienen",
@@ -689,8 +693,8 @@
       "body": "We gebruiken gerechtvaardigde belangen om de contactgegevens te verwerken die nodig zijn om een uitnodiging te versturen en te beheren. Deelname aan de toets is optioneel en vereist uw uitdrukkelijke aanvaarding van deze verklaring voordat de toets start; u kunt die toestemming op elk moment intrekken."
     },
     "recipients": {
-      "title": "Dienstverleners",
-      "body": "We gebruiken Auth0 voor authenticatie, Brevo voor e-mailbezorging en de IHF Rules Questions-dienst om toetsinhoud op te halen en resultaten te berekenen. Deze dienstverleners verwerken gegevens alleen voor zover dat nodig is om hun diensten te leveren."
+      "title": "Ontvangers en dienstverleners",
+      "body": "Persoonsgegevens worden gedeeld met toetsbeheerders van Handbal België die toetsen beheren en resultatenrapporten ontvangen, en wanneer goedkeuring vereist is met aangewezen goedkeurders die goedkeuringsmeldingen ontvangen. We gebruiken ook Auth0 voor authenticatie, Brevo voor e-mailbezorging en de IHF Rules Questions-dienst om toetsinhoud op te halen en resultaten te berekenen. Deze ontvangers en dienstverleners krijgen alleen gegevens die nodig zijn voor deze doelen."
     },
     "retention": {
       "title": "Bewaartermijn",

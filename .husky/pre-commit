@@ -1,7 +1,13 @@
 #!/usr/bin/env sh
 
-# Skip hooks during CI or when message contains [skip ci]
-if [ -n "$CI" ] || git log -1 --pretty=%B | grep -q "\[skip ci\]"; then
+# Skip during CI. Automated commits (e.g. semantic-release) run there, so they never need the
+# local README sync or UI build.
+#
+# Do not add a "[skip ci]" check here: a pre-commit hook runs before the commit exists, so
+# `git log -1` reads the PREVIOUS commit. That made this hook disable itself for every commit
+# following a release commit. To skip deliberately, use `HUSKY=0 git commit ...` or
+# `git commit --no-verify`.
+if [ -n "$CI" ]; then
   exit 0
 fi
 
@@ -10,4 +16,13 @@ node scripts/sync-readme-versions.mjs
 git add README.md
 
 cd RefTestManagement.Ui
+
+# Translation parity is checked here rather than at push time because it costs ~0.4s and a
+# missing key is not a build error: it renders as a raw key to that participant and nothing
+# else in the toolchain notices.
+npm run check:i18n
+
+# The Angular build is the only full template type check there is. It was measured at ~6s
+# (and a development build at ~6.4s, so the bundling is not the cost — compilation is), which
+# is cheap enough to keep on every commit. The test suites run in .husky/pre-push instead.
 npm run build

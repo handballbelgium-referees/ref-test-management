@@ -9,6 +9,10 @@ env:
   DOTNET_VERSION: 10.0.x
   NODE_VERSION: 24
 
+# Least privilege by default. No pull-request check needs to write to the repository.
+permissions:
+  contents: read
+
 jobs:
   validate-pr-title:
     name: 📝 Validate PR Title
@@ -27,7 +31,13 @@ jobs:
         run: npm ci
 
       - name: ✅ Validate PR title
-        run: echo "${{ github.event.pull_request.title }}" | npx commitlint
+        # The title must reach the shell as data, never as source. A ${{ }} expression is
+        # substituted by the runner before the shell parses the line, so a title containing a
+        # backtick or $(...) would execute on the runner — and this workflow triggers on
+        # `edited`, so a title can be weaponised after review has started.
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+        run: echo "$PR_TITLE" | npx commitlint
         # Ensures PR title follows Conventional Commits or your commitlint rules
 
   validate:
@@ -56,6 +66,17 @@ jobs:
         run: npm run build -- --configuration production
         # Ensures that UI builds successfully in PR
 
+      - name: 🌍 Check translation parity
+        working-directory: ./RefTestManagement.Ui
+        run: npm run check:i18n
+        # A key present in one locale and missing from another renders as a raw key to that
+        # participant. Nothing else catches it: a missing translation is not a build error.
+
+      - name: 🧪 Run Angular unit tests
+        working-directory: ./RefTestManagement.Ui
+        run: npm test
+        # The participant test-taking flow has no server-side safety net during the attempt
+
       - name: ⚡ Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
@@ -69,11 +90,13 @@ jobs:
         run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
         # Validates .NET application can build successfully
 
+      - name: 🧪 Run .NET unit tests
+        run: dotnet test --solution RefTestManagement.slnx --configuration Release --no-build -p:TestingPlatformShowTestsFailure=true
+        # Fails the check on a failing test. --solution is required by the MTP mode of dotnet test
+
   sync-readme-versions:
     name: 📄 Sync README Versions
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
 
     steps:
       - name: 📥 Checkout code
@@ -85,15 +108,12 @@ jobs:
         run: node scripts/sync-readme-versions.mjs
         # Covers bot-authored PRs (e.g. Renovate) that skip the local pre-commit hook
 
-      - name: 📤 Commit changes if needed
+      - name: ❌ Fail if README needs changes
         run: |
           if ! git diff --quiet README.md; then
-            git config user.name "github-actions[bot]"
-            git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add README.md
-            git commit -m "docs: sync README version tables"
-            git push
+            echo "::error::README.md is out of sync. Run node scripts/sync-readme-versions.mjs and commit the result."
+            git diff -- README.md
+            exit 1
           else
             echo "README.md already up to date"
           fi
-        # Only works for same-repo PR branches; GITHUB_TOKEN can't push to fork branches

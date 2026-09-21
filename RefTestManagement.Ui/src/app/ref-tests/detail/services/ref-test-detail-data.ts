@@ -27,6 +27,7 @@ import {
 } from '../../../../../graphql/generated';
 import { Permissions } from '../../../auth/models/permissions';
 import { PermissionsService } from '../../../auth/services/permissions';
+import { ErrorReporter } from '../../../services/error-reporter';
 import { MutationCallbacks, runMutation } from '../../../shared/utils/apollo-utils';
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
@@ -49,6 +50,7 @@ export class RefTestDetailData {
   private readonly _regenerateRefTestTokenGQL = inject(RegenerateRefTestTokenGQL);
 
   private readonly _router = inject(Router);
+  private readonly _errorReporter = inject(ErrorReporter);
 
   private readonly _refTestId = signal<string>('');
   readonly refTestId = this._refTestId.asReadonly();
@@ -330,6 +332,40 @@ export class RefTestDetailData {
               case 'RefTestResultSent':
                 updates = { resultsSent: true };
                 break;
+
+              case 'RefTestReset':
+                updates = {
+                  status: 'PENDING',
+                  startedAt: null,
+                  completedAt: null,
+                  questionScore: null,
+                  questionTotal: null,
+                  answerScore: null,
+                  answerTotal: null,
+                  percentage: null,
+                  resultsSent: false,
+                };
+                break;
+
+              case 'RefTestRevived':
+                updates = { status: 'PENDING', invitationSent: false };
+                break;
+
+              case 'RefTestApproved':
+                updates = { status: event.status };
+                break;
+
+              case 'RefTestRejected':
+                updates = { status: event.status, rejectionReason: event.reason };
+                break;
+
+              case 'RefTestCreated':
+                this._queryRef?.refetch();
+                return;
+
+              default:
+                this._errorReporter.report('ref-test-detail.subscription.unknown-event', event);
+                return;
             }
 
             this.updateRefTestData(updates);

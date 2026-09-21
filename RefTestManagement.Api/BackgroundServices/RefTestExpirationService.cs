@@ -2,6 +2,7 @@
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
+using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -72,74 +73,39 @@ public class RefTestExpirationService : BackgroundService
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var jobEnqueueService = scope.ServiceProvider.GetRequiredService<IJobEnqueueService>();
 
-        // Find all tests that might be expired - only load what we need for checking
-        var potentiallyExpiredTests = await context.RefTests
-            .Where(rt => rt.Status != RefTestStatus.Completed && rt.Status != RefTestStatus.Expired && !rt.IsAnonymized)
-            .Select(rt => new { rt.Id, rt.Status, rt.StartedAt, rt.CreatedAt, rt.MaxTimeInMinutes })
+        var now = DateTime.UtcNow;
+
+        // The predicate runs in the database, so only rows that are genuinely due come back. Two
+        // columns are projected because the action depends on the status — nothing else about the
+        // row is needed to enqueue the job.
+        var expiredTests = await context.RefTests
+            .Where(RefTestExpirationQueries.IsDueForExpiration(now, _expirationIfNotStarted))
+            .Select(rt => new { rt.Id, rt.Status })
             .ToListAsync(cancellationToken);
 
-        if (potentiallyExpiredTests.Count == 0)
+        if (expiredTests.Count == 0)
         {
             ServiceLoggerMessages.LogNoPotentiallyExpiredTests(_logger);
             return;
         }
 
-        ServiceLoggerMessages.LogCheckingExpiredTests(_logger, potentiallyExpiredTests.Count);
+        ServiceLoggerMessages.LogCheckingExpiredTests(_logger, expiredTests.Count);
 
-        var enqueuedCount = 0;
-        var now = DateTime.UtcNow;
-
-        foreach (var test in potentiallyExpiredTests)
+        foreach (var test in expiredTests)
         {
-            var isExpired = IsExpired(test.Status, test.StartedAt, test.CreatedAt, test.MaxTimeInMinutes, now);
-
-            if (!isExpired)
-                continue;
-
-            // Determine the action based on status
+            // An in-progress test has answers worth scoring; one that was never started does not.
             var action = test.Status == RefTestStatus.InProgress
                 ? RefTestExpirationAction.AutoComplete
                 : RefTestExpirationAction.MarkAsExpired;
 
-            // Enqueue a specific job to handle this expired test
             await jobEnqueueService.EnqueueRefTestExpirationAsync(
                 new RefTestExpirationPayload(test.Id, action),
                 executeAfter: null,
                 cancellationToken);
 
-            enqueuedCount++;
             ServiceLoggerMessages.LogEnqueuedExpirationJob(_logger, action, test.Id);
         }
 
-        if (enqueuedCount > 0)
-        {
-            ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, enqueuedCount);
-        }
-    }
-
-    private bool IsExpired(RefTestStatus status, DateTime? startedAt, DateTime createdAt, int maxTimeInMinutes,
-        DateTime now)
-    {
-        switch (status)
-        {
-            case RefTestStatus.InProgress when startedAt.HasValue:
-            {
-                // Check if the test has exceeded its time limit
-                var expirationTime = startedAt.Value.AddMinutes(maxTimeInMinutes);
-                return now >= expirationTime;
-            }
-            case RefTestStatus.Pending:
-            {
-                // Check if the test was never started and is too old
-                var expirationTime = createdAt.Add(_expirationIfNotStarted);
-                return now >= expirationTime;
-            }
-            case RefTestStatus.Completed:
-            case RefTestStatus.Expired:
-            case RefTestStatus.PendingApproval:
-            case RefTestStatus.Rejected:
-            default:
-                return false;
-        }
+        ServiceLoggerMessages.LogEnqueuedExpirationJobs(_logger, expiredTests.Count);
     }
 }

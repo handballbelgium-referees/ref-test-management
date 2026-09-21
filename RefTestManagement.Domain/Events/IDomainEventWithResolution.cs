@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.AuditLog;
+namespace Handball.Belgium.RefTestManagement.Domain.Events;
 
 /// <summary>
 /// Implemented by domain events that need to resolve entity IDs to human-readable values

@@ -72,6 +72,15 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
     "EnableCleanup": true,
     "CleanupIntervalHours": 24,
     "RetentionDays": 90
+  },
+  "GraphQlLimitsConfiguration": {
+    "EnforceCostLimits": true,
+    "MaxFieldCost": 20000,
+    "MaxTypeCost": 5000,
+    "EnableRateLimiting": true,
+    "RateLimitPermitLimit": 300,
+    "RateLimitWindowSeconds": 60,
+    "RateLimitQueueLimit": 20
   }
 }
 ```
@@ -192,9 +201,62 @@ See [docs/PRIVACY.md](PRIVACY.md) for how retention and erasure actually work.
 
 | Key                    | Description                                         | Default |
 | ---------------------- | --------------------------------------------------- | ------- |
-| `EnableCleanup`        | Enable automatic soft-archiving of old audit events | `true`  |
+| `EnableCleanup`        | Enable automatic redaction of old audit events      | `true`  |
 | `CleanupIntervalHours` | How often cleanup runs                              | `24`    |
-| `RetentionDays`        | Audit events older than this are soft-archived      | `90`    |
+| `RetentionDays`        | Audit events older than this are redacted           | `90`    |
+
+### GraphQlLimitsConfiguration
+
+Protects `/graphql` from abuse. The participant test-taking flow is reachable without signing
+in, so the endpoint cannot rely on authorization alone.
+
+| Key                     | Description                                                    | Default |
+| ----------------------- | -------------------------------------------------------------- | ------- |
+| `EnforceCostLimits`     | Reject queries whose analysed cost exceeds the limits below     | `true`  |
+| `MaxFieldCost`          | Maximum analysed field cost per operation                       | `20000` |
+| `MaxTypeCost`           | Maximum analysed type cost per operation                        | `5000`  |
+| `EnableRateLimiting`    | Apply the per-address rate limiter to `/graphql`                | `true`  |
+| `RateLimitPermitLimit`  | Requests allowed per address within the window                  | `300`   |
+| `RateLimitWindowSeconds`| Length of the rate limit window, in seconds                     | `60`    |
+| `RateLimitQueueLimit`   | Requests queued once the limit is reached, instead of rejected  | `20`    |
+
+#### Tuning the cost limits
+
+The defaults were measured against this schema, not guessed. For reference:
+
+| Operation                                         | Field cost | Type cost |
+| ------------------------------------------------- | ---------- | --------- |
+| `GetRefTests` (100 per page, filtered and sorted)  | 3,667      | 303       |
+| `GetAuditLogs` (100 per page)                      | 1,122      | 203       |
+| `GetRefTestById` including questions and answers   | 43         | 5         |
+| `GetRefTestByToken` (participant)                  | small      | 2         |
+
+Filter and sort arguments dominate field cost, and they are charged from the query document,
+so passing filters as variables costs the same as omitting them. If a legitimate query starts
+being rejected, the error carries the measured cost (`extensions.fieldCost` /
+`extensions.typeCost`) — raise the matching limit to just above it rather than disabling
+`EnforceCostLimits`.
+
+#### Rate limiting behind a proxy
+
+The limiter partitions on the client's remote address. `UseForwardedHeaders` is configured for
+`X-Forwarded-For` and `X-Forwarded-Proto`, but only from the explicitly configured trusted proxy
+addresses and networks below. If the deployment already rate limits at the edge, set
+`EnableRateLimiting` to `false`.
+
+### ForwardedHeadersConfiguration
+
+Controls which reverse proxies may supply the client address used by the rate limiter. Forwarded
+headers from any other source are ignored.
+
+| Key | Description | Default |
+| --- | --- | --- |
+| `ForwardLimit` | Number of trusted proxy hops to process | `1` |
+| `KnownProxies` | Exact proxy IP addresses allowed to supply forwarded headers | `[]` |
+| `KnownNetworks` | CIDR networks allowed to supply forwarded headers | `[]` |
+
+Configure the actual ingress addresses per environment. Leaving both allow-lists empty is the safe
+default for direct/local access; it does not trust arbitrary `X-Forwarded-For` headers.
 
 ## Managing Migrations
 
@@ -285,3 +347,28 @@ dotnet user-secrets set "EmailConfiguration:BrevoApiKey" "your-brevo-api-key"
 ```
 
 Any key from the sections above can be set the same way, using `:` to nest sections and array indices (e.g. `LanguageConfiguration:EnabledLanguages:0`).
+
+## Release Credentials
+
+The release workflows push to protected branches, which `GITHUB_TOKEN` cannot do. They used a
+long-lived personal access token (`GH_PAT`) for that: a credential tied to one person, valid
+until it is rotated by hand, and carrying every permission that person has on the repository.
+
+The workflows now prefer a GitHub App installation token, which expires after an hour and is
+limited to the permissions the app was granted. One-time setup:
+
+1. Create a GitHub App in the organisation. It needs **Contents: Read and write** — nothing else
+   — and does not need to be public.
+2. Install the app on `handballbelgium-referees/ref-test-management`.
+3. Generate a private key for the app and download the `.pem`.
+4. Add the app to the branch protection bypass list for `main` and `release`, the same way
+   `GH_PAT`'s owner was.
+5. In the repository settings add:
+   - a **variable** `RELEASE_APP_ID` holding the app's numeric App ID;
+   - a **secret** `RELEASE_APP_PRIVATE_KEY` holding the full contents of the `.pem`.
+6. Run a beta release to confirm it pushes, then delete the `GH_PAT` secret and revoke the token.
+
+Until `RELEASE_APP_ID` is set, the workflows fall back to `GH_PAT`, so adding these values is
+what switches them over — no workflow edit is needed, and nothing breaks in the meantime.
+Because the fallback is what keeps releases working today, `GH_PAT` should only be revoked after
+step 6 has actually succeeded.

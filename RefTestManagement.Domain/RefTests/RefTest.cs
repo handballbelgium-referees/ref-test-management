@@ -1,14 +1,41 @@
-﻿using System.ComponentModel.DataAnnotations.Schema;
-using Handball.Belgium.RefTestManagement.AuditLog;
+using System.ComponentModel.DataAnnotations.Schema;
+using System.Security.Cryptography;
+using Handball.Belgium.RefTestManagement.Domain.Events;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
 namespace Handball.Belgium.RefTestManagement.Domain.RefTests;
 
+/// <summary>
+/// Who is completing a RefTest. The only thing this decides is whether the participant's time
+/// limit is enforced.
+/// </summary>
+public enum RefTestCompletionSource
+{
+    /// <summary>
+    /// The participant submitted the test themselves. The time limit is enforced.
+    /// </summary>
+    Participant,
+
+    /// <summary>
+    /// The expiration service auto-completing an overdue test with the answers already saved.
+    /// It runs precisely because the deadline has passed, so enforcing the deadline here would
+    /// make every overdue test permanently unfinishable.
+    /// </summary>
+    ExpirationService
+}
+
 public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 {
     /// <summary>Placeholder used to redact personal data in place — see <see cref="Anonymize"/>.</summary>
     private const string RedactedValue = "***";
+
+    /// <summary>
+    /// Length in characters of a generated invitation token. 32 hex characters is 128 bits of
+    /// entropy, and matches the width of the value this used to produce
+    /// (<c>Guid.NewGuid().ToString("N")</c>) so stored tokens and invitation URLs are unaffected.
+    /// </summary>
+    private const int TokenLength = 32;
 
     private readonly List<IDomainEvent> _domainEvents = [];
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -37,13 +64,30 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         NumberOfQuestions = numberOfQuestions;
         MaxTimeInMinutes = maxTimeInMinutes;
         QuestionIds = questionIds ?? [];
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
         CreatedAt = DateTime.UtcNow;
         Status = RefTestStatus.Pending;
         SendResultsAutomatically = sendResultsAutomatically;
     }
 
     public Guid Id { get; private set; } = Guid.NewGuid();
+
+    /// <summary>
+    /// Optimistic concurrency token. Incremented on every update by the infrastructure layer, so a
+    /// save built from a stale read fails instead of silently overwriting someone else's edit.
+    /// </summary>
+    /// <remarks>
+    /// A plain counter rather than a database-native token because the application supports SQL
+    /// Server, PostgreSQL, MySQL and SQLite: <c>rowversion</c> is SQL Server only and <c>xmin</c>
+    /// is PostgreSQL only, so a native token would mean four different mappings and four different
+    /// migration shapes for one behaviour.
+    ///
+    /// Incrementing is safe against concurrent writers even though two of them may compute the
+    /// same next value: EF compares the <em>original</em> value it loaded, so both would emit
+    /// <c>WHERE Version = 5</c> and only one can match. It is preferred over a random token
+    /// because it is half the width, orders naturally, and says something useful when read.
+    /// </remarks>
+    public long Version { get; private set; } = 1;
 
     public Guid TitleId { get; private set; }
     public RefTestTitle? Title { get; init; }
@@ -235,6 +279,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only save progress for in-progress RefTests");
 
+        if (HasPassedDeadline())
+            throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
+
         CurrentQuestionIndex = currentQuestionIndex;
         SelectedAnswerIds = selectedAnswerIds ?? [];
         Language = language;
@@ -242,13 +289,17 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public void Complete(int questionScore, int answerScore, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
-        string? language = null)
+        string? language = null,
+        RefTestCompletionSource source = RefTestCompletionSource.Participant)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot complete a RefTest whose consent has been withdrawn");
 
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only complete in-progress RefTests");
+
+        if (source == RefTestCompletionSource.Participant && HasPassedDeadline())
+            throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
 
         Status = RefTestStatus.Completed;
         CompletedAt = DateTime.UtcNow;
@@ -287,19 +338,16 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public bool IsExpired(TimeSpan expirationIfNotStarted)
     {
-        if (Status == RefTestStatus.Completed)
-            return false;
+        var now = DateTime.UtcNow;
 
-        if (StartedAt.HasValue)
+        return Status switch
         {
-            // In-progress tests that exceed the time limit are auto-completed, not expired
-            var elapsedTime = DateTime.UtcNow - StartedAt.Value;
-            return elapsedTime.TotalMinutes > MaxTimeInMinutes;
-        }
-
-        // RefTest expires after configured time if not started (Pending status only)
-        var timeSinceCreation = DateTime.UtcNow - CreatedAt;
-        return timeSinceCreation > expirationIfNotStarted;
+            RefTestStatus.InProgress when StartedAt.HasValue =>
+                RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, now),
+            RefTestStatus.Pending =>
+                RefTestExpirationRules.IsPendingDue(CreatedAt, expirationIfNotStarted, now),
+            _ => false
+        };
     }
 
     #region Update Methods
@@ -425,7 +473,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException(
                 "Can only regenerate token for pending or expired tests");
 
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         if (InvitationSentAt.HasValue)
@@ -473,7 +521,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         }
 
         // Optionally regenerate token
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         InvitationSentAt = null;
@@ -514,7 +562,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         CreatedAt = DateTime.UtcNow;
 
         // Always regenerate token for security
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
         RaiseDomainEvent(new RefTestHardResetEvent());
     }
 
@@ -527,7 +575,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException("Can only revive expired tests");
 
         Status = RefTestStatus.Pending;
-        Token = Guid.NewGuid().ToString("N");
+        Token = GenerateToken();
         ExpiredAt = null;
 
         // Reset CreatedAt so the expiration timer starts fresh
@@ -567,8 +615,10 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         // Token must stay unique (unique index) — a random placeholder still hides the real
         // token value while satisfying that constraint, unlike a fixed "***" for every RefTest.
         Token = $"erased-{Guid.NewGuid():N}";
-        PrivacyNoticeVersion = null;
-        PrivacyNoticeAcceptedAt = null;
+        // PrivacyNoticeVersion and PrivacyNoticeAcceptedAt are deliberately retained. GDPR
+        // Art. 7(1) requires the controller to be able to demonstrate that consent was given;
+        // neither field identifies the participant once name, email and token are erased, so
+        // keeping them costs nothing in privacy terms and preserves the evidence.
         IsAnonymized = true;
         AnonymizedAt = DateTime.UtcNow;
 
@@ -590,6 +640,28 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     private bool CanRegenerateToken() =>
         Status == RefTestStatus.Pending;
+
+    /// <summary>
+    /// True once the participant's time limit has elapsed, including any admin extension
+    /// (<see cref="ExtendTime"/> raises <see cref="MaxTimeInMinutes"/> in place) plus
+    /// <see cref="DeadlineGrace"/>.
+    /// </summary>
+    /// <remarks>
+    /// <see cref="RefTestStatus.InProgress"/> on its own does not mean the test is still open:
+    /// overdue tests are only closed when the expiration service next runs, so without this check
+    /// a participant can keep answering during the gap between the deadline and that sweep.
+    /// </remarks>
+    public bool HasPassedDeadline() =>
+        StartedAt.HasValue &&
+        RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, DateTime.UtcNow);
+
+    /// <summary>
+    /// Generates an invitation token. Tokens are the only credential guarding a participant's
+    /// personal data and results, so they come from a cryptographic RNG — a GUID is unique but
+    /// makes no secrecy guarantee.
+    /// </summary>
+    private static string GenerateToken() =>
+        RandomNumberGenerator.GetHexString(TokenLength, lowercase: true);
 
     #endregion
 }

@@ -10,6 +10,12 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
     {
         builder.HasKey(j => j.Id);
 
+        // See RefTestConfiguration for the rationale. The worker's claim is a conditional UPDATE
+        // that does not go through the change tracker, so this token only guards the tracked
+        // completion, failure and cancellation writes.
+        builder.Property(j => j.Version)
+            .IsConcurrencyToken();
+
         builder.Property(j => j.JobType)
             .IsRequired()
             .HasConversion<string>();

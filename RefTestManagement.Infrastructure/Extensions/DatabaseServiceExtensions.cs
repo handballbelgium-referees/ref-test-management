@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.AuditLog;
+using Handball.Belgium.RefTestManagement.Infrastructure.Interceptors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -13,7 +14,9 @@ public static class DatabaseServiceExtensions
         return services.AddDbContextFactory<RefTestManagementContext>((sp, options) =>
         {
             configureProvider(sp, options);
-            options.AddInterceptors(sp.GetRequiredService<AuditSaveChangesInterceptor>());
+            options.AddInterceptors(
+                sp.GetRequiredService<AuditSaveChangesInterceptor>(),
+                new ConcurrencyTokenInterceptor());
 #if DEBUG
             options.EnableSensitiveDataLogging();
 #endif
