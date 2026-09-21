@@ -234,7 +234,7 @@ services.AddGraphQLServer()
     .AddSorting()
     .AddCacheControl()
     .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
-    .AddGlobalObjectIdentification(true)
+    .AddGlobalObjectIdentification(false)
     .AddAuthorization()
     .AddJsonTypeConverter()
     .AddHttpRequestInterceptor(async (ctx, _, _, _) =>

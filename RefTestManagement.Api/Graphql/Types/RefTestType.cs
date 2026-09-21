@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -16,8 +17,11 @@ public class RefTestType : ObjectType<RefTestDto>
         descriptor.Description("RefTest");
 
         descriptor.BindFieldsExplicitly();
-
-        descriptor.Field(x => x.Id).Description("The id of the RefTest");
+        
+        descriptor.ImplementsNode()
+            .IdField(x => x.Id)
+            .ResolveNode((ctx, id) => ctx.DataLoader<RefTestByIdDataLoader>().LoadAsync(id, ctx.RequestAborted)!)
+            .Description("The RefTest id");
 
         descriptor.Field(x => x.Title)
             .Description("Title of the RefTest");
@@ -60,10 +64,17 @@ public class RefTestType : ObjectType<RefTestDto>
                     ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"),
                     ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
         descriptor.Field(x => x.Language).Description("Language where the RefTest was taken").Authorize();
-        descriptor.Field(x => x.RejectionReason).Description("Reason why the RefTest was rejected during approval review").Authorize();
-        descriptor.Field(x => x.ScheduledAt).Description("Date/time from which this RefTest can be started; invitation email fires at this time when automated invitations are enabled").Authorize();
-        descriptor.Field(x => x.IsAnonymized).Description("Indication of whether the RefTest has been anonymized (privacy erasure/consent withdrawal)").Authorize();
-        descriptor.Field(x => x.AnonymizedAt).Description("Date/time when the RefTest was anonymized (privacy erasure/consent withdrawal)").Authorize();
+        descriptor.Field(x => x.RejectionReason)
+            .Description("Reason why the RefTest was rejected during approval review").Authorize();
+        descriptor.Field(x => x.ScheduledAt)
+            .Description(
+                "Date/time from which this RefTest can be started; invitation email fires at this time when automated invitations are enabled")
+            .Authorize();
+        descriptor.Field(x => x.IsAnonymized)
+            .Description("Indication of whether the RefTest has been anonymized (privacy erasure/consent withdrawal)")
+            .Authorize();
+        descriptor.Field(x => x.AnonymizedAt)
+            .Description("Date/time when the RefTest was anonymized (privacy erasure/consent withdrawal)").Authorize();
     }
 
     /// <summary>
