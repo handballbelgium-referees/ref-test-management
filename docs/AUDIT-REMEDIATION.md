@@ -1,8 +1,8 @@
 # Audit Remediation Plan
 
 > **Status at a glance —** Phases 1 → 9 have shipped. The third audit
-> ([`AUDIT-R3.md`](AUDIT-R3.md)) added 14 findings and re-opened three work packages; all of
-> those remediation packages are now complete. The code-level production blocker is closed.
+> ([`AUDIT-R3.md`](AUDIT-R3.md)) identified gaps in three previously shipped work packages; the
+> replacement packages are now complete. The code-level production blocker is closed.
 > A staging anonymous-GraphQL verification and the controller's external processor/DPA checks
 > remain release evidence, not open code findings.
 
@@ -552,7 +552,8 @@ Wire `dotnet test` into the PR workflow.
 
 ## WP-35 — Disclose staff and approver recipients in the privacy notice ✅
 
-> ⚠️ **Re-opened by R3 ([R3-09](AUDIT-R3.md)).** `docs/PRIVACY.md` was updated as specified. The
+> ℹ️ **Superseded after R3 ([R3-09](AUDIT-R3.md)) by [WP-46](#wp-46--bring-the-in-app-privacy-notice-to-parity).**
+> `docs/PRIVACY.md` was updated as specified. The
 > participant-facing in-app notice was not — it still omits the internal recipient categories that
 > `PRIVACY.md` itself now says Art. 13(1)(e) requires. The document a participant is actually
 > shown is the one the Article governs. **Fixed by [WP-46](#wp-46--bring-the-in-app-privacy-notice-to-parity).**
@@ -1113,7 +1114,8 @@ nothing.
 
 ## WP-15 — Make write-then-enqueue atomic ✅
 
-> ⚠️ **Re-opened by R3 ([R3-02](AUDIT-R3.md)).** The atomicity this package established holds for
+> ℹ️ **Superseded after R3 ([R3-02](AUDIT-R3.md)) by [WP-41](#wp-41--restore-transactional-enqueue-in-the-expiration-handler).**
+> The atomicity this package established holds for
 > the participant-facing mutations listed below. It does **not** hold for the expiration handler:
 > WP-19 later gave `RefTestExpirationJobHandler` its own `DbContext` from `IDbContextFactory`,
 > while the injected `IJobEnqueueService` kept the worker scope's context. The two saves are now
@@ -1462,7 +1464,8 @@ results above were confirmed. Worth knowing before anyone reads a zero-test run 
 
 ## WP-20 — Accessibility batch ✅
 
-> ⚠️ **Re-opened by R3 ([R3-08](AUDIT-R3.md)).** The three findings this package was scoped to
+> ℹ️ **Superseded after R3 ([R3-08](AUDIT-R3.md)) by [WP-47](#wp-47--one-accessible-dialog-wrapper-for-all-18-dialogs).**
+> The three findings this package was scoped to
 > were closed. The dialog work was not carried across the component set: 7 of 18 dialogs received
 > `role="dialog"` and `aria-modal`, and **no** dialog received focus trapping, Escape-to-close or
 > focus restore. A per-dialog fix would leave the same gap next time; **[WP-47](#wp-47--one-accessible-dialog-wrapper-for-all-18-dialogs)**
@@ -2039,7 +2042,7 @@ fields.
 
 ## WP-41 — Restore transactional enqueue in the expiration handler ✅
 
-**Findings:** R3-02 (🔴 High, re-opens [WP-15](#wp-15--make-write-then-enqueue-atomic-)) · **Size:** S
+**Findings:** R3-02 (🔴 High; closes the gap identified against [WP-15](#wp-15--make-write-then-enqueue-atomic-)) · **Size:** S
 
 ### Files
 - `RefTestManagement.Api/BackgroundServices/JobHandlers/RefTestExpirationJobHandler.cs:23-35, 63-74`
@@ -2221,7 +2224,7 @@ it everywhere. Then make the enqueued action depend on status: `InProgress` auto
 
 ## WP-46 — Bring the in-app privacy notice to parity ✅
 
-**Findings:** R3-09 (🟡 Medium, re-opens [WP-35](#wp-35--disclose-staff-and-approver-recipients-in-the-privacy-notice-)) · **Size:** S
+**Findings:** R3-09 (🟡 Medium; closes the gap identified against [WP-35](#wp-35--disclose-staff-and-approver-recipients-in-the-privacy-notice-)) · **Size:** S
 
 ### Files
 - `RefTestManagement.Ui/public/i18n/en.json` (`privacy.recipients.*`) and every translated
@@ -2252,7 +2255,7 @@ Mirror the `PRIVACY.md` recipient list into the notice, in every locale.
 
 ## WP-47 — One accessible dialog wrapper for all 18 dialogs ✅
 
-**Findings:** R3-08 (🟡 Medium, re-opens [WP-20](#wp-20--accessibility-batch-)) · **Size:** M
+**Findings:** R3-08 (🟡 Medium; closes the gap identified against [WP-20](#wp-20--accessibility-batch-)) · **Size:** M
 
 ### Files
 - `RefTestManagement.Ui/src/app/ref-tests/detail/.../components/dialogs/*` (7, already have modal
@@ -2459,10 +2462,10 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | 13 | 🟡 Medium | Domain depends on EF Core | WP-18 | ✅ Done |
 | 14 | 🟡 Medium | Job claim not atomic | WP-13 | ✅ Done |
 | 15 | 🟡 Medium | No concurrency token | WP-14 | ✅ Done |
-| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15, **WP-41** | ⚠️ Re-opened (R3-02) |
+| 16 | 🟡 Medium | Write and enqueue not atomic | WP-15, **WP-41** | ✅ Done — WP-41 closes the R3-02 gap |
 | 17 | 🟡 Medium | No HTTP timeout or resilience | WP-16 | ✅ Done |
 | 18 | 🟡 Medium | Expiration evaluates client-side | WP-17 | ✅ Done |
-| 19 | 🟡 Medium | Positive `tabindex` | WP-20, **WP-47** | ⚠️ Finding closed; WP-20 re-opened (R3-08) |
+| 19 | 🟡 Medium | Positive `tabindex` | WP-20, **WP-47** | ✅ Done — WP-47 closes the R3-08 gap |
 | 20 | 🟡 Medium | Hardcoded English `confirm()` | WP-21 | ✅ Done |
 | 21 | ⚪ Low | `Guid.NewGuid()` tokens | WP-10 | ✅ Done |
 | 22 | ⚪ Low | Consent proof nulled | WP-06 | ✅ Done |
@@ -2489,7 +2492,7 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | N4 | 🟡 Medium | Regex timeout strands a job in `Processing` | WP-31 | ✅ Done |
 | N5 | 🟡 Medium | PII key matching is case-sensitive | WP-34 | ✅ Done |
 | N6 | 🟡 Medium | Erase and delete not atomic | WP-33 | ✅ Done |
-| N7 | 🟡 Medium | Undisclosed email recipients | WP-35, **WP-46** | ⚠️ Re-opened (R3-09) |
+| N7 | 🟡 Medium | Undisclosed email recipients | WP-35, **WP-46** | ✅ Done — WP-46 closes the R3-09 gap |
 | N8 | 🟡 Medium | Unbounded participant mutation inputs | WP-36 | ✅ Done |
 | N9 | 🟡 Medium | Invitation token in the URL | WP-37 | ✅ Done |
 | N10 | ⚪ Low | Erasure actor redacted, accountability lost | WP-38 | ✅ Done |
@@ -2518,10 +2521,9 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 **60 findings · 51 work packages · none dropped.**
 **60 closed · 0 re-opened · 0 open.**
 
-Three packages did not fully hold under R3's adversarial verification — **WP-15**, **WP-20** and
-**WP-35** — and were superseded by **WP-41**, **WP-47** and **WP-46** respectively. Their
-replacement packages are now shipped. The original package sections are left as written, because
-they record what was done at the time and are more useful as evidence than as a scoreboard.
+R3 identified gaps in three previously shipped packages — **WP-15**, **WP-20** and **WP-35** —
+which were resolved by **WP-41**, **WP-47** and **WP-46** respectively. The original package
+sections are retained as historical evidence; the replacement packages are the current status.
 
 One closed item carries a manual follow-up outside the repository: **#12**, complete in code but
 only effective once a maintainer creates the GitHub App.
