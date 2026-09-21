@@ -17,7 +17,7 @@ public class RefTestType : ObjectType<RefTestDto>
 
         descriptor.BindFieldsExplicitly();
 
-        descriptor.Field(x => x.Id).Description("The id of the RefTest").Authorize();
+        descriptor.Field(x => x.Id).Description("The id of the RefTest");
 
         descriptor.Field(x => x.Title)
             .Description("Title of the RefTest");
