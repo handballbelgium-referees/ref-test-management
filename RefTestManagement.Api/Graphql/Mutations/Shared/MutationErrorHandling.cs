@@ -1,7 +1,5 @@
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 

@@ -2,13 +2,39 @@ using Handball.Belgium.RefTestManagement.Api.Graphql;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using HotChocolate;
+using HotChocolate.Execution;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 public class UnhandledExceptionLoggingErrorFilterTests
 {
+    [Fact]
+    public async Task RequestExecutorCanActivateGraphQlErrorFilters()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddHttpContextAccessor();
+        services
+            .AddGraphQLServer()
+            .AddQueryType<SchemaQuery>()
+            .AddApplicationService<IHttpContextAccessor>()
+            .AddApplicationService<ILogger<UnhandledExceptionLoggingErrorFilter>>()
+            .AddApplicationService<ILogger<ConcurrencyErrorFilter>>()
+            .AddErrorFilter<ConcurrencyErrorFilter>()
+            .AddErrorFilter<UnhandledExceptionLoggingErrorFilter>();
+
+        await using var provider = services.BuildServiceProvider();
+        var executorProvider = provider.GetRequiredService<IRequestExecutorProvider>();
+
+        var executor = await executorProvider.GetExecutorAsync(
+            Assert.Single(executorProvider.SchemaNames),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(executor);
+    }
     [Fact]
     public void OnErrorMasksEmailAddressesBeforeLoggingTheException()
     {
@@ -17,9 +43,10 @@ public class UnhandledExceptionLoggingErrorFilterTests
             builder
                 .AddProvider(provider)
                 .SetMinimumLevel(LogLevel.Trace));
+        var httpContext = new DefaultHttpContext { TraceIdentifier = "trace-id" };
         var filter = new UnhandledExceptionLoggingErrorFilter(
             loggerFactory.CreateLogger<UnhandledExceptionLoggingErrorFilter>(),
-            new HttpContextAccessor { HttpContext = new DefaultHttpContext() });
+            new HttpContextAccessor { HttpContext = httpContext });
         var error = ErrorBuilder.New()
             .SetMessage("Unhandled resolver failure")
             .SetException(new InvalidOperationException("failed for john.doe@example.com"))
@@ -31,11 +58,13 @@ public class UnhandledExceptionLoggingErrorFilterTests
         Assert.NotNull(loggedException);
         Assert.DoesNotContain("john.doe@example.com", loggedException.ToString(), StringComparison.Ordinal);
         Assert.Contains("j***@example.com", loggedException.ToString(), StringComparison.Ordinal);
+        Assert.Contains("correlationId=trace-id", Assert.Single(provider.Messages), StringComparison.Ordinal);
     }
 
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
         public List<Exception?> Exceptions { get; } = [];
+        public List<string> Messages { get; } = [];
 
         public ILogger CreateLogger(string categoryName) => new CapturingLogger(this);
 
@@ -54,9 +83,17 @@ public class UnhandledExceptionLoggingErrorFilterTests
                 EventId eventId,
                 TState state,
                 Exception? exception,
-                Func<TState, Exception?, string> formatter) =>
+                Func<TState, Exception?, string> formatter)
+            {
                 provider.Exceptions.Add(exception);
+                provider.Messages.Add(formatter(state, exception));
+            }
         }
+    }
+
+    public sealed class SchemaQuery
+    {
+        public string Value() => "value";
     }
 }
 

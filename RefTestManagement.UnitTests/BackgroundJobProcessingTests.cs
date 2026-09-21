@@ -1,7 +1,6 @@
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
-using Handball.Belgium.RefTestManagement.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 

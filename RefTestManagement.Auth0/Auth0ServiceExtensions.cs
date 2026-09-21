@@ -2,7 +2,6 @@ using Handball.Belgium.RefTestManagement.Auth0.Configurations;
 using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http.Resilience;
 
 namespace Handball.Belgium.RefTestManagement.Auth0;
 

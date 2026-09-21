@@ -1,7 +1,5 @@
-using HotChocolate;
 using HotChocolate.Execution;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql;
 
@@ -22,7 +20,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql;
 public sealed partial class ConcurrencyErrorFilter(
     ILogger<ConcurrencyErrorFilter> logger) : IErrorFilter
 {
-    public const string ErrorCode = "CONCURRENT_MODIFICATION";
+    private const string ErrorCode = "CONCURRENT_MODIFICATION";
 
     public IError OnError(IError error)
     {
