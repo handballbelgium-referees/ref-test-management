@@ -259,7 +259,13 @@ public class BackgroundJobService : BackgroundService
                 errorMessage = MaskingFailedMessage;
             }
 
-            if (ex is JobPayloadException)
+            if (ex is LegacyReportPayloadException)
+            {
+                // Legacy report payloads cannot be safely associated with a participant.
+                // Quarantine them before they can send data, and clear the payload.
+                job.Cancel(errorMessage);
+            }
+            else if (ex is JobPayloadException)
             {
                 // The payload will not parse on a retry either, so stop here instead of holding a
                 // slot in the queue for two more passes.

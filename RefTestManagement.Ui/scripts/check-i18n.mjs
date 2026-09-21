@@ -34,6 +34,30 @@ function load(locale) {
 
 const reference = load(REFERENCE);
 const problems = [];
+const withdrawalKeys = [
+  'ref_test.withdraw_link',
+  'ref_test.dialog.withdraw.message',
+  'ref_test.dialog.withdraw.warning',
+  'ref_test.dialog.withdraw.confirm',
+];
+const withdrawalCopyRules = {
+  en: {
+    required: [/consent/i, /anonym/i, /audit/i],
+    forbidden: [/permanent(?:ly)?\s+delete/i, /delete\s+my\s+data/i],
+  },
+  nl: {
+    required: [/toestemming/i, /anonim/i, /audit/i],
+    forbidden: [/permanent(?:e| verwijderd)?/i, /gegevens verwijderen/i],
+  },
+  fr: {
+    required: [/consentement/i, /anonym/i, /audit/i],
+    forbidden: [/définitiv/i, /supprimer mes données/i],
+  },
+  de: {
+    required: [/einwilligung/i, /anonym/i, /prüfzweck/i],
+    forbidden: [/dauerhaft gelöscht/i, /daten löschen/i],
+  },
+};
 
 for (const locale of LOCALES.filter((l) => l !== REFERENCE)) {
   const keys = load(locale);
@@ -53,6 +77,28 @@ for (const locale of LOCALES.filter((l) => l !== REFERENCE)) {
 }
 
 console.log(`${REFERENCE}: ${reference.size} keys (reference)`);
+
+for (const locale of LOCALES) {
+  const translations = load(locale);
+  const copy = withdrawalKeys.map((key) => translations.get(key) ?? '').join(' ');
+  const rules = withdrawalCopyRules[locale];
+
+  for (const key of withdrawalKeys) {
+    if (!translations.has(key)) {
+      problems.push(`${locale}: withdrawal key "${key}" is missing`);
+    }
+  }
+  for (const pattern of rules.required) {
+    if (!pattern.test(copy)) {
+      problems.push(`${locale}: withdrawal copy does not match required pattern ${pattern}`);
+    }
+  }
+  for (const pattern of rules.forbidden) {
+    if (pattern.test(copy)) {
+      problems.push(`${locale}: withdrawal copy contains forbidden pattern ${pattern}`);
+    }
+  }
+}
 
 if (problems.length > 0) {
   console.error(`\n${problems.length} translation key problem(s):`);

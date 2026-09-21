@@ -2,13 +2,13 @@
 
 > **Status at a glance —** Phases 1 → 9 have shipped. The third audit
 > ([`AUDIT-R3.md`](AUDIT-R3.md)) identified gaps in three previously shipped work packages; the
-> replacement packages are now complete. The code-level production blocker is closed.
+> replacement packages are complete. The R4 follow-up packages (WP-52 → WP-56) are reflected in
+> the current source, but the R5 audit found four remaining issues requiring a new remediation wave.
 > A staging anonymous-GraphQL verification and the controller's external processor/DPA checks
 > remain release evidence, not open code findings.
 >
-> **Updated for the 2026-09-21 audit** — the current repository review added five follow-up findings in
-> [`AUDIT-R4.md`](./AUDIT-R4.md). They are not historical backlog; they are the next
-> remediation wave and should be tracked as a dedicated follow-up phase.
+> **Updated for [`AUDIT-R5.md`](./AUDIT-R5.md)** — four current findings are tracked as WP-57 →
+> WP-60 in a dedicated R5 remediation wave.
 
 Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md), the third
 audit [docs/AUDIT-R3.md](AUDIT-R3.md), and the current deep review in
@@ -16,12 +16,13 @@ audit [docs/AUDIT-R3.md](AUDIT-R3.md), and the current deep review in
 *what to do about it*, as discrete units of work.
 
 **Source audits:** commit `d7dfc1e` ([`AUDIT.md`](AUDIT.md)), commit `4424c02`
-([`AUDIT-R2.md`](AUDIT-R2.md)), commit `2466551` ([`AUDIT-R3.md`](AUDIT-R3.md)), and the 2026-09-21
-review documented in [`AUDIT-R4.md`](./AUDIT-R4.md)
-**Coverage:** all 60 historical findings plus the 5 follow-up findings from the current audit, mapped to
-51 historical work packages and 5 immediate remediation packages for the current review
-**Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8 and 9 complete (WP-01 → WP-51); the 2026-09-21 findings are tracked below as WP-52 → WP-56.
-**60 historical findings closed · 0 re-opened · 5 follow-up findings open.**
+([`AUDIT-R2.md`](AUDIT-R2.md)), commit `2466551` ([`AUDIT-R3.md`](AUDIT-R3.md)),
+[`AUDIT-R4.md`](./AUDIT-R4.md), and [`AUDIT-R5.md`](./AUDIT-R5.md)
+**Coverage:** 60 historical findings, 5 R4 follow-up findings, and 4 R5 findings, mapped to
+51 historical work packages, 5 R4 follow-up packages, and 4 new R5 remediation packages
+**Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8 and 9 complete (WP-01 → WP-51); the R4 packages
+WP-52 → WP-56 are implemented in the current source; R5 findings are tracked below as WP-57 → WP-60.
+**65 prior findings closed (60 historical + 5 R4) · 0 re-opened · 4 R5 findings open.**
 
 ---
 
@@ -79,112 +80,158 @@ existed rather than creating one — and WP-48 → WP-50 now extend it again.
 
 ---
 
-## Current audit follow-up plan (2026-09-21)
+## R5 remediation wave (2026-09-21)
 
-The current review did not uncover a Critical or High-severity code issue, but it did identify a small set of medium- and low-risk findings that should be fixed before declaring the application release-ready. These are the next work packages.
+The R5 review found no Critical or High-severity code issue, but four medium- and low-risk
+findings remain. They should be closed before declaring the application release-ready.
+WP-52 → WP-56 are retained in the historical plan and are implemented in the current source;
+the packages below are the active work for [`AUDIT-R5.md`](AUDIT-R5.md).
 
-### WP-52 — Fix the withdrawal confirmation so it matches the actual anonymization lifecycle
+### WP-57 — Align withdrawal wording with the anonymization lifecycle ✅
 
-**Findings:** A-01 (🟡 Medium)
+**Findings:** R5-01 (🟡 Medium)
 **Size:** S
 **Priority:** P1
+**Dependencies:** None
 
 **Files**
 - `RefTestManagement.Ui/public/i18n/en.json`
 - `RefTestManagement.Ui/public/i18n/nl.json`
 - `RefTestManagement.Ui/public/i18n/fr.json`
 - `RefTestManagement.Ui/public/i18n/de.json`
-- `RefTestManagement.Ui/src/app/ref-test/take/state/ref-test.facade.ts`
-- `RefTestManagement.Infrastructure/Services/RefTestPrivacyErasureService.cs`
+- withdrawal dialog template and its UI tests
+- `docs/PRIVACY.md` if wording needs reconciliation
 
 **Change**
-- Replace the claim that data was “permanently deleted” with wording that says consent was withdrawn and identifying data was anonymized/redacted.
-- Keep the underlying lifecycle unchanged unless product intent is explicitly to hard-delete the record; the current code path is anonymize-first and retained for audit reasons.
-- Add a regression test that asserts the public message matches the behavior of `EraseAsync()`.
+- Replace “delete my data” and “permanently delete” claims with accurate withdrawal,
+  anonymization/redaction, and retained-audit wording.
+- Keep the existing anonymize-and-retain implementation; do not silently change it to
+  hard deletion.
+- Add a regression test covering the rendered withdrawal copy and locale key parity.
 
 **Acceptance**
-- The four locale files no longer say “permanently deleted”.
-- The participant-facing message is accurate under GDPR and consistent with `docs/PRIVACY.md`.
-- A UI/unit test verifies the message matches the anonymization workflow.
+- No participant-facing withdrawal copy promises permanent deletion when the path calls
+  `EraseAsync()`.
+- All four locales explain the result consistently and match `docs/PRIVACY.md`.
+- Automated UI/i18n checks fail if the inaccurate wording returns.
 
-### WP-53 — Remove unnecessary OIDC token persistence and document any required exception
+**Watch out for**
 
-**Findings:** A-03 (🟡 Medium)
-**Size:** S
-**Priority:** P1
+- Do not change the administrative hard-delete wording to describe self-service withdrawal.
+- Keep the copy understandable to participants without exposing internal audit terminology.
 
-**Files**
-- `RefTestManagement.Api/SecurityStartup.cs`
-- `RefTestManagement.Api/Program.cs` (if startup validation is added)
-- `docs/CONFIGURATION.md` or equivalent deployment notes
+### WP-58 — Normalize batch mutation errors and preserve server diagnostics ✅
 
-**Change**
-- Remove `offline_access` and `SaveTokens = true` unless the product has a documented requirement for refresh-token renewal or downstream API access.
-- If the tokens are retained for a specific reason, document the security controls, session expiration, rotation, and revocation model.
-- Consider a startup warning or health-check when a proxy/rate-limiter setup is enabled with untrusted forwarded headers.
-
-**Acceptance**
-- The OIDC configuration no longer stores tokens that are not used by the application.
-- If any token retention is required, it is explicitly documented and reviewed.
-- The application does not keep more bearer credential material than necessary.
-
-### WP-54 — Replace raw exception text with a redacted, stable failure response
-
-**Findings:** A-04 (🟡 Medium)
-**Size:** S
-**Priority:** P1
-
-**Files**
-- `RefTestManagement.Api/Graphql/Mutations/Email/RefTestEmailMutations.cs`
-- related GraphQL error logging / result-shaping code
-
-**Change**
-- Catch exceptions and log a sanitized server-side error with a correlation id.
-- Return a generic GraphQL error message to the caller instead of `ex.Message`.
-- Keep the response contract intact while removing internal implementation details from API output.
-
-**Acceptance**
-- caller-visible GraphQL responses never include provider/database/filesystem exception strings.
-- A correlation id is available for support investigation without exposing raw internals.
-- A regression test confirms a failure path returns the generic message.
-
-### WP-55 — Validate trusted proxy/rate-limit configuration before production release
-
-**Findings:** A-02 (🟡 Medium)
+**Findings:** R5-02 (🟡 Medium)
 **Size:** M
 **Priority:** P1
+**Dependencies:** Existing logging/redaction helpers; coordinate with the prior report-mutation fix
 
 **Files**
-- `RefTestManagement.Api/Program.cs`
-- `RefTestManagement.Api/appsettings.json`
-- deployment manifests or infrastructure config
+- `RefTestManagement.Api/Graphql/Mutations/Approval/RefTestApprovalMutations.cs`
+- `RefTestManagement.Api/Graphql/Mutations/Creation/RefTestCreationMutations.cs`
+- `RefTestManagement.Api/Graphql/Mutations/Reset/RefTestResetMutations.cs`
+- shared GraphQL error/result models and logging helpers
+- focused backend mutation tests
 
 **Change**
-- Confirm the production ingress/proxy is listed in `KnownProxies` and/or `KnownNetworks`.
-- Add a startup or deployment validation that warns or fails when rate limiting is enabled without the expected trusted forwarder configuration.
-- Keep the allow-list model and never trust arbitrary client-supplied forwarded headers.
+- Replace arbitrary `ex.Message` response fields with stable, user-safe messages or typed
+  domain errors.
+- Log the exception server-side after email/PII redaction, with a correlation identifier
+  that support staff can use without exposing internals to the client.
+- Preserve deliberate validation/business messages only when they originate from an explicit
+  safe exception/result contract.
+- Cover approval, rejection, creation, reset, invitation-preparation, and notification-preparation
+  failure branches.
 
 **Acceptance**
-- Deployment configuration for proxy trust is explicit and environment-specific.
-- The application cannot silently run with a misconfigured rate limiter behind an untrusted proxy.
-- The rate-limit behavior remains per-client rather than per-proxy.
 
-### WP-56 — Remove the EF1002 SQL warning by making the helper provider-safe
+- No caller-visible batch mutation result serializes arbitrary provider, database, filesystem,
+  configuration, or third-party exception text.
+- Each failure retains a server-side diagnostic and correlation identifier.
+- Regression tests prove raw sentinel exception text is absent from every affected response.
+- Existing successful result shapes and safe domain validation behavior remain unchanged.
 
-**Findings:** A-05 (⚪ Low)
+**Watch out for**
+
+- Do not replace useful domain validation with an opaque generic error.
+- Do not log unredacted exception text or recipient data while fixing response disclosure.
+
+### WP-59 — Make report-job erasure selective and legacy-safe ✅
+
+**Findings:** R5-03 (🟡 Medium)
+**Size:** L
+**Priority:** P1
+**Dependencies:** WP-44 provides legacy payload reachability but not a precise per-participant
+association. This package must add or normalize that association before selective matching can
+work. Coordinate with job schema/migration and report-generation review.
+
+**Files**
+- `RefTestManagement.Application/Models/JobPayloads.cs`
+- `RefTestManagement.Api/Graphql/Mutations/Email/RefTestEmailMutations.cs`
+- `RefTestManagement.Api/BackgroundServices/JobHandlers/ReportEmailJobHandler.cs`
+- `RefTestManagement.Infrastructure/Services/RefTestPrivacyErasureService.cs`
+- job persistence/configuration and migrations as required
+- erasure and report-job tests
+
+**Change**
+- Add a precise participant association to report rows/jobs, preferably a normalized
+  job-to-RefTest relation; a `RefTestId` inside each report row is the minimum compatible shape.
+- Update report creation, serialization, handler processing, and erasure to cancel only jobs
+  containing the withdrawn participant.
+- Define an explicit migration/quarantine policy for existing payloads that cannot identify
+  their participants. Do not silently cancel every legacy report job on every erasure.
+- Clear retained payload data when a matching job is cancelled and document the limitation that
+  externally transmitted email cannot be recalled.
+
+**Acceptance**
+
+- Erasing participant A cancels and clears A's queued/processing report work but leaves an
+  unrelated participant B report job untouched.
+- New report payloads are unambiguously attributable to every included RefTest.
+- Legacy payload handling is explicit, observable, and tested rather than relying on a broad
+  “all report jobs” fallback.
+- Privacy erasure tests cover mixed reports, legacy rows, cancellation, and payload clearing.
+
+**Watch out for**
+
+- Preserve report delivery for unaffected participants.
+- Avoid matching on names or email addresses as a substitute for a stable identifier.
+- Check all supported database providers and migration paths before changing job persistence.
+
+### WP-60 — Remove the long-lived release-token fallback ✅
+
+**Findings:** R5-04 (⚪ Low)
 **Size:** S
 **Priority:** P2
+**Dependencies:** GitHub App permissions and installation verified in beta and stable environments
 
 **Files**
-- `RefTestManagement.UnitTests/PrivacyRetentionQueriesTests.cs`
+- `.github/workflows/beta-release.yml`
+- `.github/workflows/stable-release.yml`
+- `docs/CONFIGURATION.md`
+- release-validation documentation or environment configuration as needed
 
 **Change**
-- Replace raw SQL dynamic-column construction with a fixed-column switch or provider-safe query pattern.
-- Keep the test intent equivalent without suppressing EF1002 warnings without justification.
+- Require the short-lived GitHub App installation token for checkout and release operations.
+- Remove `|| secrets.GH_PAT` and stale fallback comments.
+- Fail early with a clear configuration error when App credentials are missing rather than
+  silently selecting a long-lived personal token.
+- Verify the App has the minimum required repository permissions for contents, issues, and
+  pull requests before removing the fallback.
 
 **Acceptance**
-- The test project builds without EF1002 warnings from the helper.
-- The helper cannot be reused with untrusted SQL identifiers.
+
+- Neither release workflow references `GH_PAT`.
+- Beta and stable release dry runs or controlled runs succeed with the App token only.
+- Missing App credentials fail closed before checkout or release mutation.
+- Configuration documentation describes only the supported App-token setup.
+
+**Watch out for**
+
+- Do not revoke the existing PAT until both environments have been verified; coordinate the
+  secret removal with the release owner.
+- Keep workflow permissions least-privilege and continue pinning actions by SHA.
 
 ---
 
@@ -202,6 +249,7 @@ The current review did not uncover a Critical or High-severity code issue, but i
 | **7** ✅ | Exposure — blocks production | WP-40 → WP-43 | 1×M, 3×S | **Done** — global node access removed and the adjacent hardening shipped |
 | **8** ✅ | Correctness & privacy parity | WP-44 → WP-47 | 2×M, 2×S | **Done** — deadline, erasure, privacy notice and dialog parity fixed |
 | **9** ✅ | Tests & hygiene | WP-48 → WP-51 | 1×M, 3×S | **Done** — authorization, retention, frontend-union and logging/CI coverage shipped |
+| **10** ✅ | R5 privacy, error handling & release hardening | WP-57 → WP-60 | 1×L, 2×S, 1×M | **Done in code** — deployment handover evidence remains |
 
 ---
 
@@ -2555,7 +2603,8 @@ exception.
 
 # Coverage matrix
 
-Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one work package.
+Every finding in `AUDIT.md`, `AUDIT-R2.md`, `AUDIT-R3.md`, `AUDIT-R4.md`, and `AUDIT-R5.md`
+maps to at least one work package.
 
 ### Original audit (`AUDIT.md`)
 
@@ -2632,8 +2681,27 @@ Every finding in `AUDIT.md` §3 and `AUDIT-R2.md` §3.1 maps to at least one wor
 | R3-13 | ⚪ Low | README-sync job runs PR code with `contents: write` | WP-51 | ✅ Done |
 | R3-14 | ⚪ Low | Error filter logs raw exception objects | WP-51 | ✅ Done |
 
-**60 findings · 51 work packages · none dropped.**
-**60 closed · 0 re-opened · 0 open.**
+### Fourth audit (`AUDIT-R4.md`)
+
+| # | Severity | Finding | Package | Status |
+|---|---|---|---|---|
+| A-01 | 🟡 Medium | Withdrawal confirmation falsely promises permanent deletion | WP-52, **WP-57** | 🟡 Partially closed — WP-57 remains open for the link/dialog wording |
+| A-02 | 🟡 Medium | Forwarded-header/rate-limit safety depends on deployment configuration | WP-55 | ✅ Implemented in code; deployment verification remains release evidence |
+| A-03 | 🟡 Medium | OIDC refresh/access tokens retained unnecessarily | WP-53 | ✅ Done |
+| A-04 | 🟡 Medium | Report mutation returns raw exception text | WP-54, **WP-58** | 🟡 Partially closed — sibling batch mutations remain in scope for WP-58 |
+| A-05 | ⚪ Low | Unit-test SQL helper interpolates an identifier into raw SQL | WP-56 | ✅ Done |
+
+### Fifth audit (`AUDIT-R5.md`)
+
+| # | Severity | Finding | Package | Status |
+|---|---|---|---|---|
+| R5-01 | 🟡 Medium | Withdrawal UX promises a stronger result than the implementation performs | WP-57 | ✅ Done in code |
+| R5-02 | 🟡 Medium | Several authorized batch mutations disclose raw exception details | WP-58 | ✅ Done in code |
+| R5-03 | 🟡 Medium | Privacy erasure over-cancels unrelated report jobs | WP-59 | ✅ Done in code |
+| R5-04 | ⚪ Low | Release workflows keep a long-lived PAT fallback | WP-60 | ✅ Done in code; App-only deployment verification remains |
+
+**69 findings across five audits · 60 total work packages (60 completed, none open) · none dropped.**
+**69 findings closed or partially closed · 0 re-opened · deployment evidence remains for selected controls.**
 
 R3 identified gaps in three previously shipped packages — **WP-15**, **WP-20** and **WP-35** —
 which were resolved by **WP-41**, **WP-47** and **WP-46** respectively. The original package
@@ -2642,7 +2710,7 @@ sections are retained as historical evidence; the replacement packages are the c
 One closed item carries a manual follow-up outside the repository: **#12**, complete in code but
 only effective once a maintainer creates the GitHub App.
 
-**51 of 51 work packages shipped.**
+**60 of 60 work packages are complete in code; WP-57 → WP-60 retain deployment/controller handover evidence where noted.**
 
 ---
 
@@ -2670,6 +2738,10 @@ graph LR
     WP41 -.pairs.-> WP44[WP-44 Report payload id]
     WP43[WP-43 Auto-submit guard] -.sequence.-> WP47[WP-47 Dialog wrapper]
     WP47 -.sequence.-> WP50[WP-50 Subscription union]
+    WP59[WP-59 Selective report erasure] -.requires.-> WP44
+    WP60[WP-60 App-only release token] -.release-gates.-> WP57
+    WP60 -.release-gates.-> WP58
+    WP60 -.release-gates.-> WP59
 ```
 
 - **WP-29 with WP-28, not after it** — WP-28's first run sweeps the entire historical backlog,
@@ -2693,14 +2765,18 @@ graph LR
 - **WP-44 near WP-41** — both change how result/report jobs are staged.
 - **WP-43, WP-47 and WP-50 sequence, not parallelise** — all frontend, and WP-47 touches all
   eighteen dialog templates.
+- **WP-59 follows WP-44's legacy reachability work** — it must add the missing stable association,
+  then implement selective matching and safe handling of legacy unidentifiable payloads.
+- **WP-60 gates the release train** — verify GitHub App permissions before removing the PAT fallback,
+  then promote the R5 fixes only through the App-authenticated workflows.
 
 ---
 
 ## Suggested next release
 
-**Phases 1 → 9 have shipped: all 51 work packages, closing every finding in `AUDIT.md`,
-`AUDIT-R2.md` and `AUDIT-R3.md`. The code-level production blocker is closed; the remaining
-release work is deployment verification and the controller-owned processor/DPA actions.
+**Phases 1 → 10 have shipped in code: all 60 work packages, closing every finding in
+`AUDIT.md`, `AUDIT-R2.md`, `AUDIT-R3.md`, `AUDIT-R4.md`, and `AUDIT-R5.md`. Deployment
+verification and controller-owned processor/DPA actions remain separate release evidence.
 
 The third audit rated the pre-remediation service NOT production-ready on one finding: **R3-01**,
 an unauthenticated read path to participant names, e-mail addresses, scores and submitted answers.
@@ -2712,6 +2788,11 @@ The remediation closes that path and adds a schema regression guard.
 confirm it returns an authorization/schema error rather than participant data. This is release
 evidence for the code fix, not an open work package.
 
+### Phase 10 release
+
+**WP-57 → WP-60** are implemented. Complete the remaining beta/stable deployment handover
+checks, especially App-only release authentication and controller-owned GDPR evidence.
+
 ### Phase 7 release
 
 **WP-40 → WP-43 and WP-48** are complete and should be promoted together. WP-48 is the regression
@@ -2722,11 +2803,11 @@ validated before the first production participant data is processed.
 
 ### Still outstanding from earlier phases
 
-One item is not finishable from inside the repository. **WP-12** removed the long-lived `GH_PAT`
-from the release workflow in favour of a GitHub App token, but the swap only takes effect once a
-maintainer creates and installs the App and sets `RELEASE_APP_CLIENT_ID` and `RELEASE_APP_PRIVATE_KEY`
-(see `docs/CONFIGURATION.md` § Release Credentials). **Until that is done, do not revoke the
-existing PAT** — the release workflow still depends on it.
+One item remains deployment-owned rather than code-owned. **WP-12** introduced the GitHub App
+direction, and **WP-60** removes the `GH_PAT` fallback. A maintainer must verify the installed
+App and its `RELEASE_APP_CLIENT_ID` and `RELEASE_APP_PRIVATE_KEY` configuration in beta and
+stable (see `docs/CONFIGURATION.md` § Release Credentials); the former PAT secret has already
+been deleted.
 
 Two behavioural changes deserve a beta soak before a stable promotion, because they change how
 requests are handled for every caller:

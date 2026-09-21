@@ -613,7 +613,7 @@
     "start_button": "RefTest starten",
     "privacy_consent": "Ich habe den folgenden Hinweis gelesen und akzeptiere ihn:",
     "privacy_consent_error": "Ihre Annahme des Datenschutzhinweises konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
-    "withdraw_link": "Einwilligung widerrufen und meine Daten löschen",
+    "withdraw_link": "Einwilligung widerrufen und meine Daten anonymisieren",
     "withdraw_error": "Ihr Widerruf konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns.",
     "withdrawn_title": "Einwilligung widerrufen",
     "withdrawn_message": "Sie haben Ihre Einwilligung widerrufen. Ihre identifizierenden Daten wurden anonymisiert und der RefTest-Datensatz wurde redigiert, um die Auditspur aufzubewahren.",
@@ -660,9 +660,9 @@
       },
       "withdraw": {
         "title": "Einwilligung widerrufen?",
-        "message": "Dadurch werden Ihr RefTest und alle zugehörigen personenbezogenen Daten dauerhaft gelöscht. Dies kann nicht rückgängig gemacht werden.",
-        "warning": "Sobald der RefTest abgeschlossen ist, ist der Widerruf über Selbstbedienung nicht mehr möglich.",
-        "confirm": "Widerrufen und meine Daten löschen",
+        "message": "Durch den Widerruf Ihrer Einwilligung werden Ihre identifizierenden Daten anonymisiert und der RefTest-Datensatz redigiert. Der anonymisierte Datensatz kann zu Prüfzwecken aufbewahrt werden.",
+        "warning": "Ihre Einwilligung wird widerrufen und Ihre identifizierenden Daten werden anonymisiert. Ein anonymisierter RefTest-Datensatz kann zu Prüfzwecken aufbewahrt werden.",
+        "confirm": "Einwilligung widerrufen und Daten anonymisieren",
         "cancel": "Abbrechen"
       }
     }

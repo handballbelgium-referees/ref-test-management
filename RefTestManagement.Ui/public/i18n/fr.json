@@ -614,7 +614,7 @@
     "start_button": "Commencer le RefTest",
     "privacy_consent": "J'ai lu et j'accepte la",
     "privacy_consent_error": "Nous n'avons pas pu enregistrer votre acceptation de l'avis de confidentialité. Veuillez réessayer.",
-    "withdraw_link": "Retirer mon consentement et supprimer mes données",
+    "withdraw_link": "Retirer mon consentement et anonymiser mes données",
     "withdraw_error": "Nous n'avons pas pu traiter votre retrait. Veuillez réessayer ou nous contacter.",
     "withdrawn_title": "Consentement retiré",
     "withdrawn_message": "Vous avez retiré votre consentement. Vos données d'identification ont été anonymisées et l'enregistrement du RefTest a été rendu anonyme pour préserver la trace d'audit.",
@@ -661,9 +661,9 @@
       },
       "withdraw": {
         "title": "Retirer votre consentement ?",
-        "message": "Cela supprimera définitivement votre RefTest et toutes les données personnelles associées. Cette action est irréversible.",
-        "warning": "Une fois le RefTest terminé, le retrait n'est plus possible en libre-service.",
-        "confirm": "Retirer et supprimer mes données",
+        "message": "Le retrait de votre consentement anonymisera vos données d'identification et rendra anonyme l'enregistrement du RefTest. L'enregistrement anonymisé peut être conservé à des fins d'audit.",
+        "warning": "Votre consentement sera retiré et vos données d'identification seront anonymisées. Un enregistrement de RefTest anonymisé peut être conservé à des fins d'audit.",
+        "confirm": "Retirer le consentement et anonymiser les données",
         "cancel": "Annuler"
       }
     }

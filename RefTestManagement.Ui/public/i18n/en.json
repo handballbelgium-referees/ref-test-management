@@ -613,7 +613,7 @@
     "start_button": "Start RefTest",
     "privacy_consent": "I have read and accept the",
     "privacy_consent_error": "We could not record your privacy-notice acceptance. Please try again.",
-    "withdraw_link": "Withdraw consent and delete my data",
+    "withdraw_link": "Withdraw consent and anonymize my data",
     "withdraw_error": "We could not process your withdrawal. Please try again or contact us.",
     "withdrawn_title": "Consent withdrawn",
     "withdrawn_message": "You have withdrawn consent. Your identifying data has been anonymized and the RefTest record has been redacted to preserve the audit trail.",
@@ -660,9 +660,9 @@
       },
       "withdraw": {
         "title": "Withdraw consent?",
-        "message": "This will permanently delete your RefTest and all personal data associated with it. This cannot be undone.",
-        "warning": "Once the RefTest is completed, withdrawal is no longer available through self-service.",
-        "confirm": "Withdraw and delete my data",
+        "message": "Withdrawing consent will anonymize your identifying data and redact the RefTest record. The anonymized record may be retained for audit purposes.",
+        "warning": "Your consent will be withdrawn and your identifying data anonymized. An anonymized RefTest record may remain for audit purposes.",
+        "confirm": "Withdraw consent and anonymize data",
         "cancel": "Cancel"
       }
     }

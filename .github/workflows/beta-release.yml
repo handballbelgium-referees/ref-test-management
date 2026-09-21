@@ -12,8 +12,6 @@ jobs:
   release:
     name: 🚀 Beta Pre-release
     runs-on: ubuntu-latest
-    env:
-      RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
     outputs:
       new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
       new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
@@ -23,23 +21,33 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: 🔒 Require GitHub App credentials
+        env:
+          RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -z "$RELEASE_APP_CLIENT_ID" ] || [ -z "$RELEASE_APP_PRIVATE_KEY" ]; then
+            echo "::error::RELEASE_APP_CLIENT_ID and RELEASE_APP_PRIVATE_KEY must be configured; refusing to release."
+            exit 1
+          fi
+
       # Mints an installation token that expires in an hour and carries only the permissions
-      # granted to the app, instead of a long-lived personal access token tied to one human.
-      # See docs/CONFIGURATION.md for the one-time setup; until RELEASE_APP_CLIENT_ID is set this falls
-      # back to GH_PAT so releases keep working.
+      # granted to the app.
       - name: 🔑 Mint release token
         id: release-token
-        if: env.RELEASE_APP_CLIENT_ID != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+          permission-issues: write
+          permission-pull-requests: write
 
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          token: ${{ steps.release-token.outputs.token || secrets.GH_PAT }}
+          token: ${{ steps.release-token.outputs.token }}
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -52,7 +60,7 @@ jobs:
       - name: 🏷 Run semantic-release
         id: semantic-release
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.release-token.outputs.token }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

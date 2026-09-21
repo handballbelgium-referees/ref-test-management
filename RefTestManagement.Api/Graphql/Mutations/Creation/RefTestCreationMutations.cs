@@ -9,6 +9,8 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 
@@ -35,13 +37,16 @@ public static partial class RefTestCreationMutations
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger(nameof(RefTestCreationMutations));
         var currentUser = httpContextAccessor.HttpContext?.User;
         var callerPermissions = currentUser?.GetPermissions() ?? [];
         var requiresApproval = !callerPermissions.Contains(Permissions.RefTests.Approve) && !callerPermissions.Contains(Permissions.RefTests.All) && !callerPermissions.Contains(Permissions.Superadmin);
         var creatorName = currentUser.GetDisplayName();
         var creatorEmail = currentUser.GetEmail();
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
 
         var result = new CreateRefTestsResult { TotalRequested = input.Users.Count };
 
@@ -49,7 +54,7 @@ public static partial class RefTestCreationMutations
         var specifiedQuestionIds =
             await ResolveSharedQuestionIdsAsync(input, ihfRulesQuestionsService, cancellationToken);
         var createdRefTests = await BuildRefTestsAsync(input, titleId, specifiedQuestionIds, requiresApproval,
-            creatorName, creatorEmail, ihfRulesQuestionsService, result, cancellationToken);
+            creatorName, creatorEmail, ihfRulesQuestionsService, result, logger, correlationId, cancellationToken);
 
         if (createdRefTests.Count == 0)
             return result;
@@ -62,9 +67,10 @@ public static partial class RefTestCreationMutations
         // domain-generated, not database-generated.
         if (requiresApproval)
             await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
-                jobEnqueueService, result, cancellationToken);
+                jobEnqueueService, result, logger, correlationId, cancellationToken);
         else if (input.SendAutomatedInvitations)
-            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, result, cancellationToken);
+            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, result, logger, correlationId,
+                cancellationToken);
 
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
@@ -153,6 +159,8 @@ public static partial class RefTestCreationMutations
         string creatorEmail,
         IIhfRulesQuestionsService ihfRulesQuestionsService,
         CreateRefTestsResult result,
+        ILogger logger,
+        string correlationId,
         CancellationToken cancellationToken)
     {
         var created = new List<RefTest>();
@@ -182,7 +190,12 @@ public static partial class RefTestCreationMutations
             catch (Exception ex)
             {
                 result.Failed++;
-                result.Errors.Add(new CreateRefTestsError { User = user, ErrorMessage = ex.Message });
+                result.Errors.Add(new CreateRefTestsError
+                {
+                    User = user,
+                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
+                });
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId, null);
             }
         }
 
@@ -232,6 +245,8 @@ public static partial class RefTestCreationMutations
         string? titleValue,
         IJobEnqueueService jobEnqueueService,
         CreateRefTestsResult result,
+        ILogger logger,
+        string correlationId,
         CancellationToken cancellationToken)
     {
         var payload = new ApprovalNotificationEmailPayload(
@@ -246,13 +261,12 @@ public static partial class RefTestCreationMutations
         }
         catch (Exception ex)
         {
-            // Staging no longer touches the database, so this only catches payload serialization.
-            // A failure to commit surfaces from SaveChanges and fails the whole mutation by design.
             result.Errors.Add(new CreateRefTestsError
             {
                 User = new User(creatorName, string.Empty, creatorEmail),
-                ErrorMessage = $"Approval notification could not be prepared: {ex.Message}"
+                ErrorMessage = $"Approval notification could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
             });
+            MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId, null);
         }
     }
 
@@ -269,6 +283,8 @@ public static partial class RefTestCreationMutations
         List<RefTest> refTests,
         IJobEnqueueService jobEnqueueService,
         CreateRefTestsResult result,
+        ILogger logger,
+        string correlationId,
         CancellationToken cancellationToken)
     {
         foreach (var refTest in refTests)
@@ -290,8 +306,9 @@ public static partial class RefTestCreationMutations
                 result.Errors.Add(new CreateRefTestsError
                 {
                     User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = $"Invitation email could not be prepared: {ex.Message}"
+                    ErrorMessage = $"Invitation email could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
                 });
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId, refTest.Id);
             }
         }
     }
