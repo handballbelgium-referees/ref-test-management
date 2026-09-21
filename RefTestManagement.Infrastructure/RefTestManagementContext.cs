@@ -7,7 +7,8 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure;
 
-public class RefTestManagementContext(DbContextOptions<RefTestManagementContext> options) : DbContext(options)
+public class RefTestManagementContext(DbContextOptions<RefTestManagementContext> options)
+    : DbContext(options), IJobPersistenceContext
 {
     public DbSet<RefTest> RefTests { get; set; } = null!;
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
@@ -36,5 +37,10 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
 
         base.OnModelCreating(modelBuilder);
     }
-}
 
+    public Task<int> SaveChangesWithRetryAsync(CancellationToken cancellationToken = default)
+    {
+        var strategy = Database.CreateExecutionStrategy();
+        return strategy.ExecuteAsync(cancellationToken, SaveChangesAsync);
+    }
+}

@@ -32,40 +32,40 @@ public interface IJobEnqueueService
 {
     Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
     Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
     Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
     Task EnqueueRefTestExpirationAsync(RefTestExpirationPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
     Task EnqueueApprovalNotificationAsync(ApprovalNotificationEmailPayload payload,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
     Task EnqueueApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
     Task CancelPendingJobsForRefTestAsync(Guid refTestId,
-        bool saveChanges = true, RefTestManagementContext? unitOfWorkContext = null,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
     Task CancelPendingResultEmailsAsync(Guid refTestId,
-        bool saveChanges = true, RefTestManagementContext? unitOfWorkContext = null,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 }
 
@@ -78,12 +78,12 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         WriteIndented = false
     };
 
-    private RefTestManagementContext ResolveContext(RefTestManagementContext? unitOfWorkContext) =>
+    private IJobPersistenceContext ResolveContext(IJobPersistenceContext? unitOfWorkContext) =>
         unitOfWorkContext ?? context;
 
     public async Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
@@ -99,7 +99,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
 
     public async Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
@@ -115,7 +115,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
 
     public async Task EnqueueReportEmailAsync(ReportEmailPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
@@ -131,7 +131,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
 
     public async Task EnqueueRefTestExpirationAsync(RefTestExpirationPayload payload, DateTime? executeAfter = null,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
@@ -148,7 +148,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
     public async Task EnqueueApprovalNotificationAsync(
         ApprovalNotificationEmailPayload payload,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
@@ -165,7 +165,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
     public async Task EnqueueApprovalDecisionEmailAsync(
         ApprovalDecisionEmailPayload payload,
         bool saveChanges = true,
-        RefTestManagementContext? unitOfWorkContext = null,
+        IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
@@ -180,7 +180,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
     }
 
     public async Task CancelPendingJobsForRefTestAsync(Guid refTestId,
-        bool saveChanges = true, RefTestManagementContext? unitOfWorkContext = null,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
@@ -245,7 +245,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
     }
 
     public async Task CancelPendingResultEmailsAsync(Guid refTestId,
-        bool saveChanges = true, RefTestManagementContext? unitOfWorkContext = null,
+        bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);

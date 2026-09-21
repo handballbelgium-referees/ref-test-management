@@ -12,7 +12,6 @@ public static class RefTestManagementContextExtensions
         this RefTestManagementContext context,
         CancellationToken cancellationToken = default)
     {
-        var strategy = context.Database.CreateExecutionStrategy();
-        return strategy.ExecuteAsync(cancellationToken, context.SaveChangesAsync);
+        return ((IJobPersistenceContext)context).SaveChangesWithRetryAsync(cancellationToken);
     }
 }
