@@ -900,7 +900,7 @@ fine-grained PAT restricted to this repository and the specific permissions need
 ### Outcome
 Both workflows now mint a GitHub App installation token per job and use it for `actions/checkout`.
 Because the App itself has to be created and installed in the organisation — which cannot be done
-from the repository — the change is gated on a `RELEASE_APP_CLIENT_ID` repository variable and falls back
+from the repository — the change is gated on a `RELEASE_APP_CLIENT_ID` repository secret and falls back
 to `GH_PAT` until that variable is set. Setting the variable and the private key secret is
 therefore the whole switch-over; no workflow edit is needed, and releases keep working in the
 meantime. The one-time setup, including the branch-protection bypass and the order in which to

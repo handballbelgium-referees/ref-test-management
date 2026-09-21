@@ -12,6 +12,8 @@ jobs:
     name: 🚀 Promote main to release
     runs-on: ubuntu-latest
     environment: promote
+    env:
+      RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
     # Pushes are made with a short-lived token, not GITHUB_TOKEN, so this job needs no write
     # scope of its own.
     permissions:
@@ -34,10 +36,10 @@ jobs:
       # below fall back to GH_PAT so releases keep working.
       - name: 🔑 Mint release token
         id: release-token
-        if: vars.RELEASE_APP_CLIENT_ID != ''
+        if: env.RELEASE_APP_CLIENT_ID != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: 📥 Checkout code
@@ -62,6 +64,8 @@ jobs:
     name: 🚀 Create Stable Release
     runs-on: ubuntu-latest
     needs: promote
+    env:
+      RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
     outputs:
       new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
       new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
@@ -73,10 +77,10 @@ jobs:
     steps:
       - name: 🔑 Mint release token
         id: release-token
-        if: vars.RELEASE_APP_CLIENT_ID != ''
+        if: env.RELEASE_APP_CLIENT_ID != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: 📥 Checkout code
@@ -195,6 +199,8 @@ jobs:
     name: 🔄 Sync release to main
     runs-on: ubuntu-latest
     needs: [release, build]
+    env:
+      RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
     if: needs.release.outputs.new-release-published == 'true'
     permissions:
       contents: write
@@ -202,10 +208,10 @@ jobs:
     steps:
       - name: 🔑 Mint release token
         id: release-token
-        if: vars.RELEASE_APP_CLIENT_ID != ''
+        if: env.RELEASE_APP_CLIENT_ID != ''
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
-          client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 
       - name: 📥 Checkout code
