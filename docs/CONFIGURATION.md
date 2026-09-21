@@ -364,7 +364,7 @@ limited to the permissions the app was granted. One-time setup:
 4. Add the app to the branch protection bypass list for `main` and `release`, the same way
    `GH_PAT`'s owner was.
 5. In the repository settings add:
-   - a **variable** `RELEASE_APP_CLIENT_ID` holding the app's numeric Client ID;
+   - a **secret** `RELEASE_APP_CLIENT_ID` holding the app's numeric Client ID;
    - a **secret** `RELEASE_APP_PRIVATE_KEY` holding the full contents of the `.pem`.
 6. Run a beta release to confirm it pushes, then delete the `GH_PAT` secret and revoke the token.
 
