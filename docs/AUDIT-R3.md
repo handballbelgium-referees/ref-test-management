@@ -581,7 +581,7 @@ I would recommend correcting the tracker rather than leaving it overstated — i
 
 ## Outstanding handover item
 
-Unrelated to the findings above, and unchanged since R2: the release workflows still require a maintainer to create the GitHub App and populate `RELEASE_APP_ID` and `RELEASE_APP_PRIVATE_KEY`. **`GH_PAT` must not be revoked until that is done.** This is a handover task, not a defect.
+Unrelated to the findings above, and unchanged since R2: the release workflows still require a maintainer to create the GitHub App and populate `RELEASE_APP_CLIENT_ID` and `RELEASE_APP_PRIVATE_KEY`. **`GH_PAT` must not be revoked until that is done.** This is a handover task, not a defect.
 
 ---
 
