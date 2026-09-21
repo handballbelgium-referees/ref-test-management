@@ -68,8 +68,18 @@ public class PrivacyRetentionQueriesTests
         DateTime value)
     {
         await using var context = database.CreateContext();
+
+        var sql = column switch
+        {
+            "CompletedAt" => "UPDATE RefTests SET CompletedAt = @p0 WHERE Id = @p1",
+            "ExpiredAt" => "UPDATE RefTests SET ExpiredAt = @p0 WHERE Id = @p1",
+            "CreatedAt" => "UPDATE RefTests SET CreatedAt = @p0 WHERE Id = @p1",
+            "StartedAt" => "UPDATE RefTests SET StartedAt = @p0 WHERE Id = @p1",
+            _ => throw new ArgumentOutOfRangeException(nameof(column), column, "Unsupported RefTest date column.")
+        };
+
         await context.Database.ExecuteSqlRawAsync(
-            $"UPDATE RefTests SET {column} = {{0}} WHERE Id = {{1}}",
+            sql,
             [value, id],
             TestContext.Current.CancellationToken);
     }

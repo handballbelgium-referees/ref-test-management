@@ -30,8 +30,11 @@ public static partial class RefTestEmailMutations
         SendInvitationsInput input,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
+
         var refTests = await context.RefTests
             .Where(s => input.Ids.Contains(s.Id))
             .ToListAsync(cancellationToken);
@@ -75,6 +78,7 @@ public static partial class RefTestEmailMutations
             }
             catch (Exception e)
             {
+                logger.LogError(e, "Failed to enqueue invitation email for RefTest {RefTestId}.", id);
                 result.Failed++;
 
                 // Email failed, or RefTest was not found, or RefTest is not pending
@@ -83,7 +87,7 @@ public static partial class RefTestEmailMutations
                 {
                     RefTestId = id,
                     User = refTest is null ? null : new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = e.Message
+                    ErrorMessage = "Failed to send invitation email."
                 });
             }
         }
@@ -106,8 +110,11 @@ public static partial class RefTestEmailMutations
         SendResultsInput input,
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
+
         var refTests = await context.RefTests
             .Where(s => input.Ids.Contains(s.Id))
             .ToListAsync(cancellationToken);
@@ -155,6 +162,7 @@ public static partial class RefTestEmailMutations
             }
             catch (Exception e)
             {
+                logger.LogError(e, "Failed to enqueue result email for RefTest {RefTestId}.", id);
                 result.Failed++;
 
                 // Email failed, or RefTest was not found, or RefTest is not pending
@@ -163,7 +171,7 @@ public static partial class RefTestEmailMutations
                 {
                     RefTestId = id,
                     User = refTest is null ? null : new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = e.Message
+                    ErrorMessage = "Failed to send result email."
                 });
             }
         }
@@ -188,8 +196,10 @@ public static partial class RefTestEmailMutations
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] ReportConfiguration reportConfig,
         [Service] ScoreConfiguration scoreConfig,
+        [Service] ILoggerFactory loggerFactory,
         CancellationToken cancellationToken)
     {
+        var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
         var refTests = await context.RefTests
             .Include(s => s.Title)
             .Where(s => input.Ids.Contains(s.Id))
@@ -254,10 +264,12 @@ public static partial class RefTestEmailMutations
         }
         catch (Exception ex)
         {
+            logger.LogError(ex, "Failed to enqueue report job for {RefTestCount} RefTests.", refTests.Count);
+
             return new SendReportResult
             {
                 Success = false,
-                Message = $"Failed to enqueue report job: {ex.Message}",
+                Message = "Failed to enqueue report job. Please try again later.",
                 RefTestCount = refTests.Count
             };
         }

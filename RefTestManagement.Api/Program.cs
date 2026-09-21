@@ -248,6 +248,15 @@ services.AddGraphQLServer()
 
 var app = builder.Build();
 
+if (graphQlLimitsConfig.EnableRateLimiting &&
+    forwardedHeadersConfig.KnownProxies.Length == 0 &&
+    forwardedHeadersConfig.KnownNetworks.Length == 0)
+{
+    var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
+    logger.LogWarning(
+        "GraphQL rate limiting is enabled, but ForwardedHeadersConfiguration.KnownProxies and KnownNetworks are empty. Requests behind a proxy may share the same limiter bucket unless the deployment config is updated.");
+}
+
 var forwardedHeadersOptions = new ForwardedHeadersOptions
 {
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,

@@ -44,13 +44,10 @@ public static class SecurityStartup
         options.Scope.Add("openid");
         options.Scope.Add("profile");
         options.Scope.Add("email");
-        options.Scope.Add("offline_access");
 
         options.CallbackPath = new PathString("/callback");
 
         options.ClaimsIssuer = "Auth0";
-
-        options.SaveTokens = true;
 
         options.Events = new OpenIdConnectEvents
         {
