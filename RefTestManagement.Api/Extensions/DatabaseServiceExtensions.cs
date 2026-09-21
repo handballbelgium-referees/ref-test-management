@@ -2,8 +2,6 @@ using Handball.Belgium.RefTestManagement.Migrations.MySQL;
 using Handball.Belgium.RefTestManagement.Migrations.PostgreSQL;
 using Handball.Belgium.RefTestManagement.Migrations.SqlServer;
 using Handball.Belgium.RefTestManagement.Migrations.SQLite;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace Handball.Belgium.RefTestManagement.Api.Extensions;
 

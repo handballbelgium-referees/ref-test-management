@@ -9,8 +9,6 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 

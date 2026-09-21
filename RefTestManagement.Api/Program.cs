@@ -20,7 +20,6 @@ using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using System.Threading.RateLimiting;
 using System.Net;
-using Microsoft.AspNetCore.RateLimiting;
 
 // Configure QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
@@ -209,6 +208,7 @@ services.AddGraphQLServer()
     .AddQueryConventions()
     .AddMutationConventions()
     .AddInMemorySubscriptions()
+    .AddApplicationService<IHttpContextAccessor>()
     .AddApplicationService<ILogger<UnhandledExceptionLoggingErrorFilter>>()
     .AddApplicationService<ILogger<ConcurrencyErrorFilter>>()
     // Order matters: the concurrency filter handles and unwraps its exception, so the logging

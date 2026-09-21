@@ -1,4 +1,3 @@
-using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Security;
 

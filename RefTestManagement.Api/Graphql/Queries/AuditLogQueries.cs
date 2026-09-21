@@ -1,9 +1,7 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
-using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 
