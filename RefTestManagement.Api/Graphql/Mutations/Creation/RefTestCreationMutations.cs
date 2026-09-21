@@ -255,7 +255,7 @@ public static partial class RefTestCreationMutations
         try
         {
             await jobEnqueueService.EnqueueApprovalNotificationAsync(payload, cancellationToken,
-                saveChanges: false);
+                saveChanges: false, unitOfWorkContext: context);
         }
         catch (Exception ex)
         {
@@ -295,7 +295,8 @@ public static partial class RefTestCreationMutations
                         refTest.Token, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes),
                     executeAfter: refTest.ScheduledAt,
                     cancellationToken: cancellationToken,
-                    saveChanges: false);
+                    saveChanges: false,
+                    unitOfWorkContext: context);
 
                 result.CreatedRefTests.Add(refTest.ToDto());
             }

@@ -101,7 +101,8 @@ public static partial class RefTestApprovalMutations
                         refTest.MaxTimeInMinutes),
                     executeAfter: refTest.ScheduledAt,
                     cancellationToken: cancellationToken,
-                    saveChanges: false);
+                    saveChanges: false,
+                    unitOfWorkContext: context);
             }
             catch (Exception ex)
             {
@@ -131,7 +132,8 @@ public static partial class RefTestApprovalMutations
                     TitleValue: null,
                     items),
                 cancellationToken,
-                saveChanges: false);
+                saveChanges: false,
+                unitOfWorkContext: context);
         }
 
         await context.SaveChangesWithRetryAsync(cancellationToken);
@@ -234,7 +236,8 @@ public static partial class RefTestApprovalMutations
                     TitleValue: null,
                     items),
                 cancellationToken,
-                saveChanges: false);
+                saveChanges: false,
+                unitOfWorkContext: context);
         }
 
         await context.SaveChangesWithRetryAsync(cancellationToken);

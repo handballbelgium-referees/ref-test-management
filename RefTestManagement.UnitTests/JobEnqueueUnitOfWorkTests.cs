@@ -94,6 +94,26 @@ public sealed class JobEnqueueUnitOfWorkTests
     }
 
     [Fact]
+    public async Task CallerCanStageAJobOnItsOwnUnitOfWorkContext()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        using var db = SqliteTestDatabase.Create();
+        await using var mutationContext = db.CreateContext();
+        await using var serviceContext = db.CreateContext();
+
+        await Service(serviceContext).EnqueueInvitationEmailAsync(
+            Payload(Guid.NewGuid()),
+            cancellationToken: ct,
+            saveChanges: false,
+            unitOfWorkContext: mutationContext);
+
+        await mutationContext.SaveChangesAsync(ct);
+
+        await using var observer = db.CreateContext();
+        Assert.Single(await observer.Jobs.ToListAsync(ct));
+    }
+
+    [Fact]
     public async Task AFailedCommitLeavesNeitherTheEntityNorItsJob()
     {
         var ct = TestContext.Current.CancellationToken;
