@@ -11,9 +11,12 @@ this file breaks the R7 wave into reviewable implementation packages.
 
 ## R7 remediation wave (2026-09-22)
 
+All work packages in this wave are now implemented in code and tracked as complete.
+
 ### WP-65 — Add release-pipeline test gates before deploy
 
 **Findings:** R7-01 (🟠 High)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P1  
 **Dependencies:** None
@@ -37,6 +40,7 @@ this file breaks the R7 wave into reviewable implementation packages.
 ### WP-66 — Build beta artifacts from the immutable release tag
 
 **Findings:** R7-02 (🟠 High)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P1  
 **Dependencies:** WP-65
@@ -59,6 +63,7 @@ this file breaks the R7 wave into reviewable implementation packages.
 ### WP-67 — Reduce token exposure by defaulting checkout credentials to off
 
 **Findings:** R7-03 (🟡 Medium)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P2  
 **Dependencies:** None
@@ -83,6 +88,7 @@ this file breaks the R7 wave into reviewable implementation packages.
 ### WP-68 — Emit CSP/HSTS from server and align security-header documentation
 
 **Findings:** R7-04 (🟡 Medium)  
+**Status:** ✅ Implemented  
 **Size:** M  
 **Priority:** P2  
 **Dependencies:** None
@@ -107,6 +113,7 @@ this file breaks the R7 wave into reviewable implementation packages.
 ### WP-69 — Fix Auth0 management token caching lifetime design
 
 **Findings:** R7-05 (🟡 Medium)  
+**Status:** ✅ Implemented  
 **Size:** M  
 **Priority:** P2  
 **Dependencies:** None
@@ -130,6 +137,7 @@ this file breaks the R7 wave into reviewable implementation packages.
 ### WP-70 — Remove startup-path blocking from permission sync (or document it clearly)
 
 **Findings:** R7-06 (🟡 Medium)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P3  
 **Dependencies:** None
@@ -154,6 +162,7 @@ this file breaks the R7 wave into reviewable implementation packages.
 ### WP-71 — Enforce safe forwarded-header/rate-limiter defaults
 
 **Findings:** R7-07 (⚪ Low)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P3  
 **Dependencies:** None
@@ -177,6 +186,7 @@ this file breaks the R7 wave into reviewable implementation packages.
 ### WP-72 — Restore README parity (OnPush/lint/docs links)
 
 **Findings:** R7-08 (⚪ Low)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P3  
 **Dependencies:** None

@@ -14,42 +14,41 @@ namespace Handball.Belgium.RefTestManagement.Auth0.Services;
 internal sealed partial class Auth0ManagementService(
     HttpClient httpClient,
     IOptions<Auth0ManagementConfiguration> options,
+    Auth0ManagementTokenCache tokenCache,
     ILogger<Auth0ManagementService> logger)
     : IAuth0ManagementService
 {
     private readonly Auth0ManagementConfiguration _config = options.Value;
 
-    // --- Token cache --------------------------------------------------------
-
-    private string? _accessToken;
-    private DateTimeOffset _tokenExpiry = DateTimeOffset.MinValue;
+    // --- Token acquisition --------------------------------------------------
 
     private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
-        if (_accessToken is not null && DateTimeOffset.UtcNow < _tokenExpiry)
-            return _accessToken;
+        return await tokenCache.GetAccessTokenAsync(async ct =>
+        {
+            var response = await httpClient.PostAsync(
+                $"https://{_config.Domain}/oauth/token",
+                JsonContent.Create(new
+                {
+                    client_id = _config.ManagementClientId,
+                    client_secret = _config.ManagementClientSecret,
+                    audience = $"https://{_config.Domain}/api/v2/",
+                    grant_type = "client_credentials"
+                }),
+                ct);
 
-        var response = await httpClient.PostAsync(
-            $"https://{_config.Domain}/oauth/token",
-            JsonContent.Create(new
-            {
-                client_id = _config.ManagementClientId,
-                client_secret = _config.ManagementClientSecret,
-                audience = $"https://{_config.Domain}/api/v2/",
-                grant_type = "client_credentials"
-            }),
-            cancellationToken);
+            response.EnsureSuccessStatusCode();
 
-        response.EnsureSuccessStatusCode();
+            var token = await response.Content.ReadFromJsonAsync<TokenResponse>(
+                cancellationToken: ct)
+                ?? throw new InvalidOperationException("Auth0 returned an empty token response");
 
-        var token = await response.Content.ReadFromJsonAsync<TokenResponse>(
-            cancellationToken: cancellationToken)
-            ?? throw new InvalidOperationException("Auth0 returned an empty token response");
-
-        _accessToken = token.AccessToken;
-        // Refresh 60 seconds before actual expiry to avoid edge-case races
-        _tokenExpiry = DateTimeOffset.UtcNow.AddSeconds(token.ExpiresIn - 60);
-        return _accessToken;
+            // Refresh 60 seconds before actual expiry to avoid edge-case races
+            var cacheLifetimeSeconds = Math.Max(1, token.ExpiresIn - 60);
+            return new Auth0ManagementTokenCache.CachedToken(
+                token.AccessToken,
+                DateTimeOffset.UtcNow.AddSeconds(cacheLifetimeSeconds));
+        }, cancellationToken);
     }
 
     // --- IAuth0ManagementService --------------------------------------------
