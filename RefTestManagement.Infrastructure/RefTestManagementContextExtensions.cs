@@ -1,5 +1,3 @@
-using Microsoft.EntityFrameworkCore;
-
 namespace Handball.Belgium.RefTestManagement.Infrastructure;
 
 public static class RefTestManagementContextExtensions

@@ -196,7 +196,7 @@ public static partial class RefTestCreationMutations
                     User = user,
                     ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
                 });
-                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId, null);
+                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId);
             }
         }
 
@@ -271,7 +271,7 @@ public static partial class RefTestCreationMutations
                 User = new User(creatorName, string.Empty, creatorEmail),
                 ErrorMessage = $"Approval notification could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
             });
-            MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId, null);
+            MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId);
         }
     }
 
