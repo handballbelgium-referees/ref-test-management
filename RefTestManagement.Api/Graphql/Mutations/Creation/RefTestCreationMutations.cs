@@ -25,6 +25,7 @@ public static partial class RefTestCreationMutations
     /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
     /// <param name="subscriptionService">Service for managing subscriptions to RefTest creation events.</param>
     /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
+    /// <param name="loggerFactory">Factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns>The result of the RefTest creation operation.</returns>
     [Authorize(Policy = Permissions.RefTests.Create)]
@@ -146,6 +147,8 @@ public static partial class RefTestCreationMutations
     /// <param name="creatorEmail">The email of the RefTest creator.</param>
     /// <param name="ihfRulesQuestionsService">Service for managing IHF rules questions.</param>
     /// <param name="result">The result object for tracking creation status.</param>
+    /// <param name="logger">The logger for logging information and errors.</param>
+    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns>A list of created RefTests.</returns>
     private static async Task<List<RefTest>> BuildRefTestsAsync(
@@ -234,7 +237,10 @@ public static partial class RefTestCreationMutations
     /// <param name="creatorEmail">The email address of the RefTest creator.</param>
     /// <param name="titleValue">The value of the RefTest title.</param>
     /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
     /// <param name="result">The result object for tracking operation status.</param>
+    /// <param name="logger">The logger for logging information and errors.</param>
+    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueApprovalNotificationAsync(
         List<RefTest> refTests,
@@ -276,7 +282,10 @@ public static partial class RefTestCreationMutations
     /// </summary>
     /// <param name="refTests">The list of created RefTests.</param>
     /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
     /// <param name="result">The result object for tracking operation status.</param>
+    /// <param name="logger">The logger for logging information and errors.</param>
+    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueInvitationEmailsAsync(
         List<RefTest> refTests,
