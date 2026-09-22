@@ -253,6 +253,7 @@ var app = builder.Build();
 
 var hasUnsafeForwardedHeadersRateLimitConfig =
     graphQlLimitsConfig.EnableRateLimiting &&
+    forwardedHeadersConfig.TrustedClientIpHeaders.Length == 0 &&
     forwardedHeadersConfig.KnownProxies.Length == 0 &&
     forwardedHeadersConfig.KnownNetworks.Length == 0;
 
@@ -261,14 +262,14 @@ if (hasUnsafeForwardedHeadersRateLimitConfig &&
     !forwardedHeadersConfig.AllowUnsafeRateLimitingWithoutTrustedForwarders)
 {
     throw new InvalidOperationException(
-        "GraphQL rate limiting requires ForwardedHeadersConfiguration.KnownProxies or KnownNetworks in non-development environments. Configure trusted forwarders or disable rate limiting.");
+        "GraphQL rate limiting requires at least one trusted client IP source in non-development environments. Configure ForwardedHeadersConfiguration.TrustedClientIpHeaders, KnownProxies, or KnownNetworks, or disable rate limiting.");
 }
 
 if (hasUnsafeForwardedHeadersRateLimitConfig)
 {
     var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
     logger.LogWarning(
-        "GraphQL rate limiting is enabled without trusted forwarded-header sources. This is only safe for direct/local access and should not be used behind a reverse proxy.");
+        "GraphQL rate limiting is enabled without trusted client IP sources. This is only safe for direct/local access and should not be used behind a reverse proxy.");
 }
 
 var forwardedHeadersOptions = new ForwardedHeadersOptions

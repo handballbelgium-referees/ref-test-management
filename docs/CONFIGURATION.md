@@ -260,8 +260,8 @@ headers from any other source are ignored.
 Configure the actual ingress addresses per environment. Leaving both allow-lists empty is the safe
 default for direct/local access; it does not trust arbitrary `X-Forwarded-For` headers. When
 GraphQL rate limiting is enabled, non-development environments fail fast unless at least one trusted
-proxy/network is configured or `AllowUnsafeRateLimitingWithoutTrustedForwarders` is explicitly set
-to `true`.
+client IP source is configured (`TrustedClientIpHeaders`, `KnownProxies`, or `KnownNetworks`) or
+`AllowUnsafeRateLimitingWithoutTrustedForwarders` is explicitly set to `true`.
 
 Leave `TrustedClientIpHeaders` empty unless your hosting platform provides a specific trusted header
 such as `X-Azure-ClientIP` and you want GraphQL rate limiting to key on that value instead of the
