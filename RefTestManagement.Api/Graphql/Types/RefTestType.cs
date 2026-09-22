@@ -20,7 +20,7 @@ public class RefTestType : ObjectType<RefTestDto>
         
         descriptor.ImplementsNode()
             .IdField(x => x.Id)
-            .ResolveNode((ctx, id) => ctx.DataLoader<RefTestByIdDataLoader>().LoadAsync(id, ctx.RequestAborted)!)
+            .ResolveNode((ctx, id) => ctx.DataLoader<RefTestByIdDataLoader>().LoadAsync(id, ctx.RequestAborted))
             .Description("The RefTest id");
 
         descriptor.Field(x => x.Title)

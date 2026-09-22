@@ -11,9 +11,6 @@ public record CreateRefTestsInput(
     List<string>? SpecificQuestionNumbers = null,
     bool SendAutomatedInvitations = false,
     bool SendAutomatedResults = false,
-    /// <summary>
-    /// Optional date/time from which the ref tests can be started.
-    /// When SendAutomatedInvitations is true, the invitation email is scheduled for this time.
-    /// </summary>
+    [GraphQLDescription("Optional date/time from which the ref tests can be started. When SendAutomatedInvitations is true, the invitation email is scheduled for this time.")]
     DateTime? ScheduledAt = null
 );
