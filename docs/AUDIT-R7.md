@@ -20,7 +20,7 @@ This round re-audited the repository from scratch at current `main`. The backend
 
 The most important residual risk is CI/CD integrity: release workflows can deploy without running tests, and the beta release build is pinned to `main` instead of the newly created release tag. Together, these weaken release traceability and confidence.
 
-**GDPR compliance status (source-verifiable): partially compliant in code.** The codebase shows substantial technical controls (consent versioning, anonymization/retention flow, redaction safeguards, privacy notice endpoint). However, controller-owned legal/operational evidence (DPAs, transfer safeguards, DSAR operations, backup purge process) remains out-of-repository and cannot be verified from source alone.
+**GDPR compliance status (source-verifiable): improved evidence, but still not fully verifiable end-to-end.** The codebase shows substantial technical controls (consent versioning, anonymization/retention flow, redaction safeguards, privacy notice endpoint). Since this report was drafted, controller-facing evidence templates were added and partially populated (`docs/GDPR-PROCESSOR-REGISTER.md`, `docs/GDPR-OPERATIONS-EVIDENCE.md`), including known hosting regions and processor context. Full verification still remains blocked by pending operational/legal evidence fields (final DPA proofs, transfer safeguards, DSAR operating records, and concrete backup/logging access/retention evidence).
 
 ### Verdict by area
 
@@ -194,8 +194,8 @@ README claims “OnPush change detection throughout” and “Build/lint/test va
 
 ## Source-verifiable vs non-repository evidence
 
-**Source-verifiable in this audit:** all finding evidence lines above, workflow behavior, code-level privacy/auth logic, and all command outputs in the validation table.
+**Source-verifiable in this audit:** all finding evidence lines above, workflow behavior, code-level privacy/auth logic, all command outputs in the validation table, and newly documented controller inputs in `docs/GDPR-PROCESSOR-REGISTER.md` / `docs/GDPR-OPERATIONS-EVIDENCE.md` (Azure regions, Auth0 tenant location tier context, Brevo tier context, and IHF no-personal-data statement).
 
-**Not verifiable from source alone:** legal basis determination, signed DPAs/transfer safeguards, production reverse-proxy topology/trust chain, backup-erasure execution evidence, DSAR operational SLA records, and environment branch-protection settings as configured in GitHub.
+**Not verifiable from source alone:** legal basis determination, signed/accepted DPA evidence links, formal transfer safeguard artifacts, production reverse-proxy topology/trust chain, backup-erasure execution evidence, DSAR operational SLA records/procedures, and environment branch-protection settings as configured in GitHub.
 
-**GDPR compliance status summary:** code-level safeguards are materially present, but full GDPR compliance cannot be fully attested from repository contents alone because controller/legal/operational artifacts are out-of-repo.
+**GDPR compliance status summary:** **still not complete for full compliance verification**. Technical safeguards are materially present and evidence maturity improved with the new GDPR register/evidence files, but several controller/legal/operational proof points remain open.
