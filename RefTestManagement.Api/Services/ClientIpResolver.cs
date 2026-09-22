@@ -9,14 +9,12 @@ public interface IClientIpResolver
     string Resolve(HttpContext context);
 }
 
-public sealed class ConfigurableHeaderClientIpResolver(IOptions<ForwardedHeadersConfiguration> config)
+public sealed class ConfigurableHeaderClientIpResolver(IOptionsMonitor<ForwardedHeadersConfiguration> config)
     : IClientIpResolver
 {
-    private readonly string[] _trustedHeaders = config.Value.TrustedClientIpHeaders;
-
     public string Resolve(HttpContext context)
     {
-        foreach (var header in _trustedHeaders)
+        foreach (var header in config.CurrentValue.TrustedClientIpHeaders)
         {
             var value = context.Request.Headers[header].FirstOrDefault();
             if (!string.IsNullOrEmpty(value))

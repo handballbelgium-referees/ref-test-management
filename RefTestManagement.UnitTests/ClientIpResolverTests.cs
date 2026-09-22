@@ -45,5 +45,13 @@ public class ClientIpResolverTests
 
     private static IClientIpResolver CreateResolver(string[] trustedHeaders) =>
         new ConfigurableHeaderClientIpResolver(
-            Options.Create(new ForwardedHeadersConfiguration { TrustedClientIpHeaders = trustedHeaders }));
+            new OptionsMonitorStub(new ForwardedHeadersConfiguration { TrustedClientIpHeaders = trustedHeaders }));
+
+    private sealed class OptionsMonitorStub(ForwardedHeadersConfiguration value)
+        : IOptionsMonitor<ForwardedHeadersConfiguration>
+    {
+        public ForwardedHeadersConfiguration CurrentValue => value;
+        public ForwardedHeadersConfiguration Get(string? name) => value;
+        public IDisposable? OnChange(Action<ForwardedHeadersConfiguration, string?> listener) => null;
+    }
 }
