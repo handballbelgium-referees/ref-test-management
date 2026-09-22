@@ -21,6 +21,8 @@ public static class Auth0ServiceExtensions
             options.ManagementClientSecret = auth0Section["ManagementClientSecret"] ?? string.Empty;
         });
 
+        services.AddSingleton<Auth0ManagementTokenCache>();
+
         services.AddHttpClient<IAuth0ManagementService, Auth0ManagementService>(client =>
             {
                 // Without this the client inherits HttpClient's 100-second default, which is long
