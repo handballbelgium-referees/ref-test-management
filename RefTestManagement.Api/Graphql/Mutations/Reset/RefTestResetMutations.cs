@@ -19,11 +19,13 @@ public static partial class RefTestResetMutations
     /// <summary>
     /// Reset one or more RefTests to allow retake. Soft reset preserves the audit trail, hard reset clears everything.
     /// </summary>
-    /// <param name="input"></param>
-    /// <param name="context"></param>
-    /// <param name="jobEnqueueService"></param>
-    /// <param name="subscriptionService"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="input">The input containing the IDs of the RefTests to reset and the reset type.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing and canceling job notifications.</param>
+    /// <param name="subscriptionService">Service for managing RefTest subscriptions.</param>
+    /// <param name="httpContextAccessor">The HTTP context accessor for accessing the current HTTP context.</param>
+    /// <param name="loggerFactory">The logger factory for creating loggers.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns></returns>
     [Authorize(Policy = Permissions.RefTests.Reset)]
     public static async Task<ResetRefTestsResult> ResetRefTestsAsync(
@@ -153,10 +155,13 @@ public static partial class RefTestResetMutations
     /// <summary>
     /// Revive one or more expired RefTests by resetting them to Pending status with a new token and fresh expiration timer
     /// </summary>
-    /// <param name="ids"></param>
-    /// <param name="context"></param>
-    /// <param name="jobEnqueueService"></param>
-    /// <param name="cancellationToken"></param>
+    /// <param name="ids">The IDs of the RefTests to revive.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing and canceling job notifications.</param>
+    /// <param name="subscriptionService">Service for managing RefTest subscriptions.</param>
+    /// <param name="httpContextAccessor">The HTTP context accessor for accessing the current HTTP context.</param>
+    /// <param name="loggerFactory">The logger factory for creating loggers.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns></returns>
     [Authorize(Policy = Permissions.RefTests.Revive)]
     public static async Task<ReviveRefTestsResult> ReviveRefTestsAsync(

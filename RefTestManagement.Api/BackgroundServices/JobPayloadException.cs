@@ -8,10 +8,6 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 /// </summary>
 public class JobPayloadException : Exception
 {
-    public JobPayloadException()
-    {
-    }
-
     public JobPayloadException(string message) : base(message)
     {
     }

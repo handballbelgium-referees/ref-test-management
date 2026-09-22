@@ -8,6 +8,7 @@ using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -106,6 +107,8 @@ services.AddSingleton(graphQlLimitsConfig);
 var forwardedHeadersConfig = configuration.GetSection("ForwardedHeadersConfiguration")
                                   .Get<ForwardedHeadersConfiguration>()
                               ?? new ForwardedHeadersConfiguration();
+services.Configure<ForwardedHeadersConfiguration>(configuration.GetSection("ForwardedHeadersConfiguration"));
+services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
 
 const string graphQlRateLimiterPolicy = "graphql";
 
@@ -119,7 +122,7 @@ if (graphQlLimitsConfig.EnableRateLimiting)
         // to key on, and a single shared bucket would let one abusive client lock out everyone.
         options.AddPolicy(graphQlRateLimiterPolicy, httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
-                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                httpContext.RequestServices.GetRequiredService<IClientIpResolver>().Resolve(httpContext),
                 _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = graphQlLimitsConfig.RateLimitPermitLimit,
@@ -248,13 +251,25 @@ services.AddGraphQLServer()
 
 var app = builder.Build();
 
-if (graphQlLimitsConfig.EnableRateLimiting &&
+var hasUnsafeForwardedHeadersRateLimitConfig =
+    graphQlLimitsConfig.EnableRateLimiting &&
+    forwardedHeadersConfig.TrustedClientIpHeaders.Length == 0 &&
     forwardedHeadersConfig.KnownProxies.Length == 0 &&
-    forwardedHeadersConfig.KnownNetworks.Length == 0)
+    forwardedHeadersConfig.KnownNetworks.Length == 0;
+
+if (hasUnsafeForwardedHeadersRateLimitConfig &&
+    !app.Environment.IsDevelopment() &&
+    !forwardedHeadersConfig.AllowUnsafeRateLimitingWithoutTrustedForwarders)
+{
+    throw new InvalidOperationException(
+        "GraphQL rate limiting requires at least one trusted client IP source in non-development environments. Configure ForwardedHeadersConfiguration.TrustedClientIpHeaders, KnownProxies, or KnownNetworks, or disable rate limiting.");
+}
+
+if (hasUnsafeForwardedHeadersRateLimitConfig)
 {
     var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
     logger.LogWarning(
-        "GraphQL rate limiting is enabled, but ForwardedHeadersConfiguration.KnownProxies and KnownNetworks are empty. Requests behind a proxy may share the same limiter bucket unless the deployment config is updated.");
+        "GraphQL rate limiting is enabled without trusted client IP sources. This is only safe for direct/local access and should not be used behind a reverse proxy.");
 }
 
 var forwardedHeadersOptions = new ForwardedHeadersOptions
@@ -300,14 +315,31 @@ app.UseForwardedHeaders(forwardedHeadersOptions);
 //
 // no-referrer matters more here than it usually would: a participant's invitation token travels
 // in the URL path, so any weaker policy puts a working credential into another site's logs.
+const string contentSecurityPolicy =
+    "default-src 'self' https:; " +
+    "script-src 'self' 'unsafe-inline'; " +
+    "worker-src 'self' blob:; " +
+    "style-src 'self' 'unsafe-inline'; " +
+    "connect-src 'self' wss:; " +
+    "img-src 'self' data: https:; " +
+    "font-src 'self' data:; " +
+    "base-uri 'self'; " +
+    "form-action 'self';";
+
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
+    headers["Content-Security-Policy"] = contentSecurityPolicy;
     headers["Referrer-Policy"] = "no-referrer";
     headers["X-Content-Type-Options"] = "nosniff";
     headers["X-Frame-Options"] = "DENY";
     await next();
 });
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHsts();
+}
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();

@@ -6,7 +6,7 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql;
 /// <summary>
 /// Logs the real exception behind a GraphQL error before HotChocolate masks it in the client response.
 /// </summary>
-public sealed partial class UnhandledExceptionLoggingErrorFilter(
+public sealed class UnhandledExceptionLoggingErrorFilter(
     ILogger<UnhandledExceptionLoggingErrorFilter> logger,
     IHttpContextAccessor httpContextAccessor) : IErrorFilter
 {

@@ -104,3 +104,13 @@ Before releasing a privacy-related change, confirm:
 ## Limitations
 
 The application does not itself determine the controller's legal basis, execute processor agreements, assess international transfers, or submit supervisory-authority notifications. Those are controller responsibilities and should be reviewed with qualified privacy counsel.
+
+## Operational compliance records
+
+For controller-owned operational evidence that sits outside application source code, see:
+
+- [GDPR Processor & DPA Register](./GDPR-PROCESSOR-REGISTER.md)
+- [GDPR Operations Evidence (Backups, Logging, DSAR)](./GDPR-OPERATIONS-EVIDENCE.md)
+- [GDPR Record of Processing Activities (RoPA)](./GDPR-ROPA.md)
+- [GDPR Legal Basis Record](./GDPR-LEGAL-BASIS-RECORD.md)
+- [GDPR DSAR Operating Procedure](./GDPR-DSAR-PROCEDURE.md)

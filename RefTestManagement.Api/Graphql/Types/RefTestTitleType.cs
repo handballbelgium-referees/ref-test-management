@@ -14,7 +14,7 @@ public class RefTestTitleType : ObjectType<RefTestTitleDto>
         descriptor.BindFieldsExplicitly();
         descriptor.ImplementsNode()
             .IdField(x => x.Id)
-            .ResolveNode((ctx, id) => ctx.DataLoader<RefTestTitleByIdDataLoader>().LoadAsync(id, ctx.RequestAborted)!)
+            .ResolveNode((ctx, id) => ctx.DataLoader<RefTestTitleByIdDataLoader>().LoadAsync(id, ctx.RequestAborted))
             .Description("The RefTest title id");
 
         descriptor.Field(x => x.Value).Description("RefTest title value");

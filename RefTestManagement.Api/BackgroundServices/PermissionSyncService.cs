@@ -15,15 +15,17 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 public sealed class PermissionSyncService(
     IAuth0ManagementService auth0ManagementService,
     ILogger<PermissionSyncService> logger)
-    : IHostedService
+    : BackgroundService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
+        await Task.Yield();
+
         try
         {
             await auth0ManagementService.SyncPermissionsAsync(
                 [..Permissions.All, Permissions.Superadmin],
-                cancellationToken);
+                stoppingToken);
             logger.LogInformation("Auth0 permission sync completed successfully");
         }
         catch (Exception ex)
@@ -33,6 +35,4 @@ public sealed class PermissionSyncService(
                 "Auth0 permission sync failed — application will continue without syncing permissions");
         }
     }
-
-    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

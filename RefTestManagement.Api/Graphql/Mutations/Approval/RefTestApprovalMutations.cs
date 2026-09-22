@@ -27,6 +27,7 @@ public static partial class RefTestApprovalMutations
     /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
     /// <param name="subscriptionService">Service for managing subscriptions to RefTest approval events.</param>
     /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
+    /// <param name="loggerFactory">Factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     [Authorize(Policy = Permissions.RefTests.Approve)]
     public static async Task<ApproveRefTestsResult> ApproveRefTestsAsync(
@@ -163,6 +164,7 @@ public static partial class RefTestApprovalMutations
     /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
     /// <param name="subscriptionService">Service for managing subscriptions to RefTest rejection events.</param>
     /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
+    /// <param name="loggerFactory">Factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     [Authorize(Policy = Permissions.RefTests.Approve)]
     public static async Task<RejectRefTestsResult> RejectRefTestsAsync(

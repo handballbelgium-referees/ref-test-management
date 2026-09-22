@@ -119,7 +119,7 @@ Valid values:
 | `ManagementClientId`     | Client ID for a Machine-to-Machine app authorized for the Management API | Yes      |
 | `ManagementClientSecret` | Secret for the Management API M2M app                                    | Yes      |
 
-The Management API credentials are used by `RefTestManagement.Auth0` to sync permissions on startup (`PermissionSyncService`) and to resolve approvers by permission for approval-workflow notifications.
+The Management API credentials are used by `RefTestManagement.Auth0` to sync permissions shortly after startup (`PermissionSyncService`, running in the background) and to resolve approvers by permission for approval-workflow notifications.
 
 ### EmailConfiguration
 
@@ -252,11 +252,20 @@ headers from any other source are ignored.
 | Key             | Description                                                  | Default |
 | --------------- | ------------------------------------------------------------ | ------- |
 | `ForwardLimit`  | Number of trusted proxy hops to process                      | `1`     |
+| `TrustedClientIpHeaders` | Ordered list of trusted request headers to use as the client IP before falling back to the remote connection address | `[]` |
 | `KnownProxies`  | Exact proxy IP addresses allowed to supply forwarded headers | `[]`    |
 | `KnownNetworks` | CIDR networks allowed to supply forwarded headers            | `[]`    |
+| `AllowUnsafeRateLimitingWithoutTrustedForwarders` | Permit GraphQL rate limiting with empty trusted forwarder lists outside development (not recommended) | `false` |
 
 Configure the actual ingress addresses per environment. Leaving both allow-lists empty is the safe
-default for direct/local access; it does not trust arbitrary `X-Forwarded-For` headers.
+default for direct/local access; it does not trust arbitrary `X-Forwarded-For` headers. When
+GraphQL rate limiting is enabled, non-development environments fail fast unless at least one trusted
+client IP source is configured (`TrustedClientIpHeaders`, `KnownProxies`, or `KnownNetworks`) or
+`AllowUnsafeRateLimitingWithoutTrustedForwarders` is explicitly set to `true`.
+
+Leave `TrustedClientIpHeaders` empty unless your hosting platform provides a specific trusted header
+such as `X-Azure-ClientIP` and you want GraphQL rate limiting to key on that value instead of the
+resolved remote address.
 
 ## Managing Migrations
 

@@ -18,7 +18,7 @@ public static partial class RefTestSubscriptions
     /// </summary>
     /// <param name="id">The ID of the RefTest to monitor</param>
     /// <param name="message">The time extension event message</param>
-    /// <returns></returns>
+    /// <returns>The RefTestTimeExtended event</returns>
     [Subscribe]
     [Topic(RefTestSubscriptionService.TimeExtendedTopic)]
     public static RefTestTimeExtended RefTestTimeExtended(
@@ -33,7 +33,7 @@ public static partial class RefTestSubscriptions
     /// </summary>
     /// <param name="id">The ID of the RefTest to monitor</param>
     /// <param name="message">The event message</param>
-    /// <returns></returns>
+    /// <returns>The RefTest event</returns>
     [Subscribe]
     [Authorize(Policy = Permissions.RefTests.ViewDetail)]
     [Topic("{id}")]
@@ -67,7 +67,7 @@ public static partial class RefTestSubscriptions
     /// RefTestInvitationSent, or RefTestResultSent.
     /// </summary>
     /// <param name="message">The event message containing the RefTest ID and event data</param>
-    /// <returns></returns>
+    /// <returns>The RefTest event</returns>
     [Subscribe]
     [Authorize(Policy = Permissions.RefTests.ViewList)]
     [Topic(RefTestSubscriptionService.GlobalTopic)]

@@ -57,6 +57,7 @@ public class AuthorizationSchemaTests
         Assert.DoesNotContain("firstName", AnonymousFields(refTest));
         Assert.DoesNotContain("lastName", AnonymousFields(refTest));
         Assert.DoesNotContain("token", AnonymousFields(refTest));
+        Assert.DoesNotContain(executor.Schema.QueryType.Fields, field => field.Name is "node" or "nodes");
     }
 
     private static ServiceProvider BuildSchemaProvider()
@@ -68,6 +69,8 @@ public class AuthorizationSchemaTests
             .AddType<RefTestType>()
             .AddType<QuestionType>()
             .AddType<AnswerType>()
+            .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
+            .AddGlobalObjectIdentification(false)
             .AddAuthorization();
 
         services.AddAuthorization();

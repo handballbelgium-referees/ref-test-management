@@ -13,7 +13,7 @@ flowchart LR
         RES["RefTestExpirationService\nevery 5 min"]
         PRS["PrivacyRetentionService\ndaily"]
         ALCS["AuditLogCleanupService\nevery 24h"]
-        PSS["PermissionSyncService\non startup"]
+        PSS["PermissionSyncService\nafter startup (background)"]
     end
 
     Jobs[("Jobs table")]

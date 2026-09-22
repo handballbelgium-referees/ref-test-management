@@ -84,7 +84,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### User Experience
 
-- Signal-based state management, standalone components, `OnPush` change detection throughout
+- Signal-based state management, standalone components, and multilingual participant/staff UX
 - Responsive card/table layouts, non-intrusive banner notifications, installable PWA
 
 ## Tech Stack
@@ -274,13 +274,13 @@ Five hosted services run in-process — no extra infrastructure or cost on Azure
 | `RefTestExpirationService` | every 5 min   | Auto-expires pending tests, auto-completes overdue in-progress tests     |
 | `PrivacyRetentionService`  | daily         | Anonymizes completed/expired RefTests past the retention period          |
 | `AuditLogCleanupService`   | every 24h     | Redacts personal data from audit events past the retention period       |
-| `PermissionSyncService`    | on startup    | Syncs all permissions to the Auth0 API resource (additive, non-blocking) |
+| `PermissionSyncService`    | after startup | Syncs all permissions to the Auth0 API resource (additive, non-blocking) |
 
 For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md).
 
 ## Development Workflow
 
-- **Branches**: `main` (default, protected, every push triggers an automatic pre-release) → `release` (protected, promoted manually for stable releases); use `feat/*`, `fix/*`, `chore/*` for work in progress
+- **Branches**: `main` (default, protected, every push triggers an automatic pre-release) → `release` (protected, promoted manually for stable releases with a fast-forward-only sync back to `main`); use `feat/*`, `fix/*`, `chore/*` for work in progress
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/), enforced by commitlint via a Husky `commit-msg` hook
 - **Pre-commit**: Husky re-syncs the README's dependency-version tables, then builds the Angular app
 
@@ -288,9 +288,9 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 
 | Workflow             | Trigger                | Purpose                                                             |
 | -------------------- | ---------------------- | ------------------------------------------------------------------- |
-| `pr.yml`             | PR → `main`            | Build/lint/test validation                                          |
+| `pr.yml`             | PR → `main`            | Build/test validation + i18n parity                                 |
 | `beta-release.yml`   | push → `main`          | semantic-release pre-release (`vX.Y.Z-alpha.N`) + deploy to testing |
-| `stable-release.yml` | manual, from `release` | Promote, tag a stable release, deploy to production                 |
+| `stable-release.yml` | manual, from `release` | Promote, tag a stable release, fast-forward `main`, deploy to production |
 
 ## Versioning
 
@@ -307,6 +307,12 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md) | Background job-queue flow in detail                        |
 | [docs/AUDIT.md](docs/AUDIT.md)                               | Full-stack audit findings and GDPR compliance assessment   |
 | [docs/AUDIT-R2.md](docs/AUDIT-R2.md)                         | Re-audit after Phase 1 remediation; current finding status |
+| [docs/AUDIT-R3.md](docs/AUDIT-R3.md)                         | Third audit wave findings and evidence                     |
+| [docs/AUDIT-R4.md](docs/AUDIT-R4.md)                         | Fourth audit wave findings and evidence                    |
+| [docs/AUDIT-R5.md](docs/AUDIT-R5.md)                         | Fifth audit wave findings and evidence                     |
+| [docs/AUDIT-R6.md](docs/AUDIT-R6.md)                         | Sixth audit wave findings and evidence                     |
+| [docs/AUDIT-R7.md](docs/AUDIT-R7.md)                         | Seventh audit wave findings and evidence                   |
+| [docs/AUDIT-R7-REMEDIATION.md](docs/AUDIT-R7-REMEDIATION.md) | R7 remediation work packages                               |
 | [docs/AUDIT-REMEDIATION.md](docs/AUDIT-REMEDIATION.md)       | Phased remediation plan for the audit findings             |
 
 ## License
