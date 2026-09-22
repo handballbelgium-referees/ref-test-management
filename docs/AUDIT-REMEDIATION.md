@@ -11,6 +11,9 @@
 >
 > **Updated for [`AUDIT-R6.md`](./AUDIT-R6.md)** — R5 packages WP-57 → WP-60 are closed in code;
 > the R6 follow-up packages WP-61 → WP-64 are now implemented in the current source.
+>
+> **R7 tracking note:** Round 7 findings are tracked separately in
+> [`AUDIT-R7-REMEDIATION.md`](./AUDIT-R7-REMEDIATION.md).
 
 Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md), later rounds
 [`AUDIT-R3.md`](AUDIT-R3.md), [`AUDIT-R4.md`](./AUDIT-R4.md), [`AUDIT-R5.md`](./AUDIT-R5.md), and
