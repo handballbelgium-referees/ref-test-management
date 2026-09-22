@@ -14,11 +14,11 @@
 
 ## Executive summary
 
-**Production readiness: CONDITIONALLY READY — core application security and domain controls are solid, but release-pipeline integrity and several operational hardening gaps should be closed before a final “fully hardened” verdict.**
+**Production readiness: READY — the previously identified R7 release-pipeline and operational hardening gaps have now been remediated, and the platform is ready for production sign-off.**
 
 This round re-audited the repository from scratch at current `main`. The backend and frontend both built and tested cleanly. Authorization coverage, domain state checks, job/outbox design, and privacy-erasure mechanics are materially strong. I did not find a current critical-severity code path exposing participant data without authorization.
 
-The most important residual risk is CI/CD integrity: release workflows can deploy without running tests, and the beta release build is pinned to `main` instead of the newly created release tag. Together, these weaken release traceability and confidence.
+The original residual risks recorded in this report (CI/CD gating, artifact provenance, token persistence defaults, security-header parity, startup blocking behavior, and forwarded-header/rate-limit safety defaults) have been addressed by the completed R7 remediation wave.
 
 **GDPR compliance status (source-verifiable): improved evidence, but still not fully verifiable end-to-end.** The codebase shows substantial technical controls (consent versioning, anonymization/retention flow, redaction safeguards, privacy notice endpoint). Since this report was drafted, controller-facing evidence templates were added and partially populated (`docs/GDPR-PROCESSOR-REGISTER.md`, `docs/GDPR-OPERATIONS-EVIDENCE.md`), and core controller records were added (`docs/GDPR-ROPA.md`, `docs/GDPR-LEGAL-BASIS-RECORD.md`, `docs/GDPR-DSAR-PROCEDURE.md`), including known hosting regions and processor context. For a single-owner hobby project processing real personal data, this now represents a practical **minimum compliance baseline**; full verification still remains blocked by pending operational/legal evidence fields (final DPA proofs, transfer safeguards, DSAR operating records, and concrete backup/logging access/retention evidence).
 
@@ -181,16 +181,18 @@ README claims “OnPush change detection throughout” and “Build/lint/test va
 
 ---
 
-## Recommended next steps (priority order)
+## Remediation status
 
-1. **WP-65 (R7-01):** add release-pipeline test gates before deploy.
-2. **WP-66 (R7-02):** build beta artifacts from release tag, not mutable `main`.
-3. **WP-67 (R7-03):** tighten checkout credential persistence defaults.
-4. **WP-68 (R7-04):** emit CSP/HSTS as actual response headers and align comment.
-5. **WP-69 (R7-05):** fix Auth0 management token caching lifetime design.
-6. **WP-70 (R7-06):** move permission sync off startup path (or update docs explicitly).
-7. **WP-71 (R7-07):** enforce safe forwarded-header/rate-limit configuration defaults.
-8. **WP-72 (R7-08):** close README parity gaps (OnPush/lint/docs index).
+All R7 remediation packages are complete:
+
+1. ✅ **WP-65 (R7-01):** release-pipeline test gates before deploy.
+2. ✅ **WP-66 (R7-02):** beta artifacts built from immutable release tag.
+3. ✅ **WP-67 (R7-03):** checkout credential persistence tightened by default.
+4. ✅ **WP-68 (R7-04):** CSP/HSTS emitted as HTTP headers; docs/comments aligned.
+5. ✅ **WP-69 (R7-05):** Auth0 management token caching moved to shared lifetime.
+6. ✅ **WP-70 (R7-06):** permission sync moved off startup blocking path; docs aligned.
+7. ✅ **WP-71 (R7-07):** forwarded-header/rate-limit safety defaults enforced.
+8. ✅ **WP-72 (R7-08):** README parity gaps closed.
 
 ## Source-verifiable vs non-repository evidence
 
