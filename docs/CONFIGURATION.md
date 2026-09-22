@@ -252,6 +252,7 @@ headers from any other source are ignored.
 | Key             | Description                                                  | Default |
 | --------------- | ------------------------------------------------------------ | ------- |
 | `ForwardLimit`  | Number of trusted proxy hops to process                      | `1`     |
+| `TrustedClientIpHeaders` | Ordered list of trusted request headers to use as the client IP before falling back to the remote connection address | `[]` |
 | `KnownProxies`  | Exact proxy IP addresses allowed to supply forwarded headers | `[]`    |
 | `KnownNetworks` | CIDR networks allowed to supply forwarded headers            | `[]`    |
 | `AllowUnsafeRateLimitingWithoutTrustedForwarders` | Permit GraphQL rate limiting with empty trusted forwarder lists outside development (not recommended) | `false` |
@@ -261,6 +262,10 @@ default for direct/local access; it does not trust arbitrary `X-Forwarded-For` h
 GraphQL rate limiting is enabled, non-development environments fail fast unless at least one trusted
 proxy/network is configured or `AllowUnsafeRateLimitingWithoutTrustedForwarders` is explicitly set
 to `true`.
+
+Leave `TrustedClientIpHeaders` empty unless your hosting platform provides a specific trusted header
+such as `X-Azure-ClientIP` and you want GraphQL rate limiting to key on that value instead of the
+resolved remote address.
 
 ## Managing Migrations
 
