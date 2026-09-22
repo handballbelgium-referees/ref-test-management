@@ -676,10 +676,10 @@
   "privacy": {
     "eyebrow": "Confidentialité",
     "title": "Avis de confidentialité",
-    "updated": "En vigueur à partir du 3 août 2026 (version 1.0).",
+    "updated": "En vigueur à partir du {{effectiveDate}} (version {{noticeVersion}}).",
     "controller": {
       "title": "Responsable du traitement et contact",
-      "body": "Kristof Gilis, Pipelstraat 26, 3800 Saint-Trond, Belgique, est responsable de ce traitement. Pour les demandes relatives à la confidentialité, contactez kristof.gilis@outlook.be."
+      "body": "{{controllerName}}, {{controllerAddress}}, est responsable de ce traitement. Pour les demandes relatives à la confidentialité, contactez {{contactEmail}}."
     },
     "data": {
       "title": "Données personnelles que nous traitons",
@@ -699,11 +699,11 @@
     },
     "retention": {
       "title": "Conservation",
-      "body": "Nous effaçons les données d'évaluation et d'invitation trois ans après la fin ou l'expiration de l'évaluation. Si vous retirez votre consentement après vérification de votre identité, nous effaçons sans délai vos données d'évaluation et les communications en attente. Un e-mail déjà remis dans votre boîte de réception ne peut pas être rappelé."
+      "body": "Nous effaçons les données d'évaluation et d'invitation {{retentionYears}} ans après la fin ou l'expiration de l'évaluation. Si vous retirez votre consentement après vérification de votre identité, nous effaçons sans délai vos données d'évaluation et les communications en attente. Un e-mail déjà remis dans votre boîte de réception ne peut pas être rappelé."
     },
     "rights": {
       "title": "Vos droits",
-      "body": "Vous pouvez demander l'accès, la rectification, l'effacement, la limitation, vous opposer au traitement ou demander une copie portable de vos données, et retirer votre consentement. Contactez kristof.gilis@outlook.be. Vous pouvez aussi introduire une réclamation auprès de votre autorité de contrôle."
+      "body": "Vous pouvez demander l'accès, la rectification, l'effacement, la limitation, vous opposer au traitement ou demander une copie portable de vos données, et retirer votre consentement. Contactez {{contactEmail}}. Vous pouvez aussi introduire une réclamation auprès de votre autorité de contrôle."
     }
   },
   "audit-logs": {

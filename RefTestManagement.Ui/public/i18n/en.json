@@ -675,10 +675,10 @@
   "privacy": {
     "eyebrow": "Privacy",
     "title": "Privacy notice",
-    "updated": "Effective from 3 August 2026 (version 1.0).",
+    "updated": "Effective from {{effectiveDate}} (version {{noticeVersion}}).",
     "controller": {
       "title": "Data controller and contact",
-      "body": "Kristof Gilis, Pipelstraat 26, 3800 Sint-Truiden, Belgium, is responsible for this processing. For privacy requests, contact kristof.gilis@outlook.be."
+      "body": "{{controllerName}}, {{controllerAddress}}, is responsible for this processing. For privacy requests, contact {{contactEmail}}."
     },
     "data": {
       "title": "Personal data we process",
@@ -698,11 +698,11 @@
     },
     "retention": {
       "title": "Retention",
-      "body": "We erase assessment and invitation data three years after the assessment is completed or expires. If you withdraw consent after identity verification, we erase your assessment data and queued communications without delay. Email already delivered to your inbox cannot be recalled."
+      "body": "We erase assessment and invitation data {{retentionYears}} years after the assessment is completed or expires. If you withdraw consent after identity verification, we erase your assessment data and queued communications without delay. Email already delivered to your inbox cannot be recalled."
     },
     "rights": {
       "title": "Your rights",
-      "body": "You may request access, correction, erasure, restriction, objection, or a portable copy of your data, and may withdraw consent. Contact kristof.gilis@outlook.be. You may also lodge a complaint with your supervisory authority."
+      "body": "You may request access, correction, erasure, restriction, objection, or a portable copy of your data, and may withdraw consent. Contact {{contactEmail}}. You may also lodge a complaint with your supervisory authority."
     }
   },
   "audit-logs": {

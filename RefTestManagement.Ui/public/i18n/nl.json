@@ -675,10 +675,10 @@
   "privacy": {
     "eyebrow": "Privacy",
     "title": "Privacyverklaring",
-    "updated": "Van kracht vanaf 3 augustus 2026 (versie 1.0).",
+    "updated": "Van kracht vanaf {{effectiveDate}} (versie {{noticeVersion}}).",
     "controller": {
       "title": "Verwerkingsverantwoordelijke en contact",
-      "body": "Kristof Gilis, Pipelstraat 26, 3800 Sint-Truiden, België, is verantwoordelijk voor deze verwerking. Voor privacyverzoeken kunt u contact opnemen via kristof.gilis@outlook.be."
+      "body": "{{controllerName}}, {{controllerAddress}}, is verantwoordelijk voor deze verwerking. Voor privacyverzoeken kunt u contact opnemen via {{contactEmail}}."
     },
     "data": {
       "title": "Persoonsgegevens die we verwerken",
@@ -698,11 +698,11 @@
     },
     "retention": {
       "title": "Bewaartermijn",
-      "body": "We wissen toets- en uitnodigingsgegevens drie jaar nadat de toets is voltooid of verlopen. Trekt u uw toestemming in na identiteitscontrole, dan wissen we uw toetsgegevens en geplande communicatie zonder onnodige vertraging. Een al afgeleverde e-mail kan niet uit uw inbox worden teruggehaald."
+      "body": "We wissen toets- en uitnodigingsgegevens {{retentionYears}} jaar nadat de toets is voltooid of verlopen. Trekt u uw toestemming in na identiteitscontrole, dan wissen we uw toetsgegevens en geplande communicatie zonder onnodige vertraging. Een al afgeleverde e-mail kan niet uit uw inbox worden teruggehaald."
     },
     "rights": {
       "title": "Uw rechten",
-      "body": "U kunt verzoeken om inzage, correctie, wissing, beperking, bezwaar of een overdraagbare kopie van uw gegevens. U kunt ook uw toestemming intrekken. Neem contact op via kristof.gilis@outlook.be. U kunt tevens een klacht indienen bij uw toezichthoudende autoriteit."
+      "body": "U kunt verzoeken om inzage, correctie, wissing, beperking, bezwaar of een overdraagbare kopie van uw gegevens. U kunt ook uw toestemming intrekken. Neem contact op via {{contactEmail}}. U kunt tevens een klacht indienen bij uw toezichthoudende autoriteit."
     }
   },
   "audit-logs": {

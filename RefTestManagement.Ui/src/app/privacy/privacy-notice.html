@@ -1,14 +1,37 @@
 <div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto">
     <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ 'privacy.title' | translate }}</h1>
-    <p class="text-primary-100 text-lg">{{ 'privacy.updated' | translate }}</p>
+    @if (privacyNotice(); as notice) {
+      <p class="text-primary-100 text-lg">
+        {{
+          'privacy.updated'
+            | translate
+              : {
+                  effectiveDate: effectiveDate(),
+                  noticeVersion: notice.noticeVersion,
+                }
+        }}
+      </p>
+    }
   </div>
 </div>
 
 <article class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8 space-y-9 text-neutral-700 leading-7">
   <section>
     <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.controller.title' | translate }}</h2>
-    <p>{{ 'privacy.controller.body' | translate }}</p>
+    @if (privacyNotice(); as notice) {
+      <p>
+        {{
+          'privacy.controller.body'
+            | translate
+              : {
+                  controllerName: notice.controllerName,
+                  controllerAddress: notice.controllerAddress,
+                  contactEmail: notice.contactEmail,
+                }
+        }}
+      </p>
+    }
   </section>
 
   <section>
@@ -33,11 +56,15 @@
 
   <section>
     <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.retention.title' | translate }}</h2>
-    <p>{{ 'privacy.retention.body' | translate }}</p>
+    @if (privacyNotice(); as notice) {
+      <p>{{ 'privacy.retention.body' | translate: { retentionYears: notice.retentionYears } }}</p>
+    }
   </section>
 
   <section>
     <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.rights.title' | translate }}</h2>
-    <p>{{ 'privacy.rights.body' | translate }}</p>
+    @if (privacyNotice(); as notice) {
+      <p>{{ 'privacy.rights.body' | translate: { contactEmail: notice.contactEmail } }}</p>
+    }
   </section>
 </article>

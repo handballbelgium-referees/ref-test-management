@@ -31,9 +31,11 @@ public static partial class RefTestEmailMutations
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] ILoggerFactory loggerFactory,
+        [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
 
         var refTests = await context.RefTests
             .Where(s => input.Ids.Contains(s.Id))
@@ -78,7 +80,12 @@ public static partial class RefTestEmailMutations
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Failed to enqueue invitation email for RefTest {RefTestId}.", id);
+                MutationErrorHandling.LogMutationFailure(
+                    logger,
+                    e,
+                    nameof(SendInvitationsAsync),
+                    correlationId,
+                    id);
                 result.Failed++;
 
                 // Email failed, or RefTest was not found, or RefTest is not pending
@@ -111,9 +118,11 @@ public static partial class RefTestEmailMutations
         RefTestManagementContext context,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] ILoggerFactory loggerFactory,
+        [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
 
         var refTests = await context.RefTests
             .Where(s => input.Ids.Contains(s.Id))
@@ -162,7 +171,12 @@ public static partial class RefTestEmailMutations
             }
             catch (Exception e)
             {
-                logger.LogError(e, "Failed to enqueue result email for RefTest {RefTestId}.", id);
+                MutationErrorHandling.LogMutationFailure(
+                    logger,
+                    e,
+                    nameof(SendResultsAsync),
+                    correlationId,
+                    id);
                 result.Failed++;
 
                 // Email failed, or RefTest was not found, or RefTest is not pending
@@ -197,9 +211,11 @@ public static partial class RefTestEmailMutations
         [Service] ReportConfiguration reportConfig,
         [Service] ScoreConfiguration scoreConfig,
         [Service] ILoggerFactory loggerFactory,
+        [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
     {
         var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
+        var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
         var refTests = await context.RefTests
             .Include(s => s.Title)
             .Where(s => input.Ids.Contains(s.Id))
@@ -264,7 +280,11 @@ public static partial class RefTestEmailMutations
         }
         catch (Exception ex)
         {
-            logger.LogError(ex, "Failed to enqueue report job for {RefTestCount} RefTests.", refTests.Count);
+            MutationErrorHandling.LogMutationFailure(
+                logger,
+                ex,
+                nameof(SendReportAsync),
+                correlationId);
 
             return new SendReportResult
             {
