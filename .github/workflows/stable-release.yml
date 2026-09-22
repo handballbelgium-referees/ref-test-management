@@ -253,8 +253,11 @@ jobs:
         run: |
           git fetch origin
           git checkout main
-          git rebase origin/release || { git rebase --abort; exit 1; }
-          git push --force-with-lease origin main
+          git merge --ff-only origin/release || {
+            echo "::error::main can only be promoted from release with a fast-forward update."
+            exit 1
+          }
+          git push origin main
 
   deploy-production:
     name: 🚀 Deploy to Production ${{needs.release.outputs.new-release-version}}

@@ -280,7 +280,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 
 ## Development Workflow
 
-- **Branches**: `main` (default, protected, every push triggers an automatic pre-release) → `release` (protected, promoted manually for stable releases); use `feat/*`, `fix/*`, `chore/*` for work in progress
+- **Branches**: `main` (default, protected, every push triggers an automatic pre-release) → `release` (protected, promoted manually for stable releases with a fast-forward-only sync back to `main`); use `feat/*`, `fix/*`, `chore/*` for work in progress
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/), enforced by commitlint via a Husky `commit-msg` hook
 - **Pre-commit**: Husky re-syncs the README's dependency-version tables, then builds the Angular app
 
@@ -290,7 +290,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | -------------------- | ---------------------- | ------------------------------------------------------------------- |
 | `pr.yml`             | PR → `main`            | Build/lint/test validation                                          |
 | `beta-release.yml`   | push → `main`          | semantic-release pre-release (`vX.Y.Z-alpha.N`) + deploy to testing |
-| `stable-release.yml` | manual, from `release` | Promote, tag a stable release, deploy to production                 |
+| `stable-release.yml` | manual, from `release` | Promote, tag a stable release, fast-forward `main`, deploy to production |
 
 ## Versioning
 

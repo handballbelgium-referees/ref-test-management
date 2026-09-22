@@ -675,10 +675,10 @@
   "privacy": {
     "eyebrow": "Datenschutz",
     "title": "Datenschutzhinweis",
-    "updated": "Gültig ab 3. August 2026 (Version 1.0).",
+    "updated": "Gültig ab {{effectiveDate}} (Version {{noticeVersion}}).",
     "controller": {
       "title": "Verantwortlicher und Kontakt",
-      "body": "Kristof Gilis, Pipelstraat 26, 3800 Sint-Truiden, Belgien, ist für diese Verarbeitung verantwortlich. Für Datenschutzanfragen wenden Sie sich bitte an kristof.gilis@outlook.be."
+      "body": "{{controllerName}}, {{controllerAddress}}, ist für diese Verarbeitung verantwortlich. Für Datenschutzanfragen wenden Sie sich bitte an {{contactEmail}}."
     },
     "data": {
       "title": "Personenbezogene Daten, die wir verarbeiten",
@@ -698,11 +698,11 @@
     },
     "retention": {
       "title": "Speicherdauer",
-      "body": "Wir löschen Test- und Einladungsdaten drei Jahre nach Abschluss oder Ablauf des Tests. Wenn Sie Ihre Einwilligung nach einer Identitätsprüfung widerrufen, löschen wir Ihre Testdaten und ausstehende Mitteilungen unverzüglich. Eine bereits in Ihr Postfach zugestellte E-Mail kann nicht zurückgerufen werden."
+      "body": "Wir löschen Test- und Einladungsdaten {{retentionYears}} Jahre nach Abschluss oder Ablauf des Tests. Wenn Sie Ihre Einwilligung nach einer Identitätsprüfung widerrufen, löschen wir Ihre Testdaten und ausstehende Mitteilungen unverzüglich. Eine bereits in Ihr Postfach zugestellte E-Mail kann nicht zurückgerufen werden."
     },
     "rights": {
       "title": "Ihre Rechte",
-      "body": "Sie können Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch oder eine übertragbare Kopie Ihrer Daten verlangen und Ihre Einwilligung widerrufen. Kontaktieren Sie kristof.gilis@outlook.be. Sie können außerdem Beschwerde bei Ihrer Aufsichtsbehörde einreichen."
+      "body": "Sie können Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch oder eine übertragbare Kopie Ihrer Daten verlangen und Ihre Einwilligung widerrufen. Kontaktieren Sie {{contactEmail}}. Sie können außerdem Beschwerde bei Ihrer Aufsichtsbehörde einreichen."
     }
   },
   "audit-logs": {

@@ -1,6 +1,6 @@
 # Audit Remediation Plan
 
-> **Status at a glance —** Phases 1 → 10 have shipped in code. The third audit
+> **Status at a glance —** Phases 1 → 11 have shipped in code. The third audit
 > ([`AUDIT-R3.md`](AUDIT-R3.md)) identified gaps in three previously shipped work packages; the
 > replacement packages are complete. The R4 follow-up packages (WP-52 → WP-56) are reflected in
 > the current source, and the R5 wave (WP-57 → WP-60) is implemented. The R6 audit adds four new
@@ -10,7 +10,7 @@
 > remain release evidence, not open code findings.
 >
 > **Updated for [`AUDIT-R6.md`](./AUDIT-R6.md)** — R5 packages WP-57 → WP-60 are closed in code;
-> four new findings are tracked as WP-61 → WP-64 in a dedicated R6 remediation wave.
+> the R6 follow-up packages WP-61 → WP-64 are now implemented in the current source.
 
 Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md), later rounds
 [`AUDIT-R3.md`](AUDIT-R3.md), [`AUDIT-R4.md`](./AUDIT-R4.md), [`AUDIT-R5.md`](./AUDIT-R5.md), and
@@ -22,10 +22,10 @@ to do about it*, as discrete units of work.
 [`AUDIT-R4.md`](./AUDIT-R4.md), [`AUDIT-R5.md`](./AUDIT-R5.md), and [`AUDIT-R6.md`](./AUDIT-R6.md)
 **Coverage:** 60 historical findings, 5 R4 follow-up findings, 4 R5 findings, and 4 R6 findings,
 mapped to 51 historical work packages, 5 R4 follow-up packages, 4 R5 packages, and 4 R6 packages
-**Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8 and 9 complete (WP-01 → WP-51); the R4 packages
-WP-52 → WP-56 and R5 packages WP-57 → WP-60 are implemented in the current source; R6 findings are
-tracked below as WP-61 → WP-64.
-**69 prior findings closed (60 historical + 5 R4 + 4 R5) · 0 re-opened · 4 R6 findings open.**
+**Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8, 9, 10 and 11 are complete in code (WP-01 → WP-64);
+the remaining staging anonymous-GraphQL verification and controller-owned processor/DPA checks are
+release evidence, not open code findings.
+**73 findings closed (60 historical + 5 R4 + 4 R5 + 4 R6) · 0 re-opened · 0 open code findings.**
 
 ---
 
@@ -240,12 +240,14 @@ work. Coordinate with job schema/migration and report-generation review.
 
 ## R6 remediation wave (2026-09-22)
 
-The R6 review found no Critical or High-severity issue, but four medium/low findings remain and
-should be closed before final production-hardening sign-off.
+The R6 review found no Critical or High-severity issue. The four medium/low findings below are now
+implemented in code and should be carried as closed in the tracker; remaining staging verification
+and controller-owned checks are release evidence rather than open remediation work.
 
 ### WP-61 — Unify published privacy notice metadata with enforced consent version
 
 **Findings:** R6-01 (🟡 Medium)  
+**Status:** ✅ Implemented  
 **Size:** M  
 **Priority:** P1  
 **Dependencies:** Privacy notice GraphQL contract and locale/i18n content
@@ -280,6 +282,7 @@ should be closed before final production-hardening sign-off.
 ### WP-62 — Apply redacted exception logging to staff email mutations
 
 **Findings:** R6-02 (🟡 Medium)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P1  
 **Dependencies:** Existing redaction helper (`MutationErrorHandling` / `LogRedaction`)
@@ -308,6 +311,7 @@ should be closed before final production-hardening sign-off.
 ### WP-63 — Remove force-push promotion of `main` in stable release workflow
 
 **Findings:** R6-03 (🟡 Medium)  
+**Status:** ✅ Implemented  
 **Size:** M  
 **Priority:** P1  
 **Dependencies:** Branch-protection policy and release governance decisions
@@ -334,6 +338,7 @@ should be closed before final production-hardening sign-off.
 ### WP-64 — Add production-configuration guard for Relay object-identification drift
 
 **Findings:** R6-04 (⚪ Low)  
+**Status:** ✅ Implemented  
 **Size:** S  
 **Priority:** P2  
 **Dependencies:** Existing authorization/schema test harness
@@ -375,7 +380,7 @@ should be closed before final production-hardening sign-off.
 | **8** ✅ | Correctness & privacy parity | WP-44 → WP-47 | 2×M, 2×S | **Done** — deadline, erasure, privacy notice and dialog parity fixed |
 | **9** ✅ | Tests & hygiene | WP-48 → WP-51 | 1×M, 3×S | **Done** — authorization, retention, frontend-union and logging/CI coverage shipped |
 | **10** ✅ | R5 privacy, error handling & release hardening | WP-57 → WP-60 | 1×L, 2×S, 1×M | **Done in code** — deployment handover evidence remains |
-| **11** 🚧 | R6 transparency, logging and release-integrity hardening | WP-61 → WP-64 | 2×M, 2×S | **Open** — tracked from `AUDIT-R6.md` |
+| **11** ✅ | R6 transparency, logging and release-integrity hardening | WP-61 → WP-64 | 2×M, 2×S | **Done** — privacy notice, logging, release promotion and regression guard shipped |
 
 ---
 
@@ -2830,13 +2835,13 @@ maps to at least one work package.
 
 | # | Severity | Finding | Package | Status |
 |---|---|---|---|---|
-| R6-01 | 🟡 Medium | Public privacy notice metadata can drift from enforced consent version | WP-61 | 🚧 Open |
-| R6-02 | 🟡 Medium | Staff email mutations log raw exceptions without redaction | WP-62 | 🚧 Open |
-| R6-03 | 🟡 Medium | Stable release workflow force-pushes `main` | WP-63 | 🚧 Open |
-| R6-04 | ⚪ Low | Missing regression guard for global object-identification drift | WP-64 | 🚧 Open |
+| R6-01 | 🟡 Medium | Public privacy notice metadata can drift from enforced consent version | WP-61 | ✅ Closed |
+| R6-02 | 🟡 Medium | Staff email mutations log raw exceptions without redaction | WP-62 | ✅ Closed |
+| R6-03 | 🟡 Medium | Stable release workflow force-pushes `main` | WP-63 | ✅ Closed |
+| R6-04 | ⚪ Low | Missing regression guard for global object-identification drift | WP-64 | ✅ Closed |
 
-**73 findings across six audits · 64 total work packages (60 completed, 4 open) · none dropped.**
-**69 findings closed · 0 re-opened · 4 R6 findings open · deployment evidence remains for selected controls.**
+**73 findings across six audits · 64 total work packages (64 completed, 0 open) · none dropped.**
+**73 findings closed · 0 re-opened · 0 open code findings · deployment evidence remains for selected controls.**
 
 R3 identified gaps in three previously shipped packages — **WP-15**, **WP-20** and **WP-35** —
 which were resolved by **WP-41**, **WP-47** and **WP-46** respectively. The original package
@@ -2845,7 +2850,7 @@ sections are retained as historical evidence; the replacement packages are the c
 One closed item carries a manual follow-up outside the repository: **#12**, complete in code but
 only effective once a maintainer creates the GitHub App.
 
-**60 of 64 work packages are complete in code; WP-61 → WP-64 are open and tracked above.**
+**64 of 64 work packages are complete in code; no remediation packages remain open in the repository.**
 
 ---
 
@@ -2920,9 +2925,8 @@ graph LR
 
 ## Suggested next release
 
-**Phases 1 → 10 are shipped in code (WP-01 → WP-60). Phase 11 (WP-61 → WP-64) is open from
-`AUDIT-R6.md` and should be completed before final release hardening sign-off. Deployment
-verification and controller-owned processor/DPA actions remain separate release evidence.
+**Phases 1 → 11 are shipped in code (WP-01 → WP-64).** Deployment verification and
+controller-owned processor/DPA actions remain separate release evidence.
 
 The third audit rated the pre-remediation service NOT production-ready on one finding: **R3-01**,
 an unauthenticated read path to participant names, e-mail addresses, scores and submitted answers.
@@ -2934,9 +2938,9 @@ The remediation closes that path and adds a schema regression guard.
 confirm it returns an authorization/schema error rather than participant data. This is release
 evidence for the code fix, not an open work package.
 
-### Phase 11 release (current)
+### Phase 11 release (shipped)
 
-Ship **WP-61 → WP-64** together: privacy-notice source-of-truth, mutation log redaction,
+**WP-61 → WP-64** shipped together: privacy-notice source-of-truth, mutation log redaction,
 non-rewriting stable promotion, and GraphQL object-identification regression coverage.
 
 ### Phase 10 follow-through
