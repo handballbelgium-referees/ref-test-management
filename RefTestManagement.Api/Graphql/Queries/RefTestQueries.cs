@@ -35,12 +35,12 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get a RefTest by token
     /// </summary>
-    /// <param name="token"></param>
-    /// <param name="context"></param>
-    /// <param name="configuration"></param>
-    /// <param name="jobEnqueueService"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="token">The token of the RefTest to retrieve.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
+    /// <param name="configuration">The configuration for RefTest expiration.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing and canceling job notifications.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The RefTestDto if found and valid; otherwise, throws an exception.</returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
     /// <exception cref="RefTestExpiredException"></exception>
@@ -86,8 +86,8 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get all RefTest titles
     /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="context">The database context for accessing RefTest titles and related entities.</param>
+    /// <returns>A list of RefTestTitleDto objects.</returns>
     [Authorize(Policy = Permissions.RefTests.ViewTitles)]
     [UsePaging]
     [UseProjection]
@@ -101,8 +101,8 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get all RefTests
     /// </summary>
-    /// <param name="context"></param>
-    /// <returns></returns>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
+    /// <returns>A list of RefTestDto objects.</returns>
     [Authorize(Policy = Permissions.RefTests.ViewList)]
     [UsePaging]
     [UseProjection]
@@ -117,10 +117,10 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get a RefTest by id
     /// </summary>
-    /// <param name="id"></param>
-    /// <param name="dataLoader"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="id">The ID of the RefTest to retrieve.</param>
+    /// <param name="dataLoader">The data loader for fetching RefTest entities by ID.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The RefTestDto if found; otherwise, throws a RefTestNotFoundException.</returns>
     [Authorize(Policy = Permissions.RefTests.ViewDetail)]
     [Error<RefTestNotFoundException>]
     public static async Task<RefTestDto> GetRefTest([ID<RefTestDto>] Guid id, RefTestByIdDataLoader dataLoader,
@@ -131,10 +131,10 @@ public static partial class RefTestQueries
     /// <summary>
     /// Search questions by number
     /// </summary>
-    /// <param name="number"></param>
-    /// <param name="ihfRulesQuestionsService"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="number">The number of the question to search for.</param>
+    /// <param name="ihfRulesQuestionsService">The service for accessing IHF rules questions.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>A list of questions matching the specified number.</returns>
     [Authorize(Policy = Permissions.Questions.Search)]
     public static Task<List<Question>> SearchQuestionsByNumber(string? number,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService, CancellationToken cancellationToken)
@@ -143,8 +143,8 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get questions by number
     /// </summary>
-    /// <param name="numbers"></param>
-    /// <param name="ihfRulesQuestionsService"></param>
+    /// <param name="numbers">The list of question numbers to retrieve.</param>
+    /// <param name="ihfRulesQuestionsService">The service for accessing IHF rules questions.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     [Authorize(Policy = Permissions.Questions.View)]
@@ -155,8 +155,8 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get enabled languages from configuration
     /// </summary>
-    /// <param name="languageConfiguration"></param>
-    /// <returns></returns>
+    /// <param name="languageConfiguration">The language configuration containing enabled languages.</param>
+    /// <returns>An array of enabled languages.</returns>
     [CacheControl(MaxAge = 3600)]
     public static string[] GetEnabledLanguages([Service] LanguageConfiguration languageConfiguration)
         => languageConfiguration.EnabledLanguages;
@@ -164,8 +164,8 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get score configuration
     /// </summary>
-    /// <param name="scoreConfiguration"></param>
-    /// <returns></returns>
+    /// <param name="scoreConfiguration">The score configuration containing score settings.</param>
+    /// <returns>The score configuration.</returns>
     [CacheControl(MaxAge = 3600)]
     public static ScoreConfiguration GetScoreConfiguration([Service] ScoreConfiguration scoreConfiguration)
         => scoreConfiguration;
@@ -173,8 +173,8 @@ public static partial class RefTestQueries
     /// <summary>
     /// Get results mail scheduled delay minutes
     /// </summary>
-    /// <param name="emailConfiguration"></param>
-    /// <returns></returns>
+    /// <param name="emailConfiguration">The email configuration containing scheduled delay settings.</param>
+    /// <returns>The scheduled delay minutes for results email.</returns>
     [CacheControl(MaxAge = 3600)]
     public static int GetResultsEmailDelayMinutes([Service] EmailConfiguration emailConfiguration)
         => emailConfiguration.ScheduledDelayMinutes;

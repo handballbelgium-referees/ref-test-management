@@ -1,5 +1,4 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;

@@ -38,15 +38,11 @@ public sealed class AnyTaskPermissionHandler : AuthorizationHandler<AnyTaskPermi
             }
 
             var colonIndex = permission.IndexOf(':');
-            if (colonIndex > 0)
-            {
-                var ns = permission[..colonIndex];
-                if (userPermissions.Contains($"{ns}:*"))
-                {
-                    context.Succeed(requirement);
-                    return Task.CompletedTask;
-                }
-            }
+            if (colonIndex <= 0) continue;
+            var ns = permission[..colonIndex];
+            if (!userPermissions.Contains($"{ns}:*")) continue;
+            context.Succeed(requirement);
+            return Task.CompletedTask;
         }
 
         return Task.CompletedTask;
