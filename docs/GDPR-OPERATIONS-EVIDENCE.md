@@ -46,10 +46,10 @@ This file captures operational evidence that cannot be proven from application s
 
 ### DSAR evidence checklist
 
-- [ ] Identity verification procedure documented — pending.
-- [ ] One-month SLA tracking visible — pending.
+- [x] Identity verification procedure documented — see `docs/GDPR-DSAR-PROCEDURE.md`.
+- [x] One-month SLA tracking visible — defined in `docs/GDPR-DSAR-PROCEDURE.md`.
 - [ ] Processor escalation path documented (Azure/Auth0/Brevo/etc.) — pending.
-- [ ] Refusal/extension rationale template available — pending.
+- [x] Refusal/extension rationale template available — see `docs/GDPR-DSAR-PROCEDURE.md`.
 
 ## 4) Periodic compliance review
 
@@ -63,4 +63,4 @@ This file captures operational evidence that cannot be proven from application s
 2. Exact App Service log retention settings.
 3. RBAC identities/roles allowed to access restore operations and logs.
 4. Confirmation whether logs are exported to storage/SIEM and retention there.
-5. DSAR process owner, verification steps, and tracking method.
+5. DSAR process owner, verification steps, and tracking method. ✅ documented in `docs/GDPR-DSAR-PROCEDURE.md`; register tracking remains in this file.
