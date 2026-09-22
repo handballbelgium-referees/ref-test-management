@@ -8,6 +8,7 @@ using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -106,6 +107,8 @@ services.AddSingleton(graphQlLimitsConfig);
 var forwardedHeadersConfig = configuration.GetSection("ForwardedHeadersConfiguration")
                                   .Get<ForwardedHeadersConfiguration>()
                               ?? new ForwardedHeadersConfiguration();
+services.Configure<ForwardedHeadersConfiguration>(configuration.GetSection("ForwardedHeadersConfiguration"));
+services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
 
 const string graphQlRateLimiterPolicy = "graphql";
 
@@ -119,7 +122,7 @@ if (graphQlLimitsConfig.EnableRateLimiting)
         // to key on, and a single shared bucket would let one abusive client lock out everyone.
         options.AddPolicy(graphQlRateLimiterPolicy, httpContext =>
             RateLimitPartition.GetFixedWindowLimiter(
-                httpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown",
+                httpContext.RequestServices.GetRequiredService<IClientIpResolver>().Resolve(httpContext),
                 _ => new FixedWindowRateLimiterOptions
                 {
                     PermitLimit = graphQlLimitsConfig.RateLimitPermitLimit,
