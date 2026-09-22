@@ -1,28 +1,31 @@
 # Audit Remediation Plan
 
-> **Status at a glance —** Phases 1 → 9 have shipped. The third audit
+> **Status at a glance —** Phases 1 → 10 have shipped in code. The third audit
 > ([`AUDIT-R3.md`](AUDIT-R3.md)) identified gaps in three previously shipped work packages; the
 > replacement packages are complete. The R4 follow-up packages (WP-52 → WP-56) are reflected in
-> the current source, but the R5 audit found four remaining issues requiring a new remediation wave.
+> the current source, and the R5 wave (WP-57 → WP-60) is implemented. The R6 audit adds four new
+> follow-up packages (WP-61 → WP-64) for remaining transparency, logging, CI/CD integrity and
+> regression-safety gaps.
 > A staging anonymous-GraphQL verification and the controller's external processor/DPA checks
 > remain release evidence, not open code findings.
 >
-> **Updated for [`AUDIT-R5.md`](./AUDIT-R5.md)** — four current findings are tracked as WP-57 →
-> WP-60 in a dedicated R5 remediation wave.
+> **Updated for [`AUDIT-R6.md`](./AUDIT-R6.md)** — R5 packages WP-57 → WP-60 are closed in code;
+> four new findings are tracked as WP-61 → WP-64 in a dedicated R6 remediation wave.
 
-Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md), the third
-audit [docs/AUDIT-R3.md](AUDIT-R3.md), and the current deep review in
-[`AUDIT-R4.md`](./AUDIT-R4.md). Those documents say *what* is wrong and *why*; this one says
-*what to do about it*, as discrete units of work.
+Companion to [docs/AUDIT.md](AUDIT.md), its re-audit [docs/AUDIT-R2.md](AUDIT-R2.md), later rounds
+[`AUDIT-R3.md`](AUDIT-R3.md), [`AUDIT-R4.md`](./AUDIT-R4.md), [`AUDIT-R5.md`](./AUDIT-R5.md), and
+[`AUDIT-R6.md`](./AUDIT-R6.md). Those documents say *what* is wrong and *why*; this one says *what
+to do about it*, as discrete units of work.
 
 **Source audits:** commit `d7dfc1e` ([`AUDIT.md`](AUDIT.md)), commit `4424c02`
 ([`AUDIT-R2.md`](AUDIT-R2.md)), commit `2466551` ([`AUDIT-R3.md`](AUDIT-R3.md)),
-[`AUDIT-R4.md`](./AUDIT-R4.md), and [`AUDIT-R5.md`](./AUDIT-R5.md)
-**Coverage:** 60 historical findings, 5 R4 follow-up findings, and 4 R5 findings, mapped to
-51 historical work packages, 5 R4 follow-up packages, and 4 new R5 remediation packages
+[`AUDIT-R4.md`](./AUDIT-R4.md), [`AUDIT-R5.md`](./AUDIT-R5.md), and [`AUDIT-R6.md`](./AUDIT-R6.md)
+**Coverage:** 60 historical findings, 5 R4 follow-up findings, 4 R5 findings, and 4 R6 findings,
+mapped to 51 historical work packages, 5 R4 follow-up packages, 4 R5 packages, and 4 R6 packages
 **Status:** Phases 1, 1b, 2, 3, 4, 5, 6, 7, 8 and 9 complete (WP-01 → WP-51); the R4 packages
-WP-52 → WP-56 are implemented in the current source; R5 findings are tracked below as WP-57 → WP-60.
-**65 prior findings closed (60 historical + 5 R4) · 0 re-opened · 4 R5 findings open.**
+WP-52 → WP-56 and R5 packages WP-57 → WP-60 are implemented in the current source; R6 findings are
+tracked below as WP-61 → WP-64.
+**69 prior findings closed (60 historical + 5 R4 + 4 R5) · 0 re-opened · 4 R6 findings open.**
 
 ---
 
@@ -35,7 +38,7 @@ Each package has:
 
 | Field | Meaning |
 | --- | --- |
-| **Findings** | Back-reference to the numbered findings in `AUDIT.md` §3 (`#n`), `AUDIT-R2.md` §3.1 (`Nn`) or `AUDIT-R3.md` §3 (`R3-nn`) |
+| **Findings** | Back-reference to findings in `AUDIT.md` (`#n`), `AUDIT-R2.md` (`Nn`), and later rounds (`R3-nn`, `A-nn`, `R5-nn`, `R6-nn`) |
 | **Size** | Relative effort: **S** (an hour or two), **M** (half a day), **L** (multi-day) |
 | **Files** | The exact paths to change, with line references as of the audited commit |
 | **Change** | What to do |
@@ -235,6 +238,128 @@ work. Coordinate with job schema/migration and report-generation review.
 
 ---
 
+## R6 remediation wave (2026-09-22)
+
+The R6 review found no Critical or High-severity issue, but four medium/low findings remain and
+should be closed before final production-hardening sign-off.
+
+### WP-61 — Unify published privacy notice metadata with enforced consent version
+
+**Findings:** R6-01 (🟡 Medium)  
+**Size:** M  
+**Priority:** P1  
+**Dependencies:** Privacy notice GraphQL contract and locale/i18n content
+
+**Files**
+- `RefTestManagement.Api/Graphql/Queries/RefTestQueries.cs:26-33`
+- `RefTestManagement.Api/appsettings.json:39-45`
+- `RefTestManagement.Ui/src/app/privacy/privacy-notice.ts:1-12`
+- `RefTestManagement.Ui/src/app/privacy/privacy-notice.html:1-42`
+- `RefTestManagement.Ui/src/app/ref-test/welcome/ref-test-welcome.ts:116-129`
+- `RefTestManagement.Ui/public/i18n/en.json:678-706` (+ `nl/fr/de` equivalents)
+- privacy-notice frontend tests
+
+**Change**
+- Drive public notice metadata (controller identity/contact, notice version/effective date,
+  retention years) from the backend `privacyNotice` payload rather than static locale literals.
+- Keep translated explanatory copy in locale files, but interpolate dynamic backend metadata.
+- Add regression coverage that fails when published notice metadata diverges from the backend
+  contract used during consent acceptance.
+
+**Acceptance**
+- `/privacy` shows the same notice version/effective date/controller metadata as
+  `getPrivacyNotice`.
+- Participant consent acceptance still uses the fetched backend version and no longer relies on a
+  separate static metadata source.
+- Tests fail when backend notice metadata and published notice metadata diverge.
+
+**Watch out for**
+- Preserve multi-language support while removing duplicated metadata literals.
+- Do not regress accessibility/semantics of the privacy page while introducing dynamic content.
+
+### WP-62 — Apply redacted exception logging to staff email mutations
+
+**Findings:** R6-02 (🟡 Medium)  
+**Size:** S  
+**Priority:** P1  
+**Dependencies:** Existing redaction helper (`MutationErrorHandling` / `LogRedaction`)
+
+**Files**
+- `RefTestManagement.Api/Graphql/Mutations/Email/RefTestEmailMutations.cs:79-82`
+- `RefTestManagement.Api/Graphql/Mutations/Email/RefTestEmailMutations.cs:163-166`
+- `RefTestManagement.Api/Graphql/Mutations/Email/RefTestEmailMutations.cs:265-268`
+- `RefTestManagement.Api/Graphql/Mutations/Shared/MutationErrorHandling.cs:23-36`
+- focused mutation logging tests
+
+**Change**
+- Replace direct `logger.LogError(ex, ...)` calls in invitation/result/report email mutation catch
+  paths with redacted exception logging (email/PII masking + correlation id).
+- Keep current stable user-facing error messages unchanged.
+
+**Acceptance**
+- No raw exception object is logged from these three mutation paths.
+- Redaction is consistent with other mutation families and preserves support diagnostics.
+- Regression tests cover representative exception text containing email addresses.
+
+**Watch out for**
+- Do not reduce actionable diagnostics to the point on-call triage becomes impossible.
+- Keep mutation result contracts backward-compatible.
+
+### WP-63 — Remove force-push promotion of `main` in stable release workflow
+
+**Findings:** R6-03 (🟡 Medium)  
+**Size:** M  
+**Priority:** P1  
+**Dependencies:** Branch-protection policy and release governance decisions
+
+**Files**
+- `.github/workflows/stable-release.yml:252-257`
+- release process documentation (`README.md` / `docs/CONFIGURATION.md` as needed)
+
+**Change**
+- Replace `rebase + push --force-with-lease` main sync with a non-history-rewriting promotion path
+  (fast-forward-only merge, or explicit merge commit flow).
+- Ensure the workflow fails closed if promotion cannot proceed without rewriting protected history.
+- Document the expected release-branch/main promotion invariant.
+
+**Acceptance**
+- Stable release automation no longer force-pushes `main`.
+- Promotion fails rather than rewriting history when divergence exists.
+- Documentation matches the implemented non-rewriting strategy.
+
+**Watch out for**
+- Avoid introducing an implicit bypass of branch protection through alternate credentials.
+- Verify semantic-release/tagging steps remain compatible with the promotion change.
+
+### WP-64 — Add production-configuration guard for Relay object-identification drift
+
+**Findings:** R6-04 (⚪ Low)  
+**Size:** S  
+**Priority:** P2  
+**Dependencies:** Existing authorization/schema test harness
+
+**Files**
+- `RefTestManagement.Api/Program.cs:237`
+- `RefTestManagement.Api/Graphql/Types/RefTestType.cs:21-24`
+- `RefTestManagement.UnitTests/AuthorizationSchemaTests.cs:62-75`
+- new/updated GraphQL integration authorization test(s)
+
+**Change**
+- Add a regression test bootstrapping production-equivalent GraphQL wiring and asserting anonymous
+  `node(id:)` access for `RefTest` stays unavailable while global object identification is disabled.
+- Keep current participant token flow behavior unchanged.
+
+**Acceptance**
+- A configuration drift that re-enables global object identification without corresponding
+  authorization hardening fails tests.
+- Existing anonymous participant contract tests still pass.
+
+**Watch out for**
+- Ensure tests assert runtime behavior, not just type metadata in an isolated schema.
+- Avoid introducing brittle tests coupled to unrelated schema ordering.
+
+---
+
 ## Phase overview
 
 | Phase | Theme | Packages | Size | Why this order |
@@ -250,6 +375,7 @@ work. Coordinate with job schema/migration and report-generation review.
 | **8** ✅ | Correctness & privacy parity | WP-44 → WP-47 | 2×M, 2×S | **Done** — deadline, erasure, privacy notice and dialog parity fixed |
 | **9** ✅ | Tests & hygiene | WP-48 → WP-51 | 1×M, 3×S | **Done** — authorization, retention, frontend-union and logging/CI coverage shipped |
 | **10** ✅ | R5 privacy, error handling & release hardening | WP-57 → WP-60 | 1×L, 2×S, 1×M | **Done in code** — deployment handover evidence remains |
+| **11** 🚧 | R6 transparency, logging and release-integrity hardening | WP-61 → WP-64 | 2×M, 2×S | **Open** — tracked from `AUDIT-R6.md` |
 
 ---
 
@@ -2685,10 +2811,10 @@ maps to at least one work package.
 
 | # | Severity | Finding | Package | Status |
 |---|---|---|---|---|
-| A-01 | 🟡 Medium | Withdrawal confirmation falsely promises permanent deletion | WP-52, **WP-57** | 🟡 Partially closed — WP-57 remains open for the link/dialog wording |
+| A-01 | 🟡 Medium | Withdrawal confirmation falsely promises permanent deletion | WP-52, **WP-57** | ✅ Closed — wording now aligned with anonymization lifecycle |
 | A-02 | 🟡 Medium | Forwarded-header/rate-limit safety depends on deployment configuration | WP-55 | ✅ Implemented in code; deployment verification remains release evidence |
 | A-03 | 🟡 Medium | OIDC refresh/access tokens retained unnecessarily | WP-53 | ✅ Done |
-| A-04 | 🟡 Medium | Report mutation returns raw exception text | WP-54, **WP-58** | 🟡 Partially closed — sibling batch mutations remain in scope for WP-58 |
+| A-04 | 🟡 Medium | Report mutation returns raw exception text | WP-54, **WP-58** | ✅ Closed — sibling batch mutation paths normalized |
 | A-05 | ⚪ Low | Unit-test SQL helper interpolates an identifier into raw SQL | WP-56 | ✅ Done |
 
 ### Fifth audit (`AUDIT-R5.md`)
@@ -2700,8 +2826,17 @@ maps to at least one work package.
 | R5-03 | 🟡 Medium | Privacy erasure over-cancels unrelated report jobs | WP-59 | ✅ Done in code |
 | R5-04 | ⚪ Low | Release workflows keep a long-lived PAT fallback | WP-60 | ✅ Done in code; App-only deployment verification remains |
 
-**69 findings across five audits · 60 total work packages (60 completed, none open) · none dropped.**
-**69 findings closed or partially closed · 0 re-opened · deployment evidence remains for selected controls.**
+### Sixth audit (`AUDIT-R6.md`)
+
+| # | Severity | Finding | Package | Status |
+|---|---|---|---|---|
+| R6-01 | 🟡 Medium | Public privacy notice metadata can drift from enforced consent version | WP-61 | 🚧 Open |
+| R6-02 | 🟡 Medium | Staff email mutations log raw exceptions without redaction | WP-62 | 🚧 Open |
+| R6-03 | 🟡 Medium | Stable release workflow force-pushes `main` | WP-63 | 🚧 Open |
+| R6-04 | ⚪ Low | Missing regression guard for global object-identification drift | WP-64 | 🚧 Open |
+
+**73 findings across six audits · 64 total work packages (60 completed, 4 open) · none dropped.**
+**69 findings closed · 0 re-opened · 4 R6 findings open · deployment evidence remains for selected controls.**
 
 R3 identified gaps in three previously shipped packages — **WP-15**, **WP-20** and **WP-35** —
 which were resolved by **WP-41**, **WP-47** and **WP-46** respectively. The original package
@@ -2710,7 +2845,7 @@ sections are retained as historical evidence; the replacement packages are the c
 One closed item carries a manual follow-up outside the repository: **#12**, complete in code but
 only effective once a maintainer creates the GitHub App.
 
-**60 of 60 work packages are complete in code; WP-57 → WP-60 retain deployment/controller handover evidence where noted.**
+**60 of 64 work packages are complete in code; WP-61 → WP-64 are open and tracked above.**
 
 ---
 
@@ -2742,6 +2877,10 @@ graph LR
     WP60[WP-60 App-only release token] -.release-gates.-> WP57
     WP60 -.release-gates.-> WP58
     WP60 -.release-gates.-> WP59
+    WP61[WP-61 Notice source-of-truth] -.uses.-> WP46
+    WP62[WP-62 Mutation log redaction] -.aligns.-> WP58
+    WP63[WP-63 Non-rewriting promotion] -.touches.-> WP60
+    WP64[WP-64 Object-ID drift test] -.extends.-> WP48
 ```
 
 - **WP-29 with WP-28, not after it** — WP-28's first run sweeps the entire historical backlog,
@@ -2769,13 +2908,20 @@ graph LR
   then implement selective matching and safe handling of legacy unidentifiable payloads.
 - **WP-60 gates the release train** — verify GitHub App permissions before removing the PAT fallback,
   then promote the R5 fixes only through the App-authenticated workflows.
+- **WP-61 aligns with WP-46** — both concern participant-facing privacy-notice transparency.
+- **WP-62 aligns with WP-58** — reuse the same safe-error and redaction design across mutation
+  families.
+- **WP-63 is a release-governance change** — apply after confirming branch-protection policy and
+  stable promotion expectations.
+- **WP-64 extends WP-48's intent** — keep authorization hardening guarded against schema/config
+  drift.
 
 ---
 
 ## Suggested next release
 
-**Phases 1 → 10 have shipped in code: all 60 work packages, closing every finding in
-`AUDIT.md`, `AUDIT-R2.md`, `AUDIT-R3.md`, `AUDIT-R4.md`, and `AUDIT-R5.md`. Deployment
+**Phases 1 → 10 are shipped in code (WP-01 → WP-60). Phase 11 (WP-61 → WP-64) is open from
+`AUDIT-R6.md` and should be completed before final release hardening sign-off. Deployment
 verification and controller-owned processor/DPA actions remain separate release evidence.
 
 The third audit rated the pre-remediation service NOT production-ready on one finding: **R3-01**,
@@ -2788,9 +2934,14 @@ The remediation closes that path and adds a schema regression guard.
 confirm it returns an authorization/schema error rather than participant data. This is release
 evidence for the code fix, not an open work package.
 
-### Phase 10 release
+### Phase 11 release (current)
 
-**WP-57 → WP-60** are implemented. Complete the remaining beta/stable deployment handover
+Ship **WP-61 → WP-64** together: privacy-notice source-of-truth, mutation log redaction,
+non-rewriting stable promotion, and GraphQL object-identification regression coverage.
+
+### Phase 10 follow-through
+
+**WP-57 → WP-60** are implemented in code. Complete the remaining beta/stable deployment handover
 checks, especially App-only release authentication and controller-owned GDPR evidence.
 
 ### Phase 7 release
