@@ -15,19 +15,16 @@ public sealed class TaskAuthorizationPolicyProvider(IOptions<AuthorizationOption
     : DefaultAuthorizationPolicyProvider(options)
 {
     /// <summary>The prefix used to identify "any-of" combined permission policies.</summary>
-    public const string AnyOfPrefix = "anyof:";
+    private const string AnyOfPrefix = "anyof:";
 
     public override async Task<AuthorizationPolicy?> GetPolicyAsync(string policyName)
     {
-        if (policyName.StartsWith(AnyOfPrefix, StringComparison.OrdinalIgnoreCase))
-        {
-            var permissions = policyName[AnyOfPrefix.Length..].Split('|');
-            return new AuthorizationPolicyBuilder()
-                .AddRequirements(new AnyTaskPermissionRequirement(permissions))
-                .Build();
-        }
-
-        return await base.GetPolicyAsync(policyName);
+        if (!policyName.StartsWith(AnyOfPrefix, StringComparison.OrdinalIgnoreCase))
+            return await base.GetPolicyAsync(policyName);
+        var permissions = policyName[AnyOfPrefix.Length..].Split('|');
+        return new AuthorizationPolicyBuilder()
+            .AddRequirements(new AnyTaskPermissionRequirement(permissions))
+            .Build();
     }
 
     /// <summary>
