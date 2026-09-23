@@ -68,6 +68,25 @@ export class RefTestFacade {
           }
 
           if (refTest.status === 'COMPLETED') {
+            const questions =
+              refTest.questions
+                ?.filter((q) => !!q)
+                .map(
+                  (q) =>
+                    ({
+                      id: q.id,
+                      number: q.number,
+                      phrase: q.phrase,
+                      answers: q.answers.map((a) => ({
+                        id: a.id,
+                        number: a.number,
+                        phrase: a.phrase,
+                        isCorrect: a.isCorrect,
+                      })),
+                    }) as QuestionModel,
+                ) ?? [];
+
+            this._store.restoreCompletedReview(questions, refTest.selectedAnswerIds ?? []);
             this._store.restoreCompletedResult(token, {
               questionScore: refTest.questionScore,
               questionTotal: refTest.questionTotal,
@@ -75,6 +94,7 @@ export class RefTestFacade {
               answerTotal: refTest.answerTotal,
               percentage: refTest.percentage,
               sendResultsAutomatically: refTest.sendResultsAutomatically,
+              resultsSent: refTest.resultsSent,
             });
             this._store.loading.set(false);
             return;
