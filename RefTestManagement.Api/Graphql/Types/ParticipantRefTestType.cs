@@ -15,7 +15,7 @@ public sealed class ParticipantRefTestType : ObjectType<ParticipantRefTestDto>
         descriptor.Description("A RefTest view for its participant.");
         descriptor.BindFieldsExplicitly();
 
-        descriptor.Field(x => x.Id).Description("The RefTest id");
+        descriptor.Field(x => x.Id).ID<RefTestDto>().Description("The RefTest id");
         descriptor.Field(x => x.Name).Description("The participant name");
         descriptor.Field(x => x.Email).Description("The participant email");
         descriptor.Field(x => x.NumberOfQuestions).Description("Number of questions");

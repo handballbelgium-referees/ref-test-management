@@ -40,6 +40,9 @@ public class AuthorizationSchemaTests
         Assert.DoesNotContain("number", AnonymousFields(answer));
         Assert.DoesNotContain("isCorrect", AnonymousFields(answer));
         Assert.Equal(
+            refTest.Fields.Single(field => field.Name == "id").Type.ToString(),
+            participantRefTest.Fields.Single(field => field.Name == "id").Type.ToString());
+        Assert.Equal(
             [
                 "answerScore",
                 "answerTotal",
