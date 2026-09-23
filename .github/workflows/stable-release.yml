@@ -125,7 +125,20 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           LATEST_TAG_BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          GITHUB_REF=refs/heads/release GITHUB_REF_NAME=release npx semantic-release
+          SEMANTIC_RELEASE_LOG=$(mktemp /tmp/semantic-release.XXXXXX.log)
+          set +e
+          GITHUB_REF=refs/heads/release GITHUB_REF_NAME=release npx semantic-release 2>&1 | tee "$SEMANTIC_RELEASE_LOG"
+          SEMANTIC_RELEASE_EXIT=${PIPESTATUS[0]}
+          set -e
+          if [ "$SEMANTIC_RELEASE_EXIT" -ne 0 ]; then
+            if grep -q "Cannot create ref due to creations being restricted" "$SEMANTIC_RELEASE_LOG"; then
+              echo "::warning::Skipping stable release because repository rules currently block tag creation."
+              echo "new_release_published=false" >> $GITHUB_OUTPUT
+              echo "new_release_version=''" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+            exit "$SEMANTIC_RELEASE_EXIT"
+          fi
           LATEST_TAG_AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
           if [ "$LATEST_TAG_BEFORE" != "$LATEST_TAG_AFTER" ] && [ -n "$LATEST_TAG_AFTER" ]; then
             echo "new_release_published=true" >> $GITHUB_OUTPUT
