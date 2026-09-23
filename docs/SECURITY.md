@@ -188,6 +188,12 @@ Protected routes use `permissionGuard` after `authGuard`. The guard waits for pe
 A participant takes their test through a link containing an invitation token. The token *is* the
 credential: there is no sign-in on that flow, because participants are not Auth0 users.
 
+Participant token queries and lifecycle mutations use the dedicated `ParticipantRefTest` GraphQL
+contract rather than the administrator `RefTest` type. This keeps administrator authorization rules
+and fields isolated from the anonymous participant flow. Answer correctness is omitted while a test
+is in progress and requested only after the RefTest is completed; participant answers are randomized
+deterministically per RefTest so the order remains stable across refreshes and result review.
+
 Putting a credential in a URL is a deliberate trade-off, made because requiring an account for a
 one-off test would keep most participants from ever taking it. The risks that choice carries are
 mitigated rather than ignored:
