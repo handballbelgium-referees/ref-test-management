@@ -1,4 +1,4 @@
-query GetRefTestByToken($token: String!) {
+query GetRefTestByToken($token: String!, $includeCorrectAnswers: Boolean!) {
   refTestByToken(token: $token) {
     __typename
     ... on ParticipantRefTest {
@@ -25,7 +25,7 @@ query GetRefTestByToken($token: String!) {
           id
           number
           phrase
-          isCorrect
+          isCorrect @include(if: $includeCorrectAnswers)
         }
       }
     }

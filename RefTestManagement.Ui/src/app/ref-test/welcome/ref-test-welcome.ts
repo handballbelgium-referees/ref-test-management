@@ -55,7 +55,7 @@ export class RefTestWelcome {
       switchMap((token) =>
         this._getRefTestByTokenGQL
           .watch({
-            variables: { token },
+            variables: { token, includeCorrectAnswers: false },
             fetchPolicy: 'cache-and-network',
           })
           .valueChanges.pipe(

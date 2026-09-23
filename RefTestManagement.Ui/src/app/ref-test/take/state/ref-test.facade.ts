@@ -1,6 +1,16 @@
 import { DestroyRef, Service, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
-import { EMPTY, catchError, debounceTime, distinctUntilChanged, map, skip, tap } from 'rxjs';
+import {
+  EMPTY,
+  catchError,
+  debounceTime,
+  distinctUntilChanged,
+  map,
+  of,
+  skip,
+  switchMap,
+  tap,
+} from 'rxjs';
 import {
   CompleteRefTestGQL,
   CompleteRefTestMutation,
@@ -51,8 +61,21 @@ export class RefTestFacade {
     this._store.loading.set(true);
 
     this._getRefTestByTokenGQL
-      .fetch({ variables: { token }, fetchPolicy: 'network-only' })
+      .fetch({
+        variables: { token, includeCorrectAnswers: false },
+        fetchPolicy: 'network-only',
+      })
       .pipe(
+        switchMap((result) => {
+          const refTest = result.data?.refTestByToken;
+          if (refTest?.__typename === 'ParticipantRefTest' && refTest.status === 'COMPLETED') {
+            return this._getRefTestByTokenGQL.fetch({
+              variables: { token, includeCorrectAnswers: true },
+              fetchPolicy: 'network-only',
+            });
+          }
+          return of(result);
+        }),
         tap((result) => {
           const refTest = result.data?.refTestByToken;
           if (!refTest) {
