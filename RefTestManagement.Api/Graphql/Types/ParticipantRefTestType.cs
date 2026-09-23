@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Text;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -33,35 +35,34 @@ public sealed class ParticipantRefTestType : ObjectType<ParticipantRefTestDto>
         descriptor.Field("questions")
             .Description("Questions for this participant RefTest")
             .Argument("includeNumber", x => x.Type<BooleanType>().DefaultValue(false))
-            .Argument("randomAnswerOrder", x => x.Type<BooleanType>().DefaultValue(true))
             .Resolve(
                 (ctx, ct) =>
                 {
                     var refTest = ctx.Parent<ParticipantRefTestDto>();
                     return GetQuestions(
+                        refTest.Id,
                         refTest.QuestionIds,
                         ctx.Service<IIhfRulesQuestionsService>(),
                         ctx.ArgumentValue<bool>("includeNumber"),
                         refTest.Status == RefTestStatus.Completed,
-                        ctx.ArgumentValue<bool>("randomAnswerOrder"),
                         ct);
                 });
     }
 
     private static async Task<List<ParticipantQuestionDto>> GetQuestions(
+        Guid refTestId,
         IReadOnlyList<string> questionIds,
         IIhfRulesQuestionsService service,
         bool includeNumber,
         bool includeIsCorrect,
-        bool randomAnswerOrder,
         CancellationToken cancellationToken)
     {
         var questions = await service.GetQuestionsByIdAsync(
             questionIds,
             includeNumber,
             includeIsCorrect,
-            randomAnswerOrder,
-            cancellationToken);
+            randomAnswerOrder: false,
+            cancellationToken: cancellationToken);
 
         return questions.Select(question =>
         {
@@ -71,15 +72,23 @@ public sealed class ParticipantRefTestType : ObjectType<ParticipantRefTestDto>
                 Id = participantQuestion.Id,
                 Number = includeNumber ? participantQuestion.Number : null,
                 Phrase = participantQuestion.Phrase,
-                Answers = participantQuestion.Answers.Select(answer => new ParticipantAnswerDto
-                {
-                    Id = answer.Id,
-                    Number = includeNumber ? answer.Number : null,
-                    Phrase = answer.Phrase,
-                    IsCorrect = includeIsCorrect && answer.IsCorrect
-                }).ToList()
+                Answers = participantQuestion.Answers
+                    .OrderBy(answer => GetStableAnswerOrderKey(refTestId, participantQuestion.Id, answer.Id))
+                    .Select(answer => new ParticipantAnswerDto
+                    {
+                        Id = answer.Id,
+                        Number = includeNumber ? answer.Number : null,
+                        Phrase = answer.Phrase,
+                        IsCorrect = includeIsCorrect && answer.IsCorrect
+                    }).ToList()
             };
         }).ToList();
+    }
+
+    private static string GetStableAnswerOrderKey(Guid refTestId, string questionId, string answerId)
+    {
+        var input = Encoding.UTF8.GetBytes($"{refTestId:N}:{questionId}:{answerId}");
+        return Convert.ToHexString(SHA256.HashData(input));
     }
 }
 
