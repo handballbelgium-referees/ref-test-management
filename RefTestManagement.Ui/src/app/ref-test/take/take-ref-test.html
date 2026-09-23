@@ -24,7 +24,10 @@
       [percentage]="store.result()?.percentage ?? 0"
       [passingPercentage]="passingPercentage() ?? 0"
       [emailDelayMinutes]="emailDelayMinutes() ?? 0"
+      [currentLanguage]="currentLanguage() ?? 'en'"
+      [selectedAnswerIds]="store.getSelectedAnswerIds()"
       [sendResultsAutomatically]="store.sendResultsAutomatically()"
+      [resultsSent]="store.result()?.resultsSent ?? false"
     />
     <div class="mt-4 text-center">
       <button

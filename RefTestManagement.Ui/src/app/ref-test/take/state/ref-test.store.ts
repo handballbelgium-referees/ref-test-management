@@ -184,6 +184,26 @@ export class RefTestStore {
     this.showSubmitDialog.set(false);
   }
 
+  restoreCompletedResult(token: string, result: RefTestResult): void {
+    this.token.set(token);
+    this.complete(result);
+  }
+
+  restoreCompletedReview(questions: Question[], selectedAnswerIds: string[]): void {
+    this.questions.set(questions);
+    const selected: Record<string, Set<string>> = {};
+    questions.forEach((q) => (selected[q.id] = new Set()));
+
+    selectedAnswerIds.forEach((answerId) => {
+      const question = questions.find((q) => q.answers.some((a: Answer) => a.id === answerId));
+      if (question) selected[question.id].add(answerId);
+    });
+
+    this.selectedAnswers.set(selected);
+    this.visitedQuestions.set(new Set(questions.map((q) => q.id)));
+    this.currentQuestionIndex.set(0);
+  }
+
   beginAutoSubmit(): boolean {
     if (this.autoSubmitAttempted()) return false;
 

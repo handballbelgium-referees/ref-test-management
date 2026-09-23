@@ -280,6 +280,22 @@ describe('RefTestStore', () => {
       expect(store.sendResultsAutomatically()).toBe(false);
     });
 
+    it('restores a completed result with the token needed for later participant actions', () => {
+      store.restoreCompletedResult('token-123', {
+        questionScore: 8,
+        questionTotal: 10,
+        answerScore: 15,
+        answerTotal: 20,
+        percentage: 80,
+        sendResultsAutomatically: true,
+      });
+
+      expect(store.token()).toBe('token-123');
+      expect(store.completed()).toBe(true);
+      expect(store.result()?.percentage).toBe(80);
+      expect(store.sendResultsAutomatically()).toBe(true);
+    });
+
     /**
      * The store outlives a single attempt when a participant returns to the landing page, so a
      * stale flag left behind here would mislabel the next attempt.

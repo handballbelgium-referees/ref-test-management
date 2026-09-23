@@ -62,8 +62,9 @@ export class RefTestWelcome {
             tap((result) => {
               if (
                 result.data?.refTestByToken?.__typename === 'RefTest' &&
-                result.data.refTestByToken.currentQuestionIndex !== null &&
-                result.data.refTestByToken.currentQuestionIndex !== undefined
+                (result.data.refTestByToken.status === 'COMPLETED' ||
+                  (result.data.refTestByToken.currentQuestionIndex !== null &&
+                    result.data.refTestByToken.currentQuestionIndex !== undefined))
               ) {
                 this._router.navigate(['/ref-test', token, 'take']);
               }

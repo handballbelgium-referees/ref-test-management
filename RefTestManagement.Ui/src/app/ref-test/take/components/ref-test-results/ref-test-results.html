@@ -36,7 +36,7 @@
     </div>
 
     <!-- Email Information Banner -->
-    @if (sendResultsAutomatically()) {
+    @if (sendResultsAutomatically() && !resultsSent()) {
       <div class="max-w-4xl mx-auto mb-8">
         <div class="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
           <svg
@@ -97,5 +97,23 @@
         </div>
       </div>
     </div>
+
+    @if (resultsSent() && reviewQuestions().length > 0) {
+      <div class="max-w-4xl mx-auto space-y-6">
+        @for (question of reviewQuestions(); track question.id; let questionIdx = $index) {
+          <app-question-card
+            [question]="question"
+            [questionIndex]="questionIdx"
+            [currentLanguage]="currentLanguage()"
+            [selectedAnswerIds]="selectedAnswerIdsSet()"
+          />
+        }
+
+        <app-answers-summary
+          [answeredQuestionsCount]="answeredQuestionsCount()"
+          [totalQuestions]="questionTotal()"
+        />
+      </div>
+    }
   </div>
 </div>
