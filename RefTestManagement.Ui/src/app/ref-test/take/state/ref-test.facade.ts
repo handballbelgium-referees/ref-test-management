@@ -6,9 +6,7 @@ import {
   debounceTime,
   distinctUntilChanged,
   map,
-  of,
   skip,
-  switchMap,
   tap,
 } from 'rxjs';
 import {
@@ -66,16 +64,6 @@ export class RefTestFacade {
         fetchPolicy: 'network-only',
       })
       .pipe(
-        switchMap((result) => {
-          const refTest = result.data?.refTestByToken;
-          if (refTest?.__typename === 'ParticipantRefTest' && refTest.status === 'COMPLETED') {
-            return this._getRefTestByTokenGQL.fetch({
-              variables: { token },
-              fetchPolicy: 'network-only',
-            });
-          }
-          return of(result);
-        }),
         tap((result) => {
           const refTest = result.data?.refTestByToken;
           if (!refTest) {
