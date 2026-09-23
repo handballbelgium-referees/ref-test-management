@@ -79,7 +79,7 @@ public sealed class ParticipantRefTestType : ObjectType<ParticipantRefTestDto>
                         Id = answer.Id,
                         Number = includeNumber ? answer.Number : null,
                         Phrase = answer.Phrase,
-                        IsCorrect = includeIsCorrect && answer.IsCorrect
+                        IsCorrect = includeIsCorrect ? answer.IsCorrect : null
                     }).ToList()
             };
         }).ToList();

@@ -41,5 +41,5 @@ public sealed class ParticipantAnswerDto
     public required string Id { get; init; }
     public string? Number { get; init; }
     public required IDictionary<string, string> Phrase { get; init; }
-    public bool IsCorrect { get; init; }
+    public bool? IsCorrect { get; init; }
 }

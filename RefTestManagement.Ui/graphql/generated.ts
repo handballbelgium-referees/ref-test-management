@@ -453,7 +453,7 @@ export type GetRefTestByTokenQueryVariables = Exact<{
 
 export type GetRefTestByTokenQuery = { refTestByToken:
     | { __typename: 'InvalidRefTestStatusError', message: string }
-    | { __typename: 'ParticipantRefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, resultsSent: boolean, status: RefTestStatus, currentQuestionIndex: number | null, selectedAnswerIds: Array<string>, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean, questions: Array<{ id: string, number: string | null, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
+    | { __typename: 'ParticipantRefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, resultsSent: boolean, status: RefTestStatus, currentQuestionIndex: number | null, selectedAnswerIds: Array<string>, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean, questions: Array<{ id: string, number: string | null, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean | null }> } | null> | null }
     | { __typename: 'RefTestExpiredError', message: string }
     | { __typename: 'RefTestNotFoundError', message: string }
    };

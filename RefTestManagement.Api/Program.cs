@@ -17,7 +17,6 @@ using Handball.Belgium.RefTestManagement.Api.Extensions;
 using QuestPDF.Infrastructure;
 using StrawberryShake;
 using Handball.Belgium.RefTestManagement.Api.Graphql;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using System.Threading.RateLimiting;
