@@ -8,6 +8,7 @@ mutation CompleteRefTest($input: CompleteRefTestInput!) {
       answerTotal
       percentage
       sendResultsAutomatically
+      resultsSent
     }
   }
 }

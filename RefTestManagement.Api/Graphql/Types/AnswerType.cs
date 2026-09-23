@@ -22,6 +22,10 @@ public class AnswerType : ObjectType<Answer>
         descriptor.Field(x => x.Phrase)
             .Type<AnyType>()
             .Description("Translations of the answer phrase")
+            .Authorize(TaskAuthorizationPolicyProvider.AnyOf(
+                Permissions.RefTests.ViewDetailQuestions,
+                Permissions.Questions.Search,
+                Permissions.Questions.View))
             .Resolve(ctx =>
                 JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(ctx.Parent<Answer>().Phrase)));
         descriptor.Field(x => x.IsCorrect).Description("Answer is correct")

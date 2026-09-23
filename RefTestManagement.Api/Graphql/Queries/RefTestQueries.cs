@@ -47,7 +47,7 @@ public static partial class RefTestQueries
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     [Error<RefTestExpiredException>]
-    public static async Task<RefTestDto?> GetRefTestByTokenAsync(
+    public static async Task<ParticipantRefTestDto?> GetRefTestByTokenAsync(
         string token,
         RefTestManagementContext context,
         [Service] RefTestExpirationConfiguration configuration,
@@ -65,7 +65,7 @@ public static partial class RefTestQueries
             throw new InvalidRefTestStatusException("This RefTest's consent has been withdrawn");
 
         if (!refTest.IsExpired(configuration.ExpirationIfNotStarted))
-            return refTest.ToDto();
+            return refTest.ToParticipantDto();
 
         // Enqueue a specific job to handle this expired test
         var action = refTest.Status == RefTestStatus.InProgress
