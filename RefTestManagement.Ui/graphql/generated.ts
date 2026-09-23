@@ -448,8 +448,6 @@ export type GetPrivacyNoticeQuery = { privacyNotice: { controllerName: string, c
 
 export type GetRefTestByTokenQueryVariables = Exact<{
   token: string;
-  includeQuestionNumbers: boolean;
-  includeCorrectAnswers: boolean;
 }>;
 
 
@@ -904,11 +902,7 @@ export const GetPrivacyNoticeDocument = gql`
     }
   }
 export const GetRefTestByTokenDocument = gql`
-    query GetRefTestByToken(
-      $token: String!,
-      $includeQuestionNumbers: Boolean!,
-      $includeCorrectAnswers: Boolean!
-    ) {
+    query GetRefTestByToken($token: String!) {
   refTestByToken(token: $token) {
     __typename
     ... on ParticipantRefTest {
@@ -929,13 +923,13 @@ export const GetRefTestByTokenDocument = gql`
       sendResultsAutomatically
       questions {
         id
-        number @include(if: $includeQuestionNumbers)
+        number
         phrase
         answers {
           id
-          number @include(if: $includeQuestionNumbers)
+          number
           phrase
-          isCorrect @include(if: $includeCorrectAnswers)
+          isCorrect
         }
       }
     }

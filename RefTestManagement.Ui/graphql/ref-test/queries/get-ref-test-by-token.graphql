@@ -1,8 +1,4 @@
-query GetRefTestByToken(
-  $token: String!
-  $includeQuestionNumbers: Boolean!
-  $includeCorrectAnswers: Boolean!
-) {
+query GetRefTestByToken($token: String!) {
   refTestByToken(token: $token) {
     __typename
     ... on ParticipantRefTest {
@@ -23,13 +19,13 @@ query GetRefTestByToken(
       sendResultsAutomatically
       questions {
         id
-        number @include(if: $includeQuestionNumbers)
+        number
         phrase
         answers {
           id
-          number @include(if: $includeQuestionNumbers)
+          number
           phrase
-          isCorrect @include(if: $includeCorrectAnswers)
+          isCorrect
         }
       }
     }
