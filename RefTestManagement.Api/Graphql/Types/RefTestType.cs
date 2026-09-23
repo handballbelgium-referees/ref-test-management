@@ -95,7 +95,7 @@ public class RefTestType : ObjectType<RefTestDto>
             .Authorize(viewDetails);
         descriptor.Field(x => x.SendResultsAutomatically)
             .Description("Indication of whether results are sent automatically")
-            .Authorize(viewDetails);
+            .Authorize(viewRefTests);
         descriptor.Field(x => x.Status)
             .Description(
                 "Status of the RefTest (e.g., InProgress, Completed, Expired). Expired tests are automatically processed by a background service.")

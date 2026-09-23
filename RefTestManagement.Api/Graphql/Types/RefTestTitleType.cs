@@ -21,6 +21,7 @@ public class RefTestTitleType : ObjectType<RefTestTitleDto>
         descriptor.Field(x => x.Value)
             .Description("RefTest title value")
             .Authorize(TaskAuthorizationPolicyProvider.AnyOf(
+                Permissions.RefTests.ViewTitles,
                 Permissions.RefTests.ViewList,
                 Permissions.RefTests.ViewDetail));
     }
