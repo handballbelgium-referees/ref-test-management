@@ -1,6 +1,7 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 
@@ -32,16 +33,19 @@ public sealed class ParticipantRefTestType : ObjectType<ParticipantRefTestDto>
         descriptor.Field("questions")
             .Description("Questions for this participant RefTest")
             .Argument("includeNumber", x => x.Type<BooleanType>().DefaultValue(false))
-            .Argument("includeIsCorrect", x => x.Type<BooleanType>().DefaultValue(false))
             .Argument("randomAnswerOrder", x => x.Type<BooleanType>().DefaultValue(true))
-            .Resolve((ctx, ct) =>
-                GetQuestions(
-                    ctx.Parent<ParticipantRefTestDto>().QuestionIds,
-                    ctx.Service<IIhfRulesQuestionsService>(),
-                    ctx.ArgumentValue<bool>("includeNumber"),
-                    ctx.ArgumentValue<bool>("includeIsCorrect"),
-                    ctx.ArgumentValue<bool>("randomAnswerOrder"),
-                    ct));
+            .Resolve(
+                (ctx, ct) =>
+                {
+                    var refTest = ctx.Parent<ParticipantRefTestDto>();
+                    return GetQuestions(
+                        refTest.QuestionIds,
+                        ctx.Service<IIhfRulesQuestionsService>(),
+                        ctx.ArgumentValue<bool>("includeNumber"),
+                        refTest.Status == RefTestStatus.Completed,
+                        ctx.ArgumentValue<bool>("randomAnswerOrder"),
+                        ct);
+                });
     }
 
     private static async Task<List<ParticipantQuestionDto>> GetQuestions(
