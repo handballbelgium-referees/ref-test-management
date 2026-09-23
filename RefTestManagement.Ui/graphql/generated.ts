@@ -921,7 +921,7 @@ export const GetRefTestByTokenDocument = gql`
       answerTotal
       percentage
       sendResultsAutomatically
-      questions(includeNumber: true, randomAnswerOrder: false) {
+      questions(includeNumber: true, randomAnswerOrder: true) {
         id
         number
         phrase
