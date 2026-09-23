@@ -1,10 +1,5 @@
 export default {
   extends: ['@commitlint/config-conventional'],
-  ignores: [
-    message =>
-      process.env.GITHUB_EVENT_NAME === 'pull_request' &&
-      !/^[a-z]+(\([a-z0-9-]+\))?!?:\s.+/.test(message.trim()),
-  ],
   rules: {
     // Type rules
     'type-enum': [
