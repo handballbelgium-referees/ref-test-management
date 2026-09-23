@@ -39,12 +39,7 @@ jobs:
         # `edited`, so a title can be weaponised after review has started.
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: |
-          if [[ "$PR_TITLE" == *:* ]]; then
-            echo "$PR_TITLE" | npx commitlint
-          else
-            echo "::notice::Skipping commitlint for non-conventional PR title: '$PR_TITLE'"
-          fi
+        run: echo "$PR_TITLE" | npx commitlint
         # Ensures PR title follows Conventional Commits or your commitlint rules
 
   validate:
