@@ -24,7 +24,21 @@ public class AuthorizationSchemaTests
             executor.Schema.Types.GetType<IComplexTypeDefinition>("Question"), exactMatch: false);
         var answer = Assert.IsType<IComplexTypeDefinition>(
             executor.Schema.Types.GetType<IComplexTypeDefinition>("Answer"), exactMatch: false);
+        var participantRefTest = Assert.IsType<IComplexTypeDefinition>(
+            executor.Schema.Types.GetType<IComplexTypeDefinition>("ParticipantRefTest"), exactMatch: false);
+        var participantQuestion = Assert.IsType<IComplexTypeDefinition>(
+            executor.Schema.Types.GetType<IComplexTypeDefinition>("ParticipantQuestion"), exactMatch: false);
+        var participantAnswer = Assert.IsType<IComplexTypeDefinition>(
+            executor.Schema.Types.GetType<IComplexTypeDefinition>("ParticipantAnswer"), exactMatch: false);
 
+        Assert.Equal(["id"], AnonymousFields(refTest));
+
+        Assert.Equal(["id"], AnonymousFields(question));
+        Assert.Equal(["id"], AnonymousFields(answer));
+
+        Assert.DoesNotContain("number", AnonymousFields(question));
+        Assert.DoesNotContain("number", AnonymousFields(answer));
+        Assert.DoesNotContain("isCorrect", AnonymousFields(answer));
         Assert.Equal(
             [
                 "answerScore",
@@ -39,24 +53,15 @@ public class AuthorizationSchemaTests
                 "questionScore",
                 "questionTotal",
                 "questions",
+                "resultsSent",
                 "selectedAnswerIds",
                 "sendResultsAutomatically",
                 "startedAt",
-                "title",
-                "wrongAnswerIds",
-                "wrongQuestionIds"
+                "status"
             ],
-            AnonymousFields(refTest));
-
-        Assert.Equal(["answers", "id", "phrase"], AnonymousFields(question));
-        Assert.Equal(["id", "phrase"], AnonymousFields(answer));
-
-        Assert.DoesNotContain("number", AnonymousFields(question));
-        Assert.DoesNotContain("number", AnonymousFields(answer));
-        Assert.DoesNotContain("isCorrect", AnonymousFields(answer));
-        Assert.DoesNotContain("firstName", AnonymousFields(refTest));
-        Assert.DoesNotContain("lastName", AnonymousFields(refTest));
-        Assert.DoesNotContain("token", AnonymousFields(refTest));
+            AnonymousFields(participantRefTest));
+        Assert.Equal(["answers", "id", "number", "phrase"], AnonymousFields(participantQuestion));
+        Assert.Equal(["id", "isCorrect", "number", "phrase"], AnonymousFields(participantAnswer));
         Assert.DoesNotContain(executor.Schema.QueryType.Fields, field => field.Name is "node" or "nodes");
     }
 
@@ -69,6 +74,9 @@ public class AuthorizationSchemaTests
             .AddType<RefTestType>()
             .AddType<QuestionType>()
             .AddType<AnswerType>()
+            .AddType<ParticipantRefTestType>()
+            .AddType<ParticipantQuestionType>()
+            .AddType<ParticipantAnswerType>()
             .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
             .AddGlobalObjectIdentification(false)
             .AddAuthorization();

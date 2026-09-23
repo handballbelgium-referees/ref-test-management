@@ -61,7 +61,7 @@ export class RefTestWelcome {
           .valueChanges.pipe(
             tap((result) => {
               if (
-                result.data?.refTestByToken?.__typename === 'RefTest' &&
+                result.data?.refTestByToken?.__typename === 'ParticipantRefTest' &&
                 (result.data.refTestByToken.status === 'COMPLETED' ||
                   (result.data.refTestByToken.currentQuestionIndex !== null &&
                     result.data.refTestByToken.currentQuestionIndex !== undefined))
@@ -80,7 +80,7 @@ export class RefTestWelcome {
     if (!result?.data?.refTestByToken) return null;
 
     const data = result.data.refTestByToken;
-    if (data.__typename === 'RefTest') {
+    if (data.__typename === 'ParticipantRefTest') {
       return data;
     }
     return null;
@@ -91,7 +91,7 @@ export class RefTestWelcome {
     if (!result?.data?.refTestByToken) return null;
 
     const data = result.data.refTestByToken;
-    if (data.__typename && data.__typename !== 'RefTest') {
+    if (data.__typename && data.__typename !== 'ParticipantRefTest') {
       return toSnakeCase(data.__typename);
     }
     return null;
@@ -131,7 +131,7 @@ export class RefTestWelcome {
           });
         }),
         tap((result) => {
-          if (result.data?.acceptPrivacyNotice.refTest) {
+          if (result.data?.acceptPrivacyNotice.participantRefTest) {
             this._router.navigate(['/ref-test', token, 'take']);
             return;
           }

@@ -1,6 +1,6 @@
 mutation StartRefTest($input: StartRefTestInput!) {
   startRefTest(input: $input) {
-    refTest {
+    participantRefTest {
       id
       startedAt
       maxTimeInMinutes

@@ -19,7 +19,7 @@ import { Question as QuestionModel } from './ref-test.models';
 import { RefTestStore } from './ref-test.store';
 
 type StartRefTestPayload = StartRefTestMutation['startRefTest'];
-type CompleteRefTestPayload = CompleteRefTestMutation['completeRefTest']['refTest'];
+type CompleteRefTestPayload = CompleteRefTestMutation['completeRefTest']['participantRefTest'];
 type WithdrawConsentPayload = WithdrawConsentMutation['withdrawConsent'];
 
 @Service({ autoProvided: false })
@@ -61,7 +61,7 @@ export class RefTestFacade {
             return;
           }
 
-          if (refTest.__typename !== 'RefTest') {
+          if (refTest.__typename !== 'ParticipantRefTest') {
             this._store.loading.set(false);
             this._store.error.set(toSnakeCase(refTest.__typename));
             return;
@@ -161,7 +161,7 @@ export class RefTestFacade {
       this._store.error.set(toSnakeCase(errors[0].__typename!));
       return;
     }
-    const refTest = data?.refTest;
+    const refTest = data?.participantRefTest;
     if (!refTest?.questions) return;
 
     this._store.token.set(token);
@@ -216,7 +216,7 @@ export class RefTestFacade {
         onError: () => this._store.error.set('submit_failed'),
         onComplete: () => this._store.loading.set(false),
       },
-      (r) => r.data?.completeRefTest?.refTest ?? null,
+      (r) => r.data?.completeRefTest?.participantRefTest ?? null,
     );
   }
 

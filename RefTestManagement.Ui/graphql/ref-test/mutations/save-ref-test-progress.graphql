@@ -1,6 +1,6 @@
 ﻿mutation SaveRefTestProgress($input: SaveRefTestProgressInput!) {
   saveRefTestProgress(input: $input) {
-    refTest {
+    participantRefTest {
       id
       currentQuestionIndex
       selectedAnswerIds
