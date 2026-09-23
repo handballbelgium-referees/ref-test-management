@@ -4,7 +4,7 @@ import { TranslatePipe } from '@ngx-translate/core';
 import { GetRefTestByTokenQuery } from '../../../../../../graphql/generated';
 
 type RefTest = DeepPartial<
-  Extract<GetRefTestByTokenQuery['refTestByToken'], { __typename?: 'RefTest' }>
+  Extract<GetRefTestByTokenQuery['refTestByToken'], { __typename?: 'ParticipantRefTest' }>
 >;
 
 @Component({

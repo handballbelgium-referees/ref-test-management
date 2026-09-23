@@ -1,7 +1,7 @@
 query GetRefTestByToken($token: String!) {
   refTestByToken(token: $token) {
     __typename
-    ... on RefTest {
+    ... on ParticipantRefTest {
       id
       name
       email
@@ -17,7 +17,7 @@ query GetRefTestByToken($token: String!) {
       answerTotal
       percentage
       sendResultsAutomatically
-      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
+      questions {
         id
         number
         phrase

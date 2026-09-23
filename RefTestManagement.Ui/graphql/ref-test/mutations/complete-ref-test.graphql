@@ -1,6 +1,6 @@
 mutation CompleteRefTest($input: CompleteRefTestInput!) {
   completeRefTest(input: $input) {
-    refTest {
+    participantRefTest {
       id
       questionScore
       questionTotal
@@ -8,6 +8,7 @@ mutation CompleteRefTest($input: CompleteRefTestInput!) {
       answerTotal
       percentage
       sendResultsAutomatically
+      resultsSent
     }
   }
 }

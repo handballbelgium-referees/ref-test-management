@@ -32,7 +32,7 @@ public static partial class RefTestLifecycleMutations
     [Error<RefTestExpiredException>]
     [Error<InvalidRefTestStatusException>]
     [Error<RefTestValidationException>]
-    public static async Task<RefTestDto> StartRefTestAsync(
+    public static async Task<ParticipantRefTestDto> StartRefTestAsync(
         string token,
         RefTestManagementContext context,
         [Service] RefTestExpirationConfiguration configuration,
@@ -49,7 +49,7 @@ public static partial class RefTestLifecycleMutations
             throw new RefTestNotFoundException(token);
 
         if (refTest.Status == RefTestStatus.InProgress)
-            return refTest.ToDto();
+            return refTest.ToParticipantDto();
 
         if (refTest.IsExpired(configuration.ExpirationIfNotStarted))
         {
@@ -76,7 +76,7 @@ public static partial class RefTestLifecycleMutations
             refTest.StartedAt!.Value,
             cancellationToken);
 
-        return refTest.ToDto();
+        return refTest.ToParticipantDto();
     }
 
     /// <summary>
@@ -84,7 +84,7 @@ public static partial class RefTestLifecycleMutations
     /// </summary>
     [Error<RefTestNotFoundException>]
     [Error<RefTestValidationException>]
-    public static async Task<RefTestDto> AcceptPrivacyNoticeAsync(
+    public static async Task<ParticipantRefTestDto> AcceptPrivacyNoticeAsync(
         string token,
         string noticeVersion,
         RefTestManagementContext context,
@@ -105,7 +105,7 @@ public static partial class RefTestLifecycleMutations
         refTest.AcceptPrivacyNotice(noticeVersion);
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
-        return refTest.ToDto();
+        return refTest.ToParticipantDto();
     }
 
     /// <summary>
@@ -152,7 +152,7 @@ public static partial class RefTestLifecycleMutations
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     [Error<RefTestValidationException>]
-    public static async Task<RefTestDto> SaveRefTestProgressAsync(
+    public static async Task<ParticipantRefTestDto> SaveRefTestProgressAsync(
         SaveRefTestProgressInput input,
         RefTestManagementContext context,
         CancellationToken cancellationToken)
@@ -175,7 +175,7 @@ public static partial class RefTestLifecycleMutations
         refTest.SaveProgress(currentQuestionIndex, selectedAnswerIds, language);
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
-        return refTest.ToDto();
+        return refTest.ToParticipantDto();
     }
     
     /// <summary>
@@ -194,15 +194,16 @@ public static partial class RefTestLifecycleMutations
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     [Error<RefTestValidationException>]
-    public static Task<RefTestDto> CompleteRefTestAsync(
+    public static async Task<ParticipantRefTestDto> CompleteRefTestAsync(
         CompleteRefTestInput input,
         RefTestManagementContext context,
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService,
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] EmailConfiguration emailConfiguration,
         [Service] IRefTestSubscriptionService subscriptionService,
-        CancellationToken cancellationToken) =>
-        CompleteRefTestCoreAsync(
+        CancellationToken cancellationToken)
+    {
+        var refTest = await CompleteRefTestCoreAsync(
             input,
             context,
             ihfRulesQuestionsService,
@@ -211,13 +212,15 @@ public static partial class RefTestLifecycleMutations
             subscriptionService,
             RefTestCompletionSource.Participant,
             cancellationToken);
+        return refTest.ToParticipantDto();
+    }
 
     /// <summary>
     /// Shared body behind <see cref="CompleteRefTestAsync"/>. Kept internal so it stays out of the
     /// GraphQL schema: <paramref name="source"/> decides whether the participant's time limit is
     /// enforced, and that is not something a caller of the API may choose.
     /// </summary>
-    internal static async Task<RefTestDto> CompleteRefTestCoreAsync(
+    internal static async Task<RefTest> CompleteRefTestCoreAsync(
         CompleteRefTestInput input,
         RefTestManagementContext context,
         IIhfRulesQuestionsService ihfRulesQuestionsService,
@@ -302,6 +305,6 @@ public static partial class RefTestLifecycleMutations
             language ?? "",
             cancellationToken);
 
-        return refTest.ToDto();
+        return refTest;
     }
 }

@@ -1,6 +1,6 @@
 mutation AcceptPrivacyNotice($input: AcceptPrivacyNoticeInput!) {
   acceptPrivacyNotice(input: $input) {
-    refTest {
+    participantRefTest {
       id
     }
     errors {

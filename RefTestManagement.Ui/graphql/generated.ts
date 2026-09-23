@@ -400,7 +400,7 @@ export type AcceptPrivacyNoticeMutationVariables = Exact<{
 }>;
 
 
-export type AcceptPrivacyNoticeMutation = { acceptPrivacyNotice: { refTest: { id: string } | null, errors: Array<
+export type AcceptPrivacyNoticeMutation = { acceptPrivacyNotice: { participantRefTest: { id: string } | null, errors: Array<
       | { __typename: 'RefTestNotFoundError', message: string }
       | { __typename: 'RefTestValidationError', message: string }
     > | null } };
@@ -410,21 +410,21 @@ export type CompleteRefTestMutationVariables = Exact<{
 }>;
 
 
-export type CompleteRefTestMutation = { completeRefTest: { refTest: { id: string, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean } | null } };
+export type CompleteRefTestMutation = { completeRefTest: { participantRefTest: { id: string, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean, resultsSent: boolean } | null } };
 
 export type SaveRefTestProgressMutationVariables = Exact<{
   input: SaveRefTestProgressInput;
 }>;
 
 
-export type SaveRefTestProgressMutation = { saveRefTestProgress: { refTest: { id: string, currentQuestionIndex: number | null, selectedAnswerIds: Array<string> } | null } };
+export type SaveRefTestProgressMutation = { saveRefTestProgress: { participantRefTest: { id: string, currentQuestionIndex: number | null, selectedAnswerIds: Array<string> } | null } };
 
 export type StartRefTestMutationVariables = Exact<{
   input: StartRefTestInput;
 }>;
 
 
-export type StartRefTestMutation = { startRefTest: { refTest: { id: string, startedAt: string | null, maxTimeInMinutes: number, currentQuestionIndex: number | null, selectedAnswerIds: Array<string>, questions: Array<{ id: string, phrase: unknown, answers: Array<{ id: string, phrase: unknown }> } | null> | null } | null, errors: Array<
+export type StartRefTestMutation = { startRefTest: { participantRefTest: { id: string, startedAt: string | null, maxTimeInMinutes: number, currentQuestionIndex: number | null, selectedAnswerIds: Array<string>, questions: Array<{ id: string, phrase: unknown, answers: Array<{ id: string, phrase: unknown }> } | null> | null } | null, errors: Array<
       | { __typename: 'InvalidRefTestStatusError', message: string }
       | { __typename: 'RefTestExpiredError', message: string }
       | { __typename: 'RefTestNotFoundError', message: string }
@@ -438,6 +438,7 @@ export type WithdrawConsentMutationVariables = Exact<{
 
 export type WithdrawConsentMutation = { withdrawConsent: { boolean: boolean | null, errors: Array<
       | { __typename: 'RefTestNotFoundError', message: string }
+      | { __typename: 'RefTestValidationError' }
     > | null } };
 
 export type GetPrivacyNoticeQueryVariables = Exact<{ [key: string]: never; }>;
@@ -452,7 +453,7 @@ export type GetRefTestByTokenQueryVariables = Exact<{
 
 export type GetRefTestByTokenQuery = { refTestByToken:
     | { __typename: 'InvalidRefTestStatusError', message: string }
-    | { __typename: 'RefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, resultsSent: boolean, status: RefTestStatus, currentQuestionIndex: number | null, selectedAnswerIds: Array<string>, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean, questions: Array<{ id: string, number: string, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean }> } | null> | null }
+    | { __typename: 'ParticipantRefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, resultsSent: boolean, status: RefTestStatus, currentQuestionIndex: number | null, selectedAnswerIds: Array<string>, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean, questions: Array<{ id: string, number: string | null, phrase: unknown, answers: Array<{ id: string, number: string | null, phrase: unknown, isCorrect: boolean | null }> } | null> | null }
     | { __typename: 'RefTestExpiredError', message: string }
     | { __typename: 'RefTestNotFoundError', message: string }
    };
@@ -661,11 +662,11 @@ export type RefTestUpdatedSubscriptionVariables = Exact<{
 
 
 export type RefTestUpdatedSubscription = { refTestUpdated:
+    | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
     | { __typename: 'RefTestApproved', id: string, status: RefTestStatus, approvedAt: string }
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestCreated', id: string }
     | { __typename: 'RefTestDeleted', id: string }
-    | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
@@ -679,11 +680,11 @@ export type RefTestsUpdatedSubscriptionVariables = Exact<{ [key: string]: never;
 
 
 export type RefTestsUpdatedSubscription = { refTestsUpdated:
+    | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
     | { __typename: 'RefTestApproved', id: string, status: RefTestStatus, approvedAt: string }
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
     | { __typename: 'RefTestCreated', id: string, name: string, email: string, titleId: string | null, titleValue: string | null, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number }
     | { __typename: 'RefTestDeleted', id: string, status: RefTestStatus }
-    | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
@@ -734,7 +735,7 @@ export const GetAuditLogsDocument = gql`
 export const AcceptPrivacyNoticeDocument = gql`
     mutation AcceptPrivacyNotice($input: AcceptPrivacyNoticeInput!) {
   acceptPrivacyNotice(input: $input) {
-    refTest {
+    participantRefTest {
       id
     }
     errors {
@@ -763,7 +764,7 @@ export const AcceptPrivacyNoticeDocument = gql`
 export const CompleteRefTestDocument = gql`
     mutation CompleteRefTest($input: CompleteRefTestInput!) {
   completeRefTest(input: $input) {
-    refTest {
+    participantRefTest {
       id
       questionScore
       questionTotal
@@ -771,6 +772,7 @@ export const CompleteRefTestDocument = gql`
       answerTotal
       percentage
       sendResultsAutomatically
+      resultsSent
     }
   }
 }
@@ -789,7 +791,7 @@ export const CompleteRefTestDocument = gql`
 export const SaveRefTestProgressDocument = gql`
     mutation SaveRefTestProgress($input: SaveRefTestProgressInput!) {
   saveRefTestProgress(input: $input) {
-    refTest {
+    participantRefTest {
       id
       currentQuestionIndex
       selectedAnswerIds
@@ -811,7 +813,7 @@ export const SaveRefTestProgressDocument = gql`
 export const StartRefTestDocument = gql`
     mutation StartRefTest($input: StartRefTestInput!) {
   startRefTest(input: $input) {
-    refTest {
+    participantRefTest {
       id
       startedAt
       maxTimeInMinutes
@@ -903,7 +905,7 @@ export const GetRefTestByTokenDocument = gql`
     query GetRefTestByToken($token: String!) {
   refTestByToken(token: $token) {
     __typename
-    ... on RefTest {
+    ... on ParticipantRefTest {
       id
       name
       email
@@ -919,7 +921,7 @@ export const GetRefTestByTokenDocument = gql`
       answerTotal
       percentage
       sendResultsAutomatically
-      questions(includeNumber: true, includeIsCorrect: true, randomAnswerOrder: false) {
+      questions {
         id
         number
         phrase
