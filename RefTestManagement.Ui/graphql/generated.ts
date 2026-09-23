@@ -452,7 +452,7 @@ export type GetRefTestByTokenQueryVariables = Exact<{
 
 export type GetRefTestByTokenQuery = { refTestByToken:
     | { __typename: 'InvalidRefTestStatusError', message: string }
-    | { __typename: 'RefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, currentQuestionIndex: number | null }
+    | { __typename: 'RefTest', id: string, name: string, email: string, numberOfQuestions: number, maxTimeInMinutes: number, status: RefTestStatus, currentQuestionIndex: number | null, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean }
     | { __typename: 'RefTestExpiredError', message: string }
     | { __typename: 'RefTestNotFoundError', message: string }
    };
@@ -909,7 +909,14 @@ export const GetRefTestByTokenDocument = gql`
       email
       numberOfQuestions
       maxTimeInMinutes
+      status
       currentQuestionIndex
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
+      percentage
+      sendResultsAutomatically
     }
     ... on RefTestNotFoundError {
       message

@@ -64,10 +64,6 @@ public static partial class RefTestQueries
         if (refTest.IsAnonymized)
             throw new InvalidRefTestStatusException("This RefTest's consent has been withdrawn");
 
-        if (refTest.Status == RefTestStatus.Completed)
-            throw new InvalidRefTestStatusException(refTest.Status,
-                [RefTestStatus.Pending, RefTestStatus.InProgress]);
-
         if (!refTest.IsExpired(configuration.ExpirationIfNotStarted))
             return refTest.ToDto();
 

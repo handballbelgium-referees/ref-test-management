@@ -184,6 +184,11 @@ export class RefTestStore {
     this.showSubmitDialog.set(false);
   }
 
+  restoreCompletedResult(token: string, result: RefTestResult): void {
+    this.token.set(token);
+    this.complete(result);
+  }
+
   beginAutoSubmit(): boolean {
     if (this.autoSubmitAttempted()) return false;
 

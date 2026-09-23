@@ -4,6 +4,7 @@ import { EMPTY, catchError, debounceTime, distinctUntilChanged, map, skip, tap }
 import {
   CompleteRefTestGQL,
   CompleteRefTestMutation,
+  GetRefTestByTokenGQL,
   RefTestSessionLockGQL,
   RefTestTimeExtendedGQL,
   SaveRefTestProgressGQL,
@@ -28,6 +29,7 @@ export class RefTestFacade {
 
   private readonly _startRefTestGQL = inject(StartRefTestGQL);
   private readonly _completeRefTestGQL = inject(CompleteRefTestGQL);
+  private readonly _getRefTestByTokenGQL = inject(GetRefTestByTokenGQL);
   private readonly _saveRefTestProgressGQL = inject(SaveRefTestProgressGQL);
   private readonly _refTestTimeExtendedGQL = inject(RefTestTimeExtendedGQL);
   private readonly _refTestSessionLockGQL = inject(RefTestSessionLockGQL);
@@ -46,8 +48,52 @@ export class RefTestFacade {
     if (this._sessionStarted) return;
     this._sessionStarted = true;
 
-    const sessionId = crypto.randomUUID();
     this._store.loading.set(true);
+
+    this._getRefTestByTokenGQL
+      .fetch({ variables: { token }, fetchPolicy: 'network-only' })
+      .pipe(
+        tap((result) => {
+          const refTest = result.data?.refTestByToken;
+          if (!refTest) {
+            this._store.loading.set(false);
+            this._store.error.set('general');
+            return;
+          }
+
+          if (refTest.__typename !== 'RefTest') {
+            this._store.loading.set(false);
+            this._store.error.set(toSnakeCase(refTest.__typename));
+            return;
+          }
+
+          if (refTest.status === 'COMPLETED') {
+            this._store.restoreCompletedResult(token, {
+              questionScore: refTest.questionScore,
+              questionTotal: refTest.questionTotal,
+              answerScore: refTest.answerScore,
+              answerTotal: refTest.answerTotal,
+              percentage: refTest.percentage,
+              sendResultsAutomatically: refTest.sendResultsAutomatically,
+            });
+            this._store.loading.set(false);
+            return;
+          }
+
+          this.acquireSessionLockAndStart(token);
+        }),
+        catchError(() => {
+          this._store.loading.set(false);
+          this._store.error.set('general');
+          return EMPTY;
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  private acquireSessionLockAndStart(token: string): void {
+    const sessionId = crypto.randomUUID();
 
     this._refTestSessionLockGQL
       .subscribe({ variables: { token, sessionId } })

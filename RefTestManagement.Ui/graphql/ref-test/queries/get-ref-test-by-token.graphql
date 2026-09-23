@@ -7,7 +7,14 @@ query GetRefTestByToken($token: String!) {
       email
       numberOfQuestions
       maxTimeInMinutes
+      status
       currentQuestionIndex
+      questionScore
+      questionTotal
+      answerScore
+      answerTotal
+      percentage
+      sendResultsAutomatically
     }
     ... on RefTestNotFoundError {
       message
