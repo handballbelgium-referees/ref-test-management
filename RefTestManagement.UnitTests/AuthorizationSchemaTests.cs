@@ -63,6 +63,7 @@ public class AuthorizationSchemaTests
         Assert.Equal(["answers", "id", "number", "phrase"], AnonymousFields(participantQuestion));
         Assert.Equal(["id", "isCorrect", "number", "phrase"], AnonymousFields(participantAnswer));
         var participantQuestions = participantRefTest.Fields.Single(field => field.Name == "questions");
+        Assert.Empty(participantQuestions.Arguments);
         Assert.DoesNotContain(participantQuestions.Arguments, argument => argument.Name == "includeIsCorrect");
         Assert.DoesNotContain(participantQuestions.Arguments, argument => argument.Name == "randomAnswerOrder");
         Assert.DoesNotContain(executor.Schema.QueryType.Fields, field => field.Name is "node" or "nodes");

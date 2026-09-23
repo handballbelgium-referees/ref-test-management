@@ -62,7 +62,11 @@ export class RefTestFacade {
 
     this._getRefTestByTokenGQL
       .fetch({
-        variables: { token, includeCorrectAnswers: false },
+        variables: {
+          token,
+          includeQuestionNumbers: false,
+          includeCorrectAnswers: false,
+        },
         fetchPolicy: 'network-only',
       })
       .pipe(
@@ -70,7 +74,11 @@ export class RefTestFacade {
           const refTest = result.data?.refTestByToken;
           if (refTest?.__typename === 'ParticipantRefTest' && refTest.status === 'COMPLETED') {
             return this._getRefTestByTokenGQL.fetch({
-              variables: { token, includeCorrectAnswers: true },
+              variables: {
+                token,
+                includeQuestionNumbers: true,
+                includeCorrectAnswers: true,
+              },
               fetchPolicy: 'network-only',
             });
           }

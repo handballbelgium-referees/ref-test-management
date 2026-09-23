@@ -34,7 +34,6 @@ public sealed class ParticipantRefTestType : ObjectType<ParticipantRefTestDto>
         descriptor.Field(x => x.ResultsSent).Description("Whether results were sent");
         descriptor.Field("questions")
             .Description("Questions for this participant RefTest")
-            .Argument("includeNumber", x => x.Type<BooleanType>().DefaultValue(false))
             .Resolve(
                 (ctx, ct) =>
                 {
@@ -43,7 +42,7 @@ public sealed class ParticipantRefTestType : ObjectType<ParticipantRefTestDto>
                         refTest.Id,
                         refTest.QuestionIds,
                         ctx.Service<IIhfRulesQuestionsService>(),
-                        ctx.ArgumentValue<bool>("includeNumber"),
+                        refTest.Status == RefTestStatus.Completed,
                         refTest.Status == RefTestStatus.Completed,
                         ct);
                 });
