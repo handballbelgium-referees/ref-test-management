@@ -112,13 +112,13 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 | Technology | Version | Purpose |
 | --- | --- | --- |
-| **Angular** | 22.1.6 | SPA framework with standalone components and signals |
+| **Angular** | 22.1.7 | SPA framework with standalone components and signals |
 | **TypeScript** | 6.0.3 | Strict type-checking |
 | **Apollo Client** | 4.3.1 | GraphQL client with normalized caching |
 | **apollo-angular** | 14.2.0 | Angular integration for Apollo Client |
 | **ngx-translate** | 18.0.0 | i18n and localization |
 | **Tailwind CSS** | 4.3.3 | Utility-first styling |
-| **GraphQL Code Generator** | 7.4.1 | Generates TypeScript types from the GraphQL schema |
+| **GraphQL Code Generator** | 7.4.2 | Generates TypeScript types from the GraphQL schema |
 | **Vitest** | 4.1.11 | Unit testing framework |
 | **RxJS** | 7.8.2 | Reactive programming |
 
