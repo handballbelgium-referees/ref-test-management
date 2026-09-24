@@ -112,7 +112,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 | Technology | Version | Purpose |
 | --- | --- | --- |
-| **Angular** | 22.1.7 | SPA framework with standalone components and signals |
+| **Angular** | 22.2.0 | SPA framework with standalone components and signals |
 | **TypeScript** | 6.0.3 | Strict type-checking |
 | **Apollo Client** | 4.3.1 | GraphQL client with normalized caching |
 | **apollo-angular** | 14.2.0 | Angular integration for Apollo Client |
