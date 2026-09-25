@@ -11,7 +11,7 @@ applyTo: "RefTestManagement.Ui/**"
 - Use native `@if`, `@for`, and `@switch` control flow. Put host bindings/listeners in the `host` metadata rather than `@HostBinding` or `@HostListener`.
 - Follow nearby conventions for external `templateUrl` files and Tailwind utility classes; keep template/style paths relative to the component file. Prefer `NgOptimizedImage` for static images when appropriate. Use semantic controls, accessible names, keyboard interaction, visible focus, and WCAG AA contrast.
 - Prefer `class`/`style` bindings over `ngClass`/`ngStyle`, and reactive forms for complex form behavior. Do not use arrow functions in templates or assume browser globals are available during server-side rendering.
-- In services, prefer `@Service` in Angular 22+ (or equivalent `@Injectable` metadata where needed), prefer `inject()`, and avoid unmanaged subscriptions. Prefer the async pipe or `rxResource` for template streams.
+- In services, prefer `@Service()` in Angular 22+ (or equivalent `@Injectable` metadata where needed), prefer `inject()`, and avoid unmanaged subscriptions. Prefer the async pipe or `rxResource` for template streams.
 - Edit GraphQL documents under `graphql/**/*.graphql`. Never hand-edit `graphql/generated.ts`; run `npm run codegen` with the API running.
 - Edit `public/i18n/{en,nl,fr,de}.json` in place, keep the two-space indentation and existing CRLF line endings, and do not re-serialize them. `de.json` uses `\u` escapes. Run `npm run check:i18n`.
 - Tests use Vitest through Angular's test builder. Run a focused spec with `npm test -- --include src/path/to/spec.ts --watch=false` from this directory.
