@@ -424,5 +424,8 @@ FodyWeavers.xsd
 # Root dependencies
 /node_modules
 
+# Local Copilot settings
+.github/copilot/settings.local.json
+
 # Codegraph generated files
 .codegraph/

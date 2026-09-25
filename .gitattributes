@@ -1,0 +1,3 @@
+/package-lock.json -diff
+**/packages.lock.json -diff
+/RefTestManagement.Ui/graphql/generated.ts -diff
