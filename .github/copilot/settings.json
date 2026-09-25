@@ -1,0 +1,37 @@
+{
+  "model": "gpt-6-luna",
+  "contextTier": "default",
+  "disabledMcpServers": [
+    "azure-devops",
+    "figma"
+  ],
+  "enabledPlugins": {
+    "azure-devops-copilot-plugin@copilot-plugins": false
+  },
+  "disabledSkills": [
+    "apollo-client",
+    "apollo-connectors",
+    "apollo-federation",
+    "apollo-ios",
+    "apollo-kotlin",
+    "apollo-mcp-server",
+    "apollo-router",
+    "apollo-router-plugin-creator",
+    "apollo-server",
+    "azure-devops-instructions",
+    "hotchocolate-fix-bug",
+    "nitro-mail",
+    "nitro-memory",
+    "nitro-research",
+    "nitro-task",
+    "nitro-task-orchestrator",
+    "nitro-task-planner",
+    "nitro-wayfinder",
+    "podman-container-management",
+    "prototype-feature",
+    "prototype-to-contract",
+    "rover",
+    "rust-best-practices",
+    "skill-creator"
+  ]
+}
