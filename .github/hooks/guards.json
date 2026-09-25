@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "hooks": {
+    "preToolUse": [
+      {
+        "type": "command",
+        "matcher": "view|str_replace_editor|bash|powershell|create_pull_request|update_pull_request",
+        "bash": "node .github/hooks/guards.mjs pre || true",
+        "powershell": "node .github/hooks/guards.mjs pre; exit 0",
+        "cwd": ".",
+        "timeoutSec": 10
+      }
+    ],
+    "postToolUse": [
+      {
+        "type": "command",
+        "matcher": "edit|apply_patch|str_replace_editor|bash|powershell",
+        "bash": "node .github/hooks/guards.mjs post || true",
+        "powershell": "node .github/hooks/guards.mjs post; exit 0",
+        "cwd": ".",
+        "timeoutSec": 10
+      }
+    ]
+  }
+}

@@ -283,6 +283,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 - **Branches**: `main` (default, protected, every push triggers an automatic pre-release) → `release` (protected, promoted manually for stable releases with a fast-forward-only sync back to `main`); use `feat/*`, `fix/*`, `chore/*` for work in progress
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/), enforced by commitlint via a Husky `commit-msg` hook
 - **Pre-commit**: Husky re-syncs the README's dependency-version tables, then builds the Angular app
+- **AI workflow**: plan-first with explicit approval, then `/deliver` from an issue, feature, audit, or saved plan; `/audit` creates evidence-backed rounds. Repository settings pin GPT-6 Luna where the host honors them (GPT-5.6 Luna is the fallback). Keep one model per session, avoid Auto for `/deliver` and `/audit`, and use 1M context only when needed. Repository hooks guard oversized reads and invalid PR titles.
 
 ## Deployment
 
