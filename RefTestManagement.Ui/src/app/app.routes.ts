@@ -25,6 +25,12 @@ export const routes: Routes = [
     canActivate: [authGuard, permissionGuard(Permissions.RefTests.Create)],
   },
   {
+    path: 'participants',
+    loadComponent: () =>
+      import('./participants/manage/manage-participants').then((m) => m.ManageParticipants),
+    canActivate: [authGuard, permissionGuard(Permissions.Participants.ViewList)],
+  },
+  {
     path: 'ref-tests/:id',
     loadComponent: () => import('./ref-tests/detail/ref-test-detail').then((m) => m.RefTestDetail),
     canActivate: [authGuard, permissionGuard(Permissions.RefTests.ViewDetail)],

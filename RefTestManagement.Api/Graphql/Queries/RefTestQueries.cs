@@ -1,5 +1,6 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
+using Handball.Belgium.RefTestManagement.Domain.Participants;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -78,6 +79,19 @@ public static partial class RefTestQueries
 
         throw new RefTestExpiredException(token);
     }
+
+    /// <summary>
+    /// Get all participants
+    /// </summary>
+    [Authorize(Policy = Permissions.Participants.ViewList)]
+    [UsePaging]
+    [UseProjection]
+    [UseFiltering<ParticipantFilterType>]
+    [UseSorting<ParticipantSortType>]
+    public static IQueryable<ParticipantDto> GetParticipants(RefTestManagementContext context)
+        => context.Participants
+            .AsNoTracking()
+            .Select(ParticipantMappings.ToDto);
 
     /// <summary>
     /// Get all RefTest titles

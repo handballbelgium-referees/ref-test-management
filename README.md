@@ -29,10 +29,16 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### RefTest Lifecycle & Creation
 
-- Create multiple RefTests at once, pulling questions from an external IHF question bank
+- Create multiple RefTests at once, selecting existing participants or adding new reusable participant profiles on the fly
 - Optional randomized answer order per test, configurable time limits with auto-submit
 - Instant scoring with a configurable pass threshold and negative-marking strategy
 - PDF result reports (QuestPDF) and Excel/PDF system reports (ClosedXML)
+
+### Participant Management
+
+- Standalone participant directory with reusable profiles keyed by name, email, participant type, and referee level
+- Participant data stays reusable for future RefTest creation while each RefTest still keeps its own historical snapshot
+- Built to support future participant detail/history pages without changing the current RefTest lifecycle
 
 ### Approval Workflow
 
@@ -183,7 +189,7 @@ flowchart TB
 | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `RefTestManagement.Api`            | ASP.NET Core Web API — GraphQL schema, controllers, background services                         |
 | `RefTestManagement.Application`    | Business logic, StrawberryShake IHF client, job payloads, configuration models                  |
-| `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
+| `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Participant`, `Job`) and domain events               |
 | `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel generation, subscriptions, job enqueueing                     |
 | `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
 | `RefTestManagement.AuditLog`       | Domain-event-driven audit trail — event store, EF Core interceptor, retention                   |

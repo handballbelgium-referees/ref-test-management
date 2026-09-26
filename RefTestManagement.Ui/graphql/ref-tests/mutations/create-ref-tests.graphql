@@ -5,10 +5,12 @@ mutation CreateRefTests($input: CreateRefTestsInput!) {
       successfullyCreated
       failed
       errors {
-        user {
+        participant {
           firstName
           lastName
           email
+          type
+          level
         }
         errorMessage
       }

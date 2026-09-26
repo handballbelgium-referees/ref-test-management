@@ -24,6 +24,7 @@ export class Home {
 
   protected readonly hasQuickActions = computed(
     () =>
+      this._permissions.hasPermission(Permissions.Participants.ViewList) ||
       this._permissions.hasPermission(Permissions.RefTests.Create) ||
       this._permissions.hasPermission(Permissions.RefTests.ViewList) ||
       this._permissions.hasPermission(Permissions.AuditLogs.View),

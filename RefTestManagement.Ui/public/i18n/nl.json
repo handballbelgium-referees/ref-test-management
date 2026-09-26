@@ -49,6 +49,10 @@
       "auditLogs": {
         "title": "Auditlogboek",
         "description": "Bekijk een volledige geschiedenis van alle wijzigingen in het systeem"
+      },
+      "participants": {
+        "title": "Deelnemers Beheren",
+        "description": "Beheer herbruikbare deelnemersprofielen voor RefTests"
       }
     },
     "about": {
@@ -485,7 +489,7 @@
           "clear": "Wis titel"
         },
         "users": {
-          "label": "Gebruikers",
+          "label": "Nieuwe Deelnemers",
           "placeholder": "Jan Jansen jan.jansen@example.com\nMarie Smit marie.smit@example.com\ngebruiker@example.com",
           "hint": "Voer één gebruiker per regel in. Formaat: \"Voornaam Achternaam email@example.com\" of \"email@example.com\"",
           "error": "Voer minimaal één gebruiker in",
@@ -506,7 +510,11 @@
           "email": "E-mail",
           "email_placeholder": "jan.jansen@example.com",
           "remove_participant": "Deelnemer verwijderen",
-          "add_participant": "Deelnemer Toevoegen"
+          "add_participant": "Deelnemer Toevoegen",
+          "type": "Deelnemerstype",
+          "level": "Scheidsrechtersniveau",
+          "level_optional": "Geen niveau",
+          "level_required": "Scheidsrechtersniveau is verplicht voor scheidsrechters"
         },
         "number_of_questions": {
           "label": "Aantal Vragen",
@@ -567,7 +575,20 @@
         "cancel": "Annuleren",
         "validation_error": "Corrigeer de validatiefouten voordat u verzendt",
         "no_participants": "Voeg minimaal één deelnemer toe",
-        "submit_error": "Er is een fout opgetreden bij het aanmaken van RefTests"
+        "submit_error": "Er is een fout opgetreden bij het aanmaken van RefTests",
+        "existing_participants": {
+          "title": "Bestaande Deelnemers",
+          "manage": "Deelnemers beheren",
+          "search_placeholder": "Zoek herbruikbare deelnemers...",
+          "loading": "Deelnemers laden...",
+          "empty": "Geen herbruikbare deelnemers gevonden.",
+          "select": "Selecteren",
+          "unselect": "Geselecteerd"
+        },
+        "new_participants": {
+          "count": "{{count}} nieuwe deelnemers",
+          "empty": "Voeg hier nieuwe deelnemers toe wanneer ze nog niet in het deelnemersoverzicht bestaan."
+        }
       },
       "success": {
         "title": "RefTests Succesvol Aangemaakt",
@@ -794,6 +815,43 @@
       "answerScore": "Antwoordenscore",
       "answerTotal": "Totaal aantal antwoorden",
       "percentage": "Percentage"
+    }
+  },
+  "participants": {
+    "types": {
+      "referee": "Scheidsrechter",
+      "delegate": "Waarnemer",
+      "other": "Andere"
+    },
+    "levels": {
+      "elite": "Elite",
+      "national_plus": "Nationaal+",
+      "national": "Nationaal",
+      "league": "Liga",
+      "regional": "Regionaal"
+    },
+    "manage": {
+      "title": "Deelnemers Beheren",
+      "subtitle": "Maak en wijzig herbruikbare deelnemersprofielen vóór je RefTests aanmaakt",
+      "list_title": "Deelnemersoverzicht",
+      "list_count": "{{count}} deelnemers",
+      "create_new": "Nieuwe deelnemer",
+      "search_placeholder": "Zoek op naam of e-mail...",
+      "loading": "Deelnemers laden...",
+      "empty": "Nog geen deelnemers gevonden.",
+      "edit_title": "Deelnemer bewerken",
+      "create_title": "Deelnemer aanmaken",
+      "form_subtitle": "Deelnemersgegevens worden gekopieerd naar RefTests terwijl het profiel herbruikbaar blijft.",
+      "reset_form": "Formulier resetten",
+      "save_changes": "Wijzigingen opslaan",
+      "save_new": "Deelnemer opslaan",
+      "messages": {
+        "created": "Deelnemer succesvol aangemaakt",
+        "create_failed": "Aanmaken van deelnemer mislukt",
+        "updated": "Deelnemer succesvol bijgewerkt",
+        "update_failed": "Bijwerken van deelnemer mislukt",
+        "level_only_for_referees": "Een scheidsrechtersniveau kan alleen voor scheidsrechters ingesteld worden"
+      }
     }
   }
 }

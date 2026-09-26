@@ -14,7 +14,7 @@ public class CreateRefTestsResult
 
 public class CreateRefTestsError
 {
-    public User User { get; set; } = null!;
+    public ParticipantDraft Participant { get; set; } = null!;
     public string ErrorMessage { get; set; } = string.Empty;
 }
 

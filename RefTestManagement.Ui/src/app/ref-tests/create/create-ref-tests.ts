@@ -1,14 +1,6 @@
-import {
-  Component,
-  computed,
-  DestroyRef,
-  ElementRef,
-  inject,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, computed, DestroyRef, inject, signal, viewChild, ElementRef } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { applyEach, disabled, email, form, FormField, min, required } from '@angular/forms/signals';
+import { disabled, form, FormField, min, required } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { catchError, map, of, tap } from 'rxjs';
@@ -20,20 +12,19 @@ import {
 import { Banner } from '../../services/banner';
 import { DatetimePicker } from '../../shared/components/datetime-picker/datetime-picker';
 import { runMutation } from '../../shared/utils/apollo-utils';
+import {
+  createEmptyParticipant,
+  IParticipantFormValue,
+  isParticipantDraftEmpty,
+} from '../../participants/models/participant-form-value';
+import { ParticipantsData } from '../../participants/services/participants-data';
 import { QuestionImportModal } from './components/question-import-modal/question-import-modal';
 import { QuestionSearchAutocomplete } from './components/question-search-autocomplete/question-search-autocomplete';
 import { RefTestUserListItem } from './components/ref-test-user-list-item/ref-test-user-list-item';
 import { TitleAutocomplete } from './components/title-autocomplete/title-autocomplete';
 import { UserImportModal } from './components/user-import-modal/user-import-modal';
 
-export interface IUserData {
-  firstName: string;
-  lastName: string;
-  email: string;
-}
-
 interface IRefTestFormData {
-  users: IUserData[];
   title: { id?: string; name: string } | null;
   numberOfQuestions: number;
   randomQuestionsForEachUser: boolean;
@@ -41,7 +32,6 @@ interface IRefTestFormData {
   specificQuestionNumbers: string;
   sendInvitations: boolean;
   sendResults: boolean;
-  /** "YYYY-MM-DDTHH:mm" local time string from the DatetimePicker, only relevant when sendInvitations is true */
   scheduledAt: string;
 }
 
@@ -70,11 +60,14 @@ export class CreateRefTests {
   private readonly _translate = inject(TranslateService);
   private readonly _bannerService = inject(Banner);
 
+  protected readonly participantsData = inject(ParticipantsData);
   protected readonly messagesContainer = viewChild<ElementRef>('messagesContainer');
 
-  // Angular v21 Signal Forms - model signal
+  protected readonly selectedParticipantIds = signal<string[]>([]);
+  protected readonly newParticipants = signal<IParticipantFormValue[]>([]);
+  protected readonly participantSearch = signal('');
+
   protected readonly refTestModel = signal<IRefTestFormData>({
-    users: [{ firstName: '', lastName: '', email: '' }],
     title: null,
     numberOfQuestions: 30,
     randomQuestionsForEachUser: false,
@@ -85,42 +78,17 @@ export class CreateRefTests {
     scheduledAt: '',
   });
 
-  // Form field tree with validation schema
   protected readonly refTestForm = form(this.refTestModel, (schemaPath) => {
-    // Validate each user in the array
-    applyEach(schemaPath.users, (user) => {
-      required(user.firstName, {
-        message: 'ref_tests.create.form.users.first_name_required',
-      });
-      required(user.lastName, {
-        message: 'ref_tests.create.form.users.last_name_required',
-      });
-      required(user.email, {
-        message: 'ref_tests.create.form.users.email_required',
-      });
-      email(user.email, {
-        message: 'ref_tests.create.form.users.email_invalid',
-      });
-    });
-
-    // Validate title
     required(schemaPath.title, {
       message: 'ref_tests.create.form.title.required',
     });
 
-    // Validate refTest configuration
     required(schemaPath.numberOfQuestions, {
       message: 'ref_tests.create.form.number_of_questions.required',
-      when: () => {
-        return this.selectedQuestions().length === 0;
-      },
+      when: () => this.selectedQuestions().length === 0,
     });
-    disabled(schemaPath.numberOfQuestions, () => {
-      return this.selectedQuestions().length > 0;
-    });
-    disabled(schemaPath.randomQuestionsForEachUser, () => {
-      return this.selectedQuestions().length > 0;
-    });
+    disabled(schemaPath.numberOfQuestions, () => this.selectedQuestions().length > 0);
+    disabled(schemaPath.randomQuestionsForEachUser, () => this.selectedQuestions().length > 0);
     min(schemaPath.numberOfQuestions, 1, {
       message: 'ref_tests.create.form.number_of_questions.min',
     });
@@ -133,40 +101,51 @@ export class CreateRefTests {
     });
   });
 
-  // Additional state signals
   protected readonly loading = signal(false);
   protected readonly showImport = signal(false);
-  protected readonly selectedQuestions = signal<
-    Array<{ number: string; phrase: Record<string, string> }>
-  >([]);
+  protected readonly selectedQuestions = signal<Array<{ number: string; phrase: Record<string, string> }>>([]);
   protected readonly showQuestionImport = signal(false);
   protected readonly loadingQuestions = signal(false);
-  readonly currentLanguage = this._translate.currentLang;
+  protected readonly currentLanguage = this._translate.currentLang;
 
-  // Computed signals
-  protected readonly userCount = computed(() => this.refTestModel().users.length);
+  protected readonly selectedParticipants = computed(() => {
+    const selectedIds = new Set(this.selectedParticipantIds());
+    return this.participantsData.participants().filter((participant) => selectedIds.has(participant.id));
+  });
 
-  protected addUser(): void {
-    const current = this.refTestModel();
-    this.refTestModel.set({
-      ...current,
-      users: [...current.users, { firstName: '', lastName: '', email: '' }],
+  protected readonly availableParticipants = computed(() => {
+    const term = this.participantSearch().trim().toLowerCase();
+    return this.participantsData.participants().filter((participant) => {
+      if (!term) return true;
+      return (
+        participant.name.toLowerCase().includes(term) ||
+        participant.email.toLowerCase().includes(term)
+      );
     });
+  });
+
+  protected readonly userCount = computed(() => {
+    return this.selectedParticipantIds().length + this.nonEmptyParticipants().length;
+  });
+
+  protected addParticipant(): void {
+    this.newParticipants.update((participants) => [...participants, createEmptyParticipant()]);
   }
 
-  protected removeUser(index: number): void {
-    const current = this.refTestModel();
-    const newUsers = current.users.filter((_, i) => i !== index);
+  protected updateParticipant(index: number, participant: IParticipantFormValue): void {
+    this.newParticipants.update((participants) =>
+      participants.map((current, currentIndex) => (currentIndex === index ? participant : current)),
+    );
+  }
 
-    // Ensure at least one user remains
-    if (newUsers.length === 0) {
-      newUsers.push({ firstName: '', lastName: '', email: '' });
-    }
+  protected removeParticipant(index: number): void {
+    this.newParticipants.update((participants) => participants.filter((_, currentIndex) => currentIndex !== index));
+  }
 
-    this.refTestModel.set({
-      ...current,
-      users: newUsers,
-    });
+  protected toggleExistingParticipant(id: string): void {
+    this.selectedParticipantIds.update((ids) =>
+      ids.includes(id) ? ids.filter((current) => current !== id) : [...ids, id],
+    );
   }
 
   protected toggleImport(): void {
@@ -247,7 +226,6 @@ export class CreateRefTests {
 
     this.loadingQuestions.set(true);
 
-    // Validate and add questions
     this._getQuestionsByNumberGQL
       .fetch({ variables: { numbers: questionNumbers } })
       .pipe(
@@ -287,7 +265,7 @@ export class CreateRefTests {
       .map((line) => line.trim())
       .filter((line) => line.length > 0);
 
-    const users: IUserData[] = [];
+    const participants: IParticipantFormValue[] = [];
 
     lines.forEach((line) => {
       const parts = line.split(/\s+/);
@@ -306,20 +284,21 @@ export class CreateRefTests {
       }
 
       if (email) {
-        users.push({ firstName, lastName, email });
+        participants.push({
+          firstName,
+          lastName,
+          email,
+          type: 'OTHER',
+          level: null,
+        });
       }
     });
 
-    if (users.length > 0) {
-      const current = this.refTestModel();
-      // Filter out empty users (all fields empty)
-      const nonEmptyUsers = current.users.filter(
-        (user) => user.firstName.trim() || user.lastName.trim() || user.email.trim(),
-      );
-      this.refTestModel.set({
-        ...current,
-        users: [...nonEmptyUsers, ...users],
-      });
+    if (participants.length > 0) {
+      this.newParticipants.update((current) => [
+        ...current.filter((participant) => !isParticipantDraftEmpty(participant)),
+        ...participants,
+      ]);
     }
 
     this.showImport.set(false);
@@ -334,21 +313,25 @@ export class CreateRefTests {
   }
 
   protected onSubmit(): void {
-    // Check form validity
     if (this.refTestForm().invalid()) {
-      // Mark all fields as touched to reveal validation errors
       this.refTestForm().markAsTouched();
       this._bannerService.error(this._translate.instant('ref_tests.create.form.validation_error'));
       return;
     }
 
-    const formData = this.refTestModel();
-
-    if (formData.users.length === 0) {
+    const draftParticipants = this.nonEmptyParticipants();
+    if (this.selectedParticipantIds().length === 0 && draftParticipants.length === 0) {
       this._bannerService.error(this._translate.instant('ref_tests.create.form.no_participants'));
       return;
     }
 
+    const participantValidationError = this.validateParticipants(draftParticipants);
+    if (participantValidationError) {
+      this._bannerService.error(this._translate.instant(participantValidationError));
+      return;
+    }
+
+    const formData = this.refTestModel();
     const specificQuestions = formData.specificQuestionNumbers
       .split(',')
       .map((q) => q.trim())
@@ -358,10 +341,9 @@ export class CreateRefTests {
       this._createRefTestsGQL.mutate({
         variables: {
           input: {
-            users: formData.users,
-            title: formData.title?.id
-              ? { id: formData.title.id }
-              : { name: formData.title?.name ?? '' },
+            participantIds: this.selectedParticipantIds(),
+            newParticipants: draftParticipants,
+            title: formData.title?.id ? { id: formData.title.id } : { name: formData.title?.name ?? '' },
             numberOfQuestions: formData.numberOfQuestions,
             randomQuestionsForEachUser: formData.randomQuestionsForEachUser,
             maxTimeInMinutes: formData.maxTimeInMinutes,
@@ -378,54 +360,50 @@ export class CreateRefTests {
       this._destroyRef,
       {
         onSuccess: (data: CreateRefTestsMutation['createRefTests']['createRefTestsResult']) => {
-          if (data) {
-            if (data.errors.length > 0) {
-              // Show error banner with failed count
-              this._bannerService.error(
-                this._translate.instant('ref_tests.create.success.failed_info', {
-                  count: data.failed,
-                }),
-              );
-            }
+          if (!data) return;
 
-            if (data.successfullyCreated > 0) {
-              // Show success banner
-              const successKey =
-                data.successfullyCreated === 1
-                  ? 'ref_tests.create.success.created_one'
-                  : 'ref_tests.create.success.created_other';
-              this._bannerService.success(
-                this._translate.instant(successKey, { count: data.successfullyCreated }),
-              );
+          if (data.errors.length > 0) {
+            this._bannerService.error(
+              this._translate.instant('ref_tests.create.success.failed_info', {
+                count: data.failed,
+              }),
+            );
+          }
 
-              // Reset form to initial state
-              this.refTestModel.set({
-                users: [{ firstName: '', lastName: '', email: '' }],
-                title: null,
-                numberOfQuestions: 30,
-                randomQuestionsForEachUser: false,
-                maxTimeInMinutes: 60,
-                specificQuestionNumbers: '',
-                sendInvitations: false,
-                sendResults: false,
-                scheduledAt: '',
-              });
-              // Reset form state
-              this.refTestForm().reset();
-            }
+          if (data.successfullyCreated > 0) {
+            const successKey =
+              data.successfullyCreated === 1
+                ? 'ref_tests.create.success.created_one'
+                : 'ref_tests.create.success.created_other';
+            this._bannerService.success(
+              this._translate.instant(successKey, { count: data.successfullyCreated }),
+            );
 
-            if (data.successfullyCreated > 0 && data.failed === 0) {
-              this._router.navigate(['/ref-tests'], {
-                state: { fromCreate: true },
-              });
-            }
+            this.selectedParticipantIds.set([]);
+            this.newParticipants.set([]);
+            this.participantSearch.set('');
+            this.refTestModel.set({
+              title: null,
+              numberOfQuestions: 30,
+              randomQuestionsForEachUser: false,
+              maxTimeInMinutes: 60,
+              specificQuestionNumbers: '',
+              sendInvitations: false,
+              sendResults: false,
+              scheduledAt: '',
+            });
+            this.refTestForm().reset();
+          }
+
+          if (data.successfullyCreated > 0 && data.failed === 0) {
+            this._router.navigate(['/ref-tests'], {
+              state: { fromCreate: true },
+            });
           }
         },
         onError: (err) => {
           const message = err instanceof Error ? err.message : null;
-          this._bannerService.error(
-            message || this._translate.instant('ref_tests.create.form.submit_error'),
-          );
+          this._bannerService.error(message || this._translate.instant('ref_tests.create.form.submit_error'));
         },
       },
       (result) => result.data?.createRefTests?.createRefTestsResult ?? null,
@@ -439,5 +417,28 @@ export class CreateRefTests {
 
   protected onScheduledAtChange(value: string): void {
     this.refTestModel.update((m) => ({ ...m, scheduledAt: value }));
+  }
+
+  protected nonEmptyParticipants(): IParticipantFormValue[] {
+    return this.newParticipants().filter((participant) => !isParticipantDraftEmpty(participant));
+  }
+
+  private validateParticipants(participants: IParticipantFormValue[]): string | null {
+    for (const participant of participants) {
+      if (!participant.firstName.trim()) return 'ref_tests.create.form.users.first_name_required';
+      if (!participant.lastName.trim()) return 'ref_tests.create.form.users.last_name_required';
+      if (!participant.email.trim()) return 'ref_tests.create.form.users.email_required';
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(participant.email.trim())) {
+        return 'ref_tests.create.form.users.email_invalid';
+      }
+      if (participant.type === 'REFEREE' && !participant.level) {
+        return 'ref_tests.create.form.users.level_required';
+      }
+      if (participant.type !== 'REFEREE' && participant.level) {
+        return 'participants.manage.messages.level_only_for_referees';
+      }
+    }
+
+    return null;
   }
 }

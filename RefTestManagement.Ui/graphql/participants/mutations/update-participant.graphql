@@ -1,0 +1,20 @@
+mutation UpdateParticipant($input: UpdateParticipantInput!) {
+  updateParticipant(input: $input) {
+    participant {
+      id
+      name
+      firstName
+      lastName
+      email
+      type
+      level
+      createdAt
+      updatedAt
+    }
+    errors {
+      ... on ParticipantNotFoundError {
+        message
+      }
+    }
+  }
+}

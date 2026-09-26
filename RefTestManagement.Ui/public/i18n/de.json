@@ -49,6 +49,10 @@
       "auditLogs": {
         "title": "Auditprotokoll",
         "description": "Sehen Sie eine vollständige Historie aller Änderungen im System"
+      },
+      "participants": {
+        "title": "Teilnehmer Verwalten",
+        "description": "Wiederverwendbare Teilnehmerprofile für RefTests verwalten"
       }
     },
     "about": {
@@ -350,12 +354,12 @@
         "subtitle": "Testeinstellungen und Fragenauswahl aktualisieren",
         "edit_button": "Testkonfiguration bearbeiten",
         "specific_questions": "Spezifische Fragen (Optional)",
-        "selected_questions_count": "{{count}} Frage(n) ausgew\u00e4hlt",
+        "selected_questions_count": "{{count}} Frage(n) ausgewählt",
         "number_of_questions": "Anzahl der Fragen",
         "number_of_questions_placeholder": "Anzahl der Fragen eingeben",
         "number_of_questions_required": "Anzahl der Fragen ist erforderlich",
         "number_of_questions_min": "Mindestens 1 Frage erforderlich",
-        "questions_disabled_hint": "Deaktiviert, wenn spezifische Fragen ausgew\u00e4hlt sind",
+        "questions_disabled_hint": "Deaktiviert, wenn spezifische Fragen ausgewählt sind",
         "random_questions_label": "Zufällige Fragen für Jeden Benutzer",
         "random_questions_description": "Wenn aktiviert, erhält jeder Teilnehmer eine eindeutige Auswahl zufälliger Fragen aus dem Fragenpool. Wenn deaktiviert, erhalten alle Teilnehmer dieselben Fragen.",
         "max_time": "Zeitlimit (Minuten)",
@@ -485,7 +489,7 @@
           "clear": "Titel löschen"
         },
         "users": {
-          "label": "Benutzer",
+          "label": "Neue Teilnehmer",
           "placeholder": "Hans Müller hans.mueller@example.com\nMaria Schmidt maria.schmidt@example.com\nbenutzer@example.com",
           "hint": "Geben Sie einen Benutzer pro Zeile ein. Format: \"Vorname Nachname email@example.com\" oder \"email@example.com\"",
           "error": "Bitte geben Sie mindestens einen Benutzer ein",
@@ -506,7 +510,11 @@
           "email": "E-Mail",
           "email_placeholder": "hans.mueller@example.com",
           "remove_participant": "Teilnehmer entfernen",
-          "add_participant": "Teilnehmer Hinzufügen"
+          "add_participant": "Teilnehmer Hinzufügen",
+          "type": "Teilnehmertyp",
+          "level": "Schiedsrichterstufe",
+          "level_optional": "Keine Stufe",
+          "level_required": "Für Schiedsrichter ist eine Schiedsrichterstufe erforderlich"
         },
         "number_of_questions": {
           "label": "Anzahl der Fragen",
@@ -567,7 +575,20 @@
         "cancel": "Abbrechen",
         "validation_error": "Bitte beheben Sie die Validierungsfehler vor dem Absenden",
         "no_participants": "Bitte fügen Sie mindestens einen Teilnehmer hinzu",
-        "submit_error": "Beim Erstellen der RefTests ist ein Fehler aufgetreten"
+        "submit_error": "Beim Erstellen der RefTests ist ein Fehler aufgetreten",
+        "existing_participants": {
+          "title": "Bestehende Teilnehmer",
+          "manage": "Teilnehmer verwalten",
+          "search_placeholder": "Wiederverwendbare Teilnehmer suchen...",
+          "loading": "Teilnehmer werden geladen...",
+          "empty": "Keine wiederverwendbaren Teilnehmer gefunden.",
+          "select": "Auswählen",
+          "unselect": "Ausgewählt"
+        },
+        "new_participants": {
+          "count": "{{count}} neue Teilnehmer",
+          "empty": "Fügen Sie hier neue Teilnehmer hinzu, wenn sie noch nicht im Teilnehmerverzeichnis vorhanden sind."
+        }
       },
       "success": {
         "title": "RefTests Erfolgreich Erstellt",
@@ -794,6 +815,43 @@
       "answerScore": "Antworten-Score",
       "answerTotal": "Antworten gesamt",
       "percentage": "Prozentsatz"
+    }
+  },
+  "participants": {
+    "types": {
+      "referee": "Schiedsrichter",
+      "delegate": "Delegierter",
+      "other": "Andere"
+    },
+    "levels": {
+      "elite": "Elite",
+      "national_plus": "National+",
+      "national": "National",
+      "league": "Liga",
+      "regional": "Regional"
+    },
+    "manage": {
+      "title": "Teilnehmer Verwalten",
+      "subtitle": "Erstellen und aktualisieren Sie wiederverwendbare Teilnehmerprofile, bevor Sie RefTests erstellen",
+      "list_title": "Teilnehmerverzeichnis",
+      "list_count": "{{count}} Teilnehmer",
+      "create_new": "Neuer Teilnehmer",
+      "search_placeholder": "Nach Name oder E-Mail suchen...",
+      "loading": "Teilnehmer werden geladen...",
+      "empty": "Noch keine Teilnehmer gefunden.",
+      "edit_title": "Teilnehmer bearbeiten",
+      "create_title": "Teilnehmer erstellen",
+      "form_subtitle": "Teilnehmerdetails werden in RefTests kopiert, während ein wiederverwendbares Profil erhalten bleibt.",
+      "reset_form": "Formular zurücksetzen",
+      "save_changes": "Änderungen speichern",
+      "save_new": "Teilnehmer speichern",
+      "messages": {
+        "created": "Teilnehmer erfolgreich erstellt",
+        "create_failed": "Teilnehmer konnte nicht erstellt werden",
+        "updated": "Teilnehmer erfolgreich aktualisiert",
+        "update_failed": "Teilnehmer konnte nicht aktualisiert werden",
+        "level_only_for_referees": "Eine Schiedsrichterstufe kann nur für Schiedsrichter gesetzt werden"
+      }
     }
   }
 }

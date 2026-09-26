@@ -1,0 +1,15 @@
+mutation CreateParticipant($input: CreateParticipantInput!) {
+  createParticipant(input: $input) {
+    participant {
+      id
+      name
+      firstName
+      lastName
+      email
+      type
+      level
+      createdAt
+      updatedAt
+    }
+  }
+}

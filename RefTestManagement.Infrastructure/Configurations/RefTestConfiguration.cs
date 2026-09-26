@@ -1,4 +1,5 @@
-﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
+﻿using Handball.Belgium.RefTestManagement.Domain.Participants;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -21,6 +22,11 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
             .WithMany()
             .HasForeignKey(x => x.TitleId)
             .IsRequired();
+
+        builder.HasOne<Participant>(x => x.Participant)
+            .WithMany()
+            .HasForeignKey(x => x.ParticipantId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         builder.Property(x => x.FirstName)
             .IsRequired()
@@ -136,6 +142,7 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
             .HasMaxLength(256)
             .HasDefaultValue(string.Empty);
 
+        builder.HasIndex(x => x.ParticipantId);
         builder.HasIndex(x => x.Email);
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreatedAt);

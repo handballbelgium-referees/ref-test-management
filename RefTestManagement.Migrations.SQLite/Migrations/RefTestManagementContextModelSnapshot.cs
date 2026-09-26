@@ -133,6 +133,55 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.ToTable("Jobs");
                 });
 
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Participants.Participant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Level")
+                        .HasMaxLength(32)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("LastName", "FirstName");
+
+                    b.ToTable("Participants");
+                });
+
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", b =>
                 {
                     b.Property<Guid>("Id")
@@ -222,6 +271,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.Property<int>("NumberOfQuestions")
                         .HasColumnType("INTEGER");
 
+                    b.Property<Guid?>("ParticipantId")
+                        .HasColumnType("TEXT");
+
                     b.Property<double?>("Percentage")
                         .HasColumnType("REAL");
 
@@ -298,6 +350,8 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
                     b.HasIndex("IsAnonymized");
 
+                    b.HasIndex("ParticipantId");
+
                     b.HasIndex("Status");
 
                     b.HasIndex("TitleId");
@@ -322,11 +376,18 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTests.RefTest", b =>
                 {
+                    b.HasOne("Handball.Belgium.RefTestManagement.Domain.Participants.Participant", "Participant")
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", "Title")
                         .WithMany()
                         .HasForeignKey("TitleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Participant");
 
                     b.Navigation("Title");
                 });

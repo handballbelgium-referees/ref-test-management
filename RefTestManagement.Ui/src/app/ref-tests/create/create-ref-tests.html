@@ -1,4 +1,3 @@
-<!-- Hero Section -->
 <div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto">
     <h1 class="text-3xl md:text-4xl font-bold mb-2">{{ 'ref_tests.create.title' | translate }}</h1>
@@ -6,17 +5,14 @@
   </div>
 </div>
 
-<!-- Main Content -->
 <div class="bg-neutral-50 py-8 px-4">
   <div class="max-w-7xl mx-auto">
     <form (submit)="onSubmit(); $event.preventDefault()">
       <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <!-- Left Column: Participants (2/3 width on large screens) -->
         <div class="contents lg:grid lg:col-span-2 lg:gap-6">
-          <!-- Participants Card -->
           <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-1 lg:order-0">
             <div class="border-b border-neutral-200 px-6 py-4">
-              <div class="flex items-center justify-between">
+              <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div class="flex items-center gap-3">
                   <div class="p-2 bg-primary-50 rounded-lg">
                     <svg
@@ -35,10 +31,130 @@
                   </div>
                   <div>
                     <h2 class="text-lg font-bold text-neutral-900">
-                      {{ 'ref_tests.create.form.users.label' | translate }}
+                      {{ 'ref_tests.create.form.existing_participants.title' | translate }}
                     </h2>
                     <p class="text-xs text-neutral-500 mt-0.5">
                       {{ 'ref_tests.create.form.users.count' | translate: { count: userCount() } }}
+                    </p>
+                  </div>
+                </div>
+                <a
+                  href="/participants"
+                  class="text-sm text-primary-600 hover:text-primary-700 font-medium flex items-center gap-1 px-3 py-2 hover:bg-primary-50 rounded-lg transition-colors"
+                >
+                  {{ 'ref_tests.create.form.existing_participants.manage' | translate }}
+                </a>
+              </div>
+            </div>
+
+            <div class="p-6 space-y-4">
+              <input
+                type="search"
+                [value]="participantSearch()"
+                (input)="participantSearch.set($any($event.target).value)"
+                [placeholder]="'ref_tests.create.form.existing_participants.search_placeholder' | translate"
+                class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+              />
+
+              @if (selectedParticipants().length > 0) {
+                <div class="flex flex-wrap gap-2">
+                  @for (participant of selectedParticipants(); track participant.id) {
+                    <button
+                      type="button"
+                      (click)="toggleExistingParticipant(participant.id)"
+                      class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-primary-100 text-primary-800 text-sm font-medium"
+                    >
+                      <span>{{ participant.name }}</span>
+                      <span class="text-primary-600">×</span>
+                    </button>
+                  }
+                </div>
+              }
+
+              @if (participantsData.loading()) {
+                <div class="py-6 text-center text-sm text-neutral-500">
+                  {{ 'ref_tests.create.form.existing_participants.loading' | translate }}
+                </div>
+              } @else if (availableParticipants().length === 0) {
+                <div class="py-6 text-center text-sm text-neutral-500">
+                  {{ 'ref_tests.create.form.existing_participants.empty' | translate }}
+                </div>
+              } @else {
+                <div class="space-y-2 max-h-[36vh] overflow-y-auto pr-2">
+                  @for (participant of availableParticipants(); track participant.id) {
+                    <button
+                      type="button"
+                      (click)="toggleExistingParticipant(participant.id)"
+                      class="w-full text-left p-4 rounded-xl border transition-colors"
+                      [class.border-primary-500]="selectedParticipantIds().includes(participant.id)"
+                      [class.bg-primary-50]="selectedParticipantIds().includes(participant.id)"
+                      [class.border-neutral-200]="!selectedParticipantIds().includes(participant.id)"
+                      [class.hover:border-primary-300]="!selectedParticipantIds().includes(participant.id)"
+                    >
+                      <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div>
+                          <div class="font-semibold text-neutral-900">{{ participant.name }}</div>
+                          <div class="text-sm text-neutral-600">{{ participant.email }}</div>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 text-xs">
+                          <span class="px-2 py-1 rounded-full bg-secondary-100 text-secondary-800">
+                            {{ ('participants.types.' + participant.type.toLowerCase()) | translate }}
+                          </span>
+                          @if (participant.level) {
+                            <span class="px-2 py-1 rounded-full bg-primary-100 text-primary-800">
+                              {{ ('participants.levels.' + participant.level.toLowerCase()) | translate }}
+                            </span>
+                          }
+                          <span
+                            class="px-2 py-1 rounded-full"
+                            [class.bg-primary-600]="selectedParticipantIds().includes(participant.id)"
+                            [class.text-white]="selectedParticipantIds().includes(participant.id)"
+                            [class.bg-neutral-100]="!selectedParticipantIds().includes(participant.id)"
+                            [class.text-neutral-600]="!selectedParticipantIds().includes(participant.id)"
+                          >
+                            {{
+                              (selectedParticipantIds().includes(participant.id)
+                                ? 'ref_tests.create.form.existing_participants.unselect'
+                                : 'ref_tests.create.form.existing_participants.select') | translate
+                            }}
+                          </span>
+                        </div>
+                      </div>
+                    </button>
+                  }
+                </div>
+              }
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-2 lg:order-0">
+            <div class="border-b border-neutral-200 px-6 py-4">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="p-2 bg-primary-50 rounded-lg">
+                    <svg
+                      class="w-5 h-5 text-primary-600"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M12 4v16m8-8H4"
+                      />
+                    </svg>
+                  </div>
+                  <div>
+                    <h2 class="text-lg font-bold text-neutral-900">
+                      {{ 'ref_tests.create.form.users.label' | translate }}
+                    </h2>
+                    <p class="text-xs text-neutral-500 mt-0.5">
+                      {{
+                        'ref_tests.create.form.new_participants.count'
+                          | translate: { count: nonEmptyParticipants().length }
+                      }}
                     </p>
                   </div>
                 </div>
@@ -60,28 +176,35 @@
               </div>
             </div>
 
-            <div class="p-6">
+            <div class="p-6 space-y-4">
               <app-user-import-modal
                 [show]="showImport()"
                 (import)="onUserImport($event)"
                 (cancel)="onUserCancel()"
               />
 
-              <div class="max-h-[60vh] overflow-y-auto pr-2 -mr-2 space-y-2">
-                @for (user of refTestModel().users; track $index; let i = $index) {
-                  <app-ref-test-user-list-item
-                    [userFormControl]="refTestForm.users[i]"
-                    [index]="i"
-                    [showRemove]="refTestModel().users.length > 1"
-                    (remove)="removeUser(i)"
-                  />
-                }
-              </div>
+              @if (newParticipants().length === 0) {
+                <div class="rounded-xl border border-dashed border-neutral-300 p-6 text-sm text-neutral-500">
+                  {{ 'ref_tests.create.form.new_participants.empty' | translate }}
+                </div>
+              } @else {
+                <div class="max-h-[50vh] overflow-y-auto pr-2 -mr-2 space-y-2">
+                  @for (participant of newParticipants(); track $index; let i = $index) {
+                    <app-ref-test-user-list-item
+                      [participant]="participant"
+                      [index]="i"
+                      [showRemove]="true"
+                      (participantChange)="updateParticipant(i, $event)"
+                      (remove)="removeParticipant(i)"
+                    />
+                  }
+                </div>
+              }
 
               <button
                 type="button"
-                (click)="addUser()"
-                class="mt-3 w-full py-2.5 border border-dashed border-neutral-300 rounded-lg text-neutral-600 hover:text-primary-600 hover:border-primary-400 hover:bg-primary-50 transition-colors font-medium flex items-center justify-center text-sm"
+                (click)="addParticipant()"
+                class="w-full py-2.5 border border-dashed border-neutral-300 rounded-lg text-neutral-600 hover:text-primary-600 hover:border-primary-400 hover:bg-primary-50 transition-colors font-medium flex items-center justify-center text-sm"
               >
                 <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
@@ -96,7 +219,6 @@
             </div>
           </div>
 
-          <!-- Specific Questions Card -->
           <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-3 lg:order-0">
             <div class="border-b border-neutral-200 px-6 py-4">
               <div class="flex items-center justify-between">
@@ -153,7 +275,7 @@
                 (cancel)="onQuestionCancel()"
               />
               <app-question-search-autocomplete
-                [currentLanguage]="currentLanguage() ?? 'en'"
+                [currentLanguage]="currentLanguage || 'en'"
                 [selectedQuestions]="selectedQuestions()"
                 (selectQuestion)="onQuestionSelect($event)"
                 (removeQuestion)="onQuestionRemove($event)"
@@ -169,10 +291,8 @@
           </div>
         </div>
 
-        <!-- Right Column: RefTest Configuration (1/3 width on large screens) -->
         <div class="contents lg:grid lg:gap-6">
-          <!-- RefTest Settings Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-2 lg:order-0">
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-4 lg:order-0">
             <div class="border-b border-neutral-200 px-6 py-4">
               <div class="flex items-center gap-3">
                 <div class="p-2 bg-primary-50 rounded-lg">
@@ -238,7 +358,6 @@
                 }
               </div>
 
-              <!-- Random Questions for Each User-->
               <div class="flex items-start gap-3">
                 <input
                   id="randomQuestionsForEachUser"
@@ -255,9 +374,7 @@
                     {{ 'ref_tests.create.form.random_questions_for_each_user.label' | translate }}
                   </div>
                   <p class="text-xs text-neutral-500">
-                    {{
-                      'ref_tests.create.form.random_questions_for_each_user.description' | translate
-                    }}
+                    {{ 'ref_tests.create.form.random_questions_for_each_user.description' | translate }}
                   </p>
                 </label>
               </div>
@@ -294,8 +411,7 @@
             </div>
           </div>
 
-          <!-- Email Options Card -->
-          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-4 lg:order-0">
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 order-5 lg:order-0">
             <div class="p-6 border-b border-neutral-200">
               <div class="flex items-center gap-3">
                 <div class="p-2 bg-primary-50 rounded-lg">
@@ -319,7 +435,6 @@
               </div>
             </div>
             <div class="p-6 space-y-6">
-              <!-- Send Invitations -->
               <div class="flex items-start gap-3">
                 <input
                   id="sendInvitations"
@@ -339,7 +454,6 @@
                 </label>
               </div>
 
-              <!-- Scheduled date/time (shown when Send Invitations is checked) -->
               @if (refTestModel().sendInvitations) {
                 <div class="ml-7 flex flex-col gap-1">
                   <label class="text-sm font-medium text-neutral-700">
@@ -358,7 +472,6 @@
                 </div>
               }
 
-              <!-- Send Results -->
               <div class="flex items-start gap-3">
                 <input
                   id="sendResults"
@@ -380,10 +493,7 @@
             </div>
           </div>
 
-          <!-- Action Buttons -->
-          <div
-            class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-5 lg:order-0"
-          >
+          <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-6 order-6 lg:order-0">
             <div class="flex flex-col gap-3">
               <button
                 type="submit"

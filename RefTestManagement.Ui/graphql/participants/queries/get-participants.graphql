@@ -1,0 +1,18 @@
+query GetParticipants($first: Int, $order: [ParticipantSortInput!]) {
+  participants(first: $first, order: $order) {
+    edges {
+      node {
+        id
+        name
+        firstName
+        lastName
+        email
+        type
+        level
+        createdAt
+        updatedAt
+      }
+    }
+    totalCount
+  }
+}

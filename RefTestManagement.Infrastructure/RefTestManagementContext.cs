@@ -1,5 +1,6 @@
 ﻿using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.Participants;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure.Configurations;
@@ -10,6 +11,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure;
 public class RefTestManagementContext(DbContextOptions<RefTestManagementContext> options)
     : DbContext(options), IJobPersistenceContext
 {
+    public DbSet<Participant> Participants { get; set; } = null!;
     public DbSet<RefTest> RefTests { get; set; } = null!;
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
@@ -17,6 +19,7 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.ApplyConfiguration(new ParticipantConfiguration());
         modelBuilder.ApplyConfiguration(new RefTestTitleConfiguration());
         modelBuilder.ApplyConfiguration(new RefTestConfiguration());
         modelBuilder.ApplyConfiguration(new JobConfiguration());

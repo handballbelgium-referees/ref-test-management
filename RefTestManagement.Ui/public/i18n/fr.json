@@ -49,6 +49,10 @@
       "auditLogs": {
         "title": "Journal d'audit",
         "description": "Consultez l'historique complet de toutes les modifications apportées au système"
+      },
+      "participants": {
+        "title": "Gérer les participants",
+        "description": "Gérer des profils de participants réutilisables pour les RefTests"
       }
     },
     "about": {
@@ -469,7 +473,6 @@
       "back": "Retour à l'accueil",
       "title": "Créer des RefTests",
       "subtitle": "Ajoutez des participants et configurez les paramètres du RefTest pour créer de nouvelles RefTests",
-
       "form": {
         "config": {
           "label": "Configuration du RefTest"
@@ -486,7 +489,7 @@
           "clear": "Effacer le titre"
         },
         "users": {
-          "label": "Utilisateurs",
+          "label": "Nouveaux participants",
           "placeholder": "Jean Dupont jean.dupont@example.com\nMarie Martin marie.martin@example.com\nutilisateur@example.com",
           "hint": "Entrez un utilisateur par ligne. Format : \"Prénom Nom email@example.com\" ou \"email@example.com\"",
           "error": "Veuillez entrer au moins un utilisateur",
@@ -507,7 +510,11 @@
           "email": "E-mail",
           "email_placeholder": "jean.dupont@example.com",
           "remove_participant": "Supprimer le participant",
-          "add_participant": "Ajouter un Participant"
+          "add_participant": "Ajouter un Participant",
+          "type": "Type de participant",
+          "level": "Niveau d'arbitre",
+          "level_optional": "Aucun niveau",
+          "level_required": "Le niveau d'arbitre est obligatoire pour les participants arbitres"
         },
         "number_of_questions": {
           "label": "Nombre de Questions",
@@ -568,7 +575,20 @@
         "cancel": "Annuler",
         "validation_error": "Veuillez corriger les erreurs de validation avant de soumettre",
         "no_participants": "Veuillez ajouter au moins un participant",
-        "submit_error": "Une erreur s'est produite lors de la création des RefTests"
+        "submit_error": "Une erreur s'est produite lors de la création des RefTests",
+        "existing_participants": {
+          "title": "Participants existants",
+          "manage": "Gérer les participants",
+          "search_placeholder": "Rechercher des participants réutilisables...",
+          "loading": "Chargement des participants...",
+          "empty": "Aucun participant réutilisable trouvé.",
+          "select": "Sélectionner",
+          "unselect": "Sélectionné"
+        },
+        "new_participants": {
+          "count": "{{count}} nouveaux participants",
+          "empty": "Ajoutez ici de nouveaux participants lorsqu'ils n'existent pas encore dans le répertoire des participants."
+        }
       },
       "success": {
         "title": "RefTests Créés avec Succès",
@@ -795,6 +815,43 @@
       "answerScore": "Score des réponses",
       "answerTotal": "Total des réponses",
       "percentage": "Pourcentage"
+    }
+  },
+  "participants": {
+    "types": {
+      "referee": "Arbitre",
+      "delegate": "Délégué",
+      "other": "Autre"
+    },
+    "levels": {
+      "elite": "Élite",
+      "national_plus": "National+",
+      "national": "National",
+      "league": "Ligue",
+      "regional": "Régional"
+    },
+    "manage": {
+      "title": "Gérer les participants",
+      "subtitle": "Créer et mettre à jour des profils de participants réutilisables avant de créer des RefTests",
+      "list_title": "Répertoire des participants",
+      "list_count": "{{count}} participants",
+      "create_new": "Nouveau participant",
+      "search_placeholder": "Rechercher par nom ou e-mail...",
+      "loading": "Chargement des participants...",
+      "empty": "Aucun participant trouvé pour le moment.",
+      "edit_title": "Modifier le participant",
+      "create_title": "Créer un participant",
+      "form_subtitle": "Les détails du participant sont copiés dans les RefTests tout en conservant un profil réutilisable.",
+      "reset_form": "Réinitialiser le formulaire",
+      "save_changes": "Enregistrer les modifications",
+      "save_new": "Enregistrer le participant",
+      "messages": {
+        "created": "Participant créé avec succès",
+        "create_failed": "Échec de la création du participant",
+        "updated": "Participant mis à jour avec succès",
+        "update_failed": "Échec de la mise à jour du participant",
+        "level_only_for_referees": "Un niveau d'arbitre ne peut être défini que pour les participants arbitres"
+      }
     }
   }
 }

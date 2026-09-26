@@ -1,10 +1,12 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 
 public record CreateRefTestsInput(
     Title Title,
-    List<User> Users,
+    [property: ID<ParticipantDto>] List<Guid> ParticipantIds,
+    List<ParticipantDraft> NewParticipants,
     int NumberOfQuestions,
     bool RandomQuestionsForEachUser,
     int MaxTimeInMinutes,

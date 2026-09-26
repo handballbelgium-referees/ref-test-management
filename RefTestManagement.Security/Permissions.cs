@@ -37,6 +37,17 @@ public static class Permissions
         public const string All = "ref-tests:*";
     }
 
+
+    public static class Participants
+    {
+        public const string Create = "participants:create";
+        public const string Update = "participants:update";
+        public const string ViewList = "participants:view-list";
+
+        /// <summary>Wildcard — grants all participants:* permissions.</summary>
+        public const string All = "participants:*";
+    }
+
     public static class Questions
     {
         public const string Search = "questions:search";
@@ -76,6 +87,9 @@ public static class Permissions
         RefTests.ViewDetail,
         RefTests.ViewDetailQuestions,
         RefTests.ViewTitles,
+        Participants.Create,
+        Participants.Update,
+        Participants.ViewList,
         Questions.Search,
         Questions.View,
         AuditLogs.View,

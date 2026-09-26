@@ -1,5 +1,6 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
+using Handball.Belgium.RefTestManagement.Domain.Participants;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using HotChocolate.Execution;
 using HotChocolate.Types;
@@ -30,6 +31,8 @@ public class AuthorizationSchemaTests
             executor.Schema.Types.GetType<IComplexTypeDefinition>("ParticipantQuestion"), exactMatch: false);
         var participantAnswer = Assert.IsType<IComplexTypeDefinition>(
             executor.Schema.Types.GetType<IComplexTypeDefinition>("ParticipantAnswer"), exactMatch: false);
+        var participant = Assert.IsType<IComplexTypeDefinition>(
+            executor.Schema.Types.GetType<IComplexTypeDefinition>("Participant"), exactMatch: false);
 
         Assert.Equal(["id"], AnonymousFields(refTest));
 
@@ -65,6 +68,7 @@ public class AuthorizationSchemaTests
             AnonymousFields(participantRefTest));
         Assert.Equal(["answers", "id", "number", "phrase"], AnonymousFields(participantQuestion));
         Assert.Equal(["id", "isCorrect", "number", "phrase"], AnonymousFields(participantAnswer));
+        Assert.Equal(["id"], AnonymousFields(participant));
         var participantQuestions = participantRefTest.Fields.Single(field => field.Name == "questions");
         Assert.Empty(participantQuestions.Arguments);
         Assert.DoesNotContain(participantQuestions.Arguments, argument => argument.Name == "includeIsCorrect");
@@ -84,6 +88,7 @@ public class AuthorizationSchemaTests
             .AddType<ParticipantRefTestType>()
             .AddType<ParticipantQuestionType>()
             .AddType<ParticipantAnswerType>()
+            .AddType<ParticipantObjectType>()
             .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
             .AddGlobalObjectIdentification(false)
             .AddAuthorization();
@@ -105,5 +110,6 @@ public class AuthorizationSchemaTests
         public RefTestDto? RefTest => null;
         public Question? Question => null;
         public Answer? Answer => null;
+        public ParticipantDto? Participant => null;
     }
 }

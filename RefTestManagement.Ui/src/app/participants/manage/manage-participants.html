@@ -1,0 +1,130 @@
+<div class="bg-linear-to-r from-primary-600 to-primary-700 text-white py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl md:text-4xl font-bold mb-2">
+      {{ 'participants.manage.title' | translate }}
+    </h1>
+    <p class="text-primary-100 text-lg">{{ 'participants.manage.subtitle' | translate }}</p>
+  </div>
+</div>
+
+<div class="bg-neutral-50 py-8 px-4">
+  <div class="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-6">
+    <section class="bg-white rounded-xl shadow-sm border border-neutral-200">
+      <div class="border-b border-neutral-200 px-6 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 class="text-lg font-bold text-neutral-900">
+            {{ 'participants.manage.list_title' | translate }}
+          </h2>
+          <p class="text-xs text-neutral-500 mt-0.5">
+            {{ 'participants.manage.list_count' | translate: { count: participantsData.participants().length } }}
+          </p>
+        </div>
+        <button
+          type="button"
+          (click)="beginCreate()"
+          class="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium text-sm transition-colors"
+        >
+          {{ 'participants.manage.create_new' | translate }}
+        </button>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <input
+          type="search"
+          [value]="searchTerm()"
+          (input)="searchTerm.set($any($event.target).value)"
+          [placeholder]="'participants.manage.search_placeholder' | translate"
+          class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
+        />
+
+        @if (participantsData.loading()) {
+          <div class="py-10 text-center text-neutral-500">
+            {{ 'participants.manage.loading' | translate }}
+          </div>
+        } @else if (participants().length === 0) {
+          <div class="py-10 text-center text-neutral-500 text-sm">
+            {{ 'participants.manage.empty' | translate }}
+          </div>
+        } @else {
+          <div class="space-y-2 max-h-[70vh] overflow-y-auto pr-2">
+            @for (participant of participants(); track participant.id) {
+              <button
+                type="button"
+                (click)="selectParticipant(participant)"
+                class="w-full text-left p-4 rounded-xl border transition-colors"
+                [class.border-primary-500]="selectedParticipantId() === participant.id"
+                [class.bg-primary-50]="selectedParticipantId() === participant.id"
+                [class.border-neutral-200]="selectedParticipantId() !== participant.id"
+                [class.hover:border-primary-300]="selectedParticipantId() !== participant.id"
+              >
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <div class="font-semibold text-neutral-900">{{ participant.name }}</div>
+                    <div class="text-sm text-neutral-600">{{ participant.email }}</div>
+                  </div>
+                  <div class="flex flex-wrap gap-2 text-xs">
+                    <span class="px-2 py-1 rounded-full bg-secondary-100 text-secondary-800">
+                      {{ ('participants.types.' + participant.type.toLowerCase()) | translate }}
+                    </span>
+                    @if (participant.level) {
+                      <span class="px-2 py-1 rounded-full bg-primary-100 text-primary-800">
+                        {{ ('participants.levels.' + participant.level.toLowerCase()) | translate }}
+                      </span>
+                    }
+                  </div>
+                </div>
+              </button>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
+    <section class="bg-white rounded-xl shadow-sm border border-neutral-200">
+      <div class="border-b border-neutral-200 px-6 py-4 flex items-center justify-between gap-4">
+        <div>
+          <h2 class="text-lg font-bold text-neutral-900">
+            {{
+              (isEditing() ? 'participants.manage.edit_title' : 'participants.manage.create_title')
+                | translate
+            }}
+          </h2>
+          <p class="text-xs text-neutral-500 mt-0.5">
+            {{ 'participants.manage.form_subtitle' | translate }}
+          </p>
+        </div>
+      </div>
+
+      <div class="p-6 space-y-4">
+        <app-ref-test-user-list-item
+          [participant]="participant()"
+          [index]="0"
+          [showRemove]="false"
+          (participantChange)="onParticipantChange($event)"
+        />
+
+        <div class="flex flex-col gap-3 sm:flex-row sm:justify-end">
+          <button
+            type="button"
+            (click)="beginCreate()"
+            class="px-4 py-2.5 bg-white border border-neutral-300 text-neutral-700 rounded-lg hover:bg-neutral-50 font-medium transition-colors"
+          >
+            {{ 'participants.manage.reset_form' | translate }}
+          </button>
+          <button
+            type="button"
+            (click)="save()"
+            [disabled]="saving()"
+            class="px-4 py-2.5 bg-primary-600 text-white rounded-lg hover:bg-primary-700 font-medium transition-colors disabled:opacity-50"
+          >
+            @if (saving()) {
+              {{ 'common.saving' | translate }}
+            } @else {
+              {{ (isEditing() ? 'participants.manage.save_changes' : 'participants.manage.save_new') | translate }}
+            }
+          </button>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>

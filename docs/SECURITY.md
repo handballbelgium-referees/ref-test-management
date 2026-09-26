@@ -88,6 +88,16 @@ Decode your access token at [jwt.io](https://jwt.io). You should see a `permissi
 | `questions:view`   | `getQuestionsByNumber` query                    | Query    |
 | `questions:*`      | Wildcard — grants all `questions:*` permissions | Wildcard |
 
+### Participants
+
+| Permission                 | Protects                                             | Type     |
+| -------------------------- | ---------------------------------------------------- | -------- |
+| `participants:create`      | `createParticipant` mutation                         | Mutation |
+| `participants:update`      | `updateParticipant` mutation                         | Mutation |
+| `participants:view-list`   | `participants` query + `/participants` admin route   | Query    |
+| `participants:view-detail` | Reserved for future participant detail/history pages | Query    |
+| `participants:*`           | Wildcard — grants all `participants:*` permissions   | Wildcard |
+
 ### Audit Logs
 
 | Permission        | Protects                                    | Type     |
@@ -113,10 +123,11 @@ For OR-semantics (a field accessible with any one of several permissions), the `
 
 | Role       | Permissions                                                                                                                                                        |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Admin`    | `ref-tests:*`, `questions:*`, `audit-logs:*`                                                                                                                       |
+| `Admin`    | `ref-tests:*`, `questions:*`, `participants:*`, `audit-logs:*`                                                                                                     |
 | `Auditor`  | `audit-logs:view`                                                                                                                                                  |
 | `Approver` | `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:approve`                                                                                                |
-| `Creator`  | `ref-tests:create`, `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:view-titles`                                     |
+| `Creator`  | `ref-tests:create`, `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:view-titles`, `participants:view-list`          |
+| `Participant Manager` | `participants:view-list`, `participants:create`, `participants:update`                                                                                  |
 | `Manager`  | `ref-tests:view-list`, `ref-tests:view-detail`, `ref-tests:view-detail-questions`, `ref-tests:send-invitations`, `ref-tests:send-results`, `ref-tests:send-report` |
 | `Viewer`   | `ref-tests:view-list`, `ref-tests:view-detail`                                                                                                                     |
 
@@ -179,6 +190,7 @@ Protected routes use `permissionGuard` after `authGuard`. The guard waits for pe
 
 | Route               | Required Permission     |
 | ------------------- | ----------------------- |
+| `/participants`     | `participants:view-list` |
 | `/ref-tests`        | `ref-tests:view-list`   |
 | `/ref-tests/create` | `ref-tests:create`      |
 | `/ref-tests/:id`    | `ref-tests:view-detail` |

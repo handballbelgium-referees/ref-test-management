@@ -20,6 +20,12 @@ export const Permissions = {
     ViewTitles: 'ref-tests:view-titles',
     All: 'ref-tests:*',
   },
+  Participants: {
+    Create: 'participants:create',
+    Update: 'participants:update',
+    ViewList: 'participants:view-list',
+    All: 'participants:*',
+  },
   Questions: {
     Search: 'questions:search',
     View: 'questions:view',

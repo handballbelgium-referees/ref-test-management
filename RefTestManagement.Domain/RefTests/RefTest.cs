@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Security.Cryptography;
 using Handball.Belgium.RefTestManagement.Domain.Events;
+using Handball.Belgium.RefTestManagement.Domain.Participants;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
@@ -47,6 +48,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     private RefTest(
         Guid titleId,
+        Guid? participantId,
         string firstName,
         string lastName,
         string email,
@@ -57,6 +59,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         bool sendResultsAutomatically)
     {
         TitleId = titleId;
+        ParticipantId = participantId;
         FirstName = firstName;
         LastName = lastName;
         Email = email;
@@ -90,6 +93,8 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     public long Version { get; private set; } = 1;
 
     public Guid TitleId { get; private set; }
+    public Guid? ParticipantId { get; private set; }
+    public Participant? Participant { get; init; }
     public RefTestTitle? Title { get; init; }
     public string FirstName { get; private set; }
     public string LastName { get; private set; }
@@ -164,6 +169,37 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         DateTime? scheduledAt = null,
         string creatorName = "",
         string creatorEmail = "")
+        => Create(
+            titleId,
+            null,
+            firstName,
+            lastName,
+            email,
+            numberOfQuestions,
+            maxTimeInMinutes,
+            questionIds,
+            sendInvitationAutomatically,
+            sendResultsAutomatically,
+            requiresApproval,
+            scheduledAt,
+            creatorName,
+            creatorEmail);
+
+    public static RefTest Create(
+        Guid titleId,
+        Guid? participantId,
+        string firstName,
+        string lastName,
+        string email,
+        int numberOfQuestions,
+        int maxTimeInMinutes,
+        List<string> questionIds,
+        bool sendInvitationAutomatically,
+        bool sendResultsAutomatically,
+        bool requiresApproval = false,
+        DateTime? scheduledAt = null,
+        string creatorName = "",
+        string creatorEmail = "")
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name is required", nameof(firstName));
@@ -180,7 +216,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         if (maxTimeInMinutes <= 0)
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
-        var refTest = new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
+        var refTest = new RefTest(titleId, participantId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
             questionIds, sendInvitationAutomatically, sendResultsAutomatically)
         {
             Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending,

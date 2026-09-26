@@ -49,6 +49,10 @@
       "auditLogs": {
         "title": "Audit Log",
         "description": "View a complete history of all changes made to the system"
+      },
+      "participants": {
+        "title": "Manage Participants",
+        "description": "Maintain reusable participant profiles for RefTests"
       }
     },
     "about": {
@@ -485,7 +489,7 @@
           "clear": "Clear title"
         },
         "users": {
-          "label": "Users",
+          "label": "New Participants",
           "placeholder": "John Doe john.doe@example.com\nJane Smith jane.smith@example.com\nuser@example.com",
           "hint": "Enter one user per line. Format: \"First name Last name email@example.com\" or \"email@example.com\"",
           "error": "Please enter at least one user",
@@ -506,7 +510,11 @@
           "email": "Email",
           "email_placeholder": "john.doe@example.com",
           "remove_participant": "Remove participant",
-          "add_participant": "Add Participant"
+          "add_participant": "Add Participant",
+          "type": "Participant Type",
+          "level": "Referee Level",
+          "level_optional": "No level",
+          "level_required": "Referee level is required for referee participants"
         },
         "number_of_questions": {
           "label": "Number of Questions",
@@ -567,7 +575,20 @@
         "cancel": "Cancel",
         "validation_error": "Please fix the validation errors before submitting",
         "no_participants": "Please add at least one participant",
-        "submit_error": "An error occurred while creating RefTests"
+        "submit_error": "An error occurred while creating RefTests",
+        "existing_participants": {
+          "title": "Existing Participants",
+          "manage": "Manage participants",
+          "search_placeholder": "Search reusable participants...",
+          "loading": "Loading participants...",
+          "empty": "No reusable participants found.",
+          "select": "Select",
+          "unselect": "Selected"
+        },
+        "new_participants": {
+          "count": "{{count}} new participants",
+          "empty": "Add new participants here when they do not exist yet in the participant directory."
+        }
       },
       "success": {
         "title": "RefTests Created Successfully",
@@ -794,6 +815,43 @@
       "answerScore": "Answer Score",
       "answerTotal": "Answer Total",
       "percentage": "Percentage"
+    }
+  },
+  "participants": {
+    "types": {
+      "referee": "Referee",
+      "delegate": "Delegate",
+      "other": "Other"
+    },
+    "levels": {
+      "elite": "Elite",
+      "national_plus": "National+",
+      "national": "National",
+      "league": "League",
+      "regional": "Regional"
+    },
+    "manage": {
+      "title": "Manage Participants",
+      "subtitle": "Create and update reusable participant profiles before creating RefTests",
+      "list_title": "Participant Directory",
+      "list_count": "{{count}} participants",
+      "create_new": "New Participant",
+      "search_placeholder": "Search by name or email...",
+      "loading": "Loading participants...",
+      "empty": "No participants found yet.",
+      "edit_title": "Edit Participant",
+      "create_title": "Create Participant",
+      "form_subtitle": "Participant details are copied into RefTests while keeping a reusable profile.",
+      "reset_form": "Reset form",
+      "save_changes": "Save changes",
+      "save_new": "Save participant",
+      "messages": {
+        "created": "Participant created successfully",
+        "create_failed": "Failed to create participant",
+        "updated": "Participant updated successfully",
+        "update_failed": "Failed to update participant",
+        "level_only_for_referees": "A referee level can only be set for referee participants"
+      }
     }
   }
 }

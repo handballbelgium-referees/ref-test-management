@@ -135,6 +135,55 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.ToTable("Jobs");
                 });
 
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Participants.Participant", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("FirstName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("LastName")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<string>("Level")
+                        .HasMaxLength(32)
+                        .HasColumnType("varchar(32)");
+
+                    b.Property<string>("Type")
+                        .IsRequired()
+                        .HasColumnType("longtext");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Email")
+                        .IsUnique();
+
+                    b.HasIndex("LastName", "FirstName");
+
+                    b.ToTable("Participants");
+                });
+
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", b =>
                 {
                     b.Property<Guid>("Id")
@@ -224,6 +273,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.Property<int>("NumberOfQuestions")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("ParticipantId")
+                        .HasColumnType("char(36)");
+
                     b.Property<double?>("Percentage")
                         .HasColumnType("double");
 
@@ -300,6 +352,8 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 
                     b.HasIndex("IsAnonymized");
 
+                    b.HasIndex("ParticipantId");
+
                     b.HasIndex("Status");
 
                     b.HasIndex("TitleId");
@@ -324,11 +378,18 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTests.RefTest", b =>
                 {
+                    b.HasOne("Handball.Belgium.RefTestManagement.Domain.Participants.Participant", "Participant")
+                        .WithMany()
+                        .HasForeignKey("ParticipantId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
                     b.HasOne("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", "Title")
                         .WithMany()
                         .HasForeignKey("TitleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Participant");
 
                     b.Navigation("Title");
                 });
