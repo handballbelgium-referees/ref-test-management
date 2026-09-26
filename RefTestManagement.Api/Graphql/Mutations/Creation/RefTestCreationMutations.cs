@@ -117,6 +117,8 @@ public static partial class RefTestCreationMutations
         return result;
     }
 
+    // --- Helpers ------------------------------------------------------------
+
     /// <summary>
     /// Resolve RefTest title ID and value from input.
     /// If Title.Id is provided, it is reused. Otherwise, a new title is created with Title.Name.
