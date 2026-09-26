@@ -17,6 +17,20 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 [MutationType]
 public static partial class RefTestCreationMutations
 {
+    /// <summary>
+    /// Create RefTests for existing participants and/or new participant drafts with the same shared
+    /// configuration.
+    /// Depending on the caller's permissions, the created RefTests may require approval before
+    /// invitations can be sent.
+    /// </summary>
+    /// <param name="input">The input parameters for RefTest creation.</param>
+    /// <param name="context">The database context for accessing RefTests, participants, and titles.</param>
+    /// <param name="ihfRulesQuestionsService">Service for fetching IHF Rules questions.</param>
+    /// <param name="jobEnqueueService">Service for staging invitation or approval-notification jobs.</param>
+    /// <param name="subscriptionService">Service for publishing RefTest creation events.</param>
+    /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
+    /// <param name="loggerFactory">Factory for creating loggers.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     [Authorize(Policy = Permissions.RefTests.Create)]
     public static async Task<CreateRefTestsResult> CreateRefTestsAsync(
         CreateRefTestsInput input,
@@ -69,6 +83,9 @@ public static partial class RefTestCreationMutations
 
         context.RefTests.AddRange(createdRefTests);
 
+        // The RefTests, newly-created participants, and any jobs they owe are staged together and
+        // committed by the single SaveChanges below, so a persisted RefTest can never exist
+        // without its invitation or approval-notification job.
         if (requiresApproval)
             await EnqueueApprovalNotificationAsync(
                 createdRefTests,
@@ -100,6 +117,15 @@ public static partial class RefTestCreationMutations
         return result;
     }
 
+    /// <summary>
+    /// Resolve RefTest title ID and value from input.
+    /// If Title.Id is provided, it is reused. Otherwise, a new title is created with Title.Name.
+    /// </summary>
+    /// <param name="titleInput">The input parameters for title resolution.</param>
+    /// <param name="context">The database context for accessing RefTest titles.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>A tuple containing the resolved title ID and display value.</returns>
+    /// <exception cref="ArgumentException">Thrown if neither Title.Id nor Title.Name is provided.</exception>
     private static async Task<(Guid Id, string? Value)> ResolveTitleAsync(
         Title titleInput,
         RefTestManagementContext context,
@@ -120,6 +146,15 @@ public static partial class RefTestCreationMutations
         return (title.Id, title.Value);
     }
 
+    /// <summary>
+    /// Resolve the question IDs shared among the RefTests in the current request.
+    /// Explicit question numbers take precedence; otherwise, one random set is reused unless each
+    /// participant asked for their own random draw.
+    /// </summary>
+    /// <param name="input">The input parameters for question resolution.</param>
+    /// <param name="ihfRulesQuestionsService">Service for fetching question IDs from the IHF source.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The shared question IDs, or an empty list when each participant needs their own draw.</returns>
     private static async Task<List<string>> ResolveSharedQuestionIdsAsync(
         CreateRefTestsInput input,
         IIhfRulesQuestionsService ihfRulesQuestionsService,
@@ -138,6 +173,16 @@ public static partial class RefTestCreationMutations
         return [];
     }
 
+    /// <summary>
+    /// Resolve the participants referenced by the creation request.
+    /// Existing participants are loaded in request order and draft participants are validated,
+    /// deduplicated by email, and prepared for insertion.
+    /// </summary>
+    /// <param name="input">The participant selection and draft data from the request.</param>
+    /// <param name="context">The database context for loading and creating participants.</param>
+    /// <param name="result">The result object used to record participant-level validation failures.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The ordered participants to create RefTests for, plus any new participants to persist.</returns>
     private static async Task<ResolvedParticipants> ResolveParticipantTargetsAsync(
         CreateRefTestsInput input,
         RefTestManagementContext context,
@@ -187,6 +232,14 @@ public static partial class RefTestCreationMutations
         return new ResolvedParticipants(allParticipants, createdParticipants);
     }
 
+    /// <summary>
+    /// Load the existing participants selected for this request while preserving the input order.
+    /// </summary>
+    /// <param name="participantIds">The participant IDs selected by the caller.</param>
+    /// <param name="context">The database context for loading participants.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The resolved participants in the same order as the requested IDs.</returns>
+    /// <exception cref="ParticipantNotFoundException">Thrown when any requested participant ID is unknown.</exception>
     private static async Task<List<Participant>> ResolveExistingParticipantsAsync(
         IReadOnlyList<Guid> participantIds,
         RefTestManagementContext context,
@@ -212,6 +265,24 @@ public static partial class RefTestCreationMutations
         return orderedParticipants;
     }
 
+    /// <summary>
+    /// Build RefTests for each resolved participant.
+    /// If RandomQuestionsForEachUser is true, each RefTest gets its own random set of questions;
+    /// otherwise, all RefTests share the same question IDs.
+    /// </summary>
+    /// <param name="participants">The participants to create RefTests for.</param>
+    /// <param name="input">The input containing RefTest creation details.</param>
+    /// <param name="titleId">The resolved RefTest title ID.</param>
+    /// <param name="sharedQuestionIds">The question IDs shared across the batch when applicable.</param>
+    /// <param name="requiresApproval">Indicates if the created RefTests should start in PendingApproval.</param>
+    /// <param name="creatorName">The display name of the staff user creating the RefTests.</param>
+    /// <param name="creatorEmail">The email of the staff user creating the RefTests.</param>
+    /// <param name="ihfRulesQuestionsService">Service for fetching random question IDs.</param>
+    /// <param name="result">The result object for tracking per-participant failures.</param>
+    /// <param name="logger">The logger for logging failures.</param>
+    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The RefTests that were created successfully.</returns>
     private static async Task<List<RefTest>> BuildRefTestsAsync(
         IReadOnlyList<Participant> participants,
         CreateRefTestsInput input,
@@ -274,6 +345,14 @@ public static partial class RefTestCreationMutations
         return created;
     }
 
+    /// <summary>
+    /// Publish RefTestCreated subscription events for all successfully created RefTests.
+    /// </summary>
+    /// <param name="refTests">The RefTests that were created successfully.</param>
+    /// <param name="titleId">The resolved RefTest title ID.</param>
+    /// <param name="titleValue">The resolved RefTest title display value.</param>
+    /// <param name="subscriptionService">Service for publishing RefTest creation events.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task PublishCreatedEventsAsync(
         List<RefTest> refTests,
         Guid titleId,
@@ -298,6 +377,21 @@ public static partial class RefTestCreationMutations
                 cancellationToken);
     }
 
+    /// <summary>
+    /// Stage the approval notification email for all created RefTests.
+    /// The job row is added to the same unit of work as the RefTests and any new participants, so
+    /// they are committed together or not at all.
+    /// </summary>
+    /// <param name="refTests">The RefTests awaiting approval.</param>
+    /// <param name="creatorName">The name of the staff user who created them.</param>
+    /// <param name="creatorEmail">The email address of the staff user who created them.</param>
+    /// <param name="titleValue">The resolved RefTest title display value.</param>
+    /// <param name="jobEnqueueService">Service for staging job rows.</param>
+    /// <param name="context">The shared unit-of-work context.</param>
+    /// <param name="result">The result object used to surface enqueue failures.</param>
+    /// <param name="logger">The logger for logging failures.</param>
+    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueApprovalNotificationAsync(
         List<RefTest> refTests,
         string creatorName,
@@ -340,6 +434,16 @@ public static partial class RefTestCreationMutations
         }
     }
 
+    /// <summary>
+    /// Stage invitation emails for all created RefTests that should send them automatically.
+    /// </summary>
+    /// <param name="refTests">The RefTests whose invitation emails should be staged.</param>
+    /// <param name="jobEnqueueService">Service for staging job rows.</param>
+    /// <param name="context">The shared unit-of-work context.</param>
+    /// <param name="result">The result object used to surface enqueue failures.</param>
+    /// <param name="logger">The logger for logging failures.</param>
+    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueInvitationEmailsAsync(
         List<RefTest> refTests,
         IJobEnqueueService jobEnqueueService,
