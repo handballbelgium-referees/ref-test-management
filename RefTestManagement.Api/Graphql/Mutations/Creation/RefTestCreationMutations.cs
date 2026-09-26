@@ -348,12 +348,12 @@ public static partial class RefTestCreationMutations
     }
 
     /// <summary>
-    /// Publish RefTestCreated subscription events for all successfully created RefTests.
+    /// Publish RefTestCreated events for all created RefTests.
     /// </summary>
-    /// <param name="refTests">The RefTests that were created successfully.</param>
-    /// <param name="titleId">The resolved RefTest title ID.</param>
-    /// <param name="titleValue">The resolved RefTest title display value.</param>
-    /// <param name="subscriptionService">Service for publishing RefTest creation events.</param>
+    /// <param name="refTests">The list of created RefTests.</param>
+    /// <param name="titleId">The ID of the RefTest title.</param>
+    /// <param name="titleValue">The value of the RefTest title.</param>
+    /// <param name="subscriptionService">Service for publishing RefTestCreated events.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task PublishCreatedEventsAsync(
         List<RefTest> refTests,
@@ -380,18 +380,19 @@ public static partial class RefTestCreationMutations
     }
 
     /// <summary>
-    /// Stage the approval notification email for all created RefTests.
+    /// Stage the approval notification email for all created RefTests. The notification is sent to
+    /// the creator and includes details of all RefTests awaiting approval.
     /// The job row is added to the same unit of work as the RefTests and any new participants, so
-    /// they are committed together or not at all.
+    /// it is committed with them or not at all.
     /// </summary>
-    /// <param name="refTests">The RefTests awaiting approval.</param>
-    /// <param name="creatorName">The name of the staff user who created them.</param>
-    /// <param name="creatorEmail">The email address of the staff user who created them.</param>
-    /// <param name="titleValue">The resolved RefTest title display value.</param>
-    /// <param name="jobEnqueueService">Service for staging job rows.</param>
-    /// <param name="context">The shared unit-of-work context.</param>
-    /// <param name="result">The result object used to surface enqueue failures.</param>
-    /// <param name="logger">The logger for logging failures.</param>
+    /// <param name="refTests">The list of created RefTests.</param>
+    /// <param name="creatorName">The name of the RefTest creator.</param>
+    /// <param name="creatorEmail">The email address of the RefTest creator.</param>
+    /// <param name="titleValue">The value of the RefTest title.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
+    /// <param name="result">The result object for tracking operation status.</param>
+    /// <param name="logger">The logger for logging information and errors.</param>
     /// <param name="correlationId">The correlation ID for tracking the operation.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueApprovalNotificationAsync(
@@ -437,13 +438,15 @@ public static partial class RefTestCreationMutations
     }
 
     /// <summary>
-    /// Stage invitation emails for all created RefTests that should send them automatically.
+    /// Stage invitation emails for all created RefTests.
+    /// If SendAutomatedInvitations is false, the RefTests are created but the emails are not sent.
+    /// The job rows are added to the same unit of work as the RefTests.
     /// </summary>
-    /// <param name="refTests">The RefTests whose invitation emails should be staged.</param>
-    /// <param name="jobEnqueueService">Service for staging job rows.</param>
-    /// <param name="context">The shared unit-of-work context.</param>
-    /// <param name="result">The result object used to surface enqueue failures.</param>
-    /// <param name="logger">The logger for logging failures.</param>
+    /// <param name="refTests">The list of created RefTests.</param>
+    /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
+    /// <param name="context">The database context for accessing RefTests and related entities.</param>
+    /// <param name="result">The result object for tracking operation status.</param>
+    /// <param name="logger">The logger for logging information and errors.</param>
     /// <param name="correlationId">The correlation ID for tracking the operation.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueInvitationEmailsAsync(
