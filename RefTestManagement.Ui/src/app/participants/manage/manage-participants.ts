@@ -1,6 +1,11 @@
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { CreateParticipantGQL, UpdateParticipantGQL } from '../../../../graphql/generated';
+import {
+  CreateParticipantGQL,
+  CreateParticipantMutation,
+  UpdateParticipantGQL,
+  UpdateParticipantMutation,
+} from '../../../../graphql/generated';
 import { Banner } from '../../services/banner';
 import { runMutation } from '../../shared/utils/apollo-utils';
 import {
@@ -85,8 +90,8 @@ export class ManageParticipants {
         }),
         this._destroyRef,
         {
-          onSuccess: async (payload) => {
-            const result = payload.data?.updateParticipant;
+          onSuccess: async (payload: UpdateParticipantMutation) => {
+            const result = payload.updateParticipant;
             const message = result?.errors?.[0]?.message;
             if (message) {
               this._bannerService.error(message);
@@ -109,6 +114,7 @@ export class ManageParticipants {
           },
           onComplete: () => this.saving.set(false),
         },
+        (result) => result.data!,
       );
 
       return;
@@ -124,8 +130,8 @@ export class ManageParticipants {
       }),
       this._destroyRef,
       {
-        onSuccess: async (payload) => {
-          const created = payload.data?.createParticipant.participant;
+        onSuccess: async (payload: CreateParticipantMutation) => {
+          const created = payload.createParticipant.participant;
           if (!created) return;
 
           await this.participantsData.refresh();
@@ -141,6 +147,7 @@ export class ManageParticipants {
         },
         onComplete: () => this.saving.set(false),
       },
+      (result) => result.data!,
     );
   }
 

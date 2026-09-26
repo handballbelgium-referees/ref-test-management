@@ -275,7 +275,7 @@
                 (cancel)="onQuestionCancel()"
               />
               <app-question-search-autocomplete
-                [currentLanguage]="currentLanguage || 'en'"
+                [currentLanguage]="currentLanguage() ?? 'en'"
                 [selectedQuestions]="selectedQuestions()"
                 (selectQuestion)="onQuestionSelect($event)"
                 (removeQuestion)="onQuestionRemove($event)"

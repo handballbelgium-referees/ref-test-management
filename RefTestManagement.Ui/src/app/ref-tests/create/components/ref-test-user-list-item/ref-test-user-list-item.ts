@@ -4,7 +4,7 @@ import {
   IParticipantFormValue,
   PARTICIPANT_LEVEL_OPTIONS,
   PARTICIPANT_TYPE_OPTIONS,
-} from '../../../participants/models/participant-form-value';
+} from '../../../../participants/models/participant-form-value';
 
 @Component({
   selector: 'app-ref-test-user-list-item',
