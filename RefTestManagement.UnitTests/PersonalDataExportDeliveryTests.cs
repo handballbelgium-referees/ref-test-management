@@ -68,6 +68,16 @@ public sealed class PersonalDataExportDeliveryTests
                 {
                     StreamId = completedId,
                     Version = 1,
+                    Type = "RefTestCreated",
+                    Timestamp = Now.AddMinutes(-2),
+                    ActorName = "Staff Operator",
+                    ActorEmail = "staff@example.org",
+                    Data = """{"firstName":"Ada","lastName":"Lovelace","email":"ada@example.org"}"""
+                },
+                new AuditEvent
+                {
+                    StreamId = completedId,
+                    Version = 2,
                     Type = "RefTestDetailsUpdated",
                     Timestamp = Now,
                     ActorName = "Staff Operator",
@@ -91,6 +101,16 @@ public sealed class PersonalDataExportDeliveryTests
                 {
                     StreamId = pendingId,
                     Version = 1,
+                    Type = "RefTestCreated",
+                    Timestamp = Now.AddMinutes(-2),
+                    ActorName = "Staff Operator",
+                    ActorEmail = "staff@example.org",
+                    Data = """{"firstName":"Ada","lastName":"Lovelace","email":"ada@example.org"}"""
+                },
+                new AuditEvent
+                {
+                    StreamId = pendingId,
+                    Version = 2,
                     Type = "RefTestStarted",
                     Timestamp = Now.AddMinutes(1),
                     ActorName = "***",
@@ -102,7 +122,7 @@ public sealed class PersonalDataExportDeliveryTests
                 new AuditEvent
                 {
                     StreamId = pendingId,
-                    Version = 2,
+                    Version = 3,
                     Type = "RefTestPrivacyNoticeAccepted",
                     Timestamp = Now.AddMinutes(2),
                     ActorName = "Ada Lovelace",
@@ -166,7 +186,7 @@ public sealed class PersonalDataExportDeliveryTests
         Assert.Equal("v2", completed.PrivacyNoticeVersion);
         Assert.NotNull(completed.PrivacyNoticeAcceptedAt);
 
-        Assert.Equal(3, document.AuditEvents.Count);
+        Assert.Equal(5, document.AuditEvents.Count);
         var archivedEvent = Assert.Single(document.AuditEvents, auditEvent => auditEvent.IsArchived);
         Assert.Equal(Now.AddDays(-1), archivedEvent.RedactedAt);
         Assert.Equal(PersonalDataExportActorKind.Staff, archivedEvent.ActorKind);
@@ -217,6 +237,442 @@ public sealed class PersonalDataExportDeliveryTests
         Assert.Equal(PersonalDataExportDeliveredEvent.EventType, deliveryAudit.Type);
         Assert.Equal("Verified participant", deliveryAudit.ActorName);
         Assert.Equal(string.Empty, deliveryAudit.ActorEmail);
+    }
+
+    [Fact]
+    public void SanitizeHistoryIncludesNewOwnerTransitionWithoutPriorOwnerIdentity()
+    {
+        const string streamId = "ownership-transition";
+        const string oldOwnerEmail = "alice@example.org";
+        const string newOwnerEmail = "bea@example.org";
+        var transition = CreateDetailsUpdatedAuditEvent(
+            3,
+            streamId,
+            "Alice",
+            "Bea",
+            "Former",
+            "Current",
+            oldOwnerEmail,
+            newOwnerEmail);
+        var events = new[]
+        {
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Bea", email = newOwnerEmail },
+                "Bea Current",
+                newOwnerEmail),
+            transition,
+            CreateAuditEvent(
+                2,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Alice", email = oldOwnerEmail },
+                "Alice Former",
+                oldOwnerEmail),
+            CreateRefTestCreatedAuditEvent(1, streamId, "Alice", "Former", oldOwnerEmail)
+        };
+        var originalTransitionData = transition.Data;
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, newOwnerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestStarted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var sanitizedTransition = Assert.Single(
+            sanitized,
+            auditEvent => auditEvent.Type == "RefTestDetailsUpdated");
+        using var transitionData = JsonDocument.Parse(sanitizedTransition.Data!);
+        Assert.Equal("***", transitionData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+        Assert.Equal("Bea", transitionData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
+        Assert.Equal("***", transitionData.RootElement.GetProperty("lastName").GetProperty("old").GetString());
+        Assert.Equal("Current", transitionData.RootElement.GetProperty("lastName").GetProperty("new").GetString());
+        Assert.Equal("***", transitionData.RootElement.GetProperty("email").GetProperty("old").GetString());
+        Assert.Equal(newOwnerEmail, transitionData.RootElement.GetProperty("email").GetProperty("new").GetString());
+        Assert.Equal(originalTransitionData, transition.Data);
+
+        var serializedHistory = JsonSerializer.Serialize(sanitized);
+        Assert.DoesNotContain("Alice", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain(oldOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SanitizeHistoryIncludesCurrentOwnerEventsAfterRedactedCreation()
+    {
+        const string streamId = "redacted-creation";
+        const string ownerEmail = "ada@example.org";
+        var redactedCreation = CreateRedactedAuditEvent(
+            CreateRefTestCreatedAuditEvent(1, streamId, "Ada", "Lovelace", ownerEmail));
+        var originalCreationData = redactedCreation.Data;
+        using (var sourceData = JsonDocument.Parse(redactedCreation.Data!))
+        {
+            Assert.Equal("***", sourceData.RootElement.GetProperty("firstName").GetString());
+            Assert.Equal("***", sourceData.RootElement.GetProperty("lastName").GetString());
+            Assert.Equal("***", sourceData.RootElement.GetProperty("email").GetString());
+        }
+
+        var events = new[]
+        {
+            CreateAuditEvent(
+                2,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Ada", lastName = "Lovelace", email = ownerEmail },
+                "Ada Lovelace",
+                ownerEmail),
+            redactedCreation
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, ownerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestCreated", "RefTestStarted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var sanitizedCreation = Assert.Single(sanitized, auditEvent => auditEvent.Type == "RefTestCreated");
+        Assert.Equal(PersonalDataExportActorKind.Redacted, sanitizedCreation.ActorKind);
+        Assert.Equal("***", sanitizedCreation.ActorName);
+        Assert.Equal("***", sanitizedCreation.ActorEmail);
+        Assert.NotNull(sanitizedCreation.RedactedAt);
+        using var sanitizedData = JsonDocument.Parse(sanitizedCreation.Data!);
+        Assert.Equal("***", sanitizedData.RootElement.GetProperty("firstName").GetString());
+        Assert.Equal("***", sanitizedData.RootElement.GetProperty("lastName").GetString());
+        Assert.Equal("***", sanitizedData.RootElement.GetProperty("email").GetString());
+        Assert.Equal(originalCreationData, redactedCreation.Data);
+    }
+
+    [Fact]
+    public void SanitizeHistoryExcludesPriorOwnerRedactedCreationAcrossFullyRedactedReassignment()
+    {
+        const string streamId = "redacted-reassignment";
+        const string oldOwnerEmail = "alice@example.org";
+        const string currentOwnerEmail = "bea@example.org";
+        var redactedCreation = CreateRedactedAuditEvent(
+            CreateRefTestCreatedAuditEvent(1, streamId, "Alice", "Former", oldOwnerEmail));
+        var transitionSource = CreateAuditEvent(
+            3,
+            streamId,
+            "RefTestDetailsUpdated",
+            new
+            {
+                firstName = new { old = "Alice", @new = "Bea" },
+                lastName = new { old = "Former", @new = "Current" },
+                email = new { old = oldOwnerEmail, @new = currentOwnerEmail },
+                invitationToken = "retained-but-sensitive-token"
+            },
+            "Staff Operator",
+            "staff@example.org");
+        var redactedTransition = CreateRedactedAuditEvent(transitionSource);
+        var originalCreationData = redactedCreation.Data;
+        var originalTransitionData = redactedTransition.Data;
+        using (var transitionSourceData = JsonDocument.Parse(redactedTransition.Data!))
+        {
+            Assert.Equal(
+                "***",
+                transitionSourceData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                transitionSourceData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
+            Assert.Equal(
+                "***",
+                transitionSourceData.RootElement.GetProperty("email").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                transitionSourceData.RootElement.GetProperty("email").GetProperty("new").GetString());
+        }
+
+        var events = new[]
+        {
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = "Bea", lastName = "Current", email = currentOwnerEmail },
+                "Bea Current",
+                currentOwnerEmail),
+            redactedTransition,
+            redactedCreation
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, currentOwnerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestCompleted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        Assert.DoesNotContain(sanitized, auditEvent => auditEvent.Type == "RefTestCreated");
+        var sanitizedTransition = Assert.Single(
+            sanitized,
+            auditEvent => auditEvent.Type == "RefTestDetailsUpdated");
+        Assert.Equal(PersonalDataExportActorKind.Redacted, sanitizedTransition.ActorKind);
+        Assert.NotNull(sanitizedTransition.RedactedAt);
+        using (var sanitizedTransitionData = JsonDocument.Parse(sanitizedTransition.Data!))
+        {
+            Assert.Equal(
+                "***",
+                sanitizedTransitionData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                sanitizedTransitionData.RootElement.GetProperty("email").GetProperty("new").GetString());
+            Assert.False(sanitizedTransitionData.RootElement.TryGetProperty("invitationToken", out _));
+        }
+
+        var serializedHistory = JsonSerializer.Serialize(sanitized);
+        Assert.DoesNotContain("retained-but-sensitive-token", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain(oldOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Alice", serializedHistory, StringComparison.Ordinal);
+        Assert.Contains(currentOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(originalCreationData, redactedCreation.Data);
+        Assert.Equal(originalTransitionData, redactedTransition.Data);
+    }
+
+    [Fact]
+    public void SanitizeHistoryDoesNotExposeOldOwnerActivityAfterRedactedCreationAndReadableTransfer()
+    {
+        const string streamId = "redacted-creation-readable-transfer";
+        const string oldOwnerEmail = "alice@example.org";
+        const string currentOwnerEmail = "bea@example.org";
+        var redactedCreation = CreateRedactedAuditEvent(
+            CreateRefTestCreatedAuditEvent(1, streamId, "Alice", "Former", oldOwnerEmail));
+        var oldOwnerActivity = CreateAuditEvent(
+            2,
+            streamId,
+            "RefTestStarted",
+            new { firstName = "Alice", lastName = "Former", email = oldOwnerEmail },
+            "Alice Former",
+            oldOwnerEmail);
+        var transition = CreateDetailsUpdatedAuditEvent(
+            3,
+            streamId,
+            "Alice",
+            "Bea",
+            "Former",
+            "Current",
+            oldOwnerEmail,
+            currentOwnerEmail);
+        var events = new[]
+        {
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = "Bea", lastName = "Current", email = currentOwnerEmail },
+                "Bea Current",
+                currentOwnerEmail),
+            transition,
+            oldOwnerActivity,
+            redactedCreation
+        };
+        var originalTransitionData = transition.Data;
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, currentOwnerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestCompleted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        Assert.DoesNotContain(sanitized, auditEvent => auditEvent.Type == "RefTestStarted");
+        Assert.DoesNotContain(sanitized, auditEvent => auditEvent.Type == "RefTestCreated");
+        var sanitizedTransition = Assert.Single(
+            sanitized,
+            auditEvent => auditEvent.Type == "RefTestDetailsUpdated");
+        using var sanitizedTransitionData = JsonDocument.Parse(sanitizedTransition.Data!);
+        Assert.Equal(
+            "***",
+            sanitizedTransitionData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+        Assert.Equal(
+            "Bea",
+            sanitizedTransitionData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
+        Assert.Equal(
+            "***",
+            sanitizedTransitionData.RootElement.GetProperty("email").GetProperty("old").GetString());
+        Assert.Equal(
+            currentOwnerEmail,
+            sanitizedTransitionData.RootElement.GetProperty("email").GetProperty("new").GetString());
+
+        var serializedHistory = JsonSerializer.Serialize(sanitized);
+        Assert.DoesNotContain("Alice", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain(oldOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(currentOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(originalTransitionData, transition.Data);
+    }
+
+    [Fact]
+    public void SanitizeHistoryExcludesEarlierOwnersAcrossMultipleEmailChanges()
+    {
+        const string streamId = "multi-hop-ownership";
+        const string firstOwnerEmail = "alice@example.org";
+        const string secondOwnerEmail = "bea@example.org";
+        const string currentOwnerEmail = "cora@example.org";
+        var events = new[]
+        {
+            CreateAuditEvent(
+                6,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Cora", email = currentOwnerEmail },
+                "Cora Current",
+                currentOwnerEmail),
+            CreateDetailsUpdatedAuditEvent(
+                5,
+                streamId,
+                "Bea",
+                "Cora",
+                "Former",
+                "Current",
+                secondOwnerEmail,
+                currentOwnerEmail),
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Bea", email = secondOwnerEmail },
+                "Bea Former",
+                secondOwnerEmail),
+            CreateDetailsUpdatedAuditEvent(
+                3,
+                streamId,
+                "Alice",
+                "Bea",
+                "Former",
+                "Former",
+                firstOwnerEmail,
+                secondOwnerEmail),
+            CreateAuditEvent(
+                2,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Alice", email = firstOwnerEmail },
+                "Alice Former",
+                firstOwnerEmail),
+            CreateRefTestCreatedAuditEvent(1, streamId, "Alice", "Former", firstOwnerEmail)
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, currentOwnerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestStarted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var transition = Assert.Single(sanitized, auditEvent => auditEvent.Type == "RefTestDetailsUpdated");
+        using var transitionData = JsonDocument.Parse(transition.Data!);
+        Assert.Equal("***", transitionData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+        Assert.Equal("Cora", transitionData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
+
+        var serializedHistory = JsonSerializer.Serialize(sanitized);
+        Assert.DoesNotContain("Alice", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain("Bea", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain(firstOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(secondOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(currentOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SanitizeHistoryPreservesHistoryAcrossCaseAndWhitespaceOnlyEmailUpdates()
+    {
+        const string streamId = "case-and-whitespace-only-ownership";
+        const string ownerEmail = "ada@example.org";
+        var caseAndWhitespaceOnlyUpdate = CreateDetailsUpdatedAuditEvent(
+            3,
+            streamId,
+            "Ada",
+            "Ada Byron",
+            "Lovelace",
+            "Lovelace",
+            "Ada@Example.org",
+            " ADA@example.ORG ");
+        var events = new[]
+        {
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = "Ada Byron", email = ownerEmail },
+                "Ada Byron",
+                ownerEmail),
+            caseAndWhitespaceOnlyUpdate,
+            CreateAuditEvent(
+                2,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Ada", email = ownerEmail },
+                "Ada Lovelace",
+                ownerEmail),
+            CreateRefTestCreatedAuditEvent(1, streamId, "Ada", "Lovelace", "Ada@Example.org")
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, " Ada@Example.org ");
+
+        Assert.Equal(4, sanitized.Count);
+        var sanitizedUpdate = Assert.Single(
+            sanitized,
+            auditEvent => auditEvent.Type == "RefTestDetailsUpdated");
+        using var updateData = JsonDocument.Parse(sanitizedUpdate.Data!);
+        Assert.Equal("Ada", updateData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+        Assert.Equal("Ada Byron", updateData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
+        Assert.Equal(
+            "Ada@Example.org",
+            updateData.RootElement.GetProperty("email").GetProperty("old").GetString());
+    }
+
+    [Fact]
+    public void SanitizeHistoryOmitsUnknownOwnershipUntilAValidCurrentOwnerTransition()
+    {
+        const string streamId = "unknown-ownership";
+        const string priorOwnerEmail = "alice@example.org";
+        const string currentOwnerEmail = "bea@example.org";
+        var events = new[]
+        {
+            CreateAuditEvent(
+                6,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Bea", email = currentOwnerEmail },
+                "Bea Current",
+                currentOwnerEmail),
+            CreateDetailsUpdatedAuditEvent(
+                5,
+                streamId,
+                "Alice",
+                "Bea",
+                "Former",
+                "Current",
+                priorOwnerEmail,
+                currentOwnerEmail),
+            CreateAuditEvent(4, streamId, "RefTestStarted", new { email = currentOwnerEmail }),
+            new AuditEvent
+            {
+                SeqId = 3,
+                StreamId = streamId,
+                Version = 3,
+                Type = "RefTestDetailsUpdated",
+                Data = "{ malformed",
+                Timestamp = Now
+            },
+            CreateAuditEvent(
+                2,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Bea", email = currentOwnerEmail },
+                "Bea Current",
+                currentOwnerEmail),
+            new AuditEvent
+            {
+                SeqId = 1,
+                StreamId = streamId,
+                Version = 1,
+                Type = "RefTestCreated",
+                Data = "{ malformed",
+                Timestamp = Now
+            }
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, currentOwnerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestStarted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var transition = Assert.Single(sanitized, auditEvent => auditEvent.Type == "RefTestDetailsUpdated");
+        using var transitionData = JsonDocument.Parse(transition.Data!);
+        Assert.Equal("***", transitionData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+        Assert.Equal("Bea", transitionData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
     }
 
     [Fact]
@@ -538,6 +994,82 @@ public sealed class PersonalDataExportDeliveryTests
         Assert.True(request.TryConfirm(ChallengeKey, Now.AddMinutes(1)));
         return request;
     }
+
+    private static AuditEvent CreateAuditEvent(
+        long seqId,
+        string streamId,
+        string type,
+        object? data,
+        string actorName = "System",
+        string actorEmail = "") =>
+        new()
+        {
+            SeqId = seqId,
+            StreamId = streamId,
+            Version = seqId,
+            Type = type,
+            Timestamp = Now.AddSeconds(seqId),
+            ActorName = actorName,
+            ActorEmail = actorEmail,
+            Data = data is null
+                ? null
+                : JsonSerializer.Serialize(
+                    data,
+                    new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
+        };
+
+    private static AuditEvent CreateRefTestCreatedAuditEvent(
+        long seqId,
+        string streamId,
+        string firstName,
+        string lastName,
+        string email) =>
+        CreateAuditEvent(
+            seqId,
+            streamId,
+            "RefTestCreated",
+            new { firstName, lastName, email },
+            "Staff Operator",
+            "staff@example.org");
+
+    private static AuditEvent CreateRedactedAuditEvent(AuditEvent source) =>
+        new()
+        {
+            Id = source.Id,
+            SeqId = source.SeqId,
+            StreamId = source.StreamId,
+            Version = source.Version,
+            Type = source.Type,
+            Timestamp = source.Timestamp,
+            ActorName = AuditPiiRedactor.RedactedValue,
+            ActorEmail = AuditPiiRedactor.RedactedValue,
+            Headers = source.Headers,
+            Data = AuditPiiRedactor.RedactData(source.Data),
+            IsArchived = true,
+            RedactedAt = source.Timestamp.AddDays(91)
+        };
+
+    private static AuditEvent CreateDetailsUpdatedAuditEvent(
+        long seqId,
+        string streamId,
+        string oldFirstName,
+        string newFirstName,
+        string oldLastName,
+        string newLastName,
+        string oldEmail,
+        string newEmail) =>
+        CreateAuditEvent(
+            seqId,
+            streamId,
+            "RefTestDetailsUpdated",
+            new
+            {
+                firstName = new { old = oldFirstName, @new = newFirstName },
+                lastName = new { old = oldLastName, @new = newLastName },
+                email = new { old = oldEmail, @new = newEmail }
+            },
+            "Staff Operator",
+            "staff@example.org");
 
     private static RefTest CreateRefTestForStatus(Guid titleId, RefTestStatus status, string email)
     {

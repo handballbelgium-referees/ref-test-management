@@ -211,10 +211,7 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
             retainedEvents.AddRange(batch);
         }
 
-        return retainedEvents
-            .OrderBy(auditEvent => auditEvent.SeqId)
-            .Select(auditEvent => PersonalDataExportAuditSanitizer.Sanitize(auditEvent, recipientEmail))
-            .ToList();
+        return PersonalDataExportAuditSanitizer.SanitizeHistory(retainedEvents, recipientEmail);
     }
 
     private async Task RecordFailureAsync(
