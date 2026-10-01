@@ -13,7 +13,8 @@ public sealed class RefTestDto
     public required string FullName { get; init; }
 
     public required string Email { get; init; }
-    public required string Token { get; init; }
+    /// <summary>Plaintext token, available only in the response that issues or rotates it.</summary>
+    public string? Token { get; init; }
 
     public bool SendInvitationsAutomatically { get; init; }
     public bool InvitationSent { get; init; }

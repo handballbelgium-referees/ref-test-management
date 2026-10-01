@@ -3,6 +3,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -38,6 +39,7 @@ public sealed class RefTestQueriesTests
         var titleId = await SeedTitleAsync(database);
 
         var refTest = NewRefTest(titleId);
+        var token = refTest.GetIssuedToken();
         refTest.AcceptPrivacyNotice("v1");
         refTest.Start("v1");
         refTest.Complete(
@@ -58,8 +60,15 @@ public sealed class RefTestQueriesTests
         }
 
         await using var context = database.CreateContext();
+        var storedToken = await context.RefTests
+            .Where(candidate => candidate.Id == refTest.Id)
+            .Select(candidate => candidate.Token)
+            .SingleAsync(ct);
+
+        Assert.Equal(RefTest.HashToken(token), storedToken);
+
         var queryResult = await RefTestQueries.GetRefTestByTokenAsync(
-            refTest.Token,
+            token,
             context,
             new RefTestExpirationConfiguration(),
             new JobEnqueueService(context, NullLogger<JobEnqueueService>.Instance),
@@ -73,5 +82,13 @@ public sealed class RefTestQueriesTests
         Assert.Equal(20, queryResult.AnswerTotal);
         Assert.Equal(75, queryResult.Percentage);
         Assert.True(queryResult.SendResultsAutomatically);
+
+        await Assert.ThrowsAsync<RefTestNotFoundException>(() =>
+            RefTestQueries.GetRefTestByTokenAsync(
+                storedToken,
+                context,
+                new RefTestExpirationConfiguration(),
+                new JobEnqueueService(context, NullLogger<JobEnqueueService>.Instance),
+                ct));
     }
 }

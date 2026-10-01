@@ -330,7 +330,7 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
                     b.Property<string>("Token")
                         .IsRequired()
-                        .HasMaxLength(50)
+                        .HasMaxLength(64)
                         .HasColumnType("TEXT");
 
                     b.Property<long>("Version")

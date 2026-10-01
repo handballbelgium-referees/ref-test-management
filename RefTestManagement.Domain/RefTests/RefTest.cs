@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Security.Cryptography;
 using Handball.Belgium.RefTestManagement.Domain.Events;
+using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
@@ -33,7 +33,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     /// <summary>
     /// Length in characters of a generated invitation token. 32 hex characters is 128 bits of
     /// entropy, and matches the width of the value this used to produce
-    /// (<c>Guid.NewGuid().ToString("N")</c>) so stored tokens and invitation URLs are unaffected.
+    /// (<c>Guid.NewGuid().ToString("N")</c>).
     /// </summary>
     private const int TokenLength = 32;
 
@@ -64,7 +64,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         NumberOfQuestions = numberOfQuestions;
         MaxTimeInMinutes = maxTimeInMinutes;
         QuestionIds = questionIds ?? [];
-        Token = GenerateToken();
+        IssueToken();
         CreatedAt = DateTime.UtcNow;
         Status = RefTestStatus.Pending;
         SendResultsAutomatically = sendResultsAutomatically;
@@ -97,7 +97,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     [NotMapped] public string FullName => $"{FirstName} {LastName}";
 
     public string Email { get; private set; }
+    /// <summary>The SHA-256 hash used to look up the invitation token.</summary>
     public string Token { get; private set; }
+    [NotMapped] public string? IssuedToken { get; private set; }
     public bool SendInvitationsAutomatically { get; private set; }
     public DateTime? InvitationSentAt { get; private set; }
     public int NumberOfQuestions { get; private set; }
@@ -473,7 +475,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException(
                 "Can only regenerate token for pending or expired tests");
 
-        Token = GenerateToken();
+        IssueToken();
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         if (InvitationSentAt.HasValue)
@@ -521,7 +523,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         }
 
         // Optionally regenerate token
-        Token = GenerateToken();
+        IssueToken();
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         InvitationSentAt = null;
@@ -562,7 +564,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         CreatedAt = DateTime.UtcNow;
 
         // Always regenerate token for security
-        Token = GenerateToken();
+        IssueToken();
         RaiseDomainEvent(new RefTestHardResetEvent());
     }
 
@@ -575,7 +577,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException("Can only revive expired tests");
 
         Status = RefTestStatus.Pending;
-        Token = GenerateToken();
+        IssueToken();
         ExpiredAt = null;
 
         // Reset CreatedAt so the expiration timer starts fresh
@@ -615,6 +617,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         // Token must stay unique (unique index) — a random placeholder still hides the real
         // token value while satisfying that constraint, unlike a fixed "***" for every RefTest.
         Token = $"erased-{Guid.NewGuid():N}";
+        IssuedToken = null;
         // PrivacyNoticeVersion and PrivacyNoticeAcceptedAt are deliberately retained. GDPR
         // Art. 7(1) requires the controller to be able to demonstrate that consent was given;
         // neither field identifies the participant once name, email and token are erased, so
@@ -660,8 +663,21 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     /// personal data and results, so they come from a cryptographic RNG — a GUID is unique but
     /// makes no secrecy guarantee.
     /// </summary>
-    private static string GenerateToken() =>
-        RandomNumberGenerator.GetHexString(TokenLength, lowercase: true);
+    public static string HashToken(string token) => TokenService.Hash(token);
+
+    public static bool IsValidTokenFormat(string? token) =>
+        token is { Length: TokenLength } &&
+        token.All(static character => character is >= '0' and <= '9' or >= 'a' and <= 'f');
+
+    public string GetIssuedToken() =>
+        IssuedToken ?? throw new InvalidOperationException("No invitation token was issued for this RefTest.");
+
+    private void IssueToken()
+    {
+        var token = TokenService.GenerateHex(TokenLength, lowercase: true);
+        IssuedToken = token;
+        Token = HashToken(token);
+    }
 
     #endregion
 }

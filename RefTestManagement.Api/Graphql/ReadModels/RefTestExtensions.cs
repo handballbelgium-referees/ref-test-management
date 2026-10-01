@@ -20,7 +20,7 @@ public static class RefTestExtensions
             LastName = refTest.LastName,
             FullName = $"{refTest.FirstName} {refTest.LastName}",
             Email = refTest.Email,
-            Token = refTest.Token,
+            Token = refTest.IssuedToken,
             SendInvitationsAutomatically = refTest.SendInvitationsAutomatically,
             InvitationSent = refTest.InvitationSentAt.HasValue,
             NumberOfQuestions = refTest.NumberOfQuestions,

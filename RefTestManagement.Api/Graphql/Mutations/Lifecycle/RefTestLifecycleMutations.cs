@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -40,10 +41,11 @@ public static partial class RefTestLifecycleMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
-        ParticipantInput.Token(token);
+        token = ParticipantInput.Token(token);
 
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
+            .WithParticipantToken(token)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (refTest == null)
             throw new RefTestNotFoundException(token);
@@ -94,10 +96,11 @@ public static partial class RefTestLifecycleMutations
         if (noticeVersion != privacyConfiguration.NoticeVersion)
             throw new RefTestValidationException("The privacy notice has changed. Please review the current version.");
 
-        ParticipantInput.Token(token);
+        token = ParticipantInput.Token(token);
 
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
+            .WithParticipantToken(token)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (refTest is null)
             throw new RefTestNotFoundException(token);
@@ -122,10 +125,11 @@ public static partial class RefTestLifecycleMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
-        ParticipantInput.Token(token);
+        token = ParticipantInput.Token(token);
 
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
+            .WithParticipantToken(token)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (refTest is null)
             throw new RefTestNotFoundException(token);
@@ -162,7 +166,8 @@ public static partial class RefTestLifecycleMutations
         var language = ParticipantInput.Language(input.Language);
 
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
+            .WithParticipantToken(token)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (refTest == null)
             throw new RefTestNotFoundException(input.Token);
@@ -235,11 +240,41 @@ public static partial class RefTestLifecycleMutations
         var language = ParticipantInput.Language(input.Language);
 
         var refTest = await context.RefTests
-            .FirstOrDefaultAsync(s => s.Token == token, cancellationToken);
+            .WithParticipantToken(token)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (refTest is null)
             throw new RefTestNotFoundException(input.Token);
 
+        return await CompleteRefTestCoreAsync(
+            refTest,
+            selectedAnswerIds,
+            language,
+            context,
+            ihfRulesQuestionsService,
+            jobEnqueueService,
+            emailConfiguration,
+            subscriptionService,
+            source,
+            cancellationToken);
+    }
+
+    /// <summary>
+    /// Shared completion logic for participant submissions and expiration jobs that already have
+    /// the RefTest loaded from the database.
+    /// </summary>
+    internal static async Task<RefTest> CompleteRefTestCoreAsync(
+        RefTest refTest,
+        List<string> selectedAnswerIds,
+        string? language,
+        RefTestManagementContext context,
+        IIhfRulesQuestionsService ihfRulesQuestionsService,
+        IJobEnqueueService jobEnqueueService,
+        EmailConfiguration emailConfiguration,
+        IRefTestSubscriptionService subscriptionService,
+        RefTestCompletionSource source,
+        CancellationToken cancellationToken)
+    {
         if (refTest.Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
 

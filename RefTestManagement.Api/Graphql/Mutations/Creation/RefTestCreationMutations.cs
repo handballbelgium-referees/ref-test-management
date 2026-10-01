@@ -303,7 +303,7 @@ public static partial class RefTestCreationMutations
                 await jobEnqueueService.EnqueueInvitationEmailAsync(
                     new InvitationEmailPayload(
                         refTest.Id, refTest.FullName, refTest.Email,
-                        refTest.Token, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes),
+                        refTest.GetIssuedToken(), refTest.NumberOfQuestions, refTest.MaxTimeInMinutes),
                     executeAfter: refTest.ScheduledAt,
                     saveChanges: false,
                     unitOfWorkContext: context,

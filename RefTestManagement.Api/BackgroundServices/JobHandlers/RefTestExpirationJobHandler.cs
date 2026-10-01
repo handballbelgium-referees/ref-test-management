@@ -66,7 +66,9 @@ public sealed class RefTestExpirationJobHandler(
                 {
                     var jobEnqueueService = new JobEnqueueService(context, jobEnqueueLogger);
                     await RefTestLifecycleMutations.CompleteRefTestCoreAsync(
-                        new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
+                        refTest,
+                        refTest.SelectedAnswerIds,
+                        refTest.Language,
                         context,
                         ihfRulesQuestionsService,
                         jobEnqueueService,

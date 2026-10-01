@@ -109,7 +109,7 @@ public static partial class RefTestResetMutations
                         refTest.Id,
                         refTest.FullName,
                         refTest.Email,
-                        refTest.Token,
+                        refTest.GetIssuedToken(),
                         refTest.NumberOfQuestions,
                         refTest.MaxTimeInMinutes
                     );
@@ -218,7 +218,7 @@ public static partial class RefTestResetMutations
                         refTest.Id,
                         refTest.FullName,
                         refTest.Email,
-                        refTest.Token,
+                        refTest.GetIssuedToken(),
                         refTest.NumberOfQuestions,
                         refTest.MaxTimeInMinutes
                     );

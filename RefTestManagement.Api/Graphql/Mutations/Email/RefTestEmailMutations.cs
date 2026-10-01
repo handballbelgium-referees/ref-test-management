@@ -65,11 +65,12 @@ public static partial class RefTestEmailMutations
                 if (refTest.Status != RefTestStatus.Pending)
                     throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Pending);
 
+                refTest.RegenerateToken();
                 var invitationPayload = new InvitationEmailPayload(
                     refTest.Id,
                     refTest.FullName,
                     refTest.Email,
-                    refTest.Token,
+                    refTest.GetIssuedToken(),
                     refTest.NumberOfQuestions,
                     refTest.MaxTimeInMinutes
                 );

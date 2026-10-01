@@ -1,7 +1,7 @@
 using System.Security.Cryptography;
-using System.Text;
 using Handball.Belgium.RefTestManagement.Domain.Events;
 using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
+using Handball.Belgium.RefTestManagement.Domain.Security;
 
 namespace Handball.Belgium.RefTestManagement.Domain.Privacy;
 
@@ -90,7 +90,7 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
 
     /// <summary>Computes the SHA-256 lookup value for a high-entropy challenge key.</summary>
     public static string HashKey(string challengeKey) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(challengeKey)));
+        TokenService.Hash(challengeKey);
 
     /// <summary>Whether an email job may still attempt delivery at the supplied time.</summary>
     public bool CanDeliverAt(DateTime now) =>
@@ -257,7 +257,7 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
             return false;
         }
 
-        var suppliedHash = SHA256.HashData(Encoding.UTF8.GetBytes(challengeKey));
+        var suppliedHash = TokenService.HashBytes(challengeKey);
         return expectedHash.Length == suppliedHash.Length
                && CryptographicOperations.FixedTimeEquals(expectedHash, suppliedHash);
     }

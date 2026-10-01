@@ -20,7 +20,7 @@ public static class RefTestMappings
             LastName = refTest.LastName,
             FullName = $"{refTest.FirstName} {refTest.LastName}",
             Email = refTest.Email,
-            Token = refTest.Token,
+            Token = null,
             SendInvitationsAutomatically = refTest.SendInvitationsAutomatically,
             InvitationSent = refTest.InvitationSentAt.HasValue,
             NumberOfQuestions = refTest.NumberOfQuestions,

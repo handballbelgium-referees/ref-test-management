@@ -332,8 +332,8 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 
                     b.Property<string>("Token")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("varchar(50)");
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()

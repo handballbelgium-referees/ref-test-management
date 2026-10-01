@@ -193,6 +193,9 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Debug, "Sending invitation email for RefTest {refTestId}")]
     public static partial void LogSendingInvitationEmail(ILogger logger, Guid refTestId);
 
+    [LoggerMessage(LogLevel.Debug, "Skipping invitation email for missing or stale RefTest {refTestId}")]
+    public static partial void LogSkippingStaleInvitationEmail(ILogger logger, Guid refTestId);
+
     [LoggerMessage(LogLevel.Debug, "Sending result email for RefTest {refTestId}")]
     public static partial void LogSendingResultEmail(ILogger logger, Guid refTestId);
 

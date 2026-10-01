@@ -1,5 +1,6 @@
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -20,6 +21,17 @@ public sealed class InvitationEmailJobHandler(
     {
         var payload = JobPayload.Deserialize<InvitationEmailPayload>(job, logger);
 
+        var refTest = await context.RefTests
+            .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
+
+        if (refTest is null
+            || string.IsNullOrEmpty(payload.Token)
+            || refTest.Token != RefTest.HashToken(payload.Token))
+        {
+            ServiceLoggerMessages.LogSkippingStaleInvitationEmail(logger, payload.RefTestId);
+            return;
+        }
+
         ServiceLoggerMessages.LogSendingInvitationEmail(logger, payload.RefTestId);
 
         await emailService.SendRefTestInvitationAsync(
@@ -31,20 +43,12 @@ public sealed class InvitationEmailJobHandler(
             payload.MaxTimeInMinutes,
             cancellationToken);
 
-        // Mark the RefTest invitation as sent
-        var refTest = await context.RefTests
-            .FirstOrDefaultAsync(r => r.Id == payload.RefTestId, cancellationToken);
+        refTest.SendInvitation();
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
-        if (refTest != null)
-        {
-            refTest.SendInvitation();
-            await context.SaveChangesWithRetryAsync(cancellationToken);
-
-            // Publish subscription event
-            await subscriptionService.PublishInvitationSentAsync(
-                refTest.Id,
-                refTest.InvitationSentAt!.Value,
-                cancellationToken);
-        }
+        await subscriptionService.PublishInvitationSentAsync(
+            refTest.Id,
+            refTest.InvitationSentAt!.Value,
+            cancellationToken);
     }
 }

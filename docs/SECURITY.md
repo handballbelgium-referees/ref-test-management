@@ -222,10 +222,11 @@ mitigated rather than ignored:
 | Risk                                       | Mitigation                                                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | Token leaks through the `Referer` header   | The API sends `Referrer-Policy: no-referrer` on every response, and the only link on a token-bearing page is same-origin with `rel="noreferrer"`. |
-| Token guessed                              | Tokens are 32 hex characters from `RandomNumberGenerator`, not `Guid.NewGuid()` — 128 bits of cryptographic randomness. |
+| Token guessed                              | Tokens are 32 lowercase hex characters from `RandomNumberGenerator`, not `Guid.NewGuid()` — 128 bits of cryptographic randomness. |
+| Token exposed from database rows           | `RefTests.Token` stores a SHA-256 digest; queued invitation email payloads still contain the raw token. |
 | Token replayed after the test is over      | Every participant mutation re-checks status, and the server enforces the deadline independently of status.       |
 | Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
-| Oversized or malformed token in a lookup   | Tokens are length-checked before they reach the database.                                                        |
+| Oversized or malformed token in a lookup   | Only 32 lowercase hex characters are accepted before hashing; the stored digest cannot be submitted as a credential. |
 
 Residual risk that is accepted: the token appears in browser history and in any server access log
 that records full request paths. Anyone who can read those can resume that one participant's

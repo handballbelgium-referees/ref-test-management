@@ -52,11 +52,12 @@ public static partial class RefTestUpdateMutations
         // invitation can never be sent to an address that was not persisted, or dropped after it was.
         if (emailChanged && input.ResendInvitation && invitationWasSent)
         {
+            refTest.RegenerateToken();
             var invitationPayload = new InvitationEmailPayload(
                 refTest.Id,
                 refTest.FullName,
                 refTest.Email,
-                refTest.Token,
+                refTest.GetIssuedToken(),
                 refTest.NumberOfQuestions,
                 refTest.MaxTimeInMinutes
             );
@@ -237,11 +238,12 @@ public static partial class RefTestUpdateMutations
             refTest.Status == RefTestStatus.Pending &&
             !invitationWasSent)
         {
+            refTest.RegenerateToken();
             var invitationPayload = new InvitationEmailPayload(
                 refTest.Id,
                 refTest.FullName,
                 refTest.Email,
-                refTest.Token,
+                refTest.GetIssuedToken(),
                 refTest.NumberOfQuestions,
                 refTest.MaxTimeInMinutes
             );
@@ -323,7 +325,7 @@ public static partial class RefTestUpdateMutations
                 refTest.Id,
                 refTest.FullName,
                 refTest.Email,
-                refTest.Token,
+                refTest.GetIssuedToken(),
                 refTest.NumberOfQuestions,
                 refTest.MaxTimeInMinutes
             );
