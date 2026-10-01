@@ -46,7 +46,6 @@ public sealed class PersonalDataExportRequestService(
             var key = TokenService.GenerateBase64Url(32);
             var request = PersonalDataExportRequest.Create(
                 storedEmail,
-                "en",
                 key,
                 keyProtection.Protect(key),
                 now,

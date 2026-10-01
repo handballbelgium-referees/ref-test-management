@@ -33,7 +33,7 @@ public sealed class PersonalDataExportRequestTests
         string email = ParticipantEmail,
         string key = "challenge-key",
         string protectedKey = "protected-challenge-key") =>
-        PersonalDataExportRequest.Create(email, "fr", key, protectedKey, createdAt, expiresAt);
+        PersonalDataExportRequest.Create(email, key, protectedKey, createdAt, expiresAt);
 
     [Fact]
     public void ChallengeKeyIsHashedAndConfirmationConsumesTheChallengeOnce()
@@ -77,7 +77,6 @@ public sealed class PersonalDataExportRequestTests
         Assert.True(request.ClearExpiredChallenge(expiration));
         Assert.False(request.ClearExpiredChallenge(expiration.AddMinutes(1)));
         Assert.Equal(string.Empty, request.Email);
-        Assert.Equal("en", request.Locale);
         Assert.Null(request.KeyHash);
         Assert.Null(request.ProtectedDeliveryKey);
         Assert.Empty(request.DomainEvents);
@@ -172,7 +171,6 @@ public sealed class PersonalDataExportRequestTests
         Assert.Equal(knownAddressResult, unknownAddressResult);
         Assert.True(knownAddressResult.Acknowledged);
         var request = await context.PersonalDataExportRequests.SingleAsync(cancellationToken);
-        Assert.Equal("en", request.Locale);
         Assert.Equal(64, request.KeyHash!.Length);
         Assert.NotNull(request.ProtectedDeliveryKey);
 

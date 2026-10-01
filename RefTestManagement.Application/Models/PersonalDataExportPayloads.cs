@@ -63,6 +63,5 @@ public sealed record PersonalDataExportAuditEventData(
 /// </summary>
 public sealed record PersonalDataExportDocumentData(
     string RecipientEmail,
-    string Locale,
     IReadOnlyList<PersonalDataExportRefTestData> RefTests,
     IReadOnlyList<PersonalDataExportAuditEventData> AuditEvents);

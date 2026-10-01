@@ -170,11 +170,6 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                     b.Property<DateTime?>("LastDeliveryAttemptAt")
                         .HasColumnType("timestamp with time zone");
 
-                    b.Property<string>("Locale")
-                        .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("character varying(5)");
-
                     b.Property<string>("ProtectedDeliveryKey")
                         .HasMaxLength(2048)
                         .HasColumnType("character varying(2048)");

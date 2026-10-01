@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -20,6 +21,7 @@ public interface IPersonalDataExportPdfService
 /// </summary>
 public sealed class PersonalDataExportPdfService(
     ITranslationService translationService,
+    LanguageConfiguration languageConfiguration,
     int maxPartBytes = 8 * 1024 * 1024) : IPersonalDataExportPdfService
 {
     /// <summary>
@@ -38,8 +40,6 @@ public sealed class PersonalDataExportPdfService(
         if (maxPartBytes <= 0)
             throw new ArgumentOutOfRangeException(nameof(maxPartBytes));
 
-        var translations = translationService.GetPdfPersonalDataExportTranslations(document.Locale);
-        var culture = GetCulture(document.Locale);
         var eventsByStream = document.AuditEvents
             .GroupBy(auditEvent => auditEvent.StreamId, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => (IReadOnlyList<PersonalDataExportAuditEventData>)group
@@ -68,8 +68,6 @@ public sealed class PersonalDataExportPdfService(
             var candidate = GeneratePdf(
                 document,
                 currentSections,
-                translations,
-                culture,
                 int.MaxValue,
                 int.MaxValue);
 
@@ -93,8 +91,6 @@ public sealed class PersonalDataExportPdfService(
             var content = GeneratePdf(
                 document,
                 generatedSections[index],
-                translations,
-                culture,
                 partNumber,
                 generatedSections.Count);
 
@@ -148,49 +144,57 @@ public sealed class PersonalDataExportPdfService(
         return false;
     }
 
-    private static byte[] GeneratePdf(
+    private byte[] GeneratePdf(
         PersonalDataExportDocumentData document,
         IReadOnlyList<PdfSection> sections,
-        IReadOnlyDictionary<string, string> translations,
-        CultureInfo culture,
         int partNumber,
         int partCount)
     {
         var pdf = Document.Create(container =>
         {
-            container.Page(page =>
+            foreach (var language in languageConfiguration.EnabledLanguages)
             {
-                page.Size(PageSizes.A4);
-                page.Margin(40);
-                page.DefaultTextStyle(text => text.FontSize(9));
+                var translations = translationService.GetPdfPersonalDataExportTranslations(language);
+                var culture = GetCulture(language);
 
-                page.Content().Column(column =>
+                container.Page(page =>
                 {
-                    column.Item().PaddingBottom(6).Text(translations["title"])
-                        .FontSize(20)
-                        .Bold();
-                    column.Item().PaddingBottom(10).Element(item => AddField(
-                        item,
-                        translations["recipientEmail"],
-                        document.RecipientEmail));
+                    page.Size(PageSizes.A4);
+                    page.Margin(40);
+                    page.DefaultTextStyle(text => text.FontSize(9));
 
-                    if (partCount > 1)
+                    page.Content().Column(column =>
                     {
-                        var partText = string.Format(
-                            culture,
-                            translations["part"],
-                            partNumber,
-                            partCount);
-                        column.Item().PaddingBottom(10).Text(partText).Italic();
-                    }
+                        column.Item().PaddingBottom(6).Text(translations["title"])
+                            .FontSize(20)
+                            .Bold();
+                        column.Item().PaddingBottom(2).Text(
+                            translationService.GetLanguageDisplayName(language))
+                            .FontSize(10)
+                            .Italic();
+                        column.Item().PaddingBottom(10).Element(item => AddField(
+                            item,
+                            translations["recipientEmail"],
+                            document.RecipientEmail));
 
-                    foreach (var section in sections)
-                        column.Item().PaddingBottom(12).Element(item =>
-                            ComposeRefTest(item, section, translations, culture));
+                        if (partCount > 1)
+                        {
+                            var partText = string.Format(
+                                culture,
+                                translations["part"],
+                                partNumber,
+                                partCount);
+                            column.Item().PaddingBottom(10).Text(partText).Italic();
+                        }
+
+                        foreach (var section in sections)
+                            column.Item().PaddingBottom(12).Element(item =>
+                                ComposeRefTest(item, section, translations, culture));
+                    });
+
+                    page.Footer().AlignCenter().Text(translations["footer"]);
                 });
-
-                page.Footer().AlignCenter().Text(translations["footer"]);
-            });
+            }
         });
 
         return pdf.GeneratePdf();

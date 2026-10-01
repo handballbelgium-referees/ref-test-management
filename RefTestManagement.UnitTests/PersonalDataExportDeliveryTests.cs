@@ -5,6 +5,7 @@ using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
@@ -32,7 +33,7 @@ public sealed class PersonalDataExportDeliveryTests
     {
         using var database = SqliteTestDatabase.Create();
         var cancellationToken = TestContext.Current.CancellationToken;
-        var request = CreateVerifiedRequest(ParticipantEmail, "fr");
+        var request = CreateVerifiedRequest(ParticipantEmail);
         var expectedIds = new Dictionary<RefTestStatus, Guid>();
         var tokens = new List<string>();
 
@@ -152,7 +153,6 @@ public sealed class PersonalDataExportDeliveryTests
 
         var document = Assert.IsType<PersonalDataExportDocumentData>(pdfService.Document);
         Assert.Equal(ParticipantEmail, document.RecipientEmail);
-        Assert.Equal("fr", document.Locale);
         Assert.Equal(Enum.GetNames<RefTestStatus>().Length, document.RefTests.Count);
         Assert.Equal(expectedIds.Values.OrderBy(id => id), document.RefTests.Select(refTest => refTest.Id).OrderBy(id => id));
         Assert.DoesNotContain(document.RefTests, refTest => refTest.Email == "other@example.org");
@@ -209,7 +209,6 @@ public sealed class PersonalDataExportDeliveryTests
         var deliveredRequest = await verification.PersonalDataExportRequests
             .SingleAsync(candidate => candidate.Id == request.Id, cancellationToken);
         Assert.Equal(string.Empty, deliveredRequest.Email);
-        Assert.Equal("en", deliveredRequest.Locale);
         Assert.Null(deliveredRequest.KeyHash);
         Assert.Null(deliveredRequest.ProtectedDeliveryKey);
 
@@ -225,7 +224,7 @@ public sealed class PersonalDataExportDeliveryTests
     {
         using var database = SqliteTestDatabase.Create();
         var cancellationToken = TestContext.Current.CancellationToken;
-        var request = CreateVerifiedRequest(ParticipantEmail, "nl");
+        var request = CreateVerifiedRequest(ParticipantEmail);
 
         await using (var seed = database.CreateContext())
         {
@@ -266,7 +265,6 @@ public sealed class PersonalDataExportDeliveryTests
             var requestAfterFailure = await afterFailure.PersonalDataExportRequests
                 .SingleAsync(candidate => candidate.Id == request.Id, cancellationToken);
             Assert.Equal(ParticipantEmail, requestAfterFailure.Email);
-            Assert.Equal("nl", requestAfterFailure.Locale);
             Assert.Null(requestAfterFailure.LastDeliveryAttemptAt);
             Assert.Equal(1, requestAfterFailure.DeliveryAttemptCount);
         }
@@ -318,12 +316,12 @@ public sealed class PersonalDataExportDeliveryTests
     }
 
     [Fact]
-    public async Task TerminalFailureIsAuditedAndClearsRecipientAndLocale()
+    public async Task TerminalFailureIsAuditedAndClearsRecipient()
     {
         using var database = SqliteTestDatabase.Create();
         var cancellationToken = TestContext.Current.CancellationToken;
         const string recipientEmail = "bea@example.org";
-        var request = CreateVerifiedRequest(recipientEmail, "de");
+        var request = CreateVerifiedRequest(recipientEmail);
 
         await using (var seed = database.CreateContext())
         {
@@ -366,7 +364,6 @@ public sealed class PersonalDataExportDeliveryTests
         var failedRequest = await verification.PersonalDataExportRequests
             .SingleAsync(candidate => candidate.Id == request.Id, cancellationToken);
         Assert.Equal(string.Empty, failedRequest.Email);
-        Assert.Equal("en", failedRequest.Locale);
         Assert.Null(failedRequest.KeyHash);
         Assert.Null(failedRequest.ProtectedDeliveryKey);
 
@@ -391,7 +388,7 @@ public sealed class PersonalDataExportDeliveryTests
         using var database = SqliteTestDatabase.Create();
         var cancellationToken = TestContext.Current.CancellationToken;
         const string recipientEmail = "cora@example.org";
-        var request = CreateVerifiedRequest(recipientEmail, "en");
+        var request = CreateVerifiedRequest(recipientEmail);
         var emailService = new RecordingEmailService();
         var pdfService = new RecordingPdfService
         {
@@ -434,7 +431,7 @@ public sealed class PersonalDataExportDeliveryTests
     }
 
     [Fact]
-    public void PdfPartsAreLocalizedValidAndNumberedInsteadOfTruncated()
+    public void PdfPartsAreMultilingualValidAndNumberedInsteadOfTruncated()
     {
         QuestPDF.Settings.License = LicenseType.Community;
         var random = new Random(706);
@@ -481,18 +478,21 @@ public sealed class PersonalDataExportDeliveryTests
             ScheduledAt: null);
         var document = new PersonalDataExportDocumentData(
             ParticipantEmail,
-            "fr",
             [refTest],
             eventData);
 
-        var fullExport = new PersonalDataExportPdfService(new TranslationService())
+        var languages = LanguageConfiguration.CreateDefault();
+        var fullExport = new PersonalDataExportPdfService(new TranslationService(), languages)
             .GenerateAttachments(document);
-        var oneEventExport = new PersonalDataExportPdfService(new TranslationService())
+        var oneEventExport = new PersonalDataExportPdfService(new TranslationService(), languages)
             .GenerateAttachments(document with { AuditEvents = [eventData[0]] });
         var testPartLimit = Assert.Single(oneEventExport).Content.Length * 3;
         Assert.True(Assert.Single(fullExport).Content.Length > testPartLimit);
 
-        var service = new PersonalDataExportPdfService(new TranslationService(), testPartLimit);
+        var service = new PersonalDataExportPdfService(
+            new TranslationService(),
+            languages,
+            testPartLimit);
         var attachments = service.GenerateAttachments(document);
 
         Assert.True(attachments.Count > 1);
@@ -506,22 +506,31 @@ public sealed class PersonalDataExportDeliveryTests
             Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(attachment.Content, 0, 5));
         });
 
-        var english = new PersonalDataExportPdfService(new TranslationService())
-            .GenerateAttachments(document with { Locale = "en" });
-        var french = new PersonalDataExportPdfService(new TranslationService())
+        var english = new PersonalDataExportPdfService(
+            new TranslationService(),
+            new LanguageConfiguration { DefaultPhraseLanguage = "en", EnabledLanguages = ["en"] })
             .GenerateAttachments(document);
-        Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(Assert.Single(english).Content, 0, 5));
-        Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(Assert.Single(french).Content, 0, 5));
+        var french = new PersonalDataExportPdfService(
+            new TranslationService(),
+            new LanguageConfiguration { DefaultPhraseLanguage = "en", EnabledLanguages = ["fr"] })
+            .GenerateAttachments(document);
+        var englishPdf = Assert.Single(english).Content;
+        var frenchPdf = Assert.Single(french).Content;
+        var multilingualPdf = Assert.Single(fullExport).Content;
+        Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(englishPdf, 0, 5));
+        Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(frenchPdf, 0, 5));
+        Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(multilingualPdf, 0, 5));
+        Assert.True(multilingualPdf.Length > englishPdf.Length);
+        Assert.True(multilingualPdf.Length > frenchPdf.Length);
         Assert.NotEqual(
-            Convert.ToBase64String(Assert.Single(english).Content),
-            Convert.ToBase64String(Assert.Single(french).Content));
+            Convert.ToBase64String(englishPdf),
+            Convert.ToBase64String(frenchPdf));
     }
 
-    private static PersonalDataExportRequest CreateVerifiedRequest(string email, string locale)
+    private static PersonalDataExportRequest CreateVerifiedRequest(string email)
     {
         var request = PersonalDataExportRequest.Create(
             email,
-            locale,
             ChallengeKey,
             $"protected:{ChallengeKey}",
             Now,

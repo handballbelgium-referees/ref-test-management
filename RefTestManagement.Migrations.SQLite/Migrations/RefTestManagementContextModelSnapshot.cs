@@ -163,11 +163,6 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.Property<DateTime?>("LastDeliveryAttemptAt")
                         .HasColumnType("TEXT");
 
-                    b.Property<string>("Locale")
-                        .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("TEXT");
-
                     b.Property<string>("ProtectedDeliveryKey")
                         .HasMaxLength(2048)
                         .HasColumnType("TEXT");

@@ -18,10 +18,6 @@ public sealed class PersonalDataExportRequestConfiguration : IEntityTypeConfigur
             .IsRequired()
             .HasMaxLength(256);
 
-        builder.Property(request => request.Locale)
-            .IsRequired()
-            .HasMaxLength(5);
-
         builder.Property(request => request.KeyHash)
             .IsRequired(false)
             .HasMaxLength(64);

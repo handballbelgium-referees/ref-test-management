@@ -51,7 +51,6 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
         }
 
         var recipientEmail = request.Email;
-        var locale = request.Locale;
         IReadOnlyList<EmailAttachment> attachments;
 
         try
@@ -73,7 +72,6 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
                 cancellationToken);
             var document = new PersonalDataExportDocumentData(
                 recipientEmail,
-                locale,
                 refTests,
                 auditEvents);
 

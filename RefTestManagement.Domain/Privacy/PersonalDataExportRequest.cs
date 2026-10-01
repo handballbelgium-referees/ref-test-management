@@ -20,7 +20,6 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
 
     private PersonalDataExportRequest(
         string email,
-        string locale,
         string keyHash,
         string protectedDeliveryKey,
         DateTime createdAt,
@@ -28,7 +27,6 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
     {
         Id = Guid.NewGuid();
         Email = email;
-        Locale = locale;
         KeyHash = keyHash;
         ProtectedDeliveryKey = protectedDeliveryKey;
         CreatedAt = createdAt;
@@ -38,7 +36,6 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
     private PersonalDataExportRequest()
     {
         Email = string.Empty;
-        Locale = "en";
         KeyHash = null;
         ProtectedDeliveryKey = null;
     }
@@ -46,7 +43,6 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
     public Guid Id { get; private set; }
     public long Version { get; private set; } = 1;
     public string Email { get; private set; }
-    public string Locale { get; private set; }
     public string? KeyHash { get; private set; }
     public string? ProtectedDeliveryKey { get; private set; }
     public DateTime CreatedAt { get; private set; }
@@ -64,7 +60,6 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
     /// <summary>Creates a challenge while persisting only its hash and protected delivery copy.</summary>
     public static PersonalDataExportRequest Create(
         string email,
-        string locale,
         string challengeKey,
         string protectedDeliveryKey,
         DateTime createdAt,
@@ -81,7 +76,6 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
 
         return new PersonalDataExportRequest(
             email,
-            locale,
             HashKey(challengeKey),
             protectedDeliveryKey,
             createdAt,
@@ -269,8 +263,7 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
                       || ChallengeEmailSentAt is not null
                       || LastDeliveryAttemptAt is not null
                       || DeliveryAttemptCount != 0
-                      || (clearEmail && Email.Length > 0)
-                      || (clearEmail && Locale != "en");
+                      || (clearEmail && Email.Length > 0);
 
         if (!changed)
             return false;
@@ -282,10 +275,7 @@ public sealed class PersonalDataExportRequest : IHasDomainEvents, IHasVerifiedPa
         DeliveryAttemptCount = 0;
 
         if (clearEmail)
-        {
             Email = string.Empty;
-            Locale = "en";
-        }
 
         return true;
     }

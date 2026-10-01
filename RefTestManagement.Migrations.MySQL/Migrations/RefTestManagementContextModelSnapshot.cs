@@ -165,11 +165,6 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.Property<DateTime?>("LastDeliveryAttemptAt")
                         .HasColumnType("datetime(6)");
 
-                    b.Property<string>("Locale")
-                        .IsRequired()
-                        .HasMaxLength(5)
-                        .HasColumnType("varchar(5)");
-
                     b.Property<string>("ProtectedDeliveryKey")
                         .HasMaxLength(2048)
                         .HasColumnType("varchar(2048)");
