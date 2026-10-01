@@ -77,23 +77,21 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
 
             attachments = pdfService.GenerateAttachments(document);
 
-            // Erasure clears the persisted recipient and cancels any outstanding job. Recheck
-            // immediately before handing the document to the provider so a concurrently erased
-            // request cannot use the worker's stale in-memory copy of its address.
-            var requestIsStillDeliverable = await context.PersonalDataExportRequests
-                .AsNoTracking()
-                .AnyAsync(
-                    candidate => candidate.Id == payload.RequestId
-                                 && candidate.VerifiedAt != null
-                                 && candidate.Email == recipientEmail,
-                    cancellationToken);
-            if (!requestIsStillDeliverable)
-                return;
-
-            await emailService.SendPersonalDataExportAsync(
+            // Recheck after the email service has prepared its provider payload. The query
+            // completes before the network call, so no transaction or row lock spans I/O.
+            var wasSent = await emailService.SendPersonalDataExportAsync(
                 recipientEmail,
                 attachments,
+                finalCheckCancellationToken => context.PersonalDataExportRequests
+                    .AsNoTracking()
+                    .AnyAsync(
+                        candidate => candidate.Id == payload.RequestId
+                                     && candidate.VerifiedAt != null
+                                     && candidate.Email == recipientEmail,
+                        finalCheckCancellationToken),
                 cancellationToken);
+            if (!wasSent)
+                return;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

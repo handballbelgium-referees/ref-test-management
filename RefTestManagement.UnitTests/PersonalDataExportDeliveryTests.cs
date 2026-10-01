@@ -676,6 +676,73 @@ public sealed class PersonalDataExportDeliveryTests
     }
 
     [Fact]
+    public async Task ErasureDuringEmailPreparationPreventsProviderHandoffAndDeliverySuccess()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var request = CreateVerifiedRequest(ParticipantEmail);
+        Guid refTestId;
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Erasure During Delivery");
+            seed.RefTestTitles.Add(title);
+            await seed.SaveChangesAsync(cancellationToken);
+
+            var refTest = CreateRefTest(title.Id, ParticipantEmail, "Ada", "Lovelace");
+            seed.RefTests.Add(refTest);
+            seed.PersonalDataExportRequests.Add(request);
+            await seed.SaveChangesAsync(cancellationToken);
+            refTestId = refTest.Id;
+        }
+
+        var staffContext = StaffHttpContextAccessor();
+        var emailService = new RecordingEmailService
+        {
+            PrepareEmailAsync = async preparationCancellationToken =>
+            {
+                await using var erasureContext = database.CreateContext(
+                    new AuditSaveChangesInterceptor(staffContext, new AuditLogOptions()));
+                var refTest = await erasureContext.RefTests.SingleAsync(
+                    candidate => candidate.Id == refTestId,
+                    preparationCancellationToken);
+                await new RefTestPrivacyErasureService(erasureContext).EraseAsync(
+                    refTest,
+                    ErasureInitiator.Operator,
+                    preparationCancellationToken);
+            }
+        };
+
+        await using (var deliveryContext = database.CreateContext(
+                         new AuditSaveChangesInterceptor(staffContext, new AuditLogOptions())))
+        {
+            await CreateHandler(
+                    deliveryContext,
+                    new RecordingPdfService(),
+                    emailService,
+                    new BackgroundJobConfiguration(),
+                    NullLoggerFactory.Instance)
+                .HandleAsync(DeliveryJob(request.Id), cancellationToken);
+        }
+
+        Assert.Equal(1, emailService.PreparationCount);
+        Assert.Equal(1, emailService.FinalDeliverabilityCheckCount);
+        Assert.Single(emailService.Attachments);
+        Assert.Empty(emailService.Recipients);
+
+        await using var verification = database.CreateContext();
+        var erasedRequest = await verification.PersonalDataExportRequests
+            .SingleAsync(candidate => candidate.Id == request.Id, cancellationToken);
+        Assert.Equal(string.Empty, erasedRequest.Email);
+        Assert.Null(erasedRequest.LastDeliveryAttemptAt);
+        Assert.Equal(0, erasedRequest.DeliveryAttemptCount);
+        Assert.False(await verification.AuditEvents.AnyAsync(
+            auditEvent => auditEvent.StreamId == request.Id.ToString()
+                          && auditEvent.Type == PersonalDataExportDeliveredEvent.EventType,
+            cancellationToken));
+    }
+
+    [Fact]
     public async Task RetryRecordsFailureThenDeliveryAndACompletedDuplicateDoesNotResend()
     {
         using var database = SqliteTestDatabase.Create();
@@ -1181,15 +1248,32 @@ public sealed class PersonalDataExportDeliveryTests
         public Exception? Failure { get; set; }
         public List<string> Recipients { get; } = [];
         public List<IReadOnlyList<EmailAttachment>> Attachments { get; } = [];
+        public Func<CancellationToken, Task>? PrepareEmailAsync { get; set; }
+        public int PreparationCount { get; private set; }
+        public int FinalDeliverabilityCheckCount { get; private set; }
 
-        public Task SendPersonalDataExportAsync(
+        public async Task<bool> SendPersonalDataExportAsync(
             string recipientEmail,
             IReadOnlyList<EmailAttachment> attachments,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken)
         {
-            Recipients.Add(recipientEmail);
             Attachments.Add(attachments);
-            return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
+            if (PrepareEmailAsync is not null)
+            {
+                PreparationCount++;
+                await PrepareEmailAsync(cancellationToken);
+            }
+
+            FinalDeliverabilityCheckCount++;
+            if (!await finalDeliverabilityCheck(cancellationToken))
+                return false;
+
+            Recipients.Add(recipientEmail);
+            if (Failure is not null)
+                throw Failure;
+
+            return true;
         }
 
         public Task SendRefTestInvitationAsync(

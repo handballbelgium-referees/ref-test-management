@@ -47,9 +47,10 @@ public interface IEmailService
         DateTime expiresAt,
         CancellationToken cancellationToken);
 
-    Task SendPersonalDataExportAsync(
+    Task<bool> SendPersonalDataExportAsync(
         string recipientEmail,
         IReadOnlyList<EmailAttachment> attachments,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken);
 }
 
@@ -129,12 +130,13 @@ public class EmailService(
     }
 
 
-    private async Task SendEmailAsync(string toEmail, string subject, string body,
+    private async Task<bool> SendEmailAsync(string toEmail, string subject, string body,
         List<EmailAttachment>? attachments = null, bool scheduleEmail = false,
         CancellationToken cancellationToken = default,
         bool requireSuccessfulProviderResponse = false,
         bool suppressFailureDetails = false,
-        string? suppressedFailureLabel = null)
+        string? suppressedFailureLabel = null,
+        Func<CancellationToken, Task<bool>>? finalDeliverabilityCheck = null)
     {
         ServiceLoggerMessages.LogSendingEmail(logger, LogRedaction.MaskEmail(toEmail), subject);
 
@@ -143,9 +145,10 @@ public class EmailService(
             ServiceLoggerMessages.LogApiKeyNotConfigured(logger);
             if (requireSuccessfulProviderResponse)
                 throw new InvalidOperationException("The email provider is not configured.");
-            return;
+            return false;
         }
 
+        var finalDeliverabilityCheckCompleted = false;
         try
         {
             // Create a plain text version using cached compiled regex
@@ -178,30 +181,50 @@ public class EmailService(
             };
 
             var jsonContent = JsonSerializer.Serialize(emailData);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            using var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             var brevoUrl = $"{configuration.BrevoApiUrl}/smtp/email";
+
+            // Export delivery is revalidated after all message and attachment preparation, just
+            // before the provider handoff. No database transaction or lock spans the network call.
+            if (finalDeliverabilityCheck is not null)
+            {
+                var isStillDeliverable = await finalDeliverabilityCheck(cancellationToken);
+                finalDeliverabilityCheckCompleted = true;
+                if (!isStillDeliverable)
+                    return false;
+            }
+
             var response = await httpClient.PostAsync(brevoUrl, content, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
                 ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(toEmail));
+                return true;
             }
-            else
-            {
-                if (requireSuccessfulProviderResponse)
-                {
-                    // A provider response may echo the message body, including the one-time key
-                    // in its URL fragment. Never log that body for verification mail.
-                    ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
-                        (int)response.StatusCode, string.Empty);
-                    throw new EmailException(toEmail);
-                }
 
-                var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            if (requireSuccessfulProviderResponse)
+            {
+                // A provider response may echo the message body, including the one-time key
+                // in its URL fragment. Never log that body for verification mail.
                 ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
-                    (int)response.StatusCode, LogRedaction.MaskEmailsInText(responseBody) ?? string.Empty);
+                    (int)response.StatusCode, string.Empty);
+                throw new EmailException(toEmail);
             }
+
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
+                (int)response.StatusCode, LogRedaction.MaskEmailsInText(responseBody) ?? string.Empty);
+            return false;
+        }
+        catch (OperationCanceledException) when (
+            finalDeliverabilityCheck is not null
+            && !finalDeliverabilityCheckCompleted
+            && cancellationToken.IsCancellationRequested)
+        {
+            // The job handler relies on cancellation during the final database check to keep its
+            // retry lease instead of recording a provider failure.
+            throw;
         }
         catch (Exception ex)
         {
@@ -337,9 +360,10 @@ public class EmailService(
             suppressFailureDetails: true);
     }
 
-    public async Task SendPersonalDataExportAsync(
+    public async Task<bool> SendPersonalDataExportAsync(
         string recipientEmail,
         IReadOnlyList<EmailAttachment> attachments,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken)
     {
         var encodedAttachmentsBytes = attachments.Sum(attachment =>
@@ -362,7 +386,7 @@ public class EmailService(
         var emailBody = await templateService.BuildCompletePersonalDataExportDeliveryEmailAsync(
             enabledLanguages);
 
-        await SendEmailAsync(
+        return await SendEmailAsync(
             recipientEmail,
             translationService.GetEmailPersonalDataExportDeliveryTranslations("en")["subject"],
             emailBody,
@@ -370,7 +394,8 @@ public class EmailService(
             cancellationToken: cancellationToken,
             requireSuccessfulProviderResponse: true,
             suppressFailureDetails: true,
-            suppressedFailureLabel: "Personal-data export");
+            suppressedFailureLabel: "Personal-data export",
+            finalDeliverabilityCheck: finalDeliverabilityCheck);
     }
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)

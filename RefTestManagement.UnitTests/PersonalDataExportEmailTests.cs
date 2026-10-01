@@ -94,10 +94,12 @@ public sealed class PersonalDataExportEmailTests
             new("PersonalDataExport_Part_001_of_002.pdf", [1, 2, 3]),
             new("PersonalDataExport_Part_002_of_002.pdf", [4, 5, 6])
         };
-        await service.SendPersonalDataExportAsync(
+        var wasSent = await service.SendPersonalDataExportAsync(
             ParticipantEmail,
             attachments,
+            static _ => Task.FromResult(true),
             TestContext.Current.CancellationToken);
+        Assert.True(wasSent);
 
         using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
         var root = providerRequest.RootElement;
@@ -153,6 +155,52 @@ public sealed class PersonalDataExportEmailTests
     }
 
     [Fact]
+    public async Task DeliveryEmailSkipsProviderWhenFinalDeliverabilityCheckFails()
+    {
+        var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+        using var client = new HttpClient(handler);
+        var service = CreateService(client, NullLogger<EmailService>.Instance);
+        var finalCheckCount = 0;
+
+        var wasSent = await service.SendPersonalDataExportAsync(
+            ParticipantEmail,
+            [new EmailAttachment("PersonalDataExport.pdf", [1, 2, 3])],
+            _ =>
+            {
+                finalCheckCount++;
+                return Task.FromResult(false);
+            },
+            TestContext.Current.CancellationToken);
+
+        Assert.False(wasSent);
+        Assert.Equal(1, finalCheckCount);
+        Assert.Null(handler.RequestBody);
+    }
+
+    [Fact]
+    public async Task DeliveryEmailPropagatesCancellationDuringFinalDeliverabilityCheck()
+    {
+        var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+        using var client = new HttpClient(handler);
+        var service = CreateService(client, NullLogger<EmailService>.Instance);
+        using var cancellationSource = new CancellationTokenSource();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            service.SendPersonalDataExportAsync(
+                ParticipantEmail,
+                [new EmailAttachment("PersonalDataExport.pdf", [1, 2, 3])],
+                cancellationToken =>
+                {
+                    cancellationSource.Cancel();
+                    cancellationToken.ThrowIfCancellationRequested();
+                    return Task.FromResult(true);
+                },
+                cancellationSource.Token));
+
+        Assert.Null(handler.RequestBody);
+    }
+
+    [Fact]
     public async Task DeliveryEmailRejectsAnAttachmentBeyondProviderLimitsBeforeSending()
     {
         var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
@@ -166,6 +214,7 @@ public sealed class PersonalDataExportEmailTests
             service.SendPersonalDataExportAsync(
                 ParticipantEmail,
                 [oversizedAttachment],
+                static _ => Task.FromResult(true),
                 TestContext.Current.CancellationToken));
         Assert.Null(handler.RequestBody);
     }

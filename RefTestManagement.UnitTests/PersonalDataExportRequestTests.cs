@@ -598,14 +598,21 @@ public sealed class PersonalDataExportRequestTests
             return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
         }
 
-        public Task SendPersonalDataExportAsync(
+        public async Task<bool> SendPersonalDataExportAsync(
             string recipientEmail,
             IReadOnlyList<EmailAttachment> attachments,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken)
         {
+            if (!await finalDeliverabilityCheck(cancellationToken))
+                return false;
+
             ExportRecipientEmail = recipientEmail;
             ExportAttachments = attachments;
-            return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
+            if (Failure is not null)
+                throw Failure;
+
+            return true;
         }
 
         public Task SendRefTestInvitationAsync(

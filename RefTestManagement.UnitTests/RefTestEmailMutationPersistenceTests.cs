@@ -353,9 +353,10 @@ public sealed class RefTestEmailMutationPersistenceTests
             DateTime expiresAt,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendPersonalDataExportAsync(
+        public Task<bool> SendPersonalDataExportAsync(
             string recipientEmail,
             IReadOnlyList<EmailAttachment> attachments,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 
