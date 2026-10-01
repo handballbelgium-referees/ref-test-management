@@ -56,6 +56,12 @@ public static partial class RefTestEmailMutations
 
             try
             {
+                if (refTest is not null && context.Entry(refTest).State == EntityState.Detached)
+                {
+                    refTest = await context.RefTests
+                        .FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
+                }
+
                 if (refTest is null)
                     throw new RefTestNotFoundException(id.ToString());
 
@@ -66,7 +72,9 @@ public static partial class RefTestEmailMutations
                     throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Pending);
 
                 refTest.RegenerateToken();
-                await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
+                await jobEnqueueService.EnqueueInvitationEmailAsync(
+                    refTest,
+                    unitOfWorkContext: context,
                     cancellationToken: cancellationToken);
 
                 result.SentRefTests.Add(refTest.ToDto());
@@ -90,6 +98,9 @@ public static partial class RefTestEmailMutations
                     User = refTest is null ? null : new User(refTest.FirstName, refTest.LastName, refTest.Email),
                     ErrorMessage = "Failed to send invitation email."
                 });
+
+                // Discard the failed RefTest/job state; later IDs are reloaded before they are saved.
+                context.ChangeTracker.Clear();
             }
         }
 
