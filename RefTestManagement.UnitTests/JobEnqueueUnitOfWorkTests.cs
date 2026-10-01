@@ -1,9 +1,10 @@
-using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -22,11 +23,16 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 /// </remarks>
 public sealed class JobEnqueueUnitOfWorkTests
 {
-    private static InvitationEmailPayload Payload(Guid refTestId) =>
-        new(refTestId, "Ada Lovelace", "ada@example.org", "token-1", 10, 30);
+    private static RefTestInvitationTokenProtection TokenProtection() =>
+        new(new EphemeralDataProtectionProvider());
 
     private static JobEnqueueService Service(RefTestManagementContext context) =>
-        new(context, NullLogger<JobEnqueueService>.Instance);
+        Service(context, TokenProtection());
+
+    private static JobEnqueueService Service(
+        RefTestManagementContext context,
+        RefTestInvitationTokenProtection tokenProtection) =>
+        new(context, tokenProtection, NullLogger<JobEnqueueService>.Instance);
 
     /// <summary>
     /// Seeds the title a RefTest points at, then builds the RefTest. The foreign key is real in
@@ -60,18 +66,26 @@ public sealed class JobEnqueueUnitOfWorkTests
         var ct = TestContext.Current.CancellationToken;
         using var db = SqliteTestDatabase.Create();
         await using var context = db.CreateContext();
+        var refTest = await NewRefTestAsync(db, ct);
+        context.RefTests.Add(refTest);
 
         await Service(context).EnqueueInvitationEmailAsync(
-            Payload(Guid.NewGuid()), saveChanges: false, cancellationToken: ct);
+            refTest, saveChanges: false, cancellationToken: ct);
 
         // A second context reads the database, not the first context's change tracker.
         await using (var observer = db.CreateContext())
+        {
             Assert.Empty(await observer.Jobs.ToListAsync(ct));
+            Assert.Empty(await observer.RefTests.ToListAsync(ct));
+        }
 
         await context.SaveChangesAsync(ct);
 
         await using (var observer = db.CreateContext())
+        {
             Assert.Single(await observer.Jobs.ToListAsync(ct));
+            Assert.Single(await observer.RefTests.ToListAsync(ct));
+        }
     }
 
     [Fact]
@@ -83,14 +97,22 @@ public sealed class JobEnqueueUnitOfWorkTests
 
         var refTest = await NewRefTestAsync(db, ct);
         context.RefTests.Add(refTest);
-        await Service(context).EnqueueInvitationEmailAsync(
-            Payload(refTest.Id), saveChanges: false, cancellationToken: ct);
+        var tokenProtection = TokenProtection();
+        await Service(context, tokenProtection).EnqueueInvitationEmailAsync(
+            refTest, saveChanges: false, cancellationToken: ct);
 
         await context.SaveChangesAsync(ct);
 
         await using var observer = db.CreateContext();
         Assert.Single(await observer.RefTests.ToListAsync(ct));
-        Assert.Single(await observer.Jobs.ToListAsync(ct));
+        var storedJob = await observer.Jobs.SingleAsync(ct);
+        using var payload = System.Text.Json.JsonDocument.Parse(storedJob.Payload);
+        Assert.Equal(refTest.Token, payload.RootElement.GetProperty("tokenHash").GetString());
+        Assert.DoesNotContain(refTest.GetIssuedToken(), storedJob.Payload, StringComparison.Ordinal);
+        var storedRefTest = await observer.RefTests.SingleAsync(ct);
+        var protectedToken = Assert.IsType<string>(storedRefTest.ProtectedInvitationToken);
+        Assert.NotEqual(refTest.GetIssuedToken(), protectedToken);
+        Assert.Equal(refTest.GetIssuedToken(), tokenProtection.Unprotect(protectedToken));
     }
 
     [Fact]
@@ -100,9 +122,11 @@ public sealed class JobEnqueueUnitOfWorkTests
         using var db = SqliteTestDatabase.Create();
         await using var mutationContext = db.CreateContext();
         await using var serviceContext = db.CreateContext();
+        var refTest = await NewRefTestAsync(db, ct);
+        mutationContext.RefTests.Add(refTest);
 
         await Service(serviceContext).EnqueueInvitationEmailAsync(
-            Payload(Guid.NewGuid()),
+            refTest,
             saveChanges: false,
             unitOfWorkContext: mutationContext,
             cancellationToken: ct);
@@ -123,7 +147,7 @@ public sealed class JobEnqueueUnitOfWorkTests
         var refTest = await NewRefTestAsync(db, ct);
         context.RefTests.Add(refTest);
         await Service(context).EnqueueInvitationEmailAsync(
-            Payload(refTest.Id), saveChanges: false, cancellationToken: ct);
+            refTest, saveChanges: false, cancellationToken: ct);
 
         // Force the single SaveChanges to fail: a duplicate primary key is the cheapest way to
         // make the database reject the batch that carries both rows.
@@ -141,18 +165,19 @@ public sealed class JobEnqueueUnitOfWorkTests
     }
 
     [Fact]
-    public async Task ImmediateModeStillWritesOnItsOwnForCallersWithNoEntityToCommit()
+    public async Task ImmediateModeCommitsTheRefTestAndItsInvitationJobTogether()
     {
         var ct = TestContext.Current.CancellationToken;
         using var db = SqliteTestDatabase.Create();
         await using var context = db.CreateContext();
+        var refTest = await NewRefTestAsync(db, ct);
+        context.RefTests.Add(refTest);
 
-        // Mutations that only ask for an email — "resend this invitation" — have no accompanying
-        // entity write, so the default must keep persisting on its own.
-        await Service(context).EnqueueInvitationEmailAsync(Payload(Guid.NewGuid()), cancellationToken: ct);
+        await Service(context).EnqueueInvitationEmailAsync(refTest, cancellationToken: ct);
 
         await using var observer = db.CreateContext();
         Assert.Single(await observer.Jobs.ToListAsync(ct));
+        Assert.NotNull((await observer.RefTests.SingleAsync(ct)).ProtectedInvitationToken);
     }
 
     [Fact]
@@ -160,11 +185,13 @@ public sealed class JobEnqueueUnitOfWorkTests
     {
         var ct = TestContext.Current.CancellationToken;
         using var db = SqliteTestDatabase.Create();
-        var refTestId = Guid.NewGuid();
+        var refTest = await NewRefTestAsync(db, ct);
+        var refTestId = refTest.Id;
 
         await using (var seeder = db.CreateContext())
         {
-            await Service(seeder).EnqueueInvitationEmailAsync(Payload(refTestId), cancellationToken: ct);
+            seeder.RefTests.Add(refTest);
+            await Service(seeder).EnqueueInvitationEmailAsync(refTest, cancellationToken: ct);
         }
 
         await using var context = db.CreateContext();

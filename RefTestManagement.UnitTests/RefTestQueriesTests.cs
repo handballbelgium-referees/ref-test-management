@@ -1,8 +1,11 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
+using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -10,6 +13,12 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 public sealed class RefTestQueriesTests
 {
+    private static JobEnqueueService NewJobEnqueueService(RefTestManagementContext context) =>
+        new(
+            context,
+            new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider()),
+            NullLogger<JobEnqueueService>.Instance);
+
     private static RefTest NewRefTest(Guid titleId) =>
         RefTest.Create(
             titleId,
@@ -71,7 +80,7 @@ public sealed class RefTestQueriesTests
             token,
             context,
             new RefTestExpirationConfiguration(),
-            new JobEnqueueService(context, NullLogger<JobEnqueueService>.Instance),
+            NewJobEnqueueService(context),
             ct);
 
         Assert.NotNull(queryResult);
@@ -88,7 +97,7 @@ public sealed class RefTestQueriesTests
                 storedToken,
                 context,
                 new RefTestExpirationConfiguration(),
-                new JobEnqueueService(context, NullLogger<JobEnqueueService>.Instance),
+                NewJobEnqueueService(context),
                 ct));
     }
 }

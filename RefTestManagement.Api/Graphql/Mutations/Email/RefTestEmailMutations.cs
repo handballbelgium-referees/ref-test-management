@@ -66,16 +66,7 @@ public static partial class RefTestEmailMutations
                     throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Pending);
 
                 refTest.RegenerateToken();
-                var invitationPayload = new InvitationEmailPayload(
-                    refTest.Id,
-                    refTest.FullName,
-                    refTest.Email,
-                    refTest.GetIssuedToken(),
-                    refTest.NumberOfQuestions,
-                    refTest.MaxTimeInMinutes
-                );
-
-                await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
                     cancellationToken: cancellationToken);
 
                 result.SentRefTests.Add(refTest.ToDto());

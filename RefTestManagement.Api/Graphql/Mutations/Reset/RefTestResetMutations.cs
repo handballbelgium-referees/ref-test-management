@@ -105,16 +105,7 @@ public static partial class RefTestResetMutations
 
                 if (shouldSendInvitation)
                 {
-                    var invitationPayload = new InvitationEmailPayload(
-                        refTest.Id,
-                        refTest.FullName,
-                        refTest.Email,
-                        refTest.GetIssuedToken(),
-                        refTest.NumberOfQuestions,
-                        refTest.MaxTimeInMinutes
-                    );
-
-                    await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                    await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
                         saveChanges: false,
                         unitOfWorkContext: context,
                         cancellationToken: cancellationToken);
@@ -214,16 +205,7 @@ public static partial class RefTestResetMutations
                 // (Revive always regenerates the token)
                 if (invitationWasSent)
                 {
-                    var invitationPayload = new InvitationEmailPayload(
-                        refTest.Id,
-                        refTest.FullName,
-                        refTest.Email,
-                        refTest.GetIssuedToken(),
-                        refTest.NumberOfQuestions,
-                        refTest.MaxTimeInMinutes
-                    );
-
-                    await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+                    await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
                         saveChanges: false,
                         unitOfWorkContext: context,
                         cancellationToken: cancellationToken);

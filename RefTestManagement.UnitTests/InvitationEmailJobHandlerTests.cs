@@ -1,9 +1,11 @@
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -33,12 +35,14 @@ public sealed class InvitationEmailJobHandlerTests
             sendResultsAutomatically: true);
         var staleToken = refTest.GetIssuedToken();
         refTest.RegenerateToken();
+        var tokenProtection = new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider());
+        refTest.StoreProtectedInvitationToken(tokenProtection.Protect(refTest.GetIssuedToken()));
 
         var payload = new InvitationEmailPayload(
             refTest.Id,
             refTest.FullName,
             refTest.Email,
-            staleToken,
+            RefTest.HashToken(staleToken),
             refTest.NumberOfQuestions,
             refTest.MaxTimeInMinutes);
         var job = Job.Create(JobType.InvitationEmail, JsonSerializer.Serialize(payload));
@@ -50,10 +54,12 @@ public sealed class InvitationEmailJobHandlerTests
             null!,
             context,
             null!,
+            tokenProtection,
             NullLogger<InvitationEmailJobHandler>.Instance);
 
         await handler.HandleAsync(job, ct);
 
         Assert.Null(refTest.InvitationSentAt);
+        Assert.NotNull(refTest.ProtectedInvitationToken);
     }
 }

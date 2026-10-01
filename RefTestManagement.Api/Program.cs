@@ -60,6 +60,7 @@ var auditLogOptions = services.AddAuditLogging(opts =>
     opts.ExcludeProperty("Token");
     opts.ExcludeProperty("KeyHash");
     opts.ExcludeProperty("ProtectedDeliveryKey");
+    opts.ExcludeProperty("ProtectedInvitationToken");
     opts.RegisterEntityResolver("RefTestTitle", (id, ctx) =>
         ctx.Set<RefTestTitle>().Find(id)?.Value);
 });
@@ -107,6 +108,7 @@ if (personalDataExportConfig.KeyLifetimeHours is < 1 or > 168
 
 services.AddSingleton(personalDataExportConfig);
 services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
+services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
 services.AddSingleton<IPersonalDataExportRateLimiter, PersonalDataExportRateLimiter>();
 services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
 

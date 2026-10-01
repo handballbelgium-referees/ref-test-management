@@ -192,7 +192,7 @@ public class RefTestEmailMutationLoggingTests
             new(null, null, exception);
 
         public Task EnqueueInvitationEmailAsync(
-            InvitationEmailPayload payload,
+            RefTest refTest,
             DateTime? executeAfter = null,
             bool saveChanges = true,
             IJobPersistenceContext? unitOfWorkContext = null,

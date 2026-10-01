@@ -15,6 +15,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -26,6 +27,12 @@ public sealed class PersonalDataExportRequestTests
     private const string ParticipantEmail = "ada@example.org";
     private static readonly string ChallengeKey = new('A', 43);
     private static readonly DateTime Now = new(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc);
+
+    private static JobEnqueueService NewJobEnqueueService(RefTestManagementContext context) =>
+        new(
+            context,
+            new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider()),
+            NullLogger<JobEnqueueService>.Instance);
 
     private static PersonalDataExportRequest NewRequest(
         DateTime createdAt,
@@ -142,7 +149,7 @@ public sealed class PersonalDataExportRequestTests
 
         var service = new PersonalDataExportRequestService(
             context,
-            new JobEnqueueService(context, NullLogger<JobEnqueueService>.Instance),
+            NewJobEnqueueService(context),
             new TestKeyProtection(),
             new PersonalDataExportConfiguration(),
             NullLogger<PersonalDataExportRequestService>.Instance);
@@ -205,7 +212,7 @@ public sealed class PersonalDataExportRequestTests
         await using var context = database.CreateContext();
         var service = new PersonalDataExportRequestService(
             context,
-            new JobEnqueueService(context, NullLogger<JobEnqueueService>.Instance),
+            NewJobEnqueueService(context),
             new TestKeyProtection(),
             new PersonalDataExportConfiguration(),
             NullLogger<PersonalDataExportRequestService>.Instance);

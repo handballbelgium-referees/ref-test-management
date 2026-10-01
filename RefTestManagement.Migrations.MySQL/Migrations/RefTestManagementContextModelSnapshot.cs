@@ -286,6 +286,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("varchar(32)");
 
+                    b.Property<string>("ProtectedInvitationToken")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
                     b.Property<string>("QuestionIds")
                         .IsRequired()
                         .HasMaxLength(4000)

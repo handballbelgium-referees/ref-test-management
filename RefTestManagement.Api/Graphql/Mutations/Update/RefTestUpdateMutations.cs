@@ -53,16 +53,7 @@ public static partial class RefTestUpdateMutations
         if (emailChanged && input.ResendInvitation && invitationWasSent)
         {
             refTest.RegenerateToken();
-            var invitationPayload = new InvitationEmailPayload(
-                refTest.Id,
-                refTest.FullName,
-                refTest.Email,
-                refTest.GetIssuedToken(),
-                refTest.NumberOfQuestions,
-                refTest.MaxTimeInMinutes
-            );
-
-            await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+            await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
                 saveChanges: false,
                 unitOfWorkContext: context,
                 cancellationToken: cancellationToken);
@@ -239,16 +230,7 @@ public static partial class RefTestUpdateMutations
             !invitationWasSent)
         {
             refTest.RegenerateToken();
-            var invitationPayload = new InvitationEmailPayload(
-                refTest.Id,
-                refTest.FullName,
-                refTest.Email,
-                refTest.GetIssuedToken(),
-                refTest.NumberOfQuestions,
-                refTest.MaxTimeInMinutes
-            );
-
-            await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+            await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
                 saveChanges: false,
                 unitOfWorkContext: context,
                 cancellationToken: cancellationToken);
@@ -321,16 +303,7 @@ public static partial class RefTestUpdateMutations
         // same save: a rotated token that never reaches the participant locks them out of the test.
         if (invitationWasSent)
         {
-            var invitationPayload = new InvitationEmailPayload(
-                refTest.Id,
-                refTest.FullName,
-                refTest.Email,
-                refTest.GetIssuedToken(),
-                refTest.NumberOfQuestions,
-                refTest.MaxTimeInMinutes
-            );
-
-            await jobEnqueueService.EnqueueInvitationEmailAsync(invitationPayload,
+            await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
                 saveChanges: false,
                 unitOfWorkContext: context,
                 cancellationToken: cancellationToken);

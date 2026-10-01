@@ -99,6 +99,8 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     public string Email { get; private set; }
     /// <summary>The SHA-256 hash used to look up the invitation token.</summary>
     public string Token { get; private set; }
+    /// <summary>A protected copy used only while retrying invitation email delivery.</summary>
+    public string? ProtectedInvitationToken { get; private set; }
     [NotMapped] public string? IssuedToken { get; private set; }
     public bool SendInvitationsAutomatically { get; private set; }
     public DateTime? InvitationSentAt { get; private set; }
@@ -237,7 +239,16 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     public void SendInvitation()
     {
         InvitationSentAt = DateTime.UtcNow;
+        ProtectedInvitationToken = null;
         RaiseDomainEvent(new RefTestInvitationSentEvent());
+    }
+
+    public void StoreProtectedInvitationToken(string protectedToken)
+    {
+        if (string.IsNullOrWhiteSpace(protectedToken))
+            throw new ArgumentException("A protected invitation token is required.", nameof(protectedToken));
+
+        ProtectedInvitationToken = protectedToken;
     }
 
     public void AcceptPrivacyNotice(string noticeVersion)
@@ -617,6 +628,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         // Token must stay unique (unique index) — a random placeholder still hides the real
         // token value while satisfying that constraint, unlike a fixed "***" for every RefTest.
         Token = $"erased-{Guid.NewGuid():N}";
+        ProtectedInvitationToken = null;
         IssuedToken = null;
         // PrivacyNoticeVersion and PrivacyNoticeAcceptedAt are deliberately retained. GDPR
         // Art. 7(1) requires the controller to be able to demonstrate that consent was given;
@@ -674,6 +686,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     private void IssueToken()
     {
+        ProtectedInvitationToken = null;
         var token = TokenService.GenerateHex(TokenLength, lowercase: true);
         IssuedToken = token;
         Token = HashToken(token);

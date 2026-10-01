@@ -15,11 +15,10 @@ public static class AuditPiiRedactor
     /// <summary>
     /// Property keys whose values are considered personal data in audit event JSON payloads.
     /// <para>
-    /// The invitation token is deliberately absent: it is registered as an excluded property
-    /// (<c>ExcludeProperty("Token")</c>) so entity-change payloads never capture it, and no
-    /// domain event carries it either — <c>RefTestSoftResetEvent</c> records only a boolean and
-    /// <c>RefTestTokenRegeneratedEvent</c> has no payload. If an event is ever added that
-    /// carries a token value, add the key here.
+    /// Invitation credentials are deliberately absent: the stored hash and protected retry copy
+    /// are registered as excluded properties, and no domain event carries either value —
+    /// <c>RefTestSoftResetEvent</c> records only a boolean and <c>RefTestTokenRegeneratedEvent</c>
+    /// has no payload. If an event is ever added that carries a token value, add the key here.
     /// </para>
     /// </summary>
     private static readonly HashSet<string> PiiKeys =
