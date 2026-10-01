@@ -1,7 +1,7 @@
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 
 /// <summary>Request data for a public mailbox-verification challenge.</summary>
-public sealed record PersonalDataExportRequestInput(string Email, string? Locale);
+public sealed record PersonalDataExportRequestInput(string Email);
 
 /// <summary>
 /// A deliberately generic acknowledgement. It is returned unchanged whether or not the address

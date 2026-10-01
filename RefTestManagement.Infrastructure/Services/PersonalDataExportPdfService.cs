@@ -206,8 +206,7 @@ public sealed class PersonalDataExportPdfService(
         {
             column.Item().PaddingBottom(4).Text(text =>
             {
-                text.Span($"{translations["refTest"]} ");
-                text.Span(section.RefTest.Id.ToString()).Bold();
+                text.Span(translations["refTest"]).Bold();
                 if (section.IsContinuation)
                     text.Span($" — {translations["continued"]}").Italic();
             });
@@ -231,36 +230,21 @@ public sealed class PersonalDataExportPdfService(
         IReadOnlyDictionary<string, string> translations,
         CultureInfo culture)
     {
-        AddField(column, translations["refTestId"], refTest.Id.ToString());
-        AddField(column, translations["titleId"], refTest.TitleId.ToString());
         AddField(column, translations["firstName"], refTest.FirstName);
         AddField(column, translations["lastName"], refTest.LastName);
         AddField(column, translations["email"], refTest.Email);
-        AddField(column, translations["status"], LocalizeStatus(refTest.Status, translations));
-        AddField(column, translations["sendInvitationsAutomatically"],
-            FormatBoolean(refTest.SendInvitationsAutomatically, translations));
-        AddField(column, translations["invitationSentAt"], FormatDate(refTest.InvitationSentAt, culture, translations));
         AddField(column, translations["numberOfQuestions"], refTest.NumberOfQuestions.ToString(culture));
         AddField(column, translations["maxTimeInMinutes"], refTest.MaxTimeInMinutes.ToString(culture));
-        AddField(column, translations["questionIds"], FormatList(refTest.QuestionIds, translations));
         AddField(column, translations["createdAt"], FormatDate(refTest.CreatedAt, culture, translations));
         AddField(column, translations["startedAt"], FormatDate(refTest.StartedAt, culture, translations));
         AddField(column, translations["completedAt"], FormatDate(refTest.CompletedAt, culture, translations));
         AddField(column, translations["expiredAt"], FormatDate(refTest.ExpiredAt, culture, translations));
-        AddField(column, translations["currentQuestionIndex"],
-            FormatNumber(refTest.CurrentQuestionIndex, culture, translations));
         AddField(column, translations["questionScore"],
             FormatNumber(refTest.QuestionScore, culture, translations));
         AddField(column, translations["answerScore"], FormatNumber(refTest.AnswerScore, culture, translations));
         AddField(column, translations["answerTotal"], FormatNumber(refTest.AnswerTotal, culture, translations));
         AddField(column, translations["percentage"],
             refTest.Percentage?.ToString("F2", culture) ?? translations["notRecorded"]);
-        AddField(column, translations["selectedAnswerIds"], FormatList(refTest.SelectedAnswerIds, translations));
-        AddField(column, translations["wrongQuestionIds"], FormatList(refTest.WrongQuestionIds, translations));
-        AddField(column, translations["wrongAnswerIds"], FormatList(refTest.WrongAnswerIds, translations));
-        AddField(column, translations["sendResultsAutomatically"],
-            FormatBoolean(refTest.SendResultsAutomatically, translations));
-        AddField(column, translations["resultsSentAt"], FormatDate(refTest.ResultsSentAt, culture, translations));
         AddField(column, translations["language"], refTest.Language ?? translations["notRecorded"]);
         AddField(column, translations["privacyNoticeVersion"],
             refTest.PrivacyNoticeVersion ?? translations["notRecorded"]);
@@ -303,13 +287,6 @@ public sealed class PersonalDataExportPdfService(
     private static void AddField(ColumnDescriptor column, string label, string value) =>
         column.Item().Element(container => AddField(container, label, value));
 
-    private static string LocalizeStatus(
-        string status,
-        IReadOnlyDictionary<string, string> translations) =>
-        translations.TryGetValue($"status.{status}", out var localizedStatus)
-            ? localizedStatus
-            : status;
-
     private static string LocalizeEventType(
         string eventType,
         IReadOnlyDictionary<string, string> translations) =>
@@ -346,11 +323,6 @@ public sealed class PersonalDataExportPdfService(
 
     private static string FormatBoolean(bool value, IReadOnlyDictionary<string, string> translations) =>
         translations[value ? "yes" : "no"];
-
-    private static string FormatList(
-        IReadOnlyList<string> values,
-        IReadOnlyDictionary<string, string> translations) =>
-        values.Count == 0 ? translations["notRecorded"] : string.Join(", ", values);
 
     private static string FormatJson(string? data, IReadOnlyDictionary<string, string> translations)
     {

@@ -3,7 +3,6 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
-import { Language, LanguageConfig } from '../services/language-config';
 import {
   ConfirmPersonalDataExportGQL,
   GetPrivacyNoticeGQL,
@@ -28,7 +27,6 @@ describe('PrivacyNotice', () => {
     }),
   }));
   const privacyNoticeFetch = vi.fn();
-  const getCurrentLanguage = vi.fn((): Language => 'en');
   const requestPersonalDataExportMutation = vi.fn(() =>
     of({
       data: {
@@ -61,8 +59,6 @@ describe('PrivacyNotice', () => {
       }),
     });
     privacyNoticeFetch.mockReset();
-    getCurrentLanguage.mockReset();
-    getCurrentLanguage.mockReturnValue('en');
     requestPersonalDataExportMutation.mockReset();
     requestPersonalDataExportMutation.mockReturnValue(
       of({
@@ -87,10 +83,6 @@ describe('PrivacyNotice', () => {
     TestBed.configureTestingModule({
       providers: [
         provideTranslateService({ fallbackLang: 'en' }),
-        {
-          provide: LanguageConfig,
-          useValue: { getCurrentLanguage },
-        },
         {
           provide: GetPrivacyNoticeGQL,
           useValue: {
@@ -232,10 +224,9 @@ describe('PrivacyNotice', () => {
     expect(requestPersonalDataExportMutation).not.toHaveBeenCalled();
   });
 
-  it('sends the selected locale and always shows the same generic request acknowledgement', async () => {
+  it('sends only the email and always shows the same generic request acknowledgement', async () => {
     const translate = TestBed.inject(TranslateService);
     await new Promise<void>((resolve) => translate.use('fr').subscribe(() => resolve()));
-    getCurrentLanguage.mockReturnValue('fr');
 
     const fixture = await renderPrivacyNotice();
     setEmail(fixture, 'participant@example.com');
@@ -251,7 +242,6 @@ describe('PrivacyNotice', () => {
         input: {
           input: {
             email: 'participant@example.com',
-            locale: 'fr',
           },
         },
       },

@@ -10,7 +10,6 @@ import {
   RequestPersonalDataExportGQL,
 } from '../../../graphql/generated';
 import { LocalizedDate } from '../shared/pipes/localized-date';
-import { LanguageConfig } from '../services/language-config';
 
 @Component({
   selector: 'app-privacy-notice',
@@ -24,7 +23,6 @@ import { LanguageConfig } from '../services/language-config';
 export class PrivacyNotice {
   private readonly _document = inject(DOCUMENT);
   private readonly _destroyRef = inject(DestroyRef);
-  private readonly _languageConfig = inject(LanguageConfig);
   private readonly _requestPersonalDataExportGQL = inject(RequestPersonalDataExportGQL);
   private readonly _confirmPersonalDataExportGQL = inject(ConfirmPersonalDataExportGQL);
   private readonly _confirmationKey = signal(this.readAndRemoveConfirmationKey());
@@ -77,7 +75,6 @@ export class PrivacyNotice {
           input: {
             input: {
               email: this.requestForm.controls.email.value,
-              locale: this._languageConfig.getCurrentLanguage(),
             },
           },
         },

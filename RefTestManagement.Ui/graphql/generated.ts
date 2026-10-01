@@ -142,7 +142,6 @@ export type LongOperationFilterInput = {
 
 export type PersonalDataExportRequestInput = {
   email: string;
-  locale?: string | null | undefined;
 };
 
 /** Filter RefTests based on Id, Email or Status */

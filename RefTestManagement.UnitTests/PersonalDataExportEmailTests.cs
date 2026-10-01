@@ -15,7 +15,7 @@ public sealed class PersonalDataExportEmailTests
     private static readonly string ChallengeKey = new('B', 43);
 
     [Fact]
-    public async Task ChallengeEmailIsLocalizedAndCarriesTheKeyOnlyInTheUrlFragment()
+    public async Task ChallengeEmailContainsEveryEnabledLanguageAndLanguageSpecificConfirmationLinks()
     {
         var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
         using var client = new HttpClient(handler);
@@ -24,20 +24,37 @@ public sealed class PersonalDataExportEmailTests
         await service.SendPersonalDataExportVerificationAsync(
             ParticipantEmail,
             ChallengeKey,
-            "fr",
             DateTime.UtcNow.AddHours(24),
             TestContext.Current.CancellationToken);
 
         using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
         var root = providerRequest.RootElement;
         var html = root.GetProperty("htmlContent").GetString()!;
-        var expectedLink = $"https://app.example.org/privacy/export-confirmation?lang=fr#{ChallengeKey}";
 
         Assert.Equal(
-            "Confirmez votre demande d’exportation de données personnelles",
+            "Confirm your personal data export request",
             root.GetProperty("subject").GetString());
-        Assert.Contains($"href='{expectedLink}'", html, StringComparison.Ordinal);
+        foreach (var language in new[] { "en", "nl", "fr", "de" })
+        {
+            var expectedLink =
+                $"https://app.example.org/privacy/export-confirmation?lang={language}#{ChallengeKey}";
+            Assert.Contains($"href='{expectedLink}'", html, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("Confirm your email address", html, StringComparison.Ordinal);
+        Assert.Contains("Bevestig uw e-mailadres", html, StringComparison.Ordinal);
         Assert.Contains("Confirmez votre adresse e-mail", html, StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Bestätigen Sie Ihre E-Mail-Adresse"),
+            html,
+            StringComparison.Ordinal);
+        Assert.Contains("Confirm request", html, StringComparison.Ordinal);
+        Assert.Contains("Aanvraag bevestigen", html, StringComparison.Ordinal);
+        Assert.Contains("Confirmer la demande", html, StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Anfrage bestätigen"),
+            html,
+            StringComparison.Ordinal);
         Assert.DoesNotContain(ParticipantEmail, html, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -56,7 +73,6 @@ public sealed class PersonalDataExportEmailTests
             service.SendPersonalDataExportVerificationAsync(
                 ParticipantEmail,
                 ChallengeKey,
-                "en",
                 DateTime.UtcNow.AddHours(24),
                 TestContext.Current.CancellationToken));
 
@@ -78,10 +94,8 @@ public sealed class PersonalDataExportEmailTests
             new("PersonalDataExport_Part_001_of_002.pdf", [1, 2, 3]),
             new("PersonalDataExport_Part_002_of_002.pdf", [4, 5, 6])
         };
-
         await service.SendPersonalDataExportAsync(
             ParticipantEmail,
-            "fr",
             attachments,
             TestContext.Current.CancellationToken);
 
@@ -93,11 +107,41 @@ public sealed class PersonalDataExportEmailTests
                 .Select(recipient => recipient.GetProperty("email").GetString())
                 .ToArray());
         Assert.Equal(
-            "Votre exportation de données personnelles",
+            "Your personal data export",
             root.GetProperty("subject").GetString());
+        var html = root.GetProperty("htmlContent").GetString()!;
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Your RefTest personal data"),
+            html,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Uw RefTest-persoonsgegevens"),
+            html,
+            StringComparison.Ordinal);
         Assert.Contains(
             System.Web.HttpUtility.HtmlEncode("Vos données personnelles RefTest"),
-            root.GetProperty("htmlContent").GetString());
+            html,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Ihre RefTest-Daten"),
+            html,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Attached is the PDF copy"),
+            html,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("In de bijlage vindt u de PDF"),
+            html,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Vous trouverez en pièce jointe"),
+            html,
+            StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Im Anhang finden Sie die PDF-Datei"),
+            html,
+            StringComparison.Ordinal);
 
         var providerAttachments = root.GetProperty("attachment").EnumerateArray().ToArray();
         Assert.Equal(2, providerAttachments.Length);
@@ -121,7 +165,6 @@ public sealed class PersonalDataExportEmailTests
         await Assert.ThrowsAsync<PersonalDataExportSizeLimitException>(() =>
             service.SendPersonalDataExportAsync(
                 ParticipantEmail,
-                "en",
                 [oversizedAttachment],
                 TestContext.Current.CancellationToken));
         Assert.Null(handler.RequestBody);
@@ -163,7 +206,6 @@ public sealed class PersonalDataExportEmailTests
             Assert.False(string.IsNullOrWhiteSpace(email["body"]));
             Assert.False(string.IsNullOrWhiteSpace(pdf["title"]));
             Assert.False(string.IsNullOrWhiteSpace(pdf["events"]));
-            Assert.False(string.IsNullOrWhiteSpace(pdf["status.Completed"]));
             Assert.False(string.IsNullOrWhiteSpace(pdf["event.RefTestDetailsUpdated"]));
             if (locale != "en")
             {

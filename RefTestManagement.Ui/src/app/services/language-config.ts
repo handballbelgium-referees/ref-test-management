@@ -53,11 +53,6 @@ export class LanguageConfig {
     return this._availableLanguages$;
   }
 
-  getCurrentLanguage(): Language {
-    const currentLanguage = this._translate.getCurrentLang();
-    return currentLanguage && this.isValidLanguage(currentLanguage) ? currentLanguage : 'en';
-  }
-
   initializeLanguages(): Observable<string> {
     return this.getAvailableLanguages().pipe(
       map((languages) => {

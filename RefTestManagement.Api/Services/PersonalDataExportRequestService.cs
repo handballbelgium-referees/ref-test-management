@@ -1,18 +1,17 @@
 using System.ComponentModel.DataAnnotations;
-using System.Security.Cryptography;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
+using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
-using Microsoft.AspNetCore.WebUtilities;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;
 
 public interface IPersonalDataExportRequestService
 {
-    Task RequestAsync(string? email, string? locale, CancellationToken cancellationToken);
+    Task RequestAsync(string? email, CancellationToken cancellationToken);
     Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken);
 }
 
@@ -24,10 +23,7 @@ public sealed class PersonalDataExportRequestService(
     PersonalDataExportConfiguration configuration,
     ILogger<PersonalDataExportRequestService> logger) : IPersonalDataExportRequestService
 {
-    private static readonly HashSet<string> SupportedLocales =
-        new(StringComparer.OrdinalIgnoreCase) { "en", "nl", "fr", "de" };
-
-    public async Task RequestAsync(string? email, string? locale, CancellationToken cancellationToken)
+    public async Task RequestAsync(string? email, CancellationToken cancellationToken)
     {
         var candidateEmail = email?.Trim();
         if (string.IsNullOrEmpty(candidateEmail)
@@ -47,10 +43,10 @@ public sealed class PersonalDataExportRequestService(
                 return;
 
             var now = DateTime.UtcNow;
-            var key = WebEncoders.Base64UrlEncode(RandomNumberGenerator.GetBytes(32));
+            var key = TokenService.GenerateBase64Url(32);
             var request = PersonalDataExportRequest.Create(
                 storedEmail,
-                NormalizeLocale(locale),
+                "en",
                 key,
                 keyProtection.Protect(key),
                 now,
@@ -127,12 +123,6 @@ public sealed class PersonalDataExportRequestService(
             logger.LogError("Personal-data export confirmation could not be processed.");
             return false;
         }
-    }
-
-    private static string NormalizeLocale(string? locale)
-    {
-        var normalized = locale?.Trim().ToLowerInvariant();
-        return normalized is not null && SupportedLocales.Contains(normalized) ? normalized : "en";
     }
 
     private static bool IsValidChallengeKey(string? key) =>

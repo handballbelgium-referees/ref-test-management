@@ -44,13 +44,11 @@ public interface IEmailService
     Task SendPersonalDataExportVerificationAsync(
         string recipientEmail,
         string challengeKey,
-        string locale,
         DateTime expiresAt,
         CancellationToken cancellationToken);
 
     Task SendPersonalDataExportAsync(
         string recipientEmail,
-        string locale,
         IReadOnlyList<EmailAttachment> attachments,
         CancellationToken cancellationToken);
 }
@@ -304,7 +302,6 @@ public class EmailService(
     public async Task SendPersonalDataExportVerificationAsync(
         string recipientEmail,
         string challengeKey,
-        string locale,
         DateTime expiresAt,
         CancellationToken cancellationToken)
     {
@@ -312,23 +309,28 @@ public class EmailService(
             || baseUri.Scheme is not ("http" or "https"))
             throw new InvalidOperationException("The application base URL is not configured.");
 
-        var translations = new Dictionary<string, string>(
-            translationService.GetEmailPersonalDataExportVerificationTranslations(locale));
         var remainingHours = Math.Max(1, (int)Math.Ceiling((expiresAt - DateTime.UtcNow).TotalHours));
-        translations["expiryNote"] = string.Format(
-            System.Globalization.CultureInfo.InvariantCulture,
-            translations["expiryNote"],
-            remainingHours);
+        var enabledLanguages = languageConfiguration.EnabledLanguages
+            .Select(language =>
+            {
+                var translations = new Dictionary<string, string>(
+                    translationService.GetEmailPersonalDataExportVerificationTranslations(language));
+                translations["expiryNote"] = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    translations["expiryNote"],
+                    remainingHours);
 
-        var confirmationUrl =
-            $"{configuration.BaseUrl.TrimEnd('/')}/privacy/export-confirmation?lang={Uri.EscapeDataString(locale)}#{Uri.EscapeDataString(challengeKey)}";
+                var confirmationUrl =
+                    $"{configuration.BaseUrl.TrimEnd('/')}/privacy/export-confirmation?lang={Uri.EscapeDataString(language)}#{Uri.EscapeDataString(challengeKey)}";
+                return new LanguageContent(confirmationUrl, translations);
+            })
+            .ToList();
         var emailBody = await templateService.BuildCompletePersonalDataExportVerificationEmailAsync(
-            translations,
-            confirmationUrl);
+            enabledLanguages);
 
         await SendEmailAsync(
             recipientEmail,
-            translations["subject"],
+            translationService.GetEmailPersonalDataExportVerificationTranslations("en")["subject"],
             emailBody,
             cancellationToken: cancellationToken,
             requireSuccessfulProviderResponse: true,
@@ -337,7 +339,6 @@ public class EmailService(
 
     public async Task SendPersonalDataExportAsync(
         string recipientEmail,
-        string locale,
         IReadOnlyList<EmailAttachment> attachments,
         CancellationToken cancellationToken)
     {
@@ -353,14 +354,17 @@ public class EmailService(
             throw new PersonalDataExportSizeLimitException();
         }
 
-        var translations = translationService.GetEmailPersonalDataExportDeliveryTranslations(locale);
+        var enabledLanguages = languageConfiguration.EnabledLanguages
+            .Select(language => new LanguageContent(
+                string.Empty,
+                translationService.GetEmailPersonalDataExportDeliveryTranslations(language)))
+            .ToList();
         var emailBody = await templateService.BuildCompletePersonalDataExportDeliveryEmailAsync(
-            translations,
-            locale);
+            enabledLanguages);
 
         await SendEmailAsync(
             recipientEmail,
-            translations["subject"],
+            translationService.GetEmailPersonalDataExportDeliveryTranslations("en")["subject"],
             emailBody,
             attachments.ToList(),
             cancellationToken: cancellationToken,

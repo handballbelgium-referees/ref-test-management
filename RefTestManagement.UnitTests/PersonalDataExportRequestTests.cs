@@ -155,14 +155,14 @@ public sealed class PersonalDataExportRequestTests
         var clientIpResolver = new FixedClientIpResolver();
 
         var knownAddressResult = await PersonalDataExportMutations.RequestPersonalDataExportAsync(
-            new PersonalDataExportRequestInput(ParticipantEmail, "fr"),
+            new PersonalDataExportRequestInput(ParticipantEmail),
             service,
             limiter,
             clientIpResolver,
             contextAccessor,
             cancellationToken);
         var unknownAddressResult = await PersonalDataExportMutations.RequestPersonalDataExportAsync(
-            new PersonalDataExportRequestInput("unknown@example.org", "de"),
+            new PersonalDataExportRequestInput("unknown@example.org"),
             service,
             limiter,
             clientIpResolver,
@@ -172,7 +172,7 @@ public sealed class PersonalDataExportRequestTests
         Assert.Equal(knownAddressResult, unknownAddressResult);
         Assert.True(knownAddressResult.Acknowledged);
         var request = await context.PersonalDataExportRequests.SingleAsync(cancellationToken);
-        Assert.Equal("fr", request.Locale);
+        Assert.Equal("en", request.Locale);
         Assert.Equal(64, request.KeyHash!.Length);
         Assert.NotNull(request.ProtectedDeliveryKey);
 
@@ -352,7 +352,6 @@ public sealed class PersonalDataExportRequestTests
             request => request.Id == requestId, TestContext.Current.CancellationToken);
         Assert.Equal(ParticipantEmail, emailService.RecipientEmail);
         Assert.Equal(ChallengeKey, emailService.ChallengeKey);
-        Assert.Equal("fr", emailService.Locale);
         Assert.Null(delivered.ProtectedDeliveryKey);
         Assert.NotNull(delivered.KeyHash);
         Assert.NotNull(delivered.ChallengeEmailSentAt);
@@ -580,31 +579,26 @@ public sealed class PersonalDataExportRequestTests
         public Exception? Failure { get; set; }
         public string? RecipientEmail { get; private set; }
         public string? ChallengeKey { get; private set; }
-        public string? Locale { get; private set; }
         public string? ExportRecipientEmail { get; private set; }
         public IReadOnlyList<EmailAttachment>? ExportAttachments { get; private set; }
 
         public Task SendPersonalDataExportVerificationAsync(
             string recipientEmail,
             string challengeKey,
-            string locale,
             DateTime expiresAt,
             CancellationToken cancellationToken)
         {
             RecipientEmail = recipientEmail;
             ChallengeKey = challengeKey;
-            Locale = locale;
             return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
         }
 
         public Task SendPersonalDataExportAsync(
             string recipientEmail,
-            string locale,
             IReadOnlyList<EmailAttachment> attachments,
             CancellationToken cancellationToken)
         {
             ExportRecipientEmail = recipientEmail;
-            Locale = locale;
             ExportAttachments = attachments;
             return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
         }

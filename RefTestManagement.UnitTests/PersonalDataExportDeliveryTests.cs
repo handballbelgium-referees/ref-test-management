@@ -50,7 +50,7 @@ public sealed class PersonalDataExportDeliveryTests
                 var refTest = CreateRefTestForStatus(title.Id, status, email);
                 seed.RefTests.Add(refTest);
                 expectedIds.Add(status, refTest.Id);
-                tokens.Add(refTest.Token);
+                tokens.Add(refTest.GetIssuedToken());
             }
 
             var otherEmail = CreateRefTest(title.Id, "other@example.org", "Other", "Person");
@@ -153,19 +153,16 @@ public sealed class PersonalDataExportDeliveryTests
         var document = Assert.IsType<PersonalDataExportDocumentData>(pdfService.Document);
         Assert.Equal(ParticipantEmail, document.RecipientEmail);
         Assert.Equal("fr", document.Locale);
-        Assert.Equal(Enum.GetNames<RefTestStatus>().OrderBy(status => status),
-            document.RefTests.Select(refTest => refTest.Status).OrderBy(status => status));
+        Assert.Equal(Enum.GetNames<RefTestStatus>().Length, document.RefTests.Count);
         Assert.Equal(expectedIds.Values.OrderBy(id => id), document.RefTests.Select(refTest => refTest.Id).OrderBy(id => id));
         Assert.DoesNotContain(document.RefTests, refTest => refTest.Email == "other@example.org");
         Assert.DoesNotContain(document.RefTests, refTest => refTest.FirstName == "Erased");
 
-        var completed = Assert.Single(document.RefTests, refTest => refTest.Status == nameof(RefTestStatus.Completed));
+        var completed = Assert.Single(document.RefTests, refTest => refTest.CompletedAt is not null);
+        Assert.Equal(12, completed.NumberOfQuestions);
         Assert.Equal(8, completed.QuestionScore);
         Assert.Equal(9, completed.AnswerScore);
         Assert.Equal(10, completed.AnswerTotal);
-        Assert.Equal(["answer-1"], completed.SelectedAnswerIds);
-        Assert.Equal(["question-2"], completed.WrongQuestionIds);
-        Assert.Equal(["answer-2"], completed.WrongAnswerIds);
         Assert.Equal("v2", completed.PrivacyNoticeVersion);
         Assert.NotNull(completed.PrivacyNoticeAcceptedAt);
 
@@ -206,9 +203,7 @@ public sealed class PersonalDataExportDeliveryTests
         Assert.All(tokens, token => Assert.DoesNotContain(token, serializedDocument, StringComparison.Ordinal));
         Assert.DoesNotContain("Staff Operator", serializedDocument, StringComparison.Ordinal);
         Assert.DoesNotContain("staff@example.org", serializedDocument, StringComparison.OrdinalIgnoreCase);
-
         Assert.Equal(ParticipantEmail, Assert.Single(emailService.Recipients));
-        Assert.Equal("fr", emailService.Locales.Single());
 
         await using var verification = database.CreateContext();
         var deliveredRequest = await verification.PersonalDataExportRequests
@@ -467,30 +462,19 @@ public sealed class PersonalDataExportDeliveryTests
 
         var refTest = new PersonalDataExportRefTestData(
             Guid.Parse(streamId),
-            Guid.NewGuid(),
             "Ada",
             "Lovelace",
             ParticipantEmail,
-            nameof(RefTestStatus.Completed),
-            SendInvitationsAutomatically: false,
-            InvitationSentAt: null,
             NumberOfQuestions: 12,
             MaxTimeInMinutes: 30,
-            QuestionIds: ["question-1", "question-2"],
             CreatedAt: Now,
             StartedAt: Now.AddMinutes(1),
             CompletedAt: Now.AddMinutes(30),
             ExpiredAt: null,
-            CurrentQuestionIndex: null,
             QuestionScore: 10,
             AnswerScore: 12,
             AnswerTotal: 12,
             Percentage: 83.33,
-            SelectedAnswerIds: ["answer-1"],
-            WrongQuestionIds: ["question-2"],
-            WrongAnswerIds: ["answer-2"],
-            SendResultsAutomatically: true,
-            ResultsSentAt: Now.AddMinutes(31),
             Language: "fr",
             PrivacyNoticeVersion: "v2",
             PrivacyNoticeAcceptedAt: Now,
@@ -655,17 +639,14 @@ public sealed class PersonalDataExportDeliveryTests
     {
         public Exception? Failure { get; set; }
         public List<string> Recipients { get; } = [];
-        public List<string> Locales { get; } = [];
         public List<IReadOnlyList<EmailAttachment>> Attachments { get; } = [];
 
         public Task SendPersonalDataExportAsync(
             string recipientEmail,
-            string locale,
             IReadOnlyList<EmailAttachment> attachments,
             CancellationToken cancellationToken)
         {
             Recipients.Add(recipientEmail);
-            Locales.Add(locale);
             Attachments.Add(attachments);
             return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
         }
@@ -725,7 +706,6 @@ public sealed class PersonalDataExportDeliveryTests
         public Task SendPersonalDataExportVerificationAsync(
             string recipientEmail,
             string challengeKey,
-            string locale,
             DateTime expiresAt,
             CancellationToken cancellationToken) => throw new NotSupportedException();
     }

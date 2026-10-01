@@ -23,7 +23,7 @@ public static partial class PersonalDataExportMutations
             : "unknown";
 
         if (rateLimiter.TryAcquireRequest(clientAddress))
-            await requestService.RequestAsync(input.Email, input.Locale, cancellationToken);
+            await requestService.RequestAsync(input.Email, cancellationToken);
 
         return new PersonalDataExportRequestAcknowledgement(Acknowledged: true);
     }

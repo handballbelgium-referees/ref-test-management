@@ -59,7 +59,6 @@ public sealed class PersonalDataExportChallengeEmailJobHandler(
             await emailService.SendPersonalDataExportVerificationAsync(
                 request.Email,
                 key,
-                request.Locale,
                 request.ExpiresAt,
                 cancellationToken);
         }
