@@ -143,6 +143,12 @@ public class AuditSaveChangesInterceptor(
     private static (string name, string email) ResolveEntryActor(
         EntityEntry entry, string actorName, string actorEmail, bool isAnonymousRequest)
     {
+        // Mailbox verification is stronger than the surrounding browser session. The event must
+        // describe the verified participant, not whichever staff or cookie identity happened to
+        // be present when the confirmation POST was made. No address is copied into the audit row.
+        if (entry.Entity is IHasVerifiedParticipantActor { IsVerifiedParticipantActor: true })
+            return ("Verified participant", string.Empty);
+
         if (isAnonymousRequest &&
             entry.Entity is IHasParticipantIdentity { ParticipantEmail: { Length: > 0 } participantEmail } participant)
         {

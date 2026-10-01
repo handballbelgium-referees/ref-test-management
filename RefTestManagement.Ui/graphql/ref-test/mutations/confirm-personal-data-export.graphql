@@ -1,0 +1,7 @@
+mutation ConfirmPersonalDataExport($input: ConfirmPersonalDataExportInput!) {
+  confirmPersonalDataExport(input: $input) {
+    personalDataExportConfirmationResult {
+      confirmed
+    }
+  }
+}

@@ -10,7 +10,10 @@ public interface ITranslationService
     IReadOnlyDictionary<string, string> GetEmailReportTranslations(string language);
     IReadOnlyDictionary<string, string> GetEmailApprovalNotificationTranslations(string language);
     IReadOnlyDictionary<string, string> GetEmailApprovalDecisionTranslations(string language, bool isApproved);
+    IReadOnlyDictionary<string, string> GetEmailPersonalDataExportVerificationTranslations(string language);
+    IReadOnlyDictionary<string, string> GetEmailPersonalDataExportDeliveryTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfResultsTranslations(string language);
+    IReadOnlyDictionary<string, string> GetPdfPersonalDataExportTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfReportTranslations(string language);
     IReadOnlyDictionary<string, string> GetReportColumnTranslations(string language);
     string GetLanguageDisplayName(string languageCode);
@@ -26,7 +29,10 @@ public class TranslationService : ITranslationService
     private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalNotificationTranslations = InitializeEmailApprovalNotificationTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalApprovedTranslations = InitializeEmailApprovalApprovedTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalRejectedTranslations = InitializeEmailApprovalRejectedTranslations();
+    private readonly Dictionary<string, Dictionary<string, string>> _emailPersonalDataExportVerificationTranslations = InitializeEmailPersonalDataExportVerificationTranslations();
+    private readonly Dictionary<string, Dictionary<string, string>> _emailPersonalDataExportDeliveryTranslations = InitializeEmailPersonalDataExportDeliveryTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfResultsTranslations = InitializePdfResultsTranslations();
+    private readonly Dictionary<string, Dictionary<string, string>> _pdfPersonalDataExportTranslations = InitializePdfPersonalDataExportTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfReportTranslations = InitializePdfReportTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _reportColumnTranslations = InitializeReportColumnTranslations();
     private readonly Dictionary<string, string> _languageDisplayNames = InitializeLanguageDisplayNames();
@@ -65,11 +71,32 @@ public class TranslationService : ITranslationService
             : _emailApprovalNotificationTranslations["en"];
     }
 
+    public IReadOnlyDictionary<string, string> GetEmailPersonalDataExportVerificationTranslations(string language)
+    {
+        return _emailPersonalDataExportVerificationTranslations.TryGetValue(language, out var translations)
+            ? translations
+            : _emailPersonalDataExportVerificationTranslations["en"];
+    }
+
+    public IReadOnlyDictionary<string, string> GetEmailPersonalDataExportDeliveryTranslations(string language)
+    {
+        return _emailPersonalDataExportDeliveryTranslations.TryGetValue(language, out var translations)
+            ? translations
+            : _emailPersonalDataExportDeliveryTranslations["en"];
+    }
+
     public IReadOnlyDictionary<string, string> GetPdfResultsTranslations(string language)
     {
         return _pdfResultsTranslations.TryGetValue(language, out var translations)
             ? translations
             : _pdfResultsTranslations["en"];
+    }
+
+    public IReadOnlyDictionary<string, string> GetPdfPersonalDataExportTranslations(string language)
+    {
+        return _pdfPersonalDataExportTranslations.TryGetValue(language, out var translations)
+            ? translations
+            : _pdfPersonalDataExportTranslations["en"];
     }
 
     public IReadOnlyDictionary<string, string> GetPdfReportTranslations(string language)
@@ -449,6 +476,80 @@ public class TranslationService : ITranslationService
         };
     }
 
+    private static Dictionary<string, Dictionary<string, string>> InitializeEmailPersonalDataExportVerificationTranslations()
+    {
+        return new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["subject"] = "Confirm your personal data export request",
+                ["heading"] = "Confirm your email address",
+                ["introText"] = "Someone asked to receive a copy of saved RefTest data associated with this email address. Confirm that you made this request.",
+                ["confirmButton"] = "Confirm request",
+                ["expiryNote"] = "This confirmation link expires in {0} hours.",
+                ["ignoreNote"] = "If you did not request this, you can ignore this email. No export will be prepared."
+            },
+            ["nl"] = new()
+            {
+                ["subject"] = "Bevestig uw aanvraag voor een kopie van uw persoonsgegevens",
+                ["heading"] = "Bevestig uw e-mailadres",
+                ["introText"] = "Iemand heeft gevraagd om een kopie van opgeslagen RefTest-gegevens die aan dit e-mailadres zijn gekoppeld. Bevestig dat u dit hebt aangevraagd.",
+                ["confirmButton"] = "Aanvraag bevestigen",
+                ["expiryNote"] = "Deze bevestigingslink verloopt over {0} uur.",
+                ["ignoreNote"] = "Hebt u dit niet aangevraagd? U kunt deze e-mail negeren. Er wordt geen export voorbereid."
+            },
+            ["fr"] = new()
+            {
+                ["subject"] = "Confirmez votre demande d’exportation de données personnelles",
+                ["heading"] = "Confirmez votre adresse e-mail",
+                ["introText"] = "Une personne a demandé une copie des données RefTest enregistrées associées à cette adresse e-mail. Confirmez que vous êtes à l’origine de cette demande.",
+                ["confirmButton"] = "Confirmer la demande",
+                ["expiryNote"] = "Ce lien de confirmation expire dans {0} heures.",
+                ["ignoreNote"] = "Si vous n’avez pas fait cette demande, vous pouvez ignorer cet e-mail. Aucune exportation ne sera préparée."
+            },
+            ["de"] = new()
+            {
+                ["subject"] = "Bestätigen Sie Ihre Anfrage zum Export personenbezogener Daten",
+                ["heading"] = "Bestätigen Sie Ihre E-Mail-Adresse",
+                ["introText"] = "Jemand hat eine Kopie der gespeicherten RefTest-Daten angefordert, die mit dieser E-Mail-Adresse verknüpft sind. Bestätigen Sie, dass Sie diese Anfrage gestellt haben.",
+                ["confirmButton"] = "Anfrage bestätigen",
+                ["expiryNote"] = "Dieser Bestätigungslink läuft in {0} Stunden ab.",
+                ["ignoreNote"] = "Wenn Sie diese Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren. Es wird kein Export vorbereitet."
+            }
+        };
+    }
+
+    private static Dictionary<string, Dictionary<string, string>> InitializeEmailPersonalDataExportDeliveryTranslations()
+    {
+        return new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["subject"] = "Your personal data export",
+                ["heading"] = "Your RefTest personal data",
+                ["body"] = "Attached is the PDF copy of the saved RefTest data associated with your verified email address."
+            },
+            ["nl"] = new()
+            {
+                ["subject"] = "Uw export van persoonsgegevens",
+                ["heading"] = "Uw RefTest-persoonsgegevens",
+                ["body"] = "In de bijlage vindt u de PDF met de opgeslagen RefTest-gegevens die bij uw geverifieerde e-mailadres horen."
+            },
+            ["fr"] = new()
+            {
+                ["subject"] = "Votre exportation de données personnelles",
+                ["heading"] = "Vos données personnelles RefTest",
+                ["body"] = "Vous trouverez en pièce jointe le PDF des données RefTest enregistrées associées à votre adresse e-mail vérifiée."
+            },
+            ["de"] = new()
+            {
+                ["subject"] = "Ihr Export personenbezogener Daten",
+                ["heading"] = "Ihre RefTest-Daten",
+                ["body"] = "Im Anhang finden Sie die PDF-Datei mit den gespeicherten RefTest-Daten, die Ihrer bestätigten E-Mail-Adresse zugeordnet sind."
+            }
+        };
+    }
+
     private static Dictionary<string, Dictionary<string, string>> InitializePdfResultsTranslations()    {
         return new Dictionary<string, Dictionary<string, string>>
         {
@@ -503,6 +604,345 @@ public class TranslationService : ITranslationService
                 ["question"] = "Frage",
                 ["yourAnswer"] = "Ihre Antwort",
                 ["correctAnswer"] = "Richtige Antwort"
+            }
+        };
+    }
+
+    private static Dictionary<string, Dictionary<string, string>> InitializePdfPersonalDataExportTranslations()
+    {
+        return new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["title"] = "Personal data export",
+                ["recipientEmail"] = "Verified email",
+                ["refTest"] = "RefTest",
+                ["refTestId"] = "RefTest ID",
+                ["titleId"] = "Title ID",
+                ["firstName"] = "First name",
+                ["lastName"] = "Last name",
+                ["email"] = "Email",
+                ["status"] = "Status",
+                ["status.Pending"] = "Pending",
+                ["status.InProgress"] = "In progress",
+                ["status.Completed"] = "Completed",
+                ["status.Expired"] = "Expired",
+                ["status.PendingApproval"] = "Pending approval",
+                ["status.Rejected"] = "Rejected",
+                ["sendInvitationsAutomatically"] = "Automatic invitations",
+                ["invitationSentAt"] = "Invitation sent",
+                ["numberOfQuestions"] = "Number of questions",
+                ["maxTimeInMinutes"] = "Time limit (minutes)",
+                ["questionIds"] = "Question IDs",
+                ["createdAt"] = "Created",
+                ["startedAt"] = "Started",
+                ["completedAt"] = "Completed",
+                ["expiredAt"] = "Expired",
+                ["currentQuestionIndex"] = "Current question index",
+                ["questionScore"] = "Question score",
+                ["answerScore"] = "Answer score",
+                ["answerTotal"] = "Total answers",
+                ["percentage"] = "Percentage",
+                ["selectedAnswerIds"] = "Selected answer IDs",
+                ["wrongQuestionIds"] = "Incorrect question IDs",
+                ["wrongAnswerIds"] = "Incorrect answer IDs",
+                ["sendResultsAutomatically"] = "Automatic results",
+                ["resultsSentAt"] = "Results sent",
+                ["language"] = "Language",
+                ["privacyNoticeVersion"] = "Privacy notice version",
+                ["privacyNoticeAcceptedAt"] = "Privacy notice accepted",
+                ["scheduledAt"] = "Scheduled",
+                ["events"] = "Retained audit events",
+                ["eventType"] = "Event",
+                ["event.RefTestCreated"] = "Created",
+                ["event.RefTestDetailsUpdated"] = "Participant details updated",
+                ["event.RefTestConfigurationUpdated"] = "Configuration updated",
+                ["event.RefTestNotificationSettingsUpdated"] = "Notification settings updated",
+                ["event.RefTestTimeExtended"] = "Time extended",
+                ["event.RefTestSoftReset"] = "RefTest reset",
+                ["event.RefTestStarted"] = "Started",
+                ["event.RefTestPrivacyNoticeAccepted"] = "Privacy notice accepted",
+                ["event.RefTestCompleted"] = "Completed",
+                ["event.RefTestApproved"] = "Approved",
+                ["event.RefTestRejected"] = "Rejected",
+                ["event.RefTestExpired"] = "Expired",
+                ["event.RefTestDeleted"] = "Deleted",
+                ["event.RefTestAnonymized"] = "Personal data anonymized",
+                ["event.RefTestRevived"] = "Revived",
+                ["event.RefTestInvitationSent"] = "Invitation sent",
+                ["event.RefTestResultsSent"] = "Results sent",
+                ["event.RefTestTokenRegenerated"] = "Invitation token regenerated",
+                ["event.RefTestHardReset"] = "RefTest fully reset",
+                ["timestamp"] = "Date and time",
+                ["actor"] = "Actor",
+                ["actorEmail"] = "Actor email",
+                ["actorParticipant"] = "Participant",
+                ["actorVerifiedParticipant"] = "Verified participant",
+                ["actorSystem"] = "System",
+                ["actorStaff"] = "Staff member",
+                ["actorOther"] = "Other",
+                ["details"] = "Details",
+                ["archived"] = "Archived",
+                ["redactedAt"] = "Details redacted",
+                ["yes"] = "Yes",
+                ["no"] = "No",
+                ["notRecorded"] = "Not recorded",
+                ["noDetails"] = "No event details retained",
+                ["part"] = "Part {0} of {1}",
+                ["continued"] = "continued",
+                ["version"] = "Version",
+                ["page"] = "Page",
+                ["of"] = "of",
+                ["footer"] = "RefTest Management — Personal data export"
+            },
+            ["nl"] = new()
+            {
+                ["title"] = "Export van persoonsgegevens",
+                ["recipientEmail"] = "Geverifieerd e-mailadres",
+                ["refTest"] = "RefTest",
+                ["refTestId"] = "RefTest-ID",
+                ["titleId"] = "Titel-ID",
+                ["firstName"] = "Voornaam",
+                ["lastName"] = "Achternaam",
+                ["email"] = "E-mailadres",
+                ["status"] = "Status",
+                ["status.Pending"] = "In afwachting",
+                ["status.InProgress"] = "Bezig",
+                ["status.Completed"] = "Voltooid",
+                ["status.Expired"] = "Verlopen",
+                ["status.PendingApproval"] = "Wacht op goedkeuring",
+                ["status.Rejected"] = "Afgewezen",
+                ["sendInvitationsAutomatically"] = "Uitnodigingen automatisch verzenden",
+                ["invitationSentAt"] = "Uitnodiging verzonden",
+                ["numberOfQuestions"] = "Aantal vragen",
+                ["maxTimeInMinutes"] = "Tijdslimiet (minuten)",
+                ["questionIds"] = "Vraag-ID's",
+                ["createdAt"] = "Aangemaakt",
+                ["startedAt"] = "Gestart",
+                ["completedAt"] = "Voltooid",
+                ["expiredAt"] = "Verlopen",
+                ["currentQuestionIndex"] = "Huidige vraagindex",
+                ["questionScore"] = "Vragenscore",
+                ["answerScore"] = "Antwoordscore",
+                ["answerTotal"] = "Totaal aantal antwoorden",
+                ["percentage"] = "Percentage",
+                ["selectedAnswerIds"] = "Geselecteerde antwoord-ID's",
+                ["wrongQuestionIds"] = "Onjuiste vraag-ID's",
+                ["wrongAnswerIds"] = "Onjuiste antwoord-ID's",
+                ["sendResultsAutomatically"] = "Resultaten automatisch verzenden",
+                ["resultsSentAt"] = "Resultaten verzonden",
+                ["language"] = "Taal",
+                ["privacyNoticeVersion"] = "Versie privacyverklaring",
+                ["privacyNoticeAcceptedAt"] = "Privacyverklaring aanvaard",
+                ["scheduledAt"] = "Gepland",
+                ["events"] = "Bewaarde auditgebeurtenissen",
+                ["eventType"] = "Gebeurtenis",
+                ["event.RefTestCreated"] = "Aangemaakt",
+                ["event.RefTestDetailsUpdated"] = "Deelnemergegevens bijgewerkt",
+                ["event.RefTestConfigurationUpdated"] = "Configuratie bijgewerkt",
+                ["event.RefTestNotificationSettingsUpdated"] = "Meldingsinstellingen bijgewerkt",
+                ["event.RefTestTimeExtended"] = "Tijd verlengd",
+                ["event.RefTestSoftReset"] = "RefTest gereset",
+                ["event.RefTestStarted"] = "Gestart",
+                ["event.RefTestPrivacyNoticeAccepted"] = "Privacyverklaring aanvaard",
+                ["event.RefTestCompleted"] = "Voltooid",
+                ["event.RefTestApproved"] = "Goedgekeurd",
+                ["event.RefTestRejected"] = "Afgewezen",
+                ["event.RefTestExpired"] = "Verlopen",
+                ["event.RefTestDeleted"] = "Verwijderd",
+                ["event.RefTestAnonymized"] = "Persoonsgegevens geanonimiseerd",
+                ["event.RefTestRevived"] = "Opnieuw geactiveerd",
+                ["event.RefTestInvitationSent"] = "Uitnodiging verzonden",
+                ["event.RefTestResultsSent"] = "Resultaten verzonden",
+                ["event.RefTestTokenRegenerated"] = "Uitnodigingstoken vernieuwd",
+                ["event.RefTestHardReset"] = "RefTest volledig gereset",
+                ["timestamp"] = "Datum en tijd",
+                ["actor"] = "Actor",
+                ["actorEmail"] = "E-mailadres actor",
+                ["actorParticipant"] = "Deelnemer",
+                ["actorVerifiedParticipant"] = "Geverifieerde deelnemer",
+                ["actorSystem"] = "Systeem",
+                ["actorStaff"] = "Medewerker",
+                ["actorOther"] = "Overige",
+                ["details"] = "Details",
+                ["archived"] = "Gearchiveerd",
+                ["redactedAt"] = "Details gewist",
+                ["yes"] = "Ja",
+                ["no"] = "Nee",
+                ["notRecorded"] = "Niet geregistreerd",
+                ["noDetails"] = "Geen gebeurtenisdetails bewaard",
+                ["part"] = "Deel {0} van {1}",
+                ["continued"] = "vervolg",
+                ["version"] = "Versie",
+                ["page"] = "Pagina",
+                ["of"] = "van",
+                ["footer"] = "RefTest Management — Export van persoonsgegevens"
+            },
+            ["fr"] = new()
+            {
+                ["title"] = "Exportation de données personnelles",
+                ["recipientEmail"] = "Adresse e-mail vérifiée",
+                ["refTest"] = "RefTest",
+                ["refTestId"] = "ID RefTest",
+                ["titleId"] = "ID du titre",
+                ["firstName"] = "Prénom",
+                ["lastName"] = "Nom",
+                ["email"] = "Adresse e-mail",
+                ["status"] = "Statut",
+                ["status.Pending"] = "En attente",
+                ["status.InProgress"] = "En cours",
+                ["status.Completed"] = "Terminé",
+                ["status.Expired"] = "Expiré",
+                ["status.PendingApproval"] = "En attente d’approbation",
+                ["status.Rejected"] = "Refusé",
+                ["sendInvitationsAutomatically"] = "Envoi automatique des invitations",
+                ["invitationSentAt"] = "Invitation envoyée",
+                ["numberOfQuestions"] = "Nombre de questions",
+                ["maxTimeInMinutes"] = "Limite de temps (minutes)",
+                ["questionIds"] = "Identifiants des questions",
+                ["createdAt"] = "Créé",
+                ["startedAt"] = "Commencé",
+                ["completedAt"] = "Terminé",
+                ["expiredAt"] = "Expiré",
+                ["currentQuestionIndex"] = "Index de la question actuelle",
+                ["questionScore"] = "Score des questions",
+                ["answerScore"] = "Score des réponses",
+                ["answerTotal"] = "Nombre total de réponses",
+                ["percentage"] = "Pourcentage",
+                ["selectedAnswerIds"] = "Identifiants des réponses sélectionnées",
+                ["wrongQuestionIds"] = "Identifiants des questions incorrectes",
+                ["wrongAnswerIds"] = "Identifiants des réponses incorrectes",
+                ["sendResultsAutomatically"] = "Envoi automatique des résultats",
+                ["resultsSentAt"] = "Résultats envoyés",
+                ["language"] = "Langue",
+                ["privacyNoticeVersion"] = "Version de l’avis de confidentialité",
+                ["privacyNoticeAcceptedAt"] = "Avis de confidentialité accepté",
+                ["scheduledAt"] = "Planifié",
+                ["events"] = "Événements d’audit conservés",
+                ["eventType"] = "Événement",
+                ["event.RefTestCreated"] = "Créé",
+                ["event.RefTestDetailsUpdated"] = "Données du participant modifiées",
+                ["event.RefTestConfigurationUpdated"] = "Configuration modifiée",
+                ["event.RefTestNotificationSettingsUpdated"] = "Paramètres de notification modifiés",
+                ["event.RefTestTimeExtended"] = "Durée prolongée",
+                ["event.RefTestSoftReset"] = "RefTest réinitialisé",
+                ["event.RefTestStarted"] = "Commencé",
+                ["event.RefTestPrivacyNoticeAccepted"] = "Avis de confidentialité accepté",
+                ["event.RefTestCompleted"] = "Terminé",
+                ["event.RefTestApproved"] = "Approuvé",
+                ["event.RefTestRejected"] = "Refusé",
+                ["event.RefTestExpired"] = "Expiré",
+                ["event.RefTestDeleted"] = "Supprimé",
+                ["event.RefTestAnonymized"] = "Données personnelles anonymisées",
+                ["event.RefTestRevived"] = "Réactivé",
+                ["event.RefTestInvitationSent"] = "Invitation envoyée",
+                ["event.RefTestResultsSent"] = "Résultats envoyés",
+                ["event.RefTestTokenRegenerated"] = "Jeton d’invitation renouvelé",
+                ["event.RefTestHardReset"] = "RefTest entièrement réinitialisé",
+                ["timestamp"] = "Date et heure",
+                ["actor"] = "Auteur",
+                ["actorEmail"] = "E-mail de l’auteur",
+                ["actorParticipant"] = "Participant",
+                ["actorVerifiedParticipant"] = "Participant vérifié",
+                ["actorSystem"] = "Système",
+                ["actorStaff"] = "Membre du personnel",
+                ["actorOther"] = "Autre",
+                ["details"] = "Détails",
+                ["archived"] = "Archivé",
+                ["redactedAt"] = "Détails expurgés",
+                ["yes"] = "Oui",
+                ["no"] = "Non",
+                ["notRecorded"] = "Non enregistré",
+                ["noDetails"] = "Aucun détail d’événement conservé",
+                ["part"] = "Partie {0} sur {1}",
+                ["continued"] = "suite",
+                ["version"] = "Version",
+                ["page"] = "Page",
+                ["of"] = "sur",
+                ["footer"] = "RefTest Management — Exportation de données personnelles"
+            },
+            ["de"] = new()
+            {
+                ["title"] = "Export personenbezogener Daten",
+                ["recipientEmail"] = "Bestätigte E-Mail-Adresse",
+                ["refTest"] = "RefTest",
+                ["refTestId"] = "RefTest-ID",
+                ["titleId"] = "Titel-ID",
+                ["firstName"] = "Vorname",
+                ["lastName"] = "Nachname",
+                ["email"] = "E-Mail-Adresse",
+                ["status"] = "Status",
+                ["status.Pending"] = "Ausstehend",
+                ["status.InProgress"] = "In Bearbeitung",
+                ["status.Completed"] = "Abgeschlossen",
+                ["status.Expired"] = "Abgelaufen",
+                ["status.PendingApproval"] = "Ausstehende Genehmigung",
+                ["status.Rejected"] = "Abgelehnt",
+                ["sendInvitationsAutomatically"] = "Einladungen automatisch senden",
+                ["invitationSentAt"] = "Einladung gesendet",
+                ["numberOfQuestions"] = "Anzahl der Fragen",
+                ["maxTimeInMinutes"] = "Zeitlimit (Minuten)",
+                ["questionIds"] = "Fragen-IDs",
+                ["createdAt"] = "Erstellt",
+                ["startedAt"] = "Gestartet",
+                ["completedAt"] = "Abgeschlossen",
+                ["expiredAt"] = "Abgelaufen",
+                ["currentQuestionIndex"] = "Aktueller Fragenindex",
+                ["questionScore"] = "Fragenpunktzahl",
+                ["answerScore"] = "Antwortpunktzahl",
+                ["answerTotal"] = "Antworten insgesamt",
+                ["percentage"] = "Prozentsatz",
+                ["selectedAnswerIds"] = "IDs ausgewählter Antworten",
+                ["wrongQuestionIds"] = "IDs falscher Fragen",
+                ["wrongAnswerIds"] = "IDs falscher Antworten",
+                ["sendResultsAutomatically"] = "Ergebnisse automatisch senden",
+                ["resultsSentAt"] = "Ergebnisse gesendet",
+                ["language"] = "Sprache",
+                ["privacyNoticeVersion"] = "Version des Datenschutzhinweises",
+                ["privacyNoticeAcceptedAt"] = "Datenschutzhinweis akzeptiert",
+                ["scheduledAt"] = "Geplant",
+                ["events"] = "Aufbewahrte Audit-Ereignisse",
+                ["eventType"] = "Ereignis",
+                ["event.RefTestCreated"] = "Erstellt",
+                ["event.RefTestDetailsUpdated"] = "Teilnehmerdaten aktualisiert",
+                ["event.RefTestConfigurationUpdated"] = "Konfiguration aktualisiert",
+                ["event.RefTestNotificationSettingsUpdated"] = "Benachrichtigungseinstellungen aktualisiert",
+                ["event.RefTestTimeExtended"] = "Zeit verlängert",
+                ["event.RefTestSoftReset"] = "RefTest zurückgesetzt",
+                ["event.RefTestStarted"] = "Gestartet",
+                ["event.RefTestPrivacyNoticeAccepted"] = "Datenschutzhinweis akzeptiert",
+                ["event.RefTestCompleted"] = "Abgeschlossen",
+                ["event.RefTestApproved"] = "Genehmigt",
+                ["event.RefTestRejected"] = "Abgelehnt",
+                ["event.RefTestExpired"] = "Abgelaufen",
+                ["event.RefTestDeleted"] = "Gelöscht",
+                ["event.RefTestAnonymized"] = "Personenbezogene Daten anonymisiert",
+                ["event.RefTestRevived"] = "Reaktiviert",
+                ["event.RefTestInvitationSent"] = "Einladung gesendet",
+                ["event.RefTestResultsSent"] = "Ergebnisse gesendet",
+                ["event.RefTestTokenRegenerated"] = "Einladungstoken erneuert",
+                ["event.RefTestHardReset"] = "RefTest vollständig zurückgesetzt",
+                ["timestamp"] = "Datum und Uhrzeit",
+                ["actor"] = "Akteur",
+                ["actorEmail"] = "E-Mail des Akteurs",
+                ["actorParticipant"] = "Teilnehmer",
+                ["actorVerifiedParticipant"] = "Verifizierter Teilnehmer",
+                ["actorSystem"] = "System",
+                ["actorStaff"] = "Mitarbeiter",
+                ["actorOther"] = "Sonstige",
+                ["details"] = "Details",
+                ["archived"] = "Archiviert",
+                ["redactedAt"] = "Details geschwärzt",
+                ["yes"] = "Ja",
+                ["no"] = "Nein",
+                ["notRecorded"] = "Nicht erfasst",
+                ["noDetails"] = "Keine Ereignisdetails aufbewahrt",
+                ["part"] = "Teil {0} von {1}",
+                ["continued"] = "Fortsetzung",
+                ["version"] = "Version",
+                ["page"] = "Seite",
+                ["of"] = "von",
+                ["footer"] = "RefTest Management — Export personenbezogener Daten"
             }
         };
     }

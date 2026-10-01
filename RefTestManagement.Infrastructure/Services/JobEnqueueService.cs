@@ -60,6 +60,16 @@ public interface IJobEnqueueService
         IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
+    Task EnqueuePersonalDataExportChallengeEmailAsync(PersonalDataExportChallengeEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
+
+    Task EnqueuePersonalDataExportDeliveryEmailAsync(PersonalDataExportDeliveryEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
+
     Task CancelPendingJobsForRefTestAsync(Guid refTestId,
         bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
@@ -177,6 +187,40 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
             await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalDecisionEmail, job.Id);
+    }
+
+    public async Task EnqueuePersonalDataExportChallengeEmailAsync(
+        PersonalDataExportChallengeEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
+    {
+        var dbContext = ResolveContext(unitOfWorkContext);
+        var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
+        var job = Job.Create(JobType.PersonalDataExportChallengeEmail, payloadJson);
+
+        dbContext.Jobs.Add(job);
+        if (saveChanges)
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
+
+        ServiceLoggerMessages.LogJobEnqueued(logger, JobType.PersonalDataExportChallengeEmail, job.Id);
+    }
+
+    public async Task EnqueuePersonalDataExportDeliveryEmailAsync(
+        PersonalDataExportDeliveryEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
+    {
+        var dbContext = ResolveContext(unitOfWorkContext);
+        var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
+        var job = Job.Create(JobType.PersonalDataExportDeliveryEmail, payloadJson);
+
+        dbContext.Jobs.Add(job);
+        if (saveChanges)
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
+
+        ServiceLoggerMessages.LogJobEnqueued(logger, JobType.PersonalDataExportDeliveryEmail, job.Id);
     }
 
     public async Task CancelPendingJobsForRefTestAsync(Guid refTestId,

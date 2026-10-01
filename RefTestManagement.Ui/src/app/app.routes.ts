@@ -10,6 +10,11 @@ export const routes: Routes = [
     loadComponent: () => import('./home/home').then((m) => m.Home),
   },
   {
+    path: 'privacy/export-confirmation',
+    pathMatch: 'full',
+    loadComponent: () => import('./privacy/privacy-notice').then((m) => m.PrivacyNotice),
+  },
+  {
     path: 'privacy',
     loadComponent: () => import('./privacy/privacy-notice').then((m) => m.PrivacyNotice),
   },

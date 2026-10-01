@@ -1,5 +1,6 @@
 ﻿using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure.Configurations;
@@ -13,6 +14,7 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
     public DbSet<RefTest> RefTests { get; set; } = null!;
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
+    public DbSet<PersonalDataExportRequest> PersonalDataExportRequests { get; set; } = null!;
     public DbSet<AuditEvent> AuditEvents { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -20,6 +22,7 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
         modelBuilder.ApplyConfiguration(new RefTestTitleConfiguration());
         modelBuilder.ApplyConfiguration(new RefTestConfiguration());
         modelBuilder.ApplyConfiguration(new JobConfiguration());
+        modelBuilder.ApplyConfiguration(new PersonalDataExportRequestConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuditEvent).Assembly);
 
         // MySQL maps VARCHAR(n) in utf8mb4 to n×4 bytes toward the 65535-byte row size limit.

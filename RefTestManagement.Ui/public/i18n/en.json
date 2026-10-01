@@ -703,6 +703,24 @@
     "rights": {
       "title": "Your rights",
       "body": "You may request access, correction, erasure, restriction, objection, or a portable copy of your data, and may withdraw consent. Contact {{contactEmail}}. You may also lodge a complaint with your supervisory authority."
+    },
+    "dataExport": {
+      "title": "Request a copy of your personal data",
+      "description": "Enter the email address associated with your participation. If it matches a participant record, we will send a confirmation link to that address.",
+      "emailLabel": "Email address",
+      "emailHelp": "We will use this address only to verify and deliver your request.",
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter a valid email address.",
+      "requestButton": "Send request",
+      "requesting": "Sending your request...",
+      "requestAcknowledged": "If the address matches a participant record, you will receive an email with a link to confirm your request.",
+      "requestError": "We could not process your request. Please try again.",
+      "confirmationTitle": "Confirm your request",
+      "confirmationDescription": "Confirm below to have a PDF copy of your personal data sent by email.",
+      "confirmButton": "Confirm request",
+      "confirming": "Confirming your request...",
+      "confirmed": "Your request is confirmed. A PDF copy of your personal data will be emailed to you.",
+      "confirmationError": "We could not confirm this request. The link may be invalid or expired. Please request a new link and try again."
     }
   },
   "audit-logs": {

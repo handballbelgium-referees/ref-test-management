@@ -704,6 +704,24 @@
     "rights": {
       "title": "Vos droits",
       "body": "Vous pouvez demander l'accès, la rectification, l'effacement, la limitation, vous opposer au traitement ou demander une copie portable de vos données, et retirer votre consentement. Contactez {{contactEmail}}. Vous pouvez aussi introduire une réclamation auprès de votre autorité de contrôle."
+    },
+    "dataExport": {
+      "title": "Demander une copie de vos données personnelles",
+      "description": "Saisissez l'adresse e-mail associée à votre participation. Si elle correspond à un dossier de participant, nous enverrons un lien de confirmation à cette adresse.",
+      "emailLabel": "Adresse e-mail",
+      "emailHelp": "Nous utiliserons cette adresse uniquement pour vérifier et transmettre votre demande.",
+      "emailRequired": "Saisissez votre adresse e-mail.",
+      "emailInvalid": "Saisissez une adresse e-mail valide.",
+      "requestButton": "Envoyer la demande",
+      "requesting": "Envoi de votre demande...",
+      "requestAcknowledged": "Si l'adresse correspond à un dossier de participant, vous recevrez un e-mail contenant un lien pour confirmer votre demande.",
+      "requestError": "Nous n'avons pas pu traiter votre demande. Veuillez réessayer.",
+      "confirmationTitle": "Confirmer votre demande",
+      "confirmationDescription": "Confirmez ci-dessous pour recevoir par e-mail un PDF de vos données personnelles.",
+      "confirmButton": "Confirmer la demande",
+      "confirming": "Confirmation de votre demande...",
+      "confirmed": "Votre demande est confirmée. Un PDF de vos données personnelles vous sera envoyé par e-mail.",
+      "confirmationError": "Nous n'avons pas pu confirmer cette demande. Le lien est peut-être invalide ou expiré. Demandez un nouveau lien et réessayez."
     }
   },
   "audit-logs": {

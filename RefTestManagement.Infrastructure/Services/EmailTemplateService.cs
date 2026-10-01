@@ -32,6 +32,14 @@ public interface IEmailTemplateService
         string? rejectionReason,
         string? titleValue,
         List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems);
+
+    Task<string> BuildCompletePersonalDataExportVerificationEmailAsync(
+        IReadOnlyDictionary<string, string> translations,
+        string confirmationUrl);
+
+    Task<string> BuildCompletePersonalDataExportDeliveryEmailAsync(
+        IReadOnlyDictionary<string, string> translations,
+        string locale);
 }
 
 public record LanguageContent(
@@ -106,6 +114,63 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         var languageSections = BuildAllApprovalDecisionLanguageSections(
             enabledLanguages, approverName, isApproved, rejectionReason, titleValue, refTestItems);
         return BuildApprovalDecisionEmail(logoTag, languageSections);
+    }
+
+    public async Task<string> BuildCompletePersonalDataExportVerificationEmailAsync(
+        IReadOnlyDictionary<string, string> translations,
+        string confirmationUrl)
+    {
+        var logoTag = await CreateLogoImageTag();
+        var safeUrl = System.Web.HttpUtility.HtmlEncode(confirmationUrl);
+        return $@"<!DOCTYPE html>
+<html lang='en'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>
+<body style='margin: 0; padding: 24px; background-color: #f5f5f5; font-family: Arial, sans-serif;'>
+    <div style='max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;'>
+        <div style='background-color: #e30613; padding: 24px; text-align: center;'>
+            {logoTag}
+            <h1 style='color: #ffffff; margin: 8px 0 0;'>RefTest</h1>
+        </div>
+        <div style='padding: 24px; color: #374151;'>
+            <h2>{System.Web.HttpUtility.HtmlEncode(translations["heading"])}</h2>
+            <p>{System.Web.HttpUtility.HtmlEncode(translations["introText"])}</p>
+            <div style='text-align: center; margin: 28px 0;'>
+                <a href='{safeUrl}' style='background-color: #e30613; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;'>
+                    {System.Web.HttpUtility.HtmlEncode(translations["confirmButton"])}
+                </a>
+            </div>
+            <p>{System.Web.HttpUtility.HtmlEncode(translations["expiryNote"])}</p>
+            <p style='color: #737373; font-size: 14px;'>{System.Web.HttpUtility.HtmlEncode(translations["ignoreNote"])}</p>
+            <p style='font-size: 12px; color: #737373; overflow-wrap: anywhere;'>{safeUrl}</p>
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    public async Task<string> BuildCompletePersonalDataExportDeliveryEmailAsync(
+        IReadOnlyDictionary<string, string> translations,
+        string locale)
+    {
+        var logoTag = await CreateLogoImageTag();
+        var safeLocale = locale is "en" or "nl" or "fr" or "de" ? locale : "en";
+
+        return $@"<!DOCTYPE html>
+<html lang='{safeLocale}'>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>
+<body style='margin: 0; padding: 24px; background-color: #f5f5f5; font-family: Arial, sans-serif;'>
+    <div style='max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;'>
+        <div style='background-color: #e30613; padding: 24px; text-align: center;'>
+            {logoTag}
+            <h1 style='color: #ffffff; margin: 8px 0 0;'>RefTest</h1>
+        </div>
+        <div style='padding: 24px; color: #374151;'>
+            <h2>{System.Web.HttpUtility.HtmlEncode(translations["heading"])}</h2>
+            <p>{System.Web.HttpUtility.HtmlEncode(translations["body"])}</p>
+        </div>
+    </div>
+</body>
+</html>";
     }
 
     private async Task<string> CreateLogoImageTag()

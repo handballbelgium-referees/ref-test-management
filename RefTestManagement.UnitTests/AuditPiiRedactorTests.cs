@@ -128,4 +128,31 @@ public class AuditPiiRedactorTests
         Assert.DoesNotContain("John", redacted, StringComparison.Ordinal);
         Assert.DoesNotContain("Doe", redacted, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void RedactData_RemovesExportChallengePiiAndSecretFields()
+    {
+        const string payload =
+            """{"emailAddress":"ada@example.org","challengeKey":"raw-key","keyHash":"key-hash","protectedDeliveryKey":"protected-key"}""";
+
+        var redacted = AuditPiiRedactor.RedactData(payload);
+
+        Assert.DoesNotContain("ada@example.org", redacted, StringComparison.Ordinal);
+        Assert.DoesNotContain("raw-key", redacted, StringComparison.Ordinal);
+        Assert.DoesNotContain("key-hash", redacted, StringComparison.Ordinal);
+        Assert.DoesNotContain("protected-key", redacted, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RedactData_RemovesChallengeFieldsFromNestedEventPayloads()
+    {
+        const string payload =
+            """{"request":{"email":"ada@example.org","challenge":{"key":"raw-key","keyHash":"key-hash"}}}""";
+
+        var redacted = AuditPiiRedactor.RedactData(payload);
+
+        Assert.DoesNotContain("ada@example.org", redacted, StringComparison.Ordinal);
+        Assert.DoesNotContain("raw-key", redacted, StringComparison.Ordinal);
+        Assert.DoesNotContain("key-hash", redacted, StringComparison.Ordinal);
+    }
 }

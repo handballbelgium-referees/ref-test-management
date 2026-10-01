@@ -21,6 +21,7 @@ using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using System.Threading.RateLimiting;
 using System.Net;
+using Microsoft.AspNetCore.DataProtection;
 
 // Configure QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
@@ -33,6 +34,7 @@ var configuration = builder.Configuration;
 services.AddSecurityConfiguration(configuration);
 services.AddTaskBasedAuthorization();
 services.AddHttpContextAccessor();
+services.AddDataProtection().SetApplicationName("RefTestManagement");
 services.AddControllersWithViews();
 
 // Add CORS for development (allows WebSocket connections from Angular dev server)
@@ -56,6 +58,8 @@ var auditLogOptions = services.AddAuditLogging(opts =>
 
     opts.ExcludeEntity<Job>();
     opts.ExcludeProperty("Token");
+    opts.ExcludeProperty("KeyHash");
+    opts.ExcludeProperty("ProtectedDeliveryKey");
     opts.RegisterEntityResolver("RefTestTitle", (id, ctx) =>
         ctx.Set<RefTestTitle>().Find(id)?.Value);
 });
@@ -88,6 +92,23 @@ services.AddSingleton(reportConfig);
 var privacyConfig = configuration.GetSection("PrivacyConfiguration").Get<PrivacyConfiguration>()
                     ?? new PrivacyConfiguration();
 services.AddSingleton(privacyConfig);
+
+var personalDataExportConfig = configuration.GetSection("PersonalDataExportConfiguration")
+                                   .Get<PersonalDataExportConfiguration>()
+                               ?? new PersonalDataExportConfiguration();
+if (personalDataExportConfig.KeyLifetimeHours is < 1 or > 168
+    || personalDataExportConfig.RateLimitWindowSeconds <= 0
+    || personalDataExportConfig.RequestRateLimitPermitLimit <= 0
+    || personalDataExportConfig.ConfirmationRateLimitPermitLimit <= 0
+    || personalDataExportConfig.CleanupIntervalMinutes <= 0)
+{
+    throw new InvalidOperationException("PersonalDataExportConfiguration contains an invalid value.");
+}
+
+services.AddSingleton(personalDataExportConfig);
+services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
+services.AddSingleton<IPersonalDataExportRateLimiter, PersonalDataExportRateLimiter>();
+services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
 
 var refTestExpirationConfig = configuration.GetSection("RefTestExpirationConfiguration")
                                   .Get<RefTestExpirationConfiguration>()
@@ -158,6 +179,7 @@ services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
 // the HTTP call, so it can tell the difference.
 services.AddSingleton<IEmailTemplateService, EmailTemplateService>();
 services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
+services.AddScoped<IPersonalDataExportPdfService, PersonalDataExportPdfService>();
 services.AddScoped<IRefTestReportService, RefTestReportService>();
 services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 services.AddScoped<IJobEnqueueService, JobEnqueueService>();
@@ -171,6 +193,7 @@ services.AddAuth0ManagementServices(configuration);
 services.AddHostedService<PermissionSyncService>();
 services.AddHostedService<RefTestExpirationService>();
 services.AddHostedService<PrivacyRetentionService>();
+services.AddHostedService<PersonalDataExportRequestCleanupService>();
 services.AddHostedService<BackgroundJobService>();
 
 // Job handlers, keyed by the job type BackgroundJobService dispatches on. A job type with no
@@ -181,6 +204,10 @@ services.AddKeyedScoped<IJobHandler, ReportEmailJobHandler>(JobType.ReportEmail)
 services.AddKeyedScoped<IJobHandler, RefTestExpirationJobHandler>(JobType.RefTestExpiration);
 services.AddKeyedScoped<IJobHandler, ApprovalNotificationEmailJobHandler>(JobType.ApprovalNotificationEmail);
 services.AddKeyedScoped<IJobHandler, ApprovalDecisionEmailJobHandler>(JobType.ApprovalDecisionEmail);
+services.AddKeyedScoped<IJobHandler, PersonalDataExportChallengeEmailJobHandler>(
+    JobType.PersonalDataExportChallengeEmail);
+services.AddKeyedScoped<IJobHandler, PersonalDataExportDeliveryEmailJobHandler>(
+    JobType.PersonalDataExportDeliveryEmail);
 if (auditLogOptions.EnableCleanup)
 {
     services.AddHostedService<AuditLogCleanupService>();

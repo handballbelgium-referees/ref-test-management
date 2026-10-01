@@ -95,6 +95,27 @@ Decode your access token at [jwt.io](https://jwt.io). You should see a `permissi
 | `audit-logs:view` | `auditLogs` query (paginated, with filters) | Query    |
 | `audit-logs:*`    | Wildcard — grants all `audit-logs:*` perms  | Wildcard |
 
+## Public Personal-Data Export Verification
+
+The `requestPersonalDataExport` and `confirmPersonalDataExport` mutations are intentionally public,
+like the existing participant lifecycle mutations; they have no `[Authorize]` policy and require no
+account or Auth0 permission. The confirmation key proves control of the mailbox before an export is
+queued.
+
+The request mutation returns the same acknowledgement for matching and nonmatching addresses.
+Only an address already associated with a non-anonymized participant record receives a localized
+verification email. The request and confirmation operations have separate per-client-address rate
+limits; their permit counts, window, and cleanup interval are configured under
+`PersonalDataExportConfiguration`. Verification keys expire after 24 hours by default; deployments
+may set `KeyLifetimeHours` from 1 through 168.
+
+The email link is `/privacy/export-confirmation?lang=<locale>#<key>`. The initial page load must
+only display the confirmation page: the client reads the key from the fragment, removes it from
+the address bar/history, and sends it to `confirmPersonalDataExport` only after the participant
+explicitly clicks Confirm. The server stores a hash for one-time atomic consumption and keeps only
+a data-protected transient copy while retrying email delivery. The job carries the request ID only;
+the raw key is not persisted in job or audit data.
+
 ---
 
 ## Wildcard & Superadmin Resolution

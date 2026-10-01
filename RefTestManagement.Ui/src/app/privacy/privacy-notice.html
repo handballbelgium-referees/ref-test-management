@@ -67,4 +67,135 @@
       <p>{{ 'privacy.rights.body' | translate: { contactEmail: notice.contactEmail } }}</p>
     }
   </section>
+
+  <section
+    aria-labelledby="privacy-data-export-title"
+    class="space-y-4 rounded-xl border border-neutral-200 bg-white p-6"
+  >
+    <h2 id="privacy-data-export-title" class="text-xl font-bold text-neutral-900">
+      {{ 'privacy.dataExport.title' | translate }}
+    </h2>
+    <p>{{ 'privacy.dataExport.description' | translate }}</p>
+
+    <form
+      [formGroup]="requestForm"
+      (ngSubmit)="requestPersonalDataExport()"
+      class="space-y-4"
+      novalidate
+    >
+      <div>
+        <label for="privacy-data-export-email" class="block font-medium text-neutral-900">
+          {{ 'privacy.dataExport.emailLabel' | translate }}
+        </label>
+        <input
+          id="privacy-data-export-email"
+          type="email"
+          autocomplete="email"
+          formControlName="email"
+          required
+          [attr.aria-invalid]="
+            requestAttempted() && requestForm.controls.email.invalid ? 'true' : null
+          "
+          [attr.aria-describedby]="
+            requestAttempted() && requestForm.controls.email.invalid
+              ? 'privacy-data-export-email-help privacy-data-export-email-error'
+              : 'privacy-data-export-email-help'
+          "
+          class="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 shadow-sm focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600"
+        />
+        <p id="privacy-data-export-email-help" class="mt-1 text-sm text-neutral-600">
+          {{ 'privacy.dataExport.emailHelp' | translate }}
+        </p>
+        @if (requestAttempted() && requestForm.controls.email.invalid) {
+          <p id="privacy-data-export-email-error" class="mt-1 text-sm text-red-700" role="alert">
+            @if (requestForm.controls.email.hasError('required')) {
+              {{ 'privacy.dataExport.emailRequired' | translate }}
+            } @else {
+              {{ 'privacy.dataExport.emailInvalid' | translate }}
+            }
+          </p>
+        }
+      </div>
+
+      <button
+        type="submit"
+        [disabled]="requestPending()"
+        class="rounded-md bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {{ 'privacy.dataExport.requestButton' | translate }}
+      </button>
+    </form>
+
+    @if (requestPending()) {
+      <p
+        id="privacy-data-export-request-pending"
+        class="text-neutral-700"
+        role="status"
+        aria-live="polite"
+      >
+        {{ 'privacy.dataExport.requesting' | translate }}
+      </p>
+    }
+    @if (requestAcknowledged()) {
+      <p
+        id="privacy-data-export-request-acknowledged"
+        class="text-green-800"
+        role="status"
+        aria-live="polite"
+      >
+        {{ 'privacy.dataExport.requestAcknowledged' | translate }}
+      </p>
+    }
+    @if (requestError()) {
+      <p id="privacy-data-export-request-error" class="text-red-700" role="alert">
+        {{ 'privacy.dataExport.requestError' | translate }}
+      </p>
+    }
+  </section>
+
+  @if (hasConfirmation()) {
+    <section
+      aria-labelledby="privacy-data-export-confirmation-title"
+      class="space-y-4 rounded-xl border border-neutral-200 bg-white p-6"
+    >
+      <h2 id="privacy-data-export-confirmation-title" class="text-xl font-bold text-neutral-900">
+        {{ 'privacy.dataExport.confirmationTitle' | translate }}
+      </h2>
+      @if (confirmationSucceeded()) {
+        <p
+          id="privacy-data-export-confirmed"
+          class="text-green-800"
+          role="status"
+          aria-live="polite"
+        >
+          {{ 'privacy.dataExport.confirmed' | translate }}
+        </p>
+      } @else {
+        <p>{{ 'privacy.dataExport.confirmationDescription' | translate }}</p>
+        <button
+          type="button"
+          [disabled]="confirmationPending()"
+          (click)="confirmPersonalDataExport()"
+          class="rounded-md bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {{ 'privacy.dataExport.confirmButton' | translate }}
+        </button>
+        @if (confirmationPending()) {
+          <p
+            id="privacy-data-export-confirmation-pending"
+            class="text-neutral-700"
+            role="status"
+            aria-live="polite"
+          >
+            {{ 'privacy.dataExport.confirming' | translate }}
+          </p>
+        }
+        @if (confirmationError()) {
+          <p id="privacy-data-export-confirmation-error" class="text-red-700" role="alert">
+            {{ 'privacy.dataExport.confirmationError' | translate }}
+          </p>
+        }
+      }
+    </section>
+  }
 </article>

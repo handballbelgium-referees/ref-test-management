@@ -40,6 +40,19 @@ public interface IEmailService
         string? titleValue,
         List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         CancellationToken cancellationToken);
+
+    Task SendPersonalDataExportVerificationAsync(
+        string recipientEmail,
+        string challengeKey,
+        string locale,
+        DateTime expiresAt,
+        CancellationToken cancellationToken);
+
+    Task SendPersonalDataExportAsync(
+        string recipientEmail,
+        string locale,
+        IReadOnlyList<EmailAttachment> attachments,
+        CancellationToken cancellationToken);
 }
 
 public class EmailService(
@@ -54,6 +67,10 @@ public class EmailService(
     HttpClient httpClient)
     : IEmailService
 {
+    private const int MaxProviderRequestBytes = 20 * 1024 * 1024;
+    private const int ProviderRequestHeadroomBytes = 256 * 1024;
+    private const int MaxPersonalDataExportAttachments = 10;
+
     // Compiled regex for performance (allocated once)
     private static readonly Regex HtmlTagRegex = new("<[^>]*>", RegexOptions.Compiled);
     private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
@@ -116,13 +133,18 @@ public class EmailService(
 
     private async Task SendEmailAsync(string toEmail, string subject, string body,
         List<EmailAttachment>? attachments = null, bool scheduleEmail = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool requireSuccessfulProviderResponse = false,
+        bool suppressFailureDetails = false,
+        string? suppressedFailureLabel = null)
     {
         ServiceLoggerMessages.LogSendingEmail(logger, LogRedaction.MaskEmail(toEmail), subject);
 
         if (string.IsNullOrWhiteSpace(configuration.BrevoApiKey))
         {
             ServiceLoggerMessages.LogApiKeyNotConfigured(logger);
+            if (requireSuccessfulProviderResponse)
+                throw new InvalidOperationException("The email provider is not configured.");
             return;
         }
 
@@ -169,6 +191,15 @@ public class EmailService(
             }
             else
             {
+                if (requireSuccessfulProviderResponse)
+                {
+                    // A provider response may echo the message body, including the one-time key
+                    // in its URL fragment. Never log that body for verification mail.
+                    ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
+                        (int)response.StatusCode, string.Empty);
+                    throw new EmailException(toEmail);
+                }
+
                 var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
                 ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
                     (int)response.StatusCode, LogRedaction.MaskEmailsInText(responseBody) ?? string.Empty);
@@ -178,7 +209,17 @@ public class EmailService(
         {
             // The provider's client can surface the rejected address in its exception text, and
             // that text is outside the privacy erasure path once a log sink has it.
-            ServiceLoggerMessages.LogEmailError(logger, LogRedaction.MaskEmails(ex), LogRedaction.MaskEmail(toEmail));
+            if (suppressFailureDetails)
+            {
+                logger.LogError("{EmailContext} email delivery failed for recipient {Recipient}",
+                    suppressedFailureLabel ?? "Verification",
+                    LogRedaction.MaskEmail(toEmail));
+            }
+            else
+            {
+                ServiceLoggerMessages.LogEmailError(logger, LogRedaction.MaskEmails(ex), LogRedaction.MaskEmail(toEmail));
+            }
+
             throw new EmailException(toEmail);
         }
     }
@@ -258,6 +299,74 @@ public class EmailService(
         await SendEmailAsync(creatorEmail, subject, emailBody, cancellationToken: cancellationToken);
 
         ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(creatorEmail));
+    }
+
+    public async Task SendPersonalDataExportVerificationAsync(
+        string recipientEmail,
+        string challengeKey,
+        string locale,
+        DateTime expiresAt,
+        CancellationToken cancellationToken)
+    {
+        if (!Uri.TryCreate(configuration.BaseUrl, UriKind.Absolute, out var baseUri)
+            || baseUri.Scheme is not ("http" or "https"))
+            throw new InvalidOperationException("The application base URL is not configured.");
+
+        var translations = new Dictionary<string, string>(
+            translationService.GetEmailPersonalDataExportVerificationTranslations(locale));
+        var remainingHours = Math.Max(1, (int)Math.Ceiling((expiresAt - DateTime.UtcNow).TotalHours));
+        translations["expiryNote"] = string.Format(
+            System.Globalization.CultureInfo.InvariantCulture,
+            translations["expiryNote"],
+            remainingHours);
+
+        var confirmationUrl =
+            $"{configuration.BaseUrl.TrimEnd('/')}/privacy/export-confirmation?lang={Uri.EscapeDataString(locale)}#{Uri.EscapeDataString(challengeKey)}";
+        var emailBody = await templateService.BuildCompletePersonalDataExportVerificationEmailAsync(
+            translations,
+            confirmationUrl);
+
+        await SendEmailAsync(
+            recipientEmail,
+            translations["subject"],
+            emailBody,
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true,
+            suppressFailureDetails: true);
+    }
+
+    public async Task SendPersonalDataExportAsync(
+        string recipientEmail,
+        string locale,
+        IReadOnlyList<EmailAttachment> attachments,
+        CancellationToken cancellationToken)
+    {
+        var encodedAttachmentsBytes = attachments.Sum(attachment =>
+            ((long)attachment.Content.Length + 2) / 3 * 4);
+
+        if (attachments.Count == 0
+            || attachments.Count > MaxPersonalDataExportAttachments
+            || attachments.Any(attachment =>
+                attachment.Content.Length > PersonalDataExportPdfService.MaxPartBytes)
+            || encodedAttachmentsBytes > MaxProviderRequestBytes - ProviderRequestHeadroomBytes)
+        {
+            throw new PersonalDataExportSizeLimitException();
+        }
+
+        var translations = translationService.GetEmailPersonalDataExportDeliveryTranslations(locale);
+        var emailBody = await templateService.BuildCompletePersonalDataExportDeliveryEmailAsync(
+            translations,
+            locale);
+
+        await SendEmailAsync(
+            recipientEmail,
+            translations["subject"],
+            emailBody,
+            attachments.ToList(),
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true,
+            suppressFailureDetails: true,
+            suppressedFailureLabel: "Personal-data export");
     }
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)

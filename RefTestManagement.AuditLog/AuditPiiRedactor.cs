@@ -23,7 +23,20 @@ public static class AuditPiiRedactor
     /// </para>
     /// </summary>
     private static readonly HashSet<string> PiiKeys =
-        new(StringComparer.OrdinalIgnoreCase) { "firstName", "lastName", "email" };
+        new(StringComparer.OrdinalIgnoreCase)
+        {
+            "firstName",
+            "lastName",
+            "email",
+            "emailAddress",
+            "key",
+            "keyHash",
+            "challengeKey",
+            "confirmationKey",
+            "verificationKey",
+            "protectedKey",
+            "protectedDeliveryKey"
+        };
 
     /// <summary>Keys used by the old/new diff payload shape.</summary>
     private static readonly HashSet<string> DiffKeys =
@@ -56,36 +69,69 @@ public static class AuditPiiRedactor
         if (JsonNode.Parse(data) is not JsonObject node)
             return data;
 
+        return RedactObject(node) ? node.ToJsonString() : data;
+    }
+
+    private static bool RedactObject(JsonObject node)
+    {
         var changed = false;
 
         // Materialize the property names first: the loop assigns back into the same object.
         foreach (var key in node.Select(property => property.Key).ToArray())
         {
-            if (!PiiKeys.Contains(key))
-                continue;
-
             var value = node[key];
             if (value is null)
                 continue;
 
-            if (value is JsonObject diff)
+            if (PiiKeys.Contains(key))
             {
-                foreach (var diffKey in diff.Select(property => property.Key).ToArray())
+                if (value is JsonObject diff && diff.Any(property => DiffKeys.Contains(property.Key)))
                 {
-                    if (!DiffKeys.Contains(diffKey))
-                        continue;
+                    foreach (var diffKey in diff.Select(property => property.Key).ToArray())
+                    {
+                        if (DiffKeys.Contains(diffKey))
+                        {
+                            diff[diffKey] = RedactedValue;
+                            changed = true;
+                        }
+                    }
 
-                    diff[diffKey] = RedactedValue;
+                    changed |= RedactObject(diff);
+                }
+                else
+                {
+                    node[key] = RedactedValue;
                     changed = true;
                 }
+
+                continue;
             }
-            else
+
+            if (value is JsonObject childObject)
+                changed |= RedactObject(childObject);
+            else if (value is JsonArray childArray)
+                changed |= RedactArray(childArray);
+        }
+
+        return changed;
+    }
+
+    private static bool RedactArray(JsonArray node)
+    {
+        var changed = false;
+        for (var index = 0; index < node.Count; index++)
+        {
+            switch (node[index])
             {
-                node[key] = RedactedValue;
-                changed = true;
+                case JsonObject childObject:
+                    changed |= RedactObject(childObject);
+                    break;
+                case JsonArray childArray:
+                    changed |= RedactArray(childArray);
+                    break;
             }
         }
 
-        return changed ? node.ToJsonString() : data;
+        return changed;
     }
 }

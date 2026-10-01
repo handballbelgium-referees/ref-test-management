@@ -703,6 +703,24 @@
     "rights": {
       "title": "Ihre Rechte",
       "body": "Sie können Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch oder eine übertragbare Kopie Ihrer Daten verlangen und Ihre Einwilligung widerrufen. Kontaktieren Sie {{contactEmail}}. Sie können außerdem Beschwerde bei Ihrer Aufsichtsbehörde einreichen."
+    },
+    "dataExport": {
+      "title": "Kopie Ihrer personenbezogenen Daten anfordern",
+      "description": "Geben Sie die mit Ihrer Teilnahme verknüpfte E-Mail-Adresse ein. Wenn sie einem Teilnehmereintrag entspricht, senden wir einen Bestätigungslink an diese Adresse.",
+      "emailLabel": "E-Mail-Adresse",
+      "emailHelp": "Wir verwenden diese Adresse nur, um Ihre Anfrage zu verifizieren und zuzustellen.",
+      "emailRequired": "Geben Sie Ihre E-Mail-Adresse ein.",
+      "emailInvalid": "Geben Sie eine g\u00fcltige E-Mail-Adresse ein.",
+      "requestButton": "Anfrage senden",
+      "requesting": "Ihre Anfrage wird gesendet...",
+      "requestAcknowledged": "Wenn die Adresse einem Teilnehmereintrag entspricht, erhalten Sie eine E-Mail mit einem Link zur Best\u00e4tigung Ihrer Anfrage.",
+      "requestError": "Ihre Anfrage konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
+      "confirmationTitle": "Anfrage best\u00e4tigen",
+      "confirmationDescription": "Best\u00e4tigen Sie unten, damit Ihnen eine PDF-Kopie Ihrer personenbezogenen Daten per E-Mail zugesendet wird.",
+      "confirmButton": "Anfrage best\u00e4tigen",
+      "confirming": "Ihre Anfrage wird best\u00e4tigt...",
+      "confirmed": "Ihre Anfrage wurde best\u00e4tigt. Eine PDF-Kopie Ihrer personenbezogenen Daten wird Ihnen per E-Mail zugesendet.",
+      "confirmationError": "Diese Anfrage konnte nicht best\u00e4tigt werden. Der Link ist m\u00f6glicherweise ung\u00fcltig oder abgelaufen. Fordern Sie einen neuen Link an und versuchen Sie es erneut."
     }
   },
   "audit-logs": {
