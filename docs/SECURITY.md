@@ -116,6 +116,40 @@ explicitly clicks Confirm. The server stores a hash for one-time atomic consumpt
 a data-protected transient copy while retrying email delivery. The job carries the request ID only;
 the raw key is not persisted in job or audit data.
 
+## Public Consent-Withdrawal Verification
+
+The `requestPrivacyWithdrawal` and `confirmPrivacyWithdrawal` fields are public GraphQL mutations.
+They intentionally have no `[Authorize]` policy or permission constant: participants do not need
+an account or Auth0 permission, and control of the matching mailbox is the verification method.
+
+`requestPrivacyWithdrawal` returns a payload containing only
+`privacyWithdrawalRequestAcknowledgement.acknowledged: true`, including for unmatched, duplicate,
+invalid, or rate-limited email requests. Its generated input wrapper contains a nested `input`
+object with the email. Only a matching, non-anonymized participant address is queued for a
+one-time challenge email; the response does not disclose a match or any RefTest data. The
+confirmation input wrapper carries the one-time key.
+`confirmPrivacyWithdrawal` returns a payload containing only
+`privacyWithdrawalConfirmationResult.accepted`. It is true only after the withdrawal service
+validates and consumes the unexpired one-time key and commits the confirmation and any required
+durable processing work; invalid, expired, replayed, or rate-limited attempts return false.
+Acceptance means queued, not that anonymization has completed. The public acknowledgements contain
+only their generic `acknowledged` and `accepted` values. Withdrawal service logs omit participant
+email addresses, raw keys, and RefTest identifiers; they use fixed failure messages and aggregate
+retry counts. Request/challenge and batch audit events record lifecycle details and aggregate
+counts, not participant addresses, raw keys, or individual RefTest identifiers. Challenge-email
+jobs carry only a challenge ID, and batch jobs only a batch ID; RefTest IDs remain in durable target
+rows, not job payloads. Separately, each erasure records a `RefTestAnonymizedEvent` on that
+RefTest's own audit stream, keyed by its RefTest ID, as per-record erasure evidence.
+
+Request and confirmation attempts use separate per-client-address fixed-window rate limits, shared
+with the corresponding public export operations. Defaults are five requests and ten confirmation
+attempts per 60-second window. Configure the window and permit counts under
+`PrivacyChallengeConfiguration` (`RateLimitWindowSeconds`, `RequestRateLimitPermitLimit`, and
+`ConfirmationRateLimitPermitLimit`).
+
+Confirmation is available only as a GraphQL mutation, not a query. A GET request cannot consume a
+key. The key is consumed once by the server and is never returned by either mutation.
+
 ---
 
 ## Wildcard & Superadmin Resolution

@@ -88,7 +88,29 @@ Challenge and delivery events are recorded on a separate audit stream with non-s
 
 If any RefTest for the matching email is erased before an export is complete, the application clears all uncleared export requests for that address and cancels their pending or in-flight challenge and delivery jobs, even if other RefTests for the same address remain. After preparing the email payload, a delivery worker rechecks immediately before provider handoff that the request is still verified and its persisted recipient still matches. This prevents handoff when erasure has completed before the final check, but an erasure concurrent with or after that check can still race with handoff; no database transaction or row lock is held across network I/O. Once an email has been accepted by the provider, the application cannot recall it or its PDF attachments.
 
-### Self-service withdrawal (any status, including completed)
+### Self-service email-verified withdrawal of consent
+
+In addition to the invitation-token flow below, the public GraphQL mutations
+`requestPrivacyWithdrawal` and `confirmPrivacyWithdrawal` support mailbox-verified withdrawal
+without an account or invitation token. The request mutation's `input` field contains the email
+address within a nested `input` object; the confirmation mutation's input contains the one-time
+key. The request trims and
+case-insensitively matches the address against non-anonymized RefTests, and returns the same
+`privacyWithdrawalRequestAcknowledgement.acknowledged: true` response whether or not anything
+matches. Only a matching address is queued for a one-time verification email. The response never
+includes RefTest records or participant details.
+
+The server accepts an unexpired, unused key only once and commits any required batch targets and
+durable worker job before returning
+`privacyWithdrawalConfirmationResult.accepted: true`. If no matching records remain, the key is
+durably consumed without new work. That acknowledgement means processing is queued when there is
+work to do, not that anonymization is complete. Invalid, expired, reused, and rate-limited attempts
+are not accepted. Request and confirmation attempts are separately rate-limited per client address
+(default five requests and ten confirmations per 60 seconds); the shared settings are documented in
+[Security](SECURITY.md#public-consent-withdrawal-verification) and
+[PrivacyChallengeConfiguration](CONFIGURATION.md#privacychallengeconfiguration).
+
+### Self-service invitation-token withdrawal (any status, including completed)
 
 A participant can request withdrawal of consent using only their invitation link, via the explicitly confirmed "withdraw consent" action on the welcome, in-progress, and results pages. The server verifies the invitation-token hash and atomically commits a one-RefTest withdrawal target and its durable worker job; no second email or mailbox check is involved. The page then acknowledges that processing is queued, not that anonymization has finished. An unfinished target suppresses duplicate work only while its batch job remains processable; either the token request or mailbox confirmation atomically enqueues a replacement for the same incomplete batch if its job is missing or no longer processable. The worker uses the same erasure path as bulk withdrawal, retries failed targets, and publishes the anonymization update only after the erasure transaction commits. The action is available regardless of RefTest status, including `Completed`, because anonymizing no longer destroys the record or its audit trail outright — the completion timestamp, score, and the fact that the RefTest happened remain visible to staff (with the name/email redacted); only a subsequent, separate request permanently deletes the row. A participant or controller may request permanent deletion of an already-anonymized RefTest at any time via the standard erasure process; since it no longer holds personal data, no further identity verification is needed for that step.
 
