@@ -23,6 +23,11 @@ public static class PersonalDataExportAuditSanitizer
         "lastName",
         "email"
     };
+    private static readonly HashSet<string> NameChangeFields = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "firstName",
+        "lastName"
+    };
     private static readonly HashSet<string> OldIdentityValueFields = new(StringComparer.OrdinalIgnoreCase)
     {
         "old",
@@ -124,6 +129,16 @@ public static class PersonalDataExportAuditSanitizer
                             out var oldOwnerEmail,
                             out var newOwnerEmail))
                     {
+                        if (TryReadUnchangedOwnerUpdate(auditEvent.Data))
+                        {
+                            if (IsOwner(currentOwnerEmail, normalizedParticipantEmail))
+                                sanitizedEvents.Add((
+                                    auditEvent.SeqId,
+                                    Sanitize(auditEvent, participantEmail)));
+
+                            continue;
+                        }
+
                         currentOwnerEmail = null;
                         continue;
                     }
@@ -225,6 +240,41 @@ public static class PersonalDataExportAuditSanitizer
             return false;
 
         return true;
+    }
+
+    private static bool TryReadUnchangedOwnerUpdate(string? data)
+    {
+        var eventData = ParseObjectData(data);
+        if (eventData is null || eventData.Count == 0)
+            return false;
+
+        var seenFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var property in eventData)
+        {
+            if (!seenFields.Add(property.Key)
+                || !NameChangeFields.Contains(property.Key)
+                || property.Value is not JsonObject nameChange
+                || !HasValidIdentityChangeShape(nameChange))
+                return false;
+        }
+
+        return true;
+    }
+
+    private static bool HasValidIdentityChangeShape(JsonObject identityChange)
+    {
+        if (identityChange.Count != 2)
+            return false;
+
+        var seenFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (identityChange.Any(property => !seenFields.Add(property.Key)))
+            return false;
+
+        // Older payloads may use oldValue/newValue, as accepted for email transitions above.
+        return (TryGetStringProperty(identityChange, "old", out _)
+                || TryGetStringProperty(identityChange, "oldValue", out _))
+               && (TryGetStringProperty(identityChange, "new", out _)
+                   || TryGetStringProperty(identityChange, "newValue", out _));
     }
 
     private static JsonObject? ParseObjectData(string? data)

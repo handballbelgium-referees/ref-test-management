@@ -11,6 +11,7 @@ using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -237,6 +238,122 @@ public sealed class PersonalDataExportDeliveryTests
         Assert.Equal(PersonalDataExportDeliveredEvent.EventType, deliveryAudit.Type);
         Assert.Equal("Verified participant", deliveryAudit.ActorName);
         Assert.Equal(string.Empty, deliveryAudit.ActorEmail);
+    }
+
+    [Fact]
+    public async Task DeliveryExcludesPriorOwnersNameOnlyHistoryAfterEmailTransfer()
+    {
+        const string priorOwnerEmail = "alice@example.org";
+        const string currentOwnerEmail = "bea@example.org";
+        const string aliceOldFirstName = "AliceBefore";
+        const string aliceNewFirstName = "Alicia";
+        const string aliceLastName = "AliceSurname";
+        using var database = SqliteTestDatabase.Create();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var request = CreateVerifiedRequest(currentOwnerEmail);
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Season 2026");
+            seed.RefTestTitles.Add(title);
+            await seed.SaveChangesAsync(cancellationToken);
+
+            var refTest = CreateRefTest(title.Id, currentOwnerEmail, "Bea", "Current");
+            var streamId = refTest.Id.ToString();
+            seed.RefTests.Add(refTest);
+            seed.AuditEvents.AddRange(
+                CreateRefTestCreatedAuditEvent(
+                    1,
+                    streamId,
+                    aliceOldFirstName,
+                    aliceLastName,
+                    priorOwnerEmail),
+                CreateAuditEvent(
+                    2,
+                    streamId,
+                    "RefTestStarted",
+                    new { firstName = aliceOldFirstName, lastName = aliceLastName, email = priorOwnerEmail },
+                    $"{aliceOldFirstName} {aliceLastName}",
+                    priorOwnerEmail),
+                CreateNameOnlyDetailsUpdatedAuditEvent(
+                    3,
+                    streamId,
+                    aliceOldFirstName,
+                    aliceNewFirstName,
+                    aliceLastName,
+                    aliceLastName,
+                    priorOwnerEmail),
+                CreateDetailsUpdatedAuditEvent(
+                    4,
+                    streamId,
+                    aliceNewFirstName,
+                    "Bea",
+                    aliceLastName,
+                    "Current",
+                    priorOwnerEmail,
+                    currentOwnerEmail),
+                CreateAuditEvent(
+                    5,
+                    streamId,
+                    "RefTestStarted",
+                    new { firstName = "Bea", lastName = "Current", email = currentOwnerEmail },
+                    "Bea own activity",
+                    currentOwnerEmail));
+
+            seed.PersonalDataExportRequests.Add(request);
+            await seed.SaveChangesAsync(cancellationToken);
+        }
+
+        var pdfService = new RecordingPdfService();
+        var emailService = new RecordingEmailService();
+        using var loggerFactory = NullLoggerFactory.Instance;
+
+        await using (var deliveryContext = database.CreateContext(
+                         new AuditSaveChangesInterceptor(StaffHttpContextAccessor(), new AuditLogOptions())))
+        {
+            var handler = CreateHandler(
+                deliveryContext,
+                pdfService,
+                emailService,
+                new BackgroundJobConfiguration(),
+                loggerFactory);
+            await handler.HandleAsync(DeliveryJob(request.Id), cancellationToken);
+        }
+
+        var document = Assert.IsType<PersonalDataExportDocumentData>(pdfService.Document);
+        Assert.Equal(currentOwnerEmail, document.RecipientEmail);
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestStarted" },
+            document.AuditEvents.Select(auditEvent => auditEvent.Type));
+
+        var sanitizedTransfer = Assert.Single(document.AuditEvents, auditEvent => auditEvent.Version == 4);
+        using (var transferData = JsonDocument.Parse(sanitizedTransfer.Data!))
+        {
+            Assert.Equal(
+                "***",
+                transferData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                transferData.RootElement.GetProperty("lastName").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                transferData.RootElement.GetProperty("email").GetProperty("old").GetString());
+            Assert.Equal(
+                currentOwnerEmail,
+                transferData.RootElement.GetProperty("email").GetProperty("new").GetString());
+        }
+
+        var beaActivity = Assert.Single(document.AuditEvents, auditEvent => auditEvent.Version == 5);
+        Assert.Equal(PersonalDataExportActorKind.Participant, beaActivity.ActorKind);
+        Assert.Equal(currentOwnerEmail, beaActivity.ActorEmail);
+
+        var serializedExport = JsonSerializer.Serialize(document);
+        Assert.DoesNotContain(aliceOldFirstName, serializedExport, StringComparison.Ordinal);
+        Assert.DoesNotContain(aliceNewFirstName, serializedExport, StringComparison.Ordinal);
+        Assert.DoesNotContain(aliceLastName, serializedExport, StringComparison.Ordinal);
+        Assert.DoesNotContain(priorOwnerEmail, serializedExport, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Bea own activity", serializedExport, StringComparison.Ordinal);
+        Assert.Equal(currentOwnerEmail, Assert.Single(emailService.Recipients));
     }
 
     [Fact]
@@ -675,6 +792,325 @@ public sealed class PersonalDataExportDeliveryTests
         Assert.Equal("Bea", transitionData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
     }
 
+    [Theory]
+    [InlineData("firstName")]
+    [InlineData("lastName")]
+    public void SanitizeHistoryPreservesHistoryAcrossNameOnlyUpdatesForCurrentOwner(string changedField)
+    {
+        const string streamId = "name-only-current-owner";
+        const string ownerEmail = "ada@example.org";
+        const string oldFirstName = "Ada";
+        const string oldLastName = "Lovelace";
+        var newFirstName = changedField == "firstName" ? "Augusta" : oldFirstName;
+        var newLastName = changedField == "lastName" ? "Byron" : oldLastName;
+        var nameUpdate = CreateNameOnlyDetailsUpdatedAuditEvent(
+            3,
+            streamId,
+            oldFirstName,
+            newFirstName,
+            oldLastName,
+            newLastName,
+            ownerEmail);
+        var events = new[]
+        {
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = newFirstName, lastName = newLastName, email = ownerEmail },
+                $"{newFirstName} {newLastName}",
+                ownerEmail),
+            nameUpdate,
+            CreateAuditEvent(
+                2,
+                streamId,
+                "RefTestStarted",
+                new { firstName = oldFirstName, lastName = oldLastName, email = ownerEmail },
+                $"{oldFirstName} {oldLastName}",
+                ownerEmail),
+            CreateRefTestCreatedAuditEvent(1, streamId, oldFirstName, oldLastName, ownerEmail)
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, ownerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestCreated", "RefTestStarted", "RefTestDetailsUpdated", "RefTestCompleted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var sanitizedNameUpdate = Assert.Single(
+            sanitized,
+            auditEvent => auditEvent.Version == 3);
+        using var nameUpdateData = JsonDocument.Parse(sanitizedNameUpdate.Data!);
+        Assert.Equal(changedField, Assert.Single(nameUpdateData.RootElement.EnumerateObject()).Name);
+        var changedName = nameUpdateData.RootElement.GetProperty(changedField);
+        var expectedOldName = changedField == "firstName" ? oldFirstName : oldLastName;
+        var expectedNewName = changedField == "firstName" ? newFirstName : newLastName;
+        Assert.Equal(expectedOldName, changedName.GetProperty("old").GetString());
+        Assert.Equal(expectedNewName, changedName.GetProperty("new").GetString());
+        Assert.Contains(expectedOldName, JsonSerializer.Serialize(sanitized), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SanitizeHistoryPreservesBothNameOnlyChangesForCurrentOwner()
+    {
+        const string streamId = "both-name-only-changes-current-owner";
+        const string ownerEmail = "ada@example.org";
+        const string oldFirstName = "Ada";
+        const string newFirstName = "Augusta";
+        const string oldLastName = "Lovelace";
+        const string newLastName = "Byron";
+        var nameUpdate = CreateNameOnlyDetailsUpdatedAuditEvent(
+            2,
+            streamId,
+            oldFirstName,
+            newFirstName,
+            oldLastName,
+            newLastName,
+            ownerEmail);
+        var events = new[]
+        {
+            CreateAuditEvent(
+                3,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = newFirstName, lastName = newLastName, email = ownerEmail },
+                $"{newFirstName} {newLastName}",
+                ownerEmail),
+            nameUpdate,
+            CreateAuditEvent(
+                1,
+                streamId,
+                "RefTestStarted",
+                new { firstName = oldFirstName, lastName = oldLastName, email = ownerEmail },
+                $"{oldFirstName} {oldLastName}",
+                ownerEmail)
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, ownerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestStarted", "RefTestDetailsUpdated", "RefTestCompleted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var sanitizedNameUpdate = Assert.Single(sanitized, auditEvent => auditEvent.Version == 2);
+        using var nameUpdateData = JsonDocument.Parse(sanitizedNameUpdate.Data!);
+        Assert.Equal(
+            new[] { "firstName", "lastName" },
+            nameUpdateData.RootElement.EnumerateObject().Select(property => property.Name));
+        Assert.Equal(
+            oldFirstName,
+            nameUpdateData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+        Assert.Equal(
+            oldLastName,
+            nameUpdateData.RootElement.GetProperty("lastName").GetProperty("old").GetString());
+
+        var serializedExport = JsonSerializer.Serialize(sanitized);
+        Assert.Contains(oldFirstName, serializedExport, StringComparison.Ordinal);
+        Assert.Contains(oldLastName, serializedExport, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SanitizeHistoryPreservesNewOwnersNameOnlyHistoryAfterEmailTransferWithoutPriorOwnerData()
+    {
+        const string streamId = "transfer-followed-by-name-only-update";
+        const string priorOwnerEmail = "alice@example.org";
+        const string currentOwnerEmail = "bea@example.org";
+        var nameUpdate = CreateNameOnlyDetailsUpdatedAuditEvent(
+            4,
+            streamId,
+            "Bea",
+            "Beatrice",
+            "Current",
+            "Current",
+            currentOwnerEmail);
+        var events = new[]
+        {
+            CreateAuditEvent(
+                5,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = "Beatrice", lastName = "Current", email = currentOwnerEmail },
+                "Beatrice Current",
+                currentOwnerEmail),
+            nameUpdate,
+            CreateDetailsUpdatedAuditEvent(
+                3,
+                streamId,
+                "Alice",
+                "Bea",
+                "Former",
+                "Current",
+                priorOwnerEmail,
+                currentOwnerEmail),
+            CreateAuditEvent(
+                2,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Alice", lastName = "Former", email = priorOwnerEmail },
+                "Alice Former",
+                priorOwnerEmail),
+            CreateRefTestCreatedAuditEvent(1, streamId, "Alice", "Former", priorOwnerEmail)
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, currentOwnerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestDetailsUpdated", "RefTestCompleted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var sanitizedNameUpdate = Assert.Single(sanitized, auditEvent => auditEvent.Version == 4);
+        using (var nameUpdateData = JsonDocument.Parse(sanitizedNameUpdate.Data!))
+        {
+            var firstNameChange = nameUpdateData.RootElement.GetProperty("firstName");
+            Assert.Equal("Bea", firstNameChange.GetProperty("old").GetString());
+            Assert.Equal("Beatrice", firstNameChange.GetProperty("new").GetString());
+            Assert.False(nameUpdateData.RootElement.TryGetProperty("email", out _));
+        }
+
+        var sanitizedTransfer = Assert.Single(sanitized, auditEvent => auditEvent.Version == 3);
+        using (var transferData = JsonDocument.Parse(sanitizedTransfer.Data!))
+        {
+            Assert.Equal(
+                "***",
+                transferData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                transferData.RootElement.GetProperty("lastName").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                transferData.RootElement.GetProperty("email").GetProperty("old").GetString());
+            Assert.Equal(
+                currentOwnerEmail,
+                transferData.RootElement.GetProperty("email").GetProperty("new").GetString());
+        }
+
+        var serializedHistory = JsonSerializer.Serialize(sanitized);
+        Assert.DoesNotContain("Alice", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain("Former", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain(priorOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains(currentOwnerEmail, serializedHistory, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("null")]
+    [InlineData("{}")]
+    [InlineData("[]")]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"displayName":"Ada Augusta"}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":42}}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"lastName":{"old":"Lovelace","new":42}}""")]
+    [InlineData("""{"firstName":{"old":"Ada","oldValue":"Alice","new":"Augusta"}}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"email":{"old":"ada@example.org","new":42}}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"email":{"old":"ada@example.org","new":"not-an-email"}}""")]
+    [InlineData("""{"firstName":{"old":"***","new":"***"},"lastName":{"old":"***","new":"***"},"email":{"old":"***","new":"***"}}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"middleName":{"old":"Byron","new":"King"}}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"email":null}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"email":"ada@example.org"}""")]
+    [InlineData("""{"firstName":{"old":"Ada","new":"Augusta"},"email":{"old":42,"new":null}}""")]
+    [InlineData("{ malformed")]
+    public void SanitizeHistoryDoesNotInferOwnershipFromUnknownOrMalformedDetailsUpdates(
+        string? invalidDetailsData)
+    {
+        const string streamId = "invalid-name-only-update";
+        const string ownerEmail = "ada@example.org";
+        var events = new[]
+        {
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = "Augusta", lastName = "Lovelace", email = ownerEmail },
+                "Augusta Lovelace",
+                ownerEmail),
+            CreateAuditEventWithRawData(3, streamId, "RefTestDetailsUpdated", invalidDetailsData),
+            CreateNameOnlyDetailsUpdatedAuditEvent(
+                2,
+                streamId,
+                "Ada",
+                "Augusta",
+                "Lovelace",
+                "Lovelace",
+                ownerEmail),
+            CreateAuditEvent(
+                1,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "Ada", lastName = "Lovelace", email = ownerEmail },
+                "Ada Lovelace",
+                ownerEmail)
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, ownerEmail);
+
+        Assert.Equal("RefTestCompleted", Assert.Single(sanitized).Type);
+    }
+
+    [Fact]
+    public void SanitizeHistoryFailsClosedAfterRedactedNameOnlyUpdate()
+    {
+        const string streamId = "redacted-name-only-update";
+        const string ownerEmail = "ada@example.org";
+        var redactedNameUpdate = CreateRedactedAuditEvent(
+            CreateNameOnlyDetailsUpdatedAuditEvent(
+                3,
+                streamId,
+                "VerifiedNameBefore",
+                "VerifiedNameAfter",
+                "Lovelace",
+                "Lovelace",
+                ownerEmail));
+        var events = new[]
+        {
+            CreateAuditEvent(
+                4,
+                streamId,
+                "RefTestCompleted",
+                new { firstName = "Latest", lastName = "Lovelace", email = ownerEmail },
+                "Latest Lovelace",
+                ownerEmail),
+            redactedNameUpdate,
+            CreateNameOnlyDetailsUpdatedAuditEvent(
+                2,
+                streamId,
+                "EarlierName",
+                "OlderName",
+                "Lovelace",
+                "Lovelace",
+                ownerEmail),
+            CreateAuditEvent(
+                1,
+                streamId,
+                "RefTestStarted",
+                new { firstName = "EarlierActivity", lastName = "Lovelace", email = ownerEmail },
+                "EarlierActivity Lovelace",
+                ownerEmail)
+        };
+
+        var sanitized = PersonalDataExportAuditSanitizer.SanitizeHistory(events, ownerEmail);
+
+        Assert.Equal(
+            new[] { "RefTestDetailsUpdated", "RefTestCompleted" },
+            sanitized.Select(auditEvent => auditEvent.Type));
+        var sanitizedRedactedUpdate = Assert.Single(
+            sanitized,
+            auditEvent => auditEvent.Version == 3);
+        Assert.Equal(PersonalDataExportActorKind.Redacted, sanitizedRedactedUpdate.ActorKind);
+        using (var redactedData = JsonDocument.Parse(sanitizedRedactedUpdate.Data!))
+        {
+            Assert.Equal(
+                "***",
+                redactedData.RootElement.GetProperty("firstName").GetProperty("old").GetString());
+            Assert.Equal(
+                "***",
+                redactedData.RootElement.GetProperty("firstName").GetProperty("new").GetString());
+        }
+
+        var serializedHistory = JsonSerializer.Serialize(sanitized);
+        Assert.DoesNotContain("VerifiedNameBefore", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain("VerifiedNameAfter", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain("EarlierName", serializedHistory, StringComparison.Ordinal);
+        Assert.DoesNotContain("EarlierActivity", serializedHistory, StringComparison.Ordinal);
+    }
+
     [Fact]
     public async Task ErasureDuringEmailPreparationPreventsProviderHandoffAndDeliverySuccess()
     {
@@ -1097,6 +1533,23 @@ public sealed class PersonalDataExportDeliveryTests
                     new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase })
         };
 
+    private static AuditEvent CreateAuditEventWithRawData(
+        long seqId,
+        string streamId,
+        string type,
+        string? data) =>
+        new()
+        {
+            SeqId = seqId,
+            StreamId = streamId,
+            Version = seqId,
+            Type = type,
+            Timestamp = Now.AddSeconds(seqId),
+            ActorName = "System",
+            ActorEmail = string.Empty,
+            Data = data
+        };
+
     private static AuditEvent CreateRefTestCreatedAuditEvent(
         long seqId,
         string streamId,
@@ -1147,6 +1600,28 @@ public sealed class PersonalDataExportDeliveryTests
                 lastName = new { old = oldLastName, @new = newLastName },
                 email = new { old = oldEmail, @new = newEmail }
             },
+            "Staff Operator",
+            "staff@example.org");
+
+    private static AuditEvent CreateNameOnlyDetailsUpdatedAuditEvent(
+        long seqId,
+        string streamId,
+        string oldFirstName,
+        string newFirstName,
+        string oldLastName,
+        string newLastName,
+        string ownerEmail) =>
+        CreateAuditEvent(
+            seqId,
+            streamId,
+            "RefTestDetailsUpdated",
+            new RefTestDetailsUpdatedEvent(
+                oldFirstName,
+                newFirstName,
+                oldLastName,
+                newLastName,
+                ownerEmail,
+                ownerEmail).GetChanges(),
             "Staff Operator",
             "staff@example.org");
 
