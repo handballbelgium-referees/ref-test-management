@@ -253,6 +253,10 @@ Putting a credential in a URL is a deliberate trade-off, made because requiring 
 one-off test would keep most participants from ever taking it. The risks that choice carries are
 mitigated rather than ignored:
 
+After starting or resuming, the UI replaces the token-bearing URL with `/ref-test/take`. The token
+stays in browser history state on tokenless session routes so refresh and resume continue to work,
+but is no longer in the active URL.
+
 | Risk                                       | Mitigation                                                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
 | Token leaks through the `Referer` header   | The API sends `Referrer-Policy: no-referrer` on every response, and the only link on a token-bearing page is same-origin with `rel="noreferrer"`. |
@@ -262,11 +266,11 @@ mitigated rather than ignored:
 | Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
 | Oversized or malformed token in a lookup   | Only 32 lowercase hex characters are accepted before hashing; the stored digest cannot be submitted as a credential. |
 
-Residual risk that is accepted: the token appears in browser history and in any server access log
-that records full request paths. Anyone who can read those can resume that one participant's
-test. If that becomes unacceptable, the fix is to move the token out of the path — deliver it as
-a one-time link that exchanges the token for a cookie-backed session — which is a larger change
-than this flow has so far justified.
+Residual risk that is accepted: the token is present in the original invitation URL and may appear
+in server access logs that record its initial request path. While the test is resumable, it also
+remains in browser history state on its tokenless session routes, which same-origin scripts can read.
+Anyone who can read the token can resume that one participant's test. If that becomes unacceptable,
+the next step is a one-time link that exchanges the token for a cookie-backed session.
 
 ## Response Security Headers
 

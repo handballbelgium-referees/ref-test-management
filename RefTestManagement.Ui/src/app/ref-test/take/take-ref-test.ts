@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Component, effect, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, CanDeactivate, Router } from '@angular/router';
@@ -16,6 +17,7 @@ import { RefTestNavigation } from './components/ref-test-navigation/ref-test-nav
 import { RefTestResults } from './components/ref-test-results/ref-test-results';
 import { RefTestWithdrawalQueued } from './components/ref-test-withdrawal-queued/ref-test-withdrawal-queued';
 import { SubmitRefTestDialog } from './components/submit-ref-test-dialog/submit-ref-test-dialog';
+import { REF_TEST_TOKEN_STATE_KEY, resolveRefTestToken } from '../ref-test-token-state';
 import { RefTestFacade } from './state/ref-test.facade';
 import { RefTestStore } from './state/ref-test.store';
 
@@ -39,6 +41,7 @@ import { RefTestStore } from './state/ref-test.store';
 export class TakeRefTest implements CanDeactivate<TakeRefTest> {
   private readonly _route = inject(ActivatedRoute);
   private readonly _router = inject(Router);
+  private readonly _location = inject(Location);
   private readonly _scoreConfigGQL = inject(GetScoreConfigurationGQL);
   private readonly _emailDelayGQL = inject(GetResultsEmailDelayMinutesGQL);
   private readonly _translate = inject(TranslateService);
@@ -46,7 +49,19 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
   readonly store = inject(RefTestStore);
   private readonly _facade = inject(RefTestFacade);
 
-  private readonly _token = toSignal(this._route.paramMap.pipe(map((p) => p.get('token') ?? '')));
+  private readonly _token = toSignal(
+    this._route.paramMap.pipe(
+      map(
+        (params) =>
+          resolveRefTestToken(
+            params.get('token'),
+            this._router.currentNavigation()?.extras.state,
+            this._location.getState(),
+          ) ?? '',
+      ),
+    ),
+    { initialValue: '' },
+  );
   private _leaveConfirmed = false;
   private _tempLeaveHandlers?: { confirm: () => void; cancel: () => void };
 
@@ -130,7 +145,11 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
 
   back() {
     const token = this._token();
-    if (token) this._router.navigate(['/ref-test', token]);
+    if (token) {
+      void this._router.navigate(['/ref-test/welcome'], {
+        state: { [REF_TEST_TOKEN_STATE_KEY]: token },
+      });
+    }
   }
 
   confirmLeave() {

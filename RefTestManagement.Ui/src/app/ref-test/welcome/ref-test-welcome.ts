@@ -1,3 +1,4 @@
+import { Location } from '@angular/common';
 import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -12,6 +13,7 @@ import {
 import { toSnakeCase } from '../../shared/utils/string-utils';
 import { RefTestError } from '../components/ref-test-error/ref-test-error';
 import { WithdrawConsentDialog } from '../components/withdraw-consent-dialog/withdraw-consent-dialog';
+import { REF_TEST_TOKEN_STATE_KEY, resolveRefTestToken } from '../ref-test-token-state';
 import { RefTestDetails } from './components/ref-test-details/ref-test-details';
 import { RefTestHero } from './components/ref-test-hero/ref-test-hero';
 import { RefTestInstructions } from './components/ref-test-instructions/ref-test-instructions';
@@ -34,6 +36,7 @@ import { RefTestInstructions } from './components/ref-test-instructions/ref-test
 export class RefTestWelcome {
   private readonly _route = inject(ActivatedRoute);
   private readonly _router = inject(Router);
+  private readonly _location = inject(Location);
   private readonly _getRefTestByTokenGQL = inject(GetRefTestByTokenGQL);
   private readonly _getPrivacyNoticeGQL = inject(GetPrivacyNoticeGQL);
   private readonly _acceptPrivacyNoticeGQL = inject(AcceptPrivacyNoticeGQL);
@@ -49,9 +52,18 @@ export class RefTestWelcome {
   readonly withdrawError = signal(false);
   readonly withdrawalQueued = signal(false);
 
+  private readonly _token$ = this._route.paramMap.pipe(
+    map((params) =>
+      resolveRefTestToken(
+        params.get('token'),
+        this._router.currentNavigation()?.extras.state,
+        this._location.getState(),
+      ) ?? '',
+    ),
+  );
+
   readonly refTestResult = toSignal(
-    this._route.paramMap.pipe(
-      map((params) => params.get('token') ?? ''),
+    this._token$.pipe(
       switchMap((token) =>
         this._getRefTestByTokenGQL
           .watch({
@@ -66,7 +78,10 @@ export class RefTestWelcome {
                   (result.data.refTestByToken.currentQuestionIndex !== null &&
                     result.data.refTestByToken.currentQuestionIndex !== undefined))
               ) {
-                this._router.navigate(['/ref-test', token, 'take']);
+                void this._router.navigate(['/ref-test/take'], {
+                  replaceUrl: true,
+                  state: { [REF_TEST_TOKEN_STATE_KEY]: token },
+                });
               }
             }),
           ),
@@ -104,9 +119,7 @@ export class RefTestWelcome {
     return refTest !== null && !this.loading();
   });
 
-  private readonly _token = toSignal(
-    this._route.paramMap.pipe(map((params) => params.get('token') ?? '')),
-  );
+  private readonly _token = toSignal(this._token$, { initialValue: '' });
 
   startRefTest(): void {
     const token = this._token();
@@ -132,7 +145,10 @@ export class RefTestWelcome {
         }),
         tap((result) => {
           if (result.data?.acceptPrivacyNotice.participantRefTest) {
-            this._router.navigate(['/ref-test', token, 'take']);
+            void this._router.navigate(['/ref-test/take'], {
+              replaceUrl: true,
+              state: { [REF_TEST_TOKEN_STATE_KEY]: token },
+            });
             return;
           }
           this.privacyNoticeError.set(true);
