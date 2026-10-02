@@ -13,7 +13,7 @@ public static partial class PrivacyWithdrawalMutations
     public static async Task<PrivacyWithdrawalRequestAcknowledgement> RequestPrivacyWithdrawalAsync(
         PrivacyWithdrawalRequestInput input,
         [Service] IPrivacyWithdrawalRequestService requestService,
-        [Service] IPersonalDataExportRateLimiter rateLimiter,
+        [Service] IPrivacyChallengeRateLimiter rateLimiter,
         [Service] IClientIpResolver clientIpResolver,
         [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
@@ -36,7 +36,7 @@ public static partial class PrivacyWithdrawalMutations
     public static async Task<PrivacyWithdrawalConfirmationResult> ConfirmPrivacyWithdrawalAsync(
         string key,
         [Service] IPrivacyWithdrawalRequestService requestService,
-        [Service] IPersonalDataExportRateLimiter rateLimiter,
+        [Service] IPrivacyChallengeRateLimiter rateLimiter,
         [Service] IClientIpResolver clientIpResolver,
         [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)

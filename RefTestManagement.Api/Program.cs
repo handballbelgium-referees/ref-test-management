@@ -109,7 +109,7 @@ if (privacyChallengeConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
 services.AddSingleton(privacyChallengeConfig);
 services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
 services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
-services.AddSingleton<IPersonalDataExportRateLimiter, PersonalDataExportRateLimiter>();
+services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>();
 services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
 services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
 

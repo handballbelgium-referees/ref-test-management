@@ -153,7 +153,7 @@ public sealed class PersonalDataExportRequestTests
             new TestKeyProtection(),
             new PrivacyChallengeConfiguration(),
             NullLogger<PersonalDataExportRequestService>.Instance);
-        using var limiter = new PersonalDataExportRateLimiter(new PrivacyChallengeConfiguration
+        using var limiter = new PrivacyChallengeRateLimiter(new PrivacyChallengeConfiguration
         {
             RequestRateLimitPermitLimit = 5
         });
@@ -236,7 +236,7 @@ public sealed class PersonalDataExportRequestTests
     [Fact]
     public void RequestAndConfirmationRateLimitsAreIndependentAndPartitionedByClientAddress()
     {
-        using var limiter = new PersonalDataExportRateLimiter(new PrivacyChallengeConfiguration
+        using var limiter = new PrivacyChallengeRateLimiter(new PrivacyChallengeConfiguration
         {
             RequestRateLimitPermitLimit = 1,
             ConfirmationRateLimitPermitLimit = 1

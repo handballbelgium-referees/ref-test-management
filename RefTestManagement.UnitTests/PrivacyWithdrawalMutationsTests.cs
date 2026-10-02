@@ -230,13 +230,13 @@ public sealed class PrivacyWithdrawalMutationsTests
 
     private static ServiceProvider BuildSchemaProvider(
         RecordingPrivacyWithdrawalRequestService requestService,
-        PersonalDataExportRateLimiter rateLimiter)
+        PrivacyChallengeRateLimiter rateLimiter)
     {
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddAuthorization();
         services.AddSingleton<IPrivacyWithdrawalRequestService>(requestService);
-        services.AddSingleton<IPersonalDataExportRateLimiter>(rateLimiter);
+        services.AddSingleton<IPrivacyChallengeRateLimiter>(rateLimiter);
         services.AddSingleton<IClientIpResolver>(new FixedClientIpResolver());
         services.AddSingleton<IHttpContextAccessor>(NewHttpContextAccessor());
         services
@@ -255,7 +255,7 @@ public sealed class PrivacyWithdrawalMutationsTests
             .Select(field => field.Name)
             .OrderBy(name => name, StringComparer.Ordinal)];
 
-    private static PersonalDataExportRateLimiter NewRateLimiter(
+    private static PrivacyChallengeRateLimiter NewRateLimiter(
         int requestLimit = 5,
         int confirmationLimit = 10) =>
         new(new PrivacyChallengeConfiguration
@@ -305,7 +305,7 @@ public sealed class PrivacyWithdrawalMutationsTests
         public Task<PrivacyWithdrawalRequestAcknowledgement> RequestPrivacyWithdrawalAsync(
             PrivacyWithdrawalRequestInput input,
             [Service] IPrivacyWithdrawalRequestService requestService,
-            [Service] IPersonalDataExportRateLimiter rateLimiter,
+            [Service] IPrivacyChallengeRateLimiter rateLimiter,
             [Service] IClientIpResolver clientIpResolver,
             [Service] IHttpContextAccessor httpContextAccessor,
             CancellationToken cancellationToken) =>
@@ -321,7 +321,7 @@ public sealed class PrivacyWithdrawalMutationsTests
         public Task<PrivacyWithdrawalConfirmationResult> ConfirmPrivacyWithdrawalAsync(
             string key,
             [Service] IPrivacyWithdrawalRequestService requestService,
-            [Service] IPersonalDataExportRateLimiter rateLimiter,
+            [Service] IPrivacyChallengeRateLimiter rateLimiter,
             [Service] IClientIpResolver clientIpResolver,
             [Service] IHttpContextAccessor httpContextAccessor,
             CancellationToken cancellationToken) =>

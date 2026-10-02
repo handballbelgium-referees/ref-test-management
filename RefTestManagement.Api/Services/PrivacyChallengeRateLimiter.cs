@@ -6,18 +6,18 @@ namespace Handball.Belgium.RefTestManagement.Api.Services;
 /// <summary>
 /// Applies independent fixed-window limits to the public request and confirmation operations.
 /// </summary>
-public interface IPersonalDataExportRateLimiter
+public interface IPrivacyChallengeRateLimiter
 {
     bool TryAcquireRequest(string clientAddress);
     bool TryAcquireConfirmation(string clientAddress);
 }
 
-public sealed class PersonalDataExportRateLimiter : IPersonalDataExportRateLimiter, IDisposable
+public sealed class PrivacyChallengeRateLimiter : IPrivacyChallengeRateLimiter, IDisposable
 {
     private readonly PartitionedRateLimiter<string> _requestLimiter;
     private readonly PartitionedRateLimiter<string> _confirmationLimiter;
 
-    public PersonalDataExportRateLimiter(PrivacyChallengeConfiguration configuration)
+    public PrivacyChallengeRateLimiter(PrivacyChallengeConfiguration configuration)
     {
         var window = TimeSpan.FromSeconds(configuration.RateLimitWindowSeconds);
         _requestLimiter = CreateLimiter(configuration.RequestRateLimitPermitLimit, window);
