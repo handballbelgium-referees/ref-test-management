@@ -270,12 +270,11 @@ After acceptance or resuming, the UI exchanges the invitation token and replaces
 `/ref-test/take`. Only the expiring session credential is kept in browser history state for reload
 and resume. New invitation emails use `/ref-test?lang=<locale>#<invitation-token>`. The invitation
 fragment is moved into history state while the UI redirects to the tokenless welcome route; the
-legacy `/ref-test/:token` format remains supported for links already sent and is also redirected
-through the welcome flow.
+former `/ref-test/:token` path format is no longer routed.
 
 | Risk                                       | Mitigation                                                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| Token leaks through the `Referer` header   | New invitation tokens are in the URL fragment, which browsers do not send in HTTP requests or `Referer` headers; the API also sends `Referrer-Policy: no-referrer`. Legacy path links may still be recorded in access logs. |
+| Token leaks through the `Referer` header   | New invitation tokens are in the URL fragment, which browsers do not send in HTTP requests or `Referer` headers; the API also sends `Referrer-Policy: no-referrer`. |
 | Token guessed                              | Tokens are 32 lowercase hex characters from `RandomNumberGenerator`, not `Guid.NewGuid()` — 128 bits of cryptographic randomness. |
 | Token exposed from database rows           | `RefTests.Token` stores a SHA-256 digest; a data-protected retry copy is cleared after delivery, token rotation, or anonymization, and queued invitation jobs contain only the digest. |
 | Session token replayed after rotation or expiry | The protected session token is bound to the current invitation digest and validated against the active test deadline; participant lookups and live session locks revalidate it. |
@@ -283,13 +282,14 @@ through the welcome flow.
 | Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
 | Oversized or malformed token in a lookup   | Only 32 lowercase hex characters are accepted before hashing; the stored digest cannot be submitted as a credential. |
 
-Residual risk that is accepted: legacy invitation links already sent put the token in the request
-path and may appear in server access logs. New invitation links use a fragment, but after the UI
-reads it the invitation token is temporarily kept in browser history state until the session
-exchange; same-origin scripts can read it. The session credential remains in browser history state
-on tokenless routes, and anyone who can read a still-valid credential can resume that one
-participant's test. Credential expiration and binding limit this exposure, while the original
-invitation credential remains usable until an operator rotates it or the record is anonymized.
+Residual risk that is accepted: historical server access logs may retain tokens from any previously
+issued path-based invitation links, although that route is no longer supported. New invitation
+links use a fragment, but after the UI reads it the invitation token is temporarily kept in browser
+history state until the session exchange; same-origin scripts can read it. The session credential
+remains in browser history state on tokenless routes, and anyone who can read a still-valid
+credential can resume that one participant's test. Credential expiration and binding limit this
+exposure, while the original invitation credential remains usable until an operator rotates it or
+the record is anonymized.
 
 ## Response Security Headers
 

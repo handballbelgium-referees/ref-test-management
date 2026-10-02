@@ -6,7 +6,6 @@ import { RouterTestingHarness } from '@angular/router/testing';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   refTestInvitationFragmentGuard,
-  refTestLegacyInvitationGuard,
   refTestSessionGuard,
   refTestTakeGuard,
 } from './ref-test-token.guard';
@@ -37,11 +36,6 @@ describe('RefTest token route guards', () => {
       component: RefTestDestination,
       canActivate: [refTestTakeGuard],
     },
-    {
-      path: 'ref-test/:token',
-      component: RefTestDestination,
-      canActivate: [refTestLegacyInvitationGuard],
-    },
     { path: '', component: HomeDestination },
     { path: '**', redirectTo: '' },
   ];
@@ -58,6 +52,16 @@ describe('RefTest token route guards', () => {
     const harness = await RouterTestingHarness.create();
 
     await harness.navigateByUrl('/ref-test/participant-token/take', HomeDestination);
+
+    expect(TestBed.inject(Router).url).toBe('/');
+    expect(harness.routeNativeElement?.textContent).toContain('Home destination');
+  });
+
+  it('redirects legacy path-based invitation links to the home route', async () => {
+    const harness = await RouterTestingHarness.create();
+    const invitationToken = 'b'.repeat(32);
+
+    await harness.navigateByUrl(`/ref-test/${invitationToken}`, HomeDestination);
 
     expect(TestBed.inject(Router).url).toBe('/');
     expect(harness.routeNativeElement?.textContent).toContain('Home destination');
@@ -89,21 +93,6 @@ describe('RefTest token route guards', () => {
       expect(harness.routeNativeElement?.textContent).toContain('Home destination');
     },
   );
-
-  it('migrates a legacy path invitation to the tokenless welcome route', async () => {
-    const harness = await RouterTestingHarness.create();
-    const invitationToken = 'b'.repeat(32);
-
-    await harness.navigateByUrl(
-      `/ref-test/${invitationToken}?lang=nl`,
-      RefTestDestination,
-    );
-
-    expect(TestBed.inject(Router).url).toBe('/ref-test/welcome?lang=nl');
-    expect(TestBed.inject(Location).getState()).toMatchObject({
-      refTestToken: invitationToken,
-    });
-  });
 
   it('allows reloads when the current history entry holds a session credential', async () => {
     const harness = await RouterTestingHarness.create();

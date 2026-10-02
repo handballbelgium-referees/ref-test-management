@@ -32,14 +32,6 @@ export const refTestInvitationFragmentGuard: CanActivateFn = (route) => {
   return redirectToWelcomeWithInvitationToken(token, route.queryParams, router);
 };
 
-export const refTestLegacyInvitationGuard: CanActivateFn = (route) => {
-  const router = inject(Router);
-  const token = route.paramMap.get('token');
-  if (!token || !INVITATION_TOKEN_PATTERN.test(token)) return router.parseUrl('/');
-
-  return redirectToWelcomeWithInvitationToken(token, route.queryParams, router);
-};
-
 export const refTestSessionGuard: CanActivateFn = () => {
   const router = inject(Router);
   const location = inject(Location);
