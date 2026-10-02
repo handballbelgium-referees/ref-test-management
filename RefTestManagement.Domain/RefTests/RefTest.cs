@@ -98,7 +98,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     public string Email { get; private set; }
     /// <summary>The SHA-256 hash used to look up the invitation token.</summary>
-    public string Token { get; private set; }
+    public string Token { get; private set; } = string.Empty;
     /// <summary>A protected copy used only while retrying invitation email delivery.</summary>
     public string? ProtectedInvitationToken { get; private set; }
     [NotMapped] public string? IssuedToken { get; private set; }

@@ -2,7 +2,6 @@ using System.Text.Json;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
-using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.EntityFrameworkCore;
 // Aliased: this namespace also has its own RefTestStartedEvent/RefTestCompletedEvent records
