@@ -12,7 +12,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 /// <summary>Builds localized, in-memory PDF attachments for a verified data export.</summary>
 public interface IPersonalDataExportPdfService
 {
-    IReadOnlyList<EmailAttachment> GenerateAttachments(PersonalDataExportDocumentData document);
+    Task<IReadOnlyList<EmailAttachment>> GenerateAttachmentsAsync(PersonalDataExportDocumentData document);
 }
 
 /// <summary>
@@ -22,6 +22,7 @@ public interface IPersonalDataExportPdfService
 public sealed class PersonalDataExportPdfService(
     ITranslationService translationService,
     LanguageConfiguration languageConfiguration,
+    ILogoService logoService,
     int maxPartBytes = 8 * 1024 * 1024) : IPersonalDataExportPdfService
 {
     /// <summary>
@@ -31,7 +32,8 @@ public sealed class PersonalDataExportPdfService(
     /// </summary>
     public const int MaxPartBytes = 8 * 1024 * 1024;
 
-    public IReadOnlyList<EmailAttachment> GenerateAttachments(PersonalDataExportDocumentData document)
+    public async Task<IReadOnlyList<EmailAttachment>> GenerateAttachmentsAsync(
+        PersonalDataExportDocumentData document)
     {
         ArgumentNullException.ThrowIfNull(document);
 
@@ -40,6 +42,7 @@ public sealed class PersonalDataExportPdfService(
         if (maxPartBytes <= 0)
             throw new ArgumentOutOfRangeException(nameof(maxPartBytes));
 
+        var logo = await logoService.GetLogoBytesAsync();
         var eventsByStream = document.AuditEvents
             .GroupBy(auditEvent => auditEvent.StreamId, StringComparer.Ordinal)
             .ToDictionary(group => group.Key, group => (IReadOnlyList<PersonalDataExportAuditEventData>)group
@@ -69,7 +72,8 @@ public sealed class PersonalDataExportPdfService(
                 document,
                 currentSections,
                 int.MaxValue,
-                int.MaxValue);
+                int.MaxValue,
+                logo);
 
             if (candidate.Length <= maxPartBytes)
             {
@@ -92,7 +96,8 @@ public sealed class PersonalDataExportPdfService(
                 document,
                 generatedSections[index],
                 partNumber,
-                generatedSections.Count);
+                generatedSections.Count,
+                logo);
 
             if (content.Length > maxPartBytes)
                 throw new PersonalDataExportSizeLimitException();
@@ -148,7 +153,8 @@ public sealed class PersonalDataExportPdfService(
         PersonalDataExportDocumentData document,
         IReadOnlyList<PdfSection> sections,
         int partNumber,
-        int partCount)
+        int partCount,
+        byte[]? logo)
     {
         var pdf = Document.Create(container =>
         {
@@ -156,22 +162,43 @@ public sealed class PersonalDataExportPdfService(
             {
                 var translations = translationService.GetPdfPersonalDataExportTranslations(language);
                 var culture = GetCulture(language);
+                var languageName = translationService.GetLanguageDisplayName(language);
 
                 container.Page(page =>
                 {
                     page.Size(PageSizes.A4);
-                    page.Margin(40);
+                    page.Margin(20);
+                    page.PageColor(Colors.White);
                     page.DefaultTextStyle(text => text.FontSize(9));
 
-                    page.Content().Column(column =>
+                    page.Header()
+                        .Background(Colors.Red.Darken3)
+                        .Border(2)
+                        .BorderColor(Colors.Red.Darken4)
+                        .Padding(15)
+                        .Row(row =>
+                        {
+                            if (logo is not null)
+                            {
+                                row.ConstantItem(60).AlignMiddle().Height(50).Image(logo);
+                                row.ConstantItem(15);
+                            }
+
+                            row.RelativeItem().Column(column =>
+                            {
+                                column.Item().Text(translations["title"])
+                                    .FontSize(20)
+                                    .FontColor(Colors.White)
+                                    .Bold();
+                                column.Item().Text($"{languageName} {translations["version"]}")
+                                    .FontSize(10)
+                                    .FontColor(Colors.White)
+                                    .Light();
+                            });
+                        });
+
+                    page.Content().PaddingVertical(10).Column(column =>
                     {
-                        column.Item().PaddingBottom(6).Text(translations["title"])
-                            .FontSize(20)
-                            .Bold();
-                        column.Item().PaddingBottom(2).Text(
-                            translationService.GetLanguageDisplayName(language))
-                            .FontSize(10)
-                            .Italic();
                         column.Item().PaddingBottom(10).Element(item => AddField(
                             item,
                             translations["recipientEmail"],
@@ -192,7 +219,29 @@ public sealed class PersonalDataExportPdfService(
                                 ComposeRefTest(item, section, translations, culture));
                     });
 
-                    page.Footer().AlignCenter().Text(translations["footer"]);
+                    page.Footer()
+                        .BorderTop(1)
+                        .BorderColor(Colors.Grey.Lighten2)
+                        .PaddingTop(10)
+                        .Row(row =>
+                        {
+                            row.RelativeItem(2).AlignLeft().Text(translations["footer"])
+                                .FontSize(8)
+                                .FontColor(Colors.Grey.Darken1);
+                            row.RelativeItem(2).AlignCenter().Text(text =>
+                            {
+                                text.DefaultTextStyle(style =>
+                                    style.FontSize(8).FontColor(Colors.Grey.Darken1));
+                                text.Span($"{translations["page"]} ");
+                                text.CurrentPageNumber();
+                                text.Span($" {translations["of"]} ");
+                                text.TotalPages();
+                                text.Span($" ({languageName})");
+                            });
+                            row.RelativeItem().AlignRight().Text(languageName)
+                                .FontSize(8)
+                                .FontColor(Colors.Grey.Darken1);
+                        });
                 });
             }
         });

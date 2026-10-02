@@ -954,7 +954,7 @@ public sealed class PersonalDataExportDeliveryTests
     }
 
     [Fact]
-    public void PdfPartsAreMultilingualValidAndNumberedInsteadOfTruncated()
+    public async Task PdfPartsAreMultilingualValidAndNumberedInsteadOfTruncated()
     {
         QuestPDF.Settings.License = LicenseType.Community;
         var random = new Random(706);
@@ -1005,18 +1005,26 @@ public sealed class PersonalDataExportDeliveryTests
             eventData);
 
         var languages = LanguageConfiguration.CreateDefault();
-        var fullExport = new PersonalDataExportPdfService(new TranslationService(), languages)
-            .GenerateAttachments(document);
-        var oneEventExport = new PersonalDataExportPdfService(new TranslationService(), languages)
-            .GenerateAttachments(document with { AuditEvents = [eventData[0]] });
+        var logoService = new NullLogoService();
+        var fullExport = await new PersonalDataExportPdfService(
+                new TranslationService(),
+                languages,
+                logoService)
+            .GenerateAttachmentsAsync(document);
+        var oneEventExport = await new PersonalDataExportPdfService(
+                new TranslationService(),
+                languages,
+                logoService)
+            .GenerateAttachmentsAsync(document with { AuditEvents = [eventData[0]] });
         var testPartLimit = Assert.Single(oneEventExport).Content.Length * 3;
         Assert.True(Assert.Single(fullExport).Content.Length > testPartLimit);
 
         var service = new PersonalDataExportPdfService(
             new TranslationService(),
             languages,
+            logoService,
             testPartLimit);
-        var attachments = service.GenerateAttachments(document);
+        var attachments = await service.GenerateAttachmentsAsync(document);
 
         Assert.True(attachments.Count > 1);
         Assert.Equal(
@@ -1031,14 +1039,18 @@ public sealed class PersonalDataExportDeliveryTests
 
         var english = new PersonalDataExportPdfService(
             new TranslationService(),
-            new LanguageConfiguration { DefaultPhraseLanguage = "en", EnabledLanguages = ["en"] })
-            .GenerateAttachments(document);
+            new LanguageConfiguration { DefaultPhraseLanguage = "en", EnabledLanguages = ["en"] },
+            logoService)
+            .GenerateAttachmentsAsync(document);
         var french = new PersonalDataExportPdfService(
             new TranslationService(),
-            new LanguageConfiguration { DefaultPhraseLanguage = "en", EnabledLanguages = ["fr"] })
-            .GenerateAttachments(document);
-        var englishPdf = Assert.Single(english).Content;
-        var frenchPdf = Assert.Single(french).Content;
+            new LanguageConfiguration { DefaultPhraseLanguage = "en", EnabledLanguages = ["fr"] },
+            logoService)
+            .GenerateAttachmentsAsync(document);
+        var englishAttachments = await english;
+        var frenchAttachments = await french;
+        var englishPdf = Assert.Single(englishAttachments).Content;
+        var frenchPdf = Assert.Single(frenchAttachments).Content;
         var multilingualPdf = Assert.Single(fullExport).Content;
         Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(englishPdf, 0, 5));
         Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(frenchPdf, 0, 5));
@@ -1234,13 +1246,21 @@ public sealed class PersonalDataExportDeliveryTests
         public PersonalDataExportDocumentData? Document { get; private set; }
         public Exception? Failure { get; init; }
 
-        public IReadOnlyList<EmailAttachment> GenerateAttachments(PersonalDataExportDocumentData document)
+        public Task<IReadOnlyList<EmailAttachment>> GenerateAttachmentsAsync(
+            PersonalDataExportDocumentData document)
         {
             Document = document;
             if (Failure is not null)
                 throw Failure;
-            return [new EmailAttachment("PersonalDataExport.pdf", [0x25, 0x50, 0x44, 0x46])];
+            return Task.FromResult<IReadOnlyList<EmailAttachment>>(
+                [new EmailAttachment("PersonalDataExport.pdf", [0x25, 0x50, 0x44, 0x46])]);
         }
+    }
+
+    private sealed class NullLogoService : ILogoService
+    {
+        public Task<byte[]?> GetLogoBytesAsync() => Task.FromResult<byte[]?>(null);
+        public Task<string> GetLogoAsBase64Async() => Task.FromResult(string.Empty);
     }
 
     private sealed class RecordingEmailService : IEmailService

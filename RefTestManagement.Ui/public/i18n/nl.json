@@ -707,6 +707,7 @@
     "dataExport": {
       "title": "Een kopie van uw persoonsgegevens aanvragen",
       "description": "Vul het e-mailadres in dat bij uw deelname hoort. Als het overeenkomt met een deelnemersrecord, sturen we een bevestigingslink naar dat adres.",
+      "requestLink": "Open het aanvraagformulier",
       "emailLabel": "E-mailadres",
       "emailHelp": "We gebruiken dit adres alleen om uw verzoek te verifiëren en te bezorgen.",
       "emailRequired": "Vul uw e-mailadres in.",
@@ -750,6 +751,10 @@
       "seqId": "#",
       "data": "Details"
     },
+    "actor": {
+      "system": "Systeem",
+      "verifiedParticipant": "Geverifieerde deelnemer"
+    },
     "eventType": {
       "RefTestCreated": "Aangemaakt",
       "RefTestApproved": "Goedgekeurd",
@@ -771,13 +776,24 @@
       "RefTestStarted": "Gestart",
       "RefTestPrivacyNoticeAccepted": "Privacyverklaring geaccepteerd",
       "RefTestCompleted": "Voltooid",
+      "PersonalDataExportChallengeEmailDelivered": "Verificatiemail verzonden",
+      "PersonalDataExportChallengeEmailDeliveryFailed": "Verificatiemail mislukt",
+      "PersonalDataExportRequestVerified": "E-mailadres geverifieerd",
+      "PersonalDataExportDelivered": "E-mail met gegevensexport verzonden",
+      "PersonalDataExportDeliveryFailed": "Bezorging van gegevensexport mislukt",
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
       "EntityDeleted": "Verwijderd"
     },
+    "failureCode": {
+      "DeliveryFailed": "Bezorging mislukt",
+      "SizeLimitExceeded": "Gegevensexport te groot voor e-mail",
+      "NoCurrentRecords": "Geen actuele RefTests"
+    },
     "entityType": {
       "RefTest": "RefTest",
-      "RefTestTitle": "RefTest titel"
+      "RefTestTitle": "RefTest titel",
+      "PersonalDataExportRequest": "Gegevensexportaanvraag"
     },
     "sort": {
       "title": "Sortering",
@@ -811,7 +827,14 @@
       "questionScore": "Vragenscore",
       "answerScore": "Antwoordenscore",
       "answerTotal": "Totaal aantal antwoorden",
-      "percentage": "Percentage"
+      "percentage": "Percentage",
+      "attempt": "Poging",
+      "accepted": "E-mail verzonden",
+      "attachmentCount": "Aantal bijlagen",
+      "mailboxVerified": "E-mailadres geverifieerd",
+      "challengeEmailWasAccepted": "Verificatiemail verzonden",
+      "terminal": "Definitieve fout",
+      "failureCode": "Reden van mislukking"
     }
   }
 }

@@ -707,6 +707,7 @@
     "dataExport": {
       "title": "Kopie Ihrer personenbezogenen Daten anfordern",
       "description": "Geben Sie die mit Ihrer Teilnahme verknüpfte E-Mail-Adresse ein. Wenn sie einem Teilnehmereintrag entspricht, senden wir einen Bestätigungslink an diese Adresse.",
+      "requestLink": "Antragsformular \u00f6ffnen",
       "emailLabel": "E-Mail-Adresse",
       "emailHelp": "Wir verwenden diese Adresse nur, um Ihre Anfrage zu verifizieren und zuzustellen.",
       "emailRequired": "Geben Sie Ihre E-Mail-Adresse ein.",
@@ -750,6 +751,10 @@
       "seqId": "#",
       "data": "Details"
     },
+    "actor": {
+      "system": "System",
+      "verifiedParticipant": "Verifizierter Teilnehmer"
+    },
     "eventType": {
       "RefTestCreated": "Erstellt",
       "RefTestApproved": "Genehmigt",
@@ -771,13 +776,24 @@
       "RefTestStarted": "Gestartet",
       "RefTestPrivacyNoticeAccepted": "Datenschutzhinweis akzeptiert",
       "RefTestCompleted": "Abgeschlossen",
+      "PersonalDataExportChallengeEmailDelivered": "Verifizierungs-E-Mail versendet",
+      "PersonalDataExportChallengeEmailDeliveryFailed": "Verifizierungs-E-Mail fehlgeschlagen",
+      "PersonalDataExportRequestVerified": "E-Mail-Adresse verifiziert",
+      "PersonalDataExportDelivered": "Export-E-Mail versendet",
+      "PersonalDataExportDeliveryFailed": "Zustellung des Datenexports fehlgeschlagen",
       "EntityCreated": "Erstellt",
       "EntityModified": "Geändert",
       "EntityDeleted": "Gelöscht"
     },
+    "failureCode": {
+      "DeliveryFailed": "Zustellung fehlgeschlagen",
+      "SizeLimitExceeded": "Datenexport zu gro\u00df f\u00fcr E-Mail",
+      "NoCurrentRecords": "Keine aktuellen RefTests"
+    },
     "entityType": {
       "RefTest": "RefTest",
-      "RefTestTitle": "RefTest Titel"
+      "RefTestTitle": "RefTest Titel",
+      "PersonalDataExportRequest": "Datenexportanfrage"
     },
     "sort": {
       "title": "Sortierung",
@@ -811,7 +827,14 @@
       "questionScore": "Fragen-Score",
       "answerScore": "Antworten-Score",
       "answerTotal": "Antworten gesamt",
-      "percentage": "Prozentsatz"
+      "percentage": "Prozentsatz",
+      "attempt": "Versuch",
+      "accepted": "E-Mail versendet",
+      "attachmentCount": "Anzahl der Anh\u00e4nge",
+      "mailboxVerified": "E-Mail-Adresse verifiziert",
+      "challengeEmailWasAccepted": "Verifizierungs-E-Mail versendet",
+      "terminal": "Endg\u00fcltiger Fehler",
+      "failureCode": "Fehlergrund"
     }
   }
 }

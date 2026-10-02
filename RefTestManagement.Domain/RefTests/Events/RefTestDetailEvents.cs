@@ -12,12 +12,18 @@ public sealed record RefTestDetailsUpdatedEvent(
 {
     public override string ActionName => "RefTestDetailsUpdated";
 
-    public override object? GetChanges() => new
+    public override object? GetChanges()
     {
-        firstName = new { old = OldFirstName, @new = NewFirstName },
-        lastName = new { old = OldLastName, @new = NewLastName },
-        email = new { old = OldEmail, @new = NewEmail }
-    };
+        var changes = new Dictionary<string, object?>();
+        if (OldFirstName != NewFirstName)
+            changes["firstName"] = new { old = OldFirstName, @new = NewFirstName };
+        if (OldLastName != NewLastName)
+            changes["lastName"] = new { old = OldLastName, @new = NewLastName };
+        if (OldEmail != NewEmail)
+            changes["email"] = new { old = OldEmail, @new = NewEmail };
+
+        return changes.Count == 0 ? null : changes;
+    }
 }
 
 public sealed record RefTestConfigurationUpdatedEvent(

@@ -1,0 +1,76 @@
+<article class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+  @if (hasConfirmation()) {
+    @if (confirmationSucceeded()) {
+      <section
+        aria-labelledby="privacy-data-export-confirmation-title"
+        class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 sm:p-8 text-center"
+      >
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-success-100 mb-4"
+        >
+          <svg
+            class="w-10 h-10 text-success-600"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+        <h1
+          id="privacy-data-export-confirmation-title"
+          class="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2"
+        >
+          {{ 'privacy.dataExport.confirmationTitle' | translate }}
+        </h1>
+        <p
+          id="privacy-data-export-confirmed"
+          class="text-neutral-600"
+          role="status"
+          aria-live="polite"
+        >
+          {{ 'privacy.dataExport.confirmed' | translate }}
+        </p>
+      </section>
+    } @else {
+      <section
+        aria-labelledby="privacy-data-export-confirmation-title"
+        class="space-y-4 rounded-xl border border-neutral-200 bg-white p-6"
+      >
+        <h2 id="privacy-data-export-confirmation-title" class="text-xl font-bold text-neutral-900">
+          {{ 'privacy.dataExport.confirmationTitle' | translate }}
+        </h2>
+        <p>{{ 'privacy.dataExport.confirmationDescription' | translate }}</p>
+        <button
+          type="button"
+          [disabled]="confirmationPending()"
+          (click)="confirmPersonalDataExport()"
+          class="rounded-md bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {{ 'privacy.dataExport.confirmButton' | translate }}
+        </button>
+        @if (confirmationPending()) {
+          <p
+            id="privacy-data-export-confirmation-pending"
+            class="text-neutral-700"
+            role="status"
+            aria-live="polite"
+          >
+            {{ 'privacy.dataExport.confirming' | translate }}
+          </p>
+        }
+        @if (confirmationError()) {
+          <p id="privacy-data-export-confirmation-error" class="text-red-700" role="alert">
+            {{ 'privacy.dataExport.confirmationError' | translate }}
+          </p>
+        }
+      </section>
+    }
+  }
+</article>

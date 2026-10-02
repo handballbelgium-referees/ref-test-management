@@ -6,14 +6,16 @@
     @if (isOldNew(change.value)) {
       <span class="flex flex-col gap-0.5">
         <span class="line-through text-red-400 wrap-break-word">{{
-          formatValue($any(change.value).old)
+          formatValue($any(change.value).old, change.property)
         }}</span>
         <span class="text-green-600 wrap-break-word">{{
-          formatValue($any(change.value).new)
+          formatValue($any(change.value).new, change.property)
         }}</span>
       </span>
     } @else {
-      <span class="text-neutral-800 wrap-break-word">{{ formatValue(change.value) }}</span>
+      <span class="text-neutral-800 wrap-break-word">{{
+        formatValue(change.value, change.property)
+      }}</span>
     }
   </span>
 }

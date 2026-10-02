@@ -74,7 +74,7 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
                 refTests,
                 auditEvents);
 
-            attachments = pdfService.GenerateAttachments(document);
+            attachments = await pdfService.GenerateAttachmentsAsync(document);
 
             // Recheck after the email service has prepared its provider payload. The query
             // completes before the network call, so no transaction or row lock spans I/O.

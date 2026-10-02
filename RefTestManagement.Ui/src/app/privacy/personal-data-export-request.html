@@ -1,0 +1,103 @@
+<article class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8">
+  @if (requestAcknowledged()) {
+    <section
+      aria-labelledby="privacy-data-export-title"
+      class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 sm:p-8 text-center"
+    >
+      <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-success-100 mb-4">
+        <svg
+          class="w-10 h-10 text-success-600"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          aria-hidden="true"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+          />
+        </svg>
+      </div>
+      <h1 id="privacy-data-export-title" class="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2">
+        {{ 'privacy.dataExport.title' | translate }}
+      </h1>
+      <p
+        id="privacy-data-export-request-acknowledged"
+        class="text-neutral-600"
+        role="status"
+        aria-live="polite"
+      >
+        {{ 'privacy.dataExport.requestAcknowledged' | translate }}
+      </p>
+    </section>
+  } @else {
+    <section
+      aria-labelledby="privacy-data-export-title"
+      class="space-y-4 rounded-xl border border-neutral-200 bg-white p-6"
+    >
+      <h1 id="privacy-data-export-title" class="text-xl font-bold text-neutral-900">
+        {{ 'privacy.dataExport.title' | translate }}
+      </h1>
+      <p>{{ 'privacy.dataExport.description' | translate }}</p>
+
+      <form
+        (submit)="requestPersonalDataExport(); $event.preventDefault()"
+        class="space-y-4"
+        novalidate
+      >
+        <div>
+          <label for="privacy-data-export-email" class="block font-medium text-neutral-900">
+            {{ 'privacy.dataExport.emailLabel' | translate }}
+          </label>
+          <input
+            id="privacy-data-export-email"
+            type="email"
+            autocomplete="email"
+            [formField]="requestForm.email"
+            [attr.aria-invalid]="
+              requestForm.email().touched() && requestForm.email().invalid() ? 'true' : null
+            "
+            [attr.aria-describedby]="
+              requestForm.email().touched() && requestForm.email().invalid()
+                ? 'privacy-data-export-email-help privacy-data-export-email-error'
+                : 'privacy-data-export-email-help'
+            "
+            class="mt-1 block w-full rounded-md border border-neutral-300 px-3 py-2 text-neutral-900 shadow-sm focus:border-primary-600 focus:outline-none focus:ring-2 focus:ring-primary-600"
+          />
+          <p id="privacy-data-export-email-help" class="mt-1 text-sm text-neutral-600">
+            {{ 'privacy.dataExport.emailHelp' | translate }}
+          </p>
+          @if (requestForm.email().touched() && requestForm.email().invalid()) {
+            <p id="privacy-data-export-email-error" class="mt-1 text-sm text-red-700" role="alert">
+              {{ requestForm.email().errors()[0]?.message | translate }}
+            </p>
+          }
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="requestPending()"
+          class="flex items-center justify-center rounded-md bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (requestPending()) {
+            <span
+              class="animate-spin rounded-full -ml-1 mr-2 h-4 w-4 border-b-2 border-white"
+              aria-hidden="true"
+            ></span>
+            {{ 'privacy.dataExport.requesting' | translate }}
+          } @else {
+            {{ 'privacy.dataExport.requestButton' | translate }}
+          }
+        </button>
+      </form>
+
+      @if (requestError()) {
+        <p id="privacy-data-export-request-error" class="text-red-700" role="alert">
+          {{ 'privacy.dataExport.requestError' | translate }}
+        </p>
+      }
+    </section>
+  }
+</article>

@@ -708,6 +708,7 @@
     "dataExport": {
       "title": "Demander une copie de vos données personnelles",
       "description": "Saisissez l'adresse e-mail associée à votre participation. Si elle correspond à un dossier de participant, nous enverrons un lien de confirmation à cette adresse.",
+      "requestLink": "Ouvrir le formulaire de demande",
       "emailLabel": "Adresse e-mail",
       "emailHelp": "Nous utiliserons cette adresse uniquement pour vérifier et transmettre votre demande.",
       "emailRequired": "Saisissez votre adresse e-mail.",
@@ -751,6 +752,10 @@
       "seqId": "#",
       "data": "Détails"
     },
+    "actor": {
+      "system": "Système",
+      "verifiedParticipant": "Participant vérifié"
+    },
     "eventType": {
       "RefTestCreated": "Créé",
       "RefTestApproved": "Approuvé",
@@ -772,13 +777,24 @@
       "RefTestStarted": "Démarré",
       "RefTestPrivacyNoticeAccepted": "Politique de confidentialité acceptée",
       "RefTestCompleted": "Terminé",
+      "PersonalDataExportChallengeEmailDelivered": "E-mail de vérification envoyé",
+      "PersonalDataExportChallengeEmailDeliveryFailed": "Échec de l’e-mail de vérification",
+      "PersonalDataExportRequestVerified": "Adresse e-mail vérifiée",
+      "PersonalDataExportDelivered": "E-mail avec l’export envoyé",
+      "PersonalDataExportDeliveryFailed": "Échec de la livraison de l’export",
       "EntityCreated": "Créé",
       "EntityModified": "Modifié",
       "EntityDeleted": "Supprimé"
     },
+    "failureCode": {
+      "DeliveryFailed": "Échec de livraison",
+      "SizeLimitExceeded": "Export trop volumineux pour l’e-mail",
+      "NoCurrentRecords": "Aucun RefTest actuel"
+    },
     "entityType": {
       "RefTest": "RefTest",
-      "RefTestTitle": "Titre RefTest"
+      "RefTestTitle": "Titre RefTest",
+      "PersonalDataExportRequest": "Demande d’export de données"
     },
     "sort": {
       "title": "Tri",
@@ -812,7 +828,14 @@
       "questionScore": "Score des questions",
       "answerScore": "Score des réponses",
       "answerTotal": "Total des réponses",
-      "percentage": "Pourcentage"
+      "percentage": "Pourcentage",
+      "attempt": "Tentative",
+      "accepted": "E-mail envoyé",
+      "attachmentCount": "Nombre de pièces jointes",
+      "mailboxVerified": "Adresse e-mail vérifiée",
+      "challengeEmailWasAccepted": "E-mail de vérification envoyé",
+      "terminal": "Échec définitif",
+      "failureCode": "Motif de l’échec"
     }
   }
 }
