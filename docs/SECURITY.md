@@ -106,8 +106,8 @@ The request mutation returns the same acknowledgement for matching and nonmatchi
 Only an address already associated with a non-anonymized participant record receives a localized
 verification email. The request and confirmation operations have separate per-client-address rate
 limits; their permit counts, window, and cleanup interval are configured under
-`PersonalDataExportConfiguration`. Verification keys expire after 24 hours by default; deployments
-may set `KeyLifetimeHours` from 1 through 168.
+`PersonalDataExportConfiguration`. Export and withdrawal verification keys expire after 24 hours by
+default; deployments may set `PrivacyChallengeKeyLifetimeHours` from 1 through 168.
 
 The email link is `/privacy/export-confirmation?lang=<locale>#<key>`. The initial page load must
 only display the confirmation page: the client reads the key from the fragment, removes it from

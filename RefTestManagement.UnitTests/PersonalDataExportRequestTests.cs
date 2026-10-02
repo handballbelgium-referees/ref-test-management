@@ -598,6 +598,17 @@ public sealed class PersonalDataExportRequestTests
             return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
         }
 
+        public Task SendPrivacyWithdrawalVerificationAsync(
+            string recipientEmail,
+            string challengeKey,
+            DateTime expiresAt,
+            CancellationToken cancellationToken)
+        {
+            RecipientEmail = recipientEmail;
+            ChallengeKey = challengeKey;
+            return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
+        }
+
         public async Task<bool> SendPersonalDataExportAsync(
             string recipientEmail,
             IReadOnlyList<EmailAttachment> attachments,

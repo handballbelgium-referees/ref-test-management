@@ -59,6 +59,50 @@ public sealed class PersonalDataExportEmailTests
     }
 
     [Fact]
+    public async Task WithdrawalChallengeEmailUsesLocalizedLinksAndRedactsRecipientFromItsBody()
+    {
+        var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+        using var client = new HttpClient(handler);
+        var service = CreateService(client, NullLogger<EmailService>.Instance);
+
+        await service.SendPrivacyWithdrawalVerificationAsync(
+            ParticipantEmail,
+            ChallengeKey,
+            DateTime.UtcNow.AddHours(24),
+            TestContext.Current.CancellationToken);
+
+        using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
+        var root = providerRequest.RootElement;
+        var html = root.GetProperty("htmlContent").GetString()!;
+        Assert.Equal("Confirm your consent withdrawal request", root.GetProperty("subject").GetString());
+
+        foreach (var language in new[] { "en", "nl", "fr", "de" })
+        {
+            var expectedLink =
+                $"https://app.example.org/privacy/withdrawal-confirmation?lang={language}#{ChallengeKey}";
+            Assert.Contains($"href='{expectedLink}'", html, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("Confirm withdrawal", html, StringComparison.Ordinal);
+        Assert.Contains("Intrekking bevestigen", html, StringComparison.Ordinal);
+        Assert.Contains("Confirmer le retrait", html, StringComparison.Ordinal);
+        Assert.Contains(
+            System.Web.HttpUtility.HtmlEncode("Widerruf bestätigen"),
+            html,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain(ParticipantEmail, html, StringComparison.OrdinalIgnoreCase);
+
+        var translations = new TranslationService();
+        foreach (var language in new[] { "en", "nl", "fr", "de" })
+        {
+            var localized = translations.GetEmailPrivacyWithdrawalVerificationTranslations(language);
+            Assert.False(string.IsNullOrWhiteSpace(localized["subject"]));
+            Assert.False(string.IsNullOrWhiteSpace(localized["introText"]));
+            Assert.Contains("{0}", localized["expiryNote"], StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public async Task ChallengeEmailProviderFailureDoesNotLogTheRawKeyOrRecipient()
     {
         var providerResponse =

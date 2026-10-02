@@ -2,6 +2,7 @@ using System.Text.Json;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.EntityFrameworkCore;
 // Aliased: this namespace also has its own RefTestStartedEvent/RefTestCompletedEvent records
@@ -208,6 +209,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         await context.SaveChangesAsync(ct);
 
         await ClearExportRequestsForErasedParticipantAsync(erasedParticipantEmail, ct);
+        await ClearPrivacyWithdrawalChallengesForErasedParticipantAsync(erasedParticipantEmail, ct);
 
         var auditEvents = await context.AuditEvents
             .Where(e => e.StreamId == refTestId)
@@ -275,6 +277,49 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
                     _ => null
                 };
                 if (requestId.HasValue && requestIds.Contains(requestId.Value))
+                    job.Cancel("Participant personal data was erased");
+            }
+            catch (JsonException)
+            {
+                // An unrelated malformed job must not prevent this erasure from completing.
+            }
+        }
+    }
+
+    private async Task ClearPrivacyWithdrawalChallengesForErasedParticipantAsync(string participantEmail, CancellationToken ct)
+    {
+        var normalizedEmail = PrivacyWithdrawalChallenge.NormalizeEmail(participantEmail);
+        var normalizedEmailHash = PrivacyWithdrawalChallenge.HashNormalizedEmail(normalizedEmail);
+        var challenges = await context.PrivacyWithdrawalChallenges
+            .Where(challenge => challenge.NormalizedEmailHash == normalizedEmailHash
+                                && challenge.Email != string.Empty)
+            .ToListAsync(ct);
+        if (challenges.Count == 0)
+            return;
+
+        var challengeIds = challenges.Select(challenge => challenge.Id).ToHashSet();
+        foreach (var challenge in challenges)
+            challenge.ClearForPrivacyErasure();
+
+        // Withdrawal challenge jobs carry only the challenge ID. A confirmed batch has already
+        // cleared its address and is intentionally not selected here, so erasing its first target
+        // cannot clear the remaining durable targets or cancel the batch job.
+        var challengeJobs = await context.Jobs
+            .Where(job => job.JobType == JobType.PrivacyWithdrawalChallengeEmail
+                          && (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing))
+            .ToListAsync(ct);
+
+        foreach (var job in challengeJobs)
+        {
+            if (string.IsNullOrEmpty(job.Payload))
+                continue;
+
+            try
+            {
+                var challengeId = JsonSerializer
+                    .Deserialize<PrivacyWithdrawalChallengeEmailPayload>(job.Payload, JobPayloadOptions)
+                    ?.ChallengeId;
+                if (challengeId.HasValue && challengeIds.Contains(challengeId.Value))
                     job.Cancel("Participant personal data was erased");
             }
             catch (JsonException)

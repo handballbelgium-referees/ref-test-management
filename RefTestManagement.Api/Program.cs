@@ -97,7 +97,7 @@ services.AddSingleton(privacyConfig);
 var personalDataExportConfig = configuration.GetSection("PersonalDataExportConfiguration")
                                    .Get<PersonalDataExportConfiguration>()
                                ?? new PersonalDataExportConfiguration();
-if (personalDataExportConfig.KeyLifetimeHours is < 1 or > 168
+if (personalDataExportConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
     || personalDataExportConfig.RateLimitWindowSeconds <= 0
     || personalDataExportConfig.RequestRateLimitPermitLimit <= 0
     || personalDataExportConfig.ConfirmationRateLimitPermitLimit <= 0
@@ -111,6 +111,7 @@ services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyPro
 services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
 services.AddSingleton<IPersonalDataExportRateLimiter, PersonalDataExportRateLimiter>();
 services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
+services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
 
 var refTestExpirationConfig = configuration.GetSection("RefTestExpirationConfiguration")
                                   .Get<RefTestExpirationConfiguration>()
@@ -196,6 +197,7 @@ services.AddHostedService<PermissionSyncService>();
 services.AddHostedService<RefTestExpirationService>();
 services.AddHostedService<PrivacyRetentionService>();
 services.AddHostedService<PersonalDataExportRequestCleanupService>();
+services.AddHostedService<PrivacyWithdrawalCleanupService>();
 services.AddHostedService<BackgroundJobService>();
 
 // Job handlers, keyed by the job type BackgroundJobService dispatches on. A job type with no
@@ -210,6 +212,10 @@ services.AddKeyedScoped<IJobHandler, PersonalDataExportChallengeEmailJobHandler>
     JobType.PersonalDataExportChallengeEmail);
 services.AddKeyedScoped<IJobHandler, PersonalDataExportDeliveryEmailJobHandler>(
     JobType.PersonalDataExportDeliveryEmail);
+services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalChallengeEmailJobHandler>(
+    JobType.PrivacyWithdrawalChallengeEmail);
+services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalBatchJobHandler>(
+    JobType.PrivacyWithdrawalBatch);
 if (auditLogOptions.EnableCleanup)
 {
     services.AddHostedService<AuditLogCleanupService>();

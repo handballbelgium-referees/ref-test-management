@@ -251,6 +251,20 @@ public class RefTestEmailMutationLoggingTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
+        public Task EnqueuePrivacyWithdrawalChallengeEmailAsync(
+            PrivacyWithdrawalChallengeEmailPayload payload,
+            bool saveChanges = true,
+            IJobPersistenceContext? unitOfWorkContext = null,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task EnqueuePrivacyWithdrawalBatchAsync(
+            PrivacyWithdrawalBatchPayload payload,
+            bool saveChanges = true,
+            IJobPersistenceContext? unitOfWorkContext = null,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
         public Task CancelPendingJobsForRefTestAsync(
             Guid refTestId,
             bool saveChanges = true,

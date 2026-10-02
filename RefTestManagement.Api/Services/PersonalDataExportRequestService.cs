@@ -49,7 +49,7 @@ public sealed class PersonalDataExportRequestService(
                 key,
                 keyProtection.Protect(key),
                 now,
-                now.AddHours(configuration.KeyLifetimeHours));
+                now.AddHours(configuration.PrivacyChallengeKeyLifetimeHours));
 
             context.PersonalDataExportRequests.Add(request);
             await jobEnqueueService.EnqueuePersonalDataExportChallengeEmailAsync(

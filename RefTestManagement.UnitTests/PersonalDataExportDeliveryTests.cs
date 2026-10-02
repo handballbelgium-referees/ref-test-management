@@ -1828,5 +1828,11 @@ public sealed class PersonalDataExportDeliveryTests
             string challengeKey,
             DateTime expiresAt,
             CancellationToken cancellationToken) => throw new NotSupportedException();
+
+        public Task SendPrivacyWithdrawalVerificationAsync(
+            string recipientEmail,
+            string challengeKey,
+            DateTime expiresAt,
+            CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 }

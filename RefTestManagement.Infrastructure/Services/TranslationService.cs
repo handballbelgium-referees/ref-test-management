@@ -12,6 +12,7 @@ public interface ITranslationService
     IReadOnlyDictionary<string, string> GetEmailApprovalDecisionTranslations(string language, bool isApproved);
     IReadOnlyDictionary<string, string> GetEmailPersonalDataExportVerificationTranslations(string language);
     IReadOnlyDictionary<string, string> GetEmailPersonalDataExportDeliveryTranslations(string language);
+    IReadOnlyDictionary<string, string> GetEmailPrivacyWithdrawalVerificationTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfResultsTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfPersonalDataExportTranslations(string language);
     IReadOnlyDictionary<string, string> GetPdfReportTranslations(string language);
@@ -31,6 +32,7 @@ public class TranslationService : ITranslationService
     private readonly Dictionary<string, Dictionary<string, string>> _emailApprovalRejectedTranslations = InitializeEmailApprovalRejectedTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailPersonalDataExportVerificationTranslations = InitializeEmailPersonalDataExportVerificationTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _emailPersonalDataExportDeliveryTranslations = InitializeEmailPersonalDataExportDeliveryTranslations();
+    private readonly Dictionary<string, Dictionary<string, string>> _emailPrivacyWithdrawalVerificationTranslations = InitializeEmailPrivacyWithdrawalVerificationTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfResultsTranslations = InitializePdfResultsTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfPersonalDataExportTranslations = InitializePdfPersonalDataExportTranslations();
     private readonly Dictionary<string, Dictionary<string, string>> _pdfReportTranslations = InitializePdfReportTranslations();
@@ -83,6 +85,13 @@ public class TranslationService : ITranslationService
         return _emailPersonalDataExportDeliveryTranslations.TryGetValue(language, out var translations)
             ? translations
             : _emailPersonalDataExportDeliveryTranslations["en"];
+    }
+
+    public IReadOnlyDictionary<string, string> GetEmailPrivacyWithdrawalVerificationTranslations(string language)
+    {
+        return _emailPrivacyWithdrawalVerificationTranslations.TryGetValue(language, out var translations)
+            ? translations
+            : _emailPrivacyWithdrawalVerificationTranslations["en"];
     }
 
     public IReadOnlyDictionary<string, string> GetPdfResultsTranslations(string language)
@@ -546,6 +555,49 @@ public class TranslationService : ITranslationService
                 ["subject"] = "Ihr Export personenbezogener Daten",
                 ["heading"] = "Ihre RefTest-Daten",
                 ["body"] = "Im Anhang finden Sie die PDF-Datei mit den gespeicherten RefTest-Daten, die Ihrer bestätigten E-Mail-Adresse zugeordnet sind."
+            }
+        };
+    }
+
+    private static Dictionary<string, Dictionary<string, string>> InitializeEmailPrivacyWithdrawalVerificationTranslations()
+    {
+        return new Dictionary<string, Dictionary<string, string>>
+        {
+            ["en"] = new()
+            {
+                ["subject"] = "Confirm your consent withdrawal request",
+                ["heading"] = "Confirm your email address",
+                ["introText"] = "Someone asked to withdraw consent for all saved RefTest records associated with this email address. Confirm that you made this request.",
+                ["confirmButton"] = "Confirm withdrawal",
+                ["expiryNote"] = "This withdrawal confirmation link expires in {0} hours.",
+                ["ignoreNote"] = "If you did not request this, you can ignore this email. No RefTest data will be anonymized."
+            },
+            ["nl"] = new()
+            {
+                ["subject"] = "Bevestig uw aanvraag om uw toestemming in te trekken",
+                ["heading"] = "Bevestig uw e-mailadres",
+                ["introText"] = "Iemand heeft gevraagd om de toestemming in te trekken voor alle opgeslagen RefTest-records die aan dit e-mailadres zijn gekoppeld. Bevestig dat u dit hebt aangevraagd.",
+                ["confirmButton"] = "Intrekking bevestigen",
+                ["expiryNote"] = "Deze bevestigingslink voor de intrekking verloopt over {0} uur.",
+                ["ignoreNote"] = "Hebt u dit niet aangevraagd? U kunt deze e-mail negeren. Er worden geen RefTest-gegevens geanonimiseerd."
+            },
+            ["fr"] = new()
+            {
+                ["subject"] = "Confirmez votre demande de retrait du consentement",
+                ["heading"] = "Confirmez votre adresse e-mail",
+                ["introText"] = "Une personne a demandé le retrait du consentement pour tous les dossiers RefTest enregistrés associés à cette adresse e-mail. Confirmez que vous êtes à l’origine de cette demande.",
+                ["confirmButton"] = "Confirmer le retrait",
+                ["expiryNote"] = "Ce lien de confirmation du retrait expire dans {0} heures.",
+                ["ignoreNote"] = "Si vous n’avez pas fait cette demande, vous pouvez ignorer cet e-mail. Aucune donnée RefTest ne sera anonymisée."
+            },
+            ["de"] = new()
+            {
+                ["subject"] = "Bestätigen Sie Ihren Antrag auf Widerruf der Einwilligung",
+                ["heading"] = "Bestätigen Sie Ihre E-Mail-Adresse",
+                ["introText"] = "Jemand hat den Widerruf der Einwilligung für alle gespeicherten RefTest-Datensätze beantragt, die mit dieser E-Mail-Adresse verknüpft sind. Bestätigen Sie, dass Sie diese Anfrage gestellt haben.",
+                ["confirmButton"] = "Widerruf bestätigen",
+                ["expiryNote"] = "Dieser Bestätigungslink für den Widerruf läuft in {0} Stunden ab.",
+                ["ignoreNote"] = "Wenn Sie diese Anfrage nicht gestellt haben, können Sie diese E-Mail ignorieren. Es werden keine RefTest-Daten anonymisiert."
             }
         };
     }

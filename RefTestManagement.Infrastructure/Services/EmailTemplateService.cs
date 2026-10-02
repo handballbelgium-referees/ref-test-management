@@ -36,6 +36,9 @@ public interface IEmailTemplateService
     Task<string> BuildCompletePersonalDataExportVerificationEmailAsync(
         List<LanguageContent> enabledLanguages);
 
+    Task<string> BuildCompletePrivacyWithdrawalVerificationEmailAsync(
+        List<LanguageContent> enabledLanguages);
+
     Task<string> BuildCompletePersonalDataExportDeliveryEmailAsync(
         List<LanguageContent> enabledLanguages);
 }
@@ -119,6 +122,28 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
     {
         var logoTag = await CreateLogoImageTag();
         var languageSections = BuildAllPersonalDataExportVerificationLanguageSections(enabledLanguages);
+        return $@"<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>
+<body style='margin: 0; padding: 24px; background-color: #f5f5f5; font-family: Arial, sans-serif;'>
+    <div style='max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;'>
+        <div style='background-color: #e30613; padding: 24px; text-align: center;'>
+            {logoTag}
+            <h1 style='color: #ffffff; margin: 8px 0 0;'>RefTest</h1>
+        </div>
+        <div style='padding: 24px; color: #374151;'>
+            {languageSections}
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    public async Task<string> BuildCompletePrivacyWithdrawalVerificationEmailAsync(
+        List<LanguageContent> enabledLanguages)
+    {
+        var logoTag = await CreateLogoImageTag();
+        var languageSections = BuildAllPrivacyWithdrawalVerificationLanguageSections(enabledLanguages);
         return $@"<!DOCTYPE html>
 <html>
 <head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>
@@ -572,6 +597,19 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
     }
 
     private static string BuildAllPersonalDataExportVerificationLanguageSections(
+        List<LanguageContent> enabledLanguages)
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < enabledLanguages.Count; i++)
+        {
+            sb.Append(BuildPersonalDataExportVerificationLanguageSection(
+                enabledLanguages[i],
+                isLast: i == enabledLanguages.Count - 1));
+        }
+        return sb.ToString();
+    }
+
+    private static string BuildAllPrivacyWithdrawalVerificationLanguageSections(
         List<LanguageContent> enabledLanguages)
     {
         var sb = new StringBuilder();
