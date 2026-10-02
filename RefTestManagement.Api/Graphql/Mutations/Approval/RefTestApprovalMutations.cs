@@ -92,14 +92,9 @@ public static partial class RefTestApprovalMutations
 
             try
             {
+                refTest.RegenerateToken();
                 await jobEnqueueService.EnqueueInvitationEmailAsync(
-                    new InvitationEmailPayload(
-                        refTest.Id,
-                        refTest.FullName,
-                        refTest.Email,
-                        refTest.Token,
-                        refTest.NumberOfQuestions,
-                        refTest.MaxTimeInMinutes),
+                    refTest,
                     executeAfter: refTest.ScheduledAt,
                     saveChanges: false,
                     unitOfWorkContext: context,

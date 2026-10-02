@@ -14,7 +14,7 @@ public record InvitationEmailPayload(
     Guid RefTestId,
     string Name,
     string Email,
-    string Token,
+    string TokenHash,
     int NumberOfQuestions,
     int MaxTimeInMinutes
 ) : IJobPayload;

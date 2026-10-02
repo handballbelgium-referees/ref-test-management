@@ -192,7 +192,7 @@ public class RefTestEmailMutationLoggingTests
             new(null, null, exception);
 
         public Task EnqueueInvitationEmailAsync(
-            InvitationEmailPayload payload,
+            RefTest refTest,
             DateTime? executeAfter = null,
             bool saveChanges = true,
             IJobPersistenceContext? unitOfWorkContext = null,
@@ -232,6 +232,20 @@ public class RefTestEmailMutationLoggingTests
 
         public Task EnqueueApprovalDecisionEmailAsync(
             ApprovalDecisionEmailPayload payload,
+            bool saveChanges = true,
+            IJobPersistenceContext? unitOfWorkContext = null,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task EnqueuePersonalDataExportChallengeEmailAsync(
+            PersonalDataExportChallengeEmailPayload payload,
+            bool saveChanges = true,
+            IJobPersistenceContext? unitOfWorkContext = null,
+            CancellationToken cancellationToken = default) =>
+            throw new NotSupportedException();
+
+        public Task EnqueuePersonalDataExportDeliveryEmailAsync(
+            PersonalDataExportDeliveryEmailPayload payload,
             bool saveChanges = true,
             IJobPersistenceContext? unitOfWorkContext = null,
             CancellationToken cancellationToken = default) =>

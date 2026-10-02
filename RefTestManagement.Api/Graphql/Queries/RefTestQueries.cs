@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -54,9 +55,13 @@ public static partial class RefTestQueries
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
+        if (!RefTest.IsValidTokenFormat(token))
+            throw new RefTestNotFoundException(token);
+
         var refTest = await context.RefTests
             .AsNoTracking()
-            .FirstOrDefaultAsync(x => x.Token == token, cancellationToken);
+            .WithParticipantToken(token)
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (refTest is null)
             throw new RefTestNotFoundException(token);

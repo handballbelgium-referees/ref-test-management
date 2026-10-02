@@ -25,20 +25,22 @@ public class RefTestTokenTests
         value.All(c => c is >= '0' and <= '9' or >= 'a' and <= 'f');
 
     [Fact]
-    public void Create_GeneratesA128BitLowercaseHexToken()
+    public void Create_GeneratesA128BitTokenAndStoresOnlyItsSha256Hash()
     {
         var refTest = NewRefTest();
+        var token = refTest.GetIssuedToken();
 
-        // 32 hex characters is 128 bits, and matches the width of the value this used to produce,
-        // so stored tokens and invitation URLs keep the same shape.
-        Assert.Equal(32, refTest.Token.Length);
-        Assert.True(IsLowercaseHex(refTest.Token), $"Token was not lowercase hex: {refTest.Token}");
+        Assert.Equal(32, token.Length);
+        Assert.True(IsLowercaseHex(token), $"Issued token was not lowercase hex: {token}");
+        Assert.Equal(64, refTest.Token.Length);
+        Assert.Equal(RefTest.HashToken(token), refTest.Token);
+        Assert.NotEqual(token, refTest.Token);
     }
 
     [Fact]
     public void Create_GeneratesADistinctTokenEachTime()
     {
-        var tokens = Enumerable.Range(0, 100).Select(_ => NewRefTest().Token).ToList();
+        var tokens = Enumerable.Range(0, 100).Select(_ => NewRefTest().GetIssuedToken()).ToList();
 
         Assert.Equal(tokens.Count, tokens.Distinct(StringComparer.Ordinal).Count());
     }
@@ -47,13 +49,40 @@ public class RefTestTokenTests
     public void RegenerateToken_ReplacesTheTokenWithAFreshOne()
     {
         var refTest = NewRefTest();
-        var original = refTest.Token;
+        var original = refTest.GetIssuedToken();
+        refTest.StoreProtectedInvitationToken("protected-token");
 
         refTest.RegenerateToken();
 
-        Assert.NotEqual(original, refTest.Token);
-        Assert.Equal(32, refTest.Token.Length);
-        Assert.True(IsLowercaseHex(refTest.Token), $"Token was not lowercase hex: {refTest.Token}");
+        var issuedToken = refTest.GetIssuedToken();
+        Assert.NotEqual(original, issuedToken);
+        Assert.Equal(32, issuedToken.Length);
+        Assert.True(IsLowercaseHex(issuedToken), $"Issued token was not lowercase hex: {issuedToken}");
+        Assert.Equal(RefTest.HashToken(issuedToken), refTest.Token);
+        Assert.Null(refTest.ProtectedInvitationToken);
+    }
+
+    [Fact]
+    public void SendInvitation_ClearsTheProtectedRetryToken()
+    {
+        var refTest = NewRefTest();
+        refTest.StoreProtectedInvitationToken("protected-token");
+
+        refTest.SendInvitation();
+
+        Assert.NotNull(refTest.InvitationSentAt);
+        Assert.Null(refTest.ProtectedInvitationToken);
+    }
+
+    [Fact]
+    public void Anonymize_ClearsTheProtectedRetryToken()
+    {
+        var refTest = NewRefTest();
+        refTest.StoreProtectedInvitationToken("protected-token");
+
+        refTest.Anonymize();
+
+        Assert.Null(refTest.ProtectedInvitationToken);
     }
 
     [Fact]
@@ -62,11 +91,13 @@ public class RefTestTokenTests
         var refTest = NewRefTest();
         refTest.AcceptPrivacyNotice("v1");
         refTest.Start("v1");
-        var tokenWhileInProgress = refTest.Token;
+        var tokenWhileInProgress = refTest.GetIssuedToken();
 
         refTest.HardReset();
 
-        Assert.NotEqual(tokenWhileInProgress, refTest.Token);
-        Assert.True(IsLowercaseHex(refTest.Token), $"Token was not lowercase hex: {refTest.Token}");
+        var issuedToken = refTest.GetIssuedToken();
+        Assert.NotEqual(tokenWhileInProgress, issuedToken);
+        Assert.True(IsLowercaseHex(issuedToken), $"Issued token was not lowercase hex: {issuedToken}");
+        Assert.Equal(RefTest.HashToken(issuedToken), refTest.Token);
     }
 }

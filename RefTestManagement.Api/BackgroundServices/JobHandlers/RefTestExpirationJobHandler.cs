@@ -27,6 +27,7 @@ public sealed class RefTestExpirationJobHandler(
     IRefTestSubscriptionService subscriptionService,
     IIhfRulesQuestionsService ihfRulesQuestionsService,
     EmailConfiguration emailConfiguration,
+    IRefTestInvitationTokenProtection tokenProtection,
     ILogger<RefTestExpirationJobHandler> logger,
     ILogger<JobEnqueueService> jobEnqueueLogger) : IJobHandler
 {
@@ -64,9 +65,11 @@ public sealed class RefTestExpirationJobHandler(
             {
                 case RefTestExpirationAction.AutoComplete when refTest.Status == RefTestStatus.InProgress:
                 {
-                    var jobEnqueueService = new JobEnqueueService(context, jobEnqueueLogger);
+                    var jobEnqueueService = new JobEnqueueService(context, tokenProtection, jobEnqueueLogger);
                     await RefTestLifecycleMutations.CompleteRefTestCoreAsync(
-                        new CompleteRefTestInput(refTest.Token, refTest.SelectedAnswerIds, refTest.Language),
+                        refTest,
+                        refTest.SelectedAnswerIds,
+                        refTest.Language,
                         context,
                         ihfRulesQuestionsService,
                         jobEnqueueService,

@@ -703,6 +703,25 @@
     "rights": {
       "title": "Uw rechten",
       "body": "U kunt verzoeken om inzage, correctie, wissing, beperking, bezwaar of een overdraagbare kopie van uw gegevens. U kunt ook uw toestemming intrekken. Neem contact op via {{contactEmail}}. U kunt tevens een klacht indienen bij uw toezichthoudende autoriteit."
+    },
+    "dataExport": {
+      "title": "Een kopie van uw persoonsgegevens aanvragen",
+      "description": "Vul het e-mailadres in dat bij uw deelname hoort. Als het overeenkomt met een deelnemersrecord, sturen we een bevestigingslink naar dat adres.",
+      "requestLink": "Open het aanvraagformulier",
+      "emailLabel": "E-mailadres",
+      "emailHelp": "We gebruiken dit adres alleen om uw verzoek te verifiëren en te bezorgen.",
+      "emailRequired": "Vul uw e-mailadres in.",
+      "emailInvalid": "Vul een geldig e-mailadres in.",
+      "requestButton": "Verzoek verzenden",
+      "requesting": "Uw verzoek wordt verzonden...",
+      "requestAcknowledged": "Als het adres overeenkomt met een deelnemersrecord, ontvangt u een e-mail met een link om uw verzoek te bevestigen.",
+      "requestError": "We konden uw verzoek niet verwerken. Probeer het opnieuw.",
+      "confirmationTitle": "Uw verzoek bevestigen",
+      "confirmationDescription": "Bevestig hieronder om een PDF-kopie van uw persoonsgegevens per e-mail te ontvangen.",
+      "confirmButton": "Verzoek bevestigen",
+      "confirming": "Uw verzoek wordt bevestigd...",
+      "confirmed": "Uw verzoek is bevestigd. Een PDF-kopie van uw persoonsgegevens wordt u per e-mail bezorgd.",
+      "confirmationError": "We konden dit verzoek niet bevestigen. De link is mogelijk ongeldig of verlopen. Vraag een nieuwe link aan en probeer het opnieuw."
     }
   },
   "audit-logs": {
@@ -732,6 +751,10 @@
       "seqId": "#",
       "data": "Details"
     },
+    "actor": {
+      "system": "Systeem",
+      "verifiedParticipant": "Geverifieerde deelnemer"
+    },
     "eventType": {
       "RefTestCreated": "Aangemaakt",
       "RefTestApproved": "Goedgekeurd",
@@ -753,13 +776,24 @@
       "RefTestStarted": "Gestart",
       "RefTestPrivacyNoticeAccepted": "Privacyverklaring geaccepteerd",
       "RefTestCompleted": "Voltooid",
+      "PersonalDataExportChallengeEmailDelivered": "Verificatiemail verzonden",
+      "PersonalDataExportChallengeEmailDeliveryFailed": "Verificatiemail mislukt",
+      "PersonalDataExportRequestVerified": "E-mailadres geverifieerd",
+      "PersonalDataExportDelivered": "E-mail met gegevensexport verzonden",
+      "PersonalDataExportDeliveryFailed": "Bezorging van gegevensexport mislukt",
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
       "EntityDeleted": "Verwijderd"
     },
+    "failureCode": {
+      "DeliveryFailed": "Bezorging mislukt",
+      "SizeLimitExceeded": "Gegevensexport te groot voor e-mail",
+      "NoCurrentRecords": "Geen actuele RefTests"
+    },
     "entityType": {
       "RefTest": "RefTest",
-      "RefTestTitle": "RefTest titel"
+      "RefTestTitle": "RefTest titel",
+      "PersonalDataExportRequest": "Gegevensexportaanvraag"
     },
     "sort": {
       "title": "Sortering",
@@ -793,7 +827,14 @@
       "questionScore": "Vragenscore",
       "answerScore": "Antwoordenscore",
       "answerTotal": "Totaal aantal antwoorden",
-      "percentage": "Percentage"
+      "percentage": "Percentage",
+      "attempt": "Poging",
+      "accepted": "E-mail verzonden",
+      "attachmentCount": "Aantal bijlagen",
+      "mailboxVerified": "E-mailadres geverifieerd",
+      "challengeEmailWasAccepted": "Verificatiemail verzonden",
+      "terminal": "Definitieve fout",
+      "failureCode": "Reden van mislukking"
     }
   }
 }

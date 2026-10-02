@@ -140,6 +140,58 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                     b.ToTable("Jobs");
                 });
 
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Privacy.PersonalDataExportRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ChallengeEmailSentAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("DeliveryAttemptCount")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("character varying(256)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("KeyHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<DateTime?>("LastDeliveryAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("ProtectedDeliveryKey")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("KeyHash")
+                        .HasDatabaseName("IX_PersonalDataExportRequests_KeyHash");
+
+                    b.HasIndex("VerifiedAt", "ExpiresAt")
+                        .HasDatabaseName("IX_PersonalDataExportRequests_VerifiedAt_ExpiresAt");
+
+                    b.ToTable("PersonalDataExportRequests", (string)null);
+                });
+
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", b =>
                 {
                     b.Property<Guid>("Id")
@@ -239,6 +291,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                         .HasMaxLength(32)
                         .HasColumnType("character varying(32)");
 
+                    b.Property<string>("ProtectedInvitationToken")
+                        .HasMaxLength(2048)
+                        .HasColumnType("character varying(2048)");
+
                     b.Property<string>("QuestionIds")
                         .IsRequired()
                         .HasMaxLength(4000)
@@ -280,8 +336,8 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
 
                     b.Property<string>("Token")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("character varying(50)");
+                        .HasMaxLength(64)
+                        .HasColumnType("character varying(64)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()

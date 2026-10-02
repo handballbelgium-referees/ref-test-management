@@ -55,6 +55,10 @@ export type CompleteRefTestInput = {
   token: string;
 };
 
+export type ConfirmPersonalDataExportInput = {
+  key: string;
+};
+
 export type CreateRefTestsInput = {
   maxTimeInMinutes: number;
   numberOfQuestions: number;
@@ -134,6 +138,10 @@ export type LongOperationFilterInput = {
   nin?: Array<number | null | undefined> | null | undefined;
   nlt?: number | null | undefined;
   nlte?: number | null | undefined;
+};
+
+export type PersonalDataExportRequestInput = {
+  email: string;
 };
 
 /** Filter RefTests based on Id, Email or Status */
@@ -280,6 +288,10 @@ export type RejectRefTestsInput = {
   reason: string;
 };
 
+export type RequestPersonalDataExportInput = {
+  input: PersonalDataExportRequestInput;
+};
+
 export type ResetRefTestsInput = {
   ids: Array<string | number>;
   regenerateToken: boolean;
@@ -411,6 +423,20 @@ export type CompleteRefTestMutationVariables = Exact<{
 
 
 export type CompleteRefTestMutation = { completeRefTest: { participantRefTest: { id: string, questionScore: number | null, questionTotal: number, answerScore: number | null, answerTotal: number | null, percentage: number | null, sendResultsAutomatically: boolean, resultsSent: boolean } | null } };
+
+export type ConfirmPersonalDataExportMutationVariables = Exact<{
+  input: ConfirmPersonalDataExportInput;
+}>;
+
+
+export type ConfirmPersonalDataExportMutation = { confirmPersonalDataExport: { personalDataExportConfirmationResult: { confirmed: boolean } | null } };
+
+export type RequestPersonalDataExportMutationVariables = Exact<{
+  input: RequestPersonalDataExportInput;
+}>;
+
+
+export type RequestPersonalDataExportMutation = { requestPersonalDataExport: { personalDataExportRequestAcknowledgement: { acknowledged: boolean } | null } };
 
 export type SaveRefTestProgressMutationVariables = Exact<{
   input: SaveRefTestProgressInput;
@@ -727,7 +753,7 @@ export const GetAuditLogsDocument = gql`
   })
   export class GetAuditLogsGQL extends Apollo.Query<GetAuditLogsQuery, GetAuditLogsQueryVariables> {
     override document = GetAuditLogsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -756,7 +782,7 @@ export const AcceptPrivacyNoticeDocument = gql`
   })
   export class AcceptPrivacyNoticeGQL extends Apollo.Mutation<AcceptPrivacyNoticeMutation, AcceptPrivacyNoticeMutationVariables> {
     override document = AcceptPrivacyNoticeDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -783,7 +809,47 @@ export const CompleteRefTestDocument = gql`
   })
   export class CompleteRefTestGQL extends Apollo.Mutation<CompleteRefTestMutation, CompleteRefTestMutationVariables> {
     override document = CompleteRefTestDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const ConfirmPersonalDataExportDocument = gql`
+    mutation ConfirmPersonalDataExport($input: ConfirmPersonalDataExportInput!) {
+  confirmPersonalDataExport(input: $input) {
+    personalDataExportConfirmationResult {
+      confirmed
+    }
+  }
+}
+    `;
 
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class ConfirmPersonalDataExportGQL extends Apollo.Mutation<ConfirmPersonalDataExportMutation, ConfirmPersonalDataExportMutationVariables> {
+    override document = ConfirmPersonalDataExportDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RequestPersonalDataExportDocument = gql`
+    mutation RequestPersonalDataExport($input: RequestPersonalDataExportInput!) {
+  requestPersonalDataExport(input: $input) {
+    personalDataExportRequestAcknowledgement {
+      acknowledged
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RequestPersonalDataExportGQL extends Apollo.Mutation<RequestPersonalDataExportMutation, RequestPersonalDataExportMutationVariables> {
+    override document = RequestPersonalDataExportDocument;
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -805,7 +871,7 @@ export const SaveRefTestProgressDocument = gql`
   })
   export class SaveRefTestProgressGQL extends Apollo.Mutation<SaveRefTestProgressMutation, SaveRefTestProgressMutationVariables> {
     override document = SaveRefTestProgressDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -849,7 +915,7 @@ export const StartRefTestDocument = gql`
   })
   export class StartRefTestGQL extends Apollo.Mutation<StartRefTestMutation, StartRefTestMutationVariables> {
     override document = StartRefTestDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -873,7 +939,7 @@ export const WithdrawConsentDocument = gql`
   })
   export class WithdrawConsentGQL extends Apollo.Mutation<WithdrawConsentMutation, WithdrawConsentMutationVariables> {
     override document = WithdrawConsentDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -896,7 +962,7 @@ export const GetPrivacyNoticeDocument = gql`
   })
   export class GetPrivacyNoticeGQL extends Apollo.Query<GetPrivacyNoticeQuery, GetPrivacyNoticeQueryVariables> {
     override document = GetPrivacyNoticeDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -951,7 +1017,7 @@ export const GetRefTestByTokenDocument = gql`
   })
   export class GetRefTestByTokenGQL extends Apollo.Query<GetRefTestByTokenQuery, GetRefTestByTokenQueryVariables> {
     override document = GetRefTestByTokenDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -967,7 +1033,7 @@ export const GetResultsEmailDelayMinutesDocument = gql`
   })
   export class GetResultsEmailDelayMinutesGQL extends Apollo.Query<GetResultsEmailDelayMinutesQuery, GetResultsEmailDelayMinutesQueryVariables> {
     override document = GetResultsEmailDelayMinutesDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -985,7 +1051,7 @@ export const GetScoreConfigurationDocument = gql`
   })
   export class GetScoreConfigurationGQL extends Apollo.Query<GetScoreConfigurationQuery, GetScoreConfigurationQueryVariables> {
     override document = GetScoreConfigurationDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1003,7 +1069,7 @@ export const RefTestSessionLockDocument = gql`
   })
   export class RefTestSessionLockGQL extends Apollo.Subscription<RefTestSessionLockSubscription, RefTestSessionLockSubscriptionVariables> {
     override document = RefTestSessionLockDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1022,7 +1088,7 @@ export const RefTestTimeExtendedDocument = gql`
   })
   export class RefTestTimeExtendedGQL extends Apollo.Subscription<RefTestTimeExtendedSubscription, RefTestTimeExtendedSubscriptionVariables> {
     override document = RefTestTimeExtendedDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1054,7 +1120,7 @@ export const ApproveRefTestsDocument = gql`
   })
   export class ApproveRefTestsGQL extends Apollo.Mutation<ApproveRefTestsMutation, ApproveRefTestsMutationVariables> {
     override document = ApproveRefTestsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1084,7 +1150,7 @@ export const CreateRefTestsDocument = gql`
   })
   export class CreateRefTestsGQL extends Apollo.Mutation<CreateRefTestsMutation, CreateRefTestsMutationVariables> {
     override document = CreateRefTestsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1114,7 +1180,7 @@ export const DeleteRefTestsDocument = gql`
   })
   export class DeleteRefTestsGQL extends Apollo.Mutation<DeleteRefTestsMutation, DeleteRefTestsMutationVariables> {
     override document = DeleteRefTestsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1143,7 +1209,7 @@ export const ExtendRefTestTimeDocument = gql`
   })
   export class ExtendRefTestTimeGQL extends Apollo.Mutation<ExtendRefTestTimeMutation, ExtendRefTestTimeMutationVariables> {
     override document = ExtendRefTestTimeDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1171,7 +1237,7 @@ export const RegenerateRefTestTokenDocument = gql`
   })
   export class RegenerateRefTestTokenGQL extends Apollo.Mutation<RegenerateRefTestTokenMutation, RegenerateRefTestTokenMutationVariables> {
     override document = RegenerateRefTestTokenDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1202,7 +1268,7 @@ export const RejectRefTestsDocument = gql`
   })
   export class RejectRefTestsGQL extends Apollo.Mutation<RejectRefTestsMutation, RejectRefTestsMutationVariables> {
     override document = RejectRefTestsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1243,7 +1309,7 @@ export const ResetRefTestsDocument = gql`
   })
   export class ResetRefTestsGQL extends Apollo.Mutation<ResetRefTestsMutation, ResetRefTestsMutationVariables> {
     override document = ResetRefTestsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1275,7 +1341,7 @@ export const ReviveRefTestsDocument = gql`
   })
   export class ReviveRefTestsGQL extends Apollo.Mutation<ReviveRefTestsMutation, ReviveRefTestsMutationVariables> {
     override document = ReviveRefTestsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1310,7 +1376,7 @@ export const SendRefTestInvitationsDocument = gql`
   })
   export class SendRefTestInvitationsGQL extends Apollo.Mutation<SendRefTestInvitationsMutation, SendRefTestInvitationsMutationVariables> {
     override document = SendRefTestInvitationsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1332,7 +1398,7 @@ export const SendReportDocument = gql`
   })
   export class SendReportGQL extends Apollo.Mutation<SendReportMutation, SendReportMutationVariables> {
     override document = SendReportDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1367,7 +1433,7 @@ export const SendRefTestResultsDocument = gql`
   })
   export class SendRefTestResultsGQL extends Apollo.Mutation<SendRefTestResultsMutation, SendRefTestResultsMutationVariables> {
     override document = SendRefTestResultsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1412,7 +1478,7 @@ export const UpdateRefTestConfigurationDocument = gql`
   })
   export class UpdateRefTestConfigurationGQL extends Apollo.Mutation<UpdateRefTestConfigurationMutation, UpdateRefTestConfigurationMutationVariables> {
     override document = UpdateRefTestConfigurationDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1444,7 +1510,7 @@ export const UpdateRefTestDetailsDocument = gql`
   })
   export class UpdateRefTestDetailsGQL extends Apollo.Mutation<UpdateRefTestDetailsMutation, UpdateRefTestDetailsMutationVariables> {
     override document = UpdateRefTestDetailsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1471,7 +1537,7 @@ export const UpdateRefTestNotificationSettingsDocument = gql`
   })
   export class UpdateRefTestNotificationSettingsGQL extends Apollo.Mutation<UpdateRefTestNotificationSettingsMutation, UpdateRefTestNotificationSettingsMutationVariables> {
     override document = UpdateRefTestNotificationSettingsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1487,7 +1553,7 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1507,7 +1573,7 @@ export const GetQuestionsByNumberDocument = gql`
   })
   export class GetQuestionsByNumberGQL extends Apollo.Query<GetQuestionsByNumberQuery, GetQuestionsByNumberQueryVariables> {
     override document = GetQuestionsByNumberDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1570,7 +1636,7 @@ export const GetRefTestByIdDocument = gql`
   })
   export class GetRefTestByIdGQL extends Apollo.Query<GetRefTestByIdQuery, GetRefTestByIdQueryVariables> {
     override document = GetRefTestByIdDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1606,7 +1672,7 @@ export const GetRefTestsAllCountsDocument = gql`
   })
   export class GetRefTestsAllCountsGQL extends Apollo.Query<GetRefTestsAllCountsQuery, GetRefTestsAllCountsQueryVariables> {
     override document = GetRefTestsAllCountsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1657,7 +1723,7 @@ export const GetRefTestsDocument = gql`
   })
   export class GetRefTestsGQL extends Apollo.Query<GetRefTestsQuery, GetRefTestsQueryVariables> {
     override document = GetRefTestsDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1686,7 +1752,7 @@ export const GetRefTestTitlesDocument = gql`
   })
   export class GetRefTestTitlesGQL extends Apollo.Query<GetRefTestTitlesQuery, GetRefTestTitlesQueryVariables> {
     override document = GetRefTestTitlesDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1706,7 +1772,7 @@ export const SearchQuestionsByNumberDocument = gql`
   })
   export class SearchQuestionsByNumberGQL extends Apollo.Query<SearchQuestionsByNumberQuery, SearchQuestionsByNumberQueryVariables> {
     override document = SearchQuestionsByNumberDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1780,7 +1846,7 @@ export const RefTestUpdatedDocument = gql`
   })
   export class RefTestUpdatedGQL extends Apollo.Subscription<RefTestUpdatedSubscription, RefTestUpdatedSubscriptionVariables> {
     override document = RefTestUpdatedDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }
@@ -1866,7 +1932,7 @@ export const RefTestsUpdatedDocument = gql`
   })
   export class RefTestsUpdatedGQL extends Apollo.Subscription<RefTestsUpdatedSubscription, RefTestsUpdatedSubscriptionVariables> {
     override document = RefTestsUpdatedDocument;
-
+    
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
     }

@@ -31,9 +31,9 @@ public class ParticipantInputTests
     public void Token_RejectsAMissingToken(string? token) =>
         Assert.Throws<RefTestValidationException>(() => ParticipantInput.Token(token));
 
-    /// <summary>The Token column is 50 characters wide, so anything longer cannot be a real token.</summary>
+    /// <summary>Participant credentials are 32 lowercase hexadecimal characters.</summary>
     [Fact]
-    public void Token_RejectsATokenWiderThanTheColumn() =>
+    public void Token_RejectsATokenWithTheWrongFormat() =>
         Assert.Throws<RefTestValidationException>(() => ParticipantInput.Token(new string('a', 51)));
 
     [Fact]
@@ -42,6 +42,14 @@ public class ParticipantInputTests
         var token = new string('a', 32);
 
         Assert.Equal(token, ParticipantInput.Token(token));
+    }
+
+    [Fact]
+    public void Token_RejectsTheStoredHash()
+    {
+        var storedHash = RefTest.HashToken(new string('a', 32));
+
+        Assert.Throws<RefTestValidationException>(() => ParticipantInput.Token(storedHash));
     }
 
     [Fact]

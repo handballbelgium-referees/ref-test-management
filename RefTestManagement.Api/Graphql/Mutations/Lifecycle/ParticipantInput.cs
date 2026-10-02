@@ -14,9 +14,6 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 /// </remarks>
 internal static class ParticipantInput
 {
-    /// <summary>Matches the <c>Token</c> column width.</summary>
-    private const int MaxTokenLength = 50;
-
     /// <summary>
     /// Answer and question id lists are persisted as a single comma-joined string in a 4000
     /// character column, so the joined value — not just the element count — is what has to fit.
@@ -28,16 +25,15 @@ internal static class ParticipantInput
     private const int MaxLanguageLength = 16;
 
     /// <summary>
-    /// Validates a raw invitation token before it is used to look up a RefTest. Rejecting
-    /// over-long tokens here keeps them from reaching a provider that would otherwise error on a
-    /// value wider than the column.
+    /// Validates a raw invitation token before it is hashed for lookup. The stored digest is not
+    /// a participant credential and therefore cannot be submitted as a token.
     /// </summary>
     internal static string Token(string? token)
     {
         if (string.IsNullOrWhiteSpace(token))
             throw new RefTestValidationException("A token is required.");
 
-        if (token.Length > MaxTokenLength)
+        if (!RefTest.IsValidTokenFormat(token))
             throw new RefTestValidationException("The token is not valid.");
 
         return token;

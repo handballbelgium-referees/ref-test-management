@@ -41,6 +41,17 @@ export class AuditLogTable {
     return this.canLink() && entry.nodeId != null;
   }
 
+  protected getActorTranslationKey(actorName: string): string | null {
+    switch (actorName) {
+      case 'System':
+        return 'audit-logs.actor.system';
+      case 'Verified participant':
+        return 'audit-logs.actor.verifiedParticipant';
+      default:
+        return null;
+    }
+  }
+
   protected async copyToClipboard(text: string, id: string): Promise<void> {
     await navigator.clipboard.writeText(text);
     this._copiedId.set(id);

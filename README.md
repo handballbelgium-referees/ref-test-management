@@ -67,6 +67,8 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 - Participants must accept the current, versioned privacy notice before starting a test
 - Self-service consent withdrawal at any status, using only the invitation token — no identity check needed
+- Verified self-service personal-data exports are emailed as PDF attachments after one-time
+  mailbox confirmation; no login is required
 - Two-step erasure: anonymize (redact PII, keep the audit trail) → permanent delete, available from the admin UI or self-service
 - Automatic retention enforcement with a configurable retention period
 - Full reference: [docs/PRIVACY.md](docs/PRIVACY.md)

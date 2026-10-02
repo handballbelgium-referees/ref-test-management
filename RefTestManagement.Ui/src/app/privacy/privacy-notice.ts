@@ -1,12 +1,13 @@
-import { computed, Component, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { GetPrivacyNoticeGQL } from '../../../graphql/generated';
 import { LocalizedDate } from '../shared/pipes/localized-date';
 
 @Component({
   selector: 'app-privacy-notice',
-  imports: [TranslatePipe],
+  imports: [RouterLink, TranslatePipe],
   providers: [LocalizedDate],
   templateUrl: './privacy-notice.html',
   host: {

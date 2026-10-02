@@ -1,6 +1,8 @@
 ﻿using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -30,7 +32,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 /// </remarks>
 public interface IJobEnqueueService
 {
-    Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null,
+    Task EnqueueInvitationEmailAsync(RefTest refTest, DateTime? executeAfter = null,
         bool saveChanges = true,
         IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
@@ -60,6 +62,16 @@ public interface IJobEnqueueService
         IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
 
+    Task EnqueuePersonalDataExportChallengeEmailAsync(PersonalDataExportChallengeEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
+
+    Task EnqueuePersonalDataExportDeliveryEmailAsync(PersonalDataExportDeliveryEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default);
+
     Task CancelPendingJobsForRefTestAsync(Guid refTestId,
         bool saveChanges = true, IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default);
@@ -69,7 +81,10 @@ public interface IJobEnqueueService
         CancellationToken cancellationToken = default);
 }
 
-public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqueueService> logger)
+public class JobEnqueueService(
+    RefTestManagementContext context,
+    IRefTestInvitationTokenProtection tokenProtection,
+    ILogger<JobEnqueueService> logger)
     : IJobEnqueueService
 {
     private readonly JsonSerializerOptions _jsonOptions = new()
@@ -81,12 +96,21 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
     private IJobPersistenceContext ResolveContext(IJobPersistenceContext? unitOfWorkContext) =>
         unitOfWorkContext ?? context;
 
-    public async Task EnqueueInvitationEmailAsync(InvitationEmailPayload payload, DateTime? executeAfter = null,
+    public async Task EnqueueInvitationEmailAsync(RefTest refTest, DateTime? executeAfter = null,
         bool saveChanges = true,
         IJobPersistenceContext? unitOfWorkContext = null,
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
+        var token = refTest.GetIssuedToken();
+        refTest.StoreProtectedInvitationToken(tokenProtection.Protect(token));
+        var payload = new InvitationEmailPayload(
+            refTest.Id,
+            refTest.FullName,
+            refTest.Email,
+            refTest.Token,
+            refTest.NumberOfQuestions,
+            refTest.MaxTimeInMinutes);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
         var job = Job.Create(JobType.InvitationEmail, payloadJson, executeAfter);
 
@@ -94,7 +118,7 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
         if (saveChanges)
             await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
-        ServiceLoggerMessages.LogEnqueuedInvitationEmail(logger, job.Id, payload.RefTestId);
+        ServiceLoggerMessages.LogEnqueuedInvitationEmail(logger, job.Id, refTest.Id);
     }
 
     public async Task EnqueueResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter = null,
@@ -177,6 +201,40 @@ public class JobEnqueueService(RefTestManagementContext context, ILogger<JobEnqu
             await dbContext.SaveChangesWithRetryAsync(cancellationToken);
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.ApprovalDecisionEmail, job.Id);
+    }
+
+    public async Task EnqueuePersonalDataExportChallengeEmailAsync(
+        PersonalDataExportChallengeEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
+    {
+        var dbContext = ResolveContext(unitOfWorkContext);
+        var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
+        var job = Job.Create(JobType.PersonalDataExportChallengeEmail, payloadJson);
+
+        dbContext.Jobs.Add(job);
+        if (saveChanges)
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
+
+        ServiceLoggerMessages.LogJobEnqueued(logger, JobType.PersonalDataExportChallengeEmail, job.Id);
+    }
+
+    public async Task EnqueuePersonalDataExportDeliveryEmailAsync(
+        PersonalDataExportDeliveryEmailPayload payload,
+        bool saveChanges = true,
+        IJobPersistenceContext? unitOfWorkContext = null,
+        CancellationToken cancellationToken = default)
+    {
+        var dbContext = ResolveContext(unitOfWorkContext);
+        var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
+        var job = Job.Create(JobType.PersonalDataExportDeliveryEmail, payloadJson);
+
+        dbContext.Jobs.Add(job);
+        if (saveChanges)
+            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
+
+        ServiceLoggerMessages.LogJobEnqueued(logger, JobType.PersonalDataExportDeliveryEmail, job.Id);
     }
 
     public async Task CancelPendingJobsForRefTestAsync(Guid refTestId,

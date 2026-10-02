@@ -52,6 +52,13 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
     "NoticeEffectiveDate": "2026-08-03",
     "RetentionYears": 3
   },
+  "PersonalDataExportConfiguration": {
+    "KeyLifetimeHours": 24,
+    "RateLimitWindowSeconds": 60,
+    "RequestRateLimitPermitLimit": 5,
+    "ConfirmationRateLimitPermitLimit": 10,
+    "CleanupIntervalMinutes": 15
+  },
   "RefTestExpirationConfiguration": {
     "ExpirationCheckIntervalMinutes": 5,
     "StartupDelaySeconds": 30,
@@ -174,6 +181,25 @@ The Management API credentials are used by `RefTestManagement.Auth0` to sync per
 | `RetentionYears`      | Years to retain completed/expired RefTests before automatic anonymization | `3`     |
 
 See [docs/PRIVACY.md](PRIVACY.md) for how retention and erasure actually work.
+
+### PersonalDataExportConfiguration
+
+Controls public personal-data export verification. For example, `PersonalDataExportConfiguration:KeyLifetimeHours`
+(environment variable `PersonalDataExportConfiguration__KeyLifetimeHours`) sets how long an emailed
+verification key remains valid. The API validates these values at startup and rejects invalid
+configuration.
+
+| Key                                | Description                                                     | Default | Validation                    |
+| ---------------------------------- | --------------------------------------------------------------- | ------- | ----------------------------- |
+| `KeyLifetimeHours`                 | Lifetime of a mailbox-verification key, in hours                | `24`    | `1` through `168`, inclusive  |
+| `RateLimitWindowSeconds`           | Fixed-window duration for each public export operation          | `60`    | Positive integer              |
+| `RequestRateLimitPermitLimit`      | Request challenges allowed per client address per window        | `5`     | Positive integer              |
+| `ConfirmationRateLimitPermitLimit` | Confirmation attempts allowed per client address per window    | `10`    | Positive integer              |
+| `CleanupIntervalMinutes`           | Interval for clearing expired, unverified challenge data        | `15`    | Positive integer              |
+
+Expired, unverified challenges have their recipient and key data cleared by the background
+cleanup service; their request rows remain as non-identifying lifecycle metadata. See
+[docs/PRIVACY.md](PRIVACY.md) for the export flow, audit lifecycle, and provider-retention limits.
 
 ### RefTestExpirationConfiguration
 

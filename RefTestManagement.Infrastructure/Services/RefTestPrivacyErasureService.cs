@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Handball.Belgium.RefTestManagement.AuditLog;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.EntityFrameworkCore;
@@ -73,6 +75,11 @@ public interface IRefTestPrivacyErasureService
 
 public sealed class RefTestPrivacyErasureService(RefTestManagementContext context) : IRefTestPrivacyErasureService
 {
+    private static readonly JsonSerializerOptions JobPayloadOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
+
     /// <summary>
     /// Event types raised for anonymous, token-based participant actions (see
     /// <see cref="AuditSaveChangesInterceptor"/>), whose ActorName/ActorEmail are attributed to
@@ -173,6 +180,8 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
     /// </summary>
     private async Task EraseCoreAsync(RefTest refTest, ErasureInitiator initiator, CancellationToken ct)
     {
+        var erasedParticipantEmail = refTest.Email;
+
         // The anonymization event is attributed to whoever triggered the erasure. For the
         // participant's own withdraw-consent request that is the RefTest holder — by the time
         // the event is written, Anonymize() has already replaced the name and email in memory,
@@ -198,6 +207,8 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         refTest.Anonymize();
         await context.SaveChangesAsync(ct);
 
+        await ClearExportRequestsForErasedParticipantAsync(erasedParticipantEmail, ct);
+
         var auditEvents = await context.AuditEvents
             .Where(e => e.StreamId == refTestId)
             .ToListAsync(ct);
@@ -221,6 +232,56 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         }
 
         await context.SaveChangesAsync(ct);
+    }
+
+    private async Task ClearExportRequestsForErasedParticipantAsync(string participantEmail, CancellationToken ct)
+    {
+        var normalizedEmail = participantEmail.ToUpperInvariant();
+        var requests = await context.PersonalDataExportRequests
+            .Where(request => request.Email != string.Empty && request.Email.ToUpper() == normalizedEmail)
+            .ToListAsync(ct);
+        if (requests.Count == 0)
+            return;
+
+        // An export request covers all records for this mailbox. Erasing any one record
+        // invalidates the pending snapshot so a delivery worker cannot send pre-erasure data.
+        var requestIds = requests.Select(request => request.Id).ToHashSet();
+        foreach (var request in requests)
+            request.ClearForPrivacyErasure();
+
+        // Both export jobs carry only the request ID. Cancel them as part of the same unit of
+        // work so an erasure cannot leave a retryable challenge or data delivery behind.
+        var exportJobs = await context.Jobs
+            .Where(job => (job.JobType == JobType.PersonalDataExportChallengeEmail
+                           || job.JobType == JobType.PersonalDataExportDeliveryEmail)
+                          && (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing))
+            .ToListAsync(ct);
+
+        foreach (var job in exportJobs)
+        {
+            if (string.IsNullOrEmpty(job.Payload))
+                continue;
+
+            try
+            {
+                var requestId = job.JobType switch
+                {
+                    JobType.PersonalDataExportChallengeEmail =>
+                        JsonSerializer.Deserialize<PersonalDataExportChallengeEmailPayload>(
+                            job.Payload, JobPayloadOptions)?.RequestId,
+                    JobType.PersonalDataExportDeliveryEmail =>
+                        JsonSerializer.Deserialize<PersonalDataExportDeliveryEmailPayload>(
+                            job.Payload, JobPayloadOptions)?.RequestId,
+                    _ => null
+                };
+                if (requestId.HasValue && requestIds.Contains(requestId.Value))
+                    job.Cancel("Participant personal data was erased");
+            }
+            catch (JsonException)
+            {
+                // An unrelated malformed job must not prevent this erasure from completing.
+            }
+        }
     }
 
     private async Task<List<Job>> FindCancellableJobsAsync(Guid refTestId, CancellationToken ct)

@@ -32,6 +32,12 @@ public interface IEmailTemplateService
         string? rejectionReason,
         string? titleValue,
         List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems);
+
+    Task<string> BuildCompletePersonalDataExportVerificationEmailAsync(
+        List<LanguageContent> enabledLanguages);
+
+    Task<string> BuildCompletePersonalDataExportDeliveryEmailAsync(
+        List<LanguageContent> enabledLanguages);
 }
 
 public record LanguageContent(
@@ -106,6 +112,51 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
         var languageSections = BuildAllApprovalDecisionLanguageSections(
             enabledLanguages, approverName, isApproved, rejectionReason, titleValue, refTestItems);
         return BuildApprovalDecisionEmail(logoTag, languageSections);
+    }
+
+    public async Task<string> BuildCompletePersonalDataExportVerificationEmailAsync(
+        List<LanguageContent> enabledLanguages)
+    {
+        var logoTag = await CreateLogoImageTag();
+        var languageSections = BuildAllPersonalDataExportVerificationLanguageSections(enabledLanguages);
+        return $@"<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>
+<body style='margin: 0; padding: 24px; background-color: #f5f5f5; font-family: Arial, sans-serif;'>
+    <div style='max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;'>
+        <div style='background-color: #e30613; padding: 24px; text-align: center;'>
+            {logoTag}
+            <h1 style='color: #ffffff; margin: 8px 0 0;'>RefTest</h1>
+        </div>
+        <div style='padding: 24px; color: #374151;'>
+            {languageSections}
+        </div>
+    </div>
+</body>
+</html>";
+    }
+
+    public async Task<string> BuildCompletePersonalDataExportDeliveryEmailAsync(
+        List<LanguageContent> enabledLanguages)
+    {
+        var logoTag = await CreateLogoImageTag();
+        var languageSections = BuildAllPersonalDataExportDeliveryLanguageSections(enabledLanguages);
+
+        return $@"<!DOCTYPE html>
+<html>
+<head><meta charset='UTF-8'><meta name='viewport' content='width=device-width, initial-scale=1'></head>
+<body style='margin: 0; padding: 24px; background-color: #f5f5f5; font-family: Arial, sans-serif;'>
+    <div style='max-width: 640px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden;'>
+        <div style='background-color: #e30613; padding: 24px; text-align: center;'>
+            {logoTag}
+            <h1 style='color: #ffffff; margin: 8px 0 0;'>RefTest</h1>
+        </div>
+        <div style='padding: 24px; color: #374151;'>
+            {languageSections}
+        </div>
+    </div>
+</body>
+</html>";
     }
 
     private async Task<string> CreateLogoImageTag()
@@ -517,6 +568,74 @@ public class EmailTemplateService(ILogoService logoService) : IEmailTemplateServ
                 <div style='text-align: center; color: #737373; font-size: 13px; padding: 12px 0;'>
                     <p style='margin: 0;'>{System.Web.HttpUtility.HtmlEncode(t["footerNote"])}</p>
                 </div>
+            </div>{separator}";
+    }
+
+    private static string BuildAllPersonalDataExportVerificationLanguageSections(
+        List<LanguageContent> enabledLanguages)
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < enabledLanguages.Count; i++)
+        {
+            sb.Append(BuildPersonalDataExportVerificationLanguageSection(
+                enabledLanguages[i],
+                isLast: i == enabledLanguages.Count - 1));
+        }
+        return sb.ToString();
+    }
+
+    private static string BuildAllPersonalDataExportDeliveryLanguageSections(
+        List<LanguageContent> enabledLanguages)
+    {
+        var sb = new StringBuilder();
+        for (var i = 0; i < enabledLanguages.Count; i++)
+        {
+            sb.Append(BuildPersonalDataExportDeliveryLanguageSection(
+                enabledLanguages[i].Translations,
+                isLast: i == enabledLanguages.Count - 1));
+        }
+        return sb.ToString();
+    }
+
+    private static string BuildPersonalDataExportVerificationLanguageSection(
+        LanguageContent languageContent,
+        bool isLast)
+    {
+        var translations = languageContent.Translations;
+        var safeUrl = System.Web.HttpUtility.HtmlEncode(languageContent.RefTestUrl);
+        var separator = isLast
+            ? ""
+            : @"
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
+
+        return $@"
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2>{System.Web.HttpUtility.HtmlEncode(translations["heading"])}</h2>
+                <p>{System.Web.HttpUtility.HtmlEncode(translations["introText"])}</p>
+                <div style='text-align: center; margin: 28px 0;'>
+                    <a href='{safeUrl}' style='background-color: #e30613; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; display: inline-block; font-weight: bold;'>
+                        {System.Web.HttpUtility.HtmlEncode(translations["confirmButton"])}
+                    </a>
+                </div>
+                <p>{System.Web.HttpUtility.HtmlEncode(translations["expiryNote"])}</p>
+                <p style='color: #737373; font-size: 14px;'>{System.Web.HttpUtility.HtmlEncode(translations["ignoreNote"])}</p>
+                <p style='font-size: 12px; color: #737373; overflow-wrap: anywhere;'>{safeUrl}</p>
+            </div>{separator}";
+    }
+
+    private static string BuildPersonalDataExportDeliveryLanguageSection(
+        IReadOnlyDictionary<string, string> translations,
+        bool isLast)
+    {
+        var separator = isLast
+            ? ""
+            : @"
+            <hr style='border: none; border-top: 1px solid #e5e5e5; margin: 30px 0;' />";
+
+        return $@"
+            <div style='padding: 0; margin-bottom: 20px;'>
+                <h2>{System.Web.HttpUtility.HtmlEncode(translations["heading"])}</h2>
+                <p>{System.Web.HttpUtility.HtmlEncode(translations["body"])}</p>
             </div>{separator}";
     }
 

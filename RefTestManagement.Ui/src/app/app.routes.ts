@@ -2,12 +2,28 @@ import { Routes } from '@angular/router';
 import { authGuard } from './auth/guards/auth-guard';
 import { permissionGuard } from './auth/guards/permission-guard';
 import { Permissions } from './auth/models/permissions';
+import { personalDataExportConfirmationGuard } from './privacy/guards/personal-data-export-confirmation.guard';
 import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 
 export const routes: Routes = [
   {
     path: '',
     loadComponent: () => import('./home/home').then((m) => m.Home),
+  },
+  {
+    path: 'privacy/export-request',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./privacy/personal-data-export-request').then((m) => m.PersonalDataExportRequest),
+  },
+  {
+    path: 'privacy/export-confirmation',
+    pathMatch: 'full',
+    canActivate: [personalDataExportConfirmationGuard],
+    loadComponent: () =>
+      import('./privacy/personal-data-export-confirmation').then(
+        (m) => m.PersonalDataExportConfirmation,
+      ),
   },
   {
     path: 'privacy',

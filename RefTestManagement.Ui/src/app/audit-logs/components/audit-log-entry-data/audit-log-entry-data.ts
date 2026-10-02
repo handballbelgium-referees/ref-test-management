@@ -53,12 +53,17 @@ export class AuditLogEntryData {
     );
   }
 
-  protected formatValue(value: unknown): string {
+  protected formatValue(value: unknown, property: string): string {
     if (value === null || value === undefined) return '';
     if (typeof value === 'boolean') {
       return this._translate.instant(value ? 'common.yes' : 'common.no');
     }
     const str = String(value);
+    if (property === 'failureCode') {
+      const translationKey = `audit-logs.failureCode.${str}`;
+      const translated = this._translate.instant(translationKey);
+      if (translated !== translationKey) return translated;
+    }
     if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(str)) {
       return this._localizedDate.transform(str, 'dd/MM/yyyy HH:mm:ss') ?? str;
     }

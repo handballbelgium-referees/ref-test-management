@@ -10,5 +10,7 @@ public enum JobType
     ReportEmail,
     RefTestExpiration,
     ApprovalNotificationEmail,
-    ApprovalDecisionEmail
+    ApprovalDecisionEmail,
+    PersonalDataExportChallengeEmail,
+    PersonalDataExportDeliveryEmail
 }

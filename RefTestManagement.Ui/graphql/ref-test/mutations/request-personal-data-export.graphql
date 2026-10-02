@@ -1,0 +1,7 @@
+mutation RequestPersonalDataExport($input: RequestPersonalDataExportInput!) {
+  requestPersonalDataExport(input: $input) {
+    personalDataExportRequestAcknowledgement {
+      acknowledged
+    }
+  }
+}

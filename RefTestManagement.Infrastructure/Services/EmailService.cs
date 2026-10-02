@@ -40,6 +40,18 @@ public interface IEmailService
         string? titleValue,
         List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         CancellationToken cancellationToken);
+
+    Task SendPersonalDataExportVerificationAsync(
+        string recipientEmail,
+        string challengeKey,
+        DateTime expiresAt,
+        CancellationToken cancellationToken);
+
+    Task<bool> SendPersonalDataExportAsync(
+        string recipientEmail,
+        IReadOnlyList<EmailAttachment> attachments,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
+        CancellationToken cancellationToken);
 }
 
 public class EmailService(
@@ -54,6 +66,10 @@ public class EmailService(
     HttpClient httpClient)
     : IEmailService
 {
+    private const int MaxProviderRequestBytes = 20 * 1024 * 1024;
+    private const int ProviderRequestHeadroomBytes = 256 * 1024;
+    private const int MaxPersonalDataExportAttachments = 10;
+
     // Compiled regex for performance (allocated once)
     private static readonly Regex HtmlTagRegex = new("<[^>]*>", RegexOptions.Compiled);
     private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
@@ -114,18 +130,25 @@ public class EmailService(
     }
 
 
-    private async Task SendEmailAsync(string toEmail, string subject, string body,
+    private async Task<bool> SendEmailAsync(string toEmail, string subject, string body,
         List<EmailAttachment>? attachments = null, bool scheduleEmail = false,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        bool requireSuccessfulProviderResponse = false,
+        bool suppressFailureDetails = false,
+        string? suppressedFailureLabel = null,
+        Func<CancellationToken, Task<bool>>? finalDeliverabilityCheck = null)
     {
         ServiceLoggerMessages.LogSendingEmail(logger, LogRedaction.MaskEmail(toEmail), subject);
 
         if (string.IsNullOrWhiteSpace(configuration.BrevoApiKey))
         {
             ServiceLoggerMessages.LogApiKeyNotConfigured(logger);
-            return;
+            if (requireSuccessfulProviderResponse)
+                throw new InvalidOperationException("The email provider is not configured.");
+            return false;
         }
 
+        var finalDeliverabilityCheckCompleted = false;
         try
         {
             // Create a plain text version using cached compiled regex
@@ -158,27 +181,66 @@ public class EmailService(
             };
 
             var jsonContent = JsonSerializer.Serialize(emailData);
-            var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
+            using var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
             var brevoUrl = $"{configuration.BrevoApiUrl}/smtp/email";
+
+            // Export delivery is revalidated after all message and attachment preparation, just
+            // before the provider handoff. No database transaction or lock spans the network call.
+            if (finalDeliverabilityCheck is not null)
+            {
+                var isStillDeliverable = await finalDeliverabilityCheck(cancellationToken);
+                finalDeliverabilityCheckCompleted = true;
+                if (!isStillDeliverable)
+                    return false;
+            }
+
             var response = await httpClient.PostAsync(brevoUrl, content, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
                 ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(toEmail));
+                return true;
             }
-            else
+
+            if (requireSuccessfulProviderResponse)
             {
-                var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+                // A provider response may echo the message body, including the one-time key
+                // in its URL fragment. Never log that body for verification mail.
                 ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
-                    (int)response.StatusCode, LogRedaction.MaskEmailsInText(responseBody) ?? string.Empty);
+                    (int)response.StatusCode, string.Empty);
+                throw new EmailException(toEmail);
             }
+
+            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
+                (int)response.StatusCode, LogRedaction.MaskEmailsInText(responseBody) ?? string.Empty);
+            return false;
+        }
+        catch (OperationCanceledException) when (
+            finalDeliverabilityCheck is not null
+            && !finalDeliverabilityCheckCompleted
+            && cancellationToken.IsCancellationRequested)
+        {
+            // The job handler relies on cancellation during the final database check to keep its
+            // retry lease instead of recording a provider failure.
+            throw;
         }
         catch (Exception ex)
         {
             // The provider's client can surface the rejected address in its exception text, and
             // that text is outside the privacy erasure path once a log sink has it.
-            ServiceLoggerMessages.LogEmailError(logger, LogRedaction.MaskEmails(ex), LogRedaction.MaskEmail(toEmail));
+            if (suppressFailureDetails)
+            {
+                logger.LogError("{EmailContext} email delivery failed for recipient {Recipient}",
+                    suppressedFailureLabel ?? "Verification",
+                    LogRedaction.MaskEmail(toEmail));
+            }
+            else
+            {
+                ServiceLoggerMessages.LogEmailError(logger, LogRedaction.MaskEmails(ex), LogRedaction.MaskEmail(toEmail));
+            }
+
             throw new EmailException(toEmail);
         }
     }
@@ -258,6 +320,82 @@ public class EmailService(
         await SendEmailAsync(creatorEmail, subject, emailBody, cancellationToken: cancellationToken);
 
         ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(creatorEmail));
+    }
+
+    public async Task SendPersonalDataExportVerificationAsync(
+        string recipientEmail,
+        string challengeKey,
+        DateTime expiresAt,
+        CancellationToken cancellationToken)
+    {
+        if (!Uri.TryCreate(configuration.BaseUrl, UriKind.Absolute, out var baseUri)
+            || baseUri.Scheme is not ("http" or "https"))
+            throw new InvalidOperationException("The application base URL is not configured.");
+
+        var remainingHours = Math.Max(1, (int)Math.Ceiling((expiresAt - DateTime.UtcNow).TotalHours));
+        var enabledLanguages = languageConfiguration.EnabledLanguages
+            .Select(language =>
+            {
+                var translations = new Dictionary<string, string>(
+                    translationService.GetEmailPersonalDataExportVerificationTranslations(language));
+                translations["expiryNote"] = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    translations["expiryNote"],
+                    remainingHours);
+
+                var confirmationUrl =
+                    $"{configuration.BaseUrl.TrimEnd('/')}/privacy/export-confirmation?lang={Uri.EscapeDataString(language)}#{Uri.EscapeDataString(challengeKey)}";
+                return new LanguageContent(confirmationUrl, translations);
+            })
+            .ToList();
+        var emailBody = await templateService.BuildCompletePersonalDataExportVerificationEmailAsync(
+            enabledLanguages);
+
+        await SendEmailAsync(
+            recipientEmail,
+            translationService.GetEmailPersonalDataExportVerificationTranslations("en")["subject"],
+            emailBody,
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true,
+            suppressFailureDetails: true);
+    }
+
+    public async Task<bool> SendPersonalDataExportAsync(
+        string recipientEmail,
+        IReadOnlyList<EmailAttachment> attachments,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
+        CancellationToken cancellationToken)
+    {
+        var encodedAttachmentsBytes = attachments.Sum(attachment =>
+            ((long)attachment.Content.Length + 2) / 3 * 4);
+
+        if (attachments.Count == 0
+            || attachments.Count > MaxPersonalDataExportAttachments
+            || attachments.Any(attachment =>
+                attachment.Content.Length > PersonalDataExportPdfService.MaxPartBytes)
+            || encodedAttachmentsBytes > MaxProviderRequestBytes - ProviderRequestHeadroomBytes)
+        {
+            throw new PersonalDataExportSizeLimitException();
+        }
+
+        var enabledLanguages = languageConfiguration.EnabledLanguages
+            .Select(language => new LanguageContent(
+                string.Empty,
+                translationService.GetEmailPersonalDataExportDeliveryTranslations(language)))
+            .ToList();
+        var emailBody = await templateService.BuildCompletePersonalDataExportDeliveryEmailAsync(
+            enabledLanguages);
+
+        return await SendEmailAsync(
+            recipientEmail,
+            translationService.GetEmailPersonalDataExportDeliveryTranslations("en")["subject"],
+            emailBody,
+            attachments.ToList(),
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true,
+            suppressFailureDetails: true,
+            suppressedFailureLabel: "Personal-data export",
+            finalDeliverabilityCheck: finalDeliverabilityCheck);
     }
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)

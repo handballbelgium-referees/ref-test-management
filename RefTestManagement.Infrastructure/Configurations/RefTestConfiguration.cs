@@ -39,7 +39,11 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 
         builder.Property(x => x.Token)
             .IsRequired()
-            .HasMaxLength(50);
+            .HasMaxLength(64);
+
+        builder.Property(x => x.ProtectedInvitationToken)
+            .IsRequired(false)
+            .HasMaxLength(2048);
 
         builder.HasIndex(x => x.Token)
             .IsUnique();
