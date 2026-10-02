@@ -185,7 +185,13 @@ export const appConfig: ApplicationConfig = {
         // The operation name is safe to record because it is developer-authored. The error itself
         // is not, so it goes through ErrorReporter, which withholds the contents in production.
         const errorLink = new ErrorLink(({ error, operation }) => {
-          reporter.report(`graphql:${operation.operationName ?? 'anonymous'}`, error);
+          const containsWithdrawalCredentials =
+            operation.operationName === 'RequestPrivacyWithdrawal' ||
+            operation.operationName === 'ConfirmPrivacyWithdrawal';
+          const reportedError = containsWithdrawalCredentials
+            ? new Error('Privacy withdrawal operation failed.')
+            : error;
+          reporter.report(`graphql:${operation.operationName ?? 'anonymous'}`, reportedError);
         });
 
         // Split link: use SSE for subscriptions, http (with retry) for everything else

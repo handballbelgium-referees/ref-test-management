@@ -21,6 +21,11 @@ describe('AuditLogFilter', () => {
             PersonalDataExportRequestVerified: 'Email address verified',
             PersonalDataExportDelivered: 'Export email sent',
             PersonalDataExportDeliveryFailed: 'Export delivery failed',
+            PrivacyWithdrawalChallengeCreated: 'Withdrawal request recorded',
+            PrivacyWithdrawalChallengeEmailDelivered: 'Withdrawal verification email sent',
+            PrivacyWithdrawalChallengeEmailDeliveryFailed: 'Withdrawal verification email failed',
+            PrivacyWithdrawalBatchConfirmed: 'Withdrawal processing queued',
+            PrivacyWithdrawalBatchCompleted: 'Withdrawal batch processing completed',
           },
           filter: {
             typeLabel: 'Event type',
@@ -62,6 +67,36 @@ describe('AuditLogFilter', () => {
         'Email address verified',
         'Export email sent',
         'Export delivery failed',
+      ]),
+    );
+  });
+
+  it('offers privacy-withdrawal event types for filtering with localized labels', () => {
+    const fixture: ComponentFixture<AuditLogFilter> = TestBed.createComponent(AuditLogFilter);
+    fixture.detectChanges();
+
+    const select = fixture.nativeElement.querySelector(
+      'select[title="Event type"]',
+    ) as HTMLSelectElement;
+    const options = Array.from(select.options);
+    const values = options.map((option) => option.value);
+
+    expect(values).toEqual(
+      expect.arrayContaining([
+        'PrivacyWithdrawalChallengeCreated',
+        'PrivacyWithdrawalChallengeEmailDelivered',
+        'PrivacyWithdrawalChallengeEmailDeliveryFailed',
+        'PrivacyWithdrawalBatchConfirmed',
+        'PrivacyWithdrawalBatchCompleted',
+      ]),
+    );
+    expect(options.map((option) => option.textContent?.trim())).toEqual(
+      expect.arrayContaining([
+        'Withdrawal request recorded',
+        'Withdrawal verification email sent',
+        'Withdrawal verification email failed',
+        'Withdrawal processing queued',
+        'Withdrawal batch processing completed',
       ]),
     );
   });

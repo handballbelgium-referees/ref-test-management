@@ -1,0 +1,7 @@
+mutation ConfirmPrivacyWithdrawal($input: ConfirmPrivacyWithdrawalInput!) {
+  confirmPrivacyWithdrawal(input: $input) {
+    privacyWithdrawalConfirmationResult {
+      accepted
+    }
+  }
+}

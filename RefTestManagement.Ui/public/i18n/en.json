@@ -722,6 +722,26 @@
       "confirming": "Confirming your request...",
       "confirmed": "Your request is confirmed. A PDF copy of your personal data will be emailed to you.",
       "confirmationError": "We could not confirm this request. The link may be invalid or expired. Please request a new link and try again."
+    },
+    "consentWithdrawal": {
+      "title": "Withdraw consent and request anonymization",
+      "description": "Enter the email address associated with your participation. If one or more non-anonymized participant records match, a one-time confirmation link will be sent to that address. You do not need an account or invitation token.",
+      "requestLink": "Open the withdrawal request form",
+      "emailLabel": "Email address",
+      "emailHelp": "The same acknowledgement is shown for every address. After you confirm, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. This is not immediate.",
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter a valid email address.",
+      "requestButton": "Send withdrawal request",
+      "requesting": "Sending your request...",
+      "requestAcknowledged": "If the address is associated with a participant record, a confirmation email will be sent. This page shows the same acknowledgement whether or not a record matches. After you confirm the withdrawal of consent, identifying data will be anonymized once processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
+      "requestError": "We could not process your request. Please try again.",
+      "confirmationTitle": "Confirm withdrawal of consent",
+      "confirmationDescription": "Opening this page does not confirm the request. Select the button below only if you want to withdraw your consent. After confirmation, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmButton": "Confirm withdrawal",
+      "confirming": "Confirming your withdrawal request...",
+      "confirmed": "Your consent withdrawal has been confirmed. Identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmationError": "We could not confirm this request. The link may be invalid, expired, or already used. Request a new link if needed; no participant information is shown here.",
+      "confirmationKeyMissing": "This link does not contain confirmation information. Request a new link from the privacy notice."
     }
   },
   "audit-logs": {
@@ -781,6 +801,11 @@
       "PersonalDataExportRequestVerified": "Email address verified",
       "PersonalDataExportDelivered": "Export email sent",
       "PersonalDataExportDeliveryFailed": "Export delivery failed",
+      "PrivacyWithdrawalChallengeCreated": "Withdrawal challenge requested",
+      "PrivacyWithdrawalChallengeEmailDelivered": "Withdrawal verification email sent",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Withdrawal verification email failed",
+      "PrivacyWithdrawalBatchConfirmed": "Withdrawal processing queued",
+      "PrivacyWithdrawalBatchCompleted": "Withdrawal batch processing completed",
       "EntityCreated": "Created",
       "EntityModified": "Modified",
       "EntityDeleted": "Deleted"
@@ -793,7 +818,9 @@
     "entityType": {
       "RefTest": "RefTest",
       "RefTestTitle": "RefTest Title",
-      "PersonalDataExportRequest": "Data export request"
+      "PersonalDataExportRequest": "Data export request",
+      "PrivacyWithdrawalChallenge": "Withdrawal verification challenge",
+      "PrivacyWithdrawalBatch": "Consent withdrawal batch"
     },
     "sort": {
       "title": "Sorting",

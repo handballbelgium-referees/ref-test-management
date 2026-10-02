@@ -73,6 +73,12 @@ describe('PrivacyNotice', () => {
               'Enter the email address associated with your participation. If it matches a participant record, we will send a confirmation link to that address.',
             requestLink: 'Open the request form',
           },
+          consentWithdrawal: {
+            title: 'Withdraw consent and request anonymization',
+            description:
+              'No account or invitation token is needed. After confirmation, identifying data will be anonymized when processing succeeds; an anonymized record may be kept for audit purposes.',
+            requestLink: 'Open the withdrawal request form',
+          },
         },
       },
       true,
@@ -125,5 +131,18 @@ describe('PrivacyNotice', () => {
     expect(
       fixture.nativeElement.querySelector('#privacy-data-export-confirmation-title'),
     ).toBeNull();
+  });
+
+  it('links to a public withdrawal request form and preserves the selected locale', async () => {
+    const fixture = await renderPrivacyNotice();
+    const withdrawalLink = fixture.debugElement.queryAll(By.directive(RouterLink)).find((link) =>
+      link.nativeElement.getAttribute('href')?.includes('/privacy/withdrawal-request'),
+    );
+
+    if (!withdrawalLink) throw new Error('The consent withdrawal request link was not rendered.');
+
+    expect(withdrawalLink.nativeElement.textContent).toContain('Open the withdrawal request form');
+    expect(withdrawalLink.injector.get(RouterLink).queryParamsHandling).toBe('preserve');
+    expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
 });

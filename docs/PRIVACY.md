@@ -90,15 +90,26 @@ If any RefTest for the matching email is erased before an export is complete, th
 
 ### Self-service email-verified withdrawal of consent
 
-In addition to the invitation-token flow below, the public GraphQL mutations
-`requestPrivacyWithdrawal` and `confirmPrivacyWithdrawal` support mailbox-verified withdrawal
-without an account or invitation token. The request mutation's `input` field contains the email
-address within a nested `input` object; the confirmation mutation's input contains the one-time
-key. The request trims and
-case-insensitively matches the address against non-anonymized RefTests, and returns the same
+In addition to the invitation-token flow below, the public self-service form linked from `/privacy`
+is available at `/privacy/withdrawal-request`. It uses the GraphQL mutations
+`requestPrivacyWithdrawal` and `confirmPrivacyWithdrawal` for mailbox-verified withdrawal without
+an account or invitation token. The request operation wraps the email address in its `input`
+object, and the confirmation operation wraps the one-time key in its `input` object. The request
+trims and case-insensitively matches the address
+against non-anonymized RefTests, and returns the same
 `privacyWithdrawalRequestAcknowledgement.acknowledged: true` response whether or not anything
 matches. Only a matching address is queued for a one-time verification email. The response never
 includes RefTest records or participant details.
+Challenge and batch audit events contain only matching/target counts and delivery-attempt details;
+they do not contain the recipient address or raw one-time key.
+
+Each enabled-language section of the verification email links to
+`/privacy/withdrawal-confirmation?lang=<language>#<key>`. Opening the link only renders a
+confirmation prompt: the client immediately removes the fragment from the visible address bar and
+browser history, preserves the language query, and sends the key to the server only after the
+participant explicitly selects Confirm. Email scanners and prefetchers therefore do not confirm
+the request. The UI makes no participant lookup and does not reveal whether the submitted address
+matched a record.
 
 The server accepts an unexpired, unused key only once and commits any required batch targets and
 durable worker job before returning

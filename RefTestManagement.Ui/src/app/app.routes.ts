@@ -26,6 +26,20 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'privacy/withdrawal-request',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./privacy/privacy-withdrawal-request').then((m) => m.PrivacyWithdrawalRequest),
+  },
+  {
+    path: 'privacy/withdrawal-confirmation',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./privacy/privacy-withdrawal-confirmation').then(
+        (m) => m.PrivacyWithdrawalConfirmation,
+      ),
+  },
+  {
     path: 'privacy',
     loadComponent: () => import('./privacy/privacy-notice').then((m) => m.PrivacyNotice),
   },

@@ -59,6 +59,10 @@ export type ConfirmPersonalDataExportInput = {
   key: string;
 };
 
+export type ConfirmPrivacyWithdrawalInput = {
+  key: string;
+};
+
 export type CreateRefTestsInput = {
   maxTimeInMinutes: number;
   numberOfQuestions: number;
@@ -141,6 +145,10 @@ export type LongOperationFilterInput = {
 };
 
 export type PersonalDataExportRequestInput = {
+  email: string;
+};
+
+export type PrivacyWithdrawalRequestInput = {
   email: string;
 };
 
@@ -292,6 +300,10 @@ export type RequestPersonalDataExportInput = {
   input: PersonalDataExportRequestInput;
 };
 
+export type RequestPrivacyWithdrawalInput = {
+  input: PrivacyWithdrawalRequestInput;
+};
+
 export type ResetRefTestsInput = {
   ids: Array<string | number>;
   regenerateToken: boolean;
@@ -431,12 +443,26 @@ export type ConfirmPersonalDataExportMutationVariables = Exact<{
 
 export type ConfirmPersonalDataExportMutation = { confirmPersonalDataExport: { personalDataExportConfirmationResult: { confirmed: boolean } | null } };
 
+export type ConfirmPrivacyWithdrawalMutationVariables = Exact<{
+  input: ConfirmPrivacyWithdrawalInput;
+}>;
+
+
+export type ConfirmPrivacyWithdrawalMutation = { confirmPrivacyWithdrawal: { privacyWithdrawalConfirmationResult: { accepted: boolean } | null } };
+
 export type RequestPersonalDataExportMutationVariables = Exact<{
   input: RequestPersonalDataExportInput;
 }>;
 
 
 export type RequestPersonalDataExportMutation = { requestPersonalDataExport: { personalDataExportRequestAcknowledgement: { acknowledged: boolean } | null } };
+
+export type RequestPrivacyWithdrawalMutationVariables = Exact<{
+  input: RequestPrivacyWithdrawalInput;
+}>;
+
+
+export type RequestPrivacyWithdrawalMutation = { requestPrivacyWithdrawal: { privacyWithdrawalRequestAcknowledgement: { acknowledged: boolean } | null } };
 
 export type SaveRefTestProgressMutationVariables = Exact<{
   input: SaveRefTestProgressInput;
@@ -834,6 +860,26 @@ export const ConfirmPersonalDataExportDocument = gql`
       super(apollo);
     }
   }
+export const ConfirmPrivacyWithdrawalDocument = gql`
+    mutation ConfirmPrivacyWithdrawal($input: ConfirmPrivacyWithdrawalInput!) {
+  confirmPrivacyWithdrawal(input: $input) {
+    privacyWithdrawalConfirmationResult {
+      accepted
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class ConfirmPrivacyWithdrawalGQL extends Apollo.Mutation<ConfirmPrivacyWithdrawalMutation, ConfirmPrivacyWithdrawalMutationVariables> {
+    override document = ConfirmPrivacyWithdrawalDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
 export const RequestPersonalDataExportDocument = gql`
     mutation RequestPersonalDataExport($input: RequestPersonalDataExportInput!) {
   requestPersonalDataExport(input: $input) {
@@ -849,6 +895,26 @@ export const RequestPersonalDataExportDocument = gql`
   })
   export class RequestPersonalDataExportGQL extends Apollo.Mutation<RequestPersonalDataExportMutation, RequestPersonalDataExportMutationVariables> {
     override document = RequestPersonalDataExportDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const RequestPrivacyWithdrawalDocument = gql`
+    mutation RequestPrivacyWithdrawal($input: RequestPrivacyWithdrawalInput!) {
+  requestPrivacyWithdrawal(input: $input) {
+    privacyWithdrawalRequestAcknowledgement {
+      acknowledged
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class RequestPrivacyWithdrawalGQL extends Apollo.Mutation<RequestPrivacyWithdrawalMutation, RequestPrivacyWithdrawalMutationVariables> {
+    override document = RequestPrivacyWithdrawalDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);
