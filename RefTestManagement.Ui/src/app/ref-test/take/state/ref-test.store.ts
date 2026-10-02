@@ -48,7 +48,7 @@ export class RefTestStore {
   readonly showWithdrawDialog = signal(false);
   readonly withdrawing = signal(false);
   readonly withdrawError = signal(false);
-  readonly withdrawn = signal(false);
+  readonly withdrawalQueued = signal(false);
 
   // === CURRENT LANGUAGE ==============================================
   readonly currentLanguage = signal(this._translate.currentLang());
@@ -231,7 +231,7 @@ export class RefTestStore {
     this.showWithdrawDialog.set(false);
     this.withdrawing.set(false);
     this.withdrawError.set(false);
-    this.withdrawn.set(false);
+    this.withdrawalQueued.set(false);
     this.startTime.set(null);
     this.maxTimeInMinutes.set(60);
     this.timeRemainingSeconds.set(0);

@@ -3,6 +3,7 @@ using System.Reflection;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -16,6 +17,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -41,12 +43,14 @@ public sealed class PrivacyWithdrawalPipelineTests
         RefTestManagementContext context,
         CapturingKeyProtection keyProtection,
         ILogger<PrivacyWithdrawalRequestService>? logger = null,
-        PersonalDataExportConfiguration? configuration = null) =>
+        PersonalDataExportConfiguration? configuration = null,
+        BackgroundJobConfiguration? backgroundJobConfiguration = null) =>
         new(
             context,
             NewJobEnqueueService(context),
             keyProtection,
             configuration ?? new PersonalDataExportConfiguration(),
+            backgroundJobConfiguration ?? new BackgroundJobConfiguration(),
             logger ?? NullLogger<PrivacyWithdrawalRequestService>.Instance);
 
     private static RefTest NewRefTest(
@@ -72,6 +76,30 @@ public sealed class PrivacyWithdrawalPipelineTests
         context.RefTestTitles.Add(title);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         return title.Id;
+    }
+
+    private sealed class ConcurrentSqliteTestDatabase : IDisposable
+    {
+        private readonly string _connectionString =
+            $"Data Source=withdrawal-{Guid.NewGuid():N};Mode=Memory;Cache=Shared";
+        private readonly SqliteConnection _anchorConnection;
+        private readonly DbContextOptions<RefTestManagementContext> _options;
+
+        public ConcurrentSqliteTestDatabase()
+        {
+            _anchorConnection = new SqliteConnection(_connectionString);
+            _anchorConnection.Open();
+            _options = new DbContextOptionsBuilder<RefTestManagementContext>()
+                .UseSqlite(_connectionString)
+                .Options;
+
+            using var context = CreateContext();
+            context.Database.EnsureCreated();
+        }
+
+        public RefTestManagementContext CreateContext() => new(_options);
+
+        public void Dispose() => _anchorConnection.Dispose();
     }
 
     [Fact]
@@ -176,6 +204,441 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Equal(challenge.Id, emailPayload.RootElement.GetProperty("challengeId").GetGuid());
         Assert.DoesNotContain(ParticipantEmail, emailJob.Payload, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(keyProtection.ProtectedKeys[0], emailJob.Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ParticipantTokenQueuesOnlyItsRefTestAndReplayDoesNotSendEmailOrDuplicateWork()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var participant = NewRefTest(titleId, ParticipantEmail);
+        var otherParticipant = NewRefTest(titleId, "grace@example.org");
+        var participantToken = participant.GetIssuedToken();
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.AddRange(participant, otherParticipant);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var keyProtection = new CapturingKeyProtection();
+        await using var context = database.CreateContext();
+        var service = NewRequestService(context, keyProtection);
+        Assert.True(await RefTestLifecycleMutations.WithdrawConsentAsync(
+            participantToken,
+            service,
+            TestContext.Current.CancellationToken));
+        Assert.True(await RefTestLifecycleMutations.WithdrawConsentAsync(
+            participantToken,
+            service,
+            TestContext.Current.CancellationToken));
+
+        await using var verification = database.CreateContext();
+        var batch = await verification.PrivacyWithdrawalBatches
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(1, batch.TargetCount);
+        var target = await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(participant.Id, target.RefTestId);
+
+        var job = await verification.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(JobType.PrivacyWithdrawalBatch, job.JobType);
+        using var payload = JsonDocument.Parse(job.Payload);
+        Assert.Equal(["batchId"], payload.RootElement.EnumerateObject()
+            .Select(property => property.Name).ToArray());
+        Assert.Equal(batch.Id, payload.RootElement.GetProperty("batchId").GetGuid());
+        Assert.DoesNotContain(participantToken, job.Payload, StringComparison.Ordinal);
+        Assert.DoesNotContain(ParticipantEmail, job.Payload, StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(await verification.PrivacyWithdrawalChallenges
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(keyProtection.ProtectedKeys);
+        Assert.False((await verification.RefTests
+            .SingleAsync(refTest => refTest.Id == participant.Id, TestContext.Current.CancellationToken))
+            .IsAnonymized);
+        Assert.False((await verification.RefTests
+            .SingleAsync(refTest => refTest.Id == otherParticipant.Id, TestContext.Current.CancellationToken))
+            .IsAnonymized);
+    }
+
+    [Fact]
+    public async Task InvalidParticipantTokenCannotQueueAWithdrawal()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var participant = NewRefTest(titleId, ParticipantEmail);
+        var token = participant.GetIssuedToken();
+        var invalidToken = $"{(token[0] == '0' ? '1' : '0')}{token[1..]}";
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(participant);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var context = database.CreateContext();
+        var service = NewRequestService(context, new CapturingKeyProtection());
+        await Assert.ThrowsAsync<RefTestNotFoundException>(() =>
+            RefTestLifecycleMutations.WithdrawConsentAsync(
+                invalidToken,
+                service,
+                TestContext.Current.CancellationToken));
+
+        await using var verification = database.CreateContext();
+        Assert.Empty(await verification.PrivacyWithdrawalBatches
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(await verification.PrivacyWithdrawalBatchTargets
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken));
+    }
+
+    [Fact]
+    public async Task ConcurrentParticipantTokenClaimsCommitOnlyOneBatchAndJob()
+    {
+        using var database = new ConcurrentSqliteTestDatabase();
+        RefTest participant;
+        string participantToken;
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Season 2026");
+            participant = NewRefTest(title.Id, ParticipantEmail);
+            participantToken = participant.GetIssuedToken();
+            seed.RefTestTitles.Add(title);
+            seed.RefTests.Add(participant);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        using var ready = new CountdownEvent(2);
+        using var start = new ManualResetEventSlim();
+        Task<bool> SubmitAsync() => Task.Run(async () =>
+        {
+            ready.Signal();
+            start.Wait(TestContext.Current.CancellationToken);
+
+            await using var requestContext = database.CreateContext();
+            var service = NewRequestService(requestContext, new CapturingKeyProtection());
+            return await RefTestLifecycleMutations.WithdrawConsentAsync(
+                participantToken,
+                service,
+                TestContext.Current.CancellationToken);
+        }, TestContext.Current.CancellationToken);
+
+        var first = SubmitAsync();
+        var second = SubmitAsync();
+        Assert.True(ready.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        start.Set();
+        Assert.All(await Task.WhenAll(first, second), result => Assert.True(result));
+
+        await using var verification = database.CreateContext();
+        Assert.Single(await verification.PrivacyWithdrawalBatches
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Single(await verification.PrivacyWithdrawalBatchTargets
+            .ToListAsync(TestContext.Current.CancellationToken));
+        var job = await verification.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(JobType.PrivacyWithdrawalBatch, job.JobType);
+    }
+
+    [Fact]
+    public async Task BulkConfirmationDoesNotQueueAnAlreadyClaimedParticipantTargetAgain()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var now = DateTime.UtcNow;
+        var refTest = NewRefTest(titleId, ParticipantEmail);
+        var challenge = PrivacyWithdrawalChallenge.Create(
+            ParticipantEmail,
+            PrivacyWithdrawalChallenge.HashNormalizedEmail(
+                PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            ChallengeKey,
+            $"protected:{ChallengeKey}",
+            now,
+            now.AddHours(24),
+            matchingRefTestCount: 1);
+
+        await using var context = database.CreateContext();
+        context.RefTests.Add(refTest);
+        context.PrivacyWithdrawalChallenges.Add(challenge);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        var service = NewRequestService(context, new CapturingKeyProtection());
+
+        Assert.True(await service.RequestForParticipantAsync(
+            refTest.GetIssuedToken(),
+            TestContext.Current.CancellationToken));
+        Assert.True(await service.ConfirmAsync(ChallengeKey, TestContext.Current.CancellationToken));
+
+        await using var verification = database.CreateContext();
+        Assert.Single(await verification.PrivacyWithdrawalBatches
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Single(await verification.PrivacyWithdrawalBatchTargets
+            .ToListAsync(TestContext.Current.CancellationToken));
+        var job = await verification.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(JobType.PrivacyWithdrawalBatch, job.JobType);
+        var consumedChallenge = await verification.PrivacyWithdrawalChallenges
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.NotNull(consumedChallenge.VerifiedAt);
+    }
+
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("missing")]
+    [InlineData("exhausted")]
+    public async Task ParticipantTokenRecoversAnIncompleteBatchWhenItsJobIsNotProcessable(string jobState)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var participant = NewRefTest(titleId, ParticipantEmail);
+        var participantToken = participant.GetIssuedToken();
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(participant);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        Guid originalBatchId;
+        Guid originalJobId;
+        await using (var context = database.CreateContext())
+        {
+            var service = NewRequestService(context, new CapturingKeyProtection());
+            Assert.True(await service.RequestForParticipantAsync(
+                participantToken,
+                TestContext.Current.CancellationToken));
+
+            originalBatchId = await context.PrivacyWithdrawalBatches
+                .Select(batch => batch.Id)
+                .SingleAsync(TestContext.Current.CancellationToken);
+            var originalJob = await context.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+            originalJobId = originalJob.Id;
+            if (jobState == "missing")
+                context.Jobs.Remove(originalJob);
+            else if (jobState == "failed")
+                originalJob.MarkAsFailed("Simulated terminal failure", maxAttempts: 1);
+            else
+            {
+                var maxAttempts = new BackgroundJobConfiguration().MaxAttempts;
+                originalJob.MarkAsProcessing(TimeSpan.FromMinutes(-10));
+                for (var attempt = 0; attempt < maxAttempts; attempt++)
+                    originalJob.MarkAsProcessing(TimeSpan.FromMinutes(-10));
+                Assert.Equal(maxAttempts, originalJob.Attempts);
+            }
+
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+            Assert.True(await service.RequestForParticipantAsync(
+                participantToken,
+                TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        var batch = await verification.PrivacyWithdrawalBatches
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(originalBatchId, batch.Id);
+        Assert.Null(batch.CompletedAt);
+        var target = await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(originalBatchId, target.BatchId);
+        Assert.Equal(participant.Id, target.RefTestId);
+
+        var jobs = await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(jobState == "missing" ? 1 : 2, jobs.Count);
+        var replacementJob = Assert.Single(jobs, job => job.Status == JobStatus.Pending);
+        Assert.Equal(JobType.PrivacyWithdrawalBatch, replacementJob.JobType);
+        using (var payload = JsonDocument.Parse(replacementJob.Payload))
+            Assert.Equal(originalBatchId, payload.RootElement.GetProperty("batchId").GetGuid());
+
+        if (jobState != "missing")
+        {
+            var failedJob = Assert.Single(jobs, job => job.Id == originalJobId);
+            Assert.Equal(JobStatus.Failed, failedJob.Status);
+            Assert.NotNull(failedJob.CompletedAt);
+            Assert.NotEqual(failedJob.Id, replacementJob.Id);
+        }
+    }
+
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("missing")]
+    [InlineData("exhausted")]
+    public async Task BulkConfirmationRecoversAnIncompleteBatchWhenItsJobIsNotProcessable(string jobState)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var now = DateTime.UtcNow;
+        var refTest = NewRefTest(titleId, ParticipantEmail);
+        var challenge = PrivacyWithdrawalChallenge.Create(
+            ParticipantEmail,
+            PrivacyWithdrawalChallenge.HashNormalizedEmail(
+                PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            ChallengeKey,
+            $"protected:{ChallengeKey}",
+            now,
+            now.AddHours(24),
+            matchingRefTestCount: 1);
+
+        Guid originalBatchId;
+        Guid originalJobId;
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(refTest);
+            seed.PrivacyWithdrawalChallenges.Add(challenge);
+            StageConfirmedBatch(seed, refTest.Id, now);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+            originalBatchId = await seed.PrivacyWithdrawalBatches
+                .Select(batch => batch.Id)
+                .SingleAsync(TestContext.Current.CancellationToken);
+            var originalJob = await seed.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+            originalJobId = originalJob.Id;
+            if (jobState == "missing")
+                seed.Jobs.Remove(originalJob);
+            else if (jobState == "failed")
+                originalJob.MarkAsFailed("Simulated terminal failure", maxAttempts: 1);
+            else
+            {
+                var maxAttempts = new BackgroundJobConfiguration().MaxAttempts;
+                originalJob.MarkAsProcessing(TimeSpan.FromMinutes(-10));
+                for (var attempt = 0; attempt < maxAttempts; attempt++)
+                    originalJob.MarkAsProcessing(TimeSpan.FromMinutes(-10));
+                Assert.Equal(maxAttempts, originalJob.Attempts);
+            }
+
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var service = NewRequestService(context, new CapturingKeyProtection());
+            Assert.True(await service.ConfirmAsync(
+                ChallengeKey,
+                TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        var batch = await verification.PrivacyWithdrawalBatches
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(originalBatchId, batch.Id);
+        Assert.Null(batch.CompletedAt);
+        var target = await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(originalBatchId, target.BatchId);
+        Assert.Equal(refTest.Id, target.RefTestId);
+        var consumedChallenge = await verification.PrivacyWithdrawalChallenges
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.NotNull(consumedChallenge.VerifiedAt);
+
+        var jobs = await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(jobState == "missing" ? 1 : 2, jobs.Count);
+        var replacementJob = Assert.Single(jobs, job => job.Status == JobStatus.Pending);
+        using (var payload = JsonDocument.Parse(replacementJob.Payload))
+            Assert.Equal(originalBatchId, payload.RootElement.GetProperty("batchId").GetGuid());
+
+        if (jobState != "missing")
+        {
+            var failedJob = Assert.Single(jobs, job => job.Id == originalJobId);
+            Assert.Equal(JobStatus.Failed, failedJob.Status);
+            Assert.NotNull(failedJob.CompletedAt);
+            Assert.NotEqual(failedJob.Id, replacementJob.Id);
+        }
+    }
+
+    [Fact]
+    public async Task LiveProcessingBatchJobAtAttemptLimitSuppressesTokenAndBulkDuplicates()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var now = DateTime.UtcNow;
+        var refTest = NewRefTest(titleId, ParticipantEmail);
+        var participantToken = refTest.GetIssuedToken();
+        var challenge = PrivacyWithdrawalChallenge.Create(
+            ParticipantEmail,
+            PrivacyWithdrawalChallenge.HashNormalizedEmail(
+                PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            ChallengeKey,
+            $"protected:{ChallengeKey}",
+            now,
+            now.AddHours(24),
+            matchingRefTestCount: 1);
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(refTest);
+            seed.PrivacyWithdrawalChallenges.Add(challenge);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var service = NewRequestService(context, new CapturingKeyProtection());
+            Assert.True(await service.RequestForParticipantAsync(
+                participantToken,
+                TestContext.Current.CancellationToken));
+
+            var job = await context.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+            var maxAttempts = new BackgroundJobConfiguration().MaxAttempts;
+            job.MarkAsProcessing(TimeSpan.FromMinutes(10));
+            for (var attempt = 0; attempt < maxAttempts; attempt++)
+                job.MarkAsProcessing(TimeSpan.FromMinutes(10));
+            Assert.Equal(maxAttempts, job.Attempts);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+            Assert.True(await service.RequestForParticipantAsync(
+                participantToken,
+                TestContext.Current.CancellationToken));
+            Assert.True(await service.ConfirmAsync(
+                ChallengeKey,
+                TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        Assert.Single(await verification.PrivacyWithdrawalBatches
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Single(await verification.PrivacyWithdrawalBatchTargets
+            .ToListAsync(TestContext.Current.CancellationToken));
+        var liveJob = await verification.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(JobStatus.Processing, liveJob.Status);
+        Assert.Equal(new BackgroundJobConfiguration().MaxAttempts, liveJob.Attempts);
+    }
+
+    [Fact]
+    public async Task ParticipantMutationDoesNotAcknowledgeWhenDurableEnqueueFails()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var participant = NewRefTest(titleId, ParticipantEmail);
+        var participantToken = participant.GetIssuedToken();
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(participant);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var failingEnqueuer = DispatchProxy.Create<
+                IJobEnqueueService,
+                FailingWithdrawalBatchEnqueueProxy>();
+            var service = new PrivacyWithdrawalRequestService(
+                context,
+                failingEnqueuer,
+                new CapturingKeyProtection(),
+                new PersonalDataExportConfiguration(),
+                new BackgroundJobConfiguration(),
+                NullLogger<PrivacyWithdrawalRequestService>.Instance);
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                RefTestLifecycleMutations.WithdrawConsentAsync(
+                    participantToken,
+                    service,
+                    TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        Assert.Empty(await verification.PrivacyWithdrawalBatches
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(await verification.PrivacyWithdrawalBatchTargets
+            .ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Empty(await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken));
     }
 
     [Fact]
@@ -789,6 +1252,7 @@ public sealed class PrivacyWithdrawalPipelineTests
             NewJobEnqueueService(context, loggerFactory.CreateLogger<JobEnqueueService>()),
             keyProtection,
             new PersonalDataExportConfiguration(),
+            new BackgroundJobConfiguration(),
             loggerFactory.CreateLogger<PrivacyWithdrawalRequestService>());
 
         await service.RequestAsync(ParticipantEmail, TestContext.Current.CancellationToken);
@@ -872,6 +1336,12 @@ public sealed class PrivacyWithdrawalPipelineTests
 
         Assert.Contains("IsAnonymized", eligibleSql, StringComparison.Ordinal);
         Assert.Contains("Email", eligibleSql, StringComparison.Ordinal);
+        var pendingTargetSql = context.PrivacyWithdrawalBatchTargets
+            .Where(target => target.RefTestId == Guid.Empty && target.CompletedAt == null)
+            .Select(target => target.Id)
+            .ToQueryString();
+        Assert.Contains("RefTestId", pendingTargetSql, StringComparison.Ordinal);
+        Assert.Contains("CompletedAt", pendingTargetSql, StringComparison.Ordinal);
         Assert.Contains("ExpiresAt", cleanupSql, StringComparison.Ordinal);
         Assert.Contains("VerifiedAt", cleanupSql, StringComparison.Ordinal);
         Assert.Contains("ProtectedDeliveryKey", cleanupSql, StringComparison.Ordinal);
@@ -928,6 +1398,14 @@ public sealed class PrivacyWithdrawalPipelineTests
                 ? Task.CompletedTask
                 : throw new NotSupportedException($"Unexpected {targetMethod?.Name} call.");
         }
+    }
+
+    public class FailingWithdrawalBatchEnqueueProxy : DispatchProxy
+    {
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
+            targetMethod?.Name == nameof(IJobEnqueueService.EnqueuePrivacyWithdrawalBatchAsync)
+                ? Task.FromException(new InvalidOperationException("Batch enqueue failed."))
+                : throw new NotSupportedException($"Unexpected {targetMethod?.Name} call.");
     }
 
     public class RecordingPrivacyWithdrawalEmailProxy : DispatchProxy

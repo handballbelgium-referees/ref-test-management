@@ -1,6 +1,6 @@
 <div class="bg-neutral-50 py-8 px-4">
-  @if (store.withdrawn()) {
-    <app-ref-test-withdrawn />
+  @if (store.withdrawalQueued()) {
+    <app-ref-test-withdrawal-queued />
   } @else if (store.loading()) {
     <div class="flex items-center justify-center min-h-[60vh]">
       <div class="text-center">

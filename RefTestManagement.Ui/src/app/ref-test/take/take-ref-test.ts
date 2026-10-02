@@ -14,7 +14,7 @@ import { QuestionCard } from './components/question-card/question-card';
 import { RefTestHeader } from './components/ref-test-header/ref-test-header';
 import { RefTestNavigation } from './components/ref-test-navigation/ref-test-navigation';
 import { RefTestResults } from './components/ref-test-results/ref-test-results';
-import { RefTestWithdrawn } from './components/ref-test-withdrawn/ref-test-withdrawn';
+import { RefTestWithdrawalQueued } from './components/ref-test-withdrawal-queued/ref-test-withdrawal-queued';
 import { SubmitRefTestDialog } from './components/submit-ref-test-dialog/submit-ref-test-dialog';
 import { RefTestFacade } from './state/ref-test.facade';
 import { RefTestStore } from './state/ref-test.store';
@@ -32,7 +32,7 @@ import { RefTestStore } from './state/ref-test.store';
     WithdrawConsentDialog,
     RefTestResults,
     RefTestError,
-    RefTestWithdrawn,
+    RefTestWithdrawalQueued,
     TranslatePipe,
   ],
 })

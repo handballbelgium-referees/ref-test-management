@@ -1,11 +1,11 @@
 <!-- Hero Section -->
-@if (!error() && refTest() && !loading() && !withdrawn()) {
+@if (!error() && refTest() && !loading() && !withdrawalQueued()) {
   <app-ref-test-hero />
 }
 
 <!-- Main Content -->
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-  @if (withdrawn()) {
+  @if (withdrawalQueued()) {
     <div
       class="max-w-2xl mx-auto text-center rounded-lg border border-neutral-200 bg-white p-8 shadow-sm"
     >
@@ -22,9 +22,9 @@
         </svg>
       </div>
       <h1 class="text-xl font-bold text-neutral-900 mb-2">
-        {{ 'ref_test.withdrawn_title' | translate }}
+        {{ 'ref_test.withdrawal_queued_title' | translate }}
       </h1>
-      <p class="text-neutral-600">{{ 'ref_test.withdrawn_message' | translate }}</p>
+      <p class="text-neutral-600">{{ 'ref_test.withdrawal_queued_message' | translate }}</p>
     </div>
   } @else if (loading()) {
     <div class="flex flex-col items-center justify-center py-20" role="status" aria-live="polite">

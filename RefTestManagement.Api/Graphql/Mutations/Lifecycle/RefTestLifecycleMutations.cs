@@ -112,34 +112,20 @@ public static partial class RefTestLifecycleMutations
     }
 
     /// <summary>
-    /// Lets the holder of a RefTest token withdraw consent, anonymizing their personal data in
-    /// place. Available regardless of RefTest status, including Completed. The record and its
-    /// audit trail are always kept for accountability — only personal data is redacted.
+    /// Queues a durable one-RefTest withdrawal for the holder of its invitation token. The
+    /// background worker performs the anonymization and publishes the update after it commits.
     /// </summary>
     [Error<RefTestNotFoundException>]
     [Error<RefTestValidationException>]
     public static async Task<bool> WithdrawConsentAsync(
         string token,
-        RefTestManagementContext context,
-        [Service] IRefTestPrivacyErasureService privacyErasureService,
-        [Service] IRefTestSubscriptionService subscriptionService,
+        [Service] IPrivacyWithdrawalRequestService withdrawalRequestService,
         CancellationToken cancellationToken)
     {
         token = ParticipantInput.Token(token);
 
-        var refTest = await context.RefTests
-            .WithParticipantToken(token)
-            .FirstOrDefaultAsync(cancellationToken);
-
-        if (refTest is null)
+        if (!await withdrawalRequestService.RequestForParticipantAsync(token, cancellationToken))
             throw new RefTestNotFoundException(token);
-
-        var refTestId = refTest.Id;
-        var status = refTest.Status;
-        await privacyErasureService.EraseAsync(refTest, ErasureInitiator.Participant, cancellationToken);
-
-        await subscriptionService.PublishRefTestAnonymizedAsync(
-            refTestId, status, refTest.FullName, refTest.Email, cancellationToken);
 
         return true;
     }

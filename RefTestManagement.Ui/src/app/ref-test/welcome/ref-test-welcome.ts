@@ -47,7 +47,7 @@ export class RefTestWelcome {
   readonly showWithdrawDialog = signal(false);
   readonly withdrawing = signal(false);
   readonly withdrawError = signal(false);
-  readonly withdrawn = signal(false);
+  readonly withdrawalQueued = signal(false);
 
   readonly refTestResult = toSignal(
     this._route.paramMap.pipe(
@@ -158,13 +158,13 @@ export class RefTestWelcome {
       .pipe(
         take(1),
         tap((result) => {
-          const errors = result.data?.withdrawConsent.errors;
-          if (errors && errors.length > 0) {
+          const payload = result.data?.withdrawConsent;
+          if (!payload?.boolean || (payload.errors && payload.errors.length > 0)) {
             this.withdrawError.set(true);
             return;
           }
           this.showWithdrawDialog.set(false);
-          this.withdrawn.set(true);
+          this.withdrawalQueued.set(true);
         }),
         catchError(() => {
           this.withdrawError.set(true);

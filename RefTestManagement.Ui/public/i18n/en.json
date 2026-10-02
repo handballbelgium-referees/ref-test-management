@@ -613,10 +613,10 @@
     "start_button": "Start RefTest",
     "privacy_consent": "I have read and accept the",
     "privacy_consent_error": "We could not record your privacy-notice acceptance. Please try again.",
-    "withdraw_link": "Withdraw consent and anonymize my data",
+    "withdraw_link": "Withdraw consent and request anonymization",
     "withdraw_error": "We could not process your withdrawal. Please try again or contact us.",
-    "withdrawn_title": "Consent withdrawn",
-    "withdrawn_message": "You have withdrawn consent. Your identifying data has been anonymized and the RefTest record has been redacted to preserve the audit trail.",
+    "withdrawal_queued_title": "Withdrawal request received",
+    "withdrawal_queued_message": "Your request has been queued for processing. Your identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
     "time_remaining": "Time Remaining",
     "progress": "Progress",
     "question": "Question",
@@ -660,9 +660,9 @@
       },
       "withdraw": {
         "title": "Withdraw consent?",
-        "message": "Withdrawing consent will anonymize your identifying data and redact the RefTest record. The anonymized record may be retained for audit purposes.",
-        "warning": "Your consent will be withdrawn and your identifying data anonymized. An anonymized RefTest record may remain for audit purposes.",
-        "confirm": "Withdraw consent and anonymize data",
+        "message": "Your withdrawal request will be queued for background processing. Your identifying data will be anonymized after processing succeeds; an anonymized RefTest record may be retained for audit purposes.",
+        "warning": "Anonymization is not immediate. The request will be processed in the background, and your RefTest record may remain in anonymized form for audit purposes.",
+        "confirm": "Withdraw consent and queue anonymization",
         "cancel": "Cancel"
       }
     }

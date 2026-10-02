@@ -306,7 +306,7 @@ describe('RefTestStore', () => {
       store.setTimer(new Date(), 30);
       store.complete({ percentage: 90 });
       store.token.set('abc');
-      store.withdrawn.set(true);
+      store.withdrawalQueued.set(true);
 
       store.reset();
 
@@ -314,7 +314,7 @@ describe('RefTestStore', () => {
       expect(store.getSelectedAnswerIds()).toEqual([]);
       expect(store.completed()).toBe(false);
       expect(store.result()).toBeNull();
-      expect(store.withdrawn()).toBe(false);
+      expect(store.withdrawalQueued()).toBe(false);
       expect(store.token()).toBe('');
       expect(store.startTime()).toBeNull();
       expect(store.timeRemainingSeconds()).toBe(0);

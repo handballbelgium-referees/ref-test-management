@@ -614,10 +614,10 @@
     "start_button": "Commencer le RefTest",
     "privacy_consent": "J'ai lu et j'accepte la",
     "privacy_consent_error": "Nous n'avons pas pu enregistrer votre acceptation de l'avis de confidentialité. Veuillez réessayer.",
-    "withdraw_link": "Retirer mon consentement et anonymiser mes données",
+    "withdraw_link": "Retirer mon consentement et demander l'anonymisation",
     "withdraw_error": "Nous n'avons pas pu traiter votre retrait. Veuillez réessayer ou nous contacter.",
-    "withdrawn_title": "Consentement retiré",
-    "withdrawn_message": "Vous avez retiré votre consentement. Vos données d'identification ont été anonymisées et l'enregistrement du RefTest a été rendu anonyme pour préserver la trace d'audit.",
+    "withdrawal_queued_title": "Demande de retrait reçue",
+    "withdrawal_queued_message": "Votre demande a été mise en file d'attente. Vos données d'identification seront anonymisées une fois le traitement terminé. Un enregistrement RefTest anonymisé peut être conservé à des fins d'audit.",
     "time_remaining": "Temps Restant",
     "progress": "Progrès",
     "question": "Question",
@@ -661,9 +661,9 @@
       },
       "withdraw": {
         "title": "Retirer votre consentement ?",
-        "message": "Le retrait de votre consentement anonymisera vos données d'identification et rendra anonyme l'enregistrement du RefTest. L'enregistrement anonymisé peut être conservé à des fins d'audit.",
-        "warning": "Votre consentement sera retiré et vos données d'identification seront anonymisées. Un enregistrement de RefTest anonymisé peut être conservé à des fins d'audit.",
-        "confirm": "Retirer le consentement et anonymiser les données",
+        "message": "Votre demande de retrait sera mise en file d'attente pour traitement en arrière-plan. Vos données d'identification seront anonymisées une fois le traitement terminé ; un enregistrement RefTest anonymisé peut être conservé à des fins d'audit.",
+        "warning": "L'anonymisation n'est pas immédiate. Votre demande sera traitée en arrière-plan et l'enregistrement RefTest peut être conservé sous forme anonymisée à des fins d'audit.",
+        "confirm": "Retirer le consentement et demander l'anonymisation",
         "cancel": "Annuler"
       }
     }
