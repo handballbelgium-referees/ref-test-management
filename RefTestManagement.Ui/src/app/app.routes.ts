@@ -2,7 +2,7 @@ import { Routes } from '@angular/router';
 import { authGuard } from './auth/guards/auth-guard';
 import { permissionGuard } from './auth/guards/permission-guard';
 import { Permissions } from './auth/models/permissions';
-import { personalDataExportConfirmationGuard } from './privacy/guards/personal-data-export-confirmation.guard';
+import { privacyConfirmationGuard } from './privacy/guards/privacy-confirmation.guard';
 import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 
 export const routes: Routes = [
@@ -19,7 +19,7 @@ export const routes: Routes = [
   {
     path: 'privacy/export-confirmation',
     pathMatch: 'full',
-    canActivate: [personalDataExportConfirmationGuard],
+    canActivate: [privacyConfirmationGuard],
     loadComponent: () =>
       import('./privacy/personal-data-export-confirmation').then(
         (m) => m.PersonalDataExportConfirmation,
@@ -34,6 +34,7 @@ export const routes: Routes = [
   {
     path: 'privacy/withdrawal-confirmation',
     pathMatch: 'full',
+    canActivate: [privacyConfirmationGuard],
     loadComponent: () =>
       import('./privacy/privacy-withdrawal-confirmation').then(
         (m) => m.PrivacyWithdrawalConfirmation,
