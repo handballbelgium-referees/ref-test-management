@@ -185,11 +185,13 @@ export const appConfig: ApplicationConfig = {
         // The operation name is safe to record because it is developer-authored. The error itself
         // is not, so it goes through ErrorReporter, which withholds the contents in production.
         const errorLink = new ErrorLink(({ error, operation }) => {
-          const containsWithdrawalCredentials =
+          const containsPrivacyChallengeCredentials =
+            operation.operationName === 'RequestPersonalDataExport' ||
+            operation.operationName === 'ConfirmPersonalDataExport' ||
             operation.operationName === 'RequestPrivacyWithdrawal' ||
             operation.operationName === 'ConfirmPrivacyWithdrawal';
-          const reportedError = containsWithdrawalCredentials
-            ? new Error('Privacy withdrawal operation failed.')
+          const reportedError = containsPrivacyChallengeCredentials
+            ? new Error('Privacy challenge operation failed.')
             : error;
           reporter.report(`graphql:${operation.operationName ?? 'anonymous'}`, reportedError);
         });
