@@ -8,7 +8,7 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 /// <summary>Clears recipient and challenge state for expired, unverified export requests.</summary>
 public sealed class PersonalDataExportRequestCleanupService(
     IServiceProvider serviceProvider,
-    PersonalDataExportConfiguration configuration,
+    PrivacyChallengeConfiguration configuration,
     ILogger<PersonalDataExportRequestCleanupService> logger) : BackgroundService
 {
     private const int BatchSize = 500;

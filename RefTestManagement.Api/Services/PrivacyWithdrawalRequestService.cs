@@ -28,7 +28,7 @@ public sealed class PrivacyWithdrawalRequestService(
     RefTestManagementContext context,
     IJobEnqueueService jobEnqueueService,
     IPersonalDataExportKeyProtection keyProtection,
-    PersonalDataExportConfiguration configuration,
+    PrivacyChallengeConfiguration configuration,
     BackgroundJobConfiguration backgroundJobConfiguration,
     ILogger<PrivacyWithdrawalRequestService> logger) : IPrivacyWithdrawalRequestService
 {

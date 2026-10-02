@@ -52,7 +52,7 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
     "NoticeEffectiveDate": "2026-08-03",
     "RetentionYears": 3
   },
-  "PersonalDataExportConfiguration": {
+  "PrivacyChallengeConfiguration": {
     "PrivacyChallengeKeyLifetimeHours": 24,
     "RateLimitWindowSeconds": 60,
     "RequestRateLimitPermitLimit": 5,
@@ -182,13 +182,14 @@ The Management API credentials are used by `RefTestManagement.Auth0` to sync per
 
 See [docs/PRIVACY.md](PRIVACY.md) for how retention and erasure actually work.
 
-### PersonalDataExportConfiguration
+### PrivacyChallengeConfiguration
 
 Controls public personal-data export and consent-withdrawal verification. For example,
-`PersonalDataExportConfiguration:PrivacyChallengeKeyLifetimeHours` (environment variable
-`PersonalDataExportConfiguration__PrivacyChallengeKeyLifetimeHours`) sets how long an emailed
+`PrivacyChallengeConfiguration:PrivacyChallengeKeyLifetimeHours` (environment variable
+`PrivacyChallengeConfiguration__PrivacyChallengeKeyLifetimeHours`) sets how long an emailed
 verification key remains valid for either flow. The API validates these values at startup and
-rejects invalid configuration.
+rejects invalid configuration. Deployments must use the `PrivacyChallengeConfiguration` section;
+the previous `PersonalDataExportConfiguration` section name is not supported.
 
 | Key                                   | Description                                                         | Default | Validation                    |
 | ------------------------------------- | ------------------------------------------------------------------- | ------- | ----------------------------- |

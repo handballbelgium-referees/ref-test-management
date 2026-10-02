@@ -43,13 +43,13 @@ public sealed class PrivacyWithdrawalPipelineTests
         RefTestManagementContext context,
         CapturingKeyProtection keyProtection,
         ILogger<PrivacyWithdrawalRequestService>? logger = null,
-        PersonalDataExportConfiguration? configuration = null,
+        PrivacyChallengeConfiguration? configuration = null,
         BackgroundJobConfiguration? backgroundJobConfiguration = null) =>
         new(
             context,
             NewJobEnqueueService(context),
             keyProtection,
-            configuration ?? new PersonalDataExportConfiguration(),
+            configuration ?? new PrivacyChallengeConfiguration(),
             backgroundJobConfiguration ?? new BackgroundJobConfiguration(),
             logger ?? NullLogger<PrivacyWithdrawalRequestService>.Instance);
 
@@ -170,7 +170,7 @@ public sealed class PrivacyWithdrawalPipelineTests
         var service = NewRequestService(
             context,
             keyProtection,
-            configuration: new PersonalDataExportConfiguration
+            configuration: new PrivacyChallengeConfiguration
             {
                 PrivacyChallengeKeyLifetimeHours = 2
             });
@@ -622,7 +622,7 @@ public sealed class PrivacyWithdrawalPipelineTests
                 context,
                 failingEnqueuer,
                 new CapturingKeyProtection(),
-                new PersonalDataExportConfiguration(),
+                new PrivacyChallengeConfiguration(),
                 new BackgroundJobConfiguration(),
                 NullLogger<PrivacyWithdrawalRequestService>.Instance);
 
@@ -1251,7 +1251,7 @@ public sealed class PrivacyWithdrawalPipelineTests
             context,
             NewJobEnqueueService(context, loggerFactory.CreateLogger<JobEnqueueService>()),
             keyProtection,
-            new PersonalDataExportConfiguration(),
+            new PrivacyChallengeConfiguration(),
             new BackgroundJobConfiguration(),
             loggerFactory.CreateLogger<PrivacyWithdrawalRequestService>());
 

@@ -8,7 +8,7 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 /// <summary>Clears expired withdrawal challenges and completed durable batch targets.</summary>
 public sealed class PrivacyWithdrawalCleanupService(
     IServiceProvider serviceProvider,
-    PersonalDataExportConfiguration configuration,
+    PrivacyChallengeConfiguration configuration,
     ILogger<PrivacyWithdrawalCleanupService> logger) : BackgroundService
 {
     private const int BatchSize = 500;

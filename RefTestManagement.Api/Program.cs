@@ -94,19 +94,19 @@ var privacyConfig = configuration.GetSection("PrivacyConfiguration").Get<Privacy
                     ?? new PrivacyConfiguration();
 services.AddSingleton(privacyConfig);
 
-var personalDataExportConfig = configuration.GetSection("PersonalDataExportConfiguration")
-                                   .Get<PersonalDataExportConfiguration>()
-                               ?? new PersonalDataExportConfiguration();
-if (personalDataExportConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
-    || personalDataExportConfig.RateLimitWindowSeconds <= 0
-    || personalDataExportConfig.RequestRateLimitPermitLimit <= 0
-    || personalDataExportConfig.ConfirmationRateLimitPermitLimit <= 0
-    || personalDataExportConfig.CleanupIntervalMinutes <= 0)
+var privacyChallengeConfig = configuration.GetSection("PrivacyChallengeConfiguration")
+                                 .Get<PrivacyChallengeConfiguration>()
+                             ?? new PrivacyChallengeConfiguration();
+if (privacyChallengeConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
+    || privacyChallengeConfig.RateLimitWindowSeconds <= 0
+    || privacyChallengeConfig.RequestRateLimitPermitLimit <= 0
+    || privacyChallengeConfig.ConfirmationRateLimitPermitLimit <= 0
+    || privacyChallengeConfig.CleanupIntervalMinutes <= 0)
 {
-    throw new InvalidOperationException("PersonalDataExportConfiguration contains an invalid value.");
+    throw new InvalidOperationException("PrivacyChallengeConfiguration contains an invalid value.");
 }
 
-services.AddSingleton(personalDataExportConfig);
+services.AddSingleton(privacyChallengeConfig);
 services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
 services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
 services.AddSingleton<IPersonalDataExportRateLimiter, PersonalDataExportRateLimiter>();

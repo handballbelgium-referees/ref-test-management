@@ -17,7 +17,7 @@ public sealed class PersonalDataExportRateLimiter : IPersonalDataExportRateLimit
     private readonly PartitionedRateLimiter<string> _requestLimiter;
     private readonly PartitionedRateLimiter<string> _confirmationLimiter;
 
-    public PersonalDataExportRateLimiter(PersonalDataExportConfiguration configuration)
+    public PersonalDataExportRateLimiter(PrivacyChallengeConfiguration configuration)
     {
         var window = TimeSpan.FromSeconds(configuration.RateLimitWindowSeconds);
         _requestLimiter = CreateLimiter(configuration.RequestRateLimitPermitLimit, window);

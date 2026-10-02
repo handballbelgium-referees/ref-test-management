@@ -1,7 +1,7 @@
 namespace Handball.Belgium.RefTestManagement.Application.Configurations;
 
 /// <summary>Settings for public privacy challenge verification and its request protections.</summary>
-public sealed class PersonalDataExportConfiguration
+public sealed class PrivacyChallengeConfiguration
 {
     /// <summary>Shared lifetime of export and withdrawal verification keys, in hours.</summary>
     public int PrivacyChallengeKeyLifetimeHours { get; init; } = 24;
