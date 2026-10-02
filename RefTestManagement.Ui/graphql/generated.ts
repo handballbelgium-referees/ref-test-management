@@ -63,6 +63,10 @@ export type ConfirmPrivacyWithdrawalInput = {
   key: string;
 };
 
+export type CreateRefTestSessionInput = {
+  token: string;
+};
+
 export type CreateRefTestsInput = {
   maxTimeInMinutes: number;
   numberOfQuestions: number;
@@ -449,6 +453,16 @@ export type ConfirmPrivacyWithdrawalMutationVariables = Exact<{
 
 
 export type ConfirmPrivacyWithdrawalMutation = { confirmPrivacyWithdrawal: { privacyWithdrawalConfirmationResult: { accepted: boolean } | null } };
+
+export type CreateRefTestSessionMutationVariables = Exact<{
+  input: CreateRefTestSessionInput;
+}>;
+
+
+export type CreateRefTestSessionMutation = { createRefTestSession: { participantSessionDto: { sessionToken: string } | null, errors: Array<
+      | { __typename: 'RefTestNotFoundError', message: string }
+      | { __typename: 'RefTestValidationError', message: string }
+    > | null } };
 
 export type RequestPersonalDataExportMutationVariables = Exact<{
   input: RequestPersonalDataExportInput;
@@ -875,6 +889,35 @@ export const ConfirmPrivacyWithdrawalDocument = gql`
   })
   export class ConfirmPrivacyWithdrawalGQL extends Apollo.Mutation<ConfirmPrivacyWithdrawalMutation, ConfirmPrivacyWithdrawalMutationVariables> {
     override document = ConfirmPrivacyWithdrawalDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const CreateRefTestSessionDocument = gql`
+    mutation CreateRefTestSession($input: CreateRefTestSessionInput!) {
+  createRefTestSession(input: $input) {
+    participantSessionDto {
+      sessionToken
+    }
+    errors {
+      __typename
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on RefTestValidationError {
+        message
+      }
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class CreateRefTestSessionGQL extends Apollo.Mutation<CreateRefTestSessionMutation, CreateRefTestSessionMutationVariables> {
+    override document = CreateRefTestSessionDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

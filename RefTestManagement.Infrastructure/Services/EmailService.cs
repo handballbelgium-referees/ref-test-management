@@ -445,6 +445,7 @@ public class EmailService(
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
     {
+        var baseUrl = configuration.BaseUrl.TrimEnd('/');
         return languageConfiguration.EnabledLanguages
             .Select(lang =>
             {
@@ -457,7 +458,7 @@ public class EmailService(
                 };
 
                 return new LanguageContent(
-                    $"{configuration.BaseUrl}/ref-test/{token}?lang={lang}",
+                    $"{baseUrl}/ref-test?lang={lang}#{token}",
                     translations
                 );
             })

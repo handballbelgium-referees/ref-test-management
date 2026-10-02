@@ -23,6 +23,7 @@ public static partial class RefTestLifecycleMutations
     /// <param name="context"></param>
     /// <param name="configuration"></param>
     /// <param name="privacyConfiguration"></param>
+    /// <param name="sessionTokenService"></param>
     /// <param name="subscriptionService"></param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
@@ -38,17 +39,17 @@ public static partial class RefTestLifecycleMutations
         RefTestManagementContext context,
         [Service] RefTestExpirationConfiguration configuration,
         [Service] PrivacyConfiguration privacyConfiguration,
+        [Service] IRefTestSessionTokenService sessionTokenService,
         [Service] IRefTestSubscriptionService subscriptionService,
         CancellationToken cancellationToken)
     {
         token = ParticipantInput.Token(token);
 
         var refTest = await context.RefTests
-            .WithParticipantToken(token)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
 
         if (refTest == null)
-            throw new RefTestNotFoundException(token);
+            throw new RefTestNotFoundException();
 
         if (refTest.Status == RefTestStatus.InProgress)
             return refTest.ToParticipantDto();
@@ -65,7 +66,7 @@ public static partial class RefTestLifecycleMutations
                 DateTime.UtcNow,
                 cancellationToken);
             
-            throw new RefTestExpiredException(token);
+            throw new RefTestExpiredException();
         }
 
         refTest.Start(privacyConfiguration.NoticeVersion);
@@ -82,6 +83,38 @@ public static partial class RefTestLifecycleMutations
     }
 
     /// <summary>
+    /// Exchanges an accepted participant invitation or session credential for a fresh,
+    /// time-limited session credential.
+    /// </summary>
+    /// <param name="token">The participant invitation or session credential.</param>
+    /// <param name="context">The database context used to resolve the participant.</param>
+    /// <param name="sessionTokenService">Creates the protected session credential.</param>
+    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
+    /// <returns>The new participant session credential.</returns>
+    [Error<RefTestNotFoundException>]
+    [Error<RefTestValidationException>]
+    public static async Task<ParticipantSessionDto> CreateRefTestSessionAsync(
+        string token,
+        RefTestManagementContext context,
+        [Service] IRefTestSessionTokenService sessionTokenService,
+        CancellationToken cancellationToken)
+    {
+        token = ParticipantInput.Token(token);
+
+        var refTest = await context.RefTests
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
+
+        if (refTest is null || refTest.IsAnonymized)
+            throw new RefTestNotFoundException();
+
+        if (!refTest.PrivacyNoticeAcceptedAt.HasValue)
+            throw new RefTestValidationException(
+                "The privacy notice must be accepted before creating a participant session.");
+
+        return new ParticipantSessionDto(sessionTokenService.Create(refTest));
+    }
+
+    /// <summary>
     /// Records explicit acceptance of the currently published privacy notice.
     /// </summary>
     [Error<RefTestNotFoundException>]
@@ -91,6 +124,7 @@ public static partial class RefTestLifecycleMutations
         string noticeVersion,
         RefTestManagementContext context,
         [Service] PrivacyConfiguration privacyConfiguration,
+        [Service] IRefTestSessionTokenService sessionTokenService,
         CancellationToken cancellationToken)
     {
         if (noticeVersion != privacyConfiguration.NoticeVersion)
@@ -99,11 +133,10 @@ public static partial class RefTestLifecycleMutations
         token = ParticipantInput.Token(token);
 
         var refTest = await context.RefTests
-            .WithParticipantToken(token)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
 
         if (refTest is null)
-            throw new RefTestNotFoundException(token);
+            throw new RefTestNotFoundException();
 
         refTest.AcceptPrivacyNotice(noticeVersion);
         await context.SaveChangesWithRetryAsync(cancellationToken);
@@ -112,7 +145,7 @@ public static partial class RefTestLifecycleMutations
     }
 
     /// <summary>
-    /// Queues a durable one-RefTest withdrawal for the holder of its invitation token. The
+    /// Queues a durable one-RefTest withdrawal for the holder of its invitation or session token. The
     /// background worker performs the anonymization and publishes the update after it commits.
     /// </summary>
     [Error<RefTestNotFoundException>]
@@ -125,7 +158,7 @@ public static partial class RefTestLifecycleMutations
         token = ParticipantInput.Token(token);
 
         if (!await withdrawalRequestService.RequestForParticipantAsync(token, cancellationToken))
-            throw new RefTestNotFoundException(token);
+            throw new RefTestNotFoundException();
 
         return true;
     }
@@ -135,6 +168,7 @@ public static partial class RefTestLifecycleMutations
     /// </summary>
     /// <param name="input"></param>
     /// <param name="context"></param>
+    /// <param name="sessionTokenService">Validates participant session credentials.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -145,6 +179,7 @@ public static partial class RefTestLifecycleMutations
     public static async Task<ParticipantRefTestDto> SaveRefTestProgressAsync(
         SaveRefTestProgressInput input,
         RefTestManagementContext context,
+        [Service] IRefTestSessionTokenService sessionTokenService,
         CancellationToken cancellationToken)
     {
         var token = ParticipantInput.Token(input.Token);
@@ -152,11 +187,10 @@ public static partial class RefTestLifecycleMutations
         var language = ParticipantInput.Language(input.Language);
 
         var refTest = await context.RefTests
-            .WithParticipantToken(token)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
 
         if (refTest == null)
-            throw new RefTestNotFoundException(input.Token);
+            throw new RefTestNotFoundException();
 
         if (refTest.Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
@@ -178,6 +212,7 @@ public static partial class RefTestLifecycleMutations
     /// <param name="jobEnqueueService"></param>
     /// <param name="emailConfiguration"></param>
     /// <param name="subscriptionService"></param>
+    /// <param name="sessionTokenService">Validates participant session credentials.</param>
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
@@ -192,6 +227,7 @@ public static partial class RefTestLifecycleMutations
         [Service] IJobEnqueueService jobEnqueueService,
         [Service] EmailConfiguration emailConfiguration,
         [Service] IRefTestSubscriptionService subscriptionService,
+        [Service] IRefTestSessionTokenService sessionTokenService,
         CancellationToken cancellationToken)
     {
         var refTest = await CompleteRefTestCoreAsync(
@@ -201,6 +237,7 @@ public static partial class RefTestLifecycleMutations
             jobEnqueueService,
             emailConfiguration,
             subscriptionService,
+            sessionTokenService,
             RefTestCompletionSource.Participant,
             cancellationToken);
         return refTest.ToParticipantDto();
@@ -218,6 +255,7 @@ public static partial class RefTestLifecycleMutations
         IJobEnqueueService jobEnqueueService,
         EmailConfiguration emailConfiguration,
         IRefTestSubscriptionService subscriptionService,
+        IRefTestSessionTokenService sessionTokenService,
         RefTestCompletionSource source,
         CancellationToken cancellationToken)
     {
@@ -226,11 +264,10 @@ public static partial class RefTestLifecycleMutations
         var language = ParticipantInput.Language(input.Language);
 
         var refTest = await context.RefTests
-            .WithParticipantToken(token)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
 
         if (refTest is null)
-            throw new RefTestNotFoundException(input.Token);
+            throw new RefTestNotFoundException();
 
         return await CompleteRefTestCoreAsync(
             refTest,

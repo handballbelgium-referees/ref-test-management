@@ -17,7 +17,10 @@ import { RefTestNavigation } from './components/ref-test-navigation/ref-test-nav
 import { RefTestResults } from './components/ref-test-results/ref-test-results';
 import { RefTestWithdrawalQueued } from './components/ref-test-withdrawal-queued/ref-test-withdrawal-queued';
 import { SubmitRefTestDialog } from './components/submit-ref-test-dialog/submit-ref-test-dialog';
-import { REF_TEST_TOKEN_STATE_KEY, resolveRefTestToken } from '../ref-test-token-state';
+import {
+  REF_TEST_SESSION_TOKEN_STATE_KEY,
+  resolveRefTestSessionToken,
+} from '../ref-test-token-state';
 import { RefTestFacade } from './state/ref-test.facade';
 import { RefTestStore } from './state/ref-test.store';
 
@@ -52,9 +55,8 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
   private readonly _token = toSignal(
     this._route.paramMap.pipe(
       map(
-        (params) =>
-          resolveRefTestToken(
-            params.get('token'),
+        () =>
+          resolveRefTestSessionToken(
             this._router.currentNavigation()?.extras.state,
             this._location.getState(),
           ) ?? '',
@@ -147,7 +149,7 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
     const token = this._token();
     if (token) {
       void this._router.navigate(['/ref-test/welcome'], {
-        state: { [REF_TEST_TOKEN_STATE_KEY]: token },
+        state: { [REF_TEST_SESSION_TOKEN_STATE_KEY]: token },
       });
     }
   }

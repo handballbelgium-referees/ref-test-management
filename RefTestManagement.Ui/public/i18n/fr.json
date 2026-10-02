@@ -614,6 +614,7 @@
     "start_button": "Commencer le RefTest",
     "privacy_consent": "J'ai lu et j'accepte la",
     "privacy_consent_error": "Nous n'avons pas pu enregistrer votre acceptation de l'avis de confidentialité. Veuillez réessayer.",
+    "session_creation_error": "Nous n'avons pas pu créer une session sécurisée pour le participant. Veuillez réessayer.",
     "withdraw_link": "Retirer mon consentement et demander l'anonymisation",
     "withdraw_error": "Nous n'avons pas pu traiter votre retrait. Veuillez réessayer ou nous contacter.",
     "withdrawal_queued_title": "Demande de retrait reçue",

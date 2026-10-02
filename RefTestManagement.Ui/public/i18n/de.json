@@ -613,6 +613,7 @@
     "start_button": "RefTest starten",
     "privacy_consent": "Ich habe den folgenden Hinweis gelesen und akzeptiere ihn:",
     "privacy_consent_error": "Ihre Annahme des Datenschutzhinweises konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
+    "session_creation_error": "Eine sichere Teilnehmersitzung konnte nicht erstellt werden. Bitte versuchen Sie es erneut.",
     "withdraw_link": "Einwilligung widerrufen und Anonymisierung beantragen",
     "withdraw_error": "Ihr Widerruf konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns.",
     "withdrawal_queued_title": "Antrag auf Widerruf eingegangen",

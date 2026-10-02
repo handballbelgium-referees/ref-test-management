@@ -68,6 +68,11 @@
           {{ 'ref_test.privacy_consent_error' | translate }}
         </p>
       }
+      @if (sessionCreationError()) {
+        <p class="my-3 text-sm text-red-700" role="alert">
+          {{ 'ref_test.session_creation_error' | translate }}
+        </p>
+      }
       <!-- Start Button -->
       <button
         type="button"

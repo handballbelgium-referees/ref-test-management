@@ -1,8 +1,12 @@
 ﻿using System.Runtime.CompilerServices;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 
@@ -12,6 +16,8 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 [SubscriptionType]
 public static partial class RefTestSubscriptions
 {
+    private static readonly TimeSpan SessionLockRevalidationInterval = TimeSpan.FromSeconds(30);
+
     /// <summary>
     /// Subscribe to time extension events for a specific RefTest.
     /// PUBLIC: No authorization required - test takers need to see time extensions in real-time.
@@ -93,10 +99,11 @@ public static partial class RefTestSubscriptions
     }
 
     /// <summary>
-    /// Subscribe to acquire a session lock for a specific RefTest token.
+    /// Subscribe to acquire a session lock for a participant credential.
     /// PUBLIC: No authorization is required — test takers are not authenticated.
     /// Yields Acquired if no other tab holds the session (or this tab is refreshing),
-    /// then keeps the connection open until the client disconnects.
+    /// then revalidates the credential periodically until the client disconnects or the
+    /// participant's access is revoked.
     /// Yields Blocked (and completes) if another tab already holds the session.
     /// Releasing the session happens automatically when the SSE connection drops.
     /// </summary>
@@ -106,17 +113,38 @@ public static partial class RefTestSubscriptions
     public static async IAsyncEnumerable<RefTestSessionEvent> SubscribeToRefTestSessionLock(
         string token,
         string sessionId,
+        RefTestManagementContext context,
         [Service] IRefTestSessionService sessionService,
+        [Service] IRefTestSessionTokenService sessionTokenService,
+        [Service] TimeProvider timeProvider,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
-        if (!sessionService.TryAcquireSession(token, sessionId))
+        if (!RefTest.IsValidTokenFormat(token)
+            && !RefTestSessionTokenService.HasSessionTokenFormat(token))
+        {
+            yield return new RefTestSessionEvent(RefTestSessionStatus.Blocked);
+            yield break;
+        }
+
+        var refTest = await context.RefTests
+            .AsNoTracking()
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
+        if (refTest is null || refTest.IsAnonymized)
+        {
+            yield return new RefTestSessionEvent(RefTestSessionStatus.Blocked);
+            yield break;
+        }
+
+        var lockKey = refTest.Id.ToString("N");
+        var lockStatus = refTest.Status;
+        if (!sessionService.TryAcquireSession(lockKey, sessionId))
         {
             // Grace period: on browser refresh the old SSE connection drops within ~100ms.
             // Waiting here allows the existing session to release before we give up.
             // A genuine second tab will still hold its connection throughout the wait → BLOCKED.
             await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
 
-            if (!sessionService.TryAcquireSession(token, sessionId))
+            if (!sessionService.TryAcquireSession(lockKey, sessionId))
             {
                 yield return new RefTestSessionEvent(RefTestSessionStatus.Blocked);
                 yield break;
@@ -125,12 +153,31 @@ public static partial class RefTestSubscriptions
 
         try
         {
+            using var timer = new PeriodicTimer(SessionLockRevalidationInterval, timeProvider);
             yield return new RefTestSessionEvent(RefTestSessionStatus.Acquired);
-            await Task.Delay(Timeout.Infinite, cancellationToken);
+            while (await timer.WaitForNextTickAsync(cancellationToken))
+            {
+                var currentRefTest = await context.RefTests
+                    .AsNoTracking()
+                    .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
+                if (currentRefTest is null || currentRefTest.IsAnonymized)
+                    yield break;
+
+                if (currentRefTest.Status != lockStatus)
+                {
+                    if (lockStatus != RefTestStatus.Pending
+                        || currentRefTest.Status != RefTestStatus.InProgress)
+                    {
+                        yield break;
+                    }
+
+                    lockStatus = RefTestStatus.InProgress;
+                }
+            }
         }
         finally
         {
-            sessionService.ReleaseSession(token, sessionId);
+            sessionService.ReleaseSession(lockKey, sessionId);
         }
     }
 }

@@ -613,6 +613,7 @@
     "start_button": "RefTest starten",
     "privacy_consent": "Ik heb de volgende tekst gelezen en aanvaard:",
     "privacy_consent_error": "We konden uw aanvaarding van de privacyverklaring niet vastleggen. Probeer het opnieuw.",
+    "session_creation_error": "We konden geen beveiligde deelnemerssessie aanmaken. Probeer het opnieuw.",
     "withdraw_link": "Toestemming intrekken en anonimisatie aanvragen",
     "withdraw_error": "We konden uw intrekking niet verwerken. Probeer het opnieuw of neem contact met ons op.",
     "withdrawal_queued_title": "Aanvraag tot intrekking ontvangen",

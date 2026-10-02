@@ -39,16 +39,21 @@ public sealed class PrivacyWithdrawalPipelineTests
             new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider()),
             logger ?? NullLogger<JobEnqueueService>.Instance);
 
+    private static IRefTestSessionTokenService NewSessionTokenService() =>
+        new RefTestSessionTokenService(new EphemeralDataProtectionProvider(), TimeProvider.System);
+
     private static PrivacyWithdrawalRequestService NewRequestService(
         RefTestManagementContext context,
         CapturingKeyProtection keyProtection,
         ILogger<PrivacyWithdrawalRequestService>? logger = null,
         PrivacyChallengeConfiguration? configuration = null,
-        BackgroundJobConfiguration? backgroundJobConfiguration = null) =>
+        BackgroundJobConfiguration? backgroundJobConfiguration = null,
+        IRefTestSessionTokenService? sessionTokenService = null) =>
         new(
             context,
             NewJobEnqueueService(context),
             keyProtection,
+            sessionTokenService ?? NewSessionTokenService(),
             configuration ?? new PrivacyChallengeConfiguration(),
             backgroundJobConfiguration ?? new BackgroundJobConfiguration(),
             logger ?? NullLogger<PrivacyWithdrawalRequestService>.Instance);
@@ -258,6 +263,41 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.False((await verification.RefTests
             .SingleAsync(refTest => refTest.Id == otherParticipant.Id, TestContext.Current.CancellationToken))
             .IsAnonymized);
+    }
+
+    [Fact]
+    public async Task ParticipantSessionTokenQueuesOnlyItsRefTest()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var participant = NewRefTest(titleId, ParticipantEmail);
+        participant.AcceptPrivacyNotice("v1");
+        var sessionTokenService = NewSessionTokenService();
+        var sessionToken = sessionTokenService.Create(participant);
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(participant);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var service = NewRequestService(
+                context,
+                new CapturingKeyProtection(),
+                sessionTokenService: sessionTokenService);
+
+            Assert.True(await RefTestLifecycleMutations.WithdrawConsentAsync(
+                sessionToken,
+                service,
+                TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        var target = await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(participant.Id, target.RefTestId);
     }
 
     [Fact]
@@ -622,6 +662,7 @@ public sealed class PrivacyWithdrawalPipelineTests
                 context,
                 failingEnqueuer,
                 new CapturingKeyProtection(),
+                NewSessionTokenService(),
                 new PrivacyChallengeConfiguration(),
                 new BackgroundJobConfiguration(),
                 NullLogger<PrivacyWithdrawalRequestService>.Instance);
@@ -1251,6 +1292,7 @@ public sealed class PrivacyWithdrawalPipelineTests
             context,
             NewJobEnqueueService(context, loggerFactory.CreateLogger<JobEnqueueService>()),
             keyProtection,
+            NewSessionTokenService(),
             new PrivacyChallengeConfiguration(),
             new BackgroundJobConfiguration(),
             loggerFactory.CreateLogger<PrivacyWithdrawalRequestService>());

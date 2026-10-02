@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -42,6 +43,22 @@ public class ParticipantInputTests
         var token = new string('a', 32);
 
         Assert.Equal(token, ParticipantInput.Token(token));
+    }
+
+    [Fact]
+    public void Token_AcceptsAWellFormedSessionCredential()
+    {
+        var token = RefTestSessionTokenService.TokenPrefix + new string('A', 64);
+
+        Assert.Equal(token, ParticipantInput.Token(token));
+    }
+
+    [Fact]
+    public void Token_RejectsAMalformedSessionCredential()
+    {
+        var token = RefTestSessionTokenService.TokenPrefix + "not a protected value";
+
+        Assert.Throws<RefTestValidationException>(() => ParticipantInput.Token(token));
     }
 
     [Fact]

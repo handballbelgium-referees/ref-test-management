@@ -15,6 +15,7 @@ import { RefTestFacade } from './ref-test.facade';
 import { RefTestStore } from './ref-test.store';
 
 describe('RefTestFacade consent withdrawal', () => {
+  const sessionToken = 'rts1.session-token';
   let facade: RefTestFacade;
   let store: RefTestStore;
   let withdrawalMutation: ReturnType<typeof vi.fn>;
@@ -51,13 +52,13 @@ describe('RefTestFacade consent withdrawal', () => {
   });
 
   it('shows the queued state only after the API accepts the durable request', () => {
-    store.token.set('participant-token');
+    store.token.set(sessionToken);
     store.showWithdrawDialog.set(true);
 
     facade.withdrawConsent();
 
     expect(withdrawalMutation).toHaveBeenCalledWith({
-      variables: { input: { token: 'participant-token' } },
+      variables: { input: { token: sessionToken } },
     });
     expect(store.withdrawalQueued()).toBe(true);
     expect(store.showWithdrawDialog()).toBe(false);
@@ -74,7 +75,7 @@ describe('RefTestFacade consent withdrawal', () => {
         },
       }),
     );
-    store.token.set('participant-token');
+    store.token.set(sessionToken);
     store.showWithdrawDialog.set(true);
 
     facade.withdrawConsent();

@@ -22,12 +22,13 @@ public interface IPrivacyWithdrawalRequestService
 
 /// <summary>
 /// Creates mailbox-verification challenges and atomically turns valid confirmations or
-/// participant-token requests into durable, batch-ID-only withdrawal jobs.
+/// participant-credential requests into durable, batch-ID-only withdrawal jobs.
 /// </summary>
 public sealed class PrivacyWithdrawalRequestService(
     RefTestManagementContext context,
     IJobEnqueueService jobEnqueueService,
     IPersonalDataExportKeyProtection keyProtection,
+    IRefTestSessionTokenService sessionTokenService,
     PrivacyChallengeConfiguration configuration,
     BackgroundJobConfiguration backgroundJobConfiguration,
     ILogger<PrivacyWithdrawalRequestService> logger) : IPrivacyWithdrawalRequestService
@@ -45,7 +46,7 @@ public sealed class PrivacyWithdrawalRequestService(
     /// accepted as already queued while its durable target has processable work; otherwise the
     /// existing incomplete batch is re-enqueued before the request is accepted.
     /// </summary>
-    /// <param name="token">The participant's raw invitation token; lookup uses only its hash.</param>
+    /// <param name="token">The participant's invitation or session credential.</param>
     /// <param name="cancellationToken">Token for cancelling the request.</param>
     /// <returns>
     /// True when work was newly queued, already processable, or safely re-enqueued; false when
@@ -67,8 +68,7 @@ public sealed class PrivacyWithdrawalRequestService(
                 retryToken);
 
             var refTest = await context.RefTests
-                .WithParticipantToken(token)
-                .FirstOrDefaultAsync(retryToken);
+                .FindByParticipantCredentialAsync(token, sessionTokenService, retryToken);
             if (refTest is null)
             {
                 await transaction.CommitAsync(retryToken);

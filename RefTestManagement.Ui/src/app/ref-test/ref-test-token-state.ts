@@ -1,13 +1,30 @@
-export const REF_TEST_TOKEN_STATE_KEY = 'refTestToken';
+export const REF_TEST_SESSION_TOKEN_STATE_KEY = 'refTestSessionToken';
+export const REF_TEST_LEGACY_TOKEN_STATE_KEY = 'refTestToken';
 
-// Router history state keeps active sessions reloadable without putting the bearer token in the URL.
-export function refTestTokenFromState(state: unknown): string | null {
-  if (state === null || typeof state !== 'object' || !(REF_TEST_TOKEN_STATE_KEY in state)) {
-    return null;
-  }
+const SESSION_TOKEN_PREFIX = 'rts1.';
 
-  const token = state[REF_TEST_TOKEN_STATE_KEY];
+function isStateRecord(state: unknown): state is Record<string, unknown> {
+  return state !== null && typeof state === 'object';
+}
+
+function tokenFromState(state: unknown, key: string): string | null {
+  if (!isStateRecord(state) || !(key in state)) return null;
+
+  const token = state[key];
   return typeof token === 'string' && token.trim().length > 0 ? token : null;
+}
+
+export function refTestSessionTokenFromState(state: unknown): string | null {
+  const sessionToken = tokenFromState(state, REF_TEST_SESSION_TOKEN_STATE_KEY);
+  if (sessionToken?.startsWith(SESSION_TOKEN_PREFIX)) return sessionToken;
+
+  const legacyToken = tokenFromState(state, REF_TEST_LEGACY_TOKEN_STATE_KEY);
+  return legacyToken?.startsWith(SESSION_TOKEN_PREFIX) ? legacyToken : null;
+}
+
+export function refTestInvitationTokenFromState(state: unknown): string | null {
+  const legacyToken = tokenFromState(state, REF_TEST_LEGACY_TOKEN_STATE_KEY);
+  return legacyToken && !legacyToken.startsWith(SESSION_TOKEN_PREFIX) ? legacyToken : null;
 }
 
 export function resolveRefTestToken(
@@ -16,5 +33,18 @@ export function resolveRefTestToken(
   historyState: unknown,
 ): string | null {
   if (routeToken?.trim()) return routeToken;
-  return refTestTokenFromState(navigationState) ?? refTestTokenFromState(historyState);
+
+  return (
+    refTestSessionTokenFromState(navigationState) ??
+    refTestInvitationTokenFromState(navigationState) ??
+    refTestSessionTokenFromState(historyState) ??
+    refTestInvitationTokenFromState(historyState)
+  );
+}
+
+export function resolveRefTestSessionToken(
+  navigationState: unknown,
+  historyState: unknown,
+): string | null {
+  return refTestSessionTokenFromState(navigationState) ?? refTestSessionTokenFromState(historyState);
 }

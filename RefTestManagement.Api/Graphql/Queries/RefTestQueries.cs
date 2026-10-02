@@ -34,14 +34,15 @@ public static partial class RefTestQueries
             privacyConfiguration.RetentionYears);
 
     /// <summary>
-    /// Get a RefTest by token
+    /// Get a RefTest by invitation or session token
     /// </summary>
-    /// <param name="token">The token of the RefTest to retrieve.</param>
+    /// <param name="token">The participant credential for the RefTest to retrieve.</param>
     /// <param name="context">The database context for accessing RefTests and related entities.</param>
     /// <param name="configuration">The configuration for RefTest expiration.</param>
+    /// <param name="sessionTokenService">Protects and resolves participant session credentials.</param>
     /// <param name="jobEnqueueService">Service for enqueuing and canceling job notifications.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    /// <returns>The RefTestDto if found and valid; otherwise, throws an exception.</returns>
+    /// <returns>The participant RefTest if found and valid; otherwise, throws an exception.</returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
     /// <exception cref="RefTestExpiredException"></exception>
@@ -52,19 +53,19 @@ public static partial class RefTestQueries
         string token,
         RefTestManagementContext context,
         [Service] RefTestExpirationConfiguration configuration,
+        [Service] IRefTestSessionTokenService sessionTokenService,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
-        if (!RefTest.IsValidTokenFormat(token))
-            throw new RefTestNotFoundException(token);
+        if (!RefTest.IsValidTokenFormat(token) && !RefTestSessionTokenService.HasSessionTokenFormat(token))
+            throw new RefTestNotFoundException();
 
         var refTest = await context.RefTests
             .AsNoTracking()
-            .WithParticipantToken(token)
-            .FirstOrDefaultAsync(cancellationToken);
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
 
         if (refTest is null)
-            throw new RefTestNotFoundException(token);
+            throw new RefTestNotFoundException();
 
         if (refTest.IsAnonymized)
             throw new InvalidRefTestStatusException("This RefTest's consent has been withdrawn");
@@ -81,7 +82,7 @@ public static partial class RefTestQueries
             new RefTestExpirationPayload(refTest.Id, action),
             cancellationToken: cancellationToken);
 
-        throw new RefTestExpiredException(token);
+        throw new RefTestExpiredException();
     }
 
     /// <summary>

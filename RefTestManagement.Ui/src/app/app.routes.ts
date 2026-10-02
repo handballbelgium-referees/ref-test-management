@@ -5,8 +5,10 @@ import { Permissions } from './auth/models/permissions';
 import { privacyConfirmationGuard } from './privacy/guards/privacy-confirmation.guard';
 import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 import {
+  refTestInvitationFragmentGuard,
+  refTestLegacyInvitationGuard,
   refTestSessionGuard,
-  refTestTokenUrlGuard,
+  refTestTakeGuard,
 } from './ref-test/guards/ref-test-token.guard';
 
 export const routes: Routes = [
@@ -92,6 +94,13 @@ export const routes: Routes = [
     canActivate: [authGuard, permissionGuard(Permissions.AuditLogs.View)],
   },
   {
+    path: 'ref-test',
+    pathMatch: 'full',
+    canActivate: [refTestInvitationFragmentGuard],
+    loadComponent: () =>
+      import('./ref-test/welcome/ref-test-welcome').then((m) => m.RefTestWelcome),
+  },
+  {
     path: 'ref-test/welcome',
     pathMatch: 'full',
     canActivate: [refTestSessionGuard],
@@ -101,19 +110,15 @@ export const routes: Routes = [
   {
     path: 'ref-test/take',
     pathMatch: 'full',
-    canActivate: [refTestSessionGuard],
+    canActivate: [refTestTakeGuard],
     loadComponent: () => import('./ref-test/take/take-ref-test').then((m) => m.TakeRefTest),
     canDeactivate: [refTestGuard],
   },
   {
     path: 'ref-test/:token',
+    canActivate: [refTestLegacyInvitationGuard],
     loadComponent: () =>
       import('./ref-test/welcome/ref-test-welcome').then((m) => m.RefTestWelcome),
-  },
-  {
-    path: 'ref-test/:token/take',
-    loadComponent: () => import('./ref-test/take/take-ref-test').then((m) => m.TakeRefTest),
-    canActivate: [refTestTokenUrlGuard],
   },
   {
     path: '**',

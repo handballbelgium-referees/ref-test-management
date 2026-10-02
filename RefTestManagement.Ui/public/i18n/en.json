@@ -613,6 +613,7 @@
     "start_button": "Start RefTest",
     "privacy_consent": "I have read and accept the",
     "privacy_consent_error": "We could not record your privacy-notice acceptance. Please try again.",
+    "session_creation_error": "We could not create a secure participant session. Please try again.",
     "withdraw_link": "Withdraw consent and request anonymization",
     "withdraw_error": "We could not process your withdrawal. Please try again or contact us.",
     "withdrawal_queued_title": "Withdrawal request received",

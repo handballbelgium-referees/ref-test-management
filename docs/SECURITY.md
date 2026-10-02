@@ -240,8 +240,8 @@ Protected routes use `permissionGuard` after `authGuard`. The guard waits for pe
 
 ## The Participant Invitation Token
 
-A participant takes their test through a link containing an invitation token. The token *is* the
-credential: there is no sign-in on that flow, because participants are not Auth0 users.
+A participant opens their test through a link containing an invitation token. The token is the
+initial credential: there is no sign-in on that flow, because participants are not Auth0 users.
 
 Participant token queries and lifecycle mutations use the dedicated `ParticipantRefTest` GraphQL
 contract rather than the administrator `RefTest` type. This keeps administrator authorization rules
@@ -249,28 +249,47 @@ and fields isolated from the anonymous participant flow. Answer correctness is o
 is in progress and requested only after the RefTest is completed; participant answers are randomized
 deterministically per RefTest so the order remains stable across refreshes and result review.
 
+The public `createRefTestSession` mutation exchanges an invitation or existing session credential
+for a fresh, data-protected session credential after the participant has accepted the privacy
+notice. It intentionally has no `[Authorize]` policy or permission constant; possession of the
+participant credential is the authorization method. Test operations then use the session credential.
+Pending session credentials have a 12-hour window to start the test. When a test starts within that
+window, the credential remains valid until one hour after the current test deadline; this deadline
+is rechecked against the RefTest on participant requests, including after an administrative time
+extension. Credentials issued while a test is in progress are valid for at least 12 hours or until
+one hour after the deadline, whichever is later. All session credentials are bound to the RefTest ID
+and its current invitation-token digest, so token rotation and anonymization invalidate them.
+Session-lock subscriptions revalidate credentials every 30 seconds and release their lock after
+expiry or invalidation.
+
 Putting a credential in a URL is a deliberate trade-off, made because requiring an account for a
 one-off test would keep most participants from ever taking it. The risks that choice carries are
 mitigated rather than ignored:
 
-After starting or resuming, the UI replaces the token-bearing URL with `/ref-test/take`. The token
-stays in browser history state on tokenless session routes so refresh and resume continue to work,
-but is no longer in the active URL.
+After acceptance or resuming, the UI exchanges the invitation token and replaces the URL with
+`/ref-test/take`. Only the expiring session credential is kept in browser history state for reload
+and resume. New invitation emails use `/ref-test?lang=<locale>#<invitation-token>`. The invitation
+fragment is moved into history state while the UI redirects to the tokenless welcome route; the
+legacy `/ref-test/:token` format remains supported for links already sent and is also redirected
+through the welcome flow.
 
 | Risk                                       | Mitigation                                                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| Token leaks through the `Referer` header   | The API sends `Referrer-Policy: no-referrer` on every response, and the only link on a token-bearing page is same-origin with `rel="noreferrer"`. |
+| Token leaks through the `Referer` header   | New invitation tokens are in the URL fragment, which browsers do not send in HTTP requests or `Referer` headers; the API also sends `Referrer-Policy: no-referrer`. Legacy path links may still be recorded in access logs. |
 | Token guessed                              | Tokens are 32 lowercase hex characters from `RandomNumberGenerator`, not `Guid.NewGuid()` — 128 bits of cryptographic randomness. |
 | Token exposed from database rows           | `RefTests.Token` stores a SHA-256 digest; a data-protected retry copy is cleared after delivery, token rotation, or anonymization, and queued invitation jobs contain only the digest. |
+| Session token replayed after rotation or expiry | The protected session token is bound to the current invitation digest and validated against the active test deadline; participant lookups and live session locks revalidate it. |
 | Token replayed after the test is over      | Every participant mutation re-checks status, and the server enforces the deadline independently of status.       |
 | Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
 | Oversized or malformed token in a lookup   | Only 32 lowercase hex characters are accepted before hashing; the stored digest cannot be submitted as a credential. |
 
-Residual risk that is accepted: the token is present in the original invitation URL and may appear
-in server access logs that record its initial request path. While the test is resumable, it also
-remains in browser history state on its tokenless session routes, which same-origin scripts can read.
-Anyone who can read the token can resume that one participant's test. If that becomes unacceptable,
-the next step is a one-time link that exchanges the token for a cookie-backed session.
+Residual risk that is accepted: legacy invitation links already sent put the token in the request
+path and may appear in server access logs. New invitation links use a fragment, but after the UI
+reads it the invitation token is temporarily kept in browser history state until the session
+exchange; same-origin scripts can read it. The session credential remains in browser history state
+on tokenless routes, and anyone who can read a still-valid credential can resume that one
+participant's test. Credential expiration and binding limit this exposure, while the original
+invitation credential remains usable until an operator rotates it or the record is anonymized.
 
 ## Response Security Headers
 

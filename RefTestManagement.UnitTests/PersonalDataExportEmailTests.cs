@@ -103,6 +103,34 @@ public sealed class PersonalDataExportEmailTests
     }
 
     [Fact]
+    public async Task InvitationEmailUsesFragmentCredentialsAndLanguageSpecificLinks()
+    {
+        var token = new string('a', 32);
+        var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+        using var client = new HttpClient(handler);
+        var service = CreateService(client, NullLogger<EmailService>.Instance);
+
+        await service.SendRefTestInvitationAsync(
+            Guid.NewGuid(),
+            "Ada Lovelace",
+            ParticipantEmail,
+            token,
+            numberOfQuestions: 10,
+            maxTimeInMinutes: 30,
+            TestContext.Current.CancellationToken);
+
+        using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
+        var html = providerRequest.RootElement.GetProperty("htmlContent").GetString()!;
+        foreach (var language in new[] { "en", "nl", "fr", "de" })
+        {
+            var expectedLink = $"https://app.example.org/ref-test?lang={language}#{token}";
+            Assert.Contains($"href='{expectedLink}'", html, StringComparison.Ordinal);
+        }
+
+        Assert.DoesNotContain($"/ref-test/{token}", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task ChallengeEmailProviderFailureDoesNotLogTheRawKeyOrRecipient()
     {
         var providerResponse =

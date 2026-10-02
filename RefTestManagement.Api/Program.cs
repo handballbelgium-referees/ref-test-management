@@ -35,6 +35,7 @@ services.AddSecurityConfiguration(configuration);
 services.AddTaskBasedAuthorization();
 services.AddHttpContextAccessor();
 services.AddDataProtection().SetApplicationName("RefTestManagement");
+services.AddSingleton<TimeProvider>(TimeProvider.System);
 services.AddControllersWithViews();
 
 // Add CORS for development (allows WebSocket connections from Angular dev server)
@@ -109,6 +110,7 @@ if (privacyChallengeConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
 services.AddSingleton(privacyChallengeConfig);
 services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
 services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
+services.AddSingleton<IRefTestSessionTokenService, RefTestSessionTokenService>();
 services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>();
 services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
 services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
