@@ -806,7 +806,7 @@
       "PrivacyWithdrawalChallengeEmailDelivered": "Verificatiemail voor intrekking verzonden",
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Verificatiemail voor intrekking mislukt",
       "PrivacyWithdrawalBatchConfirmed": "Intrekkingsverwerking ingepland",
-      "PrivacyWithdrawalBatchCompleted": "Verwerking van intrekkingsbatch voltooid",
+      "PrivacyWithdrawalBatchCompleted": "Intrekking voltooid",
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
       "EntityDeleted": "Verwijderd"

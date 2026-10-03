@@ -3,7 +3,7 @@ import { provideRouter } from '@angular/router';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConfirmPrivacyWithdrawalGQL } from '../../../graphql/generated';
+import { ConfirmPrivacyWithdrawalGQL } from '../../../../../../graphql/generated';
 import { PrivacyWithdrawalConfirmation } from './privacy-withdrawal-confirmation';
 
 describe('PrivacyWithdrawalConfirmation', () => {

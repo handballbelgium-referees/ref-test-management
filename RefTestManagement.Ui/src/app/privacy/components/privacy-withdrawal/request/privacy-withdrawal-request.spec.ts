@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RequestPrivacyWithdrawalGQL } from '../../../graphql/generated';
+import { RequestPrivacyWithdrawalGQL } from '../../../../../../graphql/generated';
 import { PrivacyWithdrawalRequest } from './privacy-withdrawal-request';
 
 describe('PrivacyWithdrawalRequest', () => {
@@ -80,9 +80,7 @@ describe('PrivacyWithdrawalRequest', () => {
     return fixture;
   }
 
-  function getEmailInput(
-    fixture: ComponentFixture<PrivacyWithdrawalRequest>,
-  ): HTMLInputElement {
+  function getEmailInput(fixture: ComponentFixture<PrivacyWithdrawalRequest>): HTMLInputElement {
     const input = (fixture.nativeElement as HTMLElement).querySelector<HTMLInputElement>(
       '#privacy-withdrawal-email',
     );
@@ -111,7 +109,9 @@ describe('PrivacyWithdrawalRequest', () => {
     expect(text).toContain('Withdraw consent and request anonymization');
     expect(text).toContain('No account or invitation token is needed.');
     expect(fixture.nativeElement.querySelector('form')).not.toBeNull();
-    expect(fixture.nativeElement.querySelector('#privacy-withdrawal-confirmation-title')).toBeNull();
+    expect(
+      fixture.nativeElement.querySelector('#privacy-withdrawal-confirmation-title'),
+    ).toBeNull();
   });
 
   it('shows localized validation and does not send invalid addresses', async () => {
@@ -188,7 +188,9 @@ describe('PrivacyWithdrawalRequest', () => {
     expect(submitButton.disabled).toBe(true);
     expect(submitButton.textContent).toContain('Sending your request...');
     expect(
-      fixture.nativeElement.querySelector('#privacy-withdrawal-request-pending')?.getAttribute('role'),
+      fixture.nativeElement
+        .querySelector('#privacy-withdrawal-request-pending')
+        ?.getAttribute('role'),
     ).toBe('status');
 
     requestResult.next({

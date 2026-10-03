@@ -4,7 +4,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { lastValueFrom } from 'rxjs';
-import { ConfirmPrivacyWithdrawalGQL } from '../../../graphql/generated';
+import { ConfirmPrivacyWithdrawalGQL } from '../../../../../../graphql/generated';
 
 @Component({
   selector: 'app-privacy-withdrawal-confirmation',

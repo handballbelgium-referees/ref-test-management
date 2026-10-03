@@ -806,7 +806,7 @@
       "PrivacyWithdrawalChallengeEmailDelivered": "Withdrawal verification email sent",
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Withdrawal verification email failed",
       "PrivacyWithdrawalBatchConfirmed": "Withdrawal processing queued",
-      "PrivacyWithdrawalBatchCompleted": "Withdrawal batch processing completed",
+      "PrivacyWithdrawalBatchCompleted": "Withdrawal complete",
       "EntityCreated": "Created",
       "EntityModified": "Modified",
       "EntityDeleted": "Deleted"

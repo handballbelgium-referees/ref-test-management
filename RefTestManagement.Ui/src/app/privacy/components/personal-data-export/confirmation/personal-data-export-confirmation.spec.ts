@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { ConfirmPersonalDataExportGQL } from '../../../graphql/generated';
+import { ConfirmPersonalDataExportGQL } from '../../../../../../graphql/generated';
 import { PersonalDataExportConfirmation } from './personal-data-export-confirmation';
 
 describe('PersonalDataExportConfirmation', () => {
@@ -117,9 +117,9 @@ describe('PersonalDataExportConfirmation', () => {
     ).toContain(
       'Your request is confirmed. A PDF copy of your personal data will be emailed to you.',
     );
-    const successCard = fixture.nativeElement
-      .querySelector('#privacy-data-export-confirmed')
-      ?.parentElement;
+    const successCard = fixture.nativeElement.querySelector(
+      '#privacy-data-export-confirmed',
+    )?.parentElement;
     expect(successCard?.classList.contains('p-4')).toBe(true);
     expect(successCard?.classList.contains('sm:p-8')).toBe(true);
     expect(successCard?.classList.contains('shadow-sm')).toBe(true);
@@ -137,7 +137,11 @@ describe('PersonalDataExportConfirmation', () => {
       };
     }>();
     confirmPersonalDataExportMutation.mockReturnValue(confirmationResult.asObservable());
-    window.history.replaceState(window.history.state, '', `${window.location.pathname}#pending-key`);
+    window.history.replaceState(
+      window.history.state,
+      '',
+      `${window.location.pathname}#pending-key`,
+    );
 
     const fixture = await renderConfirmation();
     const confirmButton = getConfirmButton(fixture);

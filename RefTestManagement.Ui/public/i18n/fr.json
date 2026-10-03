@@ -807,7 +807,7 @@
       "PrivacyWithdrawalChallengeEmailDelivered": "E-mail de vérification du retrait envoyé",
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Échec de l’e-mail de vérification du retrait",
       "PrivacyWithdrawalBatchConfirmed": "Traitement du retrait mis en file d’attente",
-      "PrivacyWithdrawalBatchCompleted": "Traitement du lot de retrait terminé",
+      "PrivacyWithdrawalBatchCompleted": "Retrait terminé",
       "EntityCreated": "Créé",
       "EntityModified": "Modifié",
       "EntityDeleted": "Supprimé"

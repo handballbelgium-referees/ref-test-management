@@ -3,12 +3,12 @@ import { authGuard } from './auth/guards/auth-guard';
 import { permissionGuard } from './auth/guards/permission-guard';
 import { Permissions } from './auth/models/permissions';
 import { privacyConfirmationGuard } from './privacy/guards/privacy-confirmation.guard';
-import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 import {
   refTestInvitationFragmentGuard,
   refTestSessionGuard,
   refTestTakeGuard,
 } from './ref-test/guards/ref-test-token.guard';
+import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 
 export const routes: Routes = [
   {
@@ -19,14 +19,16 @@ export const routes: Routes = [
     path: 'privacy/export-request',
     pathMatch: 'full',
     loadComponent: () =>
-      import('./privacy/personal-data-export-request').then((m) => m.PersonalDataExportRequest),
+      import('./privacy/components/personal-data-export/request/personal-data-export-request').then(
+        (m) => m.PersonalDataExportRequest,
+      ),
   },
   {
     path: 'privacy/export-confirmation',
     pathMatch: 'full',
     canActivate: [privacyConfirmationGuard],
     loadComponent: () =>
-      import('./privacy/personal-data-export-confirmation').then(
+      import('./privacy/components/personal-data-export/confirmation/personal-data-export-confirmation').then(
         (m) => m.PersonalDataExportConfirmation,
       ),
   },
@@ -34,14 +36,16 @@ export const routes: Routes = [
     path: 'privacy/withdrawal-request',
     pathMatch: 'full',
     loadComponent: () =>
-      import('./privacy/privacy-withdrawal-request').then((m) => m.PrivacyWithdrawalRequest),
+      import('./privacy/components/privacy-withdrawal/request/privacy-withdrawal-request').then(
+        (m) => m.PrivacyWithdrawalRequest,
+      ),
   },
   {
     path: 'privacy/withdrawal-confirmation',
     pathMatch: 'full',
     canActivate: [privacyConfirmationGuard],
     loadComponent: () =>
-      import('./privacy/privacy-withdrawal-confirmation').then(
+      import('./privacy/components/privacy-withdrawal/confirmation/privacy-withdrawal-confirmation').then(
         (m) => m.PrivacyWithdrawalConfirmation,
       ),
   },

@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { email, form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { lastValueFrom } from 'rxjs';
-import { RequestPrivacyWithdrawalGQL } from '../../../graphql/generated';
+import { RequestPrivacyWithdrawalGQL } from '../../../../../../graphql/generated';
 
 @Component({
   selector: 'app-privacy-withdrawal-request',

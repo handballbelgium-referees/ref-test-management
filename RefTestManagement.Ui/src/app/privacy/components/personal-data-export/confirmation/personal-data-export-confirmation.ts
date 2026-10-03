@@ -3,7 +3,7 @@ import { Component, computed, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
 import { catchError, EMPTY, finalize, tap } from 'rxjs';
-import { ConfirmPersonalDataExportGQL } from '../../../graphql/generated';
+import { ConfirmPersonalDataExportGQL } from '../../../../../../graphql/generated';
 
 @Component({
   selector: 'app-personal-data-export-confirmation',

@@ -806,7 +806,7 @@
       "PrivacyWithdrawalChallengeEmailDelivered": "Verifizierungs-E-Mail zum Widerruf versendet",
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Verifizierungs-E-Mail zum Widerruf fehlgeschlagen",
       "PrivacyWithdrawalBatchConfirmed": "Widerrufsverarbeitung vorgemerkt",
-      "PrivacyWithdrawalBatchCompleted": "Widerrufsverarbeitung abgeschlossen",
+      "PrivacyWithdrawalBatchCompleted": "Widerruf abgeschlossen",
       "EntityCreated": "Erstellt",
       "EntityModified": "Geändert",
       "EntityDeleted": "Gelöscht"
