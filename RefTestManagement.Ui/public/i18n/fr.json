@@ -803,10 +803,10 @@
       "PersonalDataExportRequestVerified": "Adresse e-mail vérifiée",
       "PersonalDataExportDelivered": "E-mail avec l’export envoyé",
       "PersonalDataExportDeliveryFailed": "Échec de la livraison de l’export",
-      "PrivacyWithdrawalChallengeCreated": "Demande de retrait enregistrée",
-      "PrivacyWithdrawalChallengeEmailDelivered": "E-mail de vérification du retrait envoyé",
-      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Échec de l’e-mail de vérification du retrait",
-      "PrivacyWithdrawalBatchConfirmed": "Traitement du retrait mis en file d’attente",
+      "PrivacyWithdrawalChallengeCreated": "Retrait demandé",
+      "PrivacyWithdrawalChallengeEmailDelivered": "E-mail de retrait envoyé",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Échec de l’e-mail de retrait",
+      "PrivacyWithdrawalBatchConfirmed": "Retrait en attente",
       "PrivacyWithdrawalBatchCompleted": "Retrait terminé",
       "EntityCreated": "Créé",
       "EntityModified": "Modifié",
@@ -822,7 +822,7 @@
       "RefTestTitle": "Titre RefTest",
       "PersonalDataExportRequest": "Demande d’export de données",
       "PrivacyWithdrawalChallenge": "Vérification du retrait",
-      "PrivacyWithdrawalBatch": "Lot de retrait du consentement"
+      "PrivacyWithdrawalBatch": "Lot de retrait"
     },
     "sort": {
       "title": "Tri",

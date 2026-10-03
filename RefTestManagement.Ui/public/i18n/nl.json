@@ -802,10 +802,10 @@
       "PersonalDataExportRequestVerified": "E-mailadres geverifieerd",
       "PersonalDataExportDelivered": "E-mail met gegevensexport verzonden",
       "PersonalDataExportDeliveryFailed": "Bezorging van gegevensexport mislukt",
-      "PrivacyWithdrawalChallengeCreated": "Intrekkingsverzoek vastgelegd",
-      "PrivacyWithdrawalChallengeEmailDelivered": "Verificatiemail voor intrekking verzonden",
-      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Verificatiemail voor intrekking mislukt",
-      "PrivacyWithdrawalBatchConfirmed": "Intrekkingsverwerking ingepland",
+      "PrivacyWithdrawalChallengeCreated": "Intrekking aangevraagd",
+      "PrivacyWithdrawalChallengeEmailDelivered": "Intrekkingsmail verzonden",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Intrekkingsmail mislukt",
+      "PrivacyWithdrawalBatchConfirmed": "Intrekking ingepland",
       "PrivacyWithdrawalBatchCompleted": "Intrekking voltooid",
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
@@ -820,8 +820,8 @@
       "RefTest": "RefTest",
       "RefTestTitle": "RefTest titel",
       "PersonalDataExportRequest": "Gegevensexportaanvraag",
-      "PrivacyWithdrawalChallenge": "Verificatie voor intrekking",
-      "PrivacyWithdrawalBatch": "Verwerkingsbatch voor intrekking"
+      "PrivacyWithdrawalChallenge": "Intrekkingsverificatie",
+      "PrivacyWithdrawalBatch": "Intrekkingsbatch"
     },
     "sort": {
       "title": "Sortering",

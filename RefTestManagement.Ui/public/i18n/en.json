@@ -802,10 +802,10 @@
       "PersonalDataExportRequestVerified": "Email address verified",
       "PersonalDataExportDelivered": "Export email sent",
       "PersonalDataExportDeliveryFailed": "Export delivery failed",
-      "PrivacyWithdrawalChallengeCreated": "Withdrawal challenge requested",
-      "PrivacyWithdrawalChallengeEmailDelivered": "Withdrawal verification email sent",
-      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Withdrawal verification email failed",
-      "PrivacyWithdrawalBatchConfirmed": "Withdrawal processing queued",
+      "PrivacyWithdrawalChallengeCreated": "Withdrawal requested",
+      "PrivacyWithdrawalChallengeEmailDelivered": "Withdrawal email sent",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Withdrawal email failed",
+      "PrivacyWithdrawalBatchConfirmed": "Withdrawal queued",
       "PrivacyWithdrawalBatchCompleted": "Withdrawal complete",
       "EntityCreated": "Created",
       "EntityModified": "Modified",
@@ -820,7 +820,7 @@
       "RefTest": "RefTest",
       "RefTestTitle": "RefTest Title",
       "PersonalDataExportRequest": "Data export request",
-      "PrivacyWithdrawalChallenge": "Withdrawal verification challenge",
+      "PrivacyWithdrawalChallenge": "Withdrawal verification",
       "PrivacyWithdrawalBatch": "Withdrawal batch"
     },
     "sort": {

@@ -802,10 +802,10 @@
       "PersonalDataExportRequestVerified": "E-Mail-Adresse verifiziert",
       "PersonalDataExportDelivered": "Export-E-Mail versendet",
       "PersonalDataExportDeliveryFailed": "Zustellung des Datenexports fehlgeschlagen",
-      "PrivacyWithdrawalChallengeCreated": "Widerrufsantrag erfasst",
-      "PrivacyWithdrawalChallengeEmailDelivered": "Verifizierungs-E-Mail zum Widerruf versendet",
-      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Verifizierungs-E-Mail zum Widerruf fehlgeschlagen",
-      "PrivacyWithdrawalBatchConfirmed": "Widerrufsverarbeitung vorgemerkt",
+      "PrivacyWithdrawalChallengeCreated": "Widerruf beantragt",
+      "PrivacyWithdrawalChallengeEmailDelivered": "Widerrufs-E-Mail gesendet",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Widerrufs-E-Mail fehlgeschlagen",
+      "PrivacyWithdrawalBatchConfirmed": "Widerruf vorgemerkt",
       "PrivacyWithdrawalBatchCompleted": "Widerruf abgeschlossen",
       "EntityCreated": "Erstellt",
       "EntityModified": "Geändert",
@@ -821,7 +821,7 @@
       "RefTestTitle": "RefTest Titel",
       "PersonalDataExportRequest": "Datenexportanfrage",
       "PrivacyWithdrawalChallenge": "Widerrufsbest\u00e4tigung",
-      "PrivacyWithdrawalBatch": "Widerrufsverarbeitungsbatch"
+      "PrivacyWithdrawalBatch": "Widerrufsbatch"
     },
     "sort": {
       "title": "Sortierung",
