@@ -155,8 +155,12 @@ public sealed class PrivacyWithdrawalChallenge : IHasDomainEvents, IHasVerifiedP
         return true;
     }
 
-    /// <summary>Records a retryable provider failure without discarding the protected key.</summary>
-    public bool MarkChallengeEmailDeliveryFailed(DateTime attemptedAt)
+    /// <summary>Records a provider failure and expires the challenge after the final delivery attempt.</summary>
+    /// <remarks>
+    /// On the final attempt, retain the normalized-address lookup until a request renews this row
+    /// or scheduled cleanup clears it.
+    /// </remarks>
+    public bool MarkChallengeEmailDeliveryFailed(DateTime attemptedAt, bool isFinalAttempt)
     {
         if (!CanDeliverAt(attemptedAt))
             return false;
@@ -167,6 +171,10 @@ public sealed class PrivacyWithdrawalChallenge : IHasDomainEvents, IHasVerifiedP
         {
             OccurredAt = attemptedAt
         });
+
+        if (isFinalAttempt)
+            ExpiresAt = attemptedAt;
+
         return true;
     }
 

@@ -191,6 +191,12 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Single(keyProtection.ProtectedKeys);
         Assert.Single(await context.Jobs.ToListAsync(TestContext.Current.CancellationToken));
 
+        // An active challenge suppresses a duplicate request even before delivery succeeds.
+        await service.RequestAsync("Ada@Example.Org", TestContext.Current.CancellationToken);
+        Assert.Single(await context.PrivacyWithdrawalChallenges.ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Single(await context.Jobs.ToListAsync(TestContext.Current.CancellationToken));
+        Assert.Single(keyProtection.ProtectedKeys);
+
         // A successfully delivered email is still a pending, unexpired challenge.
         Assert.True(challenge.MarkChallengeEmailDelivered(DateTime.UtcNow));
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
@@ -839,6 +845,7 @@ public sealed class PrivacyWithdrawalPipelineTests
                 failedAttempt,
                 emailService,
                 new CapturingKeyProtection(),
+                new BackgroundJobConfiguration(),
                 loggerFactory.CreateLogger<PrivacyWithdrawalChallengeEmailJobHandler>());
             var failure = await Assert.ThrowsAsync<PrivacyWithdrawalEmailDeliveryException>(
                 () => handler.HandleAsync(job, TestContext.Current.CancellationToken));
@@ -859,6 +866,7 @@ public sealed class PrivacyWithdrawalPipelineTests
                 successfulAttempt,
                 emailService,
                 new CapturingKeyProtection(),
+                new BackgroundJobConfiguration(),
                 loggerFactory.CreateLogger<PrivacyWithdrawalChallengeEmailJobHandler>());
             await handler.HandleAsync(job, TestContext.Current.CancellationToken);
 
@@ -882,9 +890,180 @@ public sealed class PrivacyWithdrawalPipelineTests
             noDuplicateDelivery,
             emailService,
             new CapturingKeyProtection(),
+            new BackgroundJobConfiguration(),
             loggerFactory.CreateLogger<PrivacyWithdrawalChallengeEmailJobHandler>());
         await completedHandler.HandleAsync(job, TestContext.Current.CancellationToken);
         Assert.Equal(2, emailProxy.InvocationCount);
+    }
+
+    [Fact]
+    public async Task FinalChallengeEmailFailureExpiresChallengeAndRepeatRequestQueuesFreshDelivery()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(NewRefTest(titleId, ParticipantEmail));
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var jobConfiguration = new BackgroundJobConfiguration { MaxAttempts = 2 };
+        var keyProtection = new CapturingKeyProtection();
+        await using (var requestContext = database.CreateContext())
+        {
+            await NewRequestService(
+                    requestContext,
+                    keyProtection,
+                    backgroundJobConfiguration: jobConfiguration)
+                .RequestAsync(ParticipantEmail, TestContext.Current.CancellationToken);
+        }
+
+        Guid challengeId;
+        Guid jobId;
+        string initialKeyHash;
+        string initialProtectedKey;
+        string normalizedEmailHash;
+        await using (var initialState = database.CreateContext())
+        {
+            var challenge = await initialState.PrivacyWithdrawalChallenges
+                .SingleAsync(TestContext.Current.CancellationToken);
+            var job = await initialState.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+            challengeId = challenge.Id;
+            jobId = job.Id;
+            initialKeyHash = challenge.KeyHash!;
+            initialProtectedKey = challenge.ProtectedDeliveryKey!;
+            normalizedEmailHash = challenge.NormalizedEmailHash;
+        }
+
+        var initialKey = keyProtection.ProtectedKeys.Single();
+        var providerFailureMessage = $"Provider echoed {ParticipantEmail} {initialKey}.";
+        var emailService = DispatchProxy.Create<IEmailService, RecordingPrivacyWithdrawalEmailProxy>();
+        var emailProxy = (RecordingPrivacyWithdrawalEmailProxy)(object)emailService;
+        emailProxy.Failure = new InvalidOperationException(providerFailureMessage);
+        using var loggerProvider = new CapturingLoggerProvider();
+
+        var services = new ServiceCollection();
+        services.AddLogging(builder => builder.AddProvider(loggerProvider));
+        services.AddScoped<RefTestManagementContext>(_ => database.CreateContext());
+        services.AddSingleton<IEmailService>(emailService);
+        services.AddSingleton<IPersonalDataExportKeyProtection>(keyProtection);
+        services.AddSingleton(jobConfiguration);
+        services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalChallengeEmailJobHandler>(
+            JobType.PrivacyWithdrawalChallengeEmail);
+        using var serviceProvider = services.BuildServiceProvider();
+        var backgroundJobLogger = serviceProvider.GetRequiredService<ILogger<BackgroundJobService>>();
+
+        for (var attempt = 1; attempt <= jobConfiguration.MaxAttempts; attempt++)
+        {
+            await using (var processingScope = serviceProvider.CreateAsyncScope())
+            {
+                var context = processingScope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
+                var job = await context.Jobs.SingleAsync(
+                    candidate => candidate.Id == jobId,
+                    TestContext.Current.CancellationToken);
+                Assert.Equal(attempt - 1, job.Attempts);
+                job.MarkAsProcessing(TimeSpan.FromMinutes(5));
+
+                await BackgroundJobService.ProcessJobAsync(
+                    job,
+                    processingScope.ServiceProvider,
+                    context,
+                    backgroundJobLogger,
+                    jobConfiguration.MaxAttempts,
+                    TestContext.Current.CancellationToken);
+
+                Assert.Equal(attempt, job.Attempts);
+                Assert.Equal(
+                    attempt == jobConfiguration.MaxAttempts ? JobStatus.Failed : JobStatus.Pending,
+                    job.Status);
+                Assert.Equal("Privacy-withdrawal verification email delivery failed.", job.ErrorMessage);
+                Assert.DoesNotContain(ParticipantEmail, job.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
+                Assert.DoesNotContain(initialKey, job.ErrorMessage!, StringComparison.Ordinal);
+
+                var challenge = await context.PrivacyWithdrawalChallenges
+                    .SingleAsync(candidate => candidate.Id == challengeId, TestContext.Current.CancellationToken);
+                Assert.Equal(attempt, challenge.DeliveryAttemptCount);
+                if (attempt < jobConfiguration.MaxAttempts)
+                {
+                    Assert.True(challenge.IsPendingAt(DateTime.UtcNow));
+                    Assert.NotNull(challenge.ProtectedDeliveryKey);
+                }
+                else
+                {
+                    Assert.False(challenge.IsPendingAt(DateTime.UtcNow));
+                    Assert.True(challenge.ExpiresAt <= DateTime.UtcNow);
+                }
+            }
+
+            if (attempt >= jobConfiguration.MaxAttempts)
+                continue;
+
+            await using var retryRequestContext = database.CreateContext();
+            await NewRequestService(
+                    retryRequestContext,
+                    keyProtection,
+                    backgroundJobConfiguration: jobConfiguration)
+                .RequestAsync("Ada@Example.Org", TestContext.Current.CancellationToken);
+            Assert.Single(await retryRequestContext.PrivacyWithdrawalChallenges
+                .ToListAsync(TestContext.Current.CancellationToken));
+            Assert.Single(await retryRequestContext.Jobs.ToListAsync(TestContext.Current.CancellationToken));
+            Assert.Single(keyProtection.ProtectedKeys);
+        }
+
+        Assert.Equal(jobConfiguration.MaxAttempts, emailProxy.InvocationCount);
+        Assert.Equal(ParticipantEmail, emailProxy.RecipientEmail);
+        Assert.Equal(initialKey, emailProxy.ChallengeKey);
+
+        await using (var expiredState = database.CreateContext())
+        {
+            var expired = await expiredState.PrivacyWithdrawalChallenges
+                .SingleAsync(candidate => candidate.Id == challengeId, TestContext.Current.CancellationToken);
+            Assert.True(expired.ExpiresAt <= DateTime.UtcNow);
+            Assert.Equal(jobConfiguration.MaxAttempts, expired.DeliveryAttemptCount);
+            Assert.Equal(initialKeyHash, expired.KeyHash);
+            Assert.Equal(initialProtectedKey, expired.ProtectedDeliveryKey);
+            Assert.Equal(normalizedEmailHash, expired.NormalizedEmailHash);
+        }
+
+        await using (var renewalContext = database.CreateContext())
+        {
+            await NewRequestService(
+                    renewalContext,
+                    keyProtection,
+                    backgroundJobConfiguration: jobConfiguration)
+                .RequestAsync("ADA@EXAMPLE.ORG", TestContext.Current.CancellationToken);
+            Assert.Equal(
+                2,
+                await renewalContext.Jobs.CountAsync(TestContext.Current.CancellationToken));
+        }
+
+        await using var verificationContext = database.CreateContext();
+        var renewed = await verificationContext.PrivacyWithdrawalChallenges
+            .SingleAsync(candidate => candidate.Id == challengeId, TestContext.Current.CancellationToken);
+        Assert.Equal(normalizedEmailHash, renewed.NormalizedEmailHash);
+        Assert.True(renewed.ExpiresAt > DateTime.UtcNow);
+        Assert.Equal(0, renewed.DeliveryAttemptCount);
+        Assert.Null(renewed.ChallengeEmailSentAt);
+        Assert.NotEqual(initialKeyHash, renewed.KeyHash);
+        Assert.Equal(PrivacyWithdrawalChallenge.HashKey(keyProtection.ProtectedKeys[1]), renewed.KeyHash);
+        Assert.NotEqual(initialProtectedKey, renewed.ProtectedDeliveryKey);
+        Assert.Equal(2, keyProtection.ProtectedKeys.Count);
+
+        var jobs = await verificationContext.Jobs.ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, jobs.Count);
+        var failedJob = jobs.Single(candidate => candidate.Id == jobId);
+        Assert.Equal(JobStatus.Failed, failedJob.Status);
+        Assert.Equal(jobConfiguration.MaxAttempts, failedJob.Attempts);
+        var freshJob = jobs.Single(candidate => candidate.Id != jobId);
+        Assert.Equal(JobType.PrivacyWithdrawalChallengeEmail, freshJob.JobType);
+        Assert.Equal(JobStatus.Pending, freshJob.Status);
+        using var payload = JsonDocument.Parse(freshJob.Payload);
+        Assert.Equal(challengeId, payload.RootElement.GetProperty("challengeId").GetGuid());
+
+        var logs = string.Join(Environment.NewLine, loggerProvider.Messages);
+        Assert.DoesNotContain(ParticipantEmail, logs, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(initialKey, logs, StringComparison.Ordinal);
+        Assert.DoesNotContain(providerFailureMessage, logs, StringComparison.Ordinal);
     }
 
     [Fact]

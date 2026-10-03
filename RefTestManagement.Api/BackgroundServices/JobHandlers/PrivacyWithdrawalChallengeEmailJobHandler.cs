@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -12,6 +13,7 @@ public sealed class PrivacyWithdrawalChallengeEmailJobHandler(
     RefTestManagementContext context,
     IEmailService emailService,
     IPersonalDataExportKeyProtection keyProtection,
+    BackgroundJobConfiguration jobConfiguration,
     ILogger<PrivacyWithdrawalChallengeEmailJobHandler> logger) : IJobHandler
 {
     public async Task HandleAsync(Job job, CancellationToken cancellationToken)
@@ -67,7 +69,10 @@ public sealed class PrivacyWithdrawalChallengeEmailJobHandler(
         }
         catch (Exception)
         {
-            if (challenge.MarkChallengeEmailDeliveryFailed(DateTime.UtcNow))
+            // ProcessJobAsync applies MarkAsFailed after this handler throws, so this run is
+            // job.Attempts + 1. Keep the current key for retries, but expire it on the final run.
+            var isFinalAttempt = job.Attempts + 1 >= jobConfiguration.MaxAttempts;
+            if (challenge.MarkChallengeEmailDeliveryFailed(DateTime.UtcNow, isFinalAttempt))
                 await context.SaveChangesWithRetryAsync(cancellationToken);
 
             // Provider failures can echo the recipient or the one-time key, so only this fixed
