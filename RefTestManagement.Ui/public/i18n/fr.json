@@ -614,10 +614,11 @@
     "start_button": "Commencer le RefTest",
     "privacy_consent": "J'ai lu et j'accepte la",
     "privacy_consent_error": "Nous n'avons pas pu enregistrer votre acceptation de l'avis de confidentialité. Veuillez réessayer.",
-    "withdraw_link": "Retirer mon consentement et anonymiser mes données",
+    "session_creation_error": "Nous n'avons pas pu créer une session sécurisée pour le participant. Veuillez réessayer.",
+    "withdraw_link": "Retirer mon consentement et demander l'anonymisation",
     "withdraw_error": "Nous n'avons pas pu traiter votre retrait. Veuillez réessayer ou nous contacter.",
-    "withdrawn_title": "Consentement retiré",
-    "withdrawn_message": "Vous avez retiré votre consentement. Vos données d'identification ont été anonymisées et l'enregistrement du RefTest a été rendu anonyme pour préserver la trace d'audit.",
+    "withdrawal_queued_title": "Demande de retrait reçue",
+    "withdrawal_queued_message": "Votre demande a été mise en file d'attente. Vos données d'identification seront anonymisées une fois le traitement terminé. Un enregistrement RefTest anonymisé peut être conservé à des fins d'audit.",
     "time_remaining": "Temps Restant",
     "progress": "Progrès",
     "question": "Question",
@@ -661,9 +662,9 @@
       },
       "withdraw": {
         "title": "Retirer votre consentement ?",
-        "message": "Le retrait de votre consentement anonymisera vos données d'identification et rendra anonyme l'enregistrement du RefTest. L'enregistrement anonymisé peut être conservé à des fins d'audit.",
-        "warning": "Votre consentement sera retiré et vos données d'identification seront anonymisées. Un enregistrement de RefTest anonymisé peut être conservé à des fins d'audit.",
-        "confirm": "Retirer le consentement et anonymiser les données",
+        "message": "Votre demande de retrait sera mise en file d'attente pour traitement en arrière-plan. Vos données d'identification seront anonymisées une fois le traitement terminé ; un enregistrement RefTest anonymisé peut être conservé à des fins d'audit.",
+        "warning": "L'anonymisation n'est pas immédiate. Votre demande sera traitée en arrière-plan et l'enregistrement RefTest peut être conservé sous forme anonymisée à des fins d'audit.",
+        "confirm": "Retirer le consentement et demander l'anonymisation",
         "cancel": "Annuler"
       }
     }
@@ -723,6 +724,26 @@
       "confirming": "Confirmation de votre demande...",
       "confirmed": "Votre demande est confirmée. Un PDF de vos données personnelles vous sera envoyé par e-mail.",
       "confirmationError": "Nous n'avons pas pu confirmer cette demande. Le lien est peut-être invalide ou expiré. Demandez un nouveau lien et réessayez."
+    },
+    "consentWithdrawal": {
+      "title": "Retirer votre consentement et demander l’anonymisation",
+      "description": "Saisissez l’adresse e-mail associée à votre participation. Si elle correspond à un ou plusieurs dossiers de participants non anonymisés, un lien de confirmation à usage unique sera envoyé à cette adresse. Aucun compte ni jeton d’invitation n’est nécessaire.",
+      "requestLink": "Ouvrir le formulaire de retrait",
+      "emailLabel": "Adresse e-mail",
+      "emailHelp": "Le même message s’affiche pour toutes les adresses. Après votre confirmation, les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti ; un enregistrement RefTest anonymisé pourra être conservé à des fins d’audit. L’anonymisation n’est pas immédiate.",
+      "emailRequired": "Saisissez votre adresse e-mail.",
+      "emailInvalid": "Saisissez une adresse e-mail valide.",
+      "requestButton": "Envoyer la demande de retrait",
+      "requesting": "Envoi de votre demande...",
+      "requestAcknowledged": "Si l’adresse est associée à un dossier de participant, un e-mail de confirmation sera envoyé. Cette page affiche le même message qu’un dossier corresponde ou non. Après confirmation du retrait de votre consentement, les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti. Un enregistrement RefTest anonymisé peut être conservé à des fins d’audit.",
+      "requestError": "Nous n’avons pas pu traiter votre demande. Veuillez réessayer.",
+      "confirmationTitle": "Confirmer le retrait de votre consentement",
+      "confirmationDescription": "L’ouverture de cette page ne confirme pas la demande. Sélectionnez le bouton ci-dessous uniquement si vous souhaitez retirer votre consentement. Après confirmation, les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti ; un enregistrement RefTest anonymisé peut être conservé à des fins d’audit. L’anonymisation n’est pas immédiate.",
+      "confirmButton": "Confirmer le retrait",
+      "confirming": "Confirmation de votre demande de retrait...",
+      "confirmed": "Le retrait de votre consentement est confirmé. Les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti. Un enregistrement RefTest anonymisé peut être conservé à des fins d’audit. L’anonymisation n’est pas immédiate.",
+      "confirmationError": "Nous n’avons pas pu confirmer cette demande. Le lien est peut-être invalide, expiré ou déjà utilisé. Vous pouvez demander un nouveau lien ; cette page ne révèle aucune information sur les dossiers des participants.",
+      "confirmationKeyMissing": "Ce lien ne contient pas les informations de confirmation. Demandez un nouveau lien depuis l’avis de confidentialité."
     }
   },
   "audit-logs": {
@@ -779,9 +800,14 @@
       "RefTestCompleted": "Terminé",
       "PersonalDataExportChallengeEmailDelivered": "E-mail de vérification envoyé",
       "PersonalDataExportChallengeEmailDeliveryFailed": "Échec de l’e-mail de vérification",
-      "PersonalDataExportRequestVerified": "Adresse e-mail vérifiée",
-      "PersonalDataExportDelivered": "E-mail avec l’export envoyé",
-      "PersonalDataExportDeliveryFailed": "Échec de la livraison de l’export",
+      "PersonalDataExportRequestVerified": "E-mail vérifié",
+      "PersonalDataExportDelivered": "Export envoyé par e-mail",
+      "PersonalDataExportDeliveryFailed": "Échec d’envoi de l’export",
+      "PrivacyWithdrawalChallengeCreated": "Retrait demandé",
+      "PrivacyWithdrawalChallengeEmailDelivered": "E-mail de retrait envoyé",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Échec de l’e-mail de retrait",
+      "PrivacyWithdrawalBatchConfirmed": "Retrait en attente",
+      "PrivacyWithdrawalBatchCompleted": "Retrait terminé",
       "EntityCreated": "Créé",
       "EntityModified": "Modifié",
       "EntityDeleted": "Supprimé"
@@ -794,7 +820,9 @@
     "entityType": {
       "RefTest": "RefTest",
       "RefTestTitle": "Titre RefTest",
-      "PersonalDataExportRequest": "Demande d’export de données"
+      "PersonalDataExportRequest": "Demande d’export",
+      "PrivacyWithdrawalChallenge": "Vérification du retrait",
+      "PrivacyWithdrawalBatch": "Lot de retrait"
     },
     "sort": {
       "title": "Tri",

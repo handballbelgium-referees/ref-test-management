@@ -2,7 +2,12 @@ import { Routes } from '@angular/router';
 import { authGuard } from './auth/guards/auth-guard';
 import { permissionGuard } from './auth/guards/permission-guard';
 import { Permissions } from './auth/models/permissions';
-import { personalDataExportConfirmationGuard } from './privacy/guards/personal-data-export-confirmation.guard';
+import { privacyConfirmationGuard } from './privacy/guards/privacy-confirmation.guard';
+import {
+  refTestInvitationFragmentGuard,
+  refTestSessionGuard,
+  refTestTakeGuard,
+} from './ref-test/guards/ref-test-token.guard';
 import { refTestGuard } from './ref-test/take/guards/can-deactivate-ref-test.guard';
 
 export const routes: Routes = [
@@ -14,15 +19,34 @@ export const routes: Routes = [
     path: 'privacy/export-request',
     pathMatch: 'full',
     loadComponent: () =>
-      import('./privacy/personal-data-export-request').then((m) => m.PersonalDataExportRequest),
+      import('./privacy/components/personal-data-export/request/personal-data-export-request').then(
+        (m) => m.PersonalDataExportRequest,
+      ),
   },
   {
     path: 'privacy/export-confirmation',
     pathMatch: 'full',
-    canActivate: [personalDataExportConfirmationGuard],
+    canActivate: [privacyConfirmationGuard],
     loadComponent: () =>
-      import('./privacy/personal-data-export-confirmation').then(
+      import('./privacy/components/personal-data-export/confirmation/personal-data-export-confirmation').then(
         (m) => m.PersonalDataExportConfirmation,
+      ),
+  },
+  {
+    path: 'privacy/withdrawal-request',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./privacy/components/privacy-withdrawal/request/privacy-withdrawal-request').then(
+        (m) => m.PrivacyWithdrawalRequest,
+      ),
+  },
+  {
+    path: 'privacy/withdrawal-confirmation',
+    pathMatch: 'full',
+    canActivate: [privacyConfirmationGuard],
+    loadComponent: () =>
+      import('./privacy/components/privacy-withdrawal/confirmation/privacy-withdrawal-confirmation').then(
+        (m) => m.PrivacyWithdrawalConfirmation,
       ),
   },
   {
@@ -73,12 +97,23 @@ export const routes: Routes = [
     canActivate: [authGuard, permissionGuard(Permissions.AuditLogs.View)],
   },
   {
-    path: 'ref-test/:token',
+    path: 'ref-test',
+    pathMatch: 'full',
+    canActivate: [refTestInvitationFragmentGuard],
     loadComponent: () =>
       import('./ref-test/welcome/ref-test-welcome').then((m) => m.RefTestWelcome),
   },
   {
-    path: 'ref-test/:token/take',
+    path: 'ref-test/welcome',
+    pathMatch: 'full',
+    canActivate: [refTestSessionGuard],
+    loadComponent: () =>
+      import('./ref-test/welcome/ref-test-welcome').then((m) => m.RefTestWelcome),
+  },
+  {
+    path: 'ref-test/take',
+    pathMatch: 'full',
+    canActivate: [refTestTakeGuard],
     loadComponent: () => import('./ref-test/take/take-ref-test').then((m) => m.TakeRefTest),
     canDeactivate: [refTestGuard],
   },

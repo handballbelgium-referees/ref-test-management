@@ -613,10 +613,11 @@
     "start_button": "Start RefTest",
     "privacy_consent": "I have read and accept the",
     "privacy_consent_error": "We could not record your privacy-notice acceptance. Please try again.",
-    "withdraw_link": "Withdraw consent and anonymize my data",
+    "session_creation_error": "We could not create a secure participant session. Please try again.",
+    "withdraw_link": "Withdraw consent and request anonymization",
     "withdraw_error": "We could not process your withdrawal. Please try again or contact us.",
-    "withdrawn_title": "Consent withdrawn",
-    "withdrawn_message": "You have withdrawn consent. Your identifying data has been anonymized and the RefTest record has been redacted to preserve the audit trail.",
+    "withdrawal_queued_title": "Withdrawal request received",
+    "withdrawal_queued_message": "Your request has been queued for processing. Your identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
     "time_remaining": "Time Remaining",
     "progress": "Progress",
     "question": "Question",
@@ -660,9 +661,9 @@
       },
       "withdraw": {
         "title": "Withdraw consent?",
-        "message": "Withdrawing consent will anonymize your identifying data and redact the RefTest record. The anonymized record may be retained for audit purposes.",
-        "warning": "Your consent will be withdrawn and your identifying data anonymized. An anonymized RefTest record may remain for audit purposes.",
-        "confirm": "Withdraw consent and anonymize data",
+        "message": "Your withdrawal request will be queued for background processing. Your identifying data will be anonymized after processing succeeds; an anonymized RefTest record may be retained for audit purposes.",
+        "warning": "Anonymization is not immediate. The request will be processed in the background, and your RefTest record may remain in anonymized form for audit purposes.",
+        "confirm": "Withdraw consent and queue anonymization",
         "cancel": "Cancel"
       }
     }
@@ -722,6 +723,26 @@
       "confirming": "Confirming your request...",
       "confirmed": "Your request is confirmed. A PDF copy of your personal data will be emailed to you.",
       "confirmationError": "We could not confirm this request. The link may be invalid or expired. Please request a new link and try again."
+    },
+    "consentWithdrawal": {
+      "title": "Withdraw consent and request anonymization",
+      "description": "Enter the email address associated with your participation. If one or more non-anonymized participant records match, a one-time confirmation link will be sent to that address. You do not need an account or invitation token.",
+      "requestLink": "Open the withdrawal request form",
+      "emailLabel": "Email address",
+      "emailHelp": "The same acknowledgement is shown for every address. After you confirm, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. This is not immediate.",
+      "emailRequired": "Enter your email address.",
+      "emailInvalid": "Enter a valid email address.",
+      "requestButton": "Send withdrawal request",
+      "requesting": "Sending your request...",
+      "requestAcknowledged": "If the address is associated with a participant record, a confirmation email will be sent. This page shows the same acknowledgement whether or not a record matches. After you confirm the withdrawal of consent, identifying data will be anonymized once processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
+      "requestError": "We could not process your request. Please try again.",
+      "confirmationTitle": "Confirm withdrawal of consent",
+      "confirmationDescription": "Opening this page does not confirm the request. Select the button below only if you want to withdraw your consent. After confirmation, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmButton": "Confirm withdrawal",
+      "confirming": "Confirming your withdrawal request...",
+      "confirmed": "Your consent withdrawal has been confirmed. Identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmationError": "We could not confirm this request. The link may be invalid, expired, or already used. Request a new link if needed; no participant information is shown here.",
+      "confirmationKeyMissing": "This link does not contain confirmation information. Request a new link from the privacy notice."
     }
   },
   "audit-logs": {
@@ -778,9 +799,14 @@
       "RefTestCompleted": "Completed",
       "PersonalDataExportChallengeEmailDelivered": "Verification email sent",
       "PersonalDataExportChallengeEmailDeliveryFailed": "Verification email failed",
-      "PersonalDataExportRequestVerified": "Email address verified",
+      "PersonalDataExportRequestVerified": "Email verified",
       "PersonalDataExportDelivered": "Export email sent",
       "PersonalDataExportDeliveryFailed": "Export delivery failed",
+      "PrivacyWithdrawalChallengeCreated": "Withdrawal requested",
+      "PrivacyWithdrawalChallengeEmailDelivered": "Withdrawal email sent",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Withdrawal email failed",
+      "PrivacyWithdrawalBatchConfirmed": "Withdrawal queued",
+      "PrivacyWithdrawalBatchCompleted": "Withdrawal complete",
       "EntityCreated": "Created",
       "EntityModified": "Modified",
       "EntityDeleted": "Deleted"
@@ -793,7 +819,9 @@
     "entityType": {
       "RefTest": "RefTest",
       "RefTestTitle": "RefTest Title",
-      "PersonalDataExportRequest": "Data export request"
+      "PersonalDataExportRequest": "Data export request",
+      "PrivacyWithdrawalChallenge": "Withdrawal verification",
+      "PrivacyWithdrawalBatch": "Withdrawal batch"
     },
     "sort": {
       "title": "Sorting",

@@ -185,7 +185,26 @@ export const appConfig: ApplicationConfig = {
         // The operation name is safe to record because it is developer-authored. The error itself
         // is not, so it goes through ErrorReporter, which withholds the contents in production.
         const errorLink = new ErrorLink(({ error, operation }) => {
-          reporter.report(`graphql:${operation.operationName ?? 'anonymous'}`, error);
+          const containsParticipantCredential =
+            operation.operationName === 'GetRefTestByToken' ||
+            operation.operationName === 'CreateRefTestSession' ||
+            operation.operationName === 'AcceptPrivacyNotice' ||
+            operation.operationName === 'StartRefTest' ||
+            operation.operationName === 'SaveRefTestProgress' ||
+            operation.operationName === 'CompleteRefTest' ||
+            operation.operationName === 'WithdrawConsent' ||
+            operation.operationName === 'RefTestSessionLock';
+          const containsPrivacyChallengeCredential =
+            operation.operationName === 'RequestPersonalDataExport' ||
+            operation.operationName === 'ConfirmPersonalDataExport' ||
+            operation.operationName === 'RequestPrivacyWithdrawal' ||
+            operation.operationName === 'ConfirmPrivacyWithdrawal';
+          const reportedError = containsParticipantCredential
+            ? new Error('Participant credential operation failed.')
+            : containsPrivacyChallengeCredential
+              ? new Error('Privacy challenge operation failed.')
+            : error;
+          reporter.report(`graphql:${operation.operationName ?? 'anonymous'}`, reportedError);
         });
 
         // Split link: use SSE for subscriptions, http (with retry) for everything else

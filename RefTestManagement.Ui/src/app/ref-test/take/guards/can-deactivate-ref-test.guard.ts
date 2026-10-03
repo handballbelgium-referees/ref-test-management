@@ -14,6 +14,6 @@ import { TakeRefTest } from '../take-ref-test';
  */
 export const refTestGuard: CanDeactivateFn<TakeRefTest> = (component) => {
   const store = inject(RefTestStore);
-  if (store.completed() || store.withdrawn()) return true;
+  if (store.completed() || store.withdrawalQueued()) return true;
   return component.canDeactivate();
 };

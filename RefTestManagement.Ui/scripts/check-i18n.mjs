@@ -39,23 +39,57 @@ const withdrawalKeys = [
   'ref_test.dialog.withdraw.message',
   'ref_test.dialog.withdraw.warning',
   'ref_test.dialog.withdraw.confirm',
+  'privacy.consentWithdrawal.title',
+  'privacy.consentWithdrawal.description',
+  'privacy.consentWithdrawal.requestLink',
+  'privacy.consentWithdrawal.emailLabel',
+  'privacy.consentWithdrawal.emailHelp',
+  'privacy.consentWithdrawal.emailRequired',
+  'privacy.consentWithdrawal.emailInvalid',
+  'privacy.consentWithdrawal.requestButton',
+  'privacy.consentWithdrawal.requesting',
+  'privacy.consentWithdrawal.requestAcknowledged',
+  'privacy.consentWithdrawal.requestError',
+  'privacy.consentWithdrawal.confirmationTitle',
+  'privacy.consentWithdrawal.confirmationDescription',
+  'privacy.consentWithdrawal.confirmButton',
+  'privacy.consentWithdrawal.confirming',
+  'privacy.consentWithdrawal.confirmed',
+  'privacy.consentWithdrawal.confirmationError',
+  'privacy.consentWithdrawal.confirmationKeyMissing',
+];
+const withdrawalAccuracyKeys = [
+  'privacy.consentWithdrawal.requestAcknowledged',
+  'privacy.consentWithdrawal.confirmationDescription',
+  'privacy.consentWithdrawal.confirmed',
+];
+const withdrawalAuditKeys = [
+  'audit-logs.eventType.PrivacyWithdrawalChallengeCreated',
+  'audit-logs.eventType.PrivacyWithdrawalChallengeEmailDelivered',
+  'audit-logs.eventType.PrivacyWithdrawalChallengeEmailDeliveryFailed',
+  'audit-logs.eventType.PrivacyWithdrawalBatchConfirmed',
+  'audit-logs.eventType.PrivacyWithdrawalBatchCompleted',
+  'audit-logs.entityType.PrivacyWithdrawalChallenge',
+  'audit-logs.entityType.PrivacyWithdrawalBatch',
 ];
 const withdrawalCopyRules = {
   en: {
     required: [/consent/i, /anonym/i, /audit/i],
-    forbidden: [/permanent(?:ly)?\s+delete/i, /delete\s+my\s+data/i],
+    forbidden: [/\b(?:delet(?:e|ed|es|ing|ion)|eras(?:e|ed|es|ing|ure))\b/i],
   },
   nl: {
     required: [/toestemming/i, /anonim/i, /audit/i],
-    forbidden: [/permanent(?:e| verwijderd)?/i, /gegevens verwijderen/i],
+    forbidden: [/\b(?:verwijder(?:en|d|ing|t)?|wissen|gewist|wissing)\b/i],
   },
   fr: {
     required: [/consentement/i, /anonym/i, /audit/i],
-    forbidden: [/définitiv/i, /supprimer mes données/i],
+    forbidden: [
+      /\bsupprim(?:er|e|es|é(?:e|s|es)?|ent|ons|ez)\b|\bsuppression\b|\beffac(?:er|e|es|é(?:e|s|es)?|ent|ons|ez)\b|\beffacement\b/i,
+    ],
   },
   de: {
     required: [/einwilligung/i, /anonym/i, /prüfzweck/i],
-    forbidden: [/dauerhaft gelöscht/i, /daten löschen/i],
+    forbidden: [/\b(?:l[oö]schen|gel[oö]scht|l[oö]schung|entfernen|entfernt|entfernung|tilgen|getilgt)\b/i],
   },
 };
 
@@ -96,6 +130,19 @@ for (const locale of LOCALES) {
   for (const pattern of rules.forbidden) {
     if (pattern.test(copy)) {
       problems.push(`${locale}: withdrawal copy contains forbidden pattern ${pattern}`);
+    }
+  }
+  for (const key of withdrawalAccuracyKeys) {
+    const text = translations.get(key) ?? '';
+    for (const pattern of rules.required) {
+      if (!pattern.test(text)) {
+        problems.push(`${locale}: withdrawal copy "${key}" does not match required pattern ${pattern}`);
+      }
+    }
+  }
+  for (const key of withdrawalAuditKeys) {
+    if (!translations.get(key)?.trim()) {
+      problems.push(`${locale}: withdrawal audit label "${key}" is missing or empty`);
     }
   }
 }

@@ -12,5 +12,7 @@ public enum JobType
     ApprovalNotificationEmail,
     ApprovalDecisionEmail,
     PersonalDataExportChallengeEmail,
-    PersonalDataExportDeliveryEmail
+    PersonalDataExportDeliveryEmail,
+    PrivacyWithdrawalChallengeEmail,
+    PrivacyWithdrawalBatch
 }

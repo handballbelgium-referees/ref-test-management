@@ -3,7 +3,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { email, form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslatePipe } from '@ngx-translate/core';
 import { lastValueFrom } from 'rxjs';
-import { RequestPersonalDataExportGQL } from '../../../graphql/generated';
+import { RequestPersonalDataExportGQL } from '../../../../../../graphql/generated';
 
 @Component({
   selector: 'app-personal-data-export-request',

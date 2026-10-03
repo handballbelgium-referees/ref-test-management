@@ -1,6 +1,10 @@
+using System.Reflection;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Infrastructure;
+using HotChocolate.Authorization;
 using HotChocolate.Execution;
 using HotChocolate.Types;
 using Microsoft.Extensions.DependencyInjection;
@@ -9,6 +13,69 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 public class AuthorizationSchemaTests
 {
+    [Fact]
+    public void PrivacyWithdrawalResolversArePublicMutationFields()
+    {
+        var mutationType = typeof(PrivacyWithdrawalMutations);
+        Assert.NotNull(mutationType.GetCustomAttribute<MutationTypeAttribute>());
+
+        var methods = mutationType
+            .GetMethods(BindingFlags.Public | BindingFlags.Static | BindingFlags.DeclaredOnly)
+            .OrderBy(method => method.Name, StringComparer.Ordinal)
+            .ToArray();
+        Assert.Equal(
+            ["ConfirmPrivacyWithdrawalAsync", "RequestPrivacyWithdrawalAsync"],
+            methods.Select(method => method.Name));
+        Assert.DoesNotContain(
+            methods,
+            method => method.GetCustomAttribute<AuthorizeAttribute>() is not null);
+    }
+
+    [Fact]
+    public async Task PublicWithdrawalSchemaUsesAnonymousMutationConventionFields()
+    {
+        await using var provider = BuildApiSchemaProvider();
+        var executorProvider = provider.GetRequiredService<IRequestExecutorProvider>();
+        var executor = await executorProvider.GetExecutorAsync(
+            Assert.Single(executorProvider.SchemaNames),
+            TestContext.Current.CancellationToken);
+        var mutation = Assert.IsAssignableFrom<IComplexTypeDefinition>(executor.Schema.MutationType);
+        var requestField = mutation.Fields.Single(field => field.Name == "requestPrivacyWithdrawal");
+        var confirmationField = mutation.Fields.Single(field => field.Name == "confirmPrivacyWithdrawal");
+
+        Assert.DoesNotContain(
+            requestField.Directives,
+            directive => directive.Definition.Name is "authorize" or "authorizeByRole");
+        Assert.DoesNotContain(
+            confirmationField.Directives,
+            directive => directive.Definition.Name is "authorize" or "authorizeByRole");
+        Assert.DoesNotContain(
+            executor.Schema.QueryType.Fields,
+            field => field.Name is "requestPrivacyWithdrawal" or "confirmPrivacyWithdrawal");
+        // GraphQL GET requests execute queries only; keeping confirmation off Query prevents link prefetch.
+
+        Assert.Equal(
+            ["privacyWithdrawalRequestAcknowledgement"],
+            AnonymousFields(Assert.IsAssignableFrom<IComplexTypeDefinition>(
+                executor.Schema.Types.GetType<IComplexTypeDefinition>(
+                    "RequestPrivacyWithdrawalPayload"))));
+        Assert.Equal(
+            ["privacyWithdrawalConfirmationResult"],
+            AnonymousFields(Assert.IsAssignableFrom<IComplexTypeDefinition>(
+                executor.Schema.Types.GetType<IComplexTypeDefinition>(
+                    "ConfirmPrivacyWithdrawalPayload"))));
+        Assert.Equal(
+            ["acknowledged"],
+            AnonymousFields(Assert.IsAssignableFrom<IComplexTypeDefinition>(
+                executor.Schema.Types.GetType<IComplexTypeDefinition>(
+                    "PrivacyWithdrawalRequestAcknowledgement"))));
+        Assert.Equal(
+            ["accepted"],
+            AnonymousFields(Assert.IsAssignableFrom<IComplexTypeDefinition>(
+                executor.Schema.Types.GetType<IComplexTypeDefinition>(
+                    "PrivacyWithdrawalConfirmationResult"))));
+    }
+
     [Fact]
     public async Task AnonymousFieldExposureMatchesTheParticipantContract()
     {
@@ -89,6 +156,32 @@ public class AuthorizationSchemaTests
             .AddAuthorization();
 
         services.AddAuthorization();
+        return services.BuildServiceProvider();
+    }
+
+    private static ServiceProvider BuildApiSchemaProvider()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddAuthorization();
+        services
+            .AddGraphQLServer()
+            .AddQueryType()
+            .AddMutationType()
+            .AddSubscriptionType()
+            .AddApiTypes()
+            .AddQueryConventions()
+            .AddMutationConventions()
+            .AddInMemorySubscriptions()
+            .RegisterDbContextFactory<RefTestManagementContext>()
+            .AddProjections()
+            .AddFiltering()
+            .AddSorting()
+            .AddCacheControl()
+            .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
+            .AddGlobalObjectIdentification(false)
+            .AddAuthorization();
+
         return services.BuildServiceProvider();
     }
 

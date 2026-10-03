@@ -13,7 +13,7 @@ public static partial class PersonalDataExportMutations
     public static async Task<PersonalDataExportRequestAcknowledgement> RequestPersonalDataExportAsync(
         PersonalDataExportRequestInput input,
         [Service] IPersonalDataExportRequestService requestService,
-        [Service] IPersonalDataExportRateLimiter rateLimiter,
+        [Service] IPrivacyChallengeRateLimiter rateLimiter,
         [Service] IClientIpResolver clientIpResolver,
         [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)
@@ -35,7 +35,7 @@ public static partial class PersonalDataExportMutations
     public static async Task<PersonalDataExportConfirmationResult> ConfirmPersonalDataExportAsync(
         string key,
         [Service] IPersonalDataExportRequestService requestService,
-        [Service] IPersonalDataExportRateLimiter rateLimiter,
+        [Service] IPrivacyChallengeRateLimiter rateLimiter,
         [Service] IClientIpResolver clientIpResolver,
         [Service] IHttpContextAccessor httpContextAccessor,
         CancellationToken cancellationToken)

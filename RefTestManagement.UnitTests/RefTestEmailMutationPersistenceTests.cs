@@ -353,6 +353,12 @@ public sealed class RefTestEmailMutationPersistenceTests
             DateTime expiresAt,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
+        public Task SendPrivacyWithdrawalVerificationAsync(
+            string recipientEmail,
+            string challengeKey,
+            DateTime expiresAt,
+            CancellationToken cancellationToken) => throw new NotSupportedException();
+
         public Task<bool> SendPersonalDataExportAsync(
             string recipientEmail,
             IReadOnlyList<EmailAttachment> attachments,

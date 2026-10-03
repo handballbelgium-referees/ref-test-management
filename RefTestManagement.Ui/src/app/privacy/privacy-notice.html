@@ -86,4 +86,23 @@
       </a>.
     </p>
   </section>
+
+  <section
+    aria-labelledby="privacy-withdrawal-title"
+    class="space-y-4"
+  >
+    <h2 id="privacy-withdrawal-title" class="text-xl font-bold text-neutral-900">
+      {{ 'privacy.consentWithdrawal.title' | translate }}
+    </h2>
+    <p>
+      {{ 'privacy.consentWithdrawal.description' | translate }}
+      <a
+        routerLink="/privacy/withdrawal-request"
+        queryParamsHandling="preserve"
+        class="rounded-sm text-primary-700 underline decoration-2 underline-offset-2 hover:text-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
+      >
+        {{ 'privacy.consentWithdrawal.requestLink' | translate }}
+      </a>.
+    </p>
+  </section>
 </article>

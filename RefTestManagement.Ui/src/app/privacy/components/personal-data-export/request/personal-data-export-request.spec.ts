@@ -2,7 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { of, Subject, throwError } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { RequestPersonalDataExportGQL } from '../../../graphql/generated';
+import { RequestPersonalDataExportGQL } from '../../../../../../graphql/generated';
 import { PersonalDataExportRequest } from './personal-data-export-request';
 
 describe('PersonalDataExportRequest', () => {

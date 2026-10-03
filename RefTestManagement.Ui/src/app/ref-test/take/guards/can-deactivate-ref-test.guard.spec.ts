@@ -73,13 +73,12 @@ describe('refTestGuard', () => {
   });
 
   /**
-   * Withdrawing consent erases the attempt on purpose. Asking "are you sure you want to lose your
-   * progress?" immediately afterwards would be both confusing and, if confirmed away, would strand
-   * the participant on a record that no longer exists.
+   * Once a withdrawal request is durably queued, the page is replaced by its acknowledgement.
+   * Asking whether to leave the attempt would imply that the queued request could be undone.
    */
-  it('lets a participant who withdrew consent leave without a prompt', () => {
+  it('lets a participant with a queued withdrawal leave without a prompt', () => {
     const canDeactivate = vi.fn();
-    store.withdrawn.set(true);
+    store.withdrawalQueued.set(true);
 
     expect(run({ canDeactivate })).toBe(true);
     expect(canDeactivate).not.toHaveBeenCalled();

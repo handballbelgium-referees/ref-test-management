@@ -54,7 +54,7 @@ The configured retention period is three years. The application records both com
 
 Erasure is a two-step, irreversible process:
 
-1. **Anonymize (first request).** The RefTest record is kept, but its name, email, and access token are redacted in place (`***`/equivalent placeholders), and the same redaction is applied to personal-data fields recorded in its historical audit trail (e.g. the name/email captured when the RefTest was created or last updated). Background jobs referencing the RefTest that are still queued or in flight (invitation/result/report emails) are cancelled and their payloads cleared. The record and its (now redacted) audit trail remain visible to staff, so it stays clear *when* and *why* a RefTest was anonymized. Once anonymized, only the delete/erase action remains available for that RefTest — all other operations are disabled.
+1. **Anonymize.** The RefTest record is kept, but its name, email, and access token are redacted in place (`***`/equivalent placeholders), and the same redaction is applied to personal-data fields recorded in its historical audit trail (e.g. the name/email captured when the RefTest was created or last updated). Background jobs referencing the RefTest that are still queued or in flight (invitation/result/report emails) are cancelled and their payloads cleared. The record and its (now redacted) audit trail remain visible to staff, so it stays clear *when* and *why* a RefTest was anonymized. Once anonymized, only the delete/erase action remains available for that RefTest — all other operations are disabled. Participant self-service withdrawal queues this step as durable background work and acknowledges it only after the job is committed; it does not claim erasure is complete at request time.
 2. **Permanent delete.** The RefTest row itself is removed entirely. Personal data is redacted from its audit trail first, so nothing identifying is left behind; the (now redacted) trail then follows the normal audit-log retention schedule (see `AuditLogConfiguration.RetentionDays`) rather than being force-deleted.
 
 The standard administrative `deleteRefTests` operation and the participant-facing `withdrawConsent` operation both use this same erasure path. `withdrawConsent` performs step 1; `deleteRefTests` performs step 1 followed by step 2, so a staff delete leaves no personal data whether or not the RefTest was already anonymized. An already delivered email cannot be recalled from a participant's inbox.
@@ -78,7 +78,7 @@ Access and portability requests for current RefTest records can be made through 
 
 The participant enters the email address used for their RefTest. The application trims the address and matches it case-insensitively against RefTest records that have not been anonymized. The form returns the same acknowledgement whether or not a record matches; only a matching address is queued for a verification email with a section for every enabled language. The public GraphQL operations require no login or Auth0 permission. Control of the matching mailbox, demonstrated with a one-time key, is the confirmation method; it is not an independent legal-identity check.
 
-Each language section links to `/privacy/export-confirmation?lang=<language>#<key>`, so the confirmation page opens in that section's language. Opening a link only displays the confirmation page: the client removes the key from the address bar/history and sends it to the server only after the participant explicitly selects Confirm. The key is single-use and expires after 24 hours by default; its lifetime can be configured from 1 through 168 hours (see [PersonalDataExportConfiguration](CONFIGURATION.md#personaldataexportconfiguration)).
+Each language section links to `/privacy/export-confirmation?lang=<language>#<key>`, so the confirmation page opens in that section's language. Opening a link only displays the confirmation page: the client removes the key from the address bar/history and sends it to the server only after the participant explicitly selects Confirm. The key is single-use and expires after 24 hours by default; its lifetime can be configured from 1 through 168 hours (see [PrivacyChallengeConfiguration](CONFIGURATION.md#privacychallengeconfiguration)).
 
 After confirmation, the application builds the export from the data available at delivery time, not from a snapshot taken when the request was submitted. It includes every then-current, non-anonymized RefTest matched to that email, regardless of RefTest status, and retained audit events attributable to the verified address, including staff actions. Ownership is determined by replaying each stream's creation and email-update events in sequence order. When an email change transfers a RefTest to a new address, the new owner receives that transition with the former owner's identity values redacted, but not events from prior owners; case-and-whitespace-only email changes do not change ownership. Events whose ownership cannot be determined from the retained history are omitted. Archived or previously redacted events are included in their retained form when attributable. Before export, staff/third-party actor identities and known third-party fields are omitted, other email addresses are redacted, and sensitive values such as invitation tokens are removed. Records anonymized before delivery are not included.
 
@@ -88,9 +88,42 @@ Challenge and delivery events are recorded on a separate audit stream with non-s
 
 If any RefTest for the matching email is erased before an export is complete, the application clears all uncleared export requests for that address and cancels their pending or in-flight challenge and delivery jobs, even if other RefTests for the same address remain. After preparing the email payload, a delivery worker rechecks immediately before provider handoff that the request is still verified and its persisted recipient still matches. This prevents handoff when erasure has completed before the final check, but an erasure concurrent with or after that check can still race with handoff; no database transaction or row lock is held across network I/O. Once an email has been accepted by the provider, the application cannot recall it or its PDF attachments.
 
-### Self-service withdrawal (any status, including completed)
+### Self-service email-verified withdrawal of consent
 
-A participant can withdraw consent and immediately anonymize their own data using only their invitation link, via the "withdraw consent" action on the welcome, in-progress, and results pages. This uses the same erasure path described above (starting with the anonymize step) and requires no identity verification beyond the token, matching the low bar already used to give consent. This is available regardless of RefTest status, including `Completed`, because anonymizing no longer destroys the record or its audit trail outright — the completion timestamp, score, and the fact that the RefTest happened remain visible to staff (with the name/email redacted); only a subsequent, separate request permanently deletes the row. A participant or controller may request permanent deletion of an already-anonymized RefTest at any time via the standard erasure process; since it no longer holds personal data, no further identity verification is needed for that step.
+In addition to the invitation-token flow below, the public self-service form linked from `/privacy`
+is available at `/privacy/withdrawal-request`. It uses the GraphQL mutations
+`requestPrivacyWithdrawal` and `confirmPrivacyWithdrawal` for mailbox-verified withdrawal without
+an account or invitation token. The request operation wraps the email address in its `input`
+object, and the confirmation operation wraps the one-time key in its `input` object. The request
+trims and case-insensitively matches the address
+against non-anonymized RefTests, and returns the same
+`privacyWithdrawalRequestAcknowledgement.acknowledged: true` response whether or not anything
+matches. Only a matching address is queued for a one-time verification email. The response never
+includes RefTest records or participant details.
+Challenge and batch audit events contain only matching/target counts and delivery-attempt details;
+they do not contain the recipient address or raw one-time key.
+
+Each enabled-language section of the verification email links to
+`/privacy/withdrawal-confirmation?lang=<language>#<key>`. Opening the link only renders a
+confirmation prompt: the client immediately removes the fragment from the visible address bar and
+browser history, preserves the language query, and sends the key to the server only after the
+participant explicitly selects Confirm. Email scanners and prefetchers therefore do not confirm
+the request. The UI makes no participant lookup and does not reveal whether the submitted address
+matched a record.
+
+The server accepts an unexpired, unused key only once and commits any required batch targets and
+durable worker job before returning
+`privacyWithdrawalConfirmationResult.accepted: true`. If no matching records remain, the key is
+durably consumed without new work. That acknowledgement means processing is queued when there is
+work to do, not that anonymization is complete. Invalid, expired, reused, and rate-limited attempts
+are not accepted. Request and confirmation attempts are separately rate-limited per client address
+(default five requests and ten confirmations per 60 seconds); the shared settings are documented in
+[Security](SECURITY.md#public-consent-withdrawal-verification) and
+[PrivacyChallengeConfiguration](CONFIGURATION.md#privacychallengeconfiguration).
+
+### Self-service invitation-token withdrawal (any status, including completed)
+
+A participant can request withdrawal of consent using only their invitation link, via the explicitly confirmed "withdraw consent" action on the welcome, in-progress, and results pages. The server verifies the invitation-token hash and atomically commits a one-RefTest withdrawal target and its durable worker job; no second email or mailbox check is involved. The page then acknowledges that processing is queued, not that anonymization has finished. An unfinished target suppresses duplicate work only while its batch job remains processable; either the token request or mailbox confirmation atomically enqueues a replacement for the same incomplete batch if its job is missing or no longer processable. The worker uses the same erasure path as bulk withdrawal, retries failed targets, and publishes the anonymization update only after the erasure transaction commits. The action is available regardless of RefTest status, including `Completed`, because anonymizing no longer destroys the record or its audit trail outright — the completion timestamp, score, and the fact that the RefTest happened remain visible to staff (with the name/email redacted); only a subsequent, separate request permanently deletes the row. A participant or controller may request permanent deletion of an already-anonymized RefTest at any time via the standard erasure process; since it no longer holds personal data, no further identity verification is needed for that step.
 
 ### Staff-assisted requests (correction, erasure, and export support)
 

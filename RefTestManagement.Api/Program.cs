@@ -35,6 +35,7 @@ services.AddSecurityConfiguration(configuration);
 services.AddTaskBasedAuthorization();
 services.AddHttpContextAccessor();
 services.AddDataProtection().SetApplicationName("RefTestManagement");
+services.AddSingleton<TimeProvider>(TimeProvider.System);
 services.AddControllersWithViews();
 
 // Add CORS for development (allows WebSocket connections from Angular dev server)
@@ -94,23 +95,25 @@ var privacyConfig = configuration.GetSection("PrivacyConfiguration").Get<Privacy
                     ?? new PrivacyConfiguration();
 services.AddSingleton(privacyConfig);
 
-var personalDataExportConfig = configuration.GetSection("PersonalDataExportConfiguration")
-                                   .Get<PersonalDataExportConfiguration>()
-                               ?? new PersonalDataExportConfiguration();
-if (personalDataExportConfig.KeyLifetimeHours is < 1 or > 168
-    || personalDataExportConfig.RateLimitWindowSeconds <= 0
-    || personalDataExportConfig.RequestRateLimitPermitLimit <= 0
-    || personalDataExportConfig.ConfirmationRateLimitPermitLimit <= 0
-    || personalDataExportConfig.CleanupIntervalMinutes <= 0)
+var privacyChallengeConfig = configuration.GetSection("PrivacyChallengeConfiguration")
+                                 .Get<PrivacyChallengeConfiguration>()
+                             ?? new PrivacyChallengeConfiguration();
+if (privacyChallengeConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
+    || privacyChallengeConfig.RateLimitWindowSeconds <= 0
+    || privacyChallengeConfig.RequestRateLimitPermitLimit <= 0
+    || privacyChallengeConfig.ConfirmationRateLimitPermitLimit <= 0
+    || privacyChallengeConfig.CleanupIntervalMinutes <= 0)
 {
-    throw new InvalidOperationException("PersonalDataExportConfiguration contains an invalid value.");
+    throw new InvalidOperationException("PrivacyChallengeConfiguration contains an invalid value.");
 }
 
-services.AddSingleton(personalDataExportConfig);
+services.AddSingleton(privacyChallengeConfig);
 services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
 services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
-services.AddSingleton<IPersonalDataExportRateLimiter, PersonalDataExportRateLimiter>();
+services.AddSingleton<IRefTestSessionTokenService, RefTestSessionTokenService>();
+services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>();
 services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
+services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
 
 var refTestExpirationConfig = configuration.GetSection("RefTestExpirationConfiguration")
                                   .Get<RefTestExpirationConfiguration>()
@@ -196,6 +199,7 @@ services.AddHostedService<PermissionSyncService>();
 services.AddHostedService<RefTestExpirationService>();
 services.AddHostedService<PrivacyRetentionService>();
 services.AddHostedService<PersonalDataExportRequestCleanupService>();
+services.AddHostedService<PrivacyWithdrawalCleanupService>();
 services.AddHostedService<BackgroundJobService>();
 
 // Job handlers, keyed by the job type BackgroundJobService dispatches on. A job type with no
@@ -210,6 +214,10 @@ services.AddKeyedScoped<IJobHandler, PersonalDataExportChallengeEmailJobHandler>
     JobType.PersonalDataExportChallengeEmail);
 services.AddKeyedScoped<IJobHandler, PersonalDataExportDeliveryEmailJobHandler>(
     JobType.PersonalDataExportDeliveryEmail);
+services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalChallengeEmailJobHandler>(
+    JobType.PrivacyWithdrawalChallengeEmail);
+services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalBatchJobHandler>(
+    JobType.PrivacyWithdrawalBatch);
 if (auditLogOptions.EnableCleanup)
 {
     services.AddHostedService<AuditLogCleanupService>();

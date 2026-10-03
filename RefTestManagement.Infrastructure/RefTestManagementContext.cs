@@ -15,6 +15,9 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
     public DbSet<PersonalDataExportRequest> PersonalDataExportRequests { get; set; } = null!;
+    public DbSet<PrivacyWithdrawalChallenge> PrivacyWithdrawalChallenges { get; set; } = null!;
+    public DbSet<PrivacyWithdrawalBatch> PrivacyWithdrawalBatches { get; set; } = null!;
+    public DbSet<PrivacyWithdrawalBatchTarget> PrivacyWithdrawalBatchTargets { get; set; } = null!;
     public DbSet<AuditEvent> AuditEvents { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -23,6 +26,9 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
         modelBuilder.ApplyConfiguration(new RefTestConfiguration());
         modelBuilder.ApplyConfiguration(new JobConfiguration());
         modelBuilder.ApplyConfiguration(new PersonalDataExportRequestConfiguration());
+        modelBuilder.ApplyConfiguration(new PrivacyWithdrawalChallengeConfiguration());
+        modelBuilder.ApplyConfiguration(new PrivacyWithdrawalBatchConfiguration());
+        modelBuilder.ApplyConfiguration(new PrivacyWithdrawalBatchTargetConfiguration());
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(AuditEvent).Assembly);
 
         // MySQL maps VARCHAR(n) in utf8mb4 to n×4 bytes toward the 65535-byte row size limit.

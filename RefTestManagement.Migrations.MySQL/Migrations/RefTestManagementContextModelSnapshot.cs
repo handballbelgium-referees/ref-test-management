@@ -187,6 +187,128 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.ToTable("PersonalDataExportRequests", (string)null);
                 });
 
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Privacy.PrivacyWithdrawalBatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("TargetCount")
+                        .HasColumnType("int");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CompletedAt")
+                        .HasDatabaseName("IX_PrivacyWithdrawalBatches_CompletedAt");
+
+                    b.ToTable("PrivacyWithdrawalBatches", (string)null);
+                });
+
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Privacy.PrivacyWithdrawalBatchTarget", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("BatchId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("CompletedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime?>("ErasureStartedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("RefTestId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("BatchId", "CompletedAt")
+                        .HasDatabaseName("IX_PrivacyWithdrawalBatchTargets_BatchId_CompletedAt");
+
+                    b.HasIndex("BatchId", "RefTestId")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PrivacyWithdrawalBatchTargets_BatchId_RefTestId");
+
+                    b.ToTable("PrivacyWithdrawalBatchTargets", (string)null);
+                });
+
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Privacy.PrivacyWithdrawalChallenge", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("ChallengeEmailSentAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<int>("DeliveryAttemptCount")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Email")
+                        .IsRequired()
+                        .HasMaxLength(256)
+                        .HasColumnType("varchar(256)");
+
+                    b.Property<DateTime>("ExpiresAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("KeyHash")
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime?>("LastDeliveryAttemptAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("NormalizedEmailHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<string>("ProtectedDeliveryKey")
+                        .HasMaxLength(2048)
+                        .HasColumnType("varchar(2048)");
+
+                    b.Property<DateTime?>("VerifiedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<long>("Version")
+                        .IsConcurrencyToken()
+                        .HasColumnType("bigint");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NormalizedEmailHash")
+                        .IsUnique()
+                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_NormalizedEmailHash");
+
+                    b.HasIndex("KeyHash")
+                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_KeyHash");
+
+                    b.HasIndex("VerifiedAt", "ExpiresAt")
+                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_VerifiedAt_ExpiresAt");
+
+                    b.ToTable("PrivacyWithdrawalChallenges", (string)null);
+                });
+
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle", b =>
                 {
                     b.Property<Guid>("Id")
@@ -376,6 +498,15 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                         .HasDatabaseName("IX_RefTests_Status_IsAnonymized_StartedAt");
 
                     b.ToTable("RefTests");
+                });
+
+            modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Privacy.PrivacyWithdrawalBatchTarget", b =>
+                {
+                    b.HasOne("Handball.Belgium.RefTestManagement.Domain.Privacy.PrivacyWithdrawalBatch", null)
+                        .WithMany()
+                        .HasForeignKey("BatchId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.RefTests.RefTest", b =>

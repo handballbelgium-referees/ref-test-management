@@ -11,23 +11,26 @@ import { routes } from '../../app.routes';
 class PrivacyNoticeDestination {}
 
 @Component({
-  template: '<p>Export confirmation destination</p>',
+  template: '<p>Confirmation destination</p>',
 })
-class ExportConfirmationDestination {}
+class ConfirmationDestination {}
 
-describe('personalDataExportConfirmationGuard', () => {
+describe('privacyConfirmationGuard', () => {
   const confirmationComponentLoad = vi.fn();
 
   beforeEach(() => {
     confirmationComponentLoad.mockClear();
 
     const testRoutes = routes.map((route) => {
-      if (route.path === 'privacy/export-confirmation') {
+      if (
+        route.path === 'privacy/export-confirmation' ||
+        route.path === 'privacy/withdrawal-confirmation'
+      ) {
         return {
           ...route,
           loadComponent: () => {
             confirmationComponentLoad();
-            return Promise.resolve(ExportConfirmationDestination);
+            return Promise.resolve(ConfirmationDestination);
           },
         };
       }
@@ -55,6 +58,9 @@ describe('personalDataExportConfirmationGuard', () => {
     '/privacy/export-confirmation?lang=nl',
     '/privacy/export-confirmation?lang=nl#',
     '/privacy/export-confirmation?lang=nl#%20%20',
+    '/privacy/withdrawal-confirmation?lang=nl',
+    '/privacy/withdrawal-confirmation?lang=nl#',
+    '/privacy/withdrawal-confirmation?lang=nl#%20%20',
   ])('redirects missing or empty confirmation fragments before component load: %s', async (url) => {
     const harness = await RouterTestingHarness.create();
 
@@ -65,16 +71,16 @@ describe('personalDataExportConfirmationGuard', () => {
     expect(confirmationComponentLoad).not.toHaveBeenCalled();
   });
 
-  it('allows a non-empty confirmation fragment to load the confirmation page', async () => {
+  it.each([
+    '/privacy/export-confirmation?lang=nl#one-time-key',
+    '/privacy/withdrawal-confirmation?lang=nl#one-time-key',
+  ])('allows a non-empty confirmation fragment to load the confirmation page: %s', async (url) => {
     const harness = await RouterTestingHarness.create();
 
-    await harness.navigateByUrl(
-      '/privacy/export-confirmation?lang=nl#one-time-key',
-      ExportConfirmationDestination,
-    );
+    await harness.navigateByUrl(url, ConfirmationDestination);
 
-    expect(TestBed.inject(Router).url).toBe('/privacy/export-confirmation?lang=nl#one-time-key');
-    expect(harness.routeNativeElement?.textContent).toContain('Export confirmation destination');
+    expect(TestBed.inject(Router).url).toBe(url);
+    expect(harness.routeNativeElement?.textContent).toContain('Confirmation destination');
     expect(confirmationComponentLoad).toHaveBeenCalledOnce();
   });
 });

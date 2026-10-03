@@ -10,7 +10,7 @@ This procedure defines how data-subject access and related requests are handled.
 ## Intake channels
 
 - Primary contact: `kristof.gilis@outlook.be`
-- In-app self-service withdrawal: participant token flow in the application (where applicable)
+- In-app self-service withdrawal: invitation-token flow, or the public email request and confirmation flow linked from `/privacy` (the email flow requires no account or invitation token)
 
 ## Request types covered
 
@@ -24,6 +24,7 @@ This procedure defines how data-subject access and related requests are handled.
 
 - Verify identity proportionately before disclosing or changing personal data.
 - For token-based self-service withdrawal, possession of the active participant token is accepted as the operational gate for that self-service action.
+- For email-verified self-service withdrawal, the form gives the same acknowledgement for every address; a one-time email link verifies mailbox control, not independent legal identity. Confirmation queues anonymization, which is not immediate and does not promise hard deletion.
 - For email/manual requests, require enough evidence to match the requester to the relevant RefTest record without collecting excessive extra data.
 
 ## Procedure steps
@@ -36,6 +37,7 @@ This procedure defines how data-subject access and related requests are handled.
    - Access/export: provide participant data securely.
    - Rectification: update minimal necessary fields.
    - Erasure/withdrawal: execute documented erasure/anonymization flow.
+   - Self-service withdrawal: explain that identifying data will be anonymized only after background processing succeeds and that an anonymized audit record may remain; do not report completion while work is pending.
 6. If processors hold relevant data, follow processor deletion/request channels.
 7. Respond to requester and log completion details.
 8. Record any refusal/extension with rationale.

@@ -1,0 +1,16 @@
+mutation CreateRefTestSession($input: CreateRefTestSessionInput!) {
+  createRefTestSession(input: $input) {
+    participantSessionDto {
+      sessionToken
+    }
+    errors {
+      __typename
+      ... on RefTestNotFoundError {
+        message
+      }
+      ... on RefTestValidationError {
+        message
+      }
+    }
+  }
+}

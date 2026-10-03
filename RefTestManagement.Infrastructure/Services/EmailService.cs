@@ -47,6 +47,12 @@ public interface IEmailService
         DateTime expiresAt,
         CancellationToken cancellationToken);
 
+    Task SendPrivacyWithdrawalVerificationAsync(
+        string recipientEmail,
+        string challengeKey,
+        DateTime expiresAt,
+        CancellationToken cancellationToken);
+
     Task<bool> SendPersonalDataExportAsync(
         string recipientEmail,
         IReadOnlyList<EmailAttachment> attachments,
@@ -360,6 +366,45 @@ public class EmailService(
             suppressFailureDetails: true);
     }
 
+    public async Task SendPrivacyWithdrawalVerificationAsync(
+        string recipientEmail,
+        string challengeKey,
+        DateTime expiresAt,
+        CancellationToken cancellationToken)
+    {
+        if (!Uri.TryCreate(configuration.BaseUrl, UriKind.Absolute, out var baseUri)
+            || baseUri.Scheme is not ("http" or "https"))
+            throw new InvalidOperationException("The application base URL is not configured.");
+
+        var remainingHours = Math.Max(1, (int)Math.Ceiling((expiresAt - DateTime.UtcNow).TotalHours));
+        var enabledLanguages = languageConfiguration.EnabledLanguages
+            .Select(language =>
+            {
+                var translations = new Dictionary<string, string>(
+                    translationService.GetEmailPrivacyWithdrawalVerificationTranslations(language));
+                translations["expiryNote"] = string.Format(
+                    System.Globalization.CultureInfo.InvariantCulture,
+                    translations["expiryNote"],
+                    remainingHours);
+
+                var confirmationUrl =
+                    $"{configuration.BaseUrl.TrimEnd('/')}/privacy/withdrawal-confirmation?lang={Uri.EscapeDataString(language)}#{Uri.EscapeDataString(challengeKey)}";
+                return new LanguageContent(confirmationUrl, translations);
+            })
+            .ToList();
+        var emailBody = await templateService.BuildCompletePrivacyWithdrawalVerificationEmailAsync(
+            enabledLanguages);
+
+        await SendEmailAsync(
+            recipientEmail,
+            translationService.GetEmailPrivacyWithdrawalVerificationTranslations("en")["subject"],
+            emailBody,
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true,
+            suppressFailureDetails: true,
+            suppressedFailureLabel: "Privacy withdrawal");
+    }
+
     public async Task<bool> SendPersonalDataExportAsync(
         string recipientEmail,
         IReadOnlyList<EmailAttachment> attachments,
@@ -400,6 +445,7 @@ public class EmailService(
 
     private List<LanguageContent> GetEnabledLanguagesForInvitation(string token)
     {
+        var baseUrl = configuration.BaseUrl.TrimEnd('/');
         return languageConfiguration.EnabledLanguages
             .Select(lang =>
             {
@@ -412,7 +458,7 @@ public class EmailService(
                 };
 
                 return new LanguageContent(
-                    $"{configuration.BaseUrl}/ref-test/{token}?lang={lang}",
+                    $"{baseUrl}/ref-test?lang={lang}#{token}",
                     translations
                 );
             })

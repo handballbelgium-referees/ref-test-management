@@ -1,9 +1,10 @@
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Api.Services;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 
 /// <summary>
-/// Bounds checks for the mutations a participant can call with nothing but an invitation token.
+/// Bounds checks for participant operations authenticated by an invitation or session token.
 /// These are the only unauthenticated write paths in the API, so their input is entirely
 /// attacker-controlled and has to be constrained before it reaches the database.
 /// </summary>
@@ -25,15 +26,15 @@ internal static class ParticipantInput
     private const int MaxLanguageLength = 16;
 
     /// <summary>
-    /// Validates a raw invitation token before it is hashed for lookup. The stored digest is not
-    /// a participant credential and therefore cannot be submitted as a token.
+    /// Validates a participant credential before it is used for lookup. The stored invitation
+    /// digest is not a credential and therefore cannot be submitted as a token.
     /// </summary>
     internal static string Token(string? token)
     {
         if (string.IsNullOrWhiteSpace(token))
             throw new RefTestValidationException("A token is required.");
 
-        if (!RefTest.IsValidTokenFormat(token))
+        if (!RefTest.IsValidTokenFormat(token) && !RefTestSessionTokenService.HasSessionTokenFormat(token))
             throw new RefTestValidationException("The token is not valid.");
 
         return token;

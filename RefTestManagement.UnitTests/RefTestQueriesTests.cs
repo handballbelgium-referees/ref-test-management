@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -18,6 +19,9 @@ public sealed class RefTestQueriesTests
             context,
             new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider()),
             NullLogger<JobEnqueueService>.Instance);
+
+    private static RefTestSessionTokenService NewSessionTokenService() =>
+        new(new EphemeralDataProtectionProvider(), TimeProvider.System);
 
     private static RefTest NewRefTest(Guid titleId) =>
         RefTest.Create(
@@ -73,13 +77,20 @@ public sealed class RefTestQueriesTests
             .Where(candidate => candidate.Id == refTest.Id)
             .Select(candidate => candidate.Token)
             .SingleAsync(ct);
+        var sessionTokenService = NewSessionTokenService();
 
         Assert.Equal(RefTest.HashToken(token), storedToken);
 
-        var queryResult = await RefTestQueries.GetRefTestByTokenAsync(
+        var session = await RefTestLifecycleMutations.CreateRefTestSessionAsync(
             token,
             context,
+            sessionTokenService,
+            ct);
+        var queryResult = await RefTestQueries.GetRefTestByTokenAsync(
+            session.SessionToken,
+            context,
             new RefTestExpirationConfiguration(),
+            sessionTokenService,
             NewJobEnqueueService(context),
             ct);
 
@@ -97,6 +108,7 @@ public sealed class RefTestQueriesTests
                 storedToken,
                 context,
                 new RefTestExpirationConfiguration(),
+                sessionTokenService,
                 NewJobEnqueueService(context),
                 ct));
     }

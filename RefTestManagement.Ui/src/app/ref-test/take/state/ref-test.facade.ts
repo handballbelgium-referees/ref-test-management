@@ -285,12 +285,12 @@ export class RefTestFacade {
         onStart: () => this._store.withdrawing.set(true),
         onSuccess: (payload) => {
           const errors = payload?.errors;
-          if (errors && errors.length > 0) {
+          if (!payload?.boolean || (errors && errors.length > 0)) {
             this._store.withdrawError.set(true);
             return;
           }
           this._store.showWithdrawDialog.set(false);
-          this._store.withdrawn.set(true);
+          this._store.withdrawalQueued.set(true);
         },
         onError: () => this._store.withdrawError.set(true),
         onComplete: () => this._store.withdrawing.set(false),

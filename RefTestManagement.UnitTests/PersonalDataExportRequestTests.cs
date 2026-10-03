@@ -151,9 +151,9 @@ public sealed class PersonalDataExportRequestTests
             context,
             NewJobEnqueueService(context),
             new TestKeyProtection(),
-            new PersonalDataExportConfiguration(),
+            new PrivacyChallengeConfiguration(),
             NullLogger<PersonalDataExportRequestService>.Instance);
-        using var limiter = new PersonalDataExportRateLimiter(new PersonalDataExportConfiguration
+        using var limiter = new PrivacyChallengeRateLimiter(new PrivacyChallengeConfiguration
         {
             RequestRateLimitPermitLimit = 5
         });
@@ -214,7 +214,7 @@ public sealed class PersonalDataExportRequestTests
             context,
             NewJobEnqueueService(context),
             new TestKeyProtection(),
-            new PersonalDataExportConfiguration(),
+            new PrivacyChallengeConfiguration(),
             NullLogger<PersonalDataExportRequestService>.Instance);
 
         Assert.True(await service.ConfirmAsync(ChallengeKey, cancellationToken));
@@ -236,7 +236,7 @@ public sealed class PersonalDataExportRequestTests
     [Fact]
     public void RequestAndConfirmationRateLimitsAreIndependentAndPartitionedByClientAddress()
     {
-        using var limiter = new PersonalDataExportRateLimiter(new PersonalDataExportConfiguration
+        using var limiter = new PrivacyChallengeRateLimiter(new PrivacyChallengeConfiguration
         {
             RequestRateLimitPermitLimit = 1,
             ConfirmationRateLimitPermitLimit = 1
@@ -588,6 +588,17 @@ public sealed class PersonalDataExportRequestTests
         public IReadOnlyList<EmailAttachment>? ExportAttachments { get; private set; }
 
         public Task SendPersonalDataExportVerificationAsync(
+            string recipientEmail,
+            string challengeKey,
+            DateTime expiresAt,
+            CancellationToken cancellationToken)
+        {
+            RecipientEmail = recipientEmail;
+            ChallengeKey = challengeKey;
+            return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
+        }
+
+        public Task SendPrivacyWithdrawalVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,

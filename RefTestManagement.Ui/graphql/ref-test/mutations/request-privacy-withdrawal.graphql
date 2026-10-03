@@ -1,0 +1,7 @@
+mutation RequestPrivacyWithdrawal($input: RequestPrivacyWithdrawalInput!) {
+  requestPrivacyWithdrawal(input: $input) {
+    privacyWithdrawalRequestAcknowledgement {
+      acknowledged
+    }
+  }
+}

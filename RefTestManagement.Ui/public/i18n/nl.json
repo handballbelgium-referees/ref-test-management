@@ -613,10 +613,11 @@
     "start_button": "RefTest starten",
     "privacy_consent": "Ik heb de volgende tekst gelezen en aanvaard:",
     "privacy_consent_error": "We konden uw aanvaarding van de privacyverklaring niet vastleggen. Probeer het opnieuw.",
-    "withdraw_link": "Toestemming intrekken en mijn gegevens anonimiseren",
+    "session_creation_error": "We konden geen beveiligde deelnemerssessie aanmaken. Probeer het opnieuw.",
+    "withdraw_link": "Toestemming intrekken en anonimisatie aanvragen",
     "withdraw_error": "We konden uw intrekking niet verwerken. Probeer het opnieuw of neem contact met ons op.",
-    "withdrawn_title": "Toestemming ingetrokken",
-    "withdrawn_message": "U heeft uw toestemming ingetrokken. Uw identificerende gegevens zijn geanonimiseerd en het RefTest-record is geredigeerd om de audittrail te bewaren.",
+    "withdrawal_queued_title": "Aanvraag tot intrekking ontvangen",
+    "withdrawal_queued_message": "Uw aanvraag is in de wachtrij geplaatst. Uw identificerende gegevens worden geanonimiseerd zodra de verwerking is geslaagd. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
     "time_remaining": "Resterende Tijd",
     "progress": "Voortgang",
     "question": "Vraag",
@@ -660,9 +661,9 @@
       },
       "withdraw": {
         "title": "Toestemming intrekken?",
-        "message": "Door je toestemming in te trekken, worden je identificerende gegevens geanonimiseerd en wordt het RefTest-record geredigeerd. Het geanonimiseerde record kan voor auditdoeleinden worden bewaard.",
-        "warning": "Je toestemming wordt ingetrokken en je identificerende gegevens worden geanonimiseerd. Een geanonimiseerd RefTest-record kan voor auditdoeleinden bewaard blijven.",
-        "confirm": "Toestemming intrekken en gegevens anonimiseren",
+        "message": "Uw aanvraag om toestemming in te trekken wordt op de achtergrond verwerkt. Uw identificerende gegevens worden geanonimiseerd zodra de verwerking is geslaagd; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
+        "warning": "Anonimisatie gebeurt niet onmiddellijk. Uw aanvraag wordt op de achtergrond verwerkt en het RefTest-record kan in geanonimiseerde vorm voor auditdoeleinden worden bewaard.",
+        "confirm": "Toestemming intrekken en anonimisatie aanvragen",
         "cancel": "Annuleren"
       }
     }
@@ -722,6 +723,26 @@
       "confirming": "Uw verzoek wordt bevestigd...",
       "confirmed": "Uw verzoek is bevestigd. Een PDF-kopie van uw persoonsgegevens wordt u per e-mail bezorgd.",
       "confirmationError": "We konden dit verzoek niet bevestigen. De link is mogelijk ongeldig of verlopen. Vraag een nieuwe link aan en probeer het opnieuw."
+    },
+    "consentWithdrawal": {
+      "title": "Toestemming intrekken en anonimisatie aanvragen",
+      "description": "Vul het e-mailadres in dat bij uw deelname hoort. Als het overeenkomt met een of meer niet-geanonimiseerde deelnemersrecords, sturen we een eenmalige bevestigingslink naar dat adres. U hebt geen account of uitnodigingstoken nodig.",
+      "requestLink": "Open het formulier voor intrekking",
+      "emailLabel": "E-mailadres",
+      "emailHelp": "Voor elk adres wordt dezelfde bevestiging getoond. Nadat u bevestigt, worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Dit gebeurt niet onmiddellijk.",
+      "emailRequired": "Vul uw e-mailadres in.",
+      "emailInvalid": "Vul een geldig e-mailadres in.",
+      "requestButton": "Aanvraag tot intrekking verzenden",
+      "requesting": "Uw aanvraag wordt verzonden...",
+      "requestAcknowledged": "Als het adres bij een deelnemersrecord hoort, sturen we een bevestigingsmail. Deze pagina toont dezelfde melding, ongeacht of er een record overeenkomt. Na bevestiging van uw intrekking van toestemming worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
+      "requestError": "We konden uw verzoek niet verwerken. Probeer het opnieuw.",
+      "confirmationTitle": "Intrekking van toestemming bevestigen",
+      "confirmationDescription": "Het openen van deze pagina bevestigt uw aanvraag niet. Selecteer de knop hieronder alleen als u uw toestemming wilt intrekken. Na bevestiging worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Anonimisatie gebeurt niet onmiddellijk.",
+      "confirmButton": "Intrekking bevestigen",
+      "confirming": "Uw aanvraag tot intrekking wordt bevestigd...",
+      "confirmed": "Uw intrekking van toestemming is bevestigd. Identificerende gegevens worden geanonimiseerd zodra de verwerking slaagt. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Anonimisatie gebeurt niet onmiddellijk.",
+      "confirmationError": "We konden deze aanvraag niet bevestigen. De link is mogelijk ongeldig, verlopen of al gebruikt. Vraag zo nodig een nieuwe link aan; deze pagina toont geen informatie over deelnemers.",
+      "confirmationKeyMissing": "Deze link bevat geen bevestigingsgegevens. Vraag via de privacyverklaring een nieuwe link aan."
     }
   },
   "audit-logs": {
@@ -778,9 +799,14 @@
       "RefTestCompleted": "Voltooid",
       "PersonalDataExportChallengeEmailDelivered": "Verificatiemail verzonden",
       "PersonalDataExportChallengeEmailDeliveryFailed": "Verificatiemail mislukt",
-      "PersonalDataExportRequestVerified": "E-mailadres geverifieerd",
-      "PersonalDataExportDelivered": "E-mail met gegevensexport verzonden",
-      "PersonalDataExportDeliveryFailed": "Bezorging van gegevensexport mislukt",
+      "PersonalDataExportRequestVerified": "E-mail geverifieerd",
+      "PersonalDataExportDelivered": "Export per e-mail verzonden",
+      "PersonalDataExportDeliveryFailed": "Exportbezorging mislukt",
+      "PrivacyWithdrawalChallengeCreated": "Intrekking aangevraagd",
+      "PrivacyWithdrawalChallengeEmailDelivered": "Intrekkingsmail verzonden",
+      "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Intrekkingsmail mislukt",
+      "PrivacyWithdrawalBatchConfirmed": "Intrekking ingepland",
+      "PrivacyWithdrawalBatchCompleted": "Intrekking voltooid",
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
       "EntityDeleted": "Verwijderd"
@@ -793,7 +819,9 @@
     "entityType": {
       "RefTest": "RefTest",
       "RefTestTitle": "RefTest titel",
-      "PersonalDataExportRequest": "Gegevensexportaanvraag"
+      "PersonalDataExportRequest": "Exportaanvraag",
+      "PrivacyWithdrawalChallenge": "Intrekkingsverificatie",
+      "PrivacyWithdrawalBatch": "Intrekkingsbatch"
     },
     "sort": {
       "title": "Sortering",

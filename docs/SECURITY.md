@@ -106,8 +106,8 @@ The request mutation returns the same acknowledgement for matching and nonmatchi
 Only an address already associated with a non-anonymized participant record receives a localized
 verification email. The request and confirmation operations have separate per-client-address rate
 limits; their permit counts, window, and cleanup interval are configured under
-`PersonalDataExportConfiguration`. Verification keys expire after 24 hours by default; deployments
-may set `KeyLifetimeHours` from 1 through 168.
+`PrivacyChallengeConfiguration`. Export and withdrawal verification keys expire after 24 hours by
+default; deployments may set `PrivacyChallengeKeyLifetimeHours` from 1 through 168.
 
 The email link is `/privacy/export-confirmation?lang=<locale>#<key>`. The initial page load must
 only display the confirmation page: the client reads the key from the fragment, removes it from
@@ -115,6 +115,40 @@ the address bar/history, and sends it to `confirmPersonalDataExport` only after 
 explicitly clicks Confirm. The server stores a hash for one-time atomic consumption and keeps only
 a data-protected transient copy while retrying email delivery. The job carries the request ID only;
 the raw key is not persisted in job or audit data.
+
+## Public Consent-Withdrawal Verification
+
+The `requestPrivacyWithdrawal` and `confirmPrivacyWithdrawal` fields are public GraphQL mutations.
+They intentionally have no `[Authorize]` policy or permission constant: participants do not need
+an account or Auth0 permission, and control of the matching mailbox is the verification method.
+
+`requestPrivacyWithdrawal` returns a payload containing only
+`privacyWithdrawalRequestAcknowledgement.acknowledged: true`, including for unmatched, duplicate,
+invalid, or rate-limited email requests. Its generated input wrapper contains a nested `input`
+object with the email. Only a matching, non-anonymized participant address is queued for a
+one-time challenge email; the response does not disclose a match or any RefTest data. The
+confirmation input wrapper carries the one-time key.
+`confirmPrivacyWithdrawal` returns a payload containing only
+`privacyWithdrawalConfirmationResult.accepted`. It is true only after the withdrawal service
+validates and consumes the unexpired one-time key and commits the confirmation and any required
+durable processing work; invalid, expired, replayed, or rate-limited attempts return false.
+Acceptance means queued, not that anonymization has completed. The public acknowledgements contain
+only their generic `acknowledged` and `accepted` values. Withdrawal service logs omit participant
+email addresses, raw keys, and RefTest identifiers; they use fixed failure messages and aggregate
+retry counts. Request/challenge and batch audit events record lifecycle details and aggregate
+counts, not participant addresses, raw keys, or individual RefTest identifiers. Challenge-email
+jobs carry only a challenge ID, and batch jobs only a batch ID; RefTest IDs remain in durable target
+rows, not job payloads. Separately, each erasure records a `RefTestAnonymizedEvent` on that
+RefTest's own audit stream, keyed by its RefTest ID, as per-record erasure evidence.
+
+Request and confirmation attempts use separate per-client-address fixed-window rate limits, shared
+with the corresponding public export operations. Defaults are five requests and ten confirmation
+attempts per 60-second window. Configure the window and permit counts under
+`PrivacyChallengeConfiguration` (`RateLimitWindowSeconds`, `RequestRateLimitPermitLimit`, and
+`ConfirmationRateLimitPermitLimit`).
+
+Confirmation is available only as a GraphQL mutation, not a query. A GET request cannot consume a
+key. The key is consumed once by the server and is never returned by either mutation.
 
 ---
 
@@ -206,8 +240,8 @@ Protected routes use `permissionGuard` after `authGuard`. The guard waits for pe
 
 ## The Participant Invitation Token
 
-A participant takes their test through a link containing an invitation token. The token *is* the
-credential: there is no sign-in on that flow, because participants are not Auth0 users.
+A participant opens their test through a link containing an invitation token. The token is the
+initial credential: there is no sign-in on that flow, because participants are not Auth0 users.
 
 Participant token queries and lifecycle mutations use the dedicated `ParticipantRefTest` GraphQL
 contract rather than the administrator `RefTest` type. This keeps administrator authorization rules
@@ -215,24 +249,47 @@ and fields isolated from the anonymous participant flow. Answer correctness is o
 is in progress and requested only after the RefTest is completed; participant answers are randomized
 deterministically per RefTest so the order remains stable across refreshes and result review.
 
+The public `createRefTestSession` mutation exchanges an invitation or existing session credential
+for a fresh, data-protected session credential after the participant has accepted the privacy
+notice. It intentionally has no `[Authorize]` policy or permission constant; possession of the
+participant credential is the authorization method. Test operations then use the session credential.
+Pending session credentials have a 12-hour window to start the test. When a test starts within that
+window, the credential remains valid until one hour after the current test deadline; this deadline
+is rechecked against the RefTest on participant requests, including after an administrative time
+extension. Credentials issued while a test is in progress are valid for at least 12 hours or until
+one hour after the deadline, whichever is later. All session credentials are bound to the RefTest ID
+and its current invitation-token digest, so token rotation and anonymization invalidate them.
+Session-lock subscriptions revalidate credentials every 30 seconds and release their lock after
+expiry or invalidation.
+
 Putting a credential in a URL is a deliberate trade-off, made because requiring an account for a
 one-off test would keep most participants from ever taking it. The risks that choice carries are
 mitigated rather than ignored:
 
+After acceptance or resuming, the UI exchanges the invitation token and replaces the URL with
+`/ref-test/take`. Only the expiring session credential is kept in browser history state for reload
+and resume. New invitation emails use `/ref-test?lang=<locale>#<invitation-token>`. The invitation
+fragment is moved into history state while the UI redirects to the tokenless welcome route; the
+former `/ref-test/:token` path format is no longer routed.
+
 | Risk                                       | Mitigation                                                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| Token leaks through the `Referer` header   | The API sends `Referrer-Policy: no-referrer` on every response, and the only link on a token-bearing page is same-origin with `rel="noreferrer"`. |
+| Token leaks through the `Referer` header   | New invitation tokens are in the URL fragment, which browsers do not send in HTTP requests or `Referer` headers; the API also sends `Referrer-Policy: no-referrer`. |
 | Token guessed                              | Tokens are 32 lowercase hex characters from `RandomNumberGenerator`, not `Guid.NewGuid()` — 128 bits of cryptographic randomness. |
 | Token exposed from database rows           | `RefTests.Token` stores a SHA-256 digest; a data-protected retry copy is cleared after delivery, token rotation, or anonymization, and queued invitation jobs contain only the digest. |
+| Session token replayed after rotation or expiry | The protected session token is bound to the current invitation digest and validated against the active test deadline; participant lookups and live session locks revalidate it. |
 | Token replayed after the test is over      | Every participant mutation re-checks status, and the server enforces the deadline independently of status.       |
 | Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
 | Oversized or malformed token in a lookup   | Only 32 lowercase hex characters are accepted before hashing; the stored digest cannot be submitted as a credential. |
 
-Residual risk that is accepted: the token appears in browser history and in any server access log
-that records full request paths. Anyone who can read those can resume that one participant's
-test. If that becomes unacceptable, the fix is to move the token out of the path — deliver it as
-a one-time link that exchanges the token for a cookie-backed session — which is a larger change
-than this flow has so far justified.
+Residual risk that is accepted: historical server access logs may retain tokens from any previously
+issued path-based invitation links, although that route is no longer supported. New invitation
+links use a fragment, but after the UI reads it the invitation token is temporarily kept in browser
+history state until the session exchange; same-origin scripts can read it. The session credential
+remains in browser history state on tokenless routes, and anyone who can read a still-valid
+credential can resume that one participant's test. Credential expiration and binding limit this
+exposure, while the original invitation credential remains usable until an operator rotates it or
+the record is anonymized.
 
 ## Response Security Headers
 

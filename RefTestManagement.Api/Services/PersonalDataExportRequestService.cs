@@ -20,7 +20,7 @@ public sealed class PersonalDataExportRequestService(
     RefTestManagementContext context,
     IJobEnqueueService jobEnqueueService,
     IPersonalDataExportKeyProtection keyProtection,
-    PersonalDataExportConfiguration configuration,
+    PrivacyChallengeConfiguration configuration,
     ILogger<PersonalDataExportRequestService> logger) : IPersonalDataExportRequestService
 {
     public async Task RequestAsync(string? email, CancellationToken cancellationToken)
@@ -49,7 +49,7 @@ public sealed class PersonalDataExportRequestService(
                 key,
                 keyProtection.Protect(key),
                 now,
-                now.AddHours(configuration.KeyLifetimeHours));
+                now.AddHours(configuration.PrivacyChallengeKeyLifetimeHours));
 
             context.PersonalDataExportRequests.Add(request);
             await jobEnqueueService.EnqueuePersonalDataExportChallengeEmailAsync(

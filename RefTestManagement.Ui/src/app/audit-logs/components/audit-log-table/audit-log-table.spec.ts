@@ -23,9 +23,17 @@ describe('AuditLogTable', () => {
           },
           entityType: {
             PersonalDataExportRequest: 'Gegevensexportaanvraag',
+            PrivacyWithdrawalChallenge: 'Verificatie intrekking toestemming',
+            PrivacyWithdrawalBatch: 'Verwerkingsbatch intrekking toestemming',
           },
           eventType: {
             PersonalDataExportRequestVerified: 'E-mailadres geverifieerd',
+            PrivacyWithdrawalChallengeCreated: 'Intrekkingsverzoek vastgelegd',
+            PrivacyWithdrawalChallengeEmailDelivered: 'Verificatiemail voor intrekking verzonden',
+            PrivacyWithdrawalChallengeEmailDeliveryFailed:
+              'Verificatiemail voor intrekking mislukt',
+            PrivacyWithdrawalBatchConfirmed: 'Intrekkingsverwerking ingepland',
+            PrivacyWithdrawalBatchCompleted: 'Verwerking intrekkingsbatch voltooid',
           },
         },
       },
@@ -94,5 +102,46 @@ describe('AuditLogTable', () => {
 
     expect(entityTypeIndex).toBeGreaterThanOrEqual(0);
     expect(eventTypeIndex).toBeGreaterThan(entityTypeIndex);
+  });
+
+  it('translates withdrawal challenge and batch types on audit badges', async () => {
+    const fixture: ComponentFixture<AuditLogTable> = TestBed.createComponent(AuditLogTable);
+    fixture.componentRef.setInput('entries', [
+      {
+        seqId: 1,
+        id: 'id-1',
+        streamId: 'challenge-1',
+        version: 1,
+        type: 'PrivacyWithdrawalChallengeCreated',
+        timestamp: '',
+        actorName: 'Verified participant',
+        actorEmail: '',
+        headers: JSON.stringify({ entityType: 'PrivacyWithdrawalChallenge' }),
+      },
+      {
+        seqId: 2,
+        id: 'id-2',
+        streamId: 'batch-1',
+        version: 1,
+        type: 'PrivacyWithdrawalBatchConfirmed',
+        timestamp: '',
+        actorName: 'Verified participant',
+        actorEmail: '',
+        headers: JSON.stringify({ entityType: 'PrivacyWithdrawalBatch' }),
+      },
+    ]);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const badges = Array.from(
+      fixture.nativeElement.querySelectorAll('app-audit-log-event-badge'),
+    ) as HTMLElement[];
+    const badgeText = badges.map((badge) => badge.textContent ?? '');
+
+    expect(badgeText[0]).toContain('Verificatie intrekking toestemming');
+    expect(badgeText[0]).toContain('Intrekkingsverzoek vastgelegd');
+    expect(badgeText[1]).toContain('Verwerkingsbatch intrekking toestemming');
+    expect(badgeText[1]).toContain('Intrekkingsverwerking ingepland');
   });
 });
