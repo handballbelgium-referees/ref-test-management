@@ -799,7 +799,7 @@
       "RefTestCompleted": "Completed",
       "PersonalDataExportChallengeEmailDelivered": "Verification email sent",
       "PersonalDataExportChallengeEmailDeliveryFailed": "Verification email failed",
-      "PersonalDataExportRequestVerified": "Email address verified",
+      "PersonalDataExportRequestVerified": "Email verified",
       "PersonalDataExportDelivered": "Export email sent",
       "PersonalDataExportDeliveryFailed": "Export delivery failed",
       "PrivacyWithdrawalChallengeCreated": "Withdrawal requested",

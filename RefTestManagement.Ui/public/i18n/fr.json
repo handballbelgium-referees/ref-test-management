@@ -800,9 +800,9 @@
       "RefTestCompleted": "Terminé",
       "PersonalDataExportChallengeEmailDelivered": "E-mail de vérification envoyé",
       "PersonalDataExportChallengeEmailDeliveryFailed": "Échec de l’e-mail de vérification",
-      "PersonalDataExportRequestVerified": "Adresse e-mail vérifiée",
-      "PersonalDataExportDelivered": "E-mail avec l’export envoyé",
-      "PersonalDataExportDeliveryFailed": "Échec de la livraison de l’export",
+      "PersonalDataExportRequestVerified": "E-mail vérifié",
+      "PersonalDataExportDelivered": "Export envoyé par e-mail",
+      "PersonalDataExportDeliveryFailed": "Échec d’envoi de l’export",
       "PrivacyWithdrawalChallengeCreated": "Retrait demandé",
       "PrivacyWithdrawalChallengeEmailDelivered": "E-mail de retrait envoyé",
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Échec de l’e-mail de retrait",
@@ -820,7 +820,7 @@
     "entityType": {
       "RefTest": "RefTest",
       "RefTestTitle": "Titre RefTest",
-      "PersonalDataExportRequest": "Demande d’export de données",
+      "PersonalDataExportRequest": "Demande d’export",
       "PrivacyWithdrawalChallenge": "Vérification du retrait",
       "PrivacyWithdrawalBatch": "Lot de retrait"
     },

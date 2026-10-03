@@ -799,9 +799,9 @@
       "RefTestCompleted": "Voltooid",
       "PersonalDataExportChallengeEmailDelivered": "Verificatiemail verzonden",
       "PersonalDataExportChallengeEmailDeliveryFailed": "Verificatiemail mislukt",
-      "PersonalDataExportRequestVerified": "E-mailadres geverifieerd",
-      "PersonalDataExportDelivered": "E-mail met gegevensexport verzonden",
-      "PersonalDataExportDeliveryFailed": "Bezorging van gegevensexport mislukt",
+      "PersonalDataExportRequestVerified": "E-mail geverifieerd",
+      "PersonalDataExportDelivered": "Export per e-mail verzonden",
+      "PersonalDataExportDeliveryFailed": "Exportbezorging mislukt",
       "PrivacyWithdrawalChallengeCreated": "Intrekking aangevraagd",
       "PrivacyWithdrawalChallengeEmailDelivered": "Intrekkingsmail verzonden",
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Intrekkingsmail mislukt",
@@ -819,7 +819,7 @@
     "entityType": {
       "RefTest": "RefTest",
       "RefTestTitle": "RefTest titel",
-      "PersonalDataExportRequest": "Gegevensexportaanvraag",
+      "PersonalDataExportRequest": "Exportaanvraag",
       "PrivacyWithdrawalChallenge": "Intrekkingsverificatie",
       "PrivacyWithdrawalBatch": "Intrekkingsbatch"
     },
