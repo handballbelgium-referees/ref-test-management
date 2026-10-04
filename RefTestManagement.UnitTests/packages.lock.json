@@ -1526,7 +1526,7 @@
           "HotChocolate.Abstractions": "[16.6.7, )",
           "Microsoft.EntityFrameworkCore": "[10.0.12, )",
           "Microsoft.EntityFrameworkCore.Relational": "[10.0.12, )",
-          "QuestPDF": "[2026.9.0, )",
+          "QuestPDF": "[2026.9.1, )",
           "RefTestManagement.Application": "[1.0.0, )",
           "RefTestManagement.AuditLog": "[1.0.0, )"
         }
@@ -1785,9 +1785,9 @@
       },
       "QuestPDF": {
         "type": "CentralTransitive",
-        "requested": "[2026.9.0, )",
-        "resolved": "2026.9.0",
-        "contentHash": "qJuBVHeJMECFI4xiUQ1+kWaHm8NoVeyNepByezQOjlWGZnDzL4eZjrtHyu6G2ccVVOLOu+z1nX1N3i3zkzuArA=="
+        "requested": "[2026.9.1, )",
+        "resolved": "2026.9.1",
+        "contentHash": "i2BT/v+Ui6Hg9+BZbOci/VfsyvmtY8nlQqAOmFt8iOZ4Hm9aKZZRgZZ+LfrKWYXAHRb3l1EjDcMVfjRaZTt+Cw=="
       },
       "SQLitePCLRaw.lib.e_sqlite3": {
         "type": "CentralTransitive",
