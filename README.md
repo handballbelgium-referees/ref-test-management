@@ -317,6 +317,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/AUDIT-R7.md](docs/AUDIT-R7.md)                         | Seventh audit wave findings and evidence                   |
 | [docs/AUDIT-R8.md](docs/AUDIT-R8.md)                         | Eighth audit wave findings and evidence                    |
 | [docs/AUDIT-R7-REMEDIATION.md](docs/AUDIT-R7-REMEDIATION.md) | R7 remediation work packages                               |
+| [docs/AUDIT-R8-REMEDIATION.md](docs/AUDIT-R8-REMEDIATION.md) | R8 remediation work packages                               |
 | [docs/AUDIT-REMEDIATION.md](docs/AUDIT-REMEDIATION.md)       | Phased remediation plan for the audit findings             |
 
 ## License

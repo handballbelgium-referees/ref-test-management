@@ -51,6 +51,7 @@
 - **Severity:** {severity}
 - **Area:** {area}
 - **Evidence:** `{path}:{line}` — {observed fact}
+- **Confidence:** {N/10}
 
 {Explain the impact and the conditions needed to trigger it.}
 

@@ -19,7 +19,7 @@ Use severity consistently:
 - 🟡 Medium: meaningful but bounded defect or control gap.
 - ⚪ Low: limited-impact weakness or documentation drift.
 
-Return no more than 10 findings, each in this format and no more than six lines:
+Return no more than 10 findings, each in this format and no more than six lines. If there are more, keep the highest severities, and say how many lower-severity findings were omitted and in which sub-area:
 
 ```text
 R?-NN — [severity] — [short title]
@@ -28,5 +28,7 @@ Impact: concrete consequence
 Recommendation: minimal corrective action
 Confidence: N/10
 ```
+
+Confidence is how sure you are that the finding is real, based on what you read, not how severe it is.
 
 End with a one-line area verdict (`Strong`, `Needs remediation`, or `Not ready`) and note any scope limitation. Do not propose implementation outside the assigned area.

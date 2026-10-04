@@ -4,7 +4,7 @@
     "preToolUse": [
       {
         "type": "command",
-        "matcher": "view|str_replace_editor|bash|powershell|create_pull_request|update_pull_request",
+        "matcher": "view|read|edit|create|str_replace_editor|apply_patch|bash|powershell|create_pull_request|update_pull_request",
         "bash": "node .github/hooks/guards.mjs pre || true",
         "powershell": "node .github/hooks/guards.mjs pre; exit 0",
         "cwd": ".",
