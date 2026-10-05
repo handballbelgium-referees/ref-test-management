@@ -1,6 +1,8 @@
+using System.Text.Json.Nodes;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 
@@ -100,6 +102,114 @@ public class AuditRetentionTests
     }
 
     [Fact]
+    public async Task RetentionRedactsRejectionTextFromOldRejectionEvents()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var now = new DateTime(2026, 1, 31, 12, 0, 0, DateTimeKind.Utc);
+        const string reason = "Contact ada@example.org to discuss eligibility";
+
+        await using (var context = database.CreateContext())
+        {
+            context.AuditEvents.Add(AuditEvent(
+                "rejected",
+                now.AddDays(-31),
+                $$"""{"reason":"{{reason}}","status":"Rejected"}""",
+                type: RefTestRejectedEvent.EventType));
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            await AuditLogCleanupService.RedactOldAuditLogsAsync(
+                context,
+                new AuditLogOptions { RetentionDays = 30 },
+                now,
+                TestContext.Current.CancellationToken);
+        }
+
+        await using var verification = database.CreateContext();
+        var rejection = await verification.AuditEvents.SingleAsync(
+            e => e.StreamId == "rejected",
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(RefTestRejectedEvent.EventType, rejection.Type);
+        Assert.DoesNotContain(reason, rejection.Data!, StringComparison.Ordinal);
+        Assert.Contains(AuditPiiRedactor.RedactedValue, rejection.Data!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RetentionRepairsStampedOrphanRejectionReasonsAndAdvancesThroughPages()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var now = new DateTime(2026, 1, 31, 12, 0, 0, DateTimeKind.Utc);
+        var redactedAt = now.AddDays(-10);
+        const string reason = "Contact ada@example.org to discuss eligibility";
+        const int count = 5;
+
+        await using (var context = database.CreateContext())
+        {
+            for (var index = 0; index < count; index++)
+            {
+                context.AuditEvents.Add(AuditEvent(
+                    $"deleted-ref-test-{index}",
+                    now.AddDays(-31),
+                    $$"""{"reason":"{{reason}}","status":"Rejected"}""",
+                    isArchived: true,
+                    type: RefTestRejectedEvent.EventType,
+                    redactedAt: redactedAt,
+                    actorName: AuditPiiRedactor.RedactedValue,
+                    actorEmail: AuditPiiRedactor.RedactedValue));
+            }
+
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        async Task<int> RunPageAsync()
+        {
+            await using var context = database.CreateContext();
+            return await AuditLogCleanupService.RedactOldAuditLogsAsync(
+                context,
+                new AuditLogOptions { RetentionDays = 30 },
+                now,
+                TestContext.Current.CancellationToken,
+                maxRedactionsPerRun: 2);
+        }
+
+        Assert.Equal(2, await RunPageAsync());
+        await using (var context = database.CreateContext())
+        {
+            var rows = await context.AuditEvents
+                .OrderBy(auditEvent => auditEvent.SeqId)
+                .ToListAsync(TestContext.Current.CancellationToken);
+            Assert.All(rows.Take(2), auditEvent =>
+                Assert.DoesNotContain(reason, auditEvent.Data!, StringComparison.Ordinal));
+            Assert.All(rows.Skip(2), auditEvent =>
+                Assert.Contains(reason, auditEvent.Data!, StringComparison.Ordinal));
+        }
+
+        Assert.Equal(2, await RunPageAsync());
+        Assert.Equal(1, await RunPageAsync());
+        Assert.Equal(0, await RunPageAsync());
+
+        await using var verification = database.CreateContext();
+        var repaired = await verification.AuditEvents
+            .OrderBy(auditEvent => auditEvent.SeqId)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(count, repaired.Count);
+        Assert.All(repaired, auditEvent =>
+        {
+            Assert.Equal(RefTestRejectedEvent.EventType, auditEvent.Type);
+            Assert.DoesNotContain(reason, auditEvent.Data!, StringComparison.Ordinal);
+            Assert.Equal(AuditPiiRedactor.RedactedValue, (string?)JsonNode.Parse(auditEvent.Data!)!["reason"]);
+            Assert.Equal(now.AddDays(-31), auditEvent.Timestamp);
+            Assert.Equal(redactedAt, auditEvent.RedactedAt);
+            Assert.True(auditEvent.IsArchived);
+            Assert.Equal(AuditPiiRedactor.RedactedValue, auditEvent.ActorName);
+            Assert.Equal(AuditPiiRedactor.RedactedValue, auditEvent.ActorEmail);
+        });
+    }
+
+    [Fact]
     public async Task RetentionProcessesArchivedRowsThatWereNeverRedacted()
     {
         using var database = SqliteTestDatabase.Create();
@@ -174,16 +284,21 @@ public class AuditRetentionTests
         string streamId,
         DateTime timestamp,
         string data,
-        bool isArchived = false) =>
+        bool isArchived = false,
+        string type = "RefTestCreated",
+        DateTime? redactedAt = null,
+        string actorName = "Jane Doe",
+        string actorEmail = "jane@example.com") =>
         new()
         {
             StreamId = streamId,
             Version = 1,
-            Type = "RefTestCreated",
+            Type = type,
             Timestamp = timestamp,
             Data = data,
-            ActorName = "Jane Doe",
-            ActorEmail = "jane@example.com",
-            IsArchived = isArchived
+            ActorName = actorName,
+            ActorEmail = actorEmail,
+            IsArchived = isArchived,
+            RedactedAt = redactedAt
         };
 }

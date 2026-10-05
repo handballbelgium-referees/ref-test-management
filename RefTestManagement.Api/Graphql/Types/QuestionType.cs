@@ -13,7 +13,11 @@ public class QuestionType : ObjectType<Question>
 
         descriptor.BindFieldsExplicitly();
 
-        descriptor.Field(x => x.Id).Description("Question id");
+        descriptor.Field(x => x.Id).Description("Question id")
+            .Authorize(TaskAuthorizationPolicyProvider.AnyOf(
+                Permissions.RefTests.ViewDetailQuestions,
+                Permissions.Questions.Search,
+                Permissions.Questions.View));
         descriptor.Field(x => x.Number).Description("Question number")
             .Authorize(TaskAuthorizationPolicyProvider.AnyOf(
                 Permissions.RefTests.ViewDetailQuestions,

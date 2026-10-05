@@ -11,7 +11,7 @@ If the user explicitly asks to find exploitable vulnerabilities or invokes `/sec
 
 ## Process
 
-- [ ] **Confirm the scope.** Use `rg --files docs -g 'AUDIT-R*.md'` to find completed audit rounds, excluding `*-REMEDIATION.md`, and determine the next round number. Use `ask_user` to confirm the round, the area groups, and the output path (`docs/AUDIT-R{n}.md` by default). If `ask_user` is unavailable, ask one concise question at a time and wait for the answer. Do not read previous audit files in full.
+- [ ] **Confirm the scope.** Use `rg --files docs -g 'AUDIT-R*.md' -g '!*-REMEDIATION.md'` to find completed audit rounds and determine the next round number. Use `ask_user` to confirm the round, the area groups, and the output path (`docs/AUDIT-R{n}.md` by default). If `ask_user` is unavailable, ask one concise question at a time and wait for the answer. Do not read previous audit files in full.
 - [ ] **Record the baseline.** Capture `git rev-parse HEAD` and note the branch and date. Use `rg` and ranged reads to check prior findings' status; cite the remediation tracker or current source, not a copied previous report.
 - [ ] **Run validation once.** Save verbose output to temporary logs and inspect only summaries, failures, and relevant tails:
   - `dotnet restore RefTestManagement.slnx`
@@ -21,15 +21,15 @@ If the user explicitly asks to find exploitable vulnerabilities or invokes `/sec
   - From `RefTestManagement.Ui`: `npm run check:i18n`, `npm test -- --watch=false`, and `npm run build -- --configuration production`
   - At the root: `npm audit --json`; preserve the JSON in a temp log and summarize advisory counts.
   - Review recent CI failures with `gh run list --limit 20 --json databaseId,name,status,conclusion,headBranch,createdAt,url --jq '[.[] | select(.conclusion == "failure")]'`, then inspect relevant runs with `gh run view <databaseId> --log-failed`. Do not copy huge logs into the report.
-- [ ] **Audit in parallel.** Dispatch exactly four read-only `auditor` agents, one per area group. The account plan allows four concurrent subagents; do not exceed that limit:
+- [ ] **Audit in parallel.** Dispatch exactly four read-only `auditor` agents, one per area group. Do not exceed the host's concurrent-subagent limit (currently four); if it is lower, run them in batches:
   1. Backend domain, jobs, GDPR/privacy controls, logging, and documentation parity.
   2. GraphQL authentication/authorization, security headers, and Auth0.
   3. Frontend correctness, i18n, accessibility, and documentation parity.
   4. CI/CD, release integrity, and software supply chain.
 
-  Give each agent its precise scope and ask it to read both implementation and related docs. Require exact file/line evidence and a one-line verdict.
+  Give each agent its precise scope and ask it to read both implementation and related docs. Require exact file/line evidence, a confidence score per finding, and a one-line verdict. If an agent reports omitted lower-severity findings, ask it to re-run that sub-area rather than dropping them.
 - [ ] **Reconcile evidence.** Deduplicate findings, verify every cited line against the current baseline, rank Critical → High → Medium → Low, and assign stable IDs `R{n}-01`, `R{n}-02`, etc. Separate repository-verifiable facts from external or operational evidence. Do not infer GDPR compliance from code alone.
-- [ ] **Present the report proposal.** Show the user the proposed report path, scope, executive verdict, severity counts, and concise finding titles. Use `ask_user` with `Approve report` / `Request changes`, or wait for an explicit reply if the host has no `ask_user`. Do not write the audit report or README until approved.
+- [ ] **Present the report proposal.** Show the user the proposed report path, scope, executive verdict, severity counts, and concise finding titles. Use `ask_user` with `Approve report` / `Request changes`, or wait for an explicit reply if the host has no `ask_user`. Do not write the audit report or README until approved. This approval satisfies the plan gate for writing the report and the README row only; it does not authorize any other change.
 - [ ] **Write the approved report.** Use [template.md](template.md). Include the audited commit SHA, scope and method, production-readiness verdict, a GDPR evidence-status line, area verdicts, severity counts, findings, validation results, prior-round status, and the source-verifiable/non-repository evidence split. Update the README audit-doc row only after the report is written.
 - [ ] **Hand off remediation.** Finish by pointing to `/deliver R{n}`. Each fix needs its own approved plan and work packages.
 

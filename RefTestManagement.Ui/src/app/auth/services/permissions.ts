@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { inject, Service } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { catchError, merge, of, Subject, switchMap } from 'rxjs';
+import { catchError, exhaustMap, merge, of, Subject, switchMap, timer } from 'rxjs';
 import { Permissions } from '../models/permissions';
 import { Auth } from './auth';
 
@@ -18,9 +18,13 @@ export class PermissionsService {
 
   readonly permissions = toSignal(
     merge(
-      // Initial load: triggered when auth state is known
+      // Refresh regularly so UI permissions follow the server's short-lived snapshot.
       this._auth.isAuthenticated$.pipe(
-        switchMap((authenticated) => (authenticated ? this._fetch$ : of([] as string[]))),
+        switchMap((authenticated) =>
+          authenticated
+            ? timer(0, 60_000).pipe(exhaustMap(() => this._fetch$))
+            : of([] as string[]),
+        ),
       ),
       // Manual refresh: re-fetches permissions without re-checking auth state
       this._refresh$.pipe(switchMap(() => this._fetch$)),

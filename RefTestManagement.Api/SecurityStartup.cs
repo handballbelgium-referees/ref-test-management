@@ -1,5 +1,5 @@
-﻿using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
+﻿using System.Security.Claims;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authentication.OpenIdConnect;
@@ -22,13 +22,83 @@ public static class SecurityStartup
                 options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
                 options.Cookie.SameSite = SameSiteMode.Strict;
                 options.Cookie.HttpOnly = true;
+                options.Events.OnValidatePrincipal = async context =>
+                {
+                    var refresh = await RefreshPermissionClaimsAsync(
+                        context.HttpContext,
+                        context.Principal,
+                        context.HttpContext.RequestAborted);
+                    if (!refresh.Succeeded)
+                    {
+                        context.RejectPrincipal();
+                        return;
+                    }
+
+                    if (refresh.ClaimsChanged)
+                        context.ShouldRenew = true;
+                };
             })
             .AddOpenIdConnect("Auth0", options => ConfigureOpenIdConnect(options, configuration))
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.Authority = $"https://{configuration["Auth0:Domain"]}";
                 options.Audience = configuration["Auth0:Audience"];
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var refresh = await RefreshPermissionClaimsAsync(
+                            context.HttpContext,
+                            context.Principal,
+                            context.HttpContext.RequestAborted);
+                        if (!refresh.Succeeded)
+                            context.Fail("The current permissions could not be verified.");
+                    }
+                };
             });
+    }
+
+    private static async Task<PermissionRefreshResult> RefreshPermissionClaimsAsync(
+        HttpContext httpContext,
+        ClaimsPrincipal? principal,
+        CancellationToken cancellationToken)
+    {
+        if (principal is null)
+            return default;
+
+        var identity = principal.Identities.FirstOrDefault(candidate => candidate.IsAuthenticated);
+        if (identity is null)
+            return default;
+
+        try
+        {
+            var permissionService = httpContext.RequestServices.GetRequiredService<IPermissionSnapshotService>();
+            var permissions = await permissionService.GetCurrentPermissionsAsync(principal, cancellationToken);
+            if (permissions is null)
+                return default;
+
+            var existingClaims = principal.FindAll("permissions").ToArray();
+            var existingPermissions = existingClaims
+                .Select(claim => claim.Value)
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+            if (existingClaims.Length == permissions.Count && existingPermissions.SetEquals(permissions))
+                return new PermissionRefreshResult(true, false);
+
+            foreach (var claimsIdentity in principal.Identities)
+            {
+                foreach (var claim in claimsIdentity.FindAll("permissions").ToArray())
+                    claimsIdentity.RemoveClaim(claim);
+            }
+
+            foreach (var permission in permissions)
+                identity.AddClaim(new Claim("permissions", permission, ClaimValueTypes.String, "Auth0"));
+
+            return new PermissionRefreshResult(true, true);
+        }
+        catch (Exception)
+        {
+            return default;
+        }
     }
 
     private static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration configuration)
@@ -51,28 +121,14 @@ public static class SecurityStartup
 
         options.Events = new OpenIdConnectEvents
         {
-            OnTokenValidated = context =>
+            OnTokenValidated = async context =>
             {
-                // Copy the Auth0 'permissions' claim from the access token into the cookie identity.
-                // JwtBearer authentication already has permissions in the token, but for cookie-based
-                // sessions (browser login via OIDC) we need to extract them from the access token.
-                var accessToken = context.TokenEndpointResponse?.AccessToken;
-                if (string.IsNullOrEmpty(accessToken))
-                    return Task.CompletedTask;
-
-                var handler = new JwtSecurityTokenHandler();
-                if (!handler.CanReadToken(accessToken))
-                    return Task.CompletedTask;
-
-                var jwt = handler.ReadJwtToken(accessToken);
-                var permissionClaims = jwt.Claims
-                    .Where(c => c.Type == "permissions")
-                    .ToList();
-
-                if (permissionClaims.Count > 0)
-                    (context.Principal?.Identity as ClaimsIdentity)?.AddClaims(permissionClaims);
-
-                return Task.CompletedTask;
+                var refresh = await RefreshPermissionClaimsAsync(
+                    context.HttpContext,
+                    context.Principal,
+                    context.HttpContext.RequestAborted);
+                if (!refresh.Succeeded)
+                    context.Fail("The current permissions could not be verified.");
             },
 
             OnRedirectToIdentityProviderForSignOut = context =>
@@ -106,4 +162,6 @@ public static class SecurityStartup
             }
         };
     }
+
+    private readonly record struct PermissionRefreshResult(bool Succeeded, bool ClaimsChanged);
 }

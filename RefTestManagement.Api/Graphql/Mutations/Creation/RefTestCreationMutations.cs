@@ -9,6 +9,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
+using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 
@@ -58,20 +59,43 @@ public static partial class RefTestCreationMutations
         if (createdRefTests.Count == 0)
             return result;
 
-        context.RefTests.AddRange(createdRefTests);
+        if (requiresApproval)
+        {
+            var trackedJobIds = GetTrackedJobIds(context);
+            try
+            {
+                await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
+                    jobEnqueueService, context, cancellationToken);
+            }
+            catch (Exception ex)
+            {
+                DetachNewJobs(context, trackedJobIds);
+                result.Failed += createdRefTests.Count;
+                result.Errors.AddRange(createdRefTests.Select(refTest => new CreateRefTestsError
+                {
+                    User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
+                    ErrorMessage =
+                        $"Approval notification could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
+                }));
+                MutationErrorHandling.LogMutationFailure(
+                    logger, ex, nameof(CreateRefTestsAsync), correlationId);
+                return result;
+            }
+        }
+        else if (input.SendAutomatedInvitations)
+            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, context, result, logger, correlationId,
+                cancellationToken);
+
+        if (createdRefTests.Count == 0)
+            return result;
 
         // The RefTests and the jobs they owe are staged together and committed by the single
         // SaveChanges below, so a persisted RefTest can never exist without its invitation or
         // approval-notification job. Payloads can be built before the save because ids are
         // domain-generated, not database-generated.
-        if (requiresApproval)
-            await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
-                jobEnqueueService, context, result, logger, correlationId, cancellationToken);
-        else if (input.SendAutomatedInvitations)
-            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, context, result, logger, correlationId,
-                cancellationToken);
-
+        context.RefTests.AddRange(createdRefTests);
         await context.SaveChangesWithRetryAsync(cancellationToken);
+        result.SuccessfullyCreated = createdRefTests.Count;
 
         await PublishCreatedEventsAsync(createdRefTests, titleId, titleValue, subscriptionService, cancellationToken);
 
@@ -185,8 +209,6 @@ public static partial class RefTestCreationMutations
                     scheduledAt: input.ScheduledAt,
                     creatorName: creatorName,
                     creatorEmail: creatorEmail));
-
-                result.SuccessfullyCreated++;
             }
             catch (Exception ex)
             {
@@ -238,9 +260,6 @@ public static partial class RefTestCreationMutations
     /// <param name="titleValue">The value of the RefTest title.</param>
     /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
     /// <param name="context">The database context for accessing RefTests and related entities.</param>
-    /// <param name="result">The result object for tracking operation status.</param>
-    /// <param name="logger">The logger for logging information and errors.</param>
-    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     private static async Task EnqueueApprovalNotificationAsync(
         List<RefTest> refTests,
@@ -249,9 +268,6 @@ public static partial class RefTestCreationMutations
         string? titleValue,
         IJobEnqueueService jobEnqueueService,
         RefTestManagementContext context,
-        CreateRefTestsResult result,
-        ILogger logger,
-        string correlationId,
         CancellationToken cancellationToken)
     {
         var payload = new ApprovalNotificationEmailPayload(
@@ -259,20 +275,8 @@ public static partial class RefTestCreationMutations
             refTests.Select(rt => new ApprovalNotificationRefTestItem(
                 rt.Id, rt.FirstName, rt.LastName, rt.Email, rt.ScheduledAt)).ToList());
 
-        try
-        {
-            await jobEnqueueService.EnqueueApprovalNotificationAsync(payload,
-                saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
-        }
-        catch (Exception ex)
-        {
-            result.Errors.Add(new CreateRefTestsError
-            {
-                User = new User(creatorName, string.Empty, creatorEmail),
-                ErrorMessage = $"Approval notification could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
-            });
-            MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId);
-        }
+        await jobEnqueueService.EnqueueApprovalNotificationAsync(payload,
+            saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
     }
 
     /// <summary>
@@ -296,8 +300,9 @@ public static partial class RefTestCreationMutations
         string correlationId,
         CancellationToken cancellationToken)
     {
-        foreach (var refTest in refTests)
+        foreach (var refTest in refTests.ToList())
         {
+            var trackedJobIds = GetTrackedJobIds(context);
             try
             {
                 await jobEnqueueService.EnqueueInvitationEmailAsync(
@@ -311,6 +316,9 @@ public static partial class RefTestCreationMutations
             }
             catch (Exception ex)
             {
+                DetachNewJobs(context, trackedJobIds);
+                refTests.Remove(refTest);
+                result.Failed++;
                 result.Errors.Add(new CreateRefTestsError
                 {
                     User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
@@ -319,5 +327,19 @@ public static partial class RefTestCreationMutations
                 MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId, refTest.Id);
             }
         }
+    }
+
+    /// <summary>Captures the jobs already tracked so a failed enqueue can discard only its own staged rows.</summary>
+    /// <param name="context">The RefTest unit of work.</param>
+    private static HashSet<Guid> GetTrackedJobIds(RefTestManagementContext context) =>
+        context.Jobs.Local.Select(job => job.Id).ToHashSet();
+
+    /// <summary>Detaches jobs added by an enqueue attempt that did not complete.</summary>
+    /// <param name="context">The RefTest unit of work.</param>
+    /// <param name="trackedJobIds">Job IDs present before the enqueue attempt.</param>
+    private static void DetachNewJobs(RefTestManagementContext context, HashSet<Guid> trackedJobIds)
+    {
+        foreach (var job in context.Jobs.Local.Where(job => !trackedJobIds.Contains(job.Id)).ToList())
+            context.Entry(job).State = EntityState.Detached;
     }
 }

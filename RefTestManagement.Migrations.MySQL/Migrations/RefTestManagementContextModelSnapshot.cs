@@ -116,6 +116,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                         .IsRequired()
                         .HasColumnType("longtext");
 
+                    b.Property<Guid?>("PrivacyWithdrawalBatchId")
+                        .HasColumnType("char(36)");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("varchar(255)");
@@ -128,6 +131,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("IX_Jobs_CreatedAt");
+
+                    b.HasIndex("PrivacyWithdrawalBatchId")
+                        .HasDatabaseName("IX_Jobs_PrivacyWithdrawalBatchId");
 
                     b.HasIndex("Status", "ExecuteAfter", "LockedUntil")
                         .HasDatabaseName("IX_Jobs_Status_ExecuteAfter_LockedUntil");
@@ -199,6 +205,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<Guid?>("LatestJobId")
+                        .HasColumnType("char(36)");
+
                     b.Property<int>("TargetCount")
                         .HasColumnType("int");
 
@@ -220,6 +229,11 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("char(36)");
 
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasDefaultValue(0);
+
                     b.Property<Guid>("BatchId")
                         .HasColumnType("char(36)");
 
@@ -229,8 +243,17 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.Property<DateTime?>("ErasureStartedAt")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<int?>("FailureCode")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("NextAttemptAt")
+                        .HasColumnType("datetime(6)");
+
                     b.Property<Guid>("RefTestId")
                         .HasColumnType("char(36)");
+
+                    b.Property<DateTime?>("RetryExhaustedAt")
+                        .HasColumnType("datetime(6)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -296,12 +319,12 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("KeyHash")
+                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_KeyHash");
+
                     b.HasIndex("NormalizedEmailHash")
                         .IsUnique()
                         .HasDatabaseName("IX_PrivacyWithdrawalChallenges_NormalizedEmailHash");
-
-                    b.HasIndex("KeyHash")
-                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_KeyHash");
 
                     b.HasIndex("VerifiedAt", "ExpiresAt")
                         .HasDatabaseName("IX_PrivacyWithdrawalChallenges_VerifiedAt_ExpiresAt");

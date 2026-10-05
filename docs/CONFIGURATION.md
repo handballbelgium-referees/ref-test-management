@@ -126,7 +126,37 @@ Valid values:
 | `ManagementClientId`     | Client ID for a Machine-to-Machine app authorized for the Management API | Yes      |
 | `ManagementClientSecret` | Secret for the Management API M2M app                                    | Yes      |
 
-The Management API credentials are used by `RefTestManagement.Auth0` to sync permissions shortly after startup (`PermissionSyncService`, running in the background) and to resolve approvers by permission for approval-workflow notifications.
+The Management API credentials are used by `RefTestManagement.Auth0` to sync permissions shortly after startup (`PermissionSyncService`, running in the background), resolve approvers by permission, and refresh each user's effective permissions for authorization. The refresh uses the existing machine-to-machine client-credentials flow; it does not require or assume an end-user refresh token.
+
+Startup permission sync skips with a sanitized warning when required Auth0 configuration is missing.
+Transient network errors, timeouts, circuit-breaker rejections, and HTTP 408/429/5xx responses
+trigger at most four retries of the sync operation (five operation attempts total), with 2, 4, 8,
+and 16 second delays. Persistent failure is reported through a sanitized warning without blocking
+startup; shutdown cancels a pending retry delay.
+
+#### Management API access and permission freshness
+
+Grant the M2M application only the endpoint-specific Management API scopes needed for these
+operations:
+
+- Read `GET /api/v2/users/{id}/permissions`, `GET /api/v2/users/{id}/roles`, and
+  `GET /api/v2/roles/{id}/permissions` to resolve current effective grants.
+- Read users, roles, role members, and their permissions for the existing
+  `GetUsersWithPermissionAsync` approval-notification lookup.
+- Read and update `/api/v2/resource-servers` only for the existing startup permission
+  synchronization.
+
+The application does not write user metadata, assign users to roles, or request unrelated
+Management API access. The exact Auth0 scope names required by these endpoint paths and the M2M
+grant in the target tenant were not verified in this local change; confirm them against Auth0's
+endpoint documentation and tenant configuration before deployment.
+
+Successful permission snapshots are cached per user and API process for at most four minutes.
+Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most
+four simultaneous refreshes per API process. Expired snapshots are never reused after a refresh
+failure; authorization fails closed. Tenant/plan rate limits were not verified, and no quota
+figure is assumed. Monitor the Auth0 tenant's own rate-limit signals and verify its operational
+limits before rollout.
 
 ### EmailConfiguration
 
@@ -268,10 +298,18 @@ being rejected, the error carries the measured cost (`extensions.fieldCost` /
 
 #### Rate limiting behind a proxy
 
-The limiter partitions on the client's remote address. `UseForwardedHeaders` is configured for
-`X-Forwarded-For` and `X-Forwarded-Proto`, but only from the explicitly configured trusted proxy
-addresses and networks below. If the deployment already rate limits at the edge, set
-`EnableRateLimiting` to `false`.
+The limiter partitions on the resolved client address. `UseForwardedHeaders` processes
+`X-Forwarded-For` and `X-Forwarded-Proto` only from the explicitly configured trusted proxy
+addresses and networks below. For `X-Forwarded-For`, the resolver uses the resulting
+`RemoteIpAddress` at its configured position and never the raw header value. An earlier valid
+custom header can take precedence, but a later custom header cannot override a resolved address.
+Other headers selected by
+`TrustedClientIpHeaders` are considered only when the original transport peer (captured before
+forwarded-header middleware runs) matches `KnownProxies` or `KnownNetworks`, and only a single
+valid IP address is accepted. The trusted ingress must overwrite each configured custom header
+rather than append to or preserve client-supplied values. Missing, malformed, or list-valued custom
+headers fall back to the resolved remote address. If the deployment already rate limits at the
+edge, set `EnableRateLimiting` to `false`.
 
 ### ForwardedHeadersConfiguration
 
@@ -281,20 +319,24 @@ headers from any other source are ignored.
 | Key             | Description                                                  | Default |
 | --------------- | ------------------------------------------------------------ | ------- |
 | `ForwardLimit`  | Number of trusted proxy hops to process                      | `1`     |
-| `TrustedClientIpHeaders` | Ordered list of trusted request headers to use as the client IP before falling back to the remote connection address | `[]` |
+| `TrustedClientIpHeaders` | Ordered client-IP headers; `X-Forwarded-For` uses the resolved remote address, while other raw headers require one valid IP from a known ingress | `[]` |
 | `KnownProxies`  | Exact proxy IP addresses allowed to supply forwarded headers | `[]`    |
 | `KnownNetworks` | CIDR networks allowed to supply forwarded headers            | `[]`    |
-| `AllowUnsafeRateLimitingWithoutTrustedForwarders` | Permit GraphQL rate limiting with empty trusted forwarder lists outside development (not recommended) | `false` |
+| `AllowUnsafeRateLimitingWithoutTrustedForwarders` | Permit GraphQL rate limiting without known proxies/networks outside development (not recommended); does not trust raw client-IP headers | `false` |
 
 Configure the actual ingress addresses per environment. Leaving both allow-lists empty is the safe
 default for direct/local access; it does not trust arbitrary `X-Forwarded-For` headers. When
 GraphQL rate limiting is enabled, non-development environments fail fast unless at least one trusted
-client IP source is configured (`TrustedClientIpHeaders`, `KnownProxies`, or `KnownNetworks`) or
+proxy address/network is configured (`KnownProxies` or `KnownNetworks`) or
 `AllowUnsafeRateLimitingWithoutTrustedForwarders` is explicitly set to `true`.
 
-Leave `TrustedClientIpHeaders` empty unless your hosting platform provides a specific trusted header
-such as `X-Azure-ClientIP` and you want GraphQL rate limiting to key on that value instead of the
-resolved remote address.
+**Compatibility migration:** header-only configurations are rejected at startup, even when GraphQL
+rate limiting is disabled. If a platform-specific header such as `X-Azure-ClientIP` is needed,
+configure `KnownProxies` or `KnownNetworks` with the actual immediate ingress peer address/CIDR;
+do not guess these values. Otherwise remove the raw header configuration and rely on the remote
+address after trusted `X-Forwarded-For` processing. The unsafe-rate-limiting override does not make
+header-only configuration valid. Verify ingress addresses with the deployment operator before
+rollout; this repository does not assume production ingress or CIDRs.
 
 ## Managing Migrations
 

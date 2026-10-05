@@ -13,6 +13,7 @@ public sealed class PrivacyRetentionService(
     PrivacyConfiguration privacyConfiguration) : BackgroundService
 {
     private static readonly TimeSpan CleanupInterval = TimeSpan.FromDays(1);
+    private const int AnonymizedRejectionRepairBatchSize = 500;
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
@@ -60,5 +61,28 @@ public sealed class PrivacyRetentionService(
 
         if (refTests.Count > 0)
             logger.LogInformation("Erased {Count} RefTest records that exceeded privacy retention", refTests.Count);
+
+        var repaired = await RepairAnonymizedRejectionReasonsAsync(context, erasureService, cancellationToken);
+        if (repaired > 0)
+            logger.LogInformation("Repaired residual rejection data on {Count} already-anonymized RefTests", repaired);
+    }
+
+    internal static async Task<int> RepairAnonymizedRejectionReasonsAsync(
+        RefTestManagementContext context,
+        IRefTestPrivacyErasureService erasureService,
+        CancellationToken cancellationToken)
+    {
+        // EraseAsync clears the residual reason, so the next daily run advances to the next page
+        // without a durable cursor or selecting already-repaired rows again.
+        var refTests = await context.RefTests
+            .Where(refTest => refTest.IsAnonymized && refTest.RejectionReason != null)
+            .OrderBy(refTest => refTest.Id)
+            .Take(AnonymizedRejectionRepairBatchSize)
+            .ToListAsync(cancellationToken);
+
+        foreach (var refTest in refTests)
+            await erasureService.EraseAsync(refTest, ErasureInitiator.Operator, cancellationToken);
+
+        return refTests.Count;
     }
 }

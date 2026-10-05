@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.AuditLog;
+using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.EntityFrameworkCore;
@@ -76,10 +77,13 @@ public class AuditLogCleanupService(
         RefTestManagementContext context,
         AuditLogOptions options,
         DateTime now,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int maxRedactionsPerRun = MaxRedactionsPerRun)
     {
         var cutoff = now.AddDays(-options.RetentionDays);
         var archived = 0;
+        if (maxRedactionsPerRun <= 0)
+            return archived;
 
         // Archiving must strip the personal data, not just flag the row: past the retention
         // window there is no longer a lawful basis to keep the participant's name and email, and
@@ -90,16 +94,20 @@ public class AuditLogCleanupService(
         // JSON in a text column and there is no provider-portable way to rewrite it in SQL
         // across the four supported databases. The service runs daily, so the cost is bounded.
         //
-        // The cursor is RedactedAt, not IsArchived. Earlier deployments set IsArchived without
-        // redacting anything, so keying off that flag would permanently skip every row they
-        // archived. RedactedAt starts null on those rows, so the first run after this change
-        // sweeps the whole historical backlog.
+        // RedactedAt is the normal cursor, not IsArchived. The residual JSON predicate also
+        // catches rejection reasons that survived an earlier RedactedAt stamp; replacing the
+        // value with the marker makes that predicate advance without a durable cursor.
         while (!cancellationToken.IsCancellationRequested)
         {
             var batch = await context.AuditEvents
-                .Where(a => a.Timestamp < cutoff && a.RedactedAt == null)
+                .Where(a => a.Timestamp < cutoff
+                            && (a.RedactedAt == null
+                                || (a.Type == RefTestRejectedEvent.EventType
+                                    && a.Data != null
+                                    && a.Data.ToLower().Contains("\"reason\":\"")
+                                    && !a.Data.ToLower().Contains("\"reason\":\"***\""))))
                 .OrderBy(a => a.SeqId)
-                .Take(RedactionBatchSize)
+                .Take(Math.Min(RedactionBatchSize, maxRedactionsPerRun - archived))
                 .ToListAsync(cancellationToken);
 
             if (batch.Count == 0)
@@ -110,7 +118,13 @@ public class AuditLogCleanupService(
                 // AuditEvent is init-only by design, so write through the change tracker.
                 var entry = context.Entry(auditEvent);
 
-                entry.Property(e => e.Data).CurrentValue = AuditPiiRedactor.RedactData(auditEvent.Data);
+                entry.Property(e => e.Data).CurrentValue =
+                    AuditPiiRedactor.RedactData(auditEvent.Data, auditEvent.Type);
+
+                // A previously redacted row needs only the residual payload repair. Preserve its
+                // original actor, archive state, and RedactedAt timestamp.
+                if (auditEvent.RedactedAt is not null)
+                    continue;
 
                 // The accountability trail keeps what happened and when; who did it is personal
                 // data in its own right and expires with the same retention window.
@@ -129,7 +143,7 @@ public class AuditLogCleanupService(
             // first run after deployment processes the entire history, so it matters there most.
             context.ChangeTracker.Clear();
 
-            if (archived >= MaxRedactionsPerRun)
+            if (archived >= maxRedactionsPerRun)
             {
                 break;
             }

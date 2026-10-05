@@ -33,6 +33,8 @@ public sealed class PrivacyWithdrawalBatch : IHasDomainEvents, IHasVerifiedParti
     public long Version { get; private set; } = 1;
     public DateTime CreatedAt { get; private set; }
     public int TargetCount { get; private set; }
+    /// <summary>The last durable worker job committed for this batch.</summary>
+    public Guid? LatestJobId { get; private set; }
     public DateTime? CompletedAt { get; private set; }
 
     /// <inheritdoc />
@@ -48,6 +50,18 @@ public sealed class PrivacyWithdrawalBatch : IHasDomainEvents, IHasVerifiedParti
             throw new ArgumentOutOfRangeException(nameof(targetCount));
 
         return new PrivacyWithdrawalBatch(createdAt, targetCount);
+    }
+
+    /// <summary>Records a durable worker job so concurrent recovery cannot commit duplicates.</summary>
+    public bool MarkJobEnqueued(Guid jobId)
+    {
+        if (jobId == Guid.Empty)
+            throw new ArgumentException("A privacy-withdrawal job id cannot be empty.", nameof(jobId));
+        if (LatestJobId == jobId)
+            return false;
+
+        LatestJobId = jobId;
+        return true;
     }
 
     /// <summary>Marks the batch complete once all durable targets have finished.</summary>

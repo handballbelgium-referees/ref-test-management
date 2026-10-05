@@ -30,7 +30,7 @@ jobs:
       matrix:
         include:
           - language: csharp
-            build-mode: autobuild
+            build-mode: manual
           - language: javascript-typescript
             # The Angular app needs no build for CodeQL: its queries run over the TypeScript
             # sources, and bundling would only hide them behind generated output.
@@ -39,6 +39,8 @@ jobs:
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
 
       - name: ⚡ Setup .NET
         if: matrix.language == 'csharp'
@@ -55,6 +57,14 @@ jobs:
           # here: this application handles participants' personal data, so a false positive costs
           # a review while a missed injection costs a breach notification.
           queries: security-extended
+
+      - name: 🔄 Restore .NET dependencies (locked)
+        if: matrix.language == 'csharp'
+        run: dotnet restore RefTestManagement.slnx --locked-mode
+
+      - name: 🏗 Build .NET application
+        if: matrix.language == 'csharp'
+        run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
 
       - name: 🔬 Perform CodeQL analysis
         uses: github/codeql-action/analyze@2892aa5e19bbd11bc0cff5427e3b750a04d9e3c2 # v4

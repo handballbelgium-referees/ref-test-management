@@ -5,7 +5,11 @@
 /// </summary>
 public class Job
 {
-    private Job(JobType jobType, string payload, DateTime executeAfter)
+    private Job(
+        JobType jobType,
+        string payload,
+        DateTime executeAfter,
+        Guid? privacyWithdrawalBatchId)
     {
         Id = Guid.NewGuid();
         JobType = jobType;
@@ -14,6 +18,7 @@ public class Job
         Attempts = 0;
         CreatedAt = DateTime.UtcNow;
         ExecuteAfter = executeAfter;
+        PrivacyWithdrawalBatchId = privacyWithdrawalBatchId;
     }
 
     public Guid Id { get; private set; }
@@ -38,13 +43,41 @@ public class Job
     public DateTime ExecuteAfter { get; private set; }
     public DateTime? CompletedAt { get; private set; }
     public string? ErrorMessage { get; private set; }
+    public Guid? PrivacyWithdrawalBatchId { get; private set; }
 
     /// <summary>
     /// Creates a new job
     /// </summary>
-    public static Job Create(JobType jobType, string payload, DateTime? executeAfter = null)
+    public static Job Create(
+        JobType jobType,
+        string payload,
+        DateTime? executeAfter = null,
+        Guid? privacyWithdrawalBatchId = null)
     {
-        return new Job(jobType, payload, executeAfter ?? DateTime.UtcNow);
+        if (privacyWithdrawalBatchId is not null && jobType != JobType.PrivacyWithdrawalBatch)
+            throw new ArgumentException(
+                "Only privacy-withdrawal batch jobs can reference a batch.",
+                nameof(privacyWithdrawalBatchId));
+        if (privacyWithdrawalBatchId == Guid.Empty)
+            throw new ArgumentException("A privacy-withdrawal batch id cannot be empty.", nameof(privacyWithdrawalBatchId));
+
+        return new Job(jobType, payload, executeAfter ?? DateTime.UtcNow, privacyWithdrawalBatchId);
+    }
+
+    /// <summary>Links a legacy batch job to its batch after reading its ID-only payload.</summary>
+    public bool AssociateWithPrivacyWithdrawalBatch(Guid batchId)
+    {
+        if (JobType != JobType.PrivacyWithdrawalBatch)
+            throw new InvalidOperationException("Only privacy-withdrawal batch jobs can reference a batch.");
+        if (batchId == Guid.Empty)
+            throw new ArgumentException("A privacy-withdrawal batch id cannot be empty.", nameof(batchId));
+        if (PrivacyWithdrawalBatchId is { } currentBatchId && currentBatchId != batchId)
+            throw new InvalidOperationException("A privacy-withdrawal batch job cannot change its batch.");
+        if (PrivacyWithdrawalBatchId == batchId)
+            return false;
+
+        PrivacyWithdrawalBatchId = batchId;
+        return true;
     }
 
     /// <summary>
@@ -147,4 +180,3 @@ public class Job
                && (LockedUntil == null || LockedUntil <= DateTime.UtcNow);
     }
 }
-

@@ -612,19 +612,23 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     }
 
     /// <summary>
-    /// Irreversibly redacts personal data (name, email, token) in place while preserving the
-    /// RefTest record and its audit trail for accountability — used by the public self-service
-    /// "withdraw consent" flow, which (unlike a staff delete) never removes the record itself.
-    /// Idempotent — calling it again once already anonymized is a no-op.
+    /// Irreversibly redacts personal data (name, email, token, rejection reason) in place while
+    /// preserving the RefTest record and its audit trail for accountability — used by the public
+    /// self-service "withdraw consent" flow, which (unlike a staff delete) never removes the
+    /// record itself. Idempotent — calling it again also clears a legacy rejection reason from an
+    /// already-anonymized record without changing its anonymization timestamp or token.
     /// </summary>
     public void Anonymize()
     {
+        RejectionReason = null;
+
         if (IsAnonymized)
             return;
 
         FirstName = RedactedValue;
         LastName = RedactedValue;
         Email = RedactedValue;
+
         // Token must stay unique (unique index) — a random placeholder still hides the real
         // token value while satisfying that constraint, unlike a fixed "***" for every RefTest.
         Token = $"erased-{Guid.NewGuid():N}";

@@ -20,6 +20,9 @@ public sealed class PrivacyWithdrawalBatchConfiguration : IEntityTypeConfigurati
         builder.Property(batch => batch.TargetCount)
             .IsRequired();
 
+        builder.Property(batch => batch.LatestJobId)
+            .IsRequired(false);
+
         builder.Property(batch => batch.CompletedAt)
             .IsRequired(false);
 

@@ -114,6 +114,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("PrivacyWithdrawalBatchId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -126,6 +129,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("IX_Jobs_CreatedAt");
+
+                    b.HasIndex("PrivacyWithdrawalBatchId")
+                        .HasDatabaseName("IX_Jobs_PrivacyWithdrawalBatchId");
 
                     b.HasIndex("Status", "ExecuteAfter", "LockedUntil")
                         .HasDatabaseName("IX_Jobs_Status_ExecuteAfter_LockedUntil");
@@ -197,6 +203,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("LatestJobId")
+                        .HasColumnType("TEXT");
+
                     b.Property<int>("TargetCount")
                         .HasColumnType("INTEGER");
 
@@ -218,6 +227,11 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("TEXT");
 
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("INTEGER")
+                        .HasDefaultValue(0);
+
                     b.Property<Guid>("BatchId")
                         .HasColumnType("TEXT");
 
@@ -227,7 +241,16 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.Property<DateTime?>("ErasureStartedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<int?>("FailureCode")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<DateTime?>("NextAttemptAt")
+                        .HasColumnType("TEXT");
+
                     b.Property<Guid>("RefTestId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime?>("RetryExhaustedAt")
                         .HasColumnType("TEXT");
 
                     b.Property<long>("Version")
@@ -294,12 +317,12 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("KeyHash")
+                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_KeyHash");
+
                     b.HasIndex("NormalizedEmailHash")
                         .IsUnique()
                         .HasDatabaseName("IX_PrivacyWithdrawalChallenges_NormalizedEmailHash");
-
-                    b.HasIndex("KeyHash")
-                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_KeyHash");
 
                     b.HasIndex("VerifiedAt", "ExpiresAt")
                         .HasDatabaseName("IX_PrivacyWithdrawalChallenges_VerifiedAt_ExpiresAt");

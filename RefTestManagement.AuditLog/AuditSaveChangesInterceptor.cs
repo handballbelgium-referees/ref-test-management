@@ -1,10 +1,11 @@
+using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Domain.Events;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 using Microsoft.EntityFrameworkCore.Diagnostics;
-using Handball.Belgium.RefTestManagement.Domain.Events;
 
 namespace Handball.Belgium.RefTestManagement.AuditLog;
 
@@ -12,6 +13,8 @@ public class AuditSaveChangesInterceptor(
     IHttpContextAccessor httpContextAccessor,
     AuditLogOptions options) : SaveChangesInterceptor
 {
+    private readonly ConditionalWeakTable<DbContext, PendingAuditChanges> _pendingAuditChanges = new();
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase
@@ -23,12 +26,67 @@ public class AuditSaveChangesInterceptor(
         CancellationToken cancellationToken = default)
     {
         if (eventData.Context is not null)
-            await AddAuditEntriesAsync(eventData.Context, cancellationToken);
+        {
+            var pending = new PendingAuditChanges();
+            try
+            {
+                await AddAuditEntriesAsync(eventData.Context, cancellationToken, pending);
+                _pendingAuditChanges.Remove(eventData.Context);
+                _pendingAuditChanges.Add(eventData.Context, pending);
+            }
+            catch
+            {
+                DetachAuditEntries(eventData.Context, pending);
+                throw;
+            }
+        }
 
         return await base.SavingChangesAsync(eventData, result, cancellationToken);
     }
 
-    private async Task AddAuditEntriesAsync(DbContext context, CancellationToken cancellationToken)
+    public override async ValueTask<int> SavedChangesAsync(
+        SaveChangesCompletedEventData eventData,
+        int result,
+        CancellationToken cancellationToken = default)
+    {
+        var savedResult = await base.SavedChangesAsync(eventData, result, cancellationToken);
+        if (eventData.Context is { } context &&
+            _pendingAuditChanges.TryGetValue(context, out var pending))
+        {
+            // Keep domain events until EF confirms the write so a failed save can be retried.
+            foreach (var entity in pending.DomainEventEntities)
+                entity.ClearDomainEvents();
+
+            _pendingAuditChanges.Remove(context);
+        }
+
+        return savedResult;
+    }
+
+    public override async Task SaveChangesFailedAsync(
+        DbContextErrorEventData eventData,
+        CancellationToken cancellationToken = default)
+    {
+        if (eventData.Context is { } context)
+            DiscardPendingAuditEntries(context);
+
+        await base.SaveChangesFailedAsync(eventData, cancellationToken);
+    }
+
+    public override async Task SaveChangesCanceledAsync(
+        DbContextEventData eventData,
+        CancellationToken cancellationToken = default)
+    {
+        if (eventData.Context is { } context)
+            DiscardPendingAuditEntries(context);
+
+        await base.SaveChangesCanceledAsync(eventData, cancellationToken);
+    }
+
+    private async Task AddAuditEntriesAsync(
+        DbContext context,
+        CancellationToken cancellationToken,
+        PendingAuditChanges pending)
     {
         var (actorName, actorEmail, isAnonymousRequest) = GetActor();
         var timestamp = DateTime.UtcNow;
@@ -70,6 +128,7 @@ public class AuditSaveChangesInterceptor(
             {
                 // Domain event path: one AuditEvent per domain event
                 var headers = JsonSerializer.Serialize(new { entityType = entry.Entity.GetType().Name }, JsonOptions);
+                pending.DomainEventEntities.Add(hasDomainEvents);
 
                 foreach (var domainEvent in hasDomainEvents.DomainEvents)
                 {
@@ -92,9 +151,8 @@ public class AuditSaveChangesInterceptor(
                         Headers = headers
                     };
                     context.Add(auditEvent);
+                    pending.AuditEntries.Add(auditEvent);
                 }
-
-                hasDomainEvents.ClearDomainEvents();
             }
             else if (entry.Entity is not IHasDomainEvents)
             {
@@ -130,8 +188,34 @@ public class AuditSaveChangesInterceptor(
                     Headers = headers
                 };
                 context.Add(auditEvent);
+                pending.AuditEntries.Add(auditEvent);
             }
         }
+    }
+
+    private void DiscardPendingAuditEntries(DbContext context)
+    {
+        if (!_pendingAuditChanges.TryGetValue(context, out var pending))
+            return;
+
+        DetachAuditEntries(context, pending);
+        _pendingAuditChanges.Remove(context);
+    }
+
+    private static void DetachAuditEntries(DbContext context, PendingAuditChanges pending)
+    {
+        foreach (var auditEntry in pending.AuditEntries)
+        {
+            var entry = context.Entry(auditEntry);
+            if (entry.State != EntityState.Detached)
+                entry.State = EntityState.Detached;
+        }
+    }
+
+    private sealed class PendingAuditChanges
+    {
+        public HashSet<IHasDomainEvents> DomainEventEntities { get; } = [];
+        public HashSet<AuditEvent> AuditEntries { get; } = [];
     }
 
     /// <summary>

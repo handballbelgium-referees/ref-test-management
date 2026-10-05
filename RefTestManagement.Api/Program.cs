@@ -133,6 +133,7 @@ services.AddSingleton(graphQlLimitsConfig);
 var forwardedHeadersConfig = configuration.GetSection("ForwardedHeadersConfiguration")
                                   .Get<ForwardedHeadersConfiguration>()
                               ?? new ForwardedHeadersConfiguration();
+ConfigurableHeaderClientIpResolver.ValidateConfiguration(forwardedHeadersConfig);
 services.Configure<ForwardedHeadersConfiguration>(configuration.GetSection("ForwardedHeadersConfiguration"));
 services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
 
@@ -193,6 +194,8 @@ services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
 services.AddSingleton<IRefTestSessionService, RefTestSessionService>();
 
 services.AddAuth0ManagementServices(configuration);
+services.AddMemoryCache();
+services.AddSingleton<IPermissionSnapshotService, PermissionSnapshotService>();
 
 // Add background services
 services.AddHostedService<PermissionSyncService>();
@@ -290,7 +293,6 @@ var app = builder.Build();
 
 var hasUnsafeForwardedHeadersRateLimitConfig =
     graphQlLimitsConfig.EnableRateLimiting &&
-    forwardedHeadersConfig.TrustedClientIpHeaders.Length == 0 &&
     forwardedHeadersConfig.KnownProxies.Length == 0 &&
     forwardedHeadersConfig.KnownNetworks.Length == 0;
 
@@ -299,14 +301,14 @@ if (hasUnsafeForwardedHeadersRateLimitConfig &&
     !forwardedHeadersConfig.AllowUnsafeRateLimitingWithoutTrustedForwarders)
 {
     throw new InvalidOperationException(
-        "GraphQL rate limiting requires at least one trusted client IP source in non-development environments. Configure ForwardedHeadersConfiguration.TrustedClientIpHeaders, KnownProxies, or KnownNetworks, or disable rate limiting.");
+        "GraphQL rate limiting requires a trusted proxy address or network in non-development environments. Configure ForwardedHeadersConfiguration.KnownProxies or KnownNetworks for the actual ingress, disable rate limiting, or explicitly allow unsafe rate limiting. TrustedClientIpHeaders alone is not sufficient.");
 }
 
 if (hasUnsafeForwardedHeadersRateLimitConfig)
 {
     var logger = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger("Startup");
     logger.LogWarning(
-        "GraphQL rate limiting is enabled without trusted client IP sources. This is only safe for direct/local access and should not be used behind a reverse proxy.");
+        "GraphQL rate limiting is enabled without trusted forwarded-header peers. This is only safe for direct/local access and should not be used behind a reverse proxy.");
 }
 
 var forwardedHeadersOptions = new ForwardedHeadersOptions
@@ -343,18 +345,24 @@ foreach (var value in forwardedHeadersConfig.KnownNetworks)
 
 await app.MigrateRefTestManagementDatabase();
 
+// Preserve the transport peer; forwarded-header middleware replaces RemoteIpAddress.
+app.Use((context, next) =>
+{
+    context.Items[ConfigurableHeaderClientIpResolver.TransportPeerAddressItemKey] =
+        context.Connection.RemoteIpAddress;
+    return next(context);
+});
+
 app.UseForwardedHeaders(forwardedHeadersOptions);
 
-// Sent as real response headers rather than <meta http-equiv> tags. Browsers ignore
-// X-Frame-Options and X-Content-Type-Options when they appear in markup, so the tags in
-// index.html look like protection without providing any; and a meta Referrer-Policy only takes
-// effect once the parser reaches it, which is too late for anything the document requests first.
+// Security headers are enforced through response headers rather than meta tags. CSP stays
+// response-only to avoid a second policy; browsers ignore X-Content-Type-Options in markup, and
+// meta Referrer-Policy applies only after the parser reaches it.
 //
-// no-referrer matters more here than it usually would: a participant's invitation token travels
-// in the URL path, so any weaker policy puts a working credential into another site's logs.
+// no-referrer also avoids leaking URL data to other origins.
 const string contentSecurityPolicy =
     "default-src 'self' https:; " +
-    "script-src 'self' 'unsafe-inline'; " +
+    "script-src 'self'; " +
     "worker-src 'self' blob:; " +
     "style-src 'self' 'unsafe-inline'; " +
     "connect-src 'self' wss:; " +

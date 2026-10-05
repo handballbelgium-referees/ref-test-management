@@ -10,7 +10,8 @@ public sealed record RefTestApprovedEvent : DomainEventBase
 
 public sealed record RefTestRejectedEvent(string Reason) : DomainEventBase
 {
-    public override string ActionName => "RefTestRejected";
+    public const string EventType = "RefTestRejected";
+    public override string ActionName => EventType;
     public override object? GetChanges() => new { reason = Reason };
 }
 

@@ -105,7 +105,23 @@ public record ApprovalDecisionEmailPayload(
     string? RejectionReason,
     string? TitleValue,
     List<ApprovalNotificationRefTestItem> RefTests
-) : IJobPayload;
+) : IJobPayload
+{
+    /// <summary>
+    /// Clears the shared rejection text when this decision email includes the RefTest being
+    /// erased. A decision email can group several RefTests for the same creator.
+    /// </summary>
+    /// <param name="refTestId">The erased RefTest's identifier.</param>
+    public ApprovalDecisionEmailPayload RedactRejectionReasonFor(Guid refTestId)
+    {
+        if (RejectionReason is null
+            || RefTests is null
+            || !RefTests.Any(refTest => refTest.Id == refTestId))
+            return this;
+
+        return this with { RejectionReason = null };
+    }
+}
 
 /// <summary>
 /// Action to take for an expired RefTest

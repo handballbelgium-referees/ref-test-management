@@ -292,6 +292,9 @@ public sealed class PrivacyWithdrawalMutationsTests
             ConfirmedKeys.Add(challengeKey);
             return Task.FromResult(challengeKey == ValidKey);
         }
+
+        public Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken) =>
+            Task.FromResult(0);
     }
 
     public sealed class SchemaQuery

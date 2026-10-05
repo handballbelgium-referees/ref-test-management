@@ -1,5 +1,5 @@
 {
-  "model": "GPT-6 Luna (copilot)",
+  "model": "gpt-6-luna",
   "contextTier": "default",
   "disabledMcpServers": ["azure-devops", "figma"],
   "enabledPlugins": {

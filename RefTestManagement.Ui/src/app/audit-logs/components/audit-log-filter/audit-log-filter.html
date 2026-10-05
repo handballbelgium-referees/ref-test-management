@@ -9,10 +9,11 @@
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
       <!-- Stream ID -->
       <div class="flex flex-col gap-1">
-        <label class="text-xs font-medium text-neutral-500">
+        <label for="audit-log-filter-stream-id" class="text-xs font-medium text-neutral-500">
           {{ 'audit-logs.filter.streamIdLabel' | translate }}
         </label>
         <input
+          id="audit-log-filter-stream-id"
           type="text"
           class="w-full rounded-lg border border-neutral-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary-500"
           placeholder="{{ 'audit-logs.filter.streamIdPlaceholder' | translate }}"

@@ -23,6 +23,19 @@ public sealed class PrivacyWithdrawalBatchTargetConfiguration : IEntityTypeConfi
         builder.Property(target => target.ErasureStartedAt)
             .IsRequired(false);
 
+        builder.Property(target => target.AttemptCount)
+            .IsRequired()
+            .HasDefaultValue(0);
+
+        builder.Property(target => target.NextAttemptAt)
+            .IsRequired(false);
+
+        builder.Property(target => target.RetryExhaustedAt)
+            .IsRequired(false);
+
+        builder.Property(target => target.FailureCode)
+            .IsRequired(false);
+
         builder.Property(target => target.CompletedAt)
             .IsRequired(false);
 

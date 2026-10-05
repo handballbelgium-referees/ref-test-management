@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
 namespace Handball.Belgium.RefTestManagement.AuditLog;
 
@@ -44,11 +45,16 @@ public static class AuditPiiRedactor
     /// <summary>
     /// Replaces known personal-data keys (name/email) inside an audit event's JSON <c>Data</c>
     /// payload with <see cref="RedactedValue"/>, leaving the rest of the event (type, timestamp,
-    /// actor, other fields) intact. Handles both the flat shape used by
+    /// actor, other fields) intact. Rejection-event free text is also redacted when the event type
+    /// is supplied. Handles both the flat shape used by
     /// <c>RefTestCreatedEvent</c> (e.g. <c>{"firstName":"John",...}</c>) and the old/new diff
     /// shape used by <c>RefTestDetailsUpdatedEvent</c>
     /// (e.g. <c>{"firstName":{"old":"John","new":"Jane"},...}</c>).
     /// </summary>
+    /// <param name="data">The serialized audit-event payload.</param>
+    /// <param name="eventType">
+    /// The event type, when known. Rejection free text is redacted only for rejection events.
+    /// </param>
     /// <returns>
     /// The redacted JSON, or the input unchanged when it is null, empty, or not a JSON object.
     /// Reference-equal to the input when nothing needed redacting.
@@ -60,7 +66,7 @@ public static class AuditPiiRedactor
     /// <see cref="JsonObject"/> lookups are case-sensitive. Matching on what the payload
     /// actually contains keeps both shapes covered without having to enumerate every casing.
     /// </remarks>
-    public static string? RedactData(string? data)
+    public static string? RedactData(string? data, string? eventType = null)
     {
         if (string.IsNullOrEmpty(data))
             return data;
@@ -68,7 +74,35 @@ public static class AuditPiiRedactor
         if (JsonNode.Parse(data) is not JsonObject node)
             return data;
 
-        return RedactObject(node) ? node.ToJsonString() : data;
+        var changed = RedactObject(node);
+        if (string.Equals(eventType, RefTestRejectedEvent.EventType, StringComparison.Ordinal))
+            changed |= RedactRejectionReason(node);
+
+        return changed ? node.ToJsonString() : data;
+    }
+
+    private static bool RedactRejectionReason(JsonObject node)
+    {
+        // RefTestRejectedEvent stores this user-supplied text as a top-level "reason" property.
+        // Keep the event and its other accountability data, but never keep the free text after
+        // the event has been redacted.
+        foreach (var key in node.Select(property => property.Key).ToArray())
+        {
+            if (!string.Equals(key, "reason", StringComparison.OrdinalIgnoreCase) || node[key] is null)
+                continue;
+
+            if (node[key] is JsonValue value
+                && value.TryGetValue<string>(out var reason)
+                && string.Equals(reason, RedactedValue, StringComparison.Ordinal))
+            {
+                return false;
+            }
+
+            node[key] = RedactedValue;
+            return true;
+        }
+
+        return false;
     }
 
     private static bool RedactObject(JsonObject node)

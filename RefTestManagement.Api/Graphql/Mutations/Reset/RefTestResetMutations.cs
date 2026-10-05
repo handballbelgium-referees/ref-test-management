@@ -183,10 +183,9 @@ public static partial class RefTestResetMutations
 
         foreach (var id in ids)
         {
+            var refTest = refTests.FirstOrDefault(rt => rt.Id == id);
             try
             {
-                var refTest = refTests.FirstOrDefault(rt => rt.Id == id);
-
                 if (refTest == null)
                     throw new RefTestNotFoundException(id);
 
@@ -210,12 +209,28 @@ public static partial class RefTestResetMutations
                         cancellationToken: cancellationToken);
                 }
 
+                var refTestDto = refTest.ToDto();
+                await context.SaveChangesWithRetryAsync(cancellationToken);
+
                 successCount++;
-                result.RevivedRefTests.Add(refTest.ToDto());
+                result.RevivedRefTests.Add(refTestDto);
                 revivedIds.Add(refTest.Id);
             }
             catch (Exception ex)
             {
+                if (refTest is not null)
+                {
+                    var restoredRefTest = await RollbackFailedReviveAsync(context, refTest, cancellationToken);
+                    var refTestIndex = refTests.IndexOf(refTest);
+                    if (refTestIndex >= 0)
+                    {
+                        if (restoredRefTest is null)
+                            refTests.RemoveAt(refTestIndex);
+                        else
+                            refTests[refTestIndex] = restoredRefTest;
+                    }
+                }
+
                 failedCount++;
                 errors.Add(new ReviveRefTestsError
                 {
@@ -225,8 +240,6 @@ public static partial class RefTestResetMutations
                 MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ReviveRefTestsAsync), correlationId, id);
             }
         }
-
-        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         foreach (var refTestId in revivedIds)
         {
@@ -239,5 +252,41 @@ public static partial class RefTestResetMutations
             Failed = failedCount,
             Errors = errors
         };
+    }
+
+    /// <summary>Discards staged job/entity changes and returns a clean copy of the persisted RefTest.</summary>
+    /// <param name="context">The RefTest unit of work.</param>
+    /// <param name="refTest">The aggregate modified by the failed revive attempt.</param>
+    /// <param name="cancellationToken">Token for the cleanup queries.</param>
+    private static async Task<RefTest?> RollbackFailedReviveAsync(
+        RefTestManagementContext context,
+        RefTest refTest,
+        CancellationToken cancellationToken)
+    {
+        var refTestId = refTest.Id;
+        var changedEntries = context.ChangeTracker.Entries()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .ToList();
+
+        try
+        {
+            foreach (var entry in changedEntries)
+            {
+                if (entry.State == EntityState.Added)
+                    entry.State = EntityState.Detached;
+                else
+                    await entry.ReloadAsync(cancellationToken);
+            }
+        }
+        finally
+        {
+            // Domain events are transient and are not restored by EF's ReloadAsync.
+            refTest.ClearDomainEvents();
+        }
+
+        // Reload does not restore RefTest's transient IssuedToken. Detach it and query a clean
+        // aggregate so a failed token rotation cannot leak into a later item in this batch.
+        context.Entry(refTest).State = EntityState.Detached;
+        return await context.RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
     }
 }
