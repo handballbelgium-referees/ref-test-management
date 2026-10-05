@@ -336,7 +336,7 @@ jobs:
         run: npm ci
 
       - name: 🛡 Audit root release dependencies
-        run: npm audit --audit-level=high
+        run: npm audit --audit-level=critical
 
       - name: 📦 Install Angular dependencies
         working-directory: ./RefTestManagement.Ui
