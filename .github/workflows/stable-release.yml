@@ -3,6 +3,10 @@ name: 🚀 Stable Release
 on:
   workflow_dispatch:
 
+concurrency:
+  group: release-${{ github.repository }}
+  cancel-in-progress: false
+
 env:
   DOTNET_VERSION: 10.0.x
   NODE_VERSION: 24
@@ -11,9 +15,8 @@ jobs:
   promote:
     name: 🚀 Promote main to release
     runs-on: ubuntu-latest
+    needs: validate
     environment: promote
-    # Pushes are made with a short-lived token, not GITHUB_TOKEN, so this job needs no write
-    # scope of its own.
     permissions:
       contents: read
 
@@ -28,67 +31,122 @@ jobs:
           echo "❌ This workflow must be triggered from the 'release' branch, not '$REF_NAME'."
           exit 1
 
-      - name: 🔒 Require GitHub App credentials
+      - name: 📥 Checkout validated candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate.outputs.validated-sha }}
+          persist-credentials: false
+
+      - name: 🔒 Verify validated candidate
         env:
-          RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
-          RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
         run: |
-          if [ -z "$RELEASE_APP_CLIENT_ID" ] || [ -z "$RELEASE_APP_PRIVATE_KEY" ]; then
-            echo "::error::RELEASE_APP_CLIENT_ID and RELEASE_APP_PRIVATE_KEY must be configured; refusing to promote."
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          if [ "$ACTUAL_SHA" != "$VALIDATED_SHA" ]; then
+            echo "::error::Promotion checkout does not match the validated candidate."
             exit 1
           fi
 
-      # Mints an installation token that expires in an hour and carries only the permissions
-      # granted to the app.
-      - name: 🔑 Mint release token
+      - name: 🔒 Check release fast-forward
+        id: promotion
+        env:
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
+        run: |
+          set -euo pipefail
+          if ! git show-ref --verify --quiet refs/remotes/origin/main || \
+             ! git show-ref --verify --quiet refs/remotes/origin/release; then
+            echo "::error::The main or release branch was not fetched."
+            exit 1
+          fi
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          RELEASE_SHA="$(git rev-parse refs/remotes/origin/release)"
+          if ! git merge-base --is-ancestor "$VALIDATED_SHA" "$MAIN_SHA"; then
+            echo "::error::The validated candidate is no longer present in main."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$RELEASE_SHA" "$VALIDATED_SHA"; then
+            echo "::error::The validated candidate cannot fast-forward the release branch."
+            exit 1
+          fi
+          if [ "$RELEASE_SHA" = "$VALIDATED_SHA" ]; then
+            echo "push-needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "push-needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: 🔑 Mint promotion token
         id: release-token
+        if: steps.promotion.outputs.push-needed == 'true'
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
 
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          token: ${{ steps.release-token.outputs.token }}
-
-      - name: 🔧 Configure git
+      - name: 🔄 Promote validated commit to release
+        if: steps.promotion.outputs.push-needed == 'true'
+        env:
+          PROMOTION_TOKEN: ${{ steps.release-token.outputs.token }}
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: 🔄 Merge main into release (no squash)
-        run: |
-          git fetch origin
-          git checkout release
-          git merge origin/main --ff-only
-          git push origin release
+          set -euo pipefail
+          AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$PROMOTION_TOKEN" | base64 | tr -d '\n')"
+          GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0='http.https://github.com/.extraheader' \
+          GIT_CONFIG_VALUE_0="$AUTH_HEADER" \
+            git push origin "$VALIDATED_SHA:refs/heads/release"
 
   release:
     name: 🚀 Create Stable Release
     runs-on: ubuntu-latest
-    needs: promote
+    needs: [promote, validate]
     outputs:
       new-release-published: ${{ steps.semantic-release.outputs.new_release_published }}
       new-release-version: ${{ steps.semantic-release.outputs.new_release_version }}
+      new-release-tag: ${{ steps.semantic-release.outputs.new_release_tag }}
+      new-release-sha: ${{ steps.semantic-release.outputs.new_release_sha }}
+      release-branch-sha: ${{ steps.semantic-release.outputs.release_branch_sha }}
     permissions:
-      contents: write
-      issues: write
-      pull-requests: write
+      contents: read
 
     steps:
-      - name: 🔒 Require GitHub App credentials
+      - name: 📥 Checkout validated candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate.outputs.validated-sha }}
+          persist-credentials: false
+
+      - name: 🔒 Verify validated source and release branch
         env:
-          RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
-          RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
         run: |
-          if [ -z "$RELEASE_APP_CLIENT_ID" ] || [ -z "$RELEASE_APP_PRIVATE_KEY" ]; then
-            echo "::error::RELEASE_APP_CLIENT_ID and RELEASE_APP_PRIVATE_KEY must be configured; refusing to release."
+          set -euo pipefail
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          if ! git show-ref --verify --quiet refs/remotes/origin/main || \
+             ! git show-ref --verify --quiet refs/remotes/origin/release || \
+             [ "$ACTUAL_SHA" != "$VALIDATED_SHA" ] || \
+             [ "$(git rev-parse refs/remotes/origin/release)" != "$VALIDATED_SHA" ]; then
+            echo "::error::Release branch does not point to the validated candidate."
             exit 1
           fi
+          MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          if ! git merge-base --is-ancestor "$VALIDATED_SHA" "$MAIN_SHA"; then
+            echo "::error::The validated candidate is no longer present in main."
+            exit 1
+          fi
+          git checkout -B release "$ACTUAL_SHA"
 
+      - name: ⚡ Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install dependencies
+        run: npm ci
+
+      # Mint only after dependency installation; the token is injected into the release step below.
       - name: 🔑 Mint release token
         id: release-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
@@ -99,47 +157,50 @@ jobs:
           permission-issues: write
           permission-pull-requests: write
 
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          ref: release
-          token: ${{ steps.release-token.outputs.token }}
-
-      - name: 🔧 Fetch main branch
-        run: git fetch origin main:main
-
-      - name: ⚡ Setup Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-
-      - name: 📦 Install dependencies
-        run: npm ci
-
       - name: 🏷 Run semantic-release
         id: semantic-release
         env:
           GITHUB_TOKEN: ${{ steps.release-token.outputs.token }}
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          LATEST_TAG_BEFORE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          GITHUB_REF=refs/heads/release GITHUB_REF_NAME=release npx semantic-release
-          LATEST_TAG_AFTER=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 | tr -d '\n')"
+          export GIT_CONFIG_COUNT=1
+          export GIT_CONFIG_KEY_0='http.https://github.com/.extraheader'
+          export GIT_CONFIG_VALUE_0="$AUTH_HEADER"
+          LATEST_TAG_BEFORE="$(git describe --tags --abbrev=0 2>/dev/null || true)"
+          GITHUB_REF=refs/heads/release GITHUB_REF_NAME=release GITHUB_SHA="$VALIDATED_SHA" npx semantic-release
+          LATEST_TAG_AFTER="$(git describe --tags --abbrev=0 2>/dev/null || true)"
           if [ "$LATEST_TAG_BEFORE" != "$LATEST_TAG_AFTER" ] && [ -n "$LATEST_TAG_AFTER" ]; then
-            echo "new_release_published=true" >> $GITHUB_OUTPUT
-            echo "new_release_version=${LATEST_TAG_AFTER#v}" >> $GITHUB_OUTPUT
+            TAG_SHA="$(git rev-parse --verify "${LATEST_TAG_AFTER}^{commit}")"
+            if [ "$TAG_SHA" != "$VALIDATED_SHA" ]; then
+              echo "::error::Release tag does not point to the validated candidate."
+              exit 1
+            fi
+            echo "new_release_published=true" >> "$GITHUB_OUTPUT"
+            echo "new_release_version=${LATEST_TAG_AFTER#v}" >> "$GITHUB_OUTPUT"
+            echo "new_release_tag=$LATEST_TAG_AFTER" >> "$GITHUB_OUTPUT"
+            echo "new_release_sha=$TAG_SHA" >> "$GITHUB_OUTPUT"
+            BRANCH_SHA="$VALIDATED_SHA"
             VERSION="${LATEST_TAG_AFTER#v}"
-            TARGET_BRANCH=$(git rev-parse --abbrev-ref HEAD)
             git add badges/*.png
             if ! git diff --cached --quiet; then
               git commit -m "ci(release): update badges to v${VERSION} [skip ci]"
-              git push origin HEAD:refs/heads/${TARGET_BRANCH}
+              if git push origin HEAD:refs/heads/release; then
+                BRANCH_SHA="$(git rev-parse HEAD)"
+              else
+                echo "::warning::Release succeeded, but the release-branch badge update could not be pushed."
+              fi
             fi
+            echo "release_branch_sha=$BRANCH_SHA" >> "$GITHUB_OUTPUT"
           else
-            echo "new_release_published=false" >> $GITHUB_OUTPUT
-            echo "new_release_version=''" >> $GITHUB_OUTPUT
+            echo "new_release_published=false" >> "$GITHUB_OUTPUT"
+            echo "new_release_version=" >> "$GITHUB_OUTPUT"
+            echo "new_release_tag=" >> "$GITHUB_OUTPUT"
+            echo "new_release_sha=" >> "$GITHUB_OUTPUT"
+            echo "release_branch_sha=" >> "$GITHUB_OUTPUT"
           fi
 
   build:
@@ -147,21 +208,47 @@ jobs:
     runs-on: ubuntu-latest
     needs: [release, validate]
     if: needs.release.outputs.new-release-published == 'true'
+    outputs:
+      validated-sha: ${{ steps.verify-source.outputs.sha }}
+      artifact-name: ${{ steps.verify-source.outputs.artifact-name }}
     permissions:
       contents: read
 
     steps:
-      - name: 📥 Checkout code
+      - name: 📥 Checkout validated candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          ref: v${{ needs.release.outputs.new-release-version }}
+          ref: ${{ needs.validate.outputs.validated-sha }}
           persist-credentials: false
 
-      - name: 🏷 Set version
+      - name: 🔒 Verify validated source and release tag
+        id: verify-source
+        env:
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
+          RELEASE_SHA: ${{ needs.release.outputs.new-release-sha }}
+          RELEASE_TAG: ${{ needs.release.outputs.new-release-tag }}
+          RELEASE_VERSION: ${{ needs.release.outputs.new-release-version }}
         run: |
-          echo "APP_VERSION=${{ needs.release.outputs.new-release-version }}" >> $GITHUB_ENV
-          echo "Building version ${{ needs.release.outputs.new-release-version }}"
+          set -euo pipefail
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          TAG_SHA="$(git rev-parse --verify "${RELEASE_TAG}^{commit}")"
+          if [ "$ACTUAL_SHA" != "$VALIDATED_SHA" ] || \
+             [ "$RELEASE_SHA" != "$VALIDATED_SHA" ] || \
+             [ "$TAG_SHA" != "$VALIDATED_SHA" ] || \
+             [ "${RELEASE_TAG#v}" != "$RELEASE_VERSION" ]; then
+            echo "::error::Build source, release tag, and validated candidate do not match."
+            exit 1
+          fi
+          echo "sha=$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
+          echo "artifact-name=dist-$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
+
+      - name: 🏷 Set version
+        env:
+          RELEASE_VERSION: ${{ needs.release.outputs.new-release-version }}
+        run: |
+          echo "APP_VERSION=$RELEASE_VERSION" >> "$GITHUB_ENV"
+          echo "Building version $RELEASE_VERSION"
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -193,40 +280,52 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore RefTestManagement.slnx
+        run: dotnet restore RefTestManagement.slnx --locked-mode
 
       - name: 🏗 Build .NET application
         run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
 
       - name: 📦 Publish .NET application
+        env:
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
+          RELEASE_TAG: ${{ needs.release.outputs.new-release-tag }}
         run: |
+          mkdir -p ./release-artifact
           dotnet publish RefTestManagement.Api/RefTestManagement.Api.csproj \
             --configuration Release \
             --no-build \
-            --output ./publish
+            --output ./release-artifact/application
+          printf 'validated-sha=%s\nrelease-tag=%s\n' \
+            "$VALIDATED_SHA" "$RELEASE_TAG" > ./release-artifact/provenance.txt
 
       - name: ⬆️ Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
-          name: dist-production
-          path: ./publish
+          name: ${{ steps.verify-source.outputs.artifact-name }}
+          path: ./release-artifact
           retention-days: 7
 
   validate:
     name: ✅ Validate Stable Candidate
     runs-on: ubuntu-latest
-    needs: release
-    if: needs.release.outputs.new-release-published == 'true'
+    outputs:
+      validated-sha: ${{ steps.candidate.outputs.sha }}
     permissions:
       contents: read
 
     steps:
-      - name: 📥 Checkout release tag
+      - name: 📥 Checkout main candidate
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           fetch-depth: 0
-          ref: v${{ needs.release.outputs.new-release-version }}
+          ref: refs/heads/main
           persist-credentials: false
+
+      - name: 🔒 Capture validated candidate
+        id: candidate
+        run: |
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          echo "sha=$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -235,6 +334,9 @@ jobs:
 
       - name: 📦 Install root dependencies
         run: npm ci
+
+      - name: 🛡 Audit root release dependencies
+        run: npm audit --audit-level=high
 
       - name: 📦 Install Angular dependencies
         working-directory: ./RefTestManagement.Ui
@@ -258,7 +360,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore RefTestManagement.slnx
+        run: dotnet restore RefTestManagement.slnx --locked-mode
 
       - name: 🏗 Build .NET application
         run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
@@ -269,55 +371,90 @@ jobs:
   sync-to-main:
     name: 🔄 Sync release to main
     runs-on: ubuntu-latest
-    needs: [release, build]
+    needs: [release, build, validate]
     if: needs.release.outputs.new-release-published == 'true'
     permissions:
-      contents: write
+      contents: read
 
     steps:
-      - name: 🔒 Require GitHub App credentials
+      - name: 📥 Checkout validated candidate
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ needs.validate.outputs.validated-sha }}
+          persist-credentials: false
+
+      - name: 🔒 Verify provenance and plan main sync
+        id: sync
         env:
-          RELEASE_APP_CLIENT_ID: ${{ secrets.RELEASE_APP_CLIENT_ID }}
-          RELEASE_APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
+          RELEASE_SHA: ${{ needs.release.outputs.new-release-sha }}
+          RELEASE_TAG: ${{ needs.release.outputs.new-release-tag }}
+          EXPECTED_RELEASE_BRANCH_SHA: ${{ needs.release.outputs.release-branch-sha }}
         run: |
-          if [ -z "$RELEASE_APP_CLIENT_ID" ] || [ -z "$RELEASE_APP_PRIVATE_KEY" ]; then
-            echo "::error::RELEASE_APP_CLIENT_ID and RELEASE_APP_PRIVATE_KEY must be configured; refusing to sync."
+          set -euo pipefail
+          ACTUAL_SHA="$(git rev-parse HEAD)"
+          TAG_SHA="$(git rev-parse --verify "${RELEASE_TAG}^{commit}")"
+          if [ "$ACTUAL_SHA" != "$VALIDATED_SHA" ] || \
+             [ "$RELEASE_SHA" != "$VALIDATED_SHA" ] || \
+             [ "$TAG_SHA" != "$VALIDATED_SHA" ]; then
+            echo "::error::Stable tag and validated candidate do not match."
+            exit 1
+          fi
+          if ! git show-ref --verify --quiet refs/remotes/origin/main || \
+             ! git show-ref --verify --quiet refs/remotes/origin/release; then
+            echo "::error::The main or release branch was not fetched."
+            exit 1
+          fi
+          REMOTE_MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
+          REMOTE_RELEASE_SHA="$(git rev-parse refs/remotes/origin/release)"
+          if [ "$REMOTE_RELEASE_SHA" != "$EXPECTED_RELEASE_BRANCH_SHA" ]; then
+            echo "::error::The release branch moved after the validated release step."
+            exit 1
+          fi
+          if ! git merge-base --is-ancestor "$VALIDATED_SHA" "$REMOTE_MAIN_SHA" || \
+             ! git merge-base --is-ancestor "$VALIDATED_SHA" "$REMOTE_RELEASE_SHA"; then
+            echo "::error::The validated candidate is no longer present in main or release."
+            exit 1
+          fi
+          echo "release-sha=$REMOTE_RELEASE_SHA" >> "$GITHUB_OUTPUT"
+          if git merge-base --is-ancestor "$REMOTE_MAIN_SHA" "$REMOTE_RELEASE_SHA"; then
+            if [ "$REMOTE_MAIN_SHA" = "$REMOTE_RELEASE_SHA" ]; then
+              echo "push-needed=false" >> "$GITHUB_OUTPUT"
+            else
+              echo "push-needed=true" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "::error::main advanced beyond the validated candidate; release branch reconciliation is required before the next promotion."
             exit 1
           fi
 
-      - name: 🔑 Mint release token
+      - name: 🔑 Mint sync token
         id: release-token
+        if: steps.sync.outputs.push-needed == 'true'
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3
         with:
           client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
           private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
           permission-contents: write
 
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          fetch-depth: 0
-          token: ${{ steps.release-token.outputs.token }}
-
-      - name: 🔧 Configure git
+      - name: 🔄 Fast-forward main to release
+        if: steps.sync.outputs.push-needed == 'true'
+        env:
+          SYNC_TOKEN: ${{ steps.release-token.outputs.token }}
+          RELEASE_SHA: ${{ steps.sync.outputs.release-sha }}
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-      - name: 🔄 Sync release tag to main
-        run: |
-          git fetch origin
-          git checkout main
-          git merge --ff-only origin/release || {
-            echo "::error::main can only be promoted from release with a fast-forward update."
-            exit 1
-          }
-          git push origin main
+          set -euo pipefail
+          AUTH_HEADER="AUTHORIZATION: basic $(printf 'x-access-token:%s' "$SYNC_TOKEN" | base64 | tr -d '\n')"
+          GIT_CONFIG_COUNT=1 \
+          GIT_CONFIG_KEY_0='http.https://github.com/.extraheader' \
+          GIT_CONFIG_VALUE_0="$AUTH_HEADER" \
+            git push origin "$RELEASE_SHA:refs/heads/main"
 
   deploy-production:
     name: 🚀 Deploy to Production ${{needs.release.outputs.new-release-version}}
     runs-on: ubuntu-latest
-    needs: [release, build]
+    needs: [release, build, validate]
     if: needs.release.outputs.new-release-published == 'true'
     environment:
       name: production
@@ -331,8 +468,27 @@ jobs:
       - name: ⬇️ Download build artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
-          name: dist-production
-          path: ${{ github.workspace }}/publish
+          name: ${{ needs.build.outputs.artifact-name }}
+          path: ${{ github.workspace }}/release-artifact
+
+      - name: 🔒 Verify deployment artifact provenance
+        env:
+          VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
+          BUILD_SHA: ${{ needs.build.outputs.validated-sha }}
+          RELEASE_SHA: ${{ needs.release.outputs.new-release-sha }}
+          RELEASE_TAG: ${{ needs.release.outputs.new-release-tag }}
+        run: |
+          set -euo pipefail
+          if [ "$VALIDATED_SHA" != "$BUILD_SHA" ] || [ "$VALIDATED_SHA" != "$RELEASE_SHA" ]; then
+            echo "::error::Deployment source does not match the validated candidate."
+            exit 1
+          fi
+          EXPECTED_PROVENANCE="$(printf 'validated-sha=%s\nrelease-tag=%s' "$VALIDATED_SHA" "$RELEASE_TAG")"
+          ACTUAL_PROVENANCE="$(cat "$GITHUB_WORKSPACE/release-artifact/provenance.txt")"
+          if [ "$ACTUAL_PROVENANCE" != "$EXPECTED_PROVENANCE" ]; then
+            echo "::error::Deployment artifact provenance does not match the validated release."
+            exit 1
+          fi
 
       - name: 🔑 Azure Login
         uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
@@ -346,7 +502,7 @@ jobs:
         uses: azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383 # v3
         with:
           app-name: ${{ secrets.AZURE_WEBAPP_PRODUCTION_NAME }}
-          package: ${{ github.workspace }}/publish
+          package: ${{ github.workspace }}/release-artifact/application
           clean: true
 
       - name: 🎉 Deployment complete

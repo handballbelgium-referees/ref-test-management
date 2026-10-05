@@ -39,4 +39,4 @@ jobs:
         run: npm ci
 
       - name: Restore .NET dependencies
-        run: dotnet restore RefTestManagement.slnx
+        run: dotnet restore RefTestManagement.slnx --locked-mode
