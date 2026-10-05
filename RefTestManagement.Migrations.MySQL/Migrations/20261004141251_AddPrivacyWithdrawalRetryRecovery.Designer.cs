@@ -3,66 +3,71 @@ using System;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
+namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
 {
     [DbContext(typeof(RefTestManagementContext))]
-    partial class RefTestManagementContextModelSnapshot : ModelSnapshot
+    [Migration("20261004141251_AddPrivacyWithdrawalRetryRecovery")]
+    partial class AddPrivacyWithdrawalRetryRecovery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.AuditLog.AuditEvent", b =>
                 {
                     b.Property<long>("SeqId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<string>("ActorEmail")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("ActorName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<string>("Data")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("Headers")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<bool>("IsArchived")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime?>("RedactedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("StreamId")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<long>("Version")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("SeqId");
 
@@ -86,44 +91,44 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<int>("Attempts")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("ErrorMessage")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime>("ExecuteAfter")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("JobType")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<DateTime?>("LockedUntil")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Payload")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<Guid?>("PrivacyWithdrawalBatchId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -143,42 +148,42 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("ChallengeEmailSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("DeliveryAttemptCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("KeyHash")
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(64)");
 
                     b.Property<DateTime?>("LastDeliveryAttemptAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("ProtectedDeliveryKey")
                         .HasMaxLength(2048)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(2048)");
 
                     b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -195,23 +200,23 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<Guid?>("LatestJobId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<int>("TargetCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -225,37 +230,37 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<int>("AttemptCount")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("int")
                         .HasDefaultValue(0);
 
                     b.Property<Guid>("BatchId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("ErasureStartedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int?>("FailureCode")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("NextAttemptAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<Guid>("RefTestId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("RetryExhaustedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -273,47 +278,47 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("ChallengeEmailSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int>("DeliveryAttemptCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("KeyHash")
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(64)");
 
                     b.Property<DateTime?>("LastDeliveryAttemptAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("NormalizedEmailHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(64)");
 
                     b.Property<string>("ProtectedDeliveryKey")
                         .HasMaxLength(2048)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(2048)");
 
                     b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -334,12 +339,12 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.HasKey("Id");
 
@@ -350,146 +355,146 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<DateTime?>("AnonymizedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<int?>("AnswerScore")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int?>("AnswerTotal")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("CreatorEmail")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT")
+                        .HasColumnType("varchar(256)")
                         .HasDefaultValue("");
 
                     b.Property<string>("CreatorName")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT")
+                        .HasColumnType("varchar(256)")
                         .HasDefaultValue("");
 
                     b.Property<int?>("CurrentQuestionIndex")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<DateTime?>("ExpiredAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<DateTime?>("InvitationSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<bool>("IsAnonymized")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("tinyint(1)")
                         .HasDefaultValue(false);
 
                     b.Property<string>("Language")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(256)");
 
                     b.Property<int>("MaxTimeInMinutes")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<int>("NumberOfQuestions")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<double?>("Percentage")
-                        .HasColumnType("REAL");
+                        .HasColumnType("double");
 
                     b.Property<DateTime?>("PrivacyNoticeAcceptedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("PrivacyNoticeVersion")
                         .HasMaxLength(32)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(32)");
 
                     b.Property<string>("ProtectedInvitationToken")
                         .HasMaxLength(2048)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(2048)");
 
                     b.Property<string>("QuestionIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<int?>("QuestionScore")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("int");
 
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(1000)");
 
                     b.Property<DateTime?>("ResultsSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<DateTime?>("ScheduledAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("SelectedAnswerIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<bool>("SendInvitationsAutomatically")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<bool>("SendResultsAutomatically")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("tinyint(1)");
 
                     b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("datetime(6)");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(255)");
 
                     b.Property<Guid>("TitleId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("char(36)");
 
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("varchar(64)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<string>("WrongAnswerIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.Property<string>("WrongQuestionIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("longtext");
 
                     b.HasKey("Id");
 

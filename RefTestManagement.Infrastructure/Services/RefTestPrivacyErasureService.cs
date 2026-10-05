@@ -40,12 +40,13 @@ public interface IRefTestPrivacyErasureService
     /// <summary>
     /// Erases a RefTest's personal data: cancels any background job referencing it that is still
     /// pending or in flight (so no invitation/result email goes out afterwards, and the job's
-    /// payload — which carries name, email and token — is cleared) and redacts personal data
-    /// (name, email, token) in place, both on the record itself and in its audit trail. The
-    /// RefTest record and its (redacted) audit trail are always kept for accountability — this
-    /// never deletes the row itself. Idempotent: calling it again on an already-anonymized
-    /// RefTest is a no-op. Used by the public self-service "withdraw consent" flow, and by a
-    /// staff delete before the row is removed.
+    /// payload is cleared) and redacts personal data in place, both on the record itself and in
+    /// its audit trail. It also removes rejection text from related approval-decision payloads,
+    /// including completed jobs. The RefTest record and its (redacted) audit trail are always
+    /// kept for accountability — this never deletes the row itself. Idempotent: a repeat call
+    /// repairs any legacy rejection text for this RefTest without sweeping other anonymized
+    /// records. Used by the public self-service "withdraw consent" flow, and by a staff delete
+    /// before the row is removed.
     /// </summary>
     /// <param name="refTest">The RefTest to erase.</param>
     /// <param name="initiator">
@@ -78,6 +79,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 {
     private static readonly JsonSerializerOptions JobPayloadOptions = new()
     {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
         PropertyNameCaseInsensitive = true
     };
 
@@ -111,8 +113,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
             // See EraseAsync for why every attempt starts from a freshly loaded entity.
             await context.Entry(refTest).ReloadAsync(ct);
 
-            if (!refTest.IsAnonymized)
-                await EraseCoreAsync(refTest, initiator, ct);
+            await EraseCoreAsync(refTest, initiator, ct);
 
             await DeleteCoreAsync(refTest, ct);
 
@@ -144,29 +145,17 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         ErasureInitiator initiator,
         CancellationToken cancellationToken = default)
     {
-        if (refTest.IsAnonymized)
-            return;
-
         var strategy = context.Database.CreateExecutionStrategy();
 
         // The retrying execution strategy must own the transaction as a single retriable unit.
-        // Each attempt reloads refTest fresh from the database first: if a prior attempt already
-        // called Anonymize() in memory but its transaction was rolled back by a transient
-        // failure (e.g. during the second SaveChangesAsync below or the final commit), refTest
-        // would otherwise still look "already anonymized" on retry — EF would then see no
-        // changes to persist for it, and the erasure would never actually reach the database,
-        // even though the audit redaction (touching unrelated, already-committed rows) could
-        // still succeed and make it look like the whole operation worked.
+        // Each attempt reloads refTest fresh from the database first: a previous attempt may
+        // already have cleared its rejection reason in memory even though the transaction rolled
+        // back, so the retry must compare against the persisted state before doing the repair.
         await strategy.ExecuteAsync(cancellationToken, async ct =>
         {
             await using var transaction = await context.Database.BeginTransactionAsync(ct);
 
             await context.Entry(refTest).ReloadAsync(ct);
-            if (refTest.IsAnonymized)
-            {
-                await transaction.CommitAsync(ct);
-                return;
-            }
 
             await EraseCoreAsync(refTest, initiator, ct);
 
@@ -175,12 +164,13 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
     }
 
     /// <summary>
-    /// Redacts the RefTest and its audit trail in place and cancels any job still referencing it.
-    /// Assumes an ambient transaction owned by the caller, and a RefTest that is not yet
-    /// anonymized.
+    /// Redacts the RefTest and its audit trail in place, and cancels any job still referencing it.
+    /// Also repairs legacy rejection copies when the RefTest is already anonymized. Assumes an
+    /// ambient transaction owned by the caller.
     /// </summary>
     private async Task EraseCoreAsync(RefTest refTest, ErasureInitiator initiator, CancellationToken ct)
     {
+        var wasAlreadyAnonymized = refTest.IsAnonymized;
         var erasedParticipantEmail = refTest.Email;
 
         // The anonymization event is attributed to whoever triggered the erasure. For the
@@ -198,7 +188,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 
         // Cancel any job still waiting to run or already in flight (e.g. a scheduled
         // invitation/result email) so nothing gets sent out referencing the erased data.
-        // Completed jobs are left untouched and follow normal retention cleanup.
+        // Completed jobs are not cancelled; related approval-decision payloads are scrubbed below.
         var cancellableJobs = await FindCancellableJobsAsync(refTest.Id, ct);
 
         foreach (var job in cancellableJobs)
@@ -208,8 +198,13 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         refTest.Anonymize();
         await context.SaveChangesAsync(ct);
 
-        await ClearExportRequestsForErasedParticipantAsync(erasedParticipantEmail, ct);
-        await ClearPrivacyWithdrawalChallengesForErasedParticipantAsync(erasedParticipantEmail, ct);
+        // An already-anonymized row no longer has the participant's real address with which to
+        // find these separate requests. They were cleared during the original erasure.
+        if (!wasAlreadyAnonymized)
+        {
+            await ClearExportRequestsForErasedParticipantAsync(erasedParticipantEmail, ct);
+            await ClearPrivacyWithdrawalChallengesForErasedParticipantAsync(erasedParticipantEmail, ct);
+        }
 
         var auditEvents = await context.AuditEvents
             .Where(e => e.StreamId == refTestId)
@@ -217,7 +212,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
 
         foreach (var auditEvent in auditEvents)
         {
-            var redacted = AuditPiiRedactor.RedactData(auditEvent.Data);
+            var redacted = AuditPiiRedactor.RedactData(auditEvent.Data, auditEvent.Type);
             if (redacted != auditEvent.Data)
                 context.Entry(auditEvent).Property(e => e.Data).CurrentValue = redacted;
 
@@ -233,6 +228,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
             context.Entry(auditEvent).Property(e => e.ActorEmail).CurrentValue = AuditPiiRedactor.RedactedValue;
         }
 
+        await RedactApprovalDecisionJobPayloadsAsync(refTest.Id, ct);
         await context.SaveChangesAsync(ct);
     }
 
@@ -325,6 +321,41 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
             catch (JsonException)
             {
                 // An unrelated malformed job must not prevent this erasure from completing.
+            }
+        }
+    }
+
+    private async Task RedactApprovalDecisionJobPayloadsAsync(Guid refTestId, CancellationToken ct)
+    {
+        var id = refTestId.ToString();
+
+        // Keep this repair scoped to one RefTest's approval-decision jobs rather than sweeping
+        // the job table. Deliberately include every status: completed and failed jobs retain their
+        // payloads until normal cleanup, and may still contain the rejection text.
+        var candidateJobs = await context.Jobs
+            .Where(job => job.JobType == JobType.ApprovalDecisionEmail && job.Payload.Contains(id))
+            .ToListAsync(ct);
+
+        foreach (var job in candidateJobs)
+        {
+            try
+            {
+                var payload = JsonSerializer.Deserialize<ApprovalDecisionEmailPayload>(job.Payload, JobPayloadOptions);
+                if (payload is null)
+                    continue;
+
+                var redactedPayload = payload.RedactRejectionReasonFor(refTestId);
+                if (ReferenceEquals(payload, redactedPayload))
+                    continue;
+
+                context.Entry(job).Property(j => j.Payload).CurrentValue =
+                    JsonSerializer.Serialize(redactedPayload, JobPayloadOptions);
+            }
+            catch (JsonException)
+            {
+                // If a malformed approval payload mentions this RefTest, discard its unreadable
+                // contents rather than risk retaining rejection text. Keep its lifecycle status.
+                context.Entry(job).Property(j => j.Payload).CurrentValue = string.Empty;
             }
         }
     }

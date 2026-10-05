@@ -121,6 +121,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
+                    b.Property<Guid?>("PrivacyWithdrawalBatchId")
+                        .HasColumnType("uuid");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("text");
@@ -133,6 +136,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("IX_Jobs_CreatedAt");
+
+                    b.HasIndex("PrivacyWithdrawalBatchId")
+                        .HasDatabaseName("IX_Jobs_PrivacyWithdrawalBatchId");
 
                     b.HasIndex("Status", "ExecuteAfter", "LockedUntil")
                         .HasDatabaseName("IX_Jobs_Status_ExecuteAfter_LockedUntil");
@@ -204,6 +210,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<Guid?>("LatestJobId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("TargetCount")
                         .HasColumnType("integer");
 
@@ -225,6 +234,11 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<int>("AttemptCount")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer")
+                        .HasDefaultValue(0);
+
                     b.Property<Guid>("BatchId")
                         .HasColumnType("uuid");
 
@@ -234,8 +248,17 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                     b.Property<DateTime?>("ErasureStartedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int?>("FailureCode")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("NextAttemptAt")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<Guid>("RefTestId")
                         .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("RetryExhaustedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
@@ -301,12 +324,12 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("KeyHash")
+                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_KeyHash");
+
                     b.HasIndex("NormalizedEmailHash")
                         .IsUnique()
                         .HasDatabaseName("IX_PrivacyWithdrawalChallenges_NormalizedEmailHash");
-
-                    b.HasIndex("KeyHash")
-                        .HasDatabaseName("IX_PrivacyWithdrawalChallenges_KeyHash");
 
                     b.HasIndex("VerifiedAt", "ExpiresAt")
                         .HasDatabaseName("IX_PrivacyWithdrawalChallenges_VerifiedAt_ExpiresAt");

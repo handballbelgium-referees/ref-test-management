@@ -45,9 +45,15 @@ public class JobConfiguration : IEntityTypeConfiguration<Job>
         builder.Property(j => j.ErrorMessage)
             .IsRequired(false);
 
+        builder.Property(j => j.PrivacyWithdrawalBatchId)
+            .IsRequired(false);
+
         // Indexes for efficient querying
         builder.HasIndex(j => new { j.Status, j.ExecuteAfter, j.LockedUntil })
             .HasDatabaseName("IX_Jobs_Status_ExecuteAfter_LockedUntil");
+
+        builder.HasIndex(j => j.PrivacyWithdrawalBatchId)
+            .HasDatabaseName("IX_Jobs_PrivacyWithdrawalBatchId");
 
         builder.HasIndex(j => j.CreatedAt)
             .HasDatabaseName("IX_Jobs_CreatedAt");

@@ -1,4 +1,8 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.AuditLog;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
@@ -31,8 +35,13 @@ public class RefTestPrivacyErasureServiceTests
     private const string ParticipantEmail = "ada@example.org";
     private const string ParticipantFirstName = "Ada";
     private const string ParticipantLastName = "Lovelace";
+    private static readonly JsonSerializerOptions JobPayloadJsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        PropertyNameCaseInsensitive = true
+    };
 
-    private static RefTest NewRefTest(Guid titleId) =>
+    private static RefTest NewRefTest(Guid titleId, bool requiresApproval = false) =>
         RefTest.Create(
             titleId: titleId,
             firstName: ParticipantFirstName,
@@ -43,7 +52,7 @@ public class RefTestPrivacyErasureServiceTests
             questionIds: ["q1", "q2"],
             sendInvitationAutomatically: false,
             sendResultsAutomatically: false,
-            requiresApproval: false);
+            requiresApproval: requiresApproval);
 
     private static async Task<(SqliteTestDatabase Database, Guid TitleId)> SeedTitleAsync()
     {
@@ -90,6 +99,55 @@ public class RefTestPrivacyErasureServiceTests
         return refTest.Id;
     }
 
+    private static async Task<Guid> SeedRejectedRefTestAsync(
+        SqliteTestDatabase database,
+        Guid titleId,
+        string reason,
+        bool alreadyAnonymized = false)
+    {
+        await using var context = database.CreateContext();
+        var refTest = NewRefTest(titleId, requiresApproval: true);
+        context.RefTests.Add(refTest);
+        refTest.Reject(reason);
+
+        if (alreadyAnonymized)
+        {
+            refTest.Anonymize();
+            // Simulate a row written by an earlier version, which left this field behind.
+            context.Entry(refTest).Property(rt => rt.RejectionReason).CurrentValue = reason;
+        }
+
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        context.AuditEvents.Add(AuditEventFor(
+            refTest.Id,
+            DomainEvents.RefTestRejectedEvent.EventType,
+            JsonSerializer.Serialize(new { reason })));
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+        return refTest.Id;
+    }
+
+    private static Job ApprovalDecisionJobFor(string reason, params Guid[] refTestIds)
+    {
+        var payload = new ApprovalDecisionEmailPayload(
+            "Creator",
+            "creator@example.org",
+            "Approver",
+            IsApproved: false,
+            RejectionReason: reason,
+            TitleValue: null,
+            refTestIds.Select(id => new ApprovalNotificationRefTestItem(
+                id,
+                ParticipantFirstName,
+                ParticipantLastName,
+                ParticipantEmail,
+                ScheduledAt: null)).ToList());
+
+        return Job.Create(
+            JobType.ApprovalDecisionEmail,
+            JsonSerializer.Serialize(payload, JobPayloadJsonOptions));
+    }
+
     private static async Task EraseAsync(
         SqliteTestDatabase database,
         Guid refTestId,
@@ -120,6 +178,231 @@ public class RefTestPrivacyErasureServiceTests
         Assert.DoesNotContain(ParticipantFirstName, erased.FirstName, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(ParticipantLastName, erased.LastName, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(ParticipantEmail, erased.Email, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ErasureClearsRejectionReasonFromTheRecordAndAuditEvent()
+    {
+        const string reason = "Please contact ada@example.org to discuss eligibility";
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await SeedRejectedRefTestAsync(database, titleId, reason);
+
+        await EraseAsync(database, id, ErasureInitiator.Operator);
+
+        await using var after = database.CreateContext();
+        var erased = await after.RefTests.SingleAsync(rt => rt.Id == id, TestContext.Current.CancellationToken);
+        var rejection = await after.AuditEvents.SingleAsync(
+            e => e.StreamId == id.ToString() && e.Type == DomainEvents.RefTestRejectedEvent.EventType,
+            TestContext.Current.CancellationToken);
+
+        Assert.Null(erased.RejectionReason);
+        Assert.DoesNotContain(reason, rejection.Data!, StringComparison.Ordinal);
+        Assert.Equal(
+            AuditPiiRedactor.RedactedValue,
+            (string?)JsonNode.Parse(rejection.Data!)!["reason"]);
+        Assert.Equal(DomainEvents.RefTestRejectedEvent.EventType, rejection.Type);
+    }
+
+    [Fact]
+    public async Task ErasureScrubsRejectionReasonFromCompletedApprovalDecisionJobs()
+    {
+        const string reason = "Please contact ada@example.org to discuss eligibility";
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await SeedRejectedRefTestAsync(database, titleId, reason);
+        var otherId = await SeedRefTestAsync(database, titleId);
+
+        Guid relatedJobId;
+        Guid unrelatedJobId;
+        await using (var context = database.CreateContext())
+        {
+            var related = ApprovalDecisionJobFor(reason, id, otherId);
+            related.MarkAsProcessing(TimeSpan.FromMinutes(5));
+            related.MarkAsCompleted();
+            var unrelated = ApprovalDecisionJobFor(reason, otherId);
+            unrelated.MarkAsProcessing(TimeSpan.FromMinutes(5));
+            unrelated.MarkAsCompleted();
+            context.Jobs.AddRange(related, unrelated);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+            relatedJobId = related.Id;
+            unrelatedJobId = unrelated.Id;
+        }
+
+        await EraseAsync(database, id, ErasureInitiator.Operator);
+
+        await using var after = database.CreateContext();
+        var relatedJob = await after.Jobs.SingleAsync(j => j.Id == relatedJobId, TestContext.Current.CancellationToken);
+        var relatedPayload = JsonSerializer.Deserialize<ApprovalDecisionEmailPayload>(
+            relatedJob.Payload, JobPayloadJsonOptions)!;
+        var unrelatedJob = await after.Jobs.SingleAsync(j => j.Id == unrelatedJobId, TestContext.Current.CancellationToken);
+        var unrelatedPayload = JsonSerializer.Deserialize<ApprovalDecisionEmailPayload>(
+            unrelatedJob.Payload, JobPayloadJsonOptions)!;
+
+        Assert.Equal(JobStatus.Completed, relatedJob.Status);
+        Assert.Null(relatedPayload.RejectionReason);
+        Assert.Equal("creator@example.org", relatedPayload.CreatorEmail);
+        Assert.Equal(2, relatedPayload.RefTests.Count);
+        Assert.DoesNotContain(reason, relatedJob.Payload, StringComparison.Ordinal);
+        Assert.Equal(JobStatus.Completed, unrelatedJob.Status);
+        Assert.Equal(reason, unrelatedPayload.RejectionReason);
+    }
+
+    [Fact]
+    public async Task ErasureClearsMalformedRelatedApprovalDecisionPayloads()
+    {
+        const string reason = "Please contact ada@example.org to discuss eligibility";
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await SeedRejectedRefTestAsync(database, titleId, reason);
+
+        Guid jobId;
+        await using (var context = database.CreateContext())
+        {
+            var malformedJob = Job.Create(
+                JobType.ApprovalDecisionEmail,
+                $$"""{"refTests":[{"id":"{{id}}"}],"rejectionReason":"{{reason}}" """);
+            malformedJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
+            malformedJob.MarkAsCompleted();
+            context.Jobs.Add(malformedJob);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+            jobId = malformedJob.Id;
+        }
+
+        await EraseAsync(database, id, ErasureInitiator.Operator);
+
+        await using var after = database.CreateContext();
+        var job = await after.Jobs.SingleAsync(j => j.Id == jobId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(JobStatus.Completed, job.Status);
+        Assert.Empty(job.Payload);
+        Assert.DoesNotContain(reason, job.Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ErasureRepairsAlreadyAnonymizedCopiesAndIsIdempotent()
+    {
+        const string reason = "Please contact ada@example.org to discuss eligibility";
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await SeedRejectedRefTestAsync(database, titleId, reason, alreadyAnonymized: true);
+
+        Guid jobId;
+        await using (var context = database.CreateContext())
+        {
+            var job = ApprovalDecisionJobFor(reason, id);
+            job.MarkAsProcessing(TimeSpan.FromMinutes(5));
+            job.MarkAsCompleted();
+            context.Jobs.Add(job);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+            jobId = job.Id;
+        }
+
+        await EraseAsync(database, id, ErasureInitiator.Operator);
+
+        string erasedEmail;
+        string erasedToken;
+        DateTime? anonymizedAt;
+        string auditData;
+        string jobPayload;
+        await using (var after = database.CreateContext())
+        {
+            var erased = await after.RefTests.SingleAsync(rt => rt.Id == id, TestContext.Current.CancellationToken);
+            var rejection = await after.AuditEvents.SingleAsync(
+                e => e.StreamId == id.ToString() && e.Type == DomainEvents.RefTestRejectedEvent.EventType,
+                TestContext.Current.CancellationToken);
+            var job = await after.Jobs.SingleAsync(j => j.Id == jobId, TestContext.Current.CancellationToken);
+
+            Assert.True(erased.IsAnonymized);
+            Assert.Null(erased.RejectionReason);
+            Assert.DoesNotContain(reason, rejection.Data!, StringComparison.Ordinal);
+            Assert.DoesNotContain(reason, job.Payload, StringComparison.Ordinal);
+            Assert.Equal(JobStatus.Completed, job.Status);
+
+            erasedEmail = erased.Email;
+            erasedToken = erased.Token;
+            anonymizedAt = erased.AnonymizedAt;
+            auditData = rejection.Data!;
+            jobPayload = job.Payload;
+        }
+
+        await EraseAsync(database, id, ErasureInitiator.Operator);
+
+        await using var repeated = database.CreateContext();
+        var repeatedRefTest = await repeated.RefTests.SingleAsync(
+            rt => rt.Id == id, TestContext.Current.CancellationToken);
+        var repeatedAudit = await repeated.AuditEvents.SingleAsync(
+            e => e.StreamId == id.ToString() && e.Type == DomainEvents.RefTestRejectedEvent.EventType,
+            TestContext.Current.CancellationToken);
+        var repeatedJob = await repeated.Jobs.SingleAsync(j => j.Id == jobId, TestContext.Current.CancellationToken);
+
+        Assert.Equal(erasedEmail, repeatedRefTest.Email);
+        Assert.Equal(erasedToken, repeatedRefTest.Token);
+        Assert.Equal(anonymizedAt, repeatedRefTest.AnonymizedAt);
+        Assert.Equal(auditData, repeatedAudit.Data);
+        Assert.Equal(jobPayload, repeatedJob.Payload);
+    }
+
+    [Fact]
+    public async Task PrivacyRetentionRepairsAlreadyAnonymizedRefTestAndScrubsApprovalJobs()
+    {
+        const string reason = "Please contact ada@example.org to discuss eligibility";
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await SeedRejectedRefTestAsync(database, titleId, reason, alreadyAnonymized: true);
+
+        Guid pendingJobId;
+        Guid completedJobId;
+        await using (var context = database.CreateContext())
+        {
+            var pendingJob = ApprovalDecisionJobFor(reason, id);
+            var completedJob = ApprovalDecisionJobFor(reason, id);
+            completedJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
+            completedJob.MarkAsCompleted();
+            context.Jobs.AddRange(pendingJob, completedJob);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+            pendingJobId = pendingJob.Id;
+            completedJobId = completedJob.Id;
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var repaired = await PrivacyRetentionService.RepairAnonymizedRejectionReasonsAsync(
+                context,
+                new RefTestPrivacyErasureService(context),
+                TestContext.Current.CancellationToken);
+
+            Assert.Equal(1, repaired);
+        }
+
+        await using var verification = database.CreateContext();
+        var refTest = await verification.RefTests.SingleAsync(
+            refTest => refTest.Id == id,
+            TestContext.Current.CancellationToken);
+        var rejection = await verification.AuditEvents.SingleAsync(
+            auditEvent => auditEvent.StreamId == id.ToString()
+                          && auditEvent.Type == DomainEvents.RefTestRejectedEvent.EventType,
+            TestContext.Current.CancellationToken);
+        var pendingJobResult = await verification.Jobs.SingleAsync(
+            job => job.Id == pendingJobId,
+            TestContext.Current.CancellationToken);
+        var completedJobResult = await verification.Jobs.SingleAsync(
+            job => job.Id == completedJobId,
+            TestContext.Current.CancellationToken);
+        var completedPayload = JsonSerializer.Deserialize<ApprovalDecisionEmailPayload>(
+            completedJobResult.Payload, JobPayloadJsonOptions)!;
+
+        Assert.True(refTest.IsAnonymized);
+        Assert.Null(refTest.RejectionReason);
+        Assert.DoesNotContain(reason, rejection.Data!, StringComparison.Ordinal);
+        Assert.Equal(JobStatus.Cancelled, pendingJobResult.Status);
+        Assert.Empty(pendingJobResult.Payload);
+        Assert.Equal(JobStatus.Completed, completedJobResult.Status);
+        Assert.Null(completedPayload.RejectionReason);
+        Assert.DoesNotContain(reason, completedJobResult.Payload, StringComparison.Ordinal);
+        Assert.True(await verification.AuditEvents.AnyAsync(
+            auditEvent => auditEvent.StreamId == id.ToString(),
+            TestContext.Current.CancellationToken));
     }
 
     /// <summary>

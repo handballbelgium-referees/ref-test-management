@@ -9,7 +9,8 @@ using Handball.Belgium.RefTestManagement.Security;
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 
 /// <summary>
-/// Tells everyone holding the approve permission that RefTests are waiting on them.
+/// Notifies users with the approve permission on the configured Auth0 API audience when RefTests
+/// are waiting on them.
 /// </summary>
 public sealed class ApprovalNotificationEmailJobHandler(
     IAuth0ManagementService auth0Service,

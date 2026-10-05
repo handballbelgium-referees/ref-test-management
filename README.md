@@ -82,7 +82,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 ### Internationalization
 
 - Full UI, email, and PDF translations in English, Dutch, French, and German
-- Enabled languages are configurable per deployment; language preference persists per user
+- Enabled languages are configurable per deployment; language preference is stored in browser `localStorage`, not on the user's account
 
 ### User Experience
 
@@ -201,7 +201,7 @@ flowchart TB
 | .NET SDK      | 10.0+                                                           |
 | Node.js       | 22.x+                                                           |
 | Database      | SQL Server 2019+ / Azure SQL, PostgreSQL, SQLite, or MySQL 8.0+ |
-| Auth0 account | –                                                               |
+| Auth0 tenant  | OIDC application and Management API M2M application             |
 | Brevo account | – (optional, for email)                                         |
 
 ### Quick Start
@@ -229,7 +229,14 @@ dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
 dotnet user-secrets set "Auth0:ClientId" "your-client-id"
 dotnet user-secrets set "Auth0:ClientSecret" "your-client-secret"
 dotnet user-secrets set "Auth0:Audience" "your-api-identifier"
+dotnet user-secrets set "Auth0:ManagementClientId" "your-m2m-client-id"
+dotnet user-secrets set "Auth0:ManagementClientSecret" "your-m2m-client-secret"
 ```
+
+Use a separate Machine-to-Machine application for the Management API credentials and grant only
+the endpoint-specific scopes needed for permission lookups and startup synchronization. See
+[Management API access and permission freshness](docs/CONFIGURATION.md#management-api-access-and-permission-freshness)
+for the operations and tenant details that must be verified before deployment.
 
 See [docs/CONFIGURATION.md](docs/CONFIGURATION.md) for the full settings reference (email, languages, scoring, retention, and more).
 

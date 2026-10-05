@@ -1,5 +1,6 @@
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
@@ -36,12 +37,14 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
             throw new PrivacyWithdrawalBatchProcessingException();
         }
 
-        var failedTargetCount = 0;
+        var retryScheduledCount = 0;
+        var exhaustedTargetCount = 0;
         foreach (var targetId in targetIds)
         {
+            TargetProcessingOutcome outcome;
             try
             {
-                await ProcessTargetAsync(payload.BatchId, targetId, cancellationToken);
+                outcome = await ProcessTargetAsync(payload.BatchId, targetId, cancellationToken);
             }
             catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
             {
@@ -49,19 +52,28 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
             }
             catch (Exception)
             {
-                // Continue so a single bad RefTest does not keep later targets from completing.
-                // The fixed log message and count contain no target or participant data.
-                failedTargetCount++;
+                // Persist a fixed failure category and bounded retry state; never retain the
+                // exception, which may contain participant data from a provider.
+                outcome = await RecordTargetFailureAsync(
+                    payload.BatchId,
+                    targetId,
+                    cancellationToken);
             }
+
+            if (outcome == TargetProcessingOutcome.RetryScheduled)
+                retryScheduledCount++;
+            else if (outcome == TargetProcessingOutcome.RetryExhausted)
+                exhaustedTargetCount++;
         }
 
-        if (failedTargetCount > 0)
-        {
+        if (retryScheduledCount > 0)
             logger.LogWarning(
-                "Privacy-withdrawal batch left {FailedTargetCount} target(s) for retry.",
-                failedTargetCount);
-            throw new PrivacyWithdrawalBatchProcessingException();
-        }
+                "Privacy-withdrawal batch scheduled retries for {TargetCount} target(s).",
+                retryScheduledCount);
+        if (exhaustedTargetCount > 0)
+            logger.LogWarning(
+                "Privacy-withdrawal batch exhausted retries for {TargetCount} target(s).",
+                exhaustedTargetCount);
 
         try
         {
@@ -91,13 +103,15 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
             return [];
 
         return await context.PrivacyWithdrawalBatchTargets
-            .Where(target => target.BatchId == batchId && target.CompletedAt == null)
+            .Where(target => target.BatchId == batchId
+                             && target.CompletedAt == null
+                             && target.RetryExhaustedAt == null)
             .OrderBy(target => target.RefTestId)
             .Select(target => target.RefTestId)
             .ToListAsync(cancellationToken);
     }
 
-    private async Task ProcessTargetAsync(
+    private async Task<TargetProcessingOutcome> ProcessTargetAsync(
         Guid batchId,
         Guid refTestId,
         CancellationToken cancellationToken)
@@ -110,47 +124,54 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
                 cancellationToken);
 
         if (target is null)
-            throw new PrivacyWithdrawalBatchProcessingException();
+            return TargetProcessingOutcome.NoFailure;
         if (target.CompletedAt is not null)
-            return;
+            return TargetProcessingOutcome.NoFailure;
+        if (target.RetryExhaustedAt is not null)
+            return TargetProcessingOutcome.RetryExhausted;
+
+        var now = DateTime.UtcNow;
+        if (target.AttemptCount >= PrivacyWithdrawalBatchTarget.MaximumAttempts)
+        {
+            target.MarkRetryLimitReached(now);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
+            return TargetProcessingOutcome.RetryExhausted;
+        }
+        if (target.NextAttemptAt is { } nextAttemptAt && nextAttemptAt > now)
+            return TargetProcessingOutcome.NoFailure;
 
         var refTest = await context.RefTests
             .SingleOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
         if (refTest is null)
         {
-            target.MarkCompleted(DateTime.UtcNow);
+            target.MarkCompleted(now);
             await context.SaveChangesWithRetryAsync(cancellationToken);
-            return;
+            return TargetProcessingOutcome.NoFailure;
         }
+
+        var needsAttempt = !refTest.IsAnonymized || target.ErasureStartedAt is not null;
+        if (!needsAttempt)
+        {
+            target.MarkCompleted(now);
+            await context.SaveChangesWithRetryAsync(cancellationToken);
+            return TargetProcessingOutcome.NoFailure;
+        }
+
+        if (!target.TryStartAttempt(now))
+            return TargetProcessingOutcome.NoFailure;
+        if (!refTest.IsAnonymized)
+            target.MarkErasureStarted(now);
+        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         var subscriptionService = scope.ServiceProvider.GetRequiredService<IRefTestSubscriptionService>();
-        if (refTest.IsAnonymized)
+        if (!refTest.IsAnonymized)
         {
-            // A target already anonymized before its first attempt is complete. If a previous
-            // attempt began erasure and then failed before recording completion, re-publish the
-            // already-committed update before completing it.
-            if (target.ErasureStartedAt is not null)
-            {
-                await subscriptionService.PublishRefTestAnonymizedAsync(
-                    refTest.Id,
-                    refTest.Status,
-                    refTest.FullName,
-                    refTest.Email,
-                    cancellationToken);
-            }
-
-            target.MarkCompleted(DateTime.UtcNow);
-            await context.SaveChangesWithRetryAsync(cancellationToken);
-            return;
+            var erasureService = scope.ServiceProvider.GetRequiredService<IRefTestPrivacyErasureService>();
+            await erasureService.EraseAsync(refTest, ErasureInitiator.Participant, cancellationToken);
         }
 
-        if (target.MarkErasureStarted(DateTime.UtcNow))
-            await context.SaveChangesWithRetryAsync(cancellationToken);
-
-        var erasureService = scope.ServiceProvider.GetRequiredService<IRefTestPrivacyErasureService>();
-        await erasureService.EraseAsync(refTest, ErasureInitiator.Participant, cancellationToken);
-
         // EraseAsync owns and commits the per-record transaction. Publish only after it returns.
+        // If a previous attempt committed erasure but failed before publishing, repeat the update.
         await subscriptionService.PublishRefTestAnonymizedAsync(
             refTest.Id,
             refTest.Status,
@@ -160,6 +181,50 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
 
         target.MarkCompleted(DateTime.UtcNow);
         await context.SaveChangesWithRetryAsync(cancellationToken);
+        return TargetProcessingOutcome.NoFailure;
+    }
+
+    private async Task<TargetProcessingOutcome> RecordTargetFailureAsync(
+        Guid batchId,
+        Guid refTestId,
+        CancellationToken cancellationToken)
+    {
+        using var scope = scopeFactory.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
+        var target = await context.PrivacyWithdrawalBatchTargets
+            .SingleOrDefaultAsync(
+                candidate => candidate.BatchId == batchId && candidate.RefTestId == refTestId,
+                cancellationToken);
+
+        if (target is null || target.CompletedAt is not null)
+            return TargetProcessingOutcome.NoFailure;
+        if (target.RetryExhaustedAt is not null)
+            return TargetProcessingOutcome.RetryExhausted;
+
+        var failedAt = DateTime.UtcNow;
+        if (target.AttemptCount >= PrivacyWithdrawalBatchTarget.MaximumAttempts)
+        {
+            target.MarkRetryLimitReached(failedAt);
+        }
+        else
+        {
+            if (target.NextAttemptAt is { } nextAttemptAt)
+            {
+                if (nextAttemptAt > failedAt || !target.TryStartAttempt(failedAt))
+                    return TargetProcessingOutcome.NoFailure;
+            }
+            else if (target.AttemptCount == 0 && !target.TryStartAttempt(failedAt))
+            {
+                return TargetProcessingOutcome.NoFailure;
+            }
+
+            target.RecordProcessingFailure(failedAt);
+        }
+
+        await context.SaveChangesWithRetryAsync(cancellationToken);
+        return target.RetryExhaustedAt is null
+            ? TargetProcessingOutcome.RetryScheduled
+            : TargetProcessingOutcome.RetryExhausted;
     }
 
     private async Task MarkBatchCompletedIfReadyAsync(Guid batchId, CancellationToken cancellationToken)
@@ -177,10 +242,17 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
                 target => target.BatchId == batchId && target.CompletedAt == null,
                 cancellationToken);
         if (hasPendingTargets)
-            throw new PrivacyWithdrawalBatchProcessingException();
+            return;
 
         if (batch.MarkCompleted(DateTime.UtcNow))
             await context.SaveChangesWithRetryAsync(cancellationToken);
+    }
+
+    private enum TargetProcessingOutcome
+    {
+        NoFailure,
+        RetryScheduled,
+        RetryExhausted
     }
 }
 

@@ -39,6 +39,19 @@ public sealed class PrivacyWithdrawalPipelineTests
             new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider()),
             logger ?? NullLogger<JobEnqueueService>.Instance);
 
+    private static Job NewBatchJob(PrivacyWithdrawalBatch batch)
+    {
+        var payload = JsonSerializer.Serialize(
+            new PrivacyWithdrawalBatchPayload(batch.Id),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var job = Job.Create(
+            JobType.PrivacyWithdrawalBatch,
+            payload,
+            privacyWithdrawalBatchId: batch.Id);
+        batch.MarkJobEnqueued(job.Id);
+        return job;
+    }
+
     private static IRefTestSessionTokenService NewSessionTokenService() =>
         new RefTestSessionTokenService(new EphemeralDataProtectionProvider(), TimeProvider.System);
 
@@ -160,6 +173,38 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Equal(string.Empty, expired.Email);
         Assert.Null(expired.KeyHash);
         Assert.Null(expired.ProtectedDeliveryKey);
+    }
+
+    [Fact]
+    public void WithdrawalTargetBackoffIsDurableAndStopsAtItsAttemptLimit()
+    {
+        var target = PrivacyWithdrawalBatchTarget.Create(Guid.NewGuid(), Guid.NewGuid());
+        var attemptAt = Now;
+
+        for (var attempt = 1; attempt <= PrivacyWithdrawalBatchTarget.MaximumAttempts; attempt++)
+        {
+            Assert.True(target.TryStartAttempt(attemptAt));
+            Assert.Equal(attempt, target.AttemptCount);
+            var failedAt = attemptAt.AddSeconds(1);
+            Assert.True(target.RecordProcessingFailure(failedAt));
+            Assert.Equal(PrivacyWithdrawalTargetFailureCode.ProcessingFailed, target.FailureCode);
+
+            if (attempt == PrivacyWithdrawalBatchTarget.MaximumAttempts)
+            {
+                Assert.Equal(failedAt, target.RetryExhaustedAt);
+                Assert.Null(target.NextAttemptAt);
+            }
+            else
+            {
+                Assert.True(target.NextAttemptAt > failedAt);
+                attemptAt = target.NextAttemptAt!.Value;
+            }
+        }
+
+        Assert.False(target.TryStartAttempt(Now.AddYears(1)));
+        Assert.False(target.RecordProcessingFailure(Now.AddYears(1)));
+        Assert.Equal(PrivacyWithdrawalBatchTarget.MaximumAttempts, target.AttemptCount);
+        Assert.NotNull(target.RetryExhaustedAt);
     }
 
     [Fact]
@@ -1193,6 +1238,374 @@ public sealed class PrivacyWithdrawalPipelineTests
     }
 
     [Fact]
+    public async Task CleanupContinuesRetentionPurgesWhenReconciliationFails()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var expired = PrivacyWithdrawalChallenge.Create(
+            ParticipantEmail,
+            PrivacyWithdrawalChallenge.HashNormalizedEmail(
+                PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            ChallengeKey,
+            $"protected:{ChallengeKey}",
+            Now.AddHours(-25),
+            Now.AddHours(-1),
+            matchingRefTestCount: 1);
+        var completedBatch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        completedBatch.MarkCompleted(Now.AddMinutes(1));
+        var completedTarget = PrivacyWithdrawalBatchTarget.Create(completedBatch.Id, Guid.NewGuid());
+        completedTarget.MarkCompleted(Now.AddMinutes(1));
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PrivacyWithdrawalChallenges.Add(expired);
+            seed.PrivacyWithdrawalBatches.Add(completedBatch);
+            seed.PrivacyWithdrawalBatchTargets.Add(completedTarget);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(loggerProvider));
+        var requestService = new StubPrivacyWithdrawalRequestService(
+            _ => Task.FromException<int>(
+                new InvalidOperationException($"Provider failure for {ParticipantEmail}.")));
+
+        await using (var cleanup = database.CreateContext())
+        {
+            await PrivacyWithdrawalCleanupService.RunCleanupCycleAsync(
+                cleanup,
+                requestService,
+                Now,
+                loggerFactory.CreateLogger<PrivacyWithdrawalCleanupService>(),
+                TestContext.Current.CancellationToken);
+        }
+
+        await using var verification = database.CreateContext();
+        var clearedChallenge = await verification.PrivacyWithdrawalChallenges
+            .SingleAsync(challenge => challenge.Id == expired.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(string.Empty, clearedChallenge.Email);
+        Assert.Null(clearedChallenge.KeyHash);
+        Assert.Null(clearedChallenge.ProtectedDeliveryKey);
+        Assert.False(await verification.PrivacyWithdrawalBatchTargets
+            .AnyAsync(target => target.Id == completedTarget.Id, TestContext.Current.CancellationToken));
+
+        var logs = string.Join(Environment.NewLine, loggerProvider.Messages);
+        Assert.Contains("Privacy-withdrawal reconciliation failed.", logs, StringComparison.Ordinal);
+        Assert.DoesNotContain(ParticipantEmail, logs, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Provider failure", logs, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CleanupDoesNotFlushStagedReconciliationChangesWhenReconciliationFails()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var expired = PrivacyWithdrawalChallenge.Create(
+            ParticipantEmail,
+            PrivacyWithdrawalChallenge.HashNormalizedEmail(
+                PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            ChallengeKey,
+            $"protected:{ChallengeKey}",
+            Now.AddHours(-25),
+            Now.AddHours(-1),
+            matchingRefTestCount: 1);
+        var completedBatch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        completedBatch.MarkCompleted(Now.AddMinutes(1));
+        var completedTarget = PrivacyWithdrawalBatchTarget.Create(completedBatch.Id, Guid.NewGuid());
+        completedTarget.MarkCompleted(Now.AddMinutes(1));
+        var incompleteBatch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        var pendingTarget = PrivacyWithdrawalBatchTarget.Create(incompleteBatch.Id, Guid.NewGuid());
+        pendingTarget.TryStartAttempt(Now);
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PrivacyWithdrawalChallenges.Add(expired);
+            seed.PrivacyWithdrawalBatches.AddRange(completedBatch, incompleteBatch);
+            seed.PrivacyWithdrawalBatchTargets.AddRange(completedTarget, pendingTarget);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(loggerProvider));
+        var stagedEntryCount = 0;
+
+        // The hosted service resolves the request service and the retention queries from one
+        // scoped context, so a failed reconciliation must not leave its uncommitted staging behind
+        // for the retention saves to flush outside the transaction that validated it.
+        await using (var cleanup = database.CreateContext())
+        {
+            var requestService = new StubPrivacyWithdrawalRequestService(async cancellationToken =>
+            {
+                var batch = await cleanup.PrivacyWithdrawalBatches
+                    .SingleAsync(candidate => candidate.Id == incompleteBatch.Id, cancellationToken);
+                var target = await cleanup.PrivacyWithdrawalBatchTargets
+                    .SingleAsync(candidate => candidate.Id == pendingTarget.Id, cancellationToken);
+
+                // Mirror a replacement-job recovery: a new job, the batch's latest-job pointer,
+                // and a recorded target failure, all still unsaved when the failure occurs.
+                cleanup.Jobs.Add(NewBatchJob(batch));
+                target.RecordProcessingFailure(Now);
+                stagedEntryCount = cleanup.ChangeTracker.Entries()
+                    .Count(entry => entry.State is EntityState.Added or EntityState.Modified);
+
+                // Stands in for a commit, deadlock, or concurrency failure after the rollback.
+                throw new InvalidOperationException($"Commit failed for {ParticipantEmail}.");
+            });
+
+            await PrivacyWithdrawalCleanupService.RunCleanupCycleAsync(
+                cleanup,
+                requestService,
+                Now,
+                loggerFactory.CreateLogger<PrivacyWithdrawalCleanupService>(),
+                TestContext.Current.CancellationToken);
+        }
+
+        Assert.Equal(3, stagedEntryCount);
+
+        await using var verification = database.CreateContext();
+        var clearedChallenge = await verification.PrivacyWithdrawalChallenges
+            .SingleAsync(challenge => challenge.Id == expired.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(string.Empty, clearedChallenge.Email);
+        Assert.Null(clearedChallenge.KeyHash);
+        Assert.Null(clearedChallenge.ProtectedDeliveryKey);
+
+        // Only the completed batch's target is purged; the failed reconciliation changed nothing.
+        var remainingTarget = await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(pendingTarget.Id, remainingTarget.Id);
+        Assert.Equal(1, remainingTarget.AttemptCount);
+        Assert.Null(remainingTarget.NextAttemptAt);
+        Assert.Null(remainingTarget.FailureCode);
+        Assert.Empty(await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken));
+        var persistedBatch = await verification.PrivacyWithdrawalBatches
+            .SingleAsync(batch => batch.Id == incompleteBatch.Id, TestContext.Current.CancellationToken);
+        Assert.Null(persistedBatch.LatestJobId);
+        Assert.Null(persistedBatch.CompletedAt);
+
+        var logs = string.Join(Environment.NewLine, loggerProvider.Messages);
+        Assert.Contains("Privacy-withdrawal reconciliation failed.", logs, StringComparison.Ordinal);
+        Assert.DoesNotContain(ParticipantEmail, logs, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("Commit failed", logs, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task CleanupCyclePropagatesShutdownCancellationDuringReconciliation()
+    {
+        using var database = SqliteTestDatabase.Create();
+        await using var context = database.CreateContext();
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(loggerProvider));
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+        var requestService = new StubPrivacyWithdrawalRequestService(
+            Task.FromCanceled<int>);
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            PrivacyWithdrawalCleanupService.RunCleanupCycleAsync(
+                context,
+                requestService,
+                Now,
+                loggerFactory.CreateLogger<PrivacyWithdrawalCleanupService>(),
+                cancellation.Token));
+
+        Assert.DoesNotContain(
+            "Privacy-withdrawal reconciliation failed.",
+            string.Join(Environment.NewLine, loggerProvider.Messages),
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("missing")]
+    [InlineData("terminal")]
+    public async Task ScheduledReconciliationRecoversMissingOrTerminalJobsOnlyOnce(string jobState)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var batch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        var target = PrivacyWithdrawalBatchTarget.Create(batch.Id, Guid.NewGuid());
+        var terminalJob = NewBatchJob(batch);
+        if (jobState == "terminal")
+            terminalJob.MarkAsFailed("Simulated terminal failure", maxAttempts: 1);
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PrivacyWithdrawalBatches.Add(batch);
+            seed.PrivacyWithdrawalBatchTargets.Add(target);
+            if (jobState == "terminal")
+                seed.Jobs.Add(terminalJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var service = NewRequestService(context, new CapturingKeyProtection());
+            Assert.Equal(
+                1,
+                await service.ReconcileIncompleteBatchesAsync(TestContext.Current.CancellationToken));
+            Assert.Equal(
+                0,
+                await service.ReconcileIncompleteBatchesAsync(TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        var jobs = await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(jobState == "missing" ? 1 : 2, jobs.Count);
+        var replacement = Assert.Single(jobs, job => job.Status == JobStatus.Pending);
+        Assert.Equal(batch.Id, replacement.PrivacyWithdrawalBatchId);
+        Assert.Equal(replacement.Id, (await verification.PrivacyWithdrawalBatches
+            .SingleAsync(TestContext.Current.CancellationToken)).LatestJobId);
+        Assert.Null((await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(TestContext.Current.CancellationToken)).CompletedAt);
+
+        if (jobState == "terminal")
+            Assert.Contains(jobs, job => job.Id == terminalJob.Id && job.Status == JobStatus.Failed);
+    }
+
+    [Fact]
+    public async Task ScheduledReconciliationLeavesActiveLeasesAlone()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var batch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        var target = PrivacyWithdrawalBatchTarget.Create(batch.Id, Guid.NewGuid());
+        var job = NewBatchJob(batch);
+        job.MarkAsProcessing(TimeSpan.FromMinutes(10));
+        for (var attempt = 0; attempt < new BackgroundJobConfiguration().MaxAttempts; attempt++)
+            job.MarkAsProcessing(TimeSpan.FromMinutes(10));
+        var originalLock = job.LockedUntil;
+        var originalAttempts = job.Attempts;
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PrivacyWithdrawalBatches.Add(batch);
+            seed.PrivacyWithdrawalBatchTargets.Add(target);
+            seed.Jobs.Add(job);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var service = NewRequestService(context, new CapturingKeyProtection());
+            Assert.Equal(
+                0,
+                await service.ReconcileIncompleteBatchesAsync(TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        var activeJob = await verification.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(JobStatus.Processing, activeJob.Status);
+        Assert.Equal(originalAttempts, activeJob.Attempts);
+        Assert.Equal(originalLock, activeJob.LockedUntil);
+        Assert.Equal(batch.LatestJobId, activeJob.Id);
+    }
+
+    [Fact]
+    public async Task ScheduledReconciliationIgnoresCompletedTargetsAndCompletedBatches()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var completedTargetBatch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        var completedTarget = PrivacyWithdrawalBatchTarget.Create(
+            completedTargetBatch.Id,
+            Guid.NewGuid());
+        completedTarget.MarkCompleted(Now.AddMinutes(1));
+
+        var completedBatch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        completedBatch.MarkCompleted(Now.AddMinutes(2));
+        var pendingTargetInCompletedBatch = PrivacyWithdrawalBatchTarget.Create(
+            completedBatch.Id,
+            Guid.NewGuid());
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PrivacyWithdrawalBatches.AddRange(completedTargetBatch, completedBatch);
+            seed.PrivacyWithdrawalBatchTargets.AddRange(completedTarget, pendingTargetInCompletedBatch);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var service = NewRequestService(context, new CapturingKeyProtection());
+            Assert.Equal(
+                0,
+                await service.ReconcileIncompleteBatchesAsync(TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        Assert.Empty(await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken));
+        var completedTargetAfter = await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(candidate => candidate.Id == completedTarget.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(Now.AddMinutes(1), completedTargetAfter.CompletedAt);
+        var completedTargetBatchAfter = await verification.PrivacyWithdrawalBatches
+            .SingleAsync(candidate => candidate.Id == completedTargetBatch.Id, TestContext.Current.CancellationToken);
+        Assert.NotNull(completedTargetBatchAfter.CompletedAt);
+
+        var completedBatchAfter = await verification.PrivacyWithdrawalBatches
+            .SingleAsync(candidate => candidate.Id == completedBatch.Id, TestContext.Current.CancellationToken);
+        var targetInCompletedBatchAfter = await verification.PrivacyWithdrawalBatchTargets
+            .SingleAsync(
+                candidate => candidate.Id == pendingTargetInCompletedBatch.Id,
+                TestContext.Current.CancellationToken);
+        Assert.Equal(Now.AddMinutes(2), completedBatchAfter.CompletedAt);
+        Assert.Null(targetInCompletedBatchAfter.CompletedAt);
+    }
+
+    [Fact]
+    public async Task ScheduledRecoveryRacesParticipantRequestWithoutDuplicateJobs()
+    {
+        using var database = new ConcurrentSqliteTestDatabase();
+        RefTest participant;
+        string participantToken;
+        PrivacyWithdrawalBatch batch;
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Season 2026");
+            participant = NewRefTest(title.Id, ParticipantEmail);
+            participantToken = participant.GetIssuedToken();
+            batch = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+            seed.RefTestTitles.Add(title);
+            seed.RefTests.Add(participant);
+            seed.PrivacyWithdrawalBatches.Add(batch);
+            seed.PrivacyWithdrawalBatchTargets.Add(
+                PrivacyWithdrawalBatchTarget.Create(batch.Id, participant.Id));
+            var terminalJob = NewBatchJob(batch);
+            terminalJob.MarkAsFailed("Simulated terminal failure", maxAttempts: 1);
+            seed.Jobs.Add(terminalJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        using var ready = new CountdownEvent(2);
+        using var start = new ManualResetEventSlim();
+        Task<bool> RequestAsync() => Task.Run(async () =>
+        {
+            ready.Signal();
+            start.Wait(TestContext.Current.CancellationToken);
+            await using var context = database.CreateContext();
+            return await NewRequestService(context, new CapturingKeyProtection())
+                .RequestForParticipantAsync(participantToken, TestContext.Current.CancellationToken);
+        }, TestContext.Current.CancellationToken);
+        Task<int> SweepAsync() => Task.Run(async () =>
+        {
+            ready.Signal();
+            start.Wait(TestContext.Current.CancellationToken);
+            await using var context = database.CreateContext();
+            return await NewRequestService(context, new CapturingKeyProtection())
+                .ReconcileIncompleteBatchesAsync(TestContext.Current.CancellationToken);
+        }, TestContext.Current.CancellationToken);
+
+        var participantRequest = RequestAsync();
+        var scheduledSweep = SweepAsync();
+        Assert.True(ready.Wait(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken));
+        start.Set();
+        await Task.WhenAll(participantRequest, scheduledSweep);
+        Assert.True(await participantRequest);
+
+        await using var verification = database.CreateContext();
+        var jobs = await verification.Jobs.ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(2, jobs.Count);
+        var replacement = Assert.Single(jobs, job => job.Status == JobStatus.Pending);
+        Assert.Equal(batch.Id, replacement.PrivacyWithdrawalBatchId);
+        Assert.Equal(replacement.Id, (await verification.PrivacyWithdrawalBatches
+            .SingleAsync(TestContext.Current.CancellationToken)).LatestJobId);
+    }
+
+    [Fact]
     public async Task BatchWorkerContinuesAfterFailureRetriesDurablyAndPublishesOnlyAfterCommit()
     {
         using var database = SqliteTestDatabase.Create();
@@ -1207,10 +1620,8 @@ public sealed class PrivacyWithdrawalPipelineTests
         var targetRows = refTests
             .Select(refTest => PrivacyWithdrawalBatchTarget.Create(batch.Id, refTest.Id))
             .ToArray();
-        var payload = JsonSerializer.Serialize(
-            new PrivacyWithdrawalBatchPayload(batch.Id),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-        var job = Job.Create(JobType.PrivacyWithdrawalBatch, payload);
+        var job = NewBatchJob(batch);
+        var payload = job.Payload;
         job.MarkAsProcessing(TimeSpan.FromMinutes(5));
         var failureState = new WorkerFailureState(refTests[0].Id, ParticipantEmail, ChallengeKey);
 
@@ -1268,10 +1679,9 @@ public sealed class PrivacyWithdrawalPipelineTests
             maxAttempts: 3,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(JobStatus.Pending, trackedJob.Status);
+        Assert.Equal(JobStatus.Completed, trackedJob.Status);
         Assert.NotEqual(JobStatus.Cancelled, trackedJob.Status);
-        Assert.DoesNotContain(ParticipantEmail, trackedJob.ErrorMessage, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain(ChallengeKey, trackedJob.ErrorMessage, StringComparison.Ordinal);
+        Assert.Null(trackedJob.ErrorMessage);
 
         await using (var firstAttemptVerification = database.CreateContext())
         {
@@ -1288,22 +1698,42 @@ public sealed class PrivacyWithdrawalPipelineTests
                 .ToDictionaryAsync(target => target.RefTestId, TestContext.Current.CancellationToken);
             Assert.Null(progress[refTests[0].Id].CompletedAt);
             Assert.NotNull(progress[refTests[0].Id].ErasureStartedAt);
+            Assert.Equal(1, progress[refTests[0].Id].AttemptCount);
+            Assert.Equal(
+                PrivacyWithdrawalTargetFailureCode.ProcessingFailed,
+                progress[refTests[0].Id].FailureCode);
+            Assert.NotNull(progress[refTests[0].Id].NextAttemptAt);
+            Assert.Null(progress[refTests[0].Id].RetryExhaustedAt);
             Assert.NotNull(progress[refTests[1].Id].CompletedAt);
             Assert.NotNull(progress[refTests[2].Id].CompletedAt);
             Assert.Null(progress[refTests[2].Id].ErasureStartedAt);
         }
 
-        trackedJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
-        await jobContext.SaveChangesWithRetryAsync(TestContext.Current.CancellationToken);
+        await using var retryJobContext = database.CreateContext();
+        await retryJobContext.PrivacyWithdrawalBatchTargets
+            .Where(target => target.RefTestId == refTests[0].Id)
+            .ExecuteUpdateAsync(
+                setters => setters
+                    .SetProperty(target => target.NextAttemptAt, DateTime.UtcNow.AddMinutes(-1))
+                    .SetProperty(target => target.Version, target => target.Version + 1),
+                TestContext.Current.CancellationToken);
+        var retryJob = Job.Create(
+            JobType.PrivacyWithdrawalBatch,
+            payload,
+            privacyWithdrawalBatchId: batch.Id);
+        retryJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
+        retryJobContext.Jobs.Add(retryJob);
+        await retryJobContext.SaveChangesAsync(TestContext.Current.CancellationToken);
+
         await BackgroundJobService.ProcessJobAsync(
-            trackedJob,
+            retryJob,
             processingScope.ServiceProvider,
-            jobContext,
+            retryJobContext,
             NullLogger.Instance,
             maxAttempts: 3,
             TestContext.Current.CancellationToken);
 
-        Assert.Equal(JobStatus.Completed, trackedJob.Status);
+        Assert.Equal(JobStatus.Completed, retryJob.Status);
         Assert.Equal(2, failureState.PublishedRefTestIds.Count);
         Assert.Equal(3, failureState.ErasureContextIds.Distinct().Count());
 
@@ -1320,13 +1750,13 @@ public sealed class PrivacyWithdrawalPipelineTests
                     TestContext.Current.CancellationToken),
                 target => Assert.NotNull(target.CompletedAt));
 
-            var payloadJson = JsonDocument.Parse(trackedJob.Payload);
+            var payloadJson = JsonDocument.Parse(retryJob.Payload);
             Assert.Equal(
                 ["batchId"],
                 payloadJson.RootElement.EnumerateObject().Select(property => property.Name).ToArray());
-            Assert.DoesNotContain(refTests[0].Id.ToString(), trackedJob.Payload, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain(refTests[1].Id.ToString(), trackedJob.Payload, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain(refTests[2].Id.ToString(), trackedJob.Payload, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(refTests[0].Id.ToString(), retryJob.Payload, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(refTests[1].Id.ToString(), retryJob.Payload, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(refTests[2].Id.ToString(), retryJob.Payload, StringComparison.OrdinalIgnoreCase);
         }
 
         var logs = string.Join(Environment.NewLine, loggerProvider.Messages);
@@ -1525,8 +1955,9 @@ public sealed class PrivacyWithdrawalPipelineTests
     [InlineData("PostgreSQL")]
     [InlineData("MySQL")]
     [InlineData("SQLite")]
-    public void EligibilityAndChallengeCleanupQueriesTranslateOnEveryProvider(string provider)
+    public void EligibilityCleanupAndMultiIdRecoveryQueriesTranslateOnEveryProvider(string provider)
     {
+        // SQLite's provider case does not stand in for MySQL collection translation.
         var builder = new DbContextOptionsBuilder<RefTestManagementContext>();
         switch (provider)
         {
@@ -1554,6 +1985,41 @@ public sealed class PrivacyWithdrawalPipelineTests
             .Where(PrivacyWithdrawalCleanupQueries.IsDueForChallengeCleanup(Now))
             .Select(challenge => challenge.Id)
             .ToQueryString();
+        var dueWithdrawalSql = context.PrivacyWithdrawalBatchTargets
+            .Where(target => target.CompletedAt == null
+                             && target.RetryExhaustedAt == null
+                             && (target.AttemptCount >= PrivacyWithdrawalBatchTarget.MaximumAttempts
+                                 || target.NextAttemptAt == null
+                                 || target.NextAttemptAt <= Now)
+                             && context.PrivacyWithdrawalBatches.Any(
+                                 batch => batch.Id == target.BatchId && batch.CompletedAt == null))
+            .Select(target => target.RefTestId)
+            .Distinct()
+            .Take(500)
+            .ToQueryString();
+        var requestedIds = new List<Guid> { Guid.Empty, Guid.NewGuid() };
+        var requestedTargetsSql = context.PrivacyWithdrawalBatchTargets
+            .Where(target => requestedIds.Contains(target.RefTestId)
+                             && context.PrivacyWithdrawalBatches.Any(
+                                 batch => batch.Id == target.BatchId && batch.CompletedAt == null))
+            .Select(target => target.RefTestId)
+            .ToQueryString();
+        var batchIds = new List<Guid> { Guid.Empty, Guid.NewGuid() };
+        var pendingTargetsSql = context.PrivacyWithdrawalBatchTargets
+            .Where(target => batchIds.Contains(target.BatchId) && target.CompletedAt == null)
+            .Select(target => target.Id)
+            .ToQueryString();
+        var batchJobSql = context.Jobs
+            .Where(job => job.JobType == JobType.PrivacyWithdrawalBatch
+                          && job.PrivacyWithdrawalBatchId != null
+                          && batchIds.Contains(job.PrivacyWithdrawalBatchId.Value)
+                          && (job.Status == JobStatus.Pending || job.Status == JobStatus.Processing))
+            .Select(job => job.Id)
+            .ToQueryString();
+        var incompleteBatchesSql = context.PrivacyWithdrawalBatches
+            .Where(batch => batchIds.Contains(batch.Id) && batch.CompletedAt == null)
+            .Select(batch => batch.Id)
+            .ToQueryString();
 
         Assert.Contains("IsAnonymized", eligibleSql, StringComparison.Ordinal);
         Assert.Contains("Email", eligibleSql, StringComparison.Ordinal);
@@ -1566,6 +2032,12 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Contains("ExpiresAt", cleanupSql, StringComparison.Ordinal);
         Assert.Contains("VerifiedAt", cleanupSql, StringComparison.Ordinal);
         Assert.Contains("ProtectedDeliveryKey", cleanupSql, StringComparison.Ordinal);
+        Assert.Contains("RetryExhaustedAt", dueWithdrawalSql, StringComparison.Ordinal);
+        Assert.Contains("NextAttemptAt", dueWithdrawalSql, StringComparison.Ordinal);
+        Assert.Contains("RefTestId", requestedTargetsSql, StringComparison.Ordinal);
+        Assert.Contains("BatchId", pendingTargetsSql, StringComparison.Ordinal);
+        Assert.Contains("PrivacyWithdrawalBatchId", batchJobSql, StringComparison.Ordinal);
+        Assert.Contains("CompletedAt", incompleteBatchesSql, StringComparison.Ordinal);
     }
 
     private static List<RefTest> CreateAllStatusRefTests(Guid titleId)
@@ -1600,10 +2072,7 @@ public sealed class PrivacyWithdrawalPipelineTests
         context.PrivacyWithdrawalBatches.Add(batch);
         context.PrivacyWithdrawalBatchTargets.Add(
             PrivacyWithdrawalBatchTarget.Create(batch.Id, refTestId));
-        var payload = JsonSerializer.Serialize(
-            new PrivacyWithdrawalBatchPayload(batch.Id),
-            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
-        context.Jobs.Add(Job.Create(JobType.PrivacyWithdrawalBatch, payload));
+        context.Jobs.Add(NewBatchJob(batch));
     }
 
     public class RecordingSubscriptionProxy : DispatchProxy
@@ -1625,7 +2094,7 @@ public sealed class PrivacyWithdrawalPipelineTests
     {
         protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
             targetMethod?.Name == nameof(IJobEnqueueService.EnqueuePrivacyWithdrawalBatchAsync)
-                ? Task.FromException(new InvalidOperationException("Batch enqueue failed."))
+                ? Task.FromException<Guid>(new InvalidOperationException("Batch enqueue failed."))
                 : throw new NotSupportedException($"Unexpected {targetMethod?.Name} call.");
     }
 
@@ -1777,5 +2246,21 @@ public sealed class PrivacyWithdrawalPipelineTests
                 Func<TState, Exception?, string> formatter) =>
                 provider.Messages.Add(formatter(state, exception));
         }
+    }
+
+    private sealed class StubPrivacyWithdrawalRequestService(
+        Func<CancellationToken, Task<int>> reconcile) : IPrivacyWithdrawalRequestService
+    {
+        public Task RequestAsync(string? email, CancellationToken cancellationToken) =>
+            Task.CompletedTask;
+
+        public Task<bool> RequestForParticipantAsync(string token, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
+        public Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
+        public Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken) =>
+            reconcile(cancellationToken);
     }
 }

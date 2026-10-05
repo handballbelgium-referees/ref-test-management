@@ -3,66 +3,76 @@ using System;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
+using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
 
-namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
+namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
 {
     [DbContext(typeof(RefTestManagementContext))]
-    partial class RefTestManagementContextModelSnapshot : ModelSnapshot
+    [Migration("20261004141251_AddPrivacyWithdrawalRetryRecovery")]
+    partial class AddPrivacyWithdrawalRetryRecovery
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
-            modelBuilder.HasAnnotation("ProductVersion", "10.0.12");
+            modelBuilder
+                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("Relational:MaxIdentifierLength", 63);
+
+            NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.AuditLog.AuditEvent", b =>
                 {
                     b.Property<long>("SeqId")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("SeqId"));
 
                     b.Property<string>("ActorEmail")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("ActorName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<string>("Data")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("Headers")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("Id")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<bool>("IsArchived")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("RedactedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("StreamId")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime>("Timestamp")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Type")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<long>("Version")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("SeqId");
 
@@ -86,44 +96,44 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("Attempts")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ErrorMessage")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<DateTime>("ExecuteAfter")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("JobType")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<DateTime?>("LockedUntil")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Payload")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<Guid?>("PrivacyWithdrawalBatchId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -143,42 +153,42 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ChallengeEmailSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("DeliveryAttemptCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("KeyHash")
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(64)");
 
                     b.Property<DateTime?>("LastDeliveryAttemptAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("ProtectedDeliveryKey")
                         .HasMaxLength(2048)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(2048)");
 
                     b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -195,23 +205,23 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid?>("LatestJobId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("TargetCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -225,37 +235,37 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<int>("AttemptCount")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("integer")
                         .HasDefaultValue(0);
 
                     b.Property<Guid>("BatchId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("ErasureStartedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("FailureCode")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("NextAttemptAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("RefTestId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("RetryExhaustedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -273,47 +283,47 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("ChallengeEmailSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int>("DeliveryAttemptCount")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime>("ExpiresAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("KeyHash")
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(64)");
 
                     b.Property<DateTime?>("LastDeliveryAttemptAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NormalizedEmailHash")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(64)");
 
                     b.Property<string>("ProtectedDeliveryKey")
                         .HasMaxLength(2048)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(2048)");
 
                     b.Property<DateTime?>("VerifiedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.HasKey("Id");
 
@@ -334,12 +344,12 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Value")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.HasKey("Id");
 
@@ -350,146 +360,146 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<DateTime?>("AnonymizedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<int?>("AnswerScore")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<int?>("AnswerTotal")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<DateTime?>("CompletedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("CreatorEmail")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT")
+                        .HasColumnType("character varying(256)")
                         .HasDefaultValue("");
 
                     b.Property<string>("CreatorName")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT")
+                        .HasColumnType("character varying(256)")
                         .HasDefaultValue("");
 
                     b.Property<int?>("CurrentQuestionIndex")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime?>("ExpiredAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("FirstName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<DateTime?>("InvitationSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<bool>("IsAnonymized")
                         .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER")
+                        .HasColumnType("boolean")
                         .HasDefaultValue(false);
 
                     b.Property<string>("Language")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<string>("LastName")
                         .IsRequired()
                         .HasMaxLength(256)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(256)");
 
                     b.Property<int>("MaxTimeInMinutes")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<int>("NumberOfQuestions")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<double?>("Percentage")
-                        .HasColumnType("REAL");
+                        .HasColumnType("double precision");
 
                     b.Property<DateTime?>("PrivacyNoticeAcceptedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PrivacyNoticeVersion")
                         .HasMaxLength(32)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(32)");
 
                     b.Property<string>("ProtectedInvitationToken")
                         .HasMaxLength(2048)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(2048)");
 
                     b.Property<string>("QuestionIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(4000)");
 
                     b.Property<int?>("QuestionScore")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("integer");
 
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(1000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(1000)");
 
                     b.Property<DateTime?>("ResultsSentAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<DateTime?>("ScheduledAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("SelectedAnswerIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(4000)");
 
                     b.Property<bool>("SendInvitationsAutomatically")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<bool>("SendResultsAutomatically")
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("boolean");
 
                     b.Property<DateTime?>("StartedAt")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Status")
                         .IsRequired()
-                        .HasColumnType("TEXT");
+                        .HasColumnType("text");
 
                     b.Property<Guid>("TitleId")
-                        .HasColumnType("TEXT");
+                        .HasColumnType("uuid");
 
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(64)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(64)");
 
                     b.Property<long>("Version")
                         .IsConcurrencyToken()
-                        .HasColumnType("INTEGER");
+                        .HasColumnType("bigint");
 
                     b.Property<string>("WrongAnswerIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(4000)");
 
                     b.Property<string>("WrongQuestionIds")
                         .IsRequired()
                         .HasMaxLength(4000)
-                        .HasColumnType("TEXT");
+                        .HasColumnType("character varying(4000)");
 
                     b.HasKey("Id");
 

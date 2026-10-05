@@ -15,6 +15,6 @@ public sealed class PrivacyChallengeConfiguration
     /// <summary>Confirmation attempts allowed per client address in a rate-limit window.</summary>
     public int ConfirmationRateLimitPermitLimit { get; init; } = 10;
 
-    /// <summary>How often expired challenge data and completed withdrawal targets are cleared, in minutes.</summary>
+    /// <summary>How often withdrawal batches are reconciled and expired or completed data is cleared, in minutes.</summary>
     public int CleanupIntervalMinutes { get; init; } = 15;
 }

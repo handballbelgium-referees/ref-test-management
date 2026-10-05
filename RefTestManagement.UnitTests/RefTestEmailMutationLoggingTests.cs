@@ -258,7 +258,7 @@ public class RefTestEmailMutationLoggingTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
 
-        public Task EnqueuePrivacyWithdrawalBatchAsync(
+        public Task<Guid> EnqueuePrivacyWithdrawalBatchAsync(
             PrivacyWithdrawalBatchPayload payload,
             bool saveChanges = true,
             IJobPersistenceContext? unitOfWorkContext = null,

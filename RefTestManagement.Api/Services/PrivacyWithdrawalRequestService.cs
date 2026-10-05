@@ -18,11 +18,13 @@ public interface IPrivacyWithdrawalRequestService
     Task RequestAsync(string? email, CancellationToken cancellationToken);
     Task<bool> RequestForParticipantAsync(string token, CancellationToken cancellationToken);
     Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken);
+    Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken);
 }
 
 /// <summary>
 /// Creates mailbox-verification challenges and atomically turns valid confirmations or
-/// participant-credential requests into durable, batch-ID-only withdrawal jobs.
+/// participant-credential requests into durable, batch-ID-only withdrawal jobs, and reconciles
+/// incomplete batches on a schedule.
 /// </summary>
 public sealed class PrivacyWithdrawalRequestService(
     RefTestManagementContext context,
@@ -33,6 +35,8 @@ public sealed class PrivacyWithdrawalRequestService(
     BackgroundJobConfiguration backgroundJobConfiguration,
     ILogger<PrivacyWithdrawalRequestService> logger) : IPrivacyWithdrawalRequestService
 {
+    private const int ReconciliationBatchSize = 500;
+
     private static readonly JsonSerializerOptions BatchJobPayloadJsonOptions = new()
     {
         PropertyNameCaseInsensitive = true
@@ -58,41 +62,52 @@ public sealed class PrivacyWithdrawalRequestService(
     {
         var strategy = context.Database.CreateExecutionStrategy();
 
-        return await strategy.ExecuteAsync(cancellationToken, async retryToken =>
+        for (var concurrencyRetry = 0; ; concurrencyRetry++)
         {
-            // A retry must start from database state, not entities tracked by a transaction with
-            // an uncertain commit outcome.
-            context.ChangeTracker.Clear();
-            await using var transaction = await context.Database.BeginTransactionAsync(
-                IsolationLevel.Serializable,
-                retryToken);
-
-            var refTest = await context.RefTests
-                .FindByParticipantCredentialAsync(token, sessionTokenService, retryToken);
-            if (refTest is null)
+            try
             {
-                await transaction.CommitAsync(retryToken);
-                return false;
+                return await strategy.ExecuteAsync(cancellationToken, async retryToken =>
+                {
+                    // A retry must start from database state, not entities tracked by a transaction
+                    // with an uncertain commit outcome.
+                    context.ChangeTracker.Clear();
+                    await using var transaction = await context.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable,
+                        retryToken);
+
+                    var refTest = await context.RefTests
+                        .FindByParticipantCredentialAsync(token, sessionTokenService, retryToken);
+                    if (refTest is null)
+                    {
+                        await transaction.CommitAsync(retryToken);
+                        return false;
+                    }
+
+                    // A pending target suppresses new work while its batch job is processable.
+                    // Otherwise, recover that same batch instead of creating a duplicate target.
+                    var now = DateTime.UtcNow;
+                    var recovery = await EnsureProcessableTargetsAsync(
+                        [refTest.Id],
+                        now,
+                        retryToken);
+
+                    if (!recovery.ClaimedTargetIds.Contains(refTest.Id))
+                        await QueueBatchAsync([refTest.Id], now, retryToken);
+
+                    // The target snapshot and ID-only worker job commit together. Do not report
+                    // acceptance until this transaction commits successfully.
+                    await context.SaveChangesAsync(retryToken);
+                    await transaction.CommitAsync(retryToken);
+                    return true;
+                });
             }
-
-            // The serializable read protects both existing claims and the absence of one. A
-            // pending target only suppresses new work while its batch job is processable; if its
-            // job failed or disappeared, re-enqueue that same batch in this transaction.
-            var now = DateTime.UtcNow;
-            var processableTargetIds = await EnsureProcessableTargetsAsync(
-                [refTest.Id],
-                now,
-                retryToken);
-
-            if (!processableTargetIds.Contains(refTest.Id))
-                await QueueBatchAsync([refTest.Id], now, retryToken);
-
-            // The target snapshot and ID-only worker job commit together. Do not report acceptance
-            // until this transaction commits successfully.
-            await context.SaveChangesAsync(retryToken);
-            await transaction.CommitAsync(retryToken);
-            return true;
-        });
+            catch (DbUpdateConcurrencyException) when (concurrencyRetry < 1)
+            {
+                // A concurrent request or scheduled sweep already recorded a replacement job.
+                // Re-read its durable state and acknowledge the existing claim.
+                context.ChangeTracker.Clear();
+            }
+        }
     }
 
     public async Task RequestAsync(string? email, CancellationToken cancellationToken)
@@ -170,6 +185,53 @@ public sealed class PrivacyWithdrawalRequestService(
         }
     }
 
+    public async Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken)
+    {
+        var strategy = context.Database.CreateExecutionStrategy();
+
+        for (var concurrencyRetry = 0; ; concurrencyRetry++)
+        {
+            try
+            {
+                return await strategy.ExecuteAsync(cancellationToken, async retryToken =>
+                {
+                    context.ChangeTracker.Clear();
+                    await using var transaction = await context.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable,
+                        retryToken);
+
+                    var now = DateTime.UtcNow;
+                    var dueTargetIds = await context.PrivacyWithdrawalBatchTargets
+                        .Where(target => target.CompletedAt == null
+                                         && target.RetryExhaustedAt == null
+                                         && (target.AttemptCount >= PrivacyWithdrawalBatchTarget.MaximumAttempts
+                                             || target.NextAttemptAt == null
+                                             || target.NextAttemptAt <= now)
+                                         && context.PrivacyWithdrawalBatches.Any(
+                                             batch => batch.Id == target.BatchId && batch.CompletedAt == null))
+                        .Select(target => target.RefTestId)
+                        .Distinct()
+                        .Take(ReconciliationBatchSize)
+                        .ToListAsync(retryToken);
+
+                    var recovery = await EnsureProcessableTargetsAsync(dueTargetIds, now, retryToken);
+                    await CompleteFullyProcessedBatchesAsync(now, retryToken);
+
+                    if (context.ChangeTracker.HasChanges())
+                        await context.SaveChangesAsync(retryToken);
+
+                    await transaction.CommitAsync(retryToken);
+                    return recovery.RequeuedBatchCount;
+                });
+            }
+            catch (DbUpdateConcurrencyException) when (concurrencyRetry < 1)
+            {
+                // A concurrent participant request or worker won this batch; re-read it once.
+                context.ChangeTracker.Clear();
+            }
+        }
+    }
+
     public async Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken)
     {
         if (!IsValidChallengeKey(challengeKey))
@@ -221,7 +283,8 @@ public sealed class PrivacyWithdrawalRequestService(
                         matchingRefTests.Select(refTest => refTest.Id).ToArray(),
                         now,
                         retryToken);
-                    matchingRefTests.RemoveAll(refTest => processableTargetIds.Contains(refTest.Id));
+                    matchingRefTests.RemoveAll(
+                        refTest => processableTargetIds.ClaimedTargetIds.Contains(refTest.Id));
                 }
 
                 if (matchingRefTests.Count > 0)
@@ -269,50 +332,48 @@ public sealed class PrivacyWithdrawalRequestService(
             context.PrivacyWithdrawalBatchTargets.Add(
                 PrivacyWithdrawalBatchTarget.Create(batch.Id, refTestId));
 
-        await EnqueueBatchJobAsync(batch.Id, cancellationToken);
+        var jobId = await EnqueueBatchJobAsync(batch.Id, cancellationToken);
+        batch.MarkJobEnqueued(jobId);
     }
 
-    private async Task<HashSet<Guid>> EnsureProcessableTargetsAsync(
+    private async Task<BatchRecoveryResult> EnsureProcessableTargetsAsync(
         IReadOnlyCollection<Guid> requestedRefTestIds,
         DateTime now,
         CancellationToken cancellationToken)
     {
         if (requestedRefTestIds.Count == 0)
-            return [];
+            return new([], 0);
 
-        var requestedIds = requestedRefTestIds.ToArray();
+        var requestedIds = requestedRefTestIds.ToList();
         var targets = await context.PrivacyWithdrawalBatchTargets
             .Where(target => requestedIds.Contains(target.RefTestId)
-                            && target.CompletedAt == null
                             && context.PrivacyWithdrawalBatches.Any(
                                 batch => batch.Id == target.BatchId && batch.CompletedAt == null))
             .Select(target => new { target.BatchId, target.RefTestId })
             .ToListAsync(cancellationToken);
         if (targets.Count == 0)
-            return [];
+            return new([], 0);
 
-        var batchIds = targets.Select(target => target.BatchId).Distinct().ToArray();
+        var batchIds = targets.Select(target => target.BatchId).Distinct().ToList();
         var pendingBatchTargets = await context.PrivacyWithdrawalBatchTargets
             .Where(target => batchIds.Contains(target.BatchId) && target.CompletedAt == null)
-            .Select(target => new { target.BatchId, target.RefTestId })
             .ToListAsync(cancellationToken);
-        var targetIdsByBatch = pendingBatchTargets
+        var targetsByBatch = pendingBatchTargets
             .GroupBy(target => target.BatchId)
-            .ToDictionary(
-                group => group.Key,
-                group => group.Select(target => target.RefTestId).Distinct().ToArray());
+            .ToDictionary(group => group.Key, group => group.ToList());
 
-        // Job payloads intentionally contain only a batch id and there is no batch/job FK. Load
-        // the type-specific outbox rows and associate each payload without provider-specific JSON
-        // queries.
+        // Link pre-migration active jobs once. New jobs carry a relational batch id, so later
+        // sweeps query only jobs for the batches being reconciled rather than parsing the queue.
+        await LinkLegacyBatchJobsAsync(cancellationToken);
         var batchJobs = await context.Jobs
-            .Where(job => job.JobType == JobType.PrivacyWithdrawalBatch)
+            .Where(job => job.JobType == JobType.PrivacyWithdrawalBatch
+                          && job.PrivacyWithdrawalBatchId != null
+                          && batchIds.Contains(job.PrivacyWithdrawalBatchId.Value))
             .ToListAsync(cancellationToken);
         var jobsByBatch = new Dictionary<Guid, List<Job>>();
         foreach (var job in batchJobs)
         {
-            if (!TryGetBatchId(job, out var batchId))
-                continue;
+            var batchId = job.PrivacyWithdrawalBatchId!.Value;
 
             if (!jobsByBatch.TryGetValue(batchId, out var jobsForBatch))
             {
@@ -323,7 +384,12 @@ public sealed class PrivacyWithdrawalRequestService(
             jobsForBatch.Add(job);
         }
 
-        var processableTargetIds = new HashSet<Guid>();
+        var batchesById = await context.PrivacyWithdrawalBatches
+            .Where(batch => batchIds.Contains(batch.Id) && batch.CompletedAt == null)
+            .ToDictionaryAsync(batch => batch.Id, cancellationToken);
+        var claimedTargetIds = targets.Select(target => target.RefTestId).ToHashSet();
+        var requeuedBatchCount = 0;
+
         foreach (var batchId in batchIds)
         {
             var jobsForBatch = jobsByBatch.GetValueOrDefault(batchId) ?? [];
@@ -336,20 +402,83 @@ public sealed class PrivacyWithdrawalRequestService(
                     MarkNonProcessableJobForCleanup(batchJob);
             }
 
-            // Exhausted processing rows are not picked up by BackgroundJobService cleanup. Mark
-            // them terminal so the configured failed-job retention can remove them; failed,
-            // completed, and missing rows are replaced by a fresh job for this same batch.
             if (hasProcessableBatchWork)
-            {
-                processableTargetIds.UnionWith(targetIdsByBatch[batchId]);
                 continue;
+
+            var targetsForBatch = targetsByBatch.GetValueOrDefault(batchId) ?? [];
+            var exhaustedCount = 0;
+            foreach (var target in targetsForBatch)
+            {
+                if (target.MarkRetryLimitReached(now))
+                    exhaustedCount++;
+                else if (target.AttemptCount > 0
+                         && target.NextAttemptAt is null
+                         && target.RetryExhaustedAt is null
+                         && target.RecordProcessingFailure(now)
+                         && target.RetryExhaustedAt is not null)
+                    exhaustedCount++;
             }
 
-            await EnqueueBatchJobAsync(batchId, cancellationToken);
-            processableTargetIds.UnionWith(targetIdsByBatch[batchId]);
+            if (exhaustedCount > 0)
+            {
+                logger.LogWarning(
+                    "Privacy-withdrawal retry limit reached for {TargetCount} target(s).",
+                    exhaustedCount);
+            }
+
+            var hasDueTarget = targetsForBatch.Any(target =>
+                target.AttemptCount < PrivacyWithdrawalBatchTarget.MaximumAttempts
+                && target.RetryExhaustedAt is null
+                && (target.NextAttemptAt is null || target.NextAttemptAt <= now));
+            if (!hasDueTarget)
+                continue;
+
+            var jobId = await EnqueueBatchJobAsync(batchId, cancellationToken);
+            batchesById[batchId].MarkJobEnqueued(jobId);
+            requeuedBatchCount++;
         }
 
-        return processableTargetIds;
+        return new(claimedTargetIds, requeuedBatchCount);
+    }
+
+    private async Task LinkLegacyBatchJobsAsync(CancellationToken cancellationToken)
+    {
+        var legacyJobs = await context.Jobs
+            .Where(job => job.JobType == JobType.PrivacyWithdrawalBatch
+                          && job.PrivacyWithdrawalBatchId == null
+                          && (job.Status == JobStatus.Pending
+                              || job.Status == JobStatus.Processing
+                              || job.CompletedAt == null
+                              && (job.Status == JobStatus.Failed
+                                  || job.Status == JobStatus.Completed
+                                  || job.Status == JobStatus.Cancelled)))
+            .ToListAsync(cancellationToken);
+
+        foreach (var job in legacyJobs)
+        {
+            if (TryGetBatchId(job, out var batchId))
+                job.AssociateWithPrivacyWithdrawalBatch(batchId);
+            else
+                MarkNonProcessableJobForCleanup(job);
+        }
+    }
+
+    private async Task CompleteFullyProcessedBatchesAsync(
+        DateTime completedAt,
+        CancellationToken cancellationToken)
+    {
+        var completedBatches = await context.PrivacyWithdrawalBatches
+            .Where(batch => batch.CompletedAt == null
+                            && batch.TargetCount == context.PrivacyWithdrawalBatchTargets.Count(
+                                target => target.BatchId == batch.Id && target.CompletedAt != null)
+                            && !context.PrivacyWithdrawalBatchTargets.Any(
+                                target => target.BatchId == batch.Id && target.CompletedAt == null))
+            .OrderBy(batch => batch.CreatedAt)
+            .Take(ReconciliationBatchSize)
+            .ToListAsync(cancellationToken);
+
+        foreach (var batch in completedBatches)
+            batch.MarkCompleted(completedAt);
     }
 
     private bool HasProcessableBatchWork(Job job, DateTime now)
@@ -366,12 +495,12 @@ public sealed class PrivacyWithdrawalRequestService(
                || job.Attempts < backgroundJobConfiguration.MaxAttempts;
     }
 
-    private async Task EnqueueBatchJobAsync(Guid batchId, CancellationToken cancellationToken)
+    private async Task<Guid> EnqueueBatchJobAsync(Guid batchId, CancellationToken cancellationToken)
     {
         if (backgroundJobConfiguration.MaxAttempts < 1)
             throw new InvalidOperationException("BackgroundJobConfiguration.MaxAttempts must be positive.");
 
-        await jobEnqueueService.EnqueuePrivacyWithdrawalBatchAsync(
+        return await jobEnqueueService.EnqueuePrivacyWithdrawalBatchAsync(
             new PrivacyWithdrawalBatchPayload(batchId),
             saveChanges: false,
             unitOfWorkContext: context,
@@ -441,5 +570,6 @@ public sealed class PrivacyWithdrawalRequestService(
                 or '-'
                 or '_');
 
+    private sealed record BatchRecoveryResult(HashSet<Guid> ClaimedTargetIds, int RequeuedBatchCount);
     private sealed record MatchingRefTest(Guid Id, string Email);
 }

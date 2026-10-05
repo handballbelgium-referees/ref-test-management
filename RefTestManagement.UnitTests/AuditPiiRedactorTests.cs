@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Handball.Belgium.RefTestManagement.AuditLog;
+using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -42,6 +43,21 @@ public class AuditPiiRedactorTests
         // Everything that is not personal data has to survive, or the audit trail loses the
         // accountability value that justifies keeping the row at all.
         Assert.Equal(12, (int?)node["score"]);
+    }
+
+    [Fact]
+    public void RedactData_RedactsFreeTextOnlyOnRejectionEvents()
+    {
+        const string data = """{"reason":"Contact ada@example.org","status":"Rejected"}""";
+
+        var redacted = AuditPiiRedactor.RedactData(data, RefTestRejectedEvent.EventType);
+        var node = JsonNode.Parse(redacted!)!.AsObject();
+
+        Assert.Equal(AuditPiiRedactor.RedactedValue, (string?)node["reason"]);
+        Assert.Equal("Rejected", (string?)node["status"]);
+        Assert.Equal(redacted, AuditPiiRedactor.RedactData(redacted, RefTestRejectedEvent.EventType));
+        Assert.Same(redacted, AuditPiiRedactor.RedactData(redacted, RefTestRejectedEvent.EventType));
+        Assert.Equal(data, AuditPiiRedactor.RedactData(data, "RefTestApproved"));
     }
 
     [Fact]

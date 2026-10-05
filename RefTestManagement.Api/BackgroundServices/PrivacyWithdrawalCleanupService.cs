@@ -1,11 +1,12 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 
-/// <summary>Clears expired withdrawal challenges and completed durable batch targets.</summary>
+/// <summary>Reconciles incomplete withdrawal batches and clears expired or completed data.</summary>
 public sealed class PrivacyWithdrawalCleanupService(
     IServiceProvider serviceProvider,
     PrivacyChallengeConfiguration configuration,
@@ -21,14 +22,9 @@ public sealed class PrivacyWithdrawalCleanupService(
             {
                 using var scope = serviceProvider.CreateScope();
                 var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
+                var requestService = scope.ServiceProvider.GetRequiredService<IPrivacyWithdrawalRequestService>();
                 var now = DateTime.UtcNow;
-                var expiredChallenges = await ClearExpiredChallengesAsync(context, now, stoppingToken);
-                var completedTargets = await ClearCompletedBatchTargetsAsync(context, stoppingToken);
-
-                if (expiredChallenges > 0)
-                    logger.LogInformation("Cleared {Count} expired privacy-withdrawal challenges", expiredChallenges);
-                if (completedTargets > 0)
-                    logger.LogInformation("Cleared {Count} completed privacy-withdrawal targets", completedTargets);
+                await RunCleanupCycleAsync(context, requestService, now, logger, stoppingToken);
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
             {
@@ -49,6 +45,45 @@ public sealed class PrivacyWithdrawalCleanupService(
                 break;
             }
         }
+    }
+
+    internal static async Task RunCleanupCycleAsync(
+        RefTestManagementContext context,
+        IPrivacyWithdrawalRequestService requestService,
+        DateTime now,
+        ILogger<PrivacyWithdrawalCleanupService> logger,
+        CancellationToken cancellationToken)
+    {
+        var recoveredBatches = 0;
+        try
+        {
+            recoveredBatches = await requestService.ReconcileIncompleteBatchesAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            // Reconciliation and the retention purges below share this scoped context. A failure
+            // after the rollback leaves its staged replacement job and batch/target edits tracked as
+            // Added/Modified, so the next SaveChanges would flush them outside the transaction that
+            // validated them (or keep failing on them) and block the purges. Discard them first.
+            context.ChangeTracker.Clear();
+            logger.LogError("Privacy-withdrawal reconciliation failed.");
+        }
+
+        var expiredChallenges = await ClearExpiredChallengesAsync(context, now, cancellationToken);
+        var completedTargets = await ClearCompletedBatchTargetsAsync(context, cancellationToken);
+
+        if (recoveredBatches > 0)
+            logger.LogInformation(
+                "Requeued {Count} incomplete privacy-withdrawal batches",
+                recoveredBatches);
+        if (expiredChallenges > 0)
+            logger.LogInformation("Cleared {Count} expired privacy-withdrawal challenges", expiredChallenges);
+        if (completedTargets > 0)
+            logger.LogInformation("Cleared {Count} completed privacy-withdrawal targets", completedTargets);
     }
 
     internal static async Task<int> ClearExpiredChallengesAsync(
