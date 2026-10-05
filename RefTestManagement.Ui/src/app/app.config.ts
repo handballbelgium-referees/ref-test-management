@@ -58,6 +58,64 @@ function registerDynamicLocales() {
   );
 }
 
+type VisibilityDocument = Pick<
+  Document,
+  'visibilityState' | 'addEventListener' | 'removeEventListener'
+>;
+
+export function createSseLink(
+  sseClient: ReturnType<typeof createClient>,
+  documentRef?: VisibilityDocument,
+): ApolloLink {
+  return new ApolloLink(
+    (operation) =>
+      new Observable((observer) => {
+        const visibilityDocument = documentRef ?? document;
+        let unsubscribe: (() => void) | null = null;
+        let subscriptionGeneration = 0;
+
+        const start = () => {
+          const generation = ++subscriptionGeneration;
+          // Cancel any in-flight attempt before starting a fresh one
+          unsubscribe?.();
+          unsubscribe = sseClient.subscribe<Record<string, unknown>, Record<string, unknown>>(
+            {
+              query: operation.query.loc?.source.body || '',
+              variables: operation.variables,
+            },
+            {
+              // graphql-sse completes a disposed sink, so ignore callbacks from replaced attempts.
+              next: (data) => {
+                if (generation === subscriptionGeneration) observer.next(data);
+              },
+              error: (err) => {
+                if (generation === subscriptionGeneration) observer.error(err);
+              },
+              complete: () => {
+                if (generation === subscriptionGeneration) observer.complete();
+              },
+            },
+          );
+        };
+
+        // When the PWA returns from the background the SSE connection may be
+        // dead. Force a fresh subscribe so events are never missed.
+        const onVisibilityChange = () => {
+          if (visibilityDocument.visibilityState === 'visible') start();
+        };
+
+        visibilityDocument.addEventListener('visibilitychange', onVisibilityChange);
+        start();
+
+        return () => {
+          visibilityDocument.removeEventListener('visibilitychange', onVisibilityChange);
+          subscriptionGeneration++;
+          unsubscribe?.();
+        };
+      }),
+  );
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
@@ -116,46 +174,7 @@ export const appConfig: ApplicationConfig = {
           },
         });
 
-        // Create a custom link for SSE subscriptions
-        const sseLink = {
-          request: (operation: any) => {
-            // Return an Observable, not a Promise (Apollo requires Observable)
-            return new Observable((observer) => {
-              let unsubscribe: (() => void) | null = null;
-
-              const start = () => {
-                // Cancel any in-flight attempt before starting a fresh one
-                unsubscribe?.();
-                unsubscribe = sseClient.subscribe(
-                  {
-                    query: operation.query.loc?.source.body || '',
-                    variables: operation.variables,
-                  },
-                  {
-                    next: (data) => observer.next(data),
-                    error: (err) => observer.error(err),
-                    complete: () => observer.complete(),
-                  },
-                );
-              };
-
-              // When the PWA returns from the background the SSE connection may be
-              // dead. Force a fresh subscribe so events are never missed.
-              const onVisibilityChange = () => {
-                if (document.visibilityState === 'visible') start();
-              };
-
-              document.addEventListener('visibilitychange', onVisibilityChange);
-              start();
-
-              // Return cleanup function
-              return () => {
-                document.removeEventListener('visibilitychange', onVisibilityChange);
-                unsubscribe?.();
-              };
-            });
-          },
-        };
+        const sseLink = createSseLink(sseClient);
 
         // Retries automatically on network errors for everything. Queries also retry on
         // GraphQL execution errors since re-running a read is always safe, and so does
@@ -213,7 +232,7 @@ export const appConfig: ApplicationConfig = {
               definition.operation === OperationTypeNode.SUBSCRIPTION
             );
           },
-          sseLink as any,
+          sseLink,
           ApolloLink.from([retryLink, http]),
         );
 
