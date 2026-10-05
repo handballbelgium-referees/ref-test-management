@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Api.Extensions;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
@@ -8,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Handball.Belgium.RefTestManagement.Api.Controllers;
 
 [Route("[controller]")]
-public class AccountController : Controller
+public class AccountController(IPermissionSnapshotService permissionSnapshotService) : Controller
 {
     [HttpGet("Login")]
     public Task Login(string returnUrl = "/")
@@ -20,14 +21,14 @@ public class AccountController : Controller
     
     [Authorize]
     [HttpGet("Permissions")]
-    public IActionResult GetPermissions()
+    [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
+    public async Task<IActionResult> GetPermissions(CancellationToken cancellationToken)
     {
-        var permissions = User
-            .FindAll("permissions")
-            .Select(c => c.Value)
-            .ToArray();
+        var permissions = await permissionSnapshotService.GetCurrentPermissionsAsync(User, cancellationToken);
+        if (permissions is null)
+            return StatusCode(StatusCodes.Status503ServiceUnavailable);
 
-        return Ok(permissions);
+        return Ok(permissions.OrderBy(permission => permission, StringComparer.OrdinalIgnoreCase).ToArray());
     }
 
     [Authorize]

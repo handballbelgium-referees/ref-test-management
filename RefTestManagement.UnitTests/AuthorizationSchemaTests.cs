@@ -1,18 +1,33 @@
 using System.Reflection;
+using System.Security.Claims;
+using System.Text;
+using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Security;
+using HotChocolate.AspNetCore;
 using HotChocolate.Authorization;
 using HotChocolate.Execution;
 using HotChocolate.Types;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 public class AuthorizationSchemaTests
 {
+    private const string NestedQuestionId = "nested-question-id";
+    private const string ResultQuestionId = "result-question-id";
+    private const string ResultAnswerId = "result-answer-id";
+    private const string SelectedAnswerId = "selected-answer-id";
+
     [Fact]
     public void PrivacyWithdrawalResolversArePublicMutationFields()
     {
@@ -100,7 +115,7 @@ public class AuthorizationSchemaTests
 
         Assert.Equal(["id"], AnonymousFields(refTest));
 
-        Assert.Equal(["id"], AnonymousFields(question));
+        Assert.Empty(AnonymousFields(question));
         Assert.Equal(["id"], AnonymousFields(answer));
 
         Assert.DoesNotContain("number", AnonymousFields(question));
@@ -139,6 +154,65 @@ public class AuthorizationSchemaTests
         Assert.DoesNotContain(executor.Schema.QueryType.Fields, field => field.Name is "node" or "nodes");
     }
 
+    [Fact]
+    public async Task RefTestQuestionIdentifiersRequireQuestionPermissionButResultIdsRemainAvailable()
+    {
+        var questionsService =
+            DispatchProxy.Create<IIhfRulesQuestionsService, QuestionAuthorizationQuestionsService>();
+        await using var app = await BuildQuestionAuthorizationTestServer(questionsService);
+        var client = app.GetTestClient();
+
+        using var deniedQuestionsExecution = await ExecuteGraphQlAsync(
+            client,
+            "query { refTest { questions { id } } }",
+            TestContext.Current.CancellationToken,
+            Permissions.RefTests.ViewDetail);
+        Assert.NotEmpty(GraphQlErrors(deniedQuestionsExecution));
+        Assert.DoesNotContain(NestedQuestionId, deniedQuestionsExecution.RootElement.GetRawText());
+
+        using var deniedQuestionIdExecution = await ExecuteGraphQlAsync(
+            client,
+            "query { question { id } }",
+            TestContext.Current.CancellationToken,
+            Permissions.RefTests.ViewDetail);
+        Assert.NotEmpty(GraphQlErrors(deniedQuestionIdExecution));
+        Assert.DoesNotContain(NestedQuestionId, deniedQuestionIdExecution.RootElement.GetRawText());
+
+        using var resultIdsExecution = await ExecuteGraphQlAsync(
+            client,
+            "query { refTest { wrongQuestionIds wrongAnswerIds selectedAnswerIds } }",
+            TestContext.Current.CancellationToken,
+            Permissions.RefTests.ViewDetail);
+        Assert.Empty(GraphQlErrors(resultIdsExecution));
+        var result = resultIdsExecution.RootElement.GetProperty("data").GetProperty("refTest");
+        Assert.Equal(ResultQuestionId, result.GetProperty("wrongQuestionIds")[0].GetString());
+        Assert.Equal(ResultAnswerId, result.GetProperty("wrongAnswerIds")[0].GetString());
+        Assert.Equal(SelectedAnswerId, result.GetProperty("selectedAnswerIds")[0].GetString());
+
+        using var allowedQuestionsExecution = await ExecuteGraphQlAsync(
+            client,
+            "query { refTest { questions { id } } }",
+            TestContext.Current.CancellationToken,
+            Permissions.RefTests.ViewDetail,
+            Permissions.RefTests.ViewDetailQuestions);
+        Assert.Empty(GraphQlErrors(allowedQuestionsExecution));
+        Assert.Equal(
+            NestedQuestionId,
+            allowedQuestionsExecution.RootElement.GetProperty("data")
+                .GetProperty("refTest").GetProperty("questions")[0].GetProperty("id").GetString());
+
+        using var questionQueryExecution = await ExecuteGraphQlAsync(
+            client,
+            "query { question { id } }",
+            TestContext.Current.CancellationToken,
+            Permissions.Questions.View);
+        Assert.Empty(GraphQlErrors(questionQueryExecution));
+        Assert.Equal(
+            NestedQuestionId,
+            questionQueryExecution.RootElement.GetProperty("data")
+                .GetProperty("question").GetProperty("id").GetString());
+    }
+
     private static ServiceProvider BuildSchemaProvider()
     {
         var services = new ServiceCollection();
@@ -157,6 +231,38 @@ public class AuthorizationSchemaTests
 
         services.AddAuthorization();
         return services.BuildServiceProvider();
+    }
+
+    private static async Task<WebApplication> BuildQuestionAuthorizationTestServer(
+        IIhfRulesQuestionsService questionsService)
+    {
+        var builder = WebApplication.CreateBuilder();
+        builder.WebHost.UseTestServer();
+        builder.Services.AddHttpContextAccessor();
+        builder.Services.AddTaskBasedAuthorization();
+        builder.Services.AddSingleton(questionsService);
+        builder.Services
+            .AddGraphQLServer()
+            .AddQueryType<QuestionAuthorizationSchemaQuery>()
+            .AddType<RefTestType>()
+            .AddType<QuestionType>()
+            .AddType<AnswerType>()
+            .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
+            .AddGlobalObjectIdentification(false)
+            .AddAuthorization();
+
+        var app = builder.Build();
+        app.Use(async (context, next) =>
+        {
+            context.User = new ClaimsPrincipal(new ClaimsIdentity(
+                context.Request.Headers["X-Permissions"]
+                    .Select(permission => new Claim("permissions", permission!)),
+                "test"));
+            await next();
+        });
+        app.MapGraphQL();
+        await app.StartAsync();
+        return app;
     }
 
     private static ServiceProvider BuildApiSchemaProvider()
@@ -185,6 +291,33 @@ public class AuthorizationSchemaTests
         return services.BuildServiceProvider();
     }
 
+    private static async Task<JsonDocument> ExecuteGraphQlAsync(
+        HttpClient client,
+        string query,
+        CancellationToken cancellationToken,
+        params string[] permissions)
+    {
+        using var request = new HttpRequestMessage(HttpMethod.Post, "/graphql")
+        {
+            Content = new StringContent(
+                JsonSerializer.Serialize(new { query }),
+                Encoding.UTF8,
+                "application/json")
+        };
+        request.Headers.Add("X-Permissions", permissions);
+
+        using var response = await client.SendAsync(request, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        return await JsonDocument.ParseAsync(
+            await response.Content.ReadAsStreamAsync(cancellationToken),
+            cancellationToken: cancellationToken);
+    }
+
+    private static JsonElement[] GraphQlErrors(JsonDocument result) =>
+        result.RootElement.TryGetProperty("errors", out var errors)
+            ? [.. errors.EnumerateArray()]
+            : [];
+
     private static string[] AnonymousFields(IComplexTypeDefinition type) =>
         [.. type.Fields
             .Where(field => !field.IsIntrospectionField)
@@ -198,5 +331,35 @@ public class AuthorizationSchemaTests
         public RefTestDto? RefTest => null;
         public Question? Question => null;
         public Answer? Answer => null;
+    }
+
+    public sealed class QuestionAuthorizationSchemaQuery
+    {
+        public RefTestDto RefTest => new()
+        {
+            Id = Guid.Empty,
+            FirstName = "Test",
+            LastName = "User",
+            FullName = "Test User",
+            Email = "test@example.org",
+            QuestionIds = ["source-question-id"],
+            WrongQuestionIds = [ResultQuestionId],
+            WrongAnswerIds = [ResultAnswerId],
+            SelectedAnswerIds = [SelectedAnswerId]
+        };
+
+        public Question Question => new(
+            NestedQuestionId,
+            new Dictionary<string, string>(),
+            []);
+    }
+
+    public class QuestionAuthorizationQuestionsService : DispatchProxy
+    {
+        protected override object? Invoke(MethodInfo? targetMethod, object?[]? args) =>
+            targetMethod?.Name == nameof(IIhfRulesQuestionsService.GetQuestionsByIdAsync)
+                ? Task.FromResult<List<Question>>(
+                    [new Question(NestedQuestionId, new Dictionary<string, string>(), [])])
+                : throw new NotSupportedException($"Unexpected {targetMethod?.Name} call.");
     }
 }

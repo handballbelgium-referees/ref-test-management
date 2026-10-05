@@ -10,9 +10,8 @@ namespace Handball.Belgium.RefTestManagement.Security;
 /// 2. Exact match on the required permission.
 /// 3. Namespace wildcard match: e.g. <c>ref-tests:*</c> satisfies <c>ref-tests:create</c>.
 ///
-/// Permissions are read from the <c>permissions</c> claim, which Auth0 RBAC places in the
-/// access token when "Add Permissions in the Access Token" is enabled on the API.
-/// For cookie-based sessions the claim is copied from the access token during OIDC token validation.
+/// Permissions are read from the <c>permissions</c> claim after the API refreshes the user's
+/// effective grants from Auth0 Management API. Cookie claims are refreshed before authorization.
 /// </summary>
 public sealed class TaskPermissionHandler : AuthorizationHandler<TaskPermissionRequirement>
 {

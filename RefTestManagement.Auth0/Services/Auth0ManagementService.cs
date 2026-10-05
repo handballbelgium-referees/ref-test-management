@@ -66,10 +66,14 @@ internal sealed partial class Auth0ManagementService(
         var colonIndex = permission.IndexOf(':');
         var wildcardPermission = colonIndex >= 0 ? string.Concat(permission.AsSpan(0, colonIndex + 1), "*") : null;
 
-        bool PermissionMatches(string name) =>
-            string.Equals(name, permission, StringComparison.OrdinalIgnoreCase) ||
-            string.Equals(name, Permissions.Superadmin, StringComparison.OrdinalIgnoreCase) ||
-            (wildcardPermission != null && string.Equals(name, wildcardPermission, StringComparison.OrdinalIgnoreCase));
+        // Auth0 grants are scoped to a resource server; even wildcard and superadmin grants
+        // count only when they belong to the configured API audience.
+        bool PermissionMatches(PermissionResponse grant) =>
+            string.Equals(grant.ResourceServerIdentifier, _config.Audience, StringComparison.OrdinalIgnoreCase) &&
+            (string.Equals(grant.PermissionName, permission, StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(grant.PermissionName, Permissions.Superadmin, StringComparison.OrdinalIgnoreCase) ||
+             (wildcardPermission != null &&
+              string.Equals(grant.PermissionName, wildcardPermission, StringComparison.OrdinalIgnoreCase)));
 
         // 1. Role-based lookup
         var roles = await GetAllPagesAsync<RoleResponse>(
@@ -84,7 +88,7 @@ internal sealed partial class Auth0ManagementService(
                 token,
                 cancellationToken);
 
-            if (!rolePermissions.Any(p => PermissionMatches(p.PermissionName)))
+            if (!rolePermissions.Any(PermissionMatches))
                 continue;
 
             var roleUsers = await GetAllPagesAsync<UserIdResponse>(
@@ -114,7 +118,7 @@ internal sealed partial class Auth0ManagementService(
                 token,
                 cancellationToken);
 
-            if (userPermissions.Any(p => PermissionMatches(p.PermissionName)))
+            if (userPermissions.Any(PermissionMatches))
                 matchingUserIds.Add(userRef.UserId);
         }
 
@@ -148,6 +152,51 @@ internal sealed partial class Auth0ManagementService(
         LogFoundCountUserSWithPermissionPermission(users.Count, permission);
 
         return users;
+    }
+
+    /// <inheritdoc />
+    public async Task<IReadOnlySet<string>> GetUserPermissionsAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        var token = await GetAccessTokenAsync(cancellationToken);
+        var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        var directPermissions = await GetAllPagesAsync<PermissionResponse>(
+            $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/permissions",
+            token,
+            cancellationToken);
+        AddPermissions(directPermissions);
+
+        var roles = await GetAllPagesAsync<RoleResponse>(
+            $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/roles",
+            token,
+            cancellationToken);
+
+        foreach (var role in roles)
+        {
+            var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
+                $"https://{_config.Domain}/api/v2/roles/{Uri.EscapeDataString(role.Id)}/permissions",
+                token,
+                cancellationToken);
+            AddPermissions(rolePermissions);
+        }
+
+        return permissions;
+
+        void AddPermissions(IEnumerable<PermissionResponse> grants)
+        {
+            foreach (var grant in grants)
+            {
+                if (string.Equals(
+                        grant.ResourceServerIdentifier,
+                        _config.Audience,
+                        StringComparison.OrdinalIgnoreCase))
+                {
+                    permissions.Add(grant.PermissionName);
+                }
+            }
+        }
     }
 
     /// <inheritdoc />
@@ -261,7 +310,7 @@ internal sealed partial class Auth0ManagementService(
         var response = await httpClient.SendAsync(request, cancellationToken);
         if (!response.IsSuccessStatusCode)
         {
-            logger.LogWarning("Could not fetch Auth0 user '{UserId}': {Status}", userId, response.StatusCode);
+            logger.LogWarning("Could not fetch Auth0 user. Status: {Status}", response.StatusCode);
             return null;
         }
 

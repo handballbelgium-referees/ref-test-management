@@ -18,6 +18,14 @@ public interface IAuth0ManagementService
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Returns the current direct and role-assigned permissions for one Auth0 user,
+    /// limited to the configured API audience.
+    /// </summary>
+    Task<IReadOnlySet<string>> GetUserPermissionsAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Ensures every permission in <paramref name="permissions"/> exists on the
     /// Auth0 API resource server identified by <see cref="Auth0ManagementConfiguration.Audience"/>.
     /// Missing permissions are added; existing ones are left untouched (additive only).

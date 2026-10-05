@@ -29,6 +29,9 @@ public static class Auth0ServiceExtensions
                 // enough that a hung Auth0 tenant stalls permission sync for most of two minutes.
                 client.Timeout = TimeSpan.FromSeconds(30);
             })
+            // Auth0 subjects are included in resource paths, so the default URI loggers would
+            // expose them in request logs.
+            .RemoveAllLoggers()
             // Every call this client makes is safe to repeat: the token request issues a fresh
             // token, the reads are reads, and the one PATCH sends the complete desired scope set
             // rather than a delta, so a retry writes the same thing.

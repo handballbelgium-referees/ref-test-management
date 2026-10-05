@@ -16,13 +16,13 @@ public sealed class ProductionApiIntegrationCollection
 public sealed class PrivacyWithdrawalGetRequestTests
 {
     [Fact]
-    public async Task ProductionGraphQlEndpointRejectsWithdrawalConfirmationOverGet()
+    public async Task ProductionApiSetsSecurityHeadersAndRejectsGraphQlGetMutations()
     {
         using var testEnvironment = new TestApiEnvironment();
         using var factory = new ProductionApiFactory();
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
-            BaseAddress = new Uri("https://localhost")
+            BaseAddress = new Uri("https://security-test.example")
         });
         const string mutation = """
             mutation {
@@ -38,6 +38,12 @@ public sealed class PrivacyWithdrawalGetRequestTests
             $"/graphql?query={Uri.EscapeDataString(mutation)}",
             TestContext.Current.CancellationToken);
 
+        Assert.Equal(
+            "default-src 'self' https:; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' wss:; img-src 'self' data: https:; font-src 'self' data:; base-uri 'self'; form-action 'self';",
+            response.Headers.GetValues("Content-Security-Policy").Single());
+        Assert.Equal(
+            "max-age=2592000",
+            response.Headers.GetValues("Strict-Transport-Security").Single());
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
         var responseBody = await response.Content.ReadAsStringAsync(
             TestContext.Current.CancellationToken);

@@ -1,12 +1,15 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
+using HotChocolate;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
+using MicrosoftAuthorizationService = Microsoft.AspNetCore.Authorization.IAuthorizationService;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 
@@ -43,10 +46,21 @@ public static partial class RefTestSubscriptions
     [Subscribe]
     [Authorize(Policy = Permissions.RefTests.ViewDetail)]
     [Topic("{id}")]
-    public static IRefTestEvent RefTestUpdated(
+    public static async Task<IRefTestEvent> RefTestUpdated(
         [ID<RefTestDto>] Guid id,
-        [EventMessage] object message)
+        [EventMessage] object message,
+        ClaimsPrincipal user,
+        [Service] IPermissionSnapshotService permissionSnapshotService,
+        [Service] MicrosoftAuthorizationService authorizationService,
+        CancellationToken cancellationToken)
     {
+        await ValidateCurrentPermissionAsync(
+            user,
+            Permissions.RefTests.ViewDetail,
+            permissionSnapshotService,
+            authorizationService,
+            cancellationToken);
+
         return message switch
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
@@ -77,8 +91,20 @@ public static partial class RefTestSubscriptions
     [Subscribe]
     [Authorize(Policy = Permissions.RefTests.ViewList)]
     [Topic(RefTestSubscriptionService.GlobalTopic)]
-    public static IRefTestEvent RefTestsUpdated([EventMessage] object message)
+    public static async Task<IRefTestEvent> RefTestsUpdated(
+        [EventMessage] object message,
+        ClaimsPrincipal user,
+        [Service] IPermissionSnapshotService permissionSnapshotService,
+        [Service] MicrosoftAuthorizationService authorizationService,
+        CancellationToken cancellationToken)
     {
+        await ValidateCurrentPermissionAsync(
+            user,
+            Permissions.RefTests.ViewList,
+            permissionSnapshotService,
+            authorizationService,
+            cancellationToken);
+
         return message switch
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
@@ -96,6 +122,29 @@ public static partial class RefTestSubscriptions
             RefTestRejectedEvent e => new RefTestRejected(e.Id, e.Status, e.Reason, e.RejectedAt),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };
+    }
+
+    private static async Task ValidateCurrentPermissionAsync(
+        ClaimsPrincipal user,
+        string requiredPermission,
+        IPermissionSnapshotService permissionSnapshotService,
+        MicrosoftAuthorizationService authorizationService,
+        CancellationToken cancellationToken)
+    {
+        // Handshake authorization alone is not enough: a WebSocket can outlive the original principal.
+        var permissions = await permissionSnapshotService.GetCurrentPermissionsAsync(user, cancellationToken);
+        if (permissions is null)
+            throw new GraphQLException("The subscription permission could not be verified.");
+
+        var freshPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
+            permissions.Select(permission => new Claim("permissions", permission)),
+            "PermissionSnapshot"));
+        var result = await authorizationService.AuthorizeAsync(
+            freshPrincipal,
+            resource: null,
+            policyName: requiredPermission);
+        if (!result.Succeeded)
+            throw new GraphQLException("The subscription permission is no longer available.");
     }
 
     /// <summary>

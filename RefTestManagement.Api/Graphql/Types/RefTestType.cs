@@ -108,7 +108,7 @@ public class RefTestType : ObjectType<RefTestDto>
             .Authorize(viewDetails);
         descriptor.Field("questions")
             .Description("Questions for this RefTest")
-            .Authorize(viewDetails)
+            .Authorize(Permissions.RefTests.ViewDetailQuestions)
             .Argument("includeNumber", x => x.Type<BooleanType>().DefaultValue(false))
             .Argument("includeIsCorrect", x => x.Type<BooleanType>().DefaultValue(false))
             .Argument("randomAnswerOrder", x => x.Type<BooleanType>().DefaultValue(true))
