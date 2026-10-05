@@ -28,6 +28,7 @@ describe('AuditLogFilter', () => {
             PrivacyWithdrawalBatchCompleted: 'Withdrawal batch processing completed',
           },
           filter: {
+            streamIdLabel: 'Stream ID',
             typeLabel: 'Event type',
           },
         },
@@ -40,6 +41,22 @@ describe('AuditLogFilter', () => {
   });
 
   afterEach(() => TestBed.resetTestingModule());
+
+  it('associates the Stream ID label with its input', async () => {
+    const fixture: ComponentFixture<AuditLogFilter> = TestBed.createComponent(AuditLogFilter);
+    await fixture.whenStable();
+
+    const input = fixture.nativeElement.querySelector(
+      '#audit-log-filter-stream-id',
+    ) as HTMLInputElement;
+    const label = fixture.nativeElement.querySelector(
+      'label[for="audit-log-filter-stream-id"]',
+    ) as HTMLLabelElement;
+
+    expect(input.id).toBe('audit-log-filter-stream-id');
+    expect(label.textContent?.trim()).toBe('Stream ID');
+    expect(label.control).toBe(input);
+  });
 
   it('offers personal data export event types for filtering', () => {
     const fixture: ComponentFixture<AuditLogFilter> = TestBed.createComponent(AuditLogFilter);

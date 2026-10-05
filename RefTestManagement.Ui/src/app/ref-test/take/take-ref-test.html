@@ -69,7 +69,7 @@
             type="button"
             (click)="store.showProgressRestored.set(false)"
             class="text-neutral-400 hover:text-neutral-600 transition-colors"
-            aria-label="Close"
+            [attr.aria-label]="'common.close' | translate"
           >
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path

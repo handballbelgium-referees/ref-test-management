@@ -96,7 +96,10 @@ export class App {
   }
 
   protected get currentLocale(): Language {
-    return (this._translate.getCurrentLang() as Language) || 'en';
+    const currentLanguage = this._translate.getCurrentLang();
+    return currentLanguage && this._translate.getLangs().includes(currentLanguage)
+      ? (currentLanguage as Language)
+      : this._languageConfigService.initialLanguage;
   }
 
   protected setLanguage(lang: Language): void {

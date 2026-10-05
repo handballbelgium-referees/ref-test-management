@@ -11,7 +11,7 @@ import {
   provideZonelessChangeDetection,
 } from '@angular/core';
 import { provideRouter } from '@angular/router';
-import { provideTranslateService, TranslateService } from '@ngx-translate/core';
+import { provideTranslateService } from '@ngx-translate/core';
 import { provideTranslateHttpLoader } from '@ngx-translate/http-loader';
 import { GlobalErrorHandler } from './services/global-error-handler';
 import { ErrorReporter } from './services/error-reporter';
@@ -74,14 +74,11 @@ export const appConfig: ApplicationConfig = {
     {
       provide: LOCALE_ID,
       useFactory: () => {
-        const translate = inject(TranslateService);
-        const currentLang =
-          translate.getCurrentLang() || localStorage.getItem('app-language') || 'en';
-        return `${currentLang}-BE`;
+        const languageConfigService = inject(LanguageConfig);
+        return `${languageConfigService.initialLanguage}-BE`;
       },
     },
     provideTranslateService({
-      fallbackLang: 'en',
       loader: provideTranslateHttpLoader({
         prefix: '/i18n/',
         suffix: '.json',
