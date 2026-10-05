@@ -4,7 +4,7 @@ This document describes the task-based permission system used by the RefTest Man
 
 ## Overview
 
-The application uses **Auth0** for authentication and a **task-based permission system** for authorization. Every protected GraphQL operation maps 1:1 to a named permission. Permissions are issued by Auth0 as claims in the JWT access token and forwarded to the cookie session on login.
+The application uses **Auth0** for authentication and a **task-based permission system** for authorization. Every protected GraphQL operation maps 1:1 to a named permission. Effective permissions are refreshed from the Auth0 Management API and supplied to authorization as `permissions` claims.
 
 The backend enforcement lives in the `RefTestManagement.Security` class library. The Angular frontend uses a `PermissionsService` and a `HasPermission` structural directive for reactive, signal-based UI control.
 
@@ -18,7 +18,7 @@ The backend enforcement lives in the `RefTestManagement.Security` class library.
 2. Select the API that your application authenticates against
 3. Open the **Settings** tab → scroll to **RBAC Settings**
 4. Enable **"Enable RBAC"**
-5. Enable **"Add Permissions in the Access Token"**
+5. **"Add Permissions in the Access Token"** is optional for this application: authorization uses current Management API grants, not a possibly stale JWT permission claim. Enable it only if another consumer needs it.
 6. Save
 
 ### 2. Register permissions on the API
@@ -33,19 +33,7 @@ On the same API → **Permissions** tab, add each permission string listed in th
 
 ### 4. Verify the token
 
-Decode your access token at [jwt.io](https://jwt.io). You should see a `permissions` array:
-
-```json
-{
-  "permissions": [
-    "ref-tests:create",
-    "ref-tests:view-list",
-    "ref-tests:view-detail"
-  ]
-}
-```
-
-> **Important**: Make sure your application requests the correct **audience** that matches your API identifier. Without the audience, Auth0 returns an opaque token with no permissions.
+Ensure the access token is a signed JWT for the API **audience** configured by the application. The application does not use a JWT `permissions` array as its authorization source; it reads the user's current effective grants from the Management API.
 
 ---
 
@@ -79,6 +67,12 @@ Decode your access token at [jwt.io](https://jwt.io). You should see a `permissi
 | `ref-tests:view-detail-questions` | `questions` field on `RefTest` (detail page)      | Query    |
 | `ref-tests:view-titles`           | `refTestTitles` query                             | Query    |
 | `ref-tests:*`                     | Wildcard — grants all `ref-tests:*` permissions   | Wildcard |
+
+The `RefTest.questions` field requires `ref-tests:view-detail-questions`; `ref-tests:view-detail`
+alone does not expose question content or its nested identifiers. The shared `Question.id` field
+also accepts the existing `questions:search` and `questions:view` permissions for their direct
+question queries. `wrongQuestionIds`, `wrongAnswerIds`, and `selectedAnswerIds` remain available
+to `ref-tests:view-detail` users as limited result metadata.
 
 ### Questions
 
@@ -198,7 +192,25 @@ services.AddSecurityConfiguration(configuration); // Auth0 OIDC + JWT Bearer
 services.AddTaskBasedAuthorization();             // task-based permission policies
 ```
 
-Permissions are extracted from the Auth0 JWT access token in `SecurityStartup.cs` via the `OnTokenValidated` OIDC event and copied into the cookie identity as `permissions` claims. This means cookie-authenticated browser sessions also carry full permission information.
+`SecurityStartup.cs` refreshes the principal's `permissions` claims from the current effective Management API grants during OIDC/JWT validation and cookie validation. Cookie claims are renewed when the grant set changes.
+
+## Permission freshness and failure behavior
+
+The API resolves direct user grants and permissions inherited through assigned roles, filtered to
+the configured API audience. Each API process caches a user's successful snapshot for four minutes
+and shares one in-flight refresh per user; an internal limit of four concurrent refreshes per
+process bounds work without asserting an Auth0 tenant quota.
+
+When a snapshot expires, a Management API 429, outage, or other refresh failure never falls back to
+the old grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable,
+and `/Account/Permissions` returns no grants (or an authentication error) rather than stale claims.
+The UI polls this endpoint every minute and clears its permissions on errors. No refresh token is
+used or assumed.
+
+Admin subscription resolvers check the current snapshot before mapping each event. Revoked or
+unverifiable permissions produce an authorization error without an event payload; the WebSocket
+may remain connected, but admin PII is not delivered. The effective-permission freshness bound is
+four minutes per API process, below the five-minute requirement.
 
 ---
 
@@ -206,7 +218,7 @@ Permissions are extracted from the Auth0 JWT access token in `SecurityStartup.cs
 
 ### `PermissionsService`
 
-Fetches permissions once from `/Account/Permissions` when the user is authenticated. Exposes a reactive `permissions` signal (`undefined` while loading) and a `hasPermission(permission)` helper.
+Fetches permissions from `/Account/Permissions` when the user is authenticated and refreshes them every minute. Exposes a reactive `permissions` signal (`undefined` while loading) and a `hasPermission(permission)` helper.
 
 ```typescript
 // Force a re-fetch after role changes (optional)
@@ -293,15 +305,37 @@ the record is anonymized.
 
 ## Response Security Headers
 
-The API sets these on every response, including the SPA it serves:
+The API emits these headers on responses, including the SPA; HSTS is sent only for HTTPS outside
+Development:
 
-| Header                   | Value         | Why                                                                     |
-| ------------------------ | ------------- | ----------------------------------------------------------------------- |
-| `Referrer-Policy`        | `no-referrer` | Keeps invitation tokens out of other sites' logs.                        |
-| `X-Content-Type-Options` | `nosniff`     | Stops content-type sniffing.                                             |
-| `X-Frame-Options`        | `DENY`        | Blocks framing, so the test cannot be clickjacked.                       |
+| Header                       | Value                                                  | Why                                                                     |
+| ---------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
+| `Content-Security-Policy`    | See directives below                                   | Allows same-origin external scripts and blocks inline scripts.          |
+| `Referrer-Policy`            | `no-referrer`                                           | Prevents this page's URL from being sent as a referrer.                 |
+| `Strict-Transport-Security` | `max-age=2592000` (30 days; non-Development HTTPS only) | Requires HTTPS on later visits after a successful HTTPS response.       |
+| `X-Content-Type-Options`    | `nosniff`                                               | Stops content-type sniffing.                                             |
+| `X-Frame-Options`           | `DENY`                                                  | Blocks framing, so the test cannot be clickjacked.                       |
 
-`index.html` carries matching `<meta>` tags, but they are a fallback only: browsers ignore
-`X-Frame-Options` and `X-Content-Type-Options` when they appear in markup, and a meta
-`Referrer-Policy` applies only from the point the parser reaches it. The response headers are
-what actually enforce the policy.
+The API's Content-Security-Policy response header has these directives (shown one per line):
+
+```text
+default-src 'self' https:;
+script-src 'self';
+worker-src 'self' blob:;
+style-src 'self' 'unsafe-inline';
+connect-src 'self' wss:;
+img-src 'self' data: https:;
+font-src 'self' data:;
+base-uri 'self';
+form-action 'self';
+```
+
+Production builds disable Angular's `inlineCritical` optimization because it emits inline CSS and
+a media-switch script; the stylesheet remains a same-origin external asset. `style-src` continues
+to allow inline styles, independently of the stricter script policy. HSTS is added by ASP.NET
+Core's HSTS middleware for HTTPS responses outside Development.
+
+`index.html` has best-effort meta fallbacks for `Referrer-Policy` and `X-Content-Type-Options`,
+but CSP is intentionally response-header-only to avoid duplicate policies. Browsers ignore
+`X-Frame-Options` and `X-Content-Type-Options` in markup, and a meta `Referrer-Policy` applies
+only from the point the parser reaches it. The response headers are authoritative.
