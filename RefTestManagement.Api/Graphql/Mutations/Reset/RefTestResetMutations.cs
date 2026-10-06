@@ -52,7 +52,12 @@ public static partial class RefTestResetMutations
         var successCount = 0;
         var failedCount = 0;
         var errors = new List<ResetRefTestsError>();
-        var resetEvents = new List<(Guid Id, RefTestStatus OldStatus)>();
+        var resetEvents = new List<(
+            Guid Id,
+            RefTestStatus OldStatus,
+            RefTestStatus Status,
+            DateTime CreatedAt,
+            bool InvitationSent)>();
 
         foreach (var id in input.Ids)
         {
@@ -112,7 +117,12 @@ public static partial class RefTestResetMutations
 
                 successCount++;
                 result.ResetRefTests.Add(refTest.ToDto());
-                resetEvents.Add((refTest.Id, oldStatus));
+                resetEvents.Add((
+                    refTest.Id,
+                    oldStatus,
+                    refTest.Status,
+                    refTest.CreatedAt,
+                    refTest.InvitationSentAt.HasValue));
                 
             }
             catch (Exception ex)
@@ -129,9 +139,16 @@ public static partial class RefTestResetMutations
 
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
-        foreach (var (refTestId, oldStatus) in resetEvents)
+        foreach (var resetEvent in resetEvents)
         {
-            await subscriptionService.PublishRefTestResetAsync(refTestId, oldStatus, cancellationToken);
+            await subscriptionService.PublishRefTestResetAsync(
+                resetEvent.Id,
+                resetEvent.OldStatus,
+                input.ResetType,
+                resetEvent.Status,
+                resetEvent.CreatedAt,
+                resetEvent.InvitationSent,
+                cancellationToken);
         }
 
         return result with
@@ -179,7 +196,7 @@ public static partial class RefTestResetMutations
         var successCount = 0;
         var failedCount = 0;
         var errors = new List<ReviveRefTestsError>();
-        var revivedIds = new List<Guid>();
+        var revivedEvents = new List<(Guid Id, RefTestStatus Status, DateTime CreatedAt, bool InvitationSent)>();
 
         foreach (var id in ids)
         {
@@ -214,7 +231,11 @@ public static partial class RefTestResetMutations
 
                 successCount++;
                 result.RevivedRefTests.Add(refTestDto);
-                revivedIds.Add(refTest.Id);
+                revivedEvents.Add((
+                    refTest.Id,
+                    refTest.Status,
+                    refTest.CreatedAt,
+                    refTest.InvitationSentAt.HasValue));
             }
             catch (Exception ex)
             {
@@ -241,9 +262,14 @@ public static partial class RefTestResetMutations
             }
         }
 
-        foreach (var refTestId in revivedIds)
+        foreach (var revivedEvent in revivedEvents)
         {
-            await subscriptionService.PublishRefTestRevivedAsync(refTestId, cancellationToken);
+            await subscriptionService.PublishRefTestRevivedAsync(
+                revivedEvent.Id,
+                revivedEvent.Status,
+                revivedEvent.CreatedAt,
+                revivedEvent.InvitationSent,
+                cancellationToken);
         }
 
         return result with

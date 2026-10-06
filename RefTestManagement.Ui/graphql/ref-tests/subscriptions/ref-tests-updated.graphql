@@ -40,9 +40,16 @@ subscription RefTestsUpdated {
     ... on RefTestReset {
       id
       oldStatus
+      status
+      resetType
+      createdAt
+      invitationSent
     }
     ... on RefTestRevived {
       id
+      status
+      createdAt
+      invitationSent
     }
     ... on RefTestCreated {
       id
@@ -57,11 +64,17 @@ subscription RefTestsUpdated {
       status
       numberOfQuestions
       maxTimeInMinutes
+      firstName
+      lastName
+      createdAt
+      scheduledAt
     }
     ... on RefTestApproved {
       id
+      oldStatus
       status
       approvedAt
+      createdAt
     }
     ... on RefTestRejected {
       id

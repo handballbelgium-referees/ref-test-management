@@ -13,6 +13,8 @@ query GetRefTests(
           id
           value
         }
+        firstName
+        lastName
         name
         email
         invitationSent
@@ -20,6 +22,7 @@ query GetRefTests(
         sendInvitationsAutomatically
         sendResultsAutomatically
         status
+        createdAt
         numberOfQuestions
         maxTimeInMinutes
         scheduledAt
@@ -30,6 +33,7 @@ query GetRefTests(
         questionTotal
         answerTotal
         percentage
+        language
         rejectionReason
         isAnonymized
       }

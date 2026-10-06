@@ -3,6 +3,7 @@ import {
   computed,
   DestroyRef,
   effect,
+  ErrorHandler,
   inject,
   signal,
 } from '@angular/core';
@@ -10,7 +11,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
 import { onlyCompleteData } from 'apollo-angular';
-import { map } from 'rxjs';
+import { catchError, exhaustMap, map, of, startWith, Subject, tap } from 'rxjs';
 import {
   GetScoreConfigurationGQL,
   RefTestStatus,
@@ -91,6 +92,7 @@ export class ListRefTests {
   private readonly _route = inject(ActivatedRoute);
   private readonly _scoreConfigGQL = inject(GetScoreConfigurationGQL);
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _errorHandler = inject(ErrorHandler);
 
   // Services
   protected readonly filterState = inject(RefTestFilterState);
@@ -114,7 +116,46 @@ export class ListRefTests {
   // UI STATE
   // ========================================================================
   protected readonly isRefreshing = signal(false);
-  protected readonly loadingMore = signal(false);
+  private readonly _fetchMoreRequests = new Subject<void>();
+  protected readonly loadingMore = toSignal(
+    this._fetchMoreRequests.pipe(
+      exhaustMap(() =>
+        this.dataService.fetchMore().pipe(
+          tap((result) => {
+            if (result.data?.refTests) {
+              const baseIds = new Set(
+                (this._queryData()?.edges ?? [])
+                  .map((e) => e?.node?.id)
+                  .filter((id): id is string => !!id),
+              );
+
+              const edges = result.data.refTests.edges ?? [];
+              const newRefTests = edges
+                .filter((edge): edge is NonNullable<typeof edge> => !!edge && !!edge.node)
+                .map((edge) => edge.node as RefTestNode);
+
+              const alreadyLoadedIds = new Set([
+                ...baseIds,
+                ...this.localStateManager.getAdditionalLoadedRefTests().map((t) => t.id),
+              ]);
+              const uniqueNew = newRefTests.filter((t) => !alreadyLoadedIds.has(t.id));
+
+              if (uniqueNew.length > 0) {
+                this.localStateManager.addLoadedRefTests(uniqueNew);
+              }
+            }
+          }),
+          map(() => false),
+          startWith(true),
+          catchError((error: unknown) => {
+            this._errorHandler.handleError(error);
+            return of(false);
+          }),
+        ),
+      ),
+    ),
+    { initialValue: false },
+  );
 
   /** True when the user has at least one bulk-action permission, making row selection meaningful. */
   protected readonly showCheckboxes = computed(
@@ -348,37 +389,7 @@ export class ListRefTests {
       return;
     }
 
-    this.loadingMore.set(true);
-
-    this.dataService
-      .fetchMore()
-      .then((result) => {
-        if (result.data?.refTests) {
-          const baseIds = new Set(
-            (this._queryData()?.edges ?? [])
-              .map((e) => e?.node?.id)
-              .filter((id): id is string => !!id),
-          );
-
-          const edges = result.data.refTests.edges ?? [];
-          const newRefTests = edges
-            .filter((edge): edge is NonNullable<typeof edge> => !!edge && !!edge.node)
-            .map((edge) => edge.node as RefTestNode);
-
-          const alreadyLoadedIds = new Set([
-            ...baseIds,
-            ...this.localStateManager.getAdditionalLoadedRefTests().map((t) => t.id),
-          ]);
-          const uniqueNew = newRefTests.filter((t) => !alreadyLoadedIds.has(t.id));
-
-          if (uniqueNew.length > 0) {
-            this.localStateManager.addLoadedRefTests(uniqueNew);
-          }
-        }
-      })
-      .finally(() => {
-        this.loadingMore.set(false);
-      });
+    this._fetchMoreRequests.next();
   }
 
   // ========================================================================

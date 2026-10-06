@@ -703,7 +703,7 @@ export type GetRefTestsQueryVariables = Exact<{
 }>;
 
 
-export type GetRefTestsQuery = { refTests: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, rejectionReason: string | null, isAnonymized: boolean, title: { id: string, value: string } | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+export type GetRefTestsQuery = { refTests: { totalCount: number, edges: Array<{ cursor: string, node: { id: string, firstName: string, lastName: string, name: string, email: string, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, createdAt: string, numberOfQuestions: number, maxTimeInMinutes: number, scheduledAt: string | null, startedAt: string | null, completedAt: string | null, questionScore: number | null, answerScore: number | null, questionTotal: number, answerTotal: number | null, percentage: number | null, language: string | null, rejectionReason: string | null, isAnonymized: boolean, title: { id: string, value: string } | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type GetRefTestTitlesQueryVariables = Exact<{
   first: number;
@@ -729,16 +729,16 @@ export type RefTestUpdatedSubscriptionVariables = Exact<{
 
 export type RefTestUpdatedSubscription = { refTestUpdated:
     | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
-    | { __typename: 'RefTestApproved', id: string, status: RefTestStatus, approvedAt: string }
-    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
-    | { __typename: 'RefTestCreated', id: string }
+    | { __typename: 'RefTestApproved', id: string, oldStatus: RefTestStatus, status: RefTestStatus, approvedAt: string, createdAt: string }
+    | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string, selectedAnswerIds: Array<string> | null }
+    | { __typename: 'RefTestCreated', id: string, firstName: string, lastName: string, createdAt: string, scheduledAt: string | null }
     | { __typename: 'RefTestDeleted', id: string }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
-    | { __typename: 'RefTestReset', id: string, oldStatus: RefTestStatus }
+    | { __typename: 'RefTestReset', id: string, oldStatus: RefTestStatus, status: RefTestStatus, resetType: RefTestResetType, createdAt: string, invitationSent: boolean }
     | { __typename: 'RefTestResultSent', id: string }
-    | { __typename: 'RefTestRevived', id: string }
+    | { __typename: 'RefTestRevived', id: string, status: RefTestStatus, createdAt: string, invitationSent: boolean }
     | { __typename: 'RefTestStarted', id: string, status: RefTestStatus, startedAt: string }
    };
 
@@ -747,16 +747,16 @@ export type RefTestsUpdatedSubscriptionVariables = Exact<{ [key: string]: never;
 
 export type RefTestsUpdatedSubscription = { refTestsUpdated:
     | { __typename: 'RefTestAnonymized', id: string, status: RefTestStatus, name: string, email: string }
-    | { __typename: 'RefTestApproved', id: string, status: RefTestStatus, approvedAt: string }
+    | { __typename: 'RefTestApproved', id: string, oldStatus: RefTestStatus, status: RefTestStatus, approvedAt: string, createdAt: string }
     | { __typename: 'RefTestCompleted', id: string, status: RefTestStatus, completedAt: string, questionScore: number, questionTotal: number, answerScore: number, answerTotal: number, percentage: number, language: string }
-    | { __typename: 'RefTestCreated', id: string, name: string, email: string, titleId: string | null, titleValue: string | null, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number }
+    | { __typename: 'RefTestCreated', id: string, name: string, email: string, titleId: string | null, titleValue: string | null, invitationSent: boolean, resultsSent: boolean, sendInvitationsAutomatically: boolean, sendResultsAutomatically: boolean, status: RefTestStatus, numberOfQuestions: number, maxTimeInMinutes: number, firstName: string, lastName: string, createdAt: string, scheduledAt: string | null }
     | { __typename: 'RefTestDeleted', id: string, status: RefTestStatus }
     | { __typename: 'RefTestExpired', id: string, status: RefTestStatus }
     | { __typename: 'RefTestInvitationSent', id: string }
     | { __typename: 'RefTestRejected', id: string, status: RefTestStatus, reason: string, rejectedAt: string }
-    | { __typename: 'RefTestReset', id: string, oldStatus: RefTestStatus }
+    | { __typename: 'RefTestReset', id: string, oldStatus: RefTestStatus, status: RefTestStatus, resetType: RefTestResetType, createdAt: string, invitationSent: boolean }
     | { __typename: 'RefTestResultSent', id: string }
-    | { __typename: 'RefTestRevived', id: string }
+    | { __typename: 'RefTestRevived', id: string, status: RefTestStatus, createdAt: string, invitationSent: boolean }
     | { __typename: 'RefTestStarted', id: string, status: RefTestStatus, startedAt: string }
    };
 
@@ -1797,6 +1797,8 @@ export const GetRefTestsDocument = gql`
           id
           value
         }
+        firstName
+        lastName
         name
         email
         invitationSent
@@ -1804,6 +1806,7 @@ export const GetRefTestsDocument = gql`
         sendInvitationsAutomatically
         sendResultsAutomatically
         status
+        createdAt
         numberOfQuestions
         maxTimeInMinutes
         scheduledAt
@@ -1814,6 +1817,7 @@ export const GetRefTestsDocument = gql`
         questionTotal
         answerTotal
         percentage
+        language
         rejectionReason
         isAnonymized
       }
@@ -1905,6 +1909,7 @@ export const RefTestUpdatedDocument = gql`
       answerTotal
       percentage
       language
+      selectedAnswerIds
     }
     ... on RefTestExpired {
       id
@@ -1928,17 +1933,30 @@ export const RefTestUpdatedDocument = gql`
     ... on RefTestReset {
       id
       oldStatus
+      status
+      resetType
+      createdAt
+      invitationSent
     }
     ... on RefTestRevived {
       id
+      status
+      createdAt
+      invitationSent
     }
     ... on RefTestCreated {
       id
+      firstName
+      lastName
+      createdAt
+      scheduledAt
     }
     ... on RefTestApproved {
       id
+      oldStatus
       status
       approvedAt
+      createdAt
     }
     ... on RefTestRejected {
       id
@@ -2003,9 +2021,16 @@ export const RefTestsUpdatedDocument = gql`
     ... on RefTestReset {
       id
       oldStatus
+      status
+      resetType
+      createdAt
+      invitationSent
     }
     ... on RefTestRevived {
       id
+      status
+      createdAt
+      invitationSent
     }
     ... on RefTestCreated {
       id
@@ -2020,11 +2045,17 @@ export const RefTestsUpdatedDocument = gql`
       status
       numberOfQuestions
       maxTimeInMinutes
+      firstName
+      lastName
+      createdAt
+      scheduledAt
     }
     ... on RefTestApproved {
       id
+      oldStatus
       status
       approvedAt
+      createdAt
     }
     ... on RefTestRejected {
       id

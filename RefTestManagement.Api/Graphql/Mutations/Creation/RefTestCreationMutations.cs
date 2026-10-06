@@ -247,6 +247,7 @@ public static partial class RefTestCreationMutations
                 refTest.InvitationSentAt.HasValue, refTest.ResultsSentAt.HasValue,
                 refTest.SendInvitationsAutomatically, refTest.SendResultsAutomatically,
                 refTest.Status, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes,
+                refTest.FirstName, refTest.LastName, refTest.CreatedAt, refTest.ScheduledAt,
                 cancellationToken);
     }
 

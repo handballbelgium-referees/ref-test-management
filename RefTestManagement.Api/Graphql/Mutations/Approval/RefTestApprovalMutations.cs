@@ -48,6 +48,7 @@ public static partial class RefTestApprovalMutations
             .ToListAsync(cancellationToken);
 
         var approved = new List<RefTest>();
+        var approvedOldStatuses = new Dictionary<Guid, RefTestStatus>();
         var errors = new List<ApproveRefTestsError>();
 
         foreach (var id in input.Ids)
@@ -57,8 +58,10 @@ public static partial class RefTestApprovalMutations
                 var refTest = refTests.FirstOrDefault(rt => rt.Id == id)
                               ?? throw new RefTestNotFoundException(id);
 
+                var oldStatus = refTest.Status;
                 refTest.Approve();
                 approved.Add(refTest);
+                approvedOldStatuses.Add(refTest.Id, oldStatus);
             }
             catch (Exception ex)
             {
@@ -137,7 +140,8 @@ public static partial class RefTestApprovalMutations
         foreach (var refTest in approved)
         {
             await subscriptionService.PublishRefTestApprovedAsync(
-                refTest.Id, refTest.Status, now, cancellationToken);
+                refTest.Id, approvedOldStatuses[refTest.Id], refTest.Status, now, refTest.CreatedAt,
+                cancellationToken);
         }
 
         return new ApproveRefTestsResult

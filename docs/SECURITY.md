@@ -72,7 +72,9 @@ The `RefTest.questions` field requires `ref-tests:view-detail-questions`; `ref-t
 alone does not expose question content or its nested identifiers. The shared `Question.id` field
 also accepts the existing `questions:search` and `questions:view` permissions for their direct
 question queries. `wrongQuestionIds`, `wrongAnswerIds`, and `selectedAnswerIds` remain available
-to `ref-tests:view-detail` users as limited result metadata.
+to `ref-tests:view-detail` users as limited result metadata. Completion subscription events include
+`selectedAnswerIds` only on the per-RefTest `ViewDetail` subscription; the global `ViewList` event
+omits them.
 
 ### Questions
 

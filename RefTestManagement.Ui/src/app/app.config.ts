@@ -116,6 +116,19 @@ export function createSseLink(
   );
 }
 
+export function createAppApolloCache(): InMemoryCache {
+  return new InMemoryCache({
+    typePolicies: {
+      Query: {
+        fields: {
+          refTests: relayStylePagination(['where', 'order']),
+          auditLogs: relayStylePagination(['where', 'order']),
+        },
+      },
+    },
+  });
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZonelessChangeDetection(),
@@ -243,16 +256,7 @@ export const appConfig: ApplicationConfig = {
 
         return {
           link,
-          cache: new InMemoryCache({
-            typePolicies: {
-              Query: {
-                fields: {
-                  refTests: relayStylePagination(['where', 'order']),
-                  auditLogs: relayStylePagination(['where', 'order']),
-                },
-              },
-            },
-          }),
+          cache: createAppApolloCache(),
         };
       },
       {

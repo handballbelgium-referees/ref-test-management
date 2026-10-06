@@ -56,6 +56,7 @@ public interface IRefTestSubscriptionService
         int answerTotal,
         double percentage,
         string language,
+        IReadOnlyList<string> selectedAnswerIds,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -83,6 +84,10 @@ public interface IRefTestSubscriptionService
         RefTestStatus status,
         int numberOfQuestions,
         int maxTimeInMinutes,
+        string firstName,
+        string lastName,
+        DateTime createdAt,
+        DateTime? scheduledAt,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -110,6 +115,10 @@ public interface IRefTestSubscriptionService
     Task PublishRefTestResetAsync(
         Guid refTestId,
         RefTestStatus oldStatus,
+        RefTestResetType resetType,
+        RefTestStatus status,
+        DateTime createdAt,
+        bool invitationSent,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -117,6 +126,9 @@ public interface IRefTestSubscriptionService
     /// </summary>
     Task PublishRefTestRevivedAsync(
         Guid refTestId,
+        RefTestStatus status,
+        DateTime createdAt,
+        bool invitationSent,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -124,8 +136,10 @@ public interface IRefTestSubscriptionService
     /// </summary>
     Task PublishRefTestApprovedAsync(
         Guid refTestId,
+        RefTestStatus oldStatus,
         RefTestStatus status,
         DateTime approvedAt,
+        DateTime createdAt,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -206,14 +220,16 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         int answerTotal,
         double percentage,
         string language,
+        IReadOnlyList<string> selectedAnswerIds,
         CancellationToken cancellationToken = default)
     {
         var evt = new RefTestCompletedEvent(refTestId, status, completedAt, questionScore, questionTotal, answerScore,
-            answerTotal, percentage, language);
+            answerTotal, percentage, language, selectedAnswerIds);
+        var listEvent = evt with { SelectedAnswerIds = null };
 
         await Task.WhenAll(
             eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            eventSender.SendAsync<object>(GlobalTopic, listEvent, cancellationToken).AsTask()
         );
     }
 
@@ -244,6 +260,10 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         RefTestStatus status,
         int numberOfQuestions,
         int maxTimeInMinutes,
+        string firstName,
+        string lastName,
+        DateTime createdAt,
+        DateTime? scheduledAt,
         CancellationToken cancellationToken = default)
     {
         var evt = new RefTestCreatedEvent(
@@ -251,7 +271,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
             titleId, titleValue,
             invitationSent, resultsSent,
             sendInvitationsAutomatically, sendResultsAutomatically,
-            status, numberOfQuestions, maxTimeInMinutes);
+            status, numberOfQuestions, maxTimeInMinutes,
+            firstName, lastName, createdAt, scheduledAt);
 
         // Only publish to the global topic — there is no per-ID subscription for a brand-new ID.
         await eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken);
@@ -288,9 +309,14 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
     public async Task PublishRefTestResetAsync(
         Guid refTestId,
         RefTestStatus oldStatus,
+        RefTestResetType resetType,
+        RefTestStatus status,
+        DateTime createdAt,
+        bool invitationSent,
         CancellationToken cancellationToken = default)
     {
-        var evt = new RefTestResetEvent(refTestId, oldStatus);
+        var evt = new RefTestResetEvent(
+            refTestId, oldStatus, status, resetType, createdAt, invitationSent);
 
         await Task.WhenAll(
             eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
@@ -300,9 +326,12 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
 
     public async Task PublishRefTestRevivedAsync(
         Guid refTestId,
+        RefTestStatus status,
+        DateTime createdAt,
+        bool invitationSent,
         CancellationToken cancellationToken = default)
     {
-        var evt = new RefTestRevivedEvent(refTestId);
+        var evt = new RefTestRevivedEvent(refTestId, status, createdAt, invitationSent);
 
         await Task.WhenAll(
             eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
@@ -312,11 +341,13 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
 
     public async Task PublishRefTestApprovedAsync(
         Guid refTestId,
+        RefTestStatus oldStatus,
         RefTestStatus status,
         DateTime approvedAt,
+        DateTime createdAt,
         CancellationToken cancellationToken = default)
     {
-        var evt = new RefTestApprovedEvent(refTestId, status, approvedAt);
+        var evt = new RefTestApprovedEvent(refTestId, oldStatus, status, approvedAt, createdAt);
 
         await Task.WhenAll(
             eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
@@ -358,7 +389,8 @@ public record RefTestCompletedEvent(
     int AnswerScore,
     int AnswerTotal,
     double Percentage,
-    string Language);
+    string Language,
+    IReadOnlyList<string>? SelectedAnswerIds);
 
 public record RefTestExpiredEvent(Guid Id, RefTestStatus Status, DateTime ExpiredAt);
 
@@ -378,13 +410,32 @@ public record RefTestCreatedEvent(
     bool SendResultsAutomatically,
     RefTestStatus Status,
     int NumberOfQuestions,
-    int MaxTimeInMinutes);
+    int MaxTimeInMinutes,
+    string FirstName,
+    string LastName,
+    DateTime CreatedAt,
+    DateTime? ScheduledAt);
 
-public record RefTestResetEvent(Guid Id, RefTestStatus OldStatus);
+public record RefTestResetEvent(
+    Guid Id,
+    RefTestStatus OldStatus,
+    RefTestStatus Status,
+    RefTestResetType ResetType,
+    DateTime CreatedAt,
+    bool InvitationSent);
 
-public record RefTestRevivedEvent(Guid Id);
+public record RefTestRevivedEvent(
+    Guid Id,
+    RefTestStatus Status,
+    DateTime CreatedAt,
+    bool InvitationSent);
 
-public record RefTestApprovedEvent(Guid Id, RefTestStatus Status, DateTime ApprovedAt);
+public record RefTestApprovedEvent(
+    Guid Id,
+    RefTestStatus OldStatus,
+    RefTestStatus Status,
+    DateTime ApprovedAt,
+    DateTime CreatedAt);
 
 public record RefTestRejectedEvent(Guid Id, RefTestStatus Status, string Reason, DateTime RejectedAt);
 

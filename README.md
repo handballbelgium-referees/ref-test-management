@@ -54,7 +54,9 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### Real-Time Updates
 
-- GraphQL subscriptions (Server-Sent Events) push list/detail updates, invitation/result events, and time extensions to connected clients instantly
+- Admin RefTest subscriptions (Server-Sent Events) update normalized records and reconcile cache-only changes only when list membership, order, and cursor boundaries remain valid. Events that may change membership or order invalidate affected cached connections (and counts when membership may change) and refresh active list/count queries; inactive entries are invalidated so later visits cannot reuse stale edges or totals. The server supplies authoritative edges and cursors after those changes.
+  Approval events carry both statuses and the resulting `createdAt`; reset events carry their reset type and invitation-sent state, while reset and revive events carry their resulting status and `createdAt`. Completed answer IDs are sent only on the `ViewDetail` subscription; the global `ViewList` feed is sanitized. Created events include `createdAt` but no connection-specific cursor, so the client never fabricates an edge or cursor and relies on refreshed queries for the authoritative list and counts.
+  Participant time-extension notifications use a separate taking-flow subscription and do not update the admin Apollo cache.
 
 ### Authentication & Permissions
 
