@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -6,6 +7,8 @@ using Handball.Belgium.RefTestManagement.AuditLog;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
+
+[assembly: InternalsVisibleTo("RefTestManagement.UnitTests")]
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
@@ -111,7 +114,7 @@ public sealed class PersonalDataExportPdfService(
         return attachments;
     }
 
-    private static bool TrySplit(
+    internal static bool TrySplit(
         List<PdfSection> sections,
         out List<PdfSection> firstHalf,
         out List<PdfSection> secondHalf)
@@ -197,12 +200,17 @@ public sealed class PersonalDataExportPdfService(
                             });
                         });
 
-                    page.Content().PaddingVertical(10).Column(column =>
+                    page.Content().PaddingVertical(12).Column(column =>
                     {
-                        column.Item().PaddingBottom(10).Element(item => AddField(
-                            item,
-                            translations["recipientEmail"],
-                            document.RecipientEmail));
+                        column.Item().PaddingBottom(8)
+                            .Background(Colors.Grey.Lighten4)
+                            .Border(1)
+                            .BorderColor(Colors.Grey.Lighten2)
+                            .Padding(10)
+                            .Element(item => AddField(
+                                item,
+                                translations["recipientEmail"],
+                                document.RecipientEmail));
 
                         if (partCount > 1)
                         {
@@ -211,11 +219,18 @@ public sealed class PersonalDataExportPdfService(
                                 translations["part"],
                                 partNumber,
                                 partCount);
-                            column.Item().PaddingBottom(10).Text(partText).Italic();
+                            column.Item().PaddingBottom(8)
+                                .Background(Colors.Grey.Lighten4)
+                                .Border(1)
+                                .BorderColor(Colors.Grey.Lighten2)
+                                .Padding(8)
+                                .Text(partText)
+                                .FontColor(Colors.Grey.Darken2)
+                                .Italic();
                         }
 
                         foreach (var section in sections)
-                            column.Item().PaddingBottom(12).Element(item =>
+                            column.Item().PaddingBottom(10).Element(item =>
                                 ComposeRefTest(item, section, translations, culture));
                     });
 
@@ -255,26 +270,42 @@ public sealed class PersonalDataExportPdfService(
         IReadOnlyDictionary<string, string> translations,
         CultureInfo culture)
     {
-        container.Column(column =>
-        {
-            column.Item().PaddingBottom(4).Text(text =>
+        container
+            .Border(1)
+            .BorderColor(Colors.Grey.Lighten2)
+            .Padding(12)
+            .Column(column =>
             {
-                text.Span(translations["refTest"]).Bold();
-                if (section.IsContinuation)
-                    text.Span($" — {translations["continued"]}").Italic();
+                column.Item().PaddingBottom(6)
+                    .BorderBottom(1)
+                    .BorderColor(Colors.Grey.Lighten2)
+                    .Text(text =>
+                    {
+                        text.Span(translations["refTest"])
+                            .FontSize(12)
+                            .FontColor(Colors.Red.Darken3)
+                            .Bold();
+                        if (section.IsContinuation)
+                            text.Span($" — {translations["continued"]}")
+                                .FontSize(9)
+                                .FontColor(Colors.Grey.Darken1)
+                                .Italic();
+                    });
+
+                if (section.IncludeStoredFields)
+                    AddRefTestFields(column, section.RefTest, translations, culture);
+
+                if (section.AuditEvents.Count == 0)
+                    return;
+
+                column.Item().PaddingTop(8).PaddingBottom(4).Text(translations["events"])
+                    .FontSize(11)
+                    .FontColor(Colors.Grey.Darken3)
+                    .Bold();
+                foreach (var auditEvent in section.AuditEvents)
+                    column.Item().PaddingBottom(6).Element(item =>
+                        ComposeAuditEvent(item, auditEvent, translations, culture));
             });
-
-            if (section.IncludeStoredFields)
-                AddRefTestFields(column, section.RefTest, translations, culture);
-
-            if (section.AuditEvents.Count == 0)
-                return;
-
-            column.Item().PaddingTop(6).PaddingBottom(3).Text(translations["events"]).Bold();
-            foreach (var auditEvent in section.AuditEvents)
-                column.Item().PaddingBottom(8).Element(item =>
-                    ComposeAuditEvent(item, auditEvent, translations, culture));
-        });
     }
 
     private static void AddRefTestFields(
@@ -312,27 +343,43 @@ public sealed class PersonalDataExportPdfService(
         IReadOnlyDictionary<string, string> translations,
         CultureInfo culture)
     {
-        container.Column(column =>
-        {
-            AddField(column, translations["version"], auditEvent.Version.ToString(culture));
-            AddField(column, translations["eventType"], LocalizeEventType(auditEvent.Type, translations));
-            AddField(column, translations["timestamp"], FormatDate(auditEvent.Timestamp, culture, translations));
-            AddField(column, translations["actor"], LocalizeActor(auditEvent, translations));
-            if (!string.IsNullOrEmpty(auditEvent.ActorEmail))
-                AddField(column, translations["actorEmail"], auditEvent.ActorEmail);
-            AddField(column, translations["archived"],
-                FormatBoolean(auditEvent.IsArchived, translations));
-            AddField(column, translations["redactedAt"],
-                FormatDate(auditEvent.RedactedAt, culture, translations));
-            AddField(column, translations["details"], FormatJson(auditEvent.Data, translations));
-        });
+        container
+            .Background(Colors.Grey.Lighten5)
+            .Border(1)
+            .BorderColor(Colors.Grey.Lighten3)
+            .Padding(8)
+            .Column(column =>
+            {
+                AddField(column, translations["version"], auditEvent.Version.ToString(culture));
+                AddField(column, translations["eventType"], LocalizeEventType(auditEvent.Type, translations));
+                AddField(column, translations["timestamp"], FormatDate(auditEvent.Timestamp, culture, translations));
+                AddField(column, translations["actor"], LocalizeActor(auditEvent, translations));
+                if (!string.IsNullOrEmpty(auditEvent.ActorEmail))
+                    AddField(column, translations["actorEmail"], auditEvent.ActorEmail);
+                AddField(column, translations["archived"],
+                    FormatBoolean(auditEvent.IsArchived, translations));
+                AddField(column, translations["redactedAt"],
+                    FormatDate(auditEvent.RedactedAt, culture, translations));
+                column.Item().PaddingTop(4).PaddingBottom(2).Text(translations["details"])
+                    .FontColor(Colors.Grey.Darken2)
+                    .SemiBold();
+                foreach (var (label, value) in FormatAuditDetails(auditEvent.Data, translations))
+                {
+                    if (label is null)
+                        column.Item().PaddingLeft(8).PaddingVertical(2).Text(value);
+                    else
+                        column.Item().PaddingLeft(8).Element(item => AddField(item, label, value));
+                }
+            });
     }
 
     private static void AddField(IContainer container, string label, string value)
     {
-        container.Row(row =>
+        container.PaddingVertical(2).Row(row =>
         {
-            row.ConstantItem(180).Text(label).Bold();
+            row.ConstantItem(165).Text(label)
+                .FontColor(Colors.Grey.Darken2)
+                .SemiBold();
             row.RelativeItem().Text(value);
         });
     }
@@ -377,29 +424,76 @@ public sealed class PersonalDataExportPdfService(
     private static string FormatBoolean(bool value, IReadOnlyDictionary<string, string> translations) =>
         translations[value ? "yes" : "no"];
 
-    private static string FormatJson(string? data, IReadOnlyDictionary<string, string> translations)
+    internal static IReadOnlyList<(string? Label, string Value)> FormatAuditDetails(
+        string? data,
+        IReadOnlyDictionary<string, string> translations)
     {
-        if (string.IsNullOrWhiteSpace(data))
-            return translations["noDetails"];
+        if (string.IsNullOrEmpty(data))
+            return [(null, translations["noDetails"])];
 
         try
         {
             using var parsed = JsonDocument.Parse(data);
-            return JsonSerializer.Serialize(parsed.RootElement, new JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
+            var root = parsed.RootElement;
+            if (root.ValueKind != JsonValueKind.Object)
+                return [(null, translations["noDetails"])];
+
+            var details = new List<(string? Label, string Value)>();
+            foreach (var property in root.EnumerateObject())
+                AddJsonDetails(details, null, property.Name, property.Value, translations);
+
+            return details.Count > 0
+                ? details
+                : [(null, translations["noDetails"])];
         }
         catch (JsonException)
         {
-            return translations["noDetails"];
+            return [(null, translations["noDetails"])];
         }
     }
+
+    private static void AddJsonDetails(
+        List<(string? Label, string Value)> details,
+        string? parentLabel,
+        string key,
+        JsonElement value,
+        IReadOnlyDictionary<string, string> translations)
+    {
+        var keyLabel = translations.TryGetValue($"detail.{key}", out var localizedKey)
+            ? localizedKey
+            : string.IsNullOrWhiteSpace(key) || key.Any(char.IsControl)
+                ? JsonSerializer.Serialize(key)
+                : key;
+        var label = parentLabel is null ? keyLabel : $"{parentLabel} — {keyLabel}";
+
+        if (value.ValueKind == JsonValueKind.Object)
+        {
+            var count = 0;
+            foreach (var property in value.EnumerateObject())
+            {
+                count++;
+                AddJsonDetails(details, label, property.Name, property.Value, translations);
+            }
+
+            if (count == 0)
+                details.Add((label, value.GetRawText()));
+            return;
+        }
+
+        details.Add((label, value.ValueKind == JsonValueKind.String
+            ? FormatJsonString(value.GetString() ?? string.Empty)
+            : value.GetRawText()));
+    }
+
+    private static string FormatJsonString(string value) =>
+        string.IsNullOrWhiteSpace(value) || value.Any(char.IsControl)
+            ? JsonSerializer.Serialize(value)
+            : value;
 
     private static CultureInfo GetCulture(string locale) =>
         locale is "nl" or "fr" or "de" ? CultureInfo.GetCultureInfo(locale) : CultureInfo.GetCultureInfo("en");
 
-    private sealed record PdfSection(
+    internal sealed record PdfSection(
         PersonalDataExportRefTestData RefTest,
         IReadOnlyList<PersonalDataExportAuditEventData> AuditEvents,
         bool IncludeStoredFields,

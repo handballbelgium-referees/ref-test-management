@@ -1390,6 +1390,244 @@ public sealed class PersonalDataExportDeliveryTests
     }
 
     [Fact]
+    public void PdfAuditDetailsAreLocalizedAndPreserveEveryValue()
+    {
+        var translations = new TranslationService();
+        var data = """
+                   {"firstName":{"old":"Ada","new":"Grace"},"email":{"oldValue":"ada@example.org","newValue":"grace@example.org"},"startReason":"participant","unmapped":{"nested":{"value":42}},"emptyObject":{},"items":[1,{"retained":true}],"nothing":null,"emptyString":"","multiline":"line\nbreak"}
+                   """;
+        var locales = new[]
+        {
+            ("en", "First name", "Email address", "Previous value", "New value", "Start reason"),
+            ("nl", "Voornaam", "E-mailadres", "Oude waarde", "Nieuwe waarde", "Startreden"),
+            ("fr", "Prénom", "Adresse e-mail", "Valeur précédente", "Nouvelle valeur", "Motif du démarrage"),
+            ("de", "Vorname", "E-Mail-Adresse", "Vorheriger Wert", "Neuer Wert", "Startgrund")
+        };
+
+        foreach (var (locale, firstName, email, oldValue, newValue, startReason) in locales)
+        {
+            var details = PersonalDataExportPdfService.FormatAuditDetails(
+                data,
+                translations.GetPdfPersonalDataExportTranslations(locale));
+
+            Assert.Contains(($"{firstName} — {oldValue}", "Ada"), details);
+            Assert.Contains(($"{firstName} — {newValue}", "Grace"), details);
+            Assert.Contains(($"{email} — {oldValue}", "ada@example.org"), details);
+            Assert.Contains(($"{email} — {newValue}", "grace@example.org"), details);
+            Assert.Contains((startReason, "participant"), details);
+            Assert.Contains(("unmapped — nested — value", "42"), details);
+            Assert.Contains(("emptyObject", "{}"), details);
+            Assert.Contains(("items", """[1,{"retained":true}]"""), details);
+            Assert.Contains(("nothing", "null"), details);
+            Assert.Contains(("emptyString", "\"\""), details);
+            Assert.Contains(("multiline", JsonSerializer.Serialize("line\nbreak")), details);
+        }
+    }
+
+    [Fact]
+    public void PdfAuditDetailsUseSafeFallbackForNonObjectAndMalformedData()
+    {
+        var translations = new TranslationService().GetPdfPersonalDataExportTranslations("en");
+        const string arrayData = """[{"unrecognized":"still visible"},2]""";
+        const string malformedData = " {broken json \r\n";
+
+        foreach (var data in new[]
+                 {
+                     arrayData,
+                     "\"private scalar details\"",
+                     "42",
+                     "true",
+                     "null",
+                     malformedData
+                 })
+        {
+            Assert.Equal(
+                (null, translations["noDetails"]),
+                Assert.Single(PersonalDataExportPdfService.FormatAuditDetails(data, translations)));
+        }
+
+        Assert.Equal(
+            (null, translations["noDetails"]),
+            Assert.Single(PersonalDataExportPdfService.FormatAuditDetails(null, translations)));
+        Assert.Equal(
+            (null, translations["noDetails"]),
+            Assert.Single(PersonalDataExportPdfService.FormatAuditDetails("{}", translations)));
+    }
+
+    [Fact]
+    public void PdfAuditDetailsRenderSanitizedObjectsAndSuppressMalformedOrScalarPayloads()
+    {
+        const string participantEmail = "ada@example.org";
+        var translations = new TranslationService().GetPdfPersonalDataExportTranslations("en");
+        var invalidPayloads = new[]
+        {
+            ("malformed", "{ malformed"),
+            ("string", "\"private scalar details\""),
+            ("number", "42"),
+            ("boolean", "true"),
+            ("null", "null")
+        };
+        var invalidEvents = invalidPayloads
+            .Select((payload, index) => CreateAuditEventWithRawData(
+                index + 1,
+                $"invalid-{payload.Item1}",
+                "RefTestCompleted",
+                payload.Item2))
+            .ToArray();
+
+        var sanitizedInvalidEvents = PersonalDataExportAuditSanitizer.SanitizeHistory(
+            invalidEvents,
+            participantEmail);
+
+        Assert.Equal(invalidPayloads.Length, sanitizedInvalidEvents.Count);
+        Assert.All(sanitizedInvalidEvents, auditEvent =>
+        {
+            Assert.Null(auditEvent.Data);
+            Assert.Equal(
+                (null, translations["noDetails"]),
+                Assert.Single(PersonalDataExportPdfService.FormatAuditDetails(auditEvent.Data, translations)));
+        });
+
+        const string validObjectData =
+            """{"unmapped":{"nested":{"value":"retained value"}},"secret":"private secret"}""";
+        var sanitizedObjectEvent = Assert.Single(PersonalDataExportAuditSanitizer.SanitizeHistory(
+            [
+                CreateAuditEventWithRawData(
+                    99,
+                    "sanitized-object",
+                    "RefTestCompleted",
+                    validObjectData)
+            ],
+            participantEmail));
+
+        var sanitizedObjectData = Assert.IsType<string>(sanitizedObjectEvent.Data);
+        Assert.DoesNotContain("private secret", sanitizedObjectData, StringComparison.Ordinal);
+        var details = PersonalDataExportPdfService.FormatAuditDetails(sanitizedObjectData, translations);
+        Assert.Contains(("unmapped — nested — value", "retained value"), details);
+    }
+
+    [Fact]
+    public void OversizedSingleRefTestSplitsEventsIntoAContinuationWithoutRepeatingFields()
+    {
+        var streamId = Guid.NewGuid().ToString();
+        var refTest = new PersonalDataExportRefTestData(
+            Guid.Parse(streamId),
+            "Ada",
+            "Lovelace",
+            ParticipantEmail,
+            NumberOfQuestions: 12,
+            MaxTimeInMinutes: 30,
+            CreatedAt: Now,
+            StartedAt: null,
+            CompletedAt: null,
+            ExpiredAt: null,
+            QuestionScore: null,
+            AnswerScore: null,
+            AnswerTotal: null,
+            Percentage: null,
+            Language: "en",
+            PrivacyNoticeVersion: "v2",
+            PrivacyNoticeAcceptedAt: null,
+            ScheduledAt: null);
+        var auditEvents = Enumerable.Range(1, 4)
+            .Select(version => new PersonalDataExportAuditEventData(
+                streamId,
+                version,
+                "RefTestDetailsUpdated",
+                Now.AddMinutes(version),
+                PersonalDataExportActorKind.System,
+                string.Empty,
+                string.Empty,
+                JsonSerializer.Serialize(new { version }),
+                IsArchived: false,
+                RedactedAt: null))
+            .ToList();
+        var section = new PersonalDataExportPdfService.PdfSection(
+            refTest,
+            auditEvents,
+            IncludeStoredFields: true,
+            IsContinuation: false);
+
+        Assert.True(PersonalDataExportPdfService.TrySplit(
+            [section],
+            out var firstPart,
+            out var continuation));
+
+        var firstSection = Assert.Single(firstPart);
+        Assert.Same(refTest, firstSection.RefTest);
+        Assert.Equal(auditEvents.Take(2), firstSection.AuditEvents);
+        Assert.True(firstSection.IncludeStoredFields);
+        Assert.False(firstSection.IsContinuation);
+
+        var continuationSection = Assert.Single(continuation);
+        Assert.Same(refTest, continuationSection.RefTest);
+        Assert.Equal(auditEvents.Skip(2), continuationSection.AuditEvents);
+        Assert.False(continuationSection.IncludeStoredFields);
+        Assert.True(continuationSection.IsContinuation);
+    }
+
+    [Fact]
+    public async Task PersonalDataExportPdfGeneratesInEverySupportedLocale()
+    {
+        QuestPDF.Settings.License = LicenseType.Community;
+        var streamId = Guid.NewGuid().ToString();
+        var document = new PersonalDataExportDocumentData(
+            ParticipantEmail,
+            [
+                new PersonalDataExportRefTestData(
+                    Guid.Parse(streamId),
+                    "Ada",
+                    "Lovelace",
+                    ParticipantEmail,
+                    NumberOfQuestions: 12,
+                    MaxTimeInMinutes: 30,
+                    CreatedAt: Now,
+                    StartedAt: Now.AddMinutes(1),
+                    CompletedAt: null,
+                    ExpiredAt: null,
+                    QuestionScore: null,
+                    AnswerScore: null,
+                    AnswerTotal: null,
+                    Percentage: null,
+                    Language: "en",
+                    PrivacyNoticeVersion: "v2",
+                    PrivacyNoticeAcceptedAt: Now,
+                    ScheduledAt: null)
+            ],
+            [
+                new PersonalDataExportAuditEventData(
+                    streamId,
+                    1,
+                    "RefTestCreated",
+                    Now,
+                    PersonalDataExportActorKind.System,
+                    string.Empty,
+                    string.Empty,
+                    """{"firstName":"Ada","customField":"preserved"}""",
+                    IsArchived: false,
+                    RedactedAt: null)
+            ]);
+        var translations = new TranslationService();
+        var logoService = new NullLogoService();
+
+        foreach (var locale in new[] { "en", "nl", "fr", "de" })
+        {
+            var attachments = await new PersonalDataExportPdfService(
+                    translations,
+                    new LanguageConfiguration
+                    {
+                        DefaultPhraseLanguage = "en",
+                        EnabledLanguages = [locale]
+                    },
+                    logoService)
+                .GenerateAttachmentsAsync(document);
+
+            var pdf = Assert.Single(attachments).Content;
+            Assert.StartsWith("%PDF-", Encoding.ASCII.GetString(pdf, 0, 5));
+        }
+    }
+
+    [Fact]
     public async Task PdfPartsAreMultilingualValidAndNumberedInsteadOfTruncated()
     {
         QuestPDF.Settings.License = LicenseType.Community;
