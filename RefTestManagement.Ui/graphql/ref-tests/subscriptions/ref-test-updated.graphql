@@ -16,6 +16,7 @@ subscription RefTestUpdated($id: ID!) {
       answerTotal
       percentage
       language
+      selectedAnswerIds
     }
     ... on RefTestExpired {
       id
@@ -39,17 +40,30 @@ subscription RefTestUpdated($id: ID!) {
     ... on RefTestReset {
       id
       oldStatus
+      status
+      resetType
+      createdAt
+      invitationSent
     }
     ... on RefTestRevived {
       id
+      status
+      createdAt
+      invitationSent
     }
     ... on RefTestCreated {
       id
+      firstName
+      lastName
+      createdAt
+      scheduledAt
     }
     ... on RefTestApproved {
       id
+      oldStatus
       status
       approvedAt
+      createdAt
     }
     ... on RefTestRejected {
       id

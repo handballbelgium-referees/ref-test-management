@@ -217,6 +217,140 @@ public sealed class RefTestSubscriptionsTests
             message.Message is RefTestStartedEvent));
     }
 
+    [Fact]
+    public async Task SubscriptionPublishersIncludeTransitionStateAndKeepAnswerIdsDetailOnly()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var eventSender = new RecordingTopicEventSender();
+        var subscriptionService = new RefTestSubscriptionService(eventSender);
+        var refTestId = Guid.NewGuid();
+        var titleId = Guid.NewGuid();
+        var createdAt = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc);
+        var approvedAt = createdAt.AddMinutes(1);
+        var scheduledAt = createdAt.AddDays(1);
+        var completedAt = createdAt.AddHours(1);
+        var selectedAnswerIds = new[] { "question-1:answer-2", "question-2:answer-1" };
+
+        await subscriptionService.PublishRefTestCreatedAsync(
+            refTestId,
+            "Ada Lovelace",
+            "ada@example.org",
+            titleId,
+            "Season 2026",
+            invitationSent: false,
+            resultsSent: false,
+            sendInvitationsAutomatically: true,
+            sendResultsAutomatically: false,
+            status: RefTestStatus.Pending,
+            numberOfQuestions: 2,
+            maxTimeInMinutes: 30,
+            firstName: "Ada",
+            lastName: "Lovelace",
+            createdAt: createdAt,
+            scheduledAt: scheduledAt,
+            cancellationToken: cancellationToken);
+        await subscriptionService.PublishRefTestApprovedAsync(
+            refTestId, RefTestStatus.Rejected, RefTestStatus.Pending, approvedAt, createdAt,
+            cancellationToken);
+        await subscriptionService.PublishRefTestResetAsync(
+            refTestId,
+            RefTestStatus.Completed,
+            RefTestResetType.Hard,
+            RefTestStatus.Pending,
+            createdAt,
+            invitationSent: false,
+            cancellationToken: cancellationToken);
+        await subscriptionService.PublishRefTestRevivedAsync(
+            refTestId, RefTestStatus.Pending, createdAt, invitationSent: false, cancellationToken);
+        await subscriptionService.PublishRefTestCompletedAsync(
+            refTestId,
+            RefTestStatus.Completed,
+            completedAt,
+            questionScore: 1,
+            questionTotal: 2,
+            answerScore: 2,
+            answerTotal: 3,
+            percentage: 50,
+            language: "en",
+            selectedAnswerIds: selectedAnswerIds,
+            cancellationToken: cancellationToken);
+
+        var created = Assert.IsType<RefTestCreatedEvent>(eventSender.Messages.Single(message =>
+            message.Topic == RefTestSubscriptionService.GlobalTopic &&
+            message.Message is RefTestCreatedEvent).Message);
+        Assert.Equal("Ada", created.FirstName);
+        Assert.Equal("Lovelace", created.LastName);
+        Assert.Equal(createdAt, created.CreatedAt);
+        Assert.Equal(scheduledAt, created.ScheduledAt);
+
+        var approved = Assert.IsType<RefTestApprovedEvent>(eventSender.Messages.Single(message =>
+            message.Topic == RefTestSubscriptionService.GlobalTopic &&
+            message.Message is RefTestApprovedEvent).Message);
+        Assert.Equal(RefTestStatus.Rejected, approved.OldStatus);
+        Assert.Equal(createdAt, approved.CreatedAt);
+
+        var reset = Assert.IsType<RefTestResetEvent>(eventSender.Messages.Single(message =>
+            message.Topic == RefTestSubscriptionService.GlobalTopic &&
+            message.Message is RefTestResetEvent).Message);
+        Assert.Equal(RefTestResetType.Hard, reset.ResetType);
+        Assert.Equal(RefTestStatus.Pending, reset.Status);
+        Assert.Equal(createdAt, reset.CreatedAt);
+        Assert.False(reset.InvitationSent);
+
+        var revived = Assert.IsType<RefTestRevivedEvent>(eventSender.Messages.Single(message =>
+            message.Topic == RefTestSubscriptionService.GlobalTopic &&
+            message.Message is RefTestRevivedEvent).Message);
+        Assert.Equal(createdAt, revived.CreatedAt);
+        Assert.False(revived.InvitationSent);
+
+        var detailCompletion = Assert.IsType<RefTestCompletedEvent>(eventSender.Messages.Single(message =>
+            message.Topic == refTestId.ToString() &&
+            message.Message is RefTestCompletedEvent).Message);
+        var listCompletion = Assert.IsType<RefTestCompletedEvent>(eventSender.Messages.Single(message =>
+            message.Topic == RefTestSubscriptionService.GlobalTopic &&
+            message.Message is RefTestCompletedEvent).Message);
+        Assert.Equal(selectedAnswerIds, detailCompletion.SelectedAnswerIds);
+        Assert.Null(listCompletion.SelectedAnswerIds);
+
+        using var authorizationProvider = CreateAuthorizationProvider();
+        var authorizationService = authorizationProvider.GetRequiredService<IAuthorizationService>();
+        var permissionSnapshotService = new FakePermissionSnapshotService(
+            PermissionSet(Permissions.RefTests.ViewDetail),
+            PermissionSet(Permissions.RefTests.ViewList));
+        var user = AuthenticatedUser();
+        var detailEvent = Assert.IsType<RefTestCompleted>(await RefTestSubscriptions.RefTestUpdated(
+            refTestId,
+            detailCompletion,
+            user,
+            permissionSnapshotService,
+            authorizationService,
+            cancellationToken));
+        var listEvent = Assert.IsType<RefTestCompleted>(await RefTestSubscriptions.RefTestsUpdated(
+            listCompletion,
+            user,
+            permissionSnapshotService,
+            authorizationService,
+            cancellationToken));
+        Assert.Equal(selectedAnswerIds, detailEvent.SelectedAnswerIds);
+        Assert.Null(listEvent.SelectedAnswerIds);
+
+        var approvedDetailEvent = Assert.IsType<RefTestApproved>(await RefTestSubscriptions.RefTestUpdated(
+            refTestId,
+            approved,
+            user,
+            new FakePermissionSnapshotService(PermissionSet(Permissions.RefTests.ViewDetail)),
+            authorizationService,
+            cancellationToken));
+        var approvedListEvent = Assert.IsType<RefTestApproved>(await RefTestSubscriptions.RefTestsUpdated(
+            approved,
+            user,
+            new FakePermissionSnapshotService(PermissionSet(Permissions.RefTests.ViewList)),
+            authorizationService,
+            cancellationToken));
+        Assert.Equal(RefTestStatus.Rejected, approvedDetailEvent.OldStatus);
+        Assert.Equal(RefTestStatus.Rejected, approvedListEvent.OldStatus);
+    }
+
     private static RefTest NewRefTest(Guid titleId) =>
         RefTest.Create(
             titleId,

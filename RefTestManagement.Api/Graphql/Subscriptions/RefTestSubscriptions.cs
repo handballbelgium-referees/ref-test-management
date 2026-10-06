@@ -65,16 +65,22 @@ public static partial class RefTestSubscriptions
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
             RefTestCompletedEvent e => new RefTestCompleted(e.Id, e.Status, e.CompletedAt, e.QuestionScore,
-                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage, e.Language),
+                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage, e.Language, e.SelectedAnswerIds),
             RefTestExpiredEvent e => new RefTestExpired(e.Id, e.Status, e.ExpiredAt),
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
             RefTestDeletedEvent e => new RefTestDeleted(e.Id, e.Status),
             RefTestAnonymizedEvent e => new RefTestAnonymized(e.Id, e.Status, e.FullName, e.Email),
-            RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
-            RefTestRevivedEvent e => new RefTestRevived(e.Id),
-            RefTestCreatedEvent e => new RefTestCreated(e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent, e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions, e.MaxTimeInMinutes),
-            RefTestApprovedEvent e => new RefTestApproved(e.Id, e.Status, e.ApprovedAt),
+            RefTestResetEvent e => new RefTestReset(
+                e.Id, e.OldStatus, e.Status, e.ResetType, e.CreatedAt, e.InvitationSent),
+            RefTestRevivedEvent e => new RefTestRevived(
+                e.Id, e.Status, e.CreatedAt, e.InvitationSent),
+            RefTestCreatedEvent e => new RefTestCreated(
+                e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent,
+                e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions,
+                e.MaxTimeInMinutes, e.FirstName, e.LastName, e.CreatedAt, e.ScheduledAt),
+            RefTestApprovedEvent e => new RefTestApproved(
+                e.Id, e.OldStatus, e.Status, e.ApprovedAt, e.CreatedAt),
             RefTestRejectedEvent e => new RefTestRejected(e.Id, e.Status, e.Reason, e.RejectedAt),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };
@@ -109,16 +115,22 @@ public static partial class RefTestSubscriptions
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
             RefTestCompletedEvent e => new RefTestCompleted(e.Id, e.Status, e.CompletedAt, e.QuestionScore,
-                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage, e.Language),
+                e.QuestionTotal, e.AnswerScore, e.AnswerTotal, e.Percentage, e.Language, null),
             RefTestExpiredEvent e => new RefTestExpired(e.Id, e.Status, e.ExpiredAt),
             RefTestInvitationSentEvent e => new RefTestInvitationSent(e.Id, e.SentAt),
             RefTestResultSentEvent e => new RefTestResultSent(e.Id, e.SentAt),
             RefTestDeletedEvent e => new RefTestDeleted(e.Id, e.Status),
             RefTestAnonymizedEvent e => new RefTestAnonymized(e.Id, e.Status, e.FullName, e.Email),
-            RefTestResetEvent e => new RefTestReset(e.Id, e.OldStatus),
-            RefTestRevivedEvent e => new RefTestRevived(e.Id),
-            RefTestCreatedEvent e => new RefTestCreated(e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent, e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions, e.MaxTimeInMinutes),
-            RefTestApprovedEvent e => new RefTestApproved(e.Id, e.Status, e.ApprovedAt),
+            RefTestResetEvent e => new RefTestReset(
+                e.Id, e.OldStatus, e.Status, e.ResetType, e.CreatedAt, e.InvitationSent),
+            RefTestRevivedEvent e => new RefTestRevived(
+                e.Id, e.Status, e.CreatedAt, e.InvitationSent),
+            RefTestCreatedEvent e => new RefTestCreated(
+                e.Id, e.FullName, e.Email, e.TitleId, e.TitleValue, e.InvitationSent, e.ResultsSent,
+                e.SendInvitationsAutomatically, e.SendResultsAutomatically, e.Status, e.NumberOfQuestions,
+                e.MaxTimeInMinutes, e.FirstName, e.LastName, e.CreatedAt, e.ScheduledAt),
+            RefTestApprovedEvent e => new RefTestApproved(
+                e.Id, e.OldStatus, e.Status, e.ApprovedAt, e.CreatedAt),
             RefTestRejectedEvent e => new RefTestRejected(e.Id, e.Status, e.Reason, e.RejectedAt),
             _ => throw new InvalidOperationException($"Unknown event type: {message.GetType().Name}")
         };

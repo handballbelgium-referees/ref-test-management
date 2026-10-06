@@ -9,14 +9,26 @@ using Microsoft.AspNetCore.Mvc;
 namespace Handball.Belgium.RefTestManagement.Api.Controllers;
 
 [Route("[controller]")]
-public class AccountController(IPermissionSnapshotService permissionSnapshotService) : Controller
+public class AccountController(
+    IPermissionSnapshotService permissionSnapshotService,
+    IHostEnvironment hostEnvironment) : Controller
 {
     [HttpGet("Login")]
     public Task Login(string returnUrl = "/")
     {
-        if (!Url.IsLocalUrl(returnUrl)) returnUrl = "/";
+        if (!Url.IsLocalUrl(returnUrl) && !IsLocalDevelopmentUiUrl(returnUrl)) returnUrl = "/";
 
         return HttpContext.ChallengeAsync("Auth0", new AuthenticationProperties { RedirectUri = returnUrl });
+    }
+
+    private bool IsLocalDevelopmentUiUrl(string returnUrl)
+    {
+        return hostEnvironment.IsDevelopment()
+            && Uri.TryCreate(returnUrl, UriKind.Absolute, out var uri)
+            && uri.Scheme == Uri.UriSchemeHttp
+            && uri.Host.Equals("localhost", StringComparison.OrdinalIgnoreCase)
+            && uri.Port == 4200
+            && uri.UserInfo.Length == 0;
     }
     
     [Authorize]

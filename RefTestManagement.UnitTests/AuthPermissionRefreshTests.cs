@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -180,7 +181,9 @@ public sealed class AuthPermissionRefreshTests
 
     private static AccountController CreateAccountController(IPermissionSnapshotService snapshotService)
     {
-        var controller = new AccountController(snapshotService)
+        var environment = Host.CreateApplicationBuilder().Environment;
+        environment.EnvironmentName = Environments.Production;
+        var controller = new AccountController(snapshotService, environment)
         {
             ControllerContext = new ControllerContext
             {

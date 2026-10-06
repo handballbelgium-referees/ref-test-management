@@ -31,7 +31,8 @@ public record RefTestCompleted(
     int AnswerScore,
     int AnswerTotal,
     double Percentage,
-    string Language) : IRefTestEvent;
+    string Language,
+    IReadOnlyList<string>? SelectedAnswerIds) : IRefTestEvent;
 
 [ObjectType]
 public record RefTestExpired([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, DateTime ExpiredAt) : IRefTestEvent;
@@ -47,10 +48,20 @@ public record RefTestAnonymized(
     string Email) : IRefTestEvent;
 
 [ObjectType]
-public record RefTestReset([property: ID<RefTestDto>] Guid Id, RefTestStatus OldStatus) : IRefTestEvent;
+public record RefTestReset(
+    [property: ID<RefTestDto>] Guid Id,
+    RefTestStatus OldStatus,
+    RefTestStatus Status,
+    RefTestResetType ResetType,
+    DateTime CreatedAt,
+    bool InvitationSent) : IRefTestEvent;
 
 [ObjectType]
-public record RefTestRevived([property: ID<RefTestDto>] Guid Id) : IRefTestEvent;
+public record RefTestRevived(
+    [property: ID<RefTestDto>] Guid Id,
+    RefTestStatus Status,
+    DateTime CreatedAt,
+    bool InvitationSent) : IRefTestEvent;
 
 [ObjectType]
 public record RefTestCreated(
@@ -65,10 +76,19 @@ public record RefTestCreated(
     bool SendResultsAutomatically,
     RefTestStatus Status,
     int NumberOfQuestions,
-    int MaxTimeInMinutes) : IRefTestEvent;
+    int MaxTimeInMinutes,
+    string FirstName,
+    string LastName,
+    DateTime CreatedAt,
+    DateTime? ScheduledAt) : IRefTestEvent;
 
 [ObjectType]
-public record RefTestApproved([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, DateTime ApprovedAt) : IRefTestEvent;
+public record RefTestApproved(
+    [property: ID<RefTestDto>] Guid Id,
+    RefTestStatus OldStatus,
+    RefTestStatus Status,
+    DateTime ApprovedAt,
+    DateTime CreatedAt) : IRefTestEvent;
 
 [ObjectType]
 public record RefTestRejected([property: ID<RefTestDto>] Guid Id, RefTestStatus Status, string Reason, DateTime RejectedAt) : IRefTestEvent;

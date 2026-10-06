@@ -361,6 +361,7 @@ public static partial class RefTestLifecycleMutations
             refTest.AnswerTotal ?? 0,
             refTest.Percentage ?? 0,
             language ?? "",
+            refTest.SelectedAnswerIds,
             cancellationToken);
 
         return refTest;

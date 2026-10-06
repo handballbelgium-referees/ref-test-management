@@ -1,18 +1,15 @@
-import { computed, DestroyRef, inject, Service, Signal } from '@angular/core';
+import { computed, DestroyRef, ErrorHandler, inject, Service, Signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { ApolloCache, ApolloClient, ApolloLink } from '@apollo/client';
+import { ApolloClient } from '@apollo/client';
 import { Apollo } from 'apollo-angular';
-import { catchError, EMPTY, map, switchMap, tap } from 'rxjs';
+import { catchError, EMPTY, map, Observable, switchMap, tap } from 'rxjs';
 import {
   ApproveRefTestsGQL,
   DeleteRefTestsGQL,
-  DeleteRefTestsMutation,
   GetRefTestsAllCountsGQL,
-  GetRefTestsAllCountsQuery,
   GetRefTestsGQL,
   GetRefTestsQuery,
   RefTestResetType,
-  RefTestStatus,
   RefTestsUpdatedGQL,
   RejectRefTestsGQL,
   ResetRefTestsGQL,
@@ -21,42 +18,24 @@ import {
   SendRefTestResultsGQL,
   SendReportGQL,
 } from '../../../../graphql/generated';
-import {
-  decrement,
-  increment,
-  MutationCallbacks,
-  runMutation,
-} from '../../shared/utils/apollo-utils';
+import { MutationCallbacks, runMutation } from '../../shared/utils/apollo-utils';
 import { REF_TEST_CONFIG } from '../list/services/constants';
 import { RefTestFilterState } from '../list/services/ref-test-filter-state';
 import { RefTestQueryBuilder } from '../list/services/ref-test-query-builder';
 import { IReportResult } from '../list/services/types';
-
-/* -------------------------------------------------------------------------- */
-/* Types                                                                      */
-/* -------------------------------------------------------------------------- */
-
-type DeletionCounts = {
-  total: number;
-  pending: number;
-  inProgress: number;
-  completed: number;
-  expired: number;
-  pendingApproval: number;
-  rejected: number;
-};
+import { RefTestCacheUpdater } from './ref-test-cache-updater';
 
 /* -------------------------------------------------------------------------- */
 /* Service                                                                    */
 /* -------------------------------------------------------------------------- */
 
+/** Facade for RefTest list state, queries, pagination, and mutations. */
 @Service()
 export class RefTestData {
   private readonly _apollo = inject(Apollo);
+  private readonly _errorHandler = inject(ErrorHandler);
   private readonly _getRefTestsGQL = inject(GetRefTestsGQL);
-  /** IDs of deletes initiated by this client that haven't yet been confirmed by the mutation response.
-   * Used to suppress the subscription event so the mutation callback is the sole handler. */
-  private readonly _pendingDeleteIds = new Set<string>();
+  private readonly _cacheUpdater = inject(RefTestCacheUpdater);
   private readonly _getRefTestsAllCountsGQL = inject(GetRefTestsAllCountsGQL);
   private readonly _deleteRefTestsGQL = inject(DeleteRefTestsGQL);
   private readonly _sendInvitationsGQL = inject(SendRefTestInvitationsGQL);
@@ -69,6 +48,7 @@ export class RefTestData {
   private readonly _refTestsUpdatedGQL = inject(RefTestsUpdatedGQL);
   private readonly _filterState = inject(RefTestFilterState);
   private readonly _queryBuilder = inject(RefTestQueryBuilder);
+  private readonly _destroyRef = inject(DestroyRef);
 
   /* ------------------------------------------------------------------------ */
   /* Queries                                                                  */
@@ -81,11 +61,19 @@ export class RefTestData {
       where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
       order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
     },
+    notifyOnNetworkStatusChange: true,
   });
 
   private readonly _countsQueryRef = this._getRefTestsAllCountsGQL.watch({
-    variables: this.buildCountsVariables(),
+    variables: this._cacheUpdater.buildCountsVariables(),
+    notifyOnNetworkStatusChange: true,
   });
+
+  constructor() {
+    this._cacheUpdater.refreshRequests
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe((refresh) => this.refreshActiveQueries(refresh));
+  }
 
   readonly queryResult = toSignal(
     toObservable(this._filterState.filter).pipe(
@@ -96,7 +84,10 @@ export class RefTestData {
           where: this._queryBuilder.buildWhereFilter(filter),
           order: this._queryBuilder.buildOrderClause(filter),
         });
-        return this._queryRef.valueChanges;
+        return this._queryRef.valueChanges.pipe(
+          tap((result) => this._cacheUpdater.setListQueryLoading(result.loading)),
+          tap(() => this._cacheUpdater.replayPendingEvents()),
+        );
       }),
     ),
   );
@@ -131,8 +122,11 @@ export class RefTestData {
   readonly statusCounts = toSignal(
     toObservable(this._filterState.filter).pipe(
       switchMap(() => {
-        this._countsQueryRef.setVariables(this.buildCountsVariables());
-        return this._countsQueryRef.valueChanges;
+        this._countsQueryRef.setVariables(this._cacheUpdater.buildCountsVariables());
+        return this._countsQueryRef.valueChanges.pipe(
+          tap((result) => this._cacheUpdater.setCountsQueryLoading(result.loading)),
+          tap(() => this._cacheUpdater.replayPendingEvents()),
+        );
       }),
       map((r) => ({
         all: r.data?.all?.totalCount ?? 0,
@@ -161,15 +155,17 @@ export class RefTestData {
   /* Pagination / Reset                                                       */
   /* ------------------------------------------------------------------------ */
 
-  fetchMore(): Promise<ApolloClient.QueryResult<GetRefTestsQuery>> {
-    return this._queryRef.fetchMore({
-      variables: {
-        first: this._filterState.filter().pagingInfo.first,
-        after: this.queryResult()?.data?.refTests?.pageInfo?.endCursor,
-        where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
-        order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
-      },
-    });
+  fetchMore(): Observable<ApolloClient.QueryResult<GetRefTestsQuery>> {
+    return this._cacheUpdater.trackListRead(() =>
+      this._queryRef.fetchMore({
+        variables: {
+          first: this._filterState.filter().pagingInfo.first,
+          after: this.queryResult()?.data?.refTests?.pageInfo?.endCursor,
+          where: this._queryBuilder.buildWhereFilter(this._filterState.filter()),
+          order: this._queryBuilder.buildOrderClause(this._filterState.filter()),
+        },
+      }),
+    );
   }
 
   reset(): void {
@@ -177,8 +173,25 @@ export class RefTestData {
     // so every tab fetches fresh data on next visit.
     this._apollo.client.cache.evict({ id: 'ROOT_QUERY', fieldName: 'refTests' });
     this._apollo.client.cache.gc();
-    this._queryRef.refetch();
-    this._countsQueryRef.refetch();
+    this.refreshActiveQueries({ lists: true, counts: true });
+  }
+
+  private refreshActiveQueries(refresh: { lists: boolean; counts: boolean }): void {
+    if (refresh.lists) {
+      this._cacheUpdater.trackListRead(() => this._queryRef.refetch()).subscribe({
+        error: (error: unknown) => this._errorHandler.handleError(error),
+      });
+    }
+    if (refresh.counts) {
+      this._cacheUpdater.trackCountsRead(() => this._countsQueryRef.refetch()).subscribe({
+        error: (error: unknown) => this._errorHandler.handleError(error),
+      });
+    }
+  }
+
+  private syncQueryLoadingState(): void {
+    this._cacheUpdater.setListQueryLoading(this._queryRef.getCurrentResult().loading);
+    this._cacheUpdater.setCountsQueryLoading(this._countsQueryRef.getCurrentResult().loading);
   }
 
   /* ------------------------------------------------------------------------ */
@@ -193,14 +206,25 @@ export class RefTestData {
     // Register IDs before the mutation fires so the subscription handler knows to skip
     // them — whichever arrives first (SSE vs mutation response), the mutation callback
     // is the sole handler for self-initiated deletes.
-    for (const id of ids) this._pendingDeleteIds.add(id);
+    this._cacheUpdater.markPendingDeletes(ids);
+    const deleteCallbacks: MutationCallbacks<string[]> = {
+      ...callbacks,
+      onError: (error) => {
+        this._cacheUpdater.clearPendingDeletes(ids);
+        callbacks.onError?.(error);
+      },
+      onComplete: () => {
+        this._cacheUpdater.clearPendingDeletes(ids);
+        callbacks.onComplete?.();
+      },
+    };
     return runMutation(
       this._deleteRefTestsGQL.mutate({
         variables: { input: { ids } },
-        update: this.updateDeleteCache.bind(this),
+        update: this._cacheUpdater.updateDeleteCache.bind(this._cacheUpdater),
       }),
       destroyRef,
-      callbacks,
+      deleteCallbacks,
       (r) => r.data?.deleteRefTests?.deleteRefTestsResult?.deletedRefTests.map((d) => d.id) ?? [],
     );
   }
@@ -259,12 +283,15 @@ export class RefTestData {
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    const transition = this._cacheUpdater.beginTransition('RefTestReset', input.ids);
     return runMutation(
       this._resetRefTestsGQL.mutate({
         variables: { input },
+        update: (_, { data }) =>
+          transition.confirm(data?.resetRefTests?.resetRefTestsResult?.resetRefTests),
       }),
       destroyRef,
-      callbacks,
+      transition.cancelOnError(callbacks),
       (r) => {
         const res = r.data?.resetRefTests?.resetRefTestsResult;
         return {
@@ -280,10 +307,15 @@ export class RefTestData {
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    const transition = this._cacheUpdater.beginTransition('RefTestRevived', ids);
     return runMutation(
-      this._reviveRefTestsGQL.mutate({ variables: { input: { ids } } }),
+      this._reviveRefTestsGQL.mutate({
+        variables: { input: { ids } },
+        update: (_, { data }) =>
+          transition.confirm(data?.reviveRefTests?.reviveRefTestsResult?.revivedRefTests),
+      }),
       destroyRef,
-      callbacks,
+      transition.cancelOnError(callbacks),
       (r) => {
         const res = r.data?.reviveRefTests?.reviveRefTestsResult;
         return {
@@ -299,10 +331,15 @@ export class RefTestData {
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    const transition = this._cacheUpdater.beginTransition('RefTestApproved', ids);
     return runMutation(
-      this._approveRefTestsGQL.mutate({ variables: { input: { ids } } }),
+      this._approveRefTestsGQL.mutate({
+        variables: { input: { ids } },
+        update: (_, { data }) =>
+          transition.confirm(data?.approveRefTests?.approveRefTestsResult?.approvedRefTests),
+      }),
       destroyRef,
-      callbacks,
+      transition.cancelOnError(callbacks),
       (r) => {
         const res = r.data?.approveRefTests?.approveRefTestsResult;
         return {
@@ -319,10 +356,15 @@ export class RefTestData {
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    const transition = this._cacheUpdater.beginTransition('RefTestRejected', ids);
     return runMutation(
-      this._rejectRefTestsGQL.mutate({ variables: { input: { ids, reason } } }),
+      this._rejectRefTestsGQL.mutate({
+        variables: { input: { ids, reason } },
+        update: (_, { data }) =>
+          transition.confirm(data?.rejectRefTests?.rejectRefTestsResult?.rejectedRefTests),
+      }),
       destroyRef,
-      callbacks,
+      transition.cancelOnError(callbacks),
       (r) => {
         const res = r.data?.rejectRefTests?.rejectRefTestsResult;
         return {
@@ -334,74 +376,7 @@ export class RefTestData {
   }
 
   /* ------------------------------------------------------------------------ */
-  /* Delete Cache Logic                                                       */
-  /* ------------------------------------------------------------------------ */
-
-  private updateDeleteCache(
-    cache: ApolloCache,
-    { data }: ApolloLink.Result<DeleteRefTestsMutation>,
-  ): void {
-    const deleted = data?.deleteRefTests?.deleteRefTestsResult?.deletedRefTests ?? [];
-
-    if (!deleted.length) return;
-
-    // Clear pending tracking so the subscription handler knows these are done.
-    for (const d of deleted) this._pendingDeleteIds.delete(d.id);
-
-    const counts = this.countDeletionsByStatus(deleted);
-    this.updateCountsCache(cache, counts);
-    this.removeFromAllCachedStatusLists(deleted);
-  }
-
-  private countDeletionsByStatus(deleted: Array<{ status: RefTestStatus }>): DeletionCounts {
-    return deleted.reduce(
-      (acc, { status }) => {
-        acc.total++;
-        if (status === 'PENDING') acc.pending++;
-        else if (status === 'IN_PROGRESS') acc.inProgress++;
-        else if (status === 'COMPLETED') acc.completed++;
-        else if (status === 'EXPIRED') acc.expired++;
-        else if (status === 'PENDING_APPROVAL') acc.pendingApproval++;
-        else if (status === 'REJECTED') acc.rejected++;
-        return acc;
-      },
-      {
-        total: 0,
-        pending: 0,
-        inProgress: 0,
-        completed: 0,
-        expired: 0,
-        pendingApproval: 0,
-        rejected: 0,
-      },
-    );
-  }
-
-  private updateCountsCache(cache: ApolloCache, counts: DeletionCounts): void {
-    const prev = cache.readQuery<GetRefTestsAllCountsQuery>({
-      query: this._getRefTestsAllCountsGQL.document,
-      variables: this._countsQueryRef.variables,
-    });
-
-    if (!prev) return;
-
-    cache.writeQuery({
-      query: this._getRefTestsAllCountsGQL.document,
-      variables: this._countsQueryRef.variables,
-      data: {
-        all: decrement(prev.all, counts.total),
-        pending: decrement(prev.pending, counts.pending),
-        inProgress: decrement(prev.inProgress, counts.inProgress),
-        completed: decrement(prev.completed, counts.completed),
-        expired: decrement(prev.expired, counts.expired),
-        pendingApproval: decrement(prev.pendingApproval, counts.pendingApproval),
-        rejected: decrement(prev.rejected, counts.rejected),
-      },
-    });
-  }
-
-  /* ------------------------------------------------------------------------ */
-  /* Subscription + Cache Updates                                             */
+  /* List subscription                                                        */
   /* ------------------------------------------------------------------------ */
 
   public subscribeToRefTestUpdates(destroyRef: DestroyRef): void {
@@ -411,524 +386,13 @@ export class RefTestData {
         map((r) => r.data?.refTestsUpdated),
         tap((event) => {
           if (!event) return;
-
-          switch (event.__typename) {
-            case 'RefTestStarted':
-              this.moveRefTestBetweenStatusLists(
-                event.id,
-                { status: event.status, startedAt: event.startedAt },
-                'PENDING',
-                'IN_PROGRESS',
-              );
-              this.updateStatusCounts('PENDING', 'IN_PROGRESS');
-              break;
-
-            case 'RefTestCompleted':
-              this.moveRefTestBetweenStatusLists(
-                event.id,
-                {
-                  status: event.status,
-                  completedAt: event.completedAt,
-                  questionScore: event.questionScore,
-                  questionTotal: event.questionTotal,
-                  answerScore: event.answerScore,
-                  answerTotal: event.answerTotal,
-                  percentage: event.percentage,
-                  language: event.language,
-                },
-                'IN_PROGRESS',
-                'COMPLETED',
-              );
-              this.updateStatusCounts('IN_PROGRESS', 'COMPLETED');
-              break;
-
-            case 'RefTestExpired':
-              this.moveRefTestBetweenStatusLists(
-                event.id,
-                { status: event.status },
-                'PENDING',
-                'EXPIRED',
-              );
-              this.updateStatusCounts('PENDING', 'EXPIRED');
-              break;
-
-            case 'RefTestReset': {
-              const oldStatus = event.oldStatus;
-              this.moveRefTestBetweenStatusLists(
-                event.id,
-                {
-                  status: 'PENDING',
-                  startedAt: null,
-                  completedAt: null,
-                  questionScore: null,
-                  questionTotal: null,
-                  answerScore: null,
-                  answerTotal: null,
-                  percentage: null,
-                  resultsSent: false,
-                },
-                oldStatus,
-                'PENDING',
-              );
-              this.updateStatusCounts(oldStatus, 'PENDING');
-              break;
-            }
-
-            case 'RefTestRevived':
-              this.moveRefTestBetweenStatusLists(
-                event.id,
-                {
-                  status: 'PENDING',
-                  invitationSent: false,
-                },
-                'EXPIRED',
-                'PENDING',
-              );
-              this.updateStatusCounts('EXPIRED', 'PENDING');
-              break;
-
-            case 'RefTestApproved':
-              this.moveRefTestBetweenStatusLists(
-                event.id,
-                { status: event.status },
-                'PENDING_APPROVAL',
-                'PENDING',
-              );
-              this.updateStatusCounts('PENDING_APPROVAL', 'PENDING');
-              break;
-
-            case 'RefTestRejected':
-              this.moveRefTestBetweenStatusLists(
-                event.id,
-                { status: event.status, rejectionReason: event.reason },
-                'PENDING_APPROVAL',
-                'REJECTED',
-              );
-              this.updateStatusCounts('PENDING_APPROVAL', 'REJECTED');
-              break;
-
-            case 'RefTestCreated': {
-              // We now receive the full node data in the subscription event, so we can
-              // insert the new item directly into the ALL and PENDING/PENDING_APPROVAL cached lists
-              // without evicting or triggering any network request.
-              const createdEvent = event;
-              const node = {
-                __typename: 'RefTest',
-                id: createdEvent.id,
-                name: createdEvent.name,
-                email: createdEvent.email,
-                title:
-                  createdEvent.titleId != null
-                    ? {
-                        __typename: 'RefTestTitleDto',
-                        id: createdEvent.titleId,
-                        value: createdEvent.titleValue ?? '',
-                      }
-                    : null,
-                invitationSent: createdEvent.invitationSent,
-                resultsSent: createdEvent.resultsSent,
-                sendInvitationsAutomatically: createdEvent.sendInvitationsAutomatically,
-                sendResultsAutomatically: createdEvent.sendResultsAutomatically,
-                status: createdEvent.status,
-                numberOfQuestions: createdEvent.numberOfQuestions,
-                maxTimeInMinutes: createdEvent.maxTimeInMinutes,
-                startedAt: null,
-                completedAt: null,
-                questionScore: null,
-                answerScore: null,
-                questionTotal: null,
-                answerTotal: null,
-                percentage: null,
-              };
-              // Determine the initial status list
-              const createdStatus = (createdEvent.status as RefTestStatus) ?? 'PENDING';
-              const targetStatus: RefTestStatus =
-                createdStatus === 'PENDING_APPROVAL' ? 'PENDING_APPROVAL' : 'PENDING';
-              this.addEdgeToCachedList(node as any, '', targetStatus);
-              // Add to ALL list (undefined = no status filter)
-              this.addEdgeToCachedList(node as any, '', undefined);
-              // Increment tab counters
-              this.updateStatusCounts(undefined, targetStatus, true);
-              break;
-            }
-
-            case 'RefTestDeleted': {
-              // If this client initiated the delete, the mutation update callback is the
-              // sole handler (regardless of SSE/response ordering). Skip here to avoid
-              // a double-decrement when the SSE arrives before the mutation response.
-              if (this._pendingDeleteIds.has(event.id)) break;
-
-              // Remote delete — remove from cache and decrement counts only if the
-              // item was actually present (avoids processing the same event twice).
-              const removed = this.removeFromAllCachedStatusLists([
-                { id: event.id, status: event.status },
-              ]);
-              if (removed > 0) {
-                this.decrementCountsForDelete(event.status);
-              }
-              break;
-            }
-
-            case 'RefTestInvitationSent': {
-              const entityId = this._apollo.client.cache.identify({
-                __typename: 'RefTest',
-                id: event.id,
-              });
-              if (entityId)
-                this._apollo.client.cache.modify({
-                  id: entityId,
-                  fields: { invitationSent: () => true },
-                });
-              break;
-            }
-
-            case 'RefTestResultSent': {
-              const entityId = this._apollo.client.cache.identify({
-                __typename: 'RefTest',
-                id: event.id,
-              });
-              if (entityId)
-                this._apollo.client.cache.modify({
-                  id: entityId,
-                  fields: { resultsSent: () => true },
-                });
-              break;
-            }
-
-            case 'RefTestAnonymized': {
-              // The RefTest record stays (in redacted form) rather than being removed, so we
-              // just patch the normalized entity in place — no status/list movement needed.
-              const entityId = this._apollo.client.cache.identify({
-                __typename: 'RefTest',
-                id: event.id,
-              });
-              if (entityId)
-                this._apollo.client.cache.modify({
-                  id: entityId,
-                  fields: {
-                    isAnonymized: () => true,
-                    name: () => event.name,
-                    email: () => event.email,
-                  },
-                });
-              break;
-            }
-          }
+          this.syncQueryLoadingState();
+          this._cacheUpdater.replayPendingEvents();
+          this._cacheUpdater.updateCacheFromSubscription(event, undefined, 'list');
         }),
         catchError(() => EMPTY),
         takeUntilDestroyed(destroyRef),
       )
       .subscribe();
-  }
-
-  /* ------------------------------------------------------------------------ */
-  /* Cache Helpers — List Manipulation                                        */
-  /* ------------------------------------------------------------------------ */
-
-  private buildListVariables(status: RefTestStatus | undefined) {
-    const filter = this._filterState.filter();
-    const base = this._queryBuilder.buildWhereFilter(filter, { excludeStatus: true });
-    const where = status ? this._queryBuilder.mergeFilters(base, { status: { eq: status } }) : base;
-    return {
-      first: filter.pagingInfo.first,
-      where,
-      order: this._queryBuilder.buildOrderClause(filter),
-    };
-  }
-
-  private readCachedList(status: RefTestStatus | undefined): GetRefTestsQuery | null {
-    return (this._apollo.client.cache as ApolloCache).readQuery<GetRefTestsQuery>({
-      query: this._getRefTestsGQL.document,
-      variables: this.buildListVariables(status),
-    });
-  }
-
-  private writeCachedList(status: RefTestStatus | undefined, data: GetRefTestsQuery): void {
-    (this._apollo.client.cache as ApolloCache).writeQuery({
-      query: this._getRefTestsGQL.document,
-      variables: this.buildListVariables(status),
-      data,
-    });
-  }
-
-  /**
-   * Removes edges by ID from a specific status-filtered cached list (or the All list when status is undefined).
-   * Also updates totalCount. Returns the number of edges actually removed.
-   */
-  private removeEdgesFromCachedList(
-    ids: ReadonlySet<string>,
-    status: RefTestStatus | undefined,
-  ): number {
-    const prev = this.readCachedList(status);
-    if (!prev?.refTests?.edges) return 0;
-
-    const newEdges = prev.refTests.edges.filter((e) => !ids.has(e?.node?.id ?? ''));
-    const removed = prev.refTests.edges.length - newEdges.length;
-    if (removed === 0) return 0;
-
-    this.writeCachedList(status, {
-      ...prev,
-      refTests: {
-        ...prev.refTests,
-        edges: newEdges,
-        totalCount: prev.refTests.totalCount - removed,
-      },
-    });
-    return removed;
-  }
-
-  /**
-   * Removes deleted items from the All list and each status-specific list.
-   * Returns the total number of edges actually removed across all lists.
-   */
-  private removeFromAllCachedStatusLists(
-    deletedItems: ReadonlyArray<{ id: string; status: RefTestStatus }>,
-  ): number {
-    const allIds = new Set(deletedItems.map((d) => d.id));
-    let totalRemoved = 0;
-
-    // Remove from All list (no status filter)
-    totalRemoved += this.removeEdgesFromCachedList(allIds, undefined);
-
-    // Remove from each relevant status-specific list
-    const byStatus = new Map<RefTestStatus, Set<string>>();
-    for (const { id, status } of deletedItems) {
-      const set = byStatus.get(status) ?? new Set<string>();
-      set.add(id);
-      byStatus.set(status, set);
-    }
-    for (const [status, ids] of byStatus) {
-      totalRemoved += this.removeEdgesFromCachedList(ids, status);
-    }
-
-    return totalRemoved;
-  }
-
-  /**
-   * Removes a single edge from a specific cached list (or All list) and decrements totalCount.
-   */
-  private removeEdgeFromCachedList(id: string, status: RefTestStatus | undefined): void {
-    this.removeEdgesFromCachedList(new Set([id]), status);
-  }
-
-  /**
-   * Appends an updated edge to a cached list if the list exists in cache and the item isn't already there.
-   * Also increments totalCount.
-   */
-  private addEdgeToCachedList(
-    updatedNode: NonNullable<
-      NonNullable<NonNullable<GetRefTestsQuery['refTests']>['edges']>[number]
-    >['node'],
-    cursor: string,
-    status: RefTestStatus | undefined,
-  ): void {
-    const prev = this.readCachedList(status);
-    if (!prev?.refTests) return;
-
-    // Don't add if already present
-    if (prev.refTests.edges?.some((e) => e?.node?.id === updatedNode?.id)) return;
-
-    this.writeCachedList(status, {
-      ...prev,
-      refTests: {
-        ...prev.refTests,
-        edges: [...(prev.refTests.edges ?? []), { cursor, node: updatedNode }],
-        totalCount: prev.refTests.totalCount + 1,
-      },
-    });
-  }
-
-  /**
-   * Finds an edge (node + cursor) from the first cached list that contains it.
-   * Tries statuses in the given order; undefined means the All list.
-   */
-  private findEdgeInCache(
-    id: string,
-    ...statuses: Array<RefTestStatus | undefined>
-  ): {
-    node: NonNullable<
-      NonNullable<NonNullable<GetRefTestsQuery['refTests']>['edges']>[number]
-    >['node'];
-    cursor: string;
-  } | null {
-    for (const status of statuses) {
-      const data = this.readCachedList(status);
-      const edge = data?.refTests?.edges?.find((e) => e?.node?.id === id);
-      if (edge?.node) return { node: edge.node, cursor: edge.cursor ?? '' };
-    }
-    return null;
-  }
-
-  /**
-   * Moves a ref test from one status list to another, updating both lists and the entity globally.
-   * Also updates the All list in-place (entity update propagates automatically via normalization).
-   */
-  private moveRefTestBetweenStatusLists(
-    id: string,
-    updates: Record<string, unknown>,
-    oldStatus: RefTestStatus,
-    newStatus: RefTestStatus,
-  ): void {
-    // Find the edge BEFORE removing it so we still have the node data
-    const found = this.findEdgeInCache(id, oldStatus, undefined);
-
-    // Update the normalized entity so the All list reflects the new state immediately
-    const entityId = this._apollo.client.cache.identify({ __typename: 'RefTest', id });
-    if (entityId) {
-      const fields: Record<string, () => unknown> = {};
-      for (const [k, v] of Object.entries(updates)) {
-        fields[k] = () => v;
-      }
-      this._apollo.client.cache.modify({ id: entityId, fields });
-    }
-
-    // Remove edge from old-status list
-    this.removeEdgeFromCachedList(id, oldStatus);
-
-    // Add updated edge to new-status list
-    if (found?.node) {
-      const updatedNode = { ...found.node, ...updates } as typeof found.node;
-      this.addEdgeToCachedList(updatedNode, found.cursor, newStatus);
-    }
-  }
-
-  /* ------------------------------------------------------------------------ */
-  /* Cache Helpers — Status Counts                                            */
-  /* ------------------------------------------------------------------------ */
-
-  private updateStatusCounts(
-    oldStatus: RefTestStatus | undefined,
-    newStatus: RefTestStatus,
-    incrementAll = false,
-  ): void {
-    const current = this._countsQueryRef.getCurrentResult();
-    if (!current?.data) return;
-
-    // @ts-expect-error Apollo typing
-    this._countsQueryRef.updateQuery((prev) => {
-      if (!prev) return prev;
-
-      const result = { ...prev };
-
-      // Optionally increment the 'all' count (used for new creations)
-      if (incrementAll) {
-        result.all = increment(result.all);
-      }
-
-      // Decrement old status
-      switch (oldStatus) {
-        case 'PENDING':
-          result.pending = decrement(result.pending);
-          break;
-        case 'IN_PROGRESS':
-          result.inProgress = decrement(result.inProgress);
-          break;
-        case 'COMPLETED':
-          result.completed = decrement(result.completed);
-          break;
-        case 'EXPIRED':
-          result.expired = decrement(result.expired);
-          break;
-        case 'PENDING_APPROVAL':
-          result.pendingApproval = decrement(result.pendingApproval);
-          break;
-        case 'REJECTED':
-          result.rejected = decrement(result.rejected);
-          break;
-      }
-
-      // Increment new status
-      switch (newStatus) {
-        case 'PENDING':
-          result.pending = increment(result.pending);
-          break;
-        case 'IN_PROGRESS':
-          result.inProgress = increment(result.inProgress);
-          break;
-        case 'COMPLETED':
-          result.completed = increment(result.completed);
-          break;
-        case 'EXPIRED':
-          result.expired = increment(result.expired);
-          break;
-        case 'PENDING_APPROVAL':
-          result.pendingApproval = increment(result.pendingApproval);
-          break;
-        case 'REJECTED':
-          result.rejected = increment(result.rejected);
-          break;
-      }
-
-      return result;
-    });
-  }
-
-  private decrementCountsForDelete(status: RefTestStatus): void {
-    const current = this._countsQueryRef.getCurrentResult();
-    if (!current?.data) return;
-
-    // @ts-expect-error Apollo typing
-    this._countsQueryRef.updateQuery((prev) => {
-      if (!prev) return prev;
-
-      const result = { ...prev };
-
-      result.all = decrement(result.all);
-
-      switch (status) {
-        case 'PENDING':
-          result.pending = decrement(result.pending);
-          break;
-        case 'IN_PROGRESS':
-          result.inProgress = decrement(result.inProgress);
-          break;
-        case 'COMPLETED':
-          result.completed = decrement(result.completed);
-          break;
-        case 'EXPIRED':
-          result.expired = decrement(result.expired);
-          break;
-        case 'PENDING_APPROVAL':
-          result.pendingApproval = decrement(result.pendingApproval);
-          break;
-        case 'REJECTED':
-          result.rejected = decrement(result.rejected);
-          break;
-      }
-
-      return result;
-    });
-  }
-
-  /* ------------------------------------------------------------------------ */
-  /* Helpers                                                                  */
-  /* ------------------------------------------------------------------------ */
-
-  private buildCountsVariables() {
-    const base = this._queryBuilder.buildWhereFilter(this._filterState.filter(), {
-      excludeStatus: true,
-    });
-
-    return {
-      allWhere: base,
-      pendingWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: 'PENDING' },
-      }),
-      inProgressWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: 'IN_PROGRESS' },
-      }),
-      completedWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: 'COMPLETED' },
-      }),
-      expiredWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: 'EXPIRED' },
-      }),
-      pendingApprovalWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: 'PENDING_APPROVAL' },
-      }),
-      rejectedWhere: this._queryBuilder.mergeFilters(base, {
-        status: { eq: 'REJECTED' },
-      }),
-    };
   }
 }

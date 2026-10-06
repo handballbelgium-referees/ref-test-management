@@ -2,7 +2,7 @@ import { computed, DestroyRef, inject, Service, Signal, signal } from '@angular/
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Apollo, QueryRef } from 'apollo-angular';
-import { catchError, EMPTY, Observable, switchMap, tap } from 'rxjs';
+import { catchError, EMPTY, finalize, Observable, switchMap, tap } from 'rxjs';
 import {
   ExtendRefTestTimeGQL,
   ExtendRefTestTimeInput,
@@ -29,6 +29,7 @@ import { Permissions } from '../../../auth/models/permissions';
 import { PermissionsService } from '../../../auth/services/permissions';
 import { ErrorReporter } from '../../../services/error-reporter';
 import { MutationCallbacks, runMutation } from '../../../shared/utils/apollo-utils';
+import { RefTestCacheUpdater } from '../../services/ref-test-cache-updater';
 
 type RefTest = Extract<GetRefTestByIdQuery['refTest'], { __typename: 'RefTest' }>;
 
@@ -51,6 +52,7 @@ export class RefTestDetailData {
 
   private readonly _router = inject(Router);
   private readonly _errorReporter = inject(ErrorReporter);
+  private readonly _cacheUpdater = inject(RefTestCacheUpdater);
 
   private readonly _refTestId = signal<string>('');
   readonly refTestId = this._refTestId.asReadonly();
@@ -75,9 +77,20 @@ export class RefTestDetailData {
           },
         });
         this._queryRef = ref;
-        return ref.valueChanges;
+        this._cacheUpdater.setDetailQueryLoading(id, ref.getCurrentResult().loading);
+        return ref.valueChanges.pipe(
+          tap((result) => this._cacheUpdater.setDetailQueryLoading(id, result.loading)),
+          finalize(() => {
+            this._cacheUpdater.setDetailQueryLoading(id, false);
+            this._cacheUpdater.replayPendingEvents();
+          }),
+        );
       }),
       tap((result) => {
+        this._cacheUpdater.replayPendingEvents();
+        if (result.data?.refTest?.__typename === 'RefTest') {
+          return;
+        }
         if (result.data?.refTest?.__typename === 'RefTestNotFoundError') {
           throw new Error('Ref Test not found');
         }
@@ -143,18 +156,22 @@ export class RefTestDetailData {
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    const ids = [this._refTestId()];
+    const transition = this._cacheUpdater.beginTransition('RefTestReset', ids);
     return runMutation(
       this._resetRefTestsGQL.mutate({
         variables: {
           input: {
-            ids: [this._refTestId()],
+            ids,
             resetType: input.resetType,
             regenerateToken: input.regenerateToken,
           },
         },
+        update: (_, { data }) =>
+          transition.confirm(data?.resetRefTests?.resetRefTestsResult?.resetRefTests),
       }),
       destroyRef,
-      callbacks,
+      transition.cancelOnError(callbacks),
       (r) => {
         const res = r.data?.resetRefTests?.resetRefTestsResult;
         return {
@@ -169,10 +186,16 @@ export class RefTestDetailData {
     destroyRef: DestroyRef,
     callbacks: MutationCallbacks<{ successCount: number; failedCount: number }> = {},
   ): { loading: Signal<boolean>; success: Signal<boolean> } {
+    const ids = [this._refTestId()];
+    const transition = this._cacheUpdater.beginTransition('RefTestRevived', ids);
     return runMutation(
-      this._reviveRefTestsGQL.mutate({ variables: { input: { ids: [this._refTestId()] } } }),
+      this._reviveRefTestsGQL.mutate({
+        variables: { input: { ids } },
+        update: (_, { data }) =>
+          transition.confirm(data?.reviveRefTests?.reviveRefTestsResult?.revivedRefTests),
+      }),
       destroyRef,
-      callbacks,
+      transition.cancelOnError(callbacks),
       (r) => {
         const res = r.data?.reviveRefTests?.reviveRefTestsResult;
         return {
@@ -286,115 +309,30 @@ export class RefTestDetailData {
             const event = result.data?.refTestUpdated;
             if (!event) return;
 
-            const current = this._queryRef?.getCurrentResult();
-            if (current?.data?.refTest?.__typename !== 'RefTest') return;
-            const isLoaded = current?.data?.refTest?.id === event.id;
+            if (this._refTestId() !== event.id) return;
 
-            if (!isLoaded) return;
-            // Map subscription event to cache update
-            let updates: Record<string, unknown> = {};
-            switch (event.__typename) {
-              case 'RefTestDeleted':
-                this._router.navigate(['/ref-tests']);
-                return;
-
-              case 'RefTestAnonymized':
-                // The record stays (in redacted form) rather than being removed, so just
-                // reflect the new state instead of navigating away.
-                updates = { isAnonymized: true, name: event.name, email: event.email };
-                break;
-
-              case 'RefTestCompleted':
-                updates = {
-                  status: event.status,
-                  completedAt: event.completedAt,
-                  questionScore: event.questionScore,
-                  questionTotal: event.questionTotal,
-                  answerScore: event.answerScore,
-                  answerTotal: event.answerTotal,
-                  percentage: event.percentage,
-                  language: event.language,
-                };
-                break;
-
-              case 'RefTestExpired':
-                updates = { status: event.status };
-                break;
-
-              case 'RefTestStarted':
-                updates = { status: event.status, startedAt: event.startedAt };
-                break;
-
-              case 'RefTestInvitationSent':
-                updates = { invitationSent: true };
-                break;
-
-              case 'RefTestResultSent':
-                updates = { resultsSent: true };
-                break;
-
-              case 'RefTestReset':
-                updates = {
-                  status: 'PENDING',
-                  startedAt: null,
-                  completedAt: null,
-                  questionScore: null,
-                  questionTotal: null,
-                  answerScore: null,
-                  answerTotal: null,
-                  percentage: null,
-                  resultsSent: false,
-                };
-                break;
-
-              case 'RefTestRevived':
-                updates = { status: 'PENDING', invitationSent: false };
-                break;
-
-              case 'RefTestApproved':
-                updates = { status: event.status };
-                break;
-
-              case 'RefTestRejected':
-                updates = { status: event.status, rejectionReason: event.reason };
-                break;
-
-              case 'RefTestCreated':
-                this._queryRef?.refetch();
-                return;
-
-              default:
-                this._errorReporter.report('ref-test-detail.subscription.unknown-event', event);
-                return;
+            this._cacheUpdater.setDetailQueryLoading(
+              event.id,
+              this._queryRef?.getCurrentResult().loading ?? false,
+            );
+            this._cacheUpdater.replayPendingEvents();
+            const currentRefTest = this._queryRef?.getCurrentResult()?.data?.refTest;
+            const before =
+              currentRefTest?.__typename === 'RefTest' && currentRefTest.id === event.id
+                ? currentRefTest
+                : undefined;
+            const handled = this._cacheUpdater.updateCacheFromSubscription(event, before, 'detail');
+            if (!handled) {
+              this._errorReporter.report('ref-test-detail.subscription.unknown-event', event);
+              return;
             }
 
-            this.updateRefTestData(updates);
+            if (event.__typename === 'RefTestDeleted') this._router.navigate(['/ref-tests']);
           }),
           catchError(() => EMPTY),
           takeUntilDestroyed(destroyRef),
         ),
       ),
     );
-  }
-
-  private updateRefTestData(event: Record<string, unknown>): void {
-    if (!this._queryRef) return;
-
-    // Extract only the properties that should be merged, excluding __typename
-    const { __typename, ...updates } = event;
-
-    // Update Apollo cache
-    // @ts-expect-error - Apollo's updateQuery has complex typing that doesn't match our return
-    this._queryRef.updateQuery((prev) => {
-      if (!prev?.refTest) return prev;
-
-      return {
-        ...prev,
-        refTest: {
-          ...prev.refTest,
-          ...updates,
-        },
-      };
-    });
   }
 }
