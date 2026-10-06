@@ -1,6 +1,7 @@
 using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Approval;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Reset;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
@@ -166,6 +167,178 @@ public sealed class RefTestAtomicMutationTests
         Assert.Empty(await observer.RefTests.ToListAsync(cancellationToken));
         Assert.Empty(await observer.Jobs.ToListAsync(cancellationToken));
         Assert.Empty(await observer.AuditEvents.ToListAsync(cancellationToken));
+    }
+
+    [Fact]
+    public async Task ResetRefTestsAsync_RollsBackFailedItemsAndCountsOnlyCommittedResets()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database, cancellationToken);
+
+        var failedRefTest = RefTest.Create(
+            titleId, "Grace", "Hopper", "grace@example.org",
+            numberOfQuestions: 2, maxTimeInMinutes: 30, questionIds: ["q1", "q2"],
+            sendInvitationAutomatically: true, sendResultsAutomatically: true);
+        var resetRefTest = RefTest.Create(
+            titleId, "Ada", "Lovelace", "ada@example.org",
+            numberOfQuestions: 2, maxTimeInMinutes: 30, questionIds: ["q1", "q2"],
+            sendInvitationAutomatically: true, sendResultsAutomatically: true);
+        resetRefTest.SendInvitation();
+        resetRefTest.AcceptPrivacyNotice("v1");
+        resetRefTest.Start("v1");
+
+        var failedResultJob = Job.Create(
+            JobType.ResultEmail,
+            JsonSerializer.Serialize(new ResultEmailPayload(
+                failedRefTest.Id, failedRefTest.FullName, failedRefTest.Email,
+                1, 1, 2, 2, 50, [], [], []), JobJsonOptions));
+        var resetResultJob = Job.Create(
+            JobType.ResultEmail,
+            JsonSerializer.Serialize(new ResultEmailPayload(
+                resetRefTest.Id, resetRefTest.FullName, resetRefTest.Email,
+                1, 1, 2, 2, 50, [], [], []), JobJsonOptions));
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.AddRange(failedRefTest, resetRefTest);
+            seed.Jobs.AddRange(failedResultJob, resetResultJob);
+            await seed.SaveChangesAsync(cancellationToken);
+        }
+
+        var accessor = HttpContextAccessor();
+        await using (var context = database.CreateContext(AuditInterceptor(accessor)))
+        {
+            var result = await RefTestResetMutations.ResetRefTestsAsync(
+                new ResetRefTestsInput(
+                    [failedRefTest.Id, resetRefTest.Id],
+                    RefTestResetType.Soft,
+                    RegenerateToken: false),
+                context,
+                new JobEnqueueService(context, TokenProtection(), NullLogger<JobEnqueueService>.Instance),
+                SubscriptionService(),
+                accessor,
+                NullLoggerFactory.Instance,
+                cancellationToken);
+
+            Assert.Equal(2, result.TotalRequested);
+            Assert.Equal(1, result.SuccessfullyReset);
+            Assert.Equal(1, result.Failed);
+            Assert.Equal(failedRefTest.Id, Assert.Single(result.Errors).RefTestId);
+            Assert.Equal(resetRefTest.Id, Assert.Single(result.ResetRefTests).Id);
+        }
+
+        await using var observer = database.CreateContext();
+        var storedFailedRefTest = await observer.RefTests.SingleAsync(
+            refTest => refTest.Id == failedRefTest.Id, cancellationToken);
+        Assert.Equal(RefTestStatus.Pending, storedFailedRefTest.Status);
+        Assert.Null(storedFailedRefTest.StartedAt);
+
+        var storedResetRefTest = await observer.RefTests.SingleAsync(
+            refTest => refTest.Id == resetRefTest.Id, cancellationToken);
+        Assert.Equal(RefTestStatus.Pending, storedResetRefTest.Status);
+        Assert.Null(storedResetRefTest.StartedAt);
+
+        var jobs = await observer.Jobs.ToListAsync(cancellationToken);
+        Assert.Equal(JobStatus.Pending, jobs.Single(job => job.Id == failedResultJob.Id).Status);
+        Assert.Equal(JobStatus.Cancelled, jobs.Single(job => job.Id == resetResultJob.Id).Status);
+
+        var auditEvents = await observer.AuditEvents.ToListAsync(cancellationToken);
+        Assert.DoesNotContain(auditEvents, audit => audit.StreamId == failedRefTest.Id.ToString());
+        Assert.Contains(auditEvents, audit => audit.StreamId == resetRefTest.Id.ToString());
+    }
+
+    [Fact]
+    public async Task ApproveRefTestsAsync_RollsBackFailedItemsAndRequiresInvitationJobs()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database, cancellationToken);
+
+        var invalidRefTest = RefTest.Create(
+            titleId, "Invalid", "Status", "invalid@example.org",
+            numberOfQuestions: 2, maxTimeInMinutes: 30, questionIds: ["q1", "q2"],
+            sendInvitationAutomatically: true, sendResultsAutomatically: true,
+            creatorName: "Test Creator", creatorEmail: "creator@example.org");
+        var failedInvitationRefTest = RefTest.Create(
+            titleId, "Grace", "Hopper", "grace@example.org",
+            numberOfQuestions: 2, maxTimeInMinutes: 30, questionIds: ["q1", "q2"],
+            sendInvitationAutomatically: true, sendResultsAutomatically: true,
+            requiresApproval: true,
+            creatorName: "Test Creator", creatorEmail: "creator@example.org");
+        var approvedRefTest = RefTest.Create(
+            titleId, "Ada", "Lovelace", "ada@example.org",
+            numberOfQuestions: 2, maxTimeInMinutes: 30, questionIds: ["q1", "q2"],
+            sendInvitationAutomatically: true, sendResultsAutomatically: true,
+            requiresApproval: true,
+            creatorName: "Test Creator", creatorEmail: "creator@example.org");
+        var failedInvitationToken = failedInvitationRefTest.Token;
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.AddRange(invalidRefTest, failedInvitationRefTest, approvedRefTest);
+            await seed.SaveChangesAsync(cancellationToken);
+        }
+
+        var accessor = HttpContextAccessor(canApprove: true);
+        var tokenProtection = TokenProtection();
+        await using (var context = database.CreateContext(AuditInterceptor(accessor)))
+        {
+            var innerJobService = new JobEnqueueService(
+                context, tokenProtection, NullLogger<JobEnqueueService>.Instance);
+            var jobService = FailAfterStaging(
+                innerJobService,
+                nameof(IJobEnqueueService.EnqueueInvitationEmailAsync),
+                args => args[0] is RefTest { FirstName: "Grace" });
+
+            var result = await RefTestApprovalMutations.ApproveRefTestsAsync(
+                new ApproveRefTestsInput(
+                    [invalidRefTest.Id, failedInvitationRefTest.Id, approvedRefTest.Id]),
+                context,
+                jobService,
+                SubscriptionService(),
+                accessor,
+                NullLoggerFactory.Instance,
+                cancellationToken);
+
+            Assert.Equal(3, result.TotalRequested);
+            Assert.Equal(1, result.SuccessfullyApproved);
+            Assert.Equal(2, result.Failed);
+            Assert.Equal(2, result.Errors.Count);
+            Assert.Equal(approvedRefTest.Id, Assert.Single(result.ApprovedRefTests).Id);
+            Assert.Contains(result.Errors, error => error.RefTestId == invalidRefTest.Id);
+            Assert.Contains(result.Errors, error => error.RefTestId == failedInvitationRefTest.Id);
+        }
+
+        await using var observer = database.CreateContext();
+        var storedInvalidRefTest = await observer.RefTests.SingleAsync(
+            refTest => refTest.Id == invalidRefTest.Id, cancellationToken);
+        Assert.Equal(RefTestStatus.Pending, storedInvalidRefTest.Status);
+
+        var storedFailedInvitationRefTest = await observer.RefTests.SingleAsync(
+            refTest => refTest.Id == failedInvitationRefTest.Id, cancellationToken);
+        Assert.Equal(RefTestStatus.PendingApproval, storedFailedInvitationRefTest.Status);
+        Assert.Equal(failedInvitationToken, storedFailedInvitationRefTest.Token);
+        Assert.Null(storedFailedInvitationRefTest.ProtectedInvitationToken);
+
+        var storedApprovedRefTest = await observer.RefTests.SingleAsync(
+            refTest => refTest.Id == approvedRefTest.Id, cancellationToken);
+        Assert.Equal(RefTestStatus.Pending, storedApprovedRefTest.Status);
+        Assert.NotEqual(approvedRefTest.Token, storedApprovedRefTest.Token);
+
+        var jobs = await observer.Jobs.ToListAsync(cancellationToken);
+        var invitationJob = Assert.Single(jobs, job => job.JobType == JobType.InvitationEmail);
+        using (var payload = JsonDocument.Parse(invitationJob.Payload))
+            Assert.Equal(
+                storedApprovedRefTest.Id,
+                payload.RootElement.GetProperty("refTestId").GetGuid());
+        Assert.Single(jobs, job => job.JobType == JobType.ApprovalDecisionEmail);
+
+        var auditEvents = await observer.AuditEvents.ToListAsync(cancellationToken);
+        Assert.DoesNotContain(auditEvents, audit =>
+            audit.StreamId == invalidRefTest.Id.ToString() ||
+            audit.StreamId == failedInvitationRefTest.Id.ToString());
+        Assert.Contains(auditEvents, audit => audit.StreamId == approvedRefTest.Id.ToString());
     }
 
     [Fact]
