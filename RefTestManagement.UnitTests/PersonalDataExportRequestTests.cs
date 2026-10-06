@@ -626,7 +626,7 @@ public sealed class PersonalDataExportRequestTests
             return true;
         }
 
-        public Task SendRefTestInvitationAsync(
+        public Task<bool> SendRefTestInvitationAsync(
             Guid refTestId,
             string name,
             string email,
@@ -635,7 +635,7 @@ public sealed class PersonalDataExportRequestTests
             int maxTimeInMinutes,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendRefTestResultsAsync(
+        public Task<bool> SendRefTestResultsAsync(
             Guid refTestId,
             string name,
             string email,

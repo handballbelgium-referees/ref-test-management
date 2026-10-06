@@ -41,7 +41,7 @@ public sealed class InvitationEmailJobHandler(
 
         ServiceLoggerMessages.LogSendingInvitationEmail(logger, payload.RefTestId);
 
-        await emailService.SendRefTestInvitationAsync(
+        var wasAccepted = await emailService.SendRefTestInvitationAsync(
             payload.RefTestId,
             payload.Name,
             payload.Email,
@@ -49,6 +49,8 @@ public sealed class InvitationEmailJobHandler(
             payload.NumberOfQuestions,
             payload.MaxTimeInMinutes,
             cancellationToken);
+        if (!wasAccepted)
+            throw new EmailException(payload.Email);
 
         refTest.SendInvitation();
         await context.SaveChangesWithRetryAsync(cancellationToken);

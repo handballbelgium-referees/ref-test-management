@@ -41,7 +41,7 @@ public sealed class ResultEmailJobHandler(
             randomAnswerOrder: false,
             cancellationToken: cancellationToken);
 
-        await emailService.SendRefTestResultsAsync(
+        var wasAccepted = await emailService.SendRefTestResultsAsync(
             payload.RefTestId,
             payload.Name,
             payload.Email,
@@ -56,6 +56,8 @@ public sealed class ResultEmailJobHandler(
             questionsWithCorrectAnswers,
             scheduleEmail: false,
             cancellationToken); // Already scheduled via the job system
+        if (!wasAccepted)
+            throw new EmailException(payload.Email);
 
         // Mark the RefTest results as sent
         refTest.SendResults();

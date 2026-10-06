@@ -26,7 +26,7 @@ validated-SHA guarantee.
 ### WP-87 — Make reset and approval mutations atomic
 
 **Findings:** R9-01 (🟡 Medium)  
-**Status:** ✅ Implemented  
+**Status:** ✅ Implemented\
 **Size:** M  
 **Priority:** P1  
 **Dependencies:** None
@@ -58,7 +58,8 @@ validated-SHA guarantee.
 ### WP-88 — Confirm email acceptance and prevent provider-body disclosure
 
 **Findings:** R9-02, R9-08 (🟡 Medium)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
+
 **Size:** M  
 **Priority:** P1  
 **Dependencies:** None
@@ -78,6 +79,11 @@ validated-SHA guarantee.
 
 **Tests**
 - Cover accepted, rejected, and failed submissions; assert log templates/arguments exclude provider bodies and tokens; run focused xUnit v3 tests and solution build.
+
+**Verification**
+- `dotnet test --solution RefTestManagement.slnx --configuration Release` — passed (396/396).
+- `dotnet build RefTestManagement.slnx -nologo -v q -clp:ErrorsOnly` — passed (0 warnings, 0 errors).
+- `git diff --check` — passed. Final GPT-6 Luna code review found no findings after one focused fix round.
 
 **Watch out for**
 - Provider response bodies and echo behavior cannot be verified from source; do not retain raw response data for diagnostics.
