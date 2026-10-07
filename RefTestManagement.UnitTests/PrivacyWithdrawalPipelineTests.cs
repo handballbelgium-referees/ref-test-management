@@ -11,6 +11,7 @@ using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
@@ -243,7 +244,10 @@ public sealed class PrivacyWithdrawalPipelineTests
         using var database = SqliteTestDatabase.Create();
         var titleId = await SeedTitleAsync(database);
         await using var context = database.CreateContext();
-        context.RefTests.Add(NewRefTest(titleId, ParticipantEmail));
+        var legacyRefTest = NewRefTest(titleId, ParticipantEmail);
+        context.RefTests.Add(legacyRefTest);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        context.Entry(legacyRefTest).Property(refTest => refTest.EmailLookupKey).CurrentValue = null;
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var keyProtection = new CapturingKeyProtection();
@@ -256,6 +260,9 @@ public sealed class PrivacyWithdrawalPipelineTests
             });
         await service.RequestAsync("missing@example.org", TestContext.Current.CancellationToken);
 
+        Assert.Equal(
+            TokenService.HashBytes(PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            legacyRefTest.EmailLookupKey);
         Assert.Empty(await context.PrivacyWithdrawalChallenges.ToListAsync(TestContext.Current.CancellationToken));
         Assert.Empty(await context.Jobs.ToListAsync(TestContext.Current.CancellationToken));
 
@@ -290,6 +297,26 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Equal(challenge.Id, emailPayload.RootElement.GetProperty("challengeId").GetGuid());
         Assert.DoesNotContain(ParticipantEmail, emailJob.Payload, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(keyProtection.ProtectedKeys[0], emailJob.Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RefTestEmailChangesKeepTheNormalizedLookupKeyInSyncAndErasureClearsIt()
+    {
+        var refTest = NewRefTest(Guid.NewGuid(), "before@example.org");
+
+        refTest.UpdateBasicDetails("Ada", "Lovelace", " New@Example.org ");
+
+        Assert.Equal(
+            TokenService.HashBytes(
+                PrivacyWithdrawalChallenge.NormalizeEmail(" New@Example.org ")),
+            refTest.EmailLookupKey);
+
+        refTest.Anonymize();
+        Assert.Null(refTest.EmailLookupKey);
+
+        // Repeated erasure also clears any stale derived key without restoring a match.
+        refTest.Anonymize();
+        Assert.Null(refTest.EmailLookupKey);
     }
 
     [Fact]
@@ -1027,9 +1054,13 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Equal(1, emailProxy.InvocationCount);
         Assert.Equal(0, emailProxy.ProviderSubmissionCount);
         await using var verification = database.CreateContext();
+        var erasedRefTest = await verification.RefTests
+            .SingleAsync(candidate => candidate.Id == refTest.Id, cancellationToken);
         var erasedChallenge = await verification.PrivacyWithdrawalChallenges
             .SingleAsync(candidate => candidate.Id == challenge.Id, cancellationToken);
         var cancelledJob = await verification.Jobs.SingleAsync(candidate => candidate.Id == job.Id, cancellationToken);
+        Assert.True(erasedRefTest.IsAnonymized);
+        Assert.Null(erasedRefTest.EmailLookupKey);
         Assert.Equal(string.Empty, erasedChallenge.Email);
         Assert.Null(erasedChallenge.ProtectedDeliveryKey);
         Assert.Equal(JobStatus.Cancelled, cancelledJob.Status);
@@ -2238,8 +2269,28 @@ public sealed class PrivacyWithdrawalPipelineTests
         }
 
         using var context = new RefTestManagementContext(builder.Options);
+        var refTestEntity = context.Model.FindEntityType(typeof(RefTest))!;
+        var emailLookupKeyProperty = refTestEntity.FindProperty(nameof(RefTest.EmailLookupKey))!;
+        Assert.Equal(typeof(byte[]), emailLookupKeyProperty.ClrType);
+        Assert.Equal(32, emailLookupKeyProperty.GetMaxLength());
+        Assert.True(emailLookupKeyProperty.IsNullable);
+        Assert.Contains(
+            refTestEntity.GetIndexes(),
+            index => index.Properties.Contains(emailLookupKeyProperty));
+
+        var lookupKey = TokenService.HashBytes(
+            PrivacyWithdrawalChallenge.NormalizeEmail("participant@example.org"));
         var eligibleSql = PrivacyWithdrawalQueries.EligibleRefTests(context.RefTests)
             .Select(refTest => new { refTest.Id, refTest.Email })
+            .ToQueryString();
+        var matchingSql = PrivacyWithdrawalQueries.MatchingRefTestsByEmailLookupKey(
+                context.RefTests,
+                lookupKey)
+            .Select(refTest => new { refTest.Id, refTest.Email })
+            .ToQueryString();
+        var backfillSql = PrivacyWithdrawalQueries.EligibleRefTestsMissingEmailLookupKey(context.RefTests)
+            .Select(refTest => new { refTest.Id, refTest.Email, refTest.Version })
+            .Take(250)
             .ToQueryString();
         var cleanupSql = context.PrivacyWithdrawalChallenges
             .Where(PrivacyWithdrawalCleanupQueries.IsDueForChallengeCleanup(Now))
@@ -2283,6 +2334,11 @@ public sealed class PrivacyWithdrawalPipelineTests
 
         Assert.Contains("IsAnonymized", eligibleSql, StringComparison.Ordinal);
         Assert.Contains("Email", eligibleSql, StringComparison.Ordinal);
+        Assert.Contains("EmailLookupKey", matchingSql, StringComparison.Ordinal);
+        Assert.Contains("IsAnonymized", matchingSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPPER", matchingSql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("EmailLookupKey", backfillSql, StringComparison.Ordinal);
+        Assert.Contains("IsAnonymized", backfillSql, StringComparison.Ordinal);
         var pendingTargetSql = context.PrivacyWithdrawalBatchTargets
             .Where(target => target.RefTestId == Guid.Empty && target.CompletedAt == null)
             .Select(target => target.Id)

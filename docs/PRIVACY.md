@@ -103,6 +103,22 @@ includes RefTest records or participant details.
 Challenge and batch audit events contain only matching/target counts and delivery-attempt details;
 they do not contain the recipient address or raw one-time key.
 
+Matching uses a nullable indexed 32-byte SHA-256 key of the UTF-8 form produced by the canonical
+`Trim().ToUpperInvariant()` email normalizer. The key is derived/pseudonymous personal data, not
+anonymization or confidentiality; it is maintained with every RefTest email change and cleared
+during erasure. The schema migration only adds the column and index: the API backfills existing
+non-anonymized rows in bounded batches using the same application helper and optimistic concurrency
+token before each indexed lookup. The lookup does not proceed until no eligible row has a missing
+key, and it verifies the full normalized email in application code after the digest lookup.
+
+For rollout, stop old application instances and other writers that do not maintain this key before
+applying the provider migration and deploying the new application. Keep account-free withdrawal
+traffic paused until the new version is active; its first valid request or confirmation performs
+the idempotent batch backfill before matching. If backfill cannot complete, matching/challenge
+creation is not attempted and confirmation is not accepted. Do not bypass the application backfill
+with provider-specific SQL normalization or enable a legacy application writer after backfill; if a
+legacy writer cannot be drained, keep the flow disabled until it is.
+
 Each enabled-language section of the verification email links to
 `/privacy/withdrawal-confirmation?lang=<language>#<key>`. Opening the link only renders a
 confirmation prompt: the client immediately removes the fragment from the visible address bar and

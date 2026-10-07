@@ -341,7 +341,8 @@ validated-SHA guarantee.
 ### WP-98 — Bound public withdrawal matching with a normalized indexed lookup
 
 **Findings:** R9-24 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
+
 **Size:** L  
 **Priority:** P2  
 **Dependencies:** WP-89

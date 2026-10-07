@@ -11,4 +11,17 @@ public static class PrivacyWithdrawalQueries
     /// </summary>
     public static IQueryable<RefTest> EligibleRefTests(IQueryable<RefTest> refTests) =>
         refTests.Where(refTest => !refTest.IsAnonymized);
+
+    /// <summary>Selects eligible records whose normalized-email lookup key matches.</summary>
+    public static IQueryable<RefTest> MatchingRefTestsByEmailLookupKey(
+        IQueryable<RefTest> refTests,
+        byte[] emailLookupKey) =>
+        EligibleRefTests(refTests)
+            .Where(refTest => refTest.EmailLookupKey == emailLookupKey);
+
+    /// <summary>Selects eligible legacy records that still need the application-side lookup-key backfill.</summary>
+    public static IQueryable<RefTest> EligibleRefTestsMissingEmailLookupKey(
+        IQueryable<RefTest> refTests) =>
+        EligibleRefTests(refTests)
+            .Where(refTest => refTest.EmailLookupKey == null);
 }
