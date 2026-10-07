@@ -6,6 +6,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import yaml from 'js-yaml';
 import { fileURLToPath } from 'node:url';
+import releaseConfig from '../.releaserc.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = join(ROOT, 'scripts/generate-badges.mjs');
@@ -206,10 +207,20 @@ test('badge generation failure prevents branch update and leaves the candidate u
   assert.equal(readFileSync(outputPath, 'utf8'), '');
 });
 
-test('semantic-release runs badge publication in prepare before tagging', () => {
-  const releaseConfig = readFileSync(join(ROOT, '.releaserc.mjs'), 'utf8');
+test('semantic-release runs badge publication before GitHub release publishing', () => {
+  const execPluginIndex = releaseConfig.plugins.findIndex(
+    (plugin) => Array.isArray(plugin) && plugin[0] === '@semantic-release/exec',
+  );
+  const githubPluginIndex = releaseConfig.plugins.indexOf('@semantic-release/github');
+  assert.notEqual(execPluginIndex, -1);
+  assert.ok(execPluginIndex < githubPluginIndex);
+  assert.equal(
+    releaseConfig.plugins[execPluginIndex][1].prepareCmd,
+    'node scripts/generate-badges.mjs ${nextRelease.version} --publish',
+  );
+
   const badgeScript = readFileSync(SCRIPT, 'utf8');
-  assert.match(releaseConfig, /prepareCmd:\s*'node scripts\/generate-badges\.mjs \$\{nextRelease\.version\} --publish'/);
+  assert.match(badgeScript, /if \(option === '--publish'\) \{\s+publishBadgeCommit\(\{/);
   assert.match(badgeScript, /checkout', '--detach', '--force'/);
   for (const name of ['beta-release', 'stable-release']) {
     const workflow = WORKFLOWS[name].workflow;

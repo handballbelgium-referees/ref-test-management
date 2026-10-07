@@ -121,6 +121,12 @@ export default {
         npmPublish: false,
       },
     ],
+    [
+      '@semantic-release/exec',
+      {
+        prepareCmd: 'node scripts/generate-badges.mjs ${nextRelease.version} --publish',
+      },
+    ],
     '@semantic-release/github',
   ],
 };
