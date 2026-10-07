@@ -127,7 +127,7 @@ validated-SHA guarantee.
 ### WP-90 — Fail closed for blocked accounts and preserve managed scope data
 
 **Findings:** R9-09 (🟡 Medium), R9-30, R9-31 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
 **Size:** L  
 **Priority:** P1  
 **Dependencies:** None

@@ -74,6 +74,32 @@ public sealed class PermissionSnapshotServiceTests
     }
 
     [Fact]
+    public async Task RefreshThatCannotVerifyAccountStatusInvalidatesPreviouslyCachedPermissions()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
+        var accountStatusVerified = true;
+        var managementService = new FakeAuth0ManagementService((_, _) =>
+            accountStatusVerified
+                ? Task.FromResult(Set("ref-tests:delete"))
+                : Task.FromException<IReadOnlySet<string>>(
+                    new InvalidOperationException("Account status is blocked or indeterminate.")));
+        using var provider = CreateProvider(managementService, clock);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+        var user = AuthenticatedUser("auth0|account-status-refresh");
+
+        Assert.Contains(
+            "ref-tests:delete",
+            (await permissionService.GetCurrentPermissionsAsync(user, cancellationToken))!);
+        clock.Advance(TimeSpan.FromMinutes(4));
+        accountStatusVerified = false;
+
+        Assert.Null(await permissionService.GetCurrentPermissionsAsync(user, cancellationToken));
+        Assert.Null(await permissionService.GetCurrentPermissionsAsync(user, cancellationToken));
+        Assert.Equal(2, managementService.PermissionCalls);
+    }
+
+    [Fact]
     public async Task ConcurrentChecksForOneUserShareOneManagementApiRefresh()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
