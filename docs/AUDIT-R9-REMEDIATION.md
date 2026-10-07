@@ -290,7 +290,7 @@ validated-SHA guarantee.
 ### WP-96 — Enforce high-severity audits for root and UI dependencies
 
 **Findings:** R9-19, R9-20 (🟡 Medium)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
 **Size:** L  
 **Priority:** P1  
 **Dependencies:** None

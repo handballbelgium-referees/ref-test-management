@@ -8,6 +8,22 @@ The application uses **Auth0** for authentication and a **task-based permission 
 
 The backend enforcement lives in the `RefTestManagement.Security` class library. The Angular frontend uses a `PermissionsService` and a `HasPermission` structural directive for reactive, signal-based UI control.
 
+## npm Dependency Audit Gate
+
+The pull-request, beta-release, and stable-release validation workflows run
+`scripts/check-npm-audit.mjs` against both the repository-root and Angular dependency trees.
+High and Critical advisories block validation. The check does not exempt peer, development,
+optional, direct, or transitive dependencies; lower severities do not block this gate.
+
+Exceptions are recorded in `.github/npm-audit-exceptions.json` and must match the advisory's
+numeric npm ID, GHSA ID, or CVE ID. Each exception requires a rationale of at least 20 characters,
+an owner in `@user` or `@org/team` form, and a valid `expiresOn` date (`YYYY-MM-DD`). The expiry
+date remains valid through that UTC date; expired, malformed, duplicate, and unused entries fail
+validation. An advisory without an exact, valid exception remains blocking, and unlisted new
+advisory identities cannot be implicitly accepted. Keep the policy empty unless a specific
+advisory exception is reviewed and necessary; resolve the dependency issue instead whenever
+possible.
+
 ---
 
 ## Auth0 Setup
