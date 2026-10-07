@@ -22,6 +22,17 @@
     "processing": "Processing...",
     "retry": "Retry",
     "close": "Close",
+    "change_calendar_view": "Change calendar view",
+    "time_picker": {
+      "label": "Time picker",
+      "back_to_hours": "Back to hours",
+      "close": "Close time picker",
+      "hour": "{{hour}} hours",
+      "minute": "{{minute}} minutes",
+      "subtract_minute": "Subtract 1 minute",
+      "add_minute": "Add 1 minute",
+      "one_minute_short": "1 min"
+    },
     "deleting": "Deleting...",
     "sending": "Sending...",
     "copy": "Copy",
@@ -29,6 +40,7 @@
   },
   "nav": {
     "language": "Language",
+    "select_language": "Switch to {{language}}",
     "logout": "Logout"
   },
   "home": {
@@ -567,7 +579,9 @@
         "scheduled_at": {
           "label": "Schedule for",
           "optional": "(optional)",
-          "description": "Leave empty to send the invitation immediately. Set a date/time to delay until that moment."
+          "description": "Leave empty to send the invitation immediately. Set a date/time to delay until that moment.",
+          "date_label": "Schedule date",
+          "time_label": "Schedule time"
         },
         "send_results": {
           "label": "Send result emails",

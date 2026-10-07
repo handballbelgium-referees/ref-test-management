@@ -1,16 +1,18 @@
 <!-- Trigger input -->
 <div class="relative">
   <input
+    #timeInput
     type="text"
     [readonly]="isSmallTouchDevice()"
     [value]="displayValue()"
     (click)="open()"
-    (focus)="open()"
+    (focus)="onInputFocus()"
     (keydown)="onKeydown($event)"
     (blur)="onBlur($event)"
-    aria-label="Time"
+    [attr.aria-label]="label() || ('common.time_picker.label' | translate)"
     aria-haspopup="dialog"
     [attr.aria-expanded]="isOpen()"
+    [attr.aria-controls]="isOpen() ? 'time-picker-dialog' : null"
     class="datepicker-input w-full py-2 pr-10 pl-3 border border-neutral-200 rounded-lg text-sm text-neutral-900 bg-white cursor-pointer hover:border-neutral-400 focus:outline-2 focus:outline-primary-600 focus:outline-offset-2 focus:border-primary-600"
   />
 
@@ -37,14 +39,15 @@
   <div
     class="fixed inset-0 z-50 bg-black/60 flex items-center justify-center"
     (click)="close()"
-    aria-hidden="true"
   >
     <div
       class="bg-white rounded-2xl shadow-xl select-none p-3 w-72"
       (click)="$event.stopPropagation()"
-      (mousedown)="$event.preventDefault()"
       role="dialog"
-      aria-label="Time picker"
+      aria-modal="true"
+      id="time-picker-dialog"
+      [attr.aria-label]="'common.time_picker.label' | translate"
+      (keydown)="onDialogKeydown($event)"
     >
       <ng-container *ngTemplateOutlet="panelContent" />
     </div>
@@ -55,9 +58,9 @@
 @if (isOpen() && openMode() === 'desktop') {
   <div
     class="absolute z-50 mt-1 right-0 w-64 bg-white border border-neutral-200 rounded-2xl shadow-xl select-none p-3"
-    (mousedown)="$event.preventDefault()"
     role="dialog"
-    aria-label="Time picker"
+    id="time-picker-dialog"
+    [attr.aria-label]="'common.time_picker.label' | translate"
   >
     <ng-container *ngTemplateOutlet="panelContent" />
   </div>
@@ -70,9 +73,9 @@
     @if (view() === 'minutes') {
       <button
         type="button"
-        (click)="view.set('hours')"
-        class="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 transition-colors"
-        aria-label="Back to hours"
+        (click)="backToHours()"
+        class="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-500 transition-colors focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
+        [attr.aria-label]="'common.time_picker.back_to_hours' | translate"
       >
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
@@ -107,8 +110,8 @@
     <button
       type="button"
       (click)="close()"
-      class="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400 transition-colors"
-      aria-label="Close time picker"
+      class="p-1.5 rounded-lg hover:bg-neutral-100 text-neutral-400 transition-colors focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
+      [attr.aria-label]="'common.time_picker.close' | translate"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path
@@ -172,8 +175,11 @@
         <button
           type="button"
           (click)="selectHour(h)"
-          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold transition-colors cursor-pointer z-10"
+          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold transition-colors cursor-pointer z-10 focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
           [style]="itemStyle(i, 12, 84)"
+          [attr.aria-label]="'common.time_picker.hour' | translate: { hour: pad(h) }"
+          [attr.aria-pressed]="h === hourValue()"
+          [attr.data-time-option]="true"
           [class.bg-primary-600]="h === hourValue()"
           [class.text-white]="h === hourValue()"
           [class.text-neutral-700]="h !== hourValue()"
@@ -188,8 +194,11 @@
         <button
           type="button"
           (click)="selectHour(h)"
-          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors cursor-pointer z-10"
+          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-xs font-medium transition-colors cursor-pointer z-10 focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
           [style]="itemStyle(i, 12, 52)"
+          [attr.aria-label]="'common.time_picker.hour' | translate: { hour: pad(h) }"
+          [attr.aria-pressed]="h === hourValue()"
+          [attr.data-time-option]="true"
           [class.bg-primary-600]="h === hourValue()"
           [class.text-white]="h === hourValue()"
           [class.text-neutral-500]="h !== hourValue()"
@@ -206,8 +215,11 @@
         <button
           type="button"
           (click)="selectMinuteStep(m)"
-          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold transition-colors cursor-pointer z-10"
+          class="absolute w-7 h-7 rounded-full flex items-center justify-center text-sm font-semibold transition-colors cursor-pointer z-10 focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
           [style]="itemStyle(i, 12, 84)"
+          [attr.aria-label]="'common.time_picker.minute' | translate: { minute: pad(m) }"
+          [attr.aria-pressed]="m === minuteValue()"
+          [attr.data-time-option]="true"
           [class.bg-primary-600]="m === minuteValue()"
           [class.text-white]="m === minuteValue()"
           [class.text-neutral-700]="m !== minuteValue()"
@@ -225,13 +237,13 @@
       <button
         type="button"
         (click)="nudgeMinute(-1)"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 transition-colors"
-        aria-label="Subtract 1 minute"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 transition-colors focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
+        [attr.aria-label]="'common.time_picker.subtract_minute' | translate"
       >
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
         </svg>
-        1 min
+        {{ 'common.time_picker.one_minute_short' | translate }}
       </button>
 
       <span class="text-sm font-semibold tabular-nums text-neutral-700 w-8 text-center">
@@ -241,10 +253,10 @@
       <button
         type="button"
         (click)="nudgeMinute(1)"
-        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 transition-colors"
-        aria-label="Add 1 minute"
+        class="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-neutral-600 hover:bg-neutral-100 transition-colors focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
+        [attr.aria-label]="'common.time_picker.add_minute' | translate"
       >
-        1 min
+        {{ 'common.time_picker.one_minute_short' | translate }}
         <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
@@ -263,10 +275,10 @@
   >
     <button
       type="button"
-      class="font-medium rounded-lg transition-all flex-1 border border-neutral-200 cursor-pointer bg-white text-neutral-600 hover:bg-neutral-100 hover:border-neutral-300 hover:text-neutral-900 text-xs py-1.5 px-3"
+      class="font-medium rounded-lg transition-all flex-1 border border-neutral-200 cursor-pointer bg-white text-neutral-600 hover:bg-neutral-100 hover:border-neutral-300 hover:text-neutral-900 text-xs py-1.5 px-3 focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
       (click)="onClear()"
     >
-      Clear
+      {{ 'common.clear' | translate }}
     </button>
   </div>
 </ng-template>

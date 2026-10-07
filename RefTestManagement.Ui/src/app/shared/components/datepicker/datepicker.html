@@ -3,18 +3,22 @@
     #input
     [value]="displayValue()"
     [placeholder]="placeholder()"
+    [label]="label()"
+    [calendarId]="calendarId"
     [readonly]="isSmallTouchDevice()"
     [isOpen]="isOpen()"
     (focus)="onInputFocus()"
     (click)="onInputFocus()"
     (inputChange)="onInputChange($event)"
     (blur)="onInputBlur($event)"
+    (keydown)="onInputKeydown($event)"
   />
 
   @if (isOpen()) {
     <app-datepicker-calendar
       [selectedDate]="selectedDate()"
       [currentDate]="currentDate()"
+      [calendarId]="calendarId"
       [inputElement]="input.inputElement()"
       [openMode]="openMode()"
       (dateSelect)="onDateSelect($event)"

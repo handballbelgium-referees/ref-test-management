@@ -366,6 +366,8 @@
                   </label>
                   <app-datetime-picker
                     [value]="refTestModel().scheduledAt"
+                    [dateLabel]="'ref_tests.create.form.scheduled_at.date_label' | translate"
+                    [timeLabel]="'ref_tests.create.form.scheduled_at.time_label' | translate"
                     (valueChange)="onScheduledAtChange($event)"
                   />
                   <p class="text-xs text-neutral-500">

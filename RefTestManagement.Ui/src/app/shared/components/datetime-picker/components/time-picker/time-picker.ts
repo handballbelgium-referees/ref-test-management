@@ -8,12 +8,14 @@ import {
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 import { Datepicker as DatepickerService } from '../../../datepicker/services/datepicker';
 
 @Component({
   selector: 'app-time-picker',
-  imports: [NgTemplateOutlet],
+  imports: [NgTemplateOutlet, TranslatePipe],
   templateUrl: './time-picker.html',
   providers: [DatepickerService],
   host: {
@@ -26,9 +28,11 @@ export class TimePicker {
   private readonly _host = inject(ElementRef<HTMLElement>);
   private readonly _dateService = inject(DatepickerService);
   private _resizeListener?: () => void;
+  private _isRestoringFocus = false;
 
   /** "HH:mm" string */
   readonly value = input<string>('00:00');
+  readonly label = input<string>('');
   readonly valueChange = output<string>();
   readonly clear = output<void>();
 
@@ -36,6 +40,7 @@ export class TimePicker {
   protected readonly isOpen = signal(false);
   protected readonly openMode = signal<'mobile' | 'desktop'>('desktop');
   protected readonly view = signal<'hours' | 'minutes'>('hours');
+  private readonly _timeInput = viewChild<ElementRef<HTMLInputElement>>('timeInput');
 
   // ── Clock geometry (px) ────────────────────────────────────────────────
   protected readonly CLOCK = 224; // svg/container side length
@@ -122,15 +127,39 @@ export class TimePicker {
     this.openMode.set(this._dateService.detectSmallTouchDevice() ? 'mobile' : 'desktop');
     this.view.set('hours');
     this.isOpen.set(true);
+    if (this.openMode() === 'mobile') {
+      window.setTimeout(() => this.focusSelectedOption(), 0);
+    }
+  }
+
+  protected onInputFocus(): void {
+    if (this._isRestoringFocus) return;
+    this.open();
   }
 
   protected close(): void {
+    if (!this.isOpen()) return;
     this.isOpen.set(false);
+    const input = this._timeInput()?.nativeElement;
+    if (!input) return;
+
+    this._isRestoringFocus = true;
+    try {
+      input.focus();
+    } finally {
+      this._isRestoringFocus = false;
+    }
   }
 
   protected selectHour(h: number): void {
     this.emit(h, this.minuteValue());
     this.view.set('minutes');
+    window.setTimeout(() => this.focusSelectedOption(), 0);
+  }
+
+  protected backToHours(): void {
+    this.view.set('hours');
+    window.setTimeout(() => this.focusSelectedOption(), 0);
   }
 
   protected selectMinuteStep(m: number): void {
@@ -141,6 +170,28 @@ export class TimePicker {
   protected onClear(): void {
     this.clear.emit();
     this.close();
+  }
+
+  protected onDialogKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Tab' || this.openMode() !== 'mobile') return;
+
+    const dialog = event.currentTarget as HTMLElement;
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   protected nudgeMinute(delta: number): void {
@@ -198,6 +249,15 @@ export class TimePicker {
 
   private emit(h: number, m: number): void {
     this.valueChange.emit(`${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`);
+  }
+
+  private focusSelectedOption(): void {
+    const host = this._host.nativeElement as HTMLElement;
+    const dialog = host.querySelector('[role="dialog"]') as HTMLElement | null;
+    const selected = dialog?.querySelector(
+      '[data-time-option][aria-pressed="true"]',
+    ) as HTMLElement | null;
+    (selected ?? dialog?.querySelector('[data-time-option]'))?.focus();
   }
 
   /** Angle in radians: index 0 points up (12 o'clock), clockwise. */

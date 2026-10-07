@@ -145,6 +145,13 @@ export class QuestionSearchAutocomplete {
 
   protected onKeyDown(event: KeyboardEvent): void {
     switch (event.key) {
+      case 'Tab':
+        if (this.showDropdown() && this.suggestions().length > 0) {
+          const index = this.highlightedIndex();
+          const question = this.suggestions()[index >= 0 ? index : 0];
+          if (question) this.onSelectQuestion(question);
+        }
+        break;
       case 'ArrowDown':
         if (this.showDropdown() && this.suggestions().length > 0) {
           event.preventDefault();
@@ -172,7 +179,8 @@ export class QuestionSearchAutocomplete {
         break;
       case 'Escape':
         event.preventDefault();
-        this.closeDropdown();
+        this.showDropdown.set(false);
+        this.highlightedIndex.set(-1);
         break;
     }
   }

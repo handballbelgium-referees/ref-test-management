@@ -22,6 +22,17 @@
     "processing": "Traitement...",
     "retry": "Réessayer",
     "close": "Fermer",
+    "change_calendar_view": "Changer l’affichage du calendrier",
+    "time_picker": {
+      "label": "Sélecteur d'heure",
+      "back_to_hours": "Retour aux heures",
+      "close": "Fermer le sélecteur d'heure",
+      "hour": "{{hour}} heures",
+      "minute": "{{minute}} minutes",
+      "subtract_minute": "Retirer 1 minute",
+      "add_minute": "Ajouter 1 minute",
+      "one_minute_short": "1 min"
+    },
     "deleting": "Suppression...",
     "sending": "Envoi...",
     "copy": "Copier",
@@ -29,6 +40,7 @@
   },
   "nav": {
     "language": "Langue",
+    "select_language": "Passer à {{language}}",
     "logout": "Déconnexion"
   },
   "home": {
@@ -568,7 +580,9 @@
         "scheduled_at": {
           "label": "Planifier pour",
           "optional": "(facultatif)",
-          "description": "Laissez vide pour envoyer l'invitation immédiatement. Définissez une date/heure pour retarder jusqu'à ce moment."
+          "description": "Laissez vide pour envoyer l'invitation immédiatement. Définissez une date/heure pour retarder jusqu'à ce moment.",
+          "date_label": "Date prévue",
+          "time_label": "Heure prévue"
         },
         "send_results": {
           "label": "Envoyer les e-mails de résultats",

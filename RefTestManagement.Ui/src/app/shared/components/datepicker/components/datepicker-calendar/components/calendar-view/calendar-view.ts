@@ -18,6 +18,7 @@ export class CalendarView {
   readonly selectedDate = input<Date | null>(null);
 
   protected readonly dateSelect = output<Date>();
+  protected readonly currentDateChange = output<Date>();
   protected readonly monthSelect = output<number>();
   protected readonly yearSelect = output<number>();
 }

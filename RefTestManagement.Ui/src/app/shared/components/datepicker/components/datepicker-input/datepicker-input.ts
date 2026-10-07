@@ -5,9 +5,11 @@ import {
   output,
   viewChild,
 } from '@angular/core';
+import { TranslatePipe } from '@ngx-translate/core';
 
 @Component({
   selector: 'app-datepicker-input',
+  imports: [TranslatePipe],
   templateUrl: './datepicker-input.html',
   styleUrl: './datepicker-input.css',
   host: {
@@ -17,14 +19,17 @@ import {
 export class DatepickerInput {
   readonly value = input<string>('');
   readonly placeholder = input<string>('dd/mm/yyyy');
+  readonly label = input<string>('');
+  readonly calendarId = input.required<string>();
   readonly isOpen = input<boolean>(false);
   readonly readonly = input<boolean>(false);
 
   protected readonly focus = output<void>();
   protected readonly inputChange = output<string>();
   protected readonly blur = output<string>();
+  protected readonly keydown = output<KeyboardEvent>();
 
-  readonly inputElement = viewChild<ElementRef>('input');
+  readonly inputElement = viewChild<ElementRef<HTMLInputElement>>('input');
 
   protected onInput(event: Event): void {
     const input = event.target as HTMLInputElement;
@@ -37,7 +42,13 @@ export class DatepickerInput {
   }
 
   protected onKeydown(event: KeyboardEvent): void {
-    if (['Backspace', 'Delete', 'Tab', 'Escape', 'Enter'].includes(event.key)) {
+    this.keydown.emit(event);
+
+    if (
+      ['Backspace', 'Delete', 'Tab', 'Escape', 'Enter', 'ArrowUp', 'ArrowDown'].includes(
+        event.key,
+      )
+    ) {
       return;
     }
 

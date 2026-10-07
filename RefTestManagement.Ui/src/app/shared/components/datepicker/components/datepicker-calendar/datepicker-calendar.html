@@ -6,11 +6,16 @@
     (click)="$event.stopPropagation()"
     role="dialog"
     aria-modal="true"
+    [id]="calendarId()"
+    #mobileDialog
+    tabindex="-1"
     [attr.aria-label]="'common.choose_date' | translate"
+    (keydown)="onMobileDialogKeydown($event)"
   >
     <app-calendar-header
       [viewMode]="viewMode()"
       [viewTitle]="viewTitle()"
+      [isSmallTouchDevice]="openMode() === 'mobile'"
       (previous)="onPrevious()"
       (next)="onNext()"
       (toggleView)="toggleView()"
@@ -22,12 +27,17 @@
         [currentDate]="currentDate()"
         [selectedDate]="selectedDate()"
         (dateSelect)="onDateSelect($event)"
+        (currentDateChange)="currentDateChange.emit($event)"
         (monthSelect)="onMonthSelect($event)"
         (yearSelect)="onYearSelect($event)"
       />
     </div>
 
-    <app-calendar-footer (today)="onToday()" (clear)="onClear()" />
+    <app-calendar-footer
+      [isSmallTouchDevice]="true"
+      (today)="onToday()"
+      (clear)="onClear()"
+    />
   </div>
 </div>
 } @else {
@@ -40,11 +50,11 @@
 -->
 <div
   #calendar
+  [id]="calendarId()"
   class="fixed z-9999 bg-white border border-neutral-200 shadow-lg select-none w-[96vw] min-w-80 max-w-105 max-h-[85vh] rounded-xl flex flex-col transition-opacity duration-100"
   [class.invisible]="!isPositioned()"
   [class.pointer-events-none]="!isPositioned()"
   (click)="$event.stopPropagation()"
-  (mousedown)="$event.preventDefault()"
   tabindex="-1"
   role="dialog"
   [attr.aria-label]="'common.choose_date' | translate"
@@ -52,6 +62,7 @@
   <app-calendar-header
     [viewMode]="viewMode()"
     [viewTitle]="viewTitle()"
+    [isSmallTouchDevice]="false"
     (previous)="onPrevious()"
     (next)="onNext()"
     (toggleView)="toggleView()"
@@ -63,11 +74,16 @@
       [currentDate]="currentDate()"
       [selectedDate]="selectedDate()"
       (dateSelect)="onDateSelect($event)"
+      (currentDateChange)="currentDateChange.emit($event)"
       (monthSelect)="onMonthSelect($event)"
       (yearSelect)="onYearSelect($event)"
     />
   </div>
 
-  <app-calendar-footer (today)="onToday()" (clear)="onClear()" />
+  <app-calendar-footer
+    [isSmallTouchDevice]="false"
+    (today)="onToday()"
+    (clear)="onClear()"
+  />
 </div>
 }

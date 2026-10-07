@@ -10,6 +10,7 @@ export interface CalendarDay {
 export interface MonthItem {
   index: number;
   name: string;
+  label: string;
   isSelected: boolean;
 }
 

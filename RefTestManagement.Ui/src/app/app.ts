@@ -2,9 +2,11 @@ import {
   Component,
   computed,
   DestroyRef,
+  ElementRef,
   effect,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
@@ -23,6 +25,7 @@ import { PwaUpdate } from './services/pwa-update';
   host: {
     class: 'block',
     '(document:click)': 'onDocumentClick()',
+    '(document:keydown.escape)': 'onEscape()',
   },
 })
 export class App {
@@ -49,6 +52,7 @@ export class App {
   protected readonly showAuthUI = computed(() => !this._isRefTestRoute());
 
   protected readonly showLanguageMenu = signal(false);
+  private readonly _languageToggle = viewChild<ElementRef<HTMLButtonElement>>('languageToggle');
   protected readonly version = APP_VERSION;
   protected readonly currentYear = computed(() => new Date().getFullYear());
   protected readonly availableLanguages = toSignal(
@@ -106,6 +110,7 @@ export class App {
     this._translate.use(lang);
     localStorage.setItem('app-language', lang);
     this.showLanguageMenu.set(false);
+    this._languageToggle()?.nativeElement.focus();
   }
 
   protected toggleLanguageMenu(event: Event): void {
@@ -117,6 +122,12 @@ export class App {
     if (this.showLanguageMenu()) {
       this.showLanguageMenu.set(false);
     }
+  }
+
+  protected onEscape(): void {
+    if (!this.showLanguageMenu()) return;
+    this.showLanguageMenu.set(false);
+    this._languageToggle()?.nativeElement.focus();
   }
 
   protected login(): void {

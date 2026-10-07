@@ -13,6 +13,32 @@
         'ref_tests.create.form.specific_question_numbers.search_placeholder' | translate
       "
       autocomplete="off"
+      role="combobox"
+      aria-autocomplete="list"
+      aria-haspopup="listbox"
+      [attr.aria-label]="
+        'ref_tests.create.form.specific_question_numbers.search_placeholder' | translate
+      "
+      [attr.aria-expanded]="
+        showDropdown() &&
+        (suggestions().length > 0 ||
+          searchError() ||
+          (searchSucceeded() && searchTerm().trim().length > 0))
+      "
+      [attr.aria-controls]="
+        showDropdown() && suggestions().length > 0
+          ? 'question-search-options'
+          : showDropdown() && searchError()
+            ? 'question-search-error'
+            : showDropdown() && searchSucceeded() && searchTerm().trim().length > 0
+              ? 'question-search-empty-results'
+              : null
+      "
+      [attr.aria-activedescendant]="
+        showDropdown() && suggestions().length > 0 && highlightedIndex() >= 0
+          ? 'question-search-option-' + highlightedIndex()
+          : null
+      "
     />
 
     <!-- Loading Spinner -->
@@ -24,16 +50,25 @@
 
     <!-- Suggestions Dropdown -->
     @if (showDropdown() && suggestions().length > 0) {
-      <div
-        class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-y-auto"
-      >
-        @for (suggestion of suggestions(); track suggestion.id; let idx = $index) {
-          <button
-            type="button"
+      <div class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div
+          id="question-search-options"
+          role="listbox"
+          [attr.aria-label]="
+            'ref_tests.create.form.specific_question_numbers.search_placeholder' | translate
+          "
+        >
+          @for (suggestion of suggestions(); track suggestion.id; let idx = $index) {
+          <div
+            [id]="'question-search-option-' + idx"
+            role="option"
+            [attr.aria-selected]="highlightedIndex() === idx"
             (mousedown)="$event.preventDefault(); onSelectQuestion(suggestion)"
             [class]="
-              'w-full px-4 py-3 text-left focus:outline-none border-b border-neutral-100 last:border-b-0 transition-colors flex items-start gap-3 ' +
-              (highlightedIndex() === idx ? 'bg-primary-50' : 'hover:bg-primary-50')
+              'w-full px-4 py-3 text-left border-b border-neutral-100 last:border-b-0 transition-colors flex items-start gap-3 ' +
+              (highlightedIndex() === idx
+                ? 'bg-primary-50 ring-2 ring-inset ring-primary-500'
+                : 'hover:bg-primary-50')
             "
           >
             <span
@@ -45,11 +80,13 @@
                 {{ suggestion.phrase | appTranslation: currentLanguage() }}
               </p>
             </div>
-          </button>
+          </div>
         }
+        </div>
       </div>
     } @else if (showDropdown() && searchError()) {
       <div
+        id="question-search-error"
         role="alert"
         class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg p-4"
       >
@@ -61,7 +98,7 @@
             type="button"
             (mousedown)="$event.preventDefault()"
             (click)="onRetrySearch()"
-            class="shrink-0 text-sm font-medium text-primary-700 underline"
+            class="shrink-0 text-sm font-medium text-primary-700 underline focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
           >
             {{ 'common.retry' | translate }}
           </button>
@@ -74,6 +111,9 @@
       searchTerm().trim().length > 0
     ) {
       <div
+        id="question-search-empty-results"
+        role="status"
+        aria-live="polite"
         class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg p-4"
       >
         <p class="text-sm text-neutral-500 text-center">

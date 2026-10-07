@@ -230,7 +230,6 @@ export class TitleAutocomplete {
 
     if (event.key === 'Tab') {
       if (this.showDropdown() && suggestions.length > 0) {
-        event.preventDefault();
         const index = this.highlightedIndex();
         if (index >= 0 && index < suggestions.length) {
           this.onSelectTitle(suggestions[index]);
@@ -245,7 +244,6 @@ export class TitleAutocomplete {
       if (term.length > 0 && !this.selectedTitle()) {
         const match = suggestions.find((s) => s.value.toLowerCase() === term.toLowerCase());
         if (match) {
-          event.preventDefault();
           this.onSelectTitle(match);
           return;
         }

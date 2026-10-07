@@ -21,6 +21,17 @@
     "saving": "Speichern...",
     "processing": "Verarbeitung...",
     "retry": "Erneut versuchen",
+    "change_calendar_view": "Kalenderansicht \u00e4ndern",
+    "time_picker": {
+      "label": "Zeitauswahl",
+      "back_to_hours": "Zur\u00fcck zu den Stunden",
+      "close": "Zeitauswahl schlie\u00dfen",
+      "hour": "{{hour}} Uhr",
+      "minute": "{{minute}} Minuten",
+      "subtract_minute": "1 Minute abziehen",
+      "add_minute": "1 Minute hinzuf\u00fcgen",
+      "one_minute_short": "1 Min."
+    },
     "close": "Schließen",
     "deleting": "Löschen...",
     "sending": "Senden...",
@@ -29,6 +40,7 @@
   },
   "nav": {
     "language": "Sprache",
+    "select_language": "Zu {{language}} wechseln",
     "logout": "Abmelden"
   },
   "home": {
@@ -567,6 +579,8 @@
         "scheduled_at": {
           "label": "Planen für",
           "optional": "(optional)",
+          "date_label": "Geplantes Datum",
+          "time_label": "Geplante Uhrzeit",
           "description": "Leer lassen, um die Einladung sofort zu senden. Datum/Uhrzeit festlegen, um bis zu diesem Zeitpunkt zu warten."
         },
         "send_results": {

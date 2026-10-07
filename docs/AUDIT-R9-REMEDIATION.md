@@ -236,9 +236,9 @@ validated-SHA guarantee.
 
 ### WP-94 — Complete keyboard and semantic behavior of shared controls
 
-**Findings:** R9-17 (🟡 Medium), R9-34, R9-35 (⚪ Low)  
-**Status:** ⏳ Pending  
-**Size:** L  
+**Findings:** R9-17 (🟡 Medium), R9-34, R9-35 (⚪ Low)
+**Status:** ✅ Implemented
+**Size:** L
 **Priority:** P1  
 **Dependencies:** WP-92
 

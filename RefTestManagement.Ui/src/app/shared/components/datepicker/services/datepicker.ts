@@ -105,6 +105,9 @@ export class Datepicker {
       months.push({
         index: i,
         name: date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', { month: 'short' }),
+        label: date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', {
+          month: 'long',
+        }),
         isSelected: i === currentDate.getMonth(),
       });
     }
@@ -127,7 +130,7 @@ export class Datepicker {
     return years;
   }
 
-  getWeekDays(): string[] {
+  getWeekDays(format: 'short' | 'long' = 'short'): string[] {
     const days: string[] = [];
     const baseDate = new Date(2024, 0, 1); // Monday, January 1, 2024
 
@@ -135,11 +138,20 @@ export class Datepicker {
       const date = new Date(baseDate);
       date.setDate(baseDate.getDate() + i);
       days.push(
-        date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', { weekday: 'short' }),
+        date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', { weekday: format }),
       );
     }
 
     return days;
+  }
+
+  getDateLabel(date: Date): string {
+    return date.toLocaleDateString(this._translate.getCurrentLang() ?? 'en', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
   }
 
   getViewTitle(date: Date, mode: ViewMode): string {

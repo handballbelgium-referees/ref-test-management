@@ -22,6 +22,17 @@
     "processing": "Bezig...",
     "retry": "Opnieuw proberen",
     "close": "Sluiten",
+    "change_calendar_view": "Kalenderweergave wijzigen",
+    "time_picker": {
+      "label": "Tijdkiezer",
+      "back_to_hours": "Terug naar uren",
+      "close": "Tijdkiezer sluiten",
+      "hour": "{{hour}} uur",
+      "minute": "{{minute}} minuten",
+      "subtract_minute": "1 minuut aftrekken",
+      "add_minute": "1 minuut toevoegen",
+      "one_minute_short": "1 min"
+    },
     "deleting": "Verwijderen...",
     "sending": "Verzenden...",
     "copy": "Kopiëren",
@@ -29,6 +40,7 @@
   },
   "nav": {
     "language": "Taal",
+    "select_language": "Overschakelen naar {{language}}",
     "logout": "Uitloggen"
   },
   "home": {
@@ -567,7 +579,9 @@
         "scheduled_at": {
           "label": "Inplannen voor",
           "optional": "(optioneel)",
-          "description": "Leeg laten om de uitnodiging onmiddellijk te versturen. Stel een datum/tijd in om te wachten tot dat moment."
+          "description": "Leeg laten om de uitnodiging onmiddellijk te versturen. Stel een datum/tijd in om te wachten tot dat moment.",
+          "date_label": "Geplande datum",
+          "time_label": "Geplande tijd"
         },
         "send_results": {
           "label": "Resultatenmails versturen",

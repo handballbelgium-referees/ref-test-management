@@ -2,12 +2,13 @@
   @for (month of months(); track month.index) {
   <button
     type="button"
-    class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600 text-xs h-8 md:text-sm md:h-10"
+    class="text-neutral-900 rounded-lg transition-all font-medium w-full border border-transparent bg-transparent cursor-pointer flex items-center justify-center hover:bg-neutral-100 hover:border-neutral-300 hover:text-primary-600 text-xs h-8 md:text-sm md:h-10 focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-2"
     [class.!bg-primary-600]="month.isSelected"
     [class.!text-white]="month.isSelected"
     [class.font-semibold]="month.isSelected"
+    [attr.aria-label]="month.label"
+    [attr.aria-pressed]="month.isSelected"
     (click)="selectMonth(month.index)"
-    tabindex="-1"
   >
     {{ month.name }}
   </button>

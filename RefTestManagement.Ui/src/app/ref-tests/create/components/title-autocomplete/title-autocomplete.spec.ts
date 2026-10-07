@@ -81,6 +81,151 @@ describe('TitleAutocomplete', () => {
 
   afterEach(() => TestBed.resetTestingModule());
 
+  it('exposes the active listbox option and selects it with Enter', async () => {
+    const fixture: ComponentFixture<TitleAutocomplete> = TestBed.createComponent(TitleAutocomplete);
+    fixture.detectChanges();
+
+    const selected: Array<{ id?: string; name: string }> = [];
+    fixture.componentInstance.selectTitle.subscribe((title) => selected.push(title));
+    const component = fixture.componentInstance as unknown as ITitleAutocompleteHarness;
+    component.onFocus();
+    component.onSearchInput({ target: { value: 'Training' } } as unknown as Event);
+    await vi.waitFor(() => expect(watch).toHaveBeenCalledOnce());
+    results[0].next({
+      loading: false,
+      data: {
+        refTestTitles: {
+          edges: [
+            { node: { id: 'title-1', value: 'Training A' } },
+            { node: { id: 'title-2', value: 'Training B' } },
+          ],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        },
+      },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const listbox = fixture.nativeElement.querySelector('[role="listbox"]') as HTMLElement;
+    expect(input.getAttribute('role')).toBe('combobox');
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(input.getAttribute('aria-controls')).toBe(listbox.id);
+    expect(listbox.querySelectorAll('[role="option"]')).toHaveLength(2);
+
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+    expect(input.getAttribute('aria-activedescendant')).toBe('title-autocomplete-option-1');
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+    expect(selected).toEqual([{ id: 'title-2', name: 'Training B' }]);
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('selects the active listbox option on Tab without preventing focus movement', async () => {
+    const fixture: ComponentFixture<TitleAutocomplete> = TestBed.createComponent(TitleAutocomplete);
+    fixture.detectChanges();
+    const selected: Array<{ id?: string; name: string }> = [];
+    fixture.componentInstance.selectTitle.subscribe((title) => selected.push(title));
+    const component = fixture.componentInstance as unknown as ITitleAutocompleteHarness;
+    component.onFocus();
+    component.onSearchInput({ target: { value: 'Training' } } as unknown as Event);
+    await vi.waitFor(() => expect(watch).toHaveBeenCalledOnce());
+    results[0].next({
+      loading: false,
+      data: {
+        refTestTitles: {
+          edges: [{ node: { id: 'title-1', value: 'Training A' } }],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        },
+      },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    input.dispatchEvent(tab);
+    fixture.detectChanges();
+
+    expect(tab.defaultPrevented).toBe(false);
+    expect(selected).toEqual([{ id: 'title-1', name: 'Training A' }]);
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+  });
+
+  it('allows Tab focus movement when selecting an exact match from a closed dropdown', async () => {
+    const fixture: ComponentFixture<TitleAutocomplete> = TestBed.createComponent(TitleAutocomplete);
+    fixture.detectChanges();
+    const selected: Array<{ id?: string; name: string }> = [];
+    fixture.componentInstance.selectTitle.subscribe((title) => selected.push(title));
+    const component = fixture.componentInstance as unknown as ITitleAutocompleteHarness;
+    component.onFocus();
+    component.onSearchInput({ target: { value: 'Training' } } as unknown as Event);
+    await vi.waitFor(() => expect(watch).toHaveBeenCalledOnce());
+    results[0].next({
+      loading: false,
+      data: {
+        refTestTitles: {
+          edges: [{ node: { id: 'title-1', value: 'Training' } }],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        },
+      },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    input.dispatchEvent(
+      new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true }),
+    );
+    fixture.detectChanges();
+    expect(input.getAttribute('aria-expanded')).toBe('false');
+
+    const tab = new KeyboardEvent('keydown', { key: 'Tab', bubbles: true, cancelable: true });
+    input.dispatchEvent(tab);
+    fixture.detectChanges();
+
+    expect(tab.defaultPrevented).toBe(false);
+    expect(selected).toEqual([{ id: 'title-1', name: 'Training' }]);
+  });
+
+  it('announces a successful title search with no matches', async () => {
+    const fixture: ComponentFixture<TitleAutocomplete> = TestBed.createComponent(TitleAutocomplete);
+    fixture.detectChanges();
+    const component = fixture.componentInstance as unknown as ITitleAutocompleteHarness;
+    component.onFocus();
+    component.onSearchInput({ target: { value: 'Missing title' } } as unknown as Event);
+    await vi.waitFor(() => expect(watch).toHaveBeenCalledOnce());
+    results[0].next({
+      loading: false,
+      data: {
+        refTestTitles: {
+          edges: [],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        },
+      },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
+    const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
+    const status = fixture.nativeElement.querySelector(
+      '#title-autocomplete-empty-results',
+    ) as HTMLElement;
+    expect(input.getAttribute('aria-expanded')).toBe('true');
+    expect(input.getAttribute('aria-controls')).toBe(status.id);
+    expect(status.getAttribute('role')).toBe('status');
+    expect(status.getAttribute('aria-live')).toBe('polite');
+  });
+
   it('does not offer manual fallback on lookup failure and enables it after a successful no-match', async () => {
     const fixture: ComponentFixture<TitleAutocomplete> = TestBed.createComponent(TitleAutocomplete);
     fixture.detectChanges();
