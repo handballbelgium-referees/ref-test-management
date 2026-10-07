@@ -585,11 +585,14 @@
   "ref_test": {
     "page_title": "Handball RefTest",
     "loading": "Loading RefTest...",
+    "retry_submission": "Retry submission",
+    "saving_progress_before_leave": "Saving your progress before you leave...",
     "error": {
       "title": "Unable to Load RefTest",
       "general": "An unexpected error occurred while loading the RefTest. Please try again later.",
       "network": "A network error occurred. Please check your connection and try again.",
-      "submit_failed": "Submitting the RefTest failed. Please try again later.",
+      "submit_failed": "Submitting the RefTest failed. Please retry your submission.",
+      "progress_save_failed": "Your latest answer could not be saved. Please stay on this page and try leaving again.",
       "ref_test_not_found_error": "This RefTest could not be found. Please check your link.",
       "ref_test_expired_error": "This RefTest has expired. Please contact the administrator.",
       "invalid_ref_test_status_error": "This RefTest is no longer available or has already been completed.",

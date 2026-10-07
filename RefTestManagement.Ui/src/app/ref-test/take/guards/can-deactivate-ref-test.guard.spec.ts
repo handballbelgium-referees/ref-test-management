@@ -1,6 +1,8 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
+import { Observable, Subject, of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { RefTestStore } from '../state/ref-test.store';
 import { TakeRefTest } from '../take-ref-test';
@@ -30,6 +32,22 @@ describe('refTestGuard', () => {
       ),
     );
 
+  const takingComponent = (flushPendingSave: () => Observable<boolean>) => {
+    const component = Object.create(TakeRefTest.prototype) as TakeRefTest;
+    Object.assign(component, {
+      store: {
+        completed: () => false,
+        showLeaveDialog: signal(false),
+      } as unknown as RefTestStore,
+      _facade: { flushPendingSave },
+      _leaveConfirmed: false,
+      _tempLeaveHandlers: undefined,
+      leaveSavePending: signal(false),
+      leaveSaveFailed: signal(false),
+    });
+    return component;
+  };
+
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
@@ -53,11 +71,41 @@ describe('refTestGuard', () => {
 
   /**
    * The component resolves the prompt through the app's own translated dialog, so the guard must
-   * hand back whatever it returns, promise included.
+   * hand back whatever it returns, observable included.
    */
-  it('hands back a pending confirmation rather than resolving it itself', async () => {
-    const pending = Promise.resolve(true);
-    expect(await run({ canDeactivate: () => pending })).toBe(true);
+  it('hands back a pending confirmation rather than resolving it itself', () => {
+    const pending = new Subject<boolean>();
+    expect(run({ canDeactivate: () => pending })).toBe(pending);
+  });
+
+  it('waits for the confirmed progress flush before allowing navigation', () => {
+    const savePending = new Subject<boolean>();
+    const component = takingComponent(() => savePending);
+    const answers: boolean[] = [];
+    let completed = false;
+    (run(component) as Observable<boolean>).subscribe({
+      next: (answer) => answers.push(answer),
+      complete: () => (completed = true),
+    });
+    component.confirmLeave();
+
+    expect(answers).toEqual([]);
+    expect(component.leaveSavePending()).toBe(true);
+
+    savePending.next(true);
+    expect(answers).toEqual([true]);
+    expect(completed).toBe(true);
+    expect(component.leaveSavePending()).toBe(false);
+  });
+
+  it('keeps the participant on the test when the confirmed progress flush fails', () => {
+    const component = takingComponent(() => of(false));
+    let answer: boolean | undefined;
+    (run(component) as Observable<boolean>).subscribe((result) => (answer = result));
+    component.confirmLeave();
+
+    expect(answer).toBe(false);
+    expect(component.leaveSaveFailed()).toBe(true);
   });
 
   /**

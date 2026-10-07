@@ -155,7 +155,8 @@ validated-SHA guarantee.
 ### WP-91 — Preserve participant test recovery and announce question changes
 
 **Findings:** R9-10, R9-11, R9-12 (🟡 Medium), R9-32 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
+
 **Size:** M  
 **Priority:** P1  
 **Dependencies:** None

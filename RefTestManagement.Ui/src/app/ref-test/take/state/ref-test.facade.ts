@@ -1,18 +1,27 @@
-import { DestroyRef, Service, inject, signal } from '@angular/core';
-import { takeUntilDestroyed, toObservable } from '@angular/core/rxjs-interop';
+import { DestroyRef, Service, inject } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   EMPTY,
+  Observable,
+  Subject,
   catchError,
-  debounceTime,
+  concatMap,
+  debounce,
+  defaultIfEmpty,
   distinctUntilChanged,
+  filter,
+  finalize,
   map,
-  skip,
+  of,
+  take,
   tap,
+  timer,
 } from 'rxjs';
 import {
   CompleteRefTestGQL,
   CompleteRefTestMutation,
   GetRefTestByTokenGQL,
+  GetRefTestByTokenQuery,
   RefTestSessionLockGQL,
   RefTestTimeExtendedGQL,
   SaveRefTestProgressGQL,
@@ -28,7 +37,16 @@ import { RefTestStore } from './ref-test.store';
 
 type StartRefTestPayload = StartRefTestMutation['startRefTest'];
 type CompleteRefTestPayload = CompleteRefTestMutation['completeRefTest']['participantRefTest'];
+type ParticipantRefTestByToken = Extract<
+  GetRefTestByTokenQuery['refTestByToken'],
+  { __typename: 'ParticipantRefTest' }
+>;
 type WithdrawConsentPayload = WithdrawConsentMutation['withdrawConsent'];
+
+type SaveProgressRequest = {
+  immediate: boolean;
+  result?: Subject<boolean>;
+};
 
 @Service({ autoProvided: false })
 export class RefTestFacade {
@@ -43,13 +61,23 @@ export class RefTestFacade {
   private readonly _refTestSessionLockGQL = inject(RefTestSessionLockGQL);
   private readonly _withdrawConsentGQL = inject(WithdrawConsentGQL);
 
-  private readonly _saveProgressTrigger = signal(0);
+  private readonly _saveProgressTrigger = new Subject<SaveProgressRequest>();
   private _sessionStarted = false;
+  private _submission?: { token: string; selectedAnswerIds: string[]; language: string };
+  private _submissionInProgress = false;
+  private _submissionReconciliationInProgress = false;
 
   constructor() {
-    toObservable(this._saveProgressTrigger)
-      .pipe(skip(1), debounceTime(500), takeUntilDestroyed(this._destroyRef))
-      .subscribe(() => this.saveInternal());
+    this._saveProgressTrigger
+      .pipe(
+        debounce((request) => (request.immediate ? of(0) : timer(500))),
+        concatMap((request) => this.saveInternal().pipe(map((saved) => ({ request, saved })))),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe(({ request, saved }) => {
+        request.result?.next(saved);
+        request.result?.complete();
+      });
   }
 
   acquireSessionAndStart(token: string): void {
@@ -79,34 +107,7 @@ export class RefTestFacade {
           }
 
           if (refTest.status === 'COMPLETED') {
-            const questions =
-              refTest.questions
-                ?.filter((q) => !!q)
-                .map(
-                  (q) =>
-                    ({
-                      id: q.id,
-                      number: q.number,
-                      phrase: q.phrase,
-                      answers: q.answers.map((a) => ({
-                        id: a.id,
-                        number: a.number,
-                        phrase: a.phrase,
-                        isCorrect: a.isCorrect,
-                      })),
-                    }) as QuestionModel,
-                ) ?? [];
-
-            this._store.restoreCompletedReview(questions, refTest.selectedAnswerIds ?? []);
-            this._store.restoreCompletedResult(token, {
-              questionScore: refTest.questionScore,
-              questionTotal: refTest.questionTotal,
-              answerScore: refTest.answerScore,
-              answerTotal: refTest.answerTotal,
-              percentage: refTest.percentage,
-              sendResultsAutomatically: refTest.sendResultsAutomatically,
-              resultsSent: refTest.resultsSent,
-            });
+            this.restoreCompleted(token, refTest);
             this._store.loading.set(false);
             return;
           }
@@ -203,62 +204,168 @@ export class RefTestFacade {
   }
 
   submit(): void {
+    if (
+      this._submissionInProgress ||
+      this._submissionReconciliationInProgress ||
+      this._store.completed()
+    ) {
+      return;
+    }
+
     const token = this._store.token();
     if (!token) return;
 
-    const selectedAnswerIds = this._store.getSelectedAnswerIds();
+    const submission = (this._submission ??= {
+      token,
+      selectedAnswerIds: this._store.getSelectedAnswerIds(),
+      language: this._store.currentLanguage() ?? 'en',
+    });
 
     runMutation<CompleteRefTestMutation, CompleteRefTestPayload>(
       this._completeRefTestGQL.mutate({
-        variables: {
-          input: { token, selectedAnswerIds, language: this._store.currentLanguage() },
-        },
+        variables: { input: submission },
       }),
       this._destroyRef,
       {
-        onStart: () => this._store.loading.set(true),
+        onStart: () => {
+          this._submissionInProgress = true;
+          this._store.error.set(null);
+          this._store.loading.set(true);
+        },
         onSuccess: (refTest) => {
           // A null payload means the server rejected the submission (an expired time limit, or
           // input it refused), not that nothing happened. Without this the participant sees the
           // spinner stop and no change at all.
-          if (refTest) this._store.complete(refTest);
-          else this._store.error.set('submit_failed');
+          if (refTest) {
+            this._store.complete(refTest);
+            this._submission = undefined;
+          } else this.reconcileSubmission(token);
         },
-        onError: () => this._store.error.set('submit_failed'),
-        onComplete: () => this._store.loading.set(false),
+        onError: () => this.reconcileSubmission(token),
+        onComplete: () => {
+          this._submissionInProgress = false;
+          if (!this._submissionReconciliationInProgress) this._store.loading.set(false);
+        },
       },
       (r) => r.data?.completeRefTest?.participantRefTest ?? null,
     );
   }
 
-  triggerSave(): void {
-    if (!this._store.token()) return;
-    this._saveProgressTrigger.update((v) => v + 1);
+  private restoreCompleted(token: string, refTest: ParticipantRefTestByToken): void {
+    const questions =
+      refTest.questions
+        ?.filter((q) => !!q)
+        .map(
+          (q) =>
+            ({
+              id: q.id,
+              number: q.number,
+              phrase: q.phrase,
+              answers: q.answers.map((a) => ({
+                id: a.id,
+                number: a.number,
+                phrase: a.phrase,
+                isCorrect: a.isCorrect,
+              })),
+            }) as QuestionModel,
+        ) ?? [];
+
+    this._store.restoreCompletedReview(questions, refTest.selectedAnswerIds ?? []);
+    this._store.restoreCompletedResult(token, {
+      questionScore: refTest.questionScore,
+      questionTotal: refTest.questionTotal,
+      answerScore: refTest.answerScore,
+      answerTotal: refTest.answerTotal,
+      percentage: refTest.percentage,
+      sendResultsAutomatically: refTest.sendResultsAutomatically,
+      resultsSent: refTest.resultsSent,
+    });
+    this._store.error.set(null);
+    this._submission = undefined;
   }
 
-  private saveInternal() {
+  private reconcileSubmission(token: string): void {
+    this._submissionReconciliationInProgress = true;
+    this._store.error.set(null);
+    this._store.loading.set(true);
+
+    this._getRefTestByTokenGQL
+      .fetch({
+        variables: { token },
+        fetchPolicy: 'network-only',
+      })
+      .pipe(
+        map((result) => result.data?.refTestByToken),
+        tap((refTest) => {
+          if (
+            refTest?.__typename === 'ParticipantRefTest' &&
+            refTest.status === 'COMPLETED'
+          ) {
+            this.restoreCompleted(token, refTest);
+          } else {
+            this._store.error.set('submit_failed');
+          }
+        }),
+        catchError(() => {
+          this._store.error.set('submit_failed');
+          return EMPTY;
+        }),
+        finalize(() => {
+          this._submissionReconciliationInProgress = false;
+          this._store.loading.set(false);
+        }),
+        takeUntilDestroyed(this._destroyRef),
+      )
+      .subscribe();
+  }
+
+  triggerSave(): void {
+    if (!this._store.token()) return;
+    this._saveProgressTrigger.next({ immediate: false });
+  }
+
+  private saveInternal(): Observable<boolean> {
     const token = this._store.token();
     const lang = this._store.currentLanguage();
 
-    if (!token) return;
+    if (!token) return of(true);
 
-    runMutation(
-      this._saveRefTestProgressGQL.mutate({
+    return this._saveRefTestProgressGQL
+      .mutate({
         variables: {
           input: {
-            token: token,
+            token,
             currentQuestionIndex: this._store.currentQuestionIndex(),
             selectedAnswerIds: this._store.getSelectedAnswerIds(),
             language: lang ?? 'en',
           },
         },
-      }),
-      this._destroyRef,
-    );
+      })
+      .pipe(
+        filter((result) => !result.loading),
+        take(1),
+        map(
+          (result) =>
+            !!result.data?.saveRefTestProgress?.participantRefTest && !result.error,
+        ),
+        defaultIfEmpty(false),
+        catchError(() => of(false)),
+      );
+  }
+
+  flushPendingSave(): Observable<boolean> {
+    if (!this._store.token()) return of(true);
+
+    return new Observable<boolean>((subscriber) => {
+      const result = new Subject<boolean>();
+      const resultSubscription = result.pipe(take(1)).subscribe(subscriber);
+      this._saveProgressTrigger.next({ immediate: true, result });
+      return resultSubscription;
+    });
   }
 
   save(): void {
-    this.saveInternal();
+    this._saveProgressTrigger.next({ immediate: true });
   }
 
   private subscribeToTimeExtension(refTestId: string): void {

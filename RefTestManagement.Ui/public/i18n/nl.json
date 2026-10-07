@@ -585,11 +585,14 @@
   "ref_test": {
     "page_title": "Handbal RefTest",
     "loading": "RefTest laden...",
+    "retry_submission": "Opnieuw indienen",
+    "saving_progress_before_leave": "Uw voortgang wordt opgeslagen voordat u vertrekt...",
     "error": {
       "title": "Kan RefTest niet laden",
       "general": "Er is een onverwachte fout opgetreden bij het laden van de RefTest. Probeer het later opnieuw.",
       "network": "Er is een netwerkfout opgetreden. Controleer uw verbinding en probeer het opnieuw.",
-      "submit_failed": "Het indienen van de RefTest is mislukt. Probeer het later opnieuw.",
+      "submit_failed": "Het indienen van de RefTest is mislukt. Probeer opnieuw in te dienen.",
+      "progress_save_failed": "Uw laatste antwoord kon niet worden opgeslagen. Blijf op deze pagina en probeer opnieuw te vertrekken.",
       "ref_test_not_found_error": "Deze RefTest kon niet worden gevonden. Controleer de link.",
       "ref_test_expired_error": "Deze RefTest is verlopen. Neem contact op met de beheerder.",
       "invalid_ref_test_status_error": "Deze RefTest is niet meer beschikbaar of is al voltooid.",

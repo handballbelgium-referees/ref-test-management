@@ -13,6 +13,17 @@
   } @else if (store.error()) {
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <app-ref-test-error [errorType]="store.error()!" />
+      @if (store.error() === 'submit_failed') {
+        <div class="mt-6 text-center">
+          <button
+            type="button"
+            (click)="submit()"
+            class="px-6 py-3 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+          >
+            {{ 'ref_test.retry_submission' | translate }}
+          </button>
+        </div>
+      }
     </div>
   } @else if (store.completed()) {
     <app-ref-test-results
@@ -22,7 +33,7 @@
       [answerScore]="store.result()?.answerScore ?? 0"
       [answerTotal]="store.result()?.answerTotal ?? 0"
       [percentage]="store.result()?.percentage ?? 0"
-      [passingPercentage]="passingPercentage() ?? 0"
+      [passingPercentage]="passingPercentage()"
       [emailDelayMinutes]="emailDelayMinutes() ?? 0"
       [currentLanguage]="currentLanguage() ?? 'en'"
       [selectedAnswerIds]="store.getSelectedAnswerIds()"
@@ -142,6 +153,24 @@
     (confirm)="confirmLeave()"
     (cancel)="cancelLeave()"
   />
+
+  @if (leaveSavePending()) {
+    <p
+      role="status"
+      aria-live="polite"
+      class="fixed top-4 inset-x-4 z-[60] mx-auto max-w-xl rounded-lg bg-white p-4 text-center text-sm text-neutral-700 shadow-lg"
+    >
+      {{ 'ref_test.saving_progress_before_leave' | translate }}
+    </p>
+  }
+  @if (leaveSaveFailed()) {
+    <p
+      role="alert"
+      class="fixed top-4 inset-x-4 z-[60] mx-auto max-w-xl rounded-lg border border-red-200 bg-red-50 p-4 text-center text-sm text-red-800 shadow-lg"
+    >
+      {{ 'ref_test.error.progress_save_failed' | translate }}
+    </p>
+  }
 
   <app-withdraw-consent-dialog
     [show]="store.showWithdrawDialog()"

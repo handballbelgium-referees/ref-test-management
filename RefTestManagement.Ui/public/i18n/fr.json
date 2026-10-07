@@ -586,11 +586,14 @@
   "ref_test": {
     "page_title": "RefTest de Handball",
     "loading": "Chargement du RefTest...",
+    "retry_submission": "Réessayer l'envoi",
+    "saving_progress_before_leave": "Votre progression est en cours d'enregistrement avant votre départ...",
     "error": {
       "title": "Impossible de charger le RefTest",
       "general": "Une erreur inattendue s'est produite lors du chargement du RefTest. Veuillez réessayer plus tard.",
       "network": "Une erreur réseau est survenue. Vérifiez votre connexion et réessayez.",
-      "submit_failed": "L'envoi du RefTest a échoué. Veuillez réessayer plus tard.",
+      "submit_failed": "L'envoi du RefTest a échoué. Veuillez réessayer l'envoi.",
+      "progress_save_failed": "Votre dernière réponse n'a pas pu être enregistrée. Restez sur cette page et réessayez de partir.",
       "ref_test_not_found_error": "Ce RefTest est introuvable. Veuillez vérifier votre lien.",
       "ref_test_expired_error": "Ce RefTest a expiré. Veuillez contacter l'administrateur.",
       "invalid_ref_test_status_error": "Ce RefTest n'est plus disponible ou a déjà été complété.",

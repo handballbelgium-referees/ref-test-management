@@ -1,34 +1,36 @@
 <div class="max-w-7xl mx-auto">
   <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4 sm:p-8">
     <div class="text-center mb-8">
-      <div
-        class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
-        [class]="percentage() >= passingPercentage() ? 'bg-success-100' : 'bg-red-100'"
-      >
-        <svg
-          class="w-10 h-10"
-          [class]="percentage() >= passingPercentage() ? 'text-success-600' : 'text-red-600'"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
+      @if (passed() !== null) {
+        <div
+          class="inline-flex items-center justify-center w-20 h-20 rounded-full mb-4"
+          [class]="passed() === true ? 'bg-success-100' : 'bg-red-100'"
         >
-          @if (percentage() >= passingPercentage()) {
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          } @else {
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          }
-        </svg>
-      </div>
+          <svg
+            class="w-10 h-10"
+            [class]="passed() === true ? 'text-success-600' : 'text-red-600'"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            @if (passed() === true) {
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            } @else {
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
+            }
+          </svg>
+        </div>
+      }
       <h1 class="text-2xl sm:text-3xl font-bold text-neutral-900 mb-2">
         {{ 'ref_test.results.title' | translate }}
       </h1>
@@ -68,7 +70,13 @@
       <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-10 text-center">
         <div
           class="text-5xl font-bold mb-3"
-          [class]="percentage() >= passingPercentage() ? 'text-success-600' : 'text-red-600'"
+          [class]="
+            passed() === null
+              ? 'text-neutral-900'
+              : passed() === true
+                ? 'text-success-600'
+                : 'text-red-600'
+          "
         >
           {{ percentage() }}%
         </div>

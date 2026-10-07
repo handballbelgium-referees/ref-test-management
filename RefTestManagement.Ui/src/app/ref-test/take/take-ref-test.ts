@@ -1,9 +1,9 @@
 import { Location } from '@angular/common';
-import { Component, effect, inject } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, CanDeactivate, Router } from '@angular/router';
 import { TranslatePipe, TranslateService } from '@ngx-translate/core';
-import { interval, map } from 'rxjs';
+import { Observable, Subscription, catchError, interval, map, of, take } from 'rxjs';
 import {
   GetResultsEmailDelayMinutesGQL,
   GetScoreConfigurationGQL,
@@ -66,12 +66,27 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
   );
   private _leaveConfirmed = false;
   private _tempLeaveHandlers?: { confirm: () => void; cancel: () => void };
+  readonly leaveSavePending = signal(false);
+  readonly leaveSaveFailed = signal(false);
 
   readonly passingPercentage = toSignal(
     this._scoreConfigGQL
       .watch()
-      .valueChanges.pipe(map((r) => r.data?.scoreConfiguration?.passingPercentage)),
-    { initialValue: 0 },
+      .valueChanges.pipe(
+        map((result) => {
+          if (result.error) return null;
+
+          const percentage = result.data?.scoreConfiguration?.passingPercentage;
+          return typeof percentage === 'number' &&
+            Number.isFinite(percentage) &&
+            percentage >= 0 &&
+            percentage <= 100
+            ? percentage
+            : null;
+        }),
+        catchError(() => of(null)),
+      ),
+    { initialValue: null },
   );
 
   readonly emailDelayMinutes = toSignal(
@@ -156,33 +171,72 @@ export class TakeRefTest implements CanDeactivate<TakeRefTest> {
 
   confirmLeave() {
     this._tempLeaveHandlers?.confirm();
-    this._tempLeaveHandlers = undefined;
   }
 
   cancelLeave() {
     this._tempLeaveHandlers?.cancel();
-    this._tempLeaveHandlers = undefined;
   }
 
   withdrawConsent() {
     this._facade.withdrawConsent();
   }
 
-  canDeactivate(): boolean | Promise<boolean> {
+  canDeactivate(): boolean | Observable<boolean> {
     if (this.store.completed() || this._leaveConfirmed) return true;
 
-    return new Promise((resolve) => {
+    this.leaveSaveFailed.set(false);
+
+    return new Observable<boolean>((subscriber) => {
+      let settled = false;
+      let saveSubscription: Subscription | undefined;
+      const finish = (allowed: boolean) => {
+        if (settled) return;
+
+        settled = true;
+        this.leaveSavePending.set(false);
+        this.store.showLeaveDialog.set(false);
+        this._tempLeaveHandlers = undefined;
+        if (allowed) this._leaveConfirmed = true;
+        subscriber.next(allowed);
+        subscriber.complete();
+      };
+
       this.store.showLeaveDialog.set(true);
       this._tempLeaveHandlers = {
         confirm: () => {
-          this._leaveConfirmed = true;
-          this.store.showLeaveDialog.set(false);
-          resolve(true);
+          if (settled || this.leaveSavePending()) return;
+
+          this.leaveSavePending.set(true);
+          saveSubscription = this._facade
+            .flushPendingSave()
+            .pipe(take(1))
+            .subscribe({
+              next: (saved) => {
+                if (settled) return;
+                if (saved) finish(true);
+                else {
+                  this.leaveSaveFailed.set(true);
+                  finish(false);
+                }
+              },
+              error: () => {
+                if (settled) return;
+                this.leaveSaveFailed.set(true);
+                finish(false);
+              },
+            });
         },
-        cancel: () => {
-          this.store.showLeaveDialog.set(false);
-          resolve(false);
-        },
+        cancel: () => finish(false),
+      };
+
+      return () => {
+        saveSubscription?.unsubscribe();
+        if (settled) return;
+
+        settled = true;
+        this.leaveSavePending.set(false);
+        this.store.showLeaveDialog.set(false);
+        this._tempLeaveHandlers = undefined;
       };
     });
   }
