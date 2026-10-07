@@ -4,7 +4,7 @@
 
 # Default owner for everything in the repo
 
-- @KristofGilis
+* @KristofGilis
 
 # .NET API and infrastructure
 
@@ -20,7 +20,7 @@
 # CI/CD and configuration
 
 /.github/ @KristofGilis
-/.releaserc.json @KristofGilis
+/.releaserc.mjs @KristofGilis
 /commitlint.config.mjs @KristofGilis
 
 # AI setup

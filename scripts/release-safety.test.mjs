@@ -219,3 +219,20 @@ test('semantic-release runs badge publication in prepare before tagging', () => 
     assert.doesNotMatch(releaseStep.run, /git (?:add|commit) badges/);
   }
 });
+
+test('CODEOWNERS and README match the active conditional semantic-release config', () => {
+  const codeOwners = readFileSync(join(ROOT, '.github/CODEOWNERS'), 'utf8');
+  const readme = readFileSync(join(ROOT, 'README.md'), 'utf8');
+  const releaseConfig = readFileSync(join(ROOT, '.releaserc.mjs'), 'utf8');
+
+  assert.match(codeOwners, /^\* @KristofGilis$/m);
+  assert.match(codeOwners, /^\/\.releaserc\.mjs @KristofGilis$/m);
+  assert.doesNotMatch(codeOwners, /^-\s+@KristofGilis$/m);
+  assert.doesNotMatch(codeOwners, /^\/\.releaserc\.json\b/m);
+  assert.match(
+    readme,
+    /Every push to `main` triggers the beta workflow, but semantic-release publishes a pre-release only when commit analysis finds a releasable change\./,
+  );
+  assert.match(releaseConfig, /'@semantic-release\/commit-analyzer'/);
+  assert.match(releaseConfig, /releaseRules:/);
+});

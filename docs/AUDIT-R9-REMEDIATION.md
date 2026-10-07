@@ -424,7 +424,8 @@ validated-SHA guarantee.
 ### WP-101 — Correct code-owner coverage and release documentation claims
 
 **Findings:** R9-37, R9-40 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
+
 **Size:** S  
 **Priority:** P2  
 **Dependencies:** WP-100
@@ -445,7 +446,7 @@ validated-SHA guarantee.
 - Run supported CODEOWNERS and release-config checks; review README against `.releaserc.mjs`.
 
 **Watch out for**
-- Required code-owner review depends on GitHub repository settings; record external confirmation as an operational prerequisite.
+- Required code-owner review cannot be established by this checkout; verify the applicable GitHub ruleset or branch protection requires code-owner review.
 
 ## Execution order
 
