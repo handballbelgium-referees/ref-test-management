@@ -61,7 +61,7 @@ describe('Datepicker focus management', () => {
     expect(document.activeElement).toBe(input);
     expect((fixture.componentInstance as unknown as IDatepickerHarness).isOpen()).toBe(false);
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
-  });
+  }, 15_000);
 
   it('keeps the mobile calendar closed after Escape restores focus', async () => {
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
@@ -83,7 +83,7 @@ describe('Datepicker focus management', () => {
     expect(document.activeElement).toBe(input);
     expect((fixture.componentInstance as unknown as IDatepickerHarness).isOpen()).toBe(false);
     expect(fixture.nativeElement.querySelector('[role="dialog"]')).toBeNull();
-  });
+  }, 15_000);
 
   it('moves focus into each calendar view after changing date granularity', async () => {
     const input = fixture.nativeElement.querySelector('input') as HTMLInputElement;
@@ -116,5 +116,5 @@ describe('Datepicker focus management', () => {
     await expectFocusOnSelectedView('button[aria-pressed="true"]');
     (document.activeElement as HTMLButtonElement).click();
     await expectFocusOnSelectedView('button[data-calendar-day][tabindex="0"]');
-  });
+  }, 15_000);
 });

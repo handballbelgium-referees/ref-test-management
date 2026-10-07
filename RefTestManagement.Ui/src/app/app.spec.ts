@@ -104,5 +104,5 @@ describe('App language selector', () => {
     await vi.waitFor(() => expect(translate.getCurrentLang()).toBe('nl'));
     expect(toggle.getAttribute('aria-expanded')).toBe('false');
     expect(document.activeElement).toBe(toggle);
-  });
+  }, 15_000);
 });

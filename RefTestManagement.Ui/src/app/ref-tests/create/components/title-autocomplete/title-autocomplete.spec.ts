@@ -22,6 +22,8 @@ interface ITitleAutocompleteHarness {
   onSearchInput(event: Event): void;
   onManualEntry(): void;
   onBlur(): void;
+  searchError(): boolean;
+  suggestions(): Array<{ id?: string; value: string }>;
 }
 
 describe('TitleAutocomplete', () => {
@@ -416,6 +418,8 @@ describe('TitleAutocomplete', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    await vi.waitFor(() => expect(component.searchError()).toBe(true), { timeout: 2000 });
+    expect(component.suggestions()).toEqual([]);
     expect(selected).toEqual([]);
     expect(fixture.nativeElement.textContent).toContain('Could not search titles.');
     expect(fixture.nativeElement.textContent).not.toContain('No existing titles found');

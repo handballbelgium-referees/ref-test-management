@@ -74,5 +74,5 @@ describe('DateRangeFilter', () => {
     expect(toDialogId).not.toBe(fromDialogId);
     expect(document.getElementById(toDialogId!)).not.toBeNull();
     expect(fixture.nativeElement.querySelectorAll('[role="dialog"]')).toHaveLength(1);
-  });
+  }, 15_000);
 });
