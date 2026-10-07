@@ -130,9 +130,10 @@ public static partial class RefTestCreationMutations
         if (titleInput.Name is null)
             throw new ArgumentException("Either Title.Id or Title.Name must be provided.");
 
-        var title = RefTestTitle.Create(titleInput.Name);
-        context.RefTestTitles.Add(title);
-        await context.SaveChangesWithRetryAsync(cancellationToken);
+        var title = await RefTestTitleResolution.ResolveOrCreateAsync(
+            context,
+            titleInput.Name,
+            cancellationToken);
         return (title.Id, title.Value);
     }
 
