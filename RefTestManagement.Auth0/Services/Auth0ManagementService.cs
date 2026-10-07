@@ -111,8 +111,8 @@ internal sealed partial class Auth0ManagementService(
         var roles = await GetAllPagesAsync<RoleResponse>(
             $"https://{_config.Domain}/api/v2/roles",
             token,
-            cancellationToken,
-            requestBudget);
+            requestBudget,
+            cancellationToken);
 
         foreach (var role in roles)
         {
@@ -125,8 +125,8 @@ internal sealed partial class Auth0ManagementService(
             var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
                 $"https://{_config.Domain}/api/v2/roles/{role.Id}/permissions",
                 token,
-                cancellationToken,
-                requestBudget);
+                requestBudget,
+                cancellationToken);
 
             if (!rolePermissions.Any(PermissionMatches))
                 continue;
@@ -134,8 +134,8 @@ internal sealed partial class Auth0ManagementService(
             var roleUsers = await GetAllPagesAsync<UserIdResponse>(
                 $"https://{_config.Domain}/api/v2/roles/{role.Id}/users",
                 token,
-                cancellationToken,
-                requestBudget);
+                requestBudget,
+                cancellationToken);
 
             foreach (var u in roleUsers)
                 matchingUserIds.Add(u.UserId);
@@ -147,8 +147,8 @@ internal sealed partial class Auth0ManagementService(
         var allUsers = await GetAllPagesAsync<UserResponse>(
             $"https://{_config.Domain}/api/v2/users",
             token,
-            cancellationToken,
-            requestBudget);
+            requestBudget,
+            cancellationToken);
 
         foreach (var userRef in allUsers)
         {
@@ -164,8 +164,8 @@ internal sealed partial class Auth0ManagementService(
             var userPermissions = await GetAllPagesAsync<PermissionResponse>(
                 $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userRef.UserId)}/permissions",
                 token,
-                cancellationToken,
-                requestBudget);
+                requestBudget,
+                cancellationToken);
 
             if (userPermissions.Any(PermissionMatches))
                 matchingUserIds.Add(userRef.UserId);
@@ -196,7 +196,7 @@ internal sealed partial class Auth0ManagementService(
             else
             {
                 // Fallback for users found via role but absent from the /users page (edge case)
-                var user = await GetUserAsync(userId, token, cancellationToken, requestBudget);
+                var user = await GetUserAsync(userId, token, requestBudget, cancellationToken);
                 if (user is not null)
                     users.Add(user);
             }
@@ -247,12 +247,14 @@ internal sealed partial class Auth0ManagementService(
         var directPermissions = await GetAllPagesAsync<PermissionResponse>(
             $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/permissions",
             token,
+            null,
             cancellationToken);
         AddPermissions(directPermissions);
 
         var roles = await GetAllPagesAsync<RoleResponse>(
             $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/roles",
             token,
+            null,
             cancellationToken);
 
         foreach (var role in roles)
@@ -260,6 +262,7 @@ internal sealed partial class Auth0ManagementService(
             var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
                 $"https://{_config.Domain}/api/v2/roles/{Uri.EscapeDataString(role.Id)}/permissions",
                 token,
+                null,
                 cancellationToken);
             AddPermissions(rolePermissions);
         }
@@ -292,6 +295,7 @@ internal sealed partial class Auth0ManagementService(
         var apis = await GetAllPagesAsync<ResourceServerResponse>(
             $"https://{_config.Domain}/api/v2/resource-servers",
             token,
+            null,
             cancellationToken);
 
         var api = apis.FirstOrDefault(a =>
@@ -353,8 +357,8 @@ internal sealed partial class Auth0ManagementService(
     private async Task<List<T>> GetAllPagesAsync<T>(
         string url,
         string token,
-        CancellationToken cancellationToken,
-        ApiRequestBudget? requestBudget = null)
+        ApiRequestBudget? requestBudget,
+        CancellationToken cancellationToken)
     {
         var results = new List<T>();
         var page = 0;
@@ -392,8 +396,8 @@ internal sealed partial class Auth0ManagementService(
     private async Task<Auth0User?> GetUserAsync(
         string userId,
         string token,
-        CancellationToken cancellationToken,
-        ApiRequestBudget? requestBudget = null)
+        ApiRequestBudget? requestBudget,
+        CancellationToken cancellationToken)
     {
         if (requestBudget is not null && !requestBudget.TryTake())
             return null;
