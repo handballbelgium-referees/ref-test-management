@@ -210,7 +210,8 @@ validated-SHA guarantee.
 ### WP-93 — Add recovery for authentication-check failures
 
 **Findings:** R9-16 (🟡 Medium)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
+
 **Size:** M  
 **Priority:** P1  
 **Dependencies:** None

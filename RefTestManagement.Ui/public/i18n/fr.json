@@ -37,6 +37,10 @@
       "subtitle": "Créer et gérer des RefTests sur les règles de handball pour les arbitres et délégués de la Fédération Belge de Handball",
       "login": "Accéder au Tableau de Bord"
     },
+    "authenticationCheckFailed": {
+      "title": "Statut de connexion indisponible",
+      "description": "Impossible de vérifier votre statut de connexion. Réessayez la vérification."
+    },
     "actions": {
       "title": "Actions Rapides",
       "create": {

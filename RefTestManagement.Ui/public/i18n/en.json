@@ -37,6 +37,10 @@
       "subtitle": "Create and manage handball rules RefTests for referees and delegates of the Belgian Handball Federation",
       "login": "Login to Dashboard"
     },
+    "authenticationCheckFailed": {
+      "title": "Sign-in status unavailable",
+      "description": "We couldn't confirm your sign-in status. Retry the check to continue."
+    },
     "actions": {
       "title": "Quick Actions",
       "create": {

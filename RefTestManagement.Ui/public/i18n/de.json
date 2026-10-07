@@ -37,6 +37,10 @@
       "subtitle": "Erstellen und verwalten Sie Handball-RefTests für Schiedsrichter und Delegierte des Belgischen Handballverbands",
       "login": "Zum Dashboard"
     },
+    "authenticationCheckFailed": {
+      "title": "Anmeldestatus nicht verf\u00fcgbar",
+      "description": "Ihr Anmeldestatus konnte nicht \u00fcberpr\u00fcft werden. Bitte versuchen Sie die Pr\u00fcfung erneut."
+    },
     "actions": {
       "title": "Schnellaktionen",
       "create": {

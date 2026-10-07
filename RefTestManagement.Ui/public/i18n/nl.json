@@ -37,6 +37,10 @@
       "subtitle": "Creëer en beheer RefTests voor scheidsrechters en waarnemers van de Belgische Handbalbond",
       "login": "Inloggen op Dashboard"
     },
+    "authenticationCheckFailed": {
+      "title": "Aanmeldstatus niet beschikbaar",
+      "description": "We konden uw aanmeldstatus niet controleren. Probeer de controle opnieuw."
+    },
     "actions": {
       "title": "Snelle Acties",
       "create": {
