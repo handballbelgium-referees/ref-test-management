@@ -263,7 +263,7 @@ validated-SHA guarantee.
 ### WP-95 — Align privacy wording and record the confirmed data classification
 
 **Findings:** R9-18 (🟡 Medium), R9-22 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented — the register records the IHF-side payload as transient, unlinked score input under the inspected configuration, supported by API source, Azure logging settings, and owner attestations (including no backups). It distinguishes the referee app's temporary association with an active RefTest from identifiers sent to IHF; this is a technical data-flow classification, not a blanket legal conclusion about controller-side processing.
 **Size:** M  
 **Priority:** P1  
 **Dependencies:** WP-89
