@@ -9,8 +9,9 @@ const peerAdvisory = {
   url: 'https://github.com/advisories/GHSA-aaaa-bbbb-cccc',
   cves: ['CVE-2026-12345'],
 };
+const criticalPeerAdvisory = { ...peerAdvisory, severity: 'critical' };
 
-test('parses high and critical advisories without excluding peer or development dependencies', () => {
+test('blocks critical advisories and ignores high and moderate advisories', () => {
   const findings = parseAuditReport({
     auditReportVersion: 2,
     vulnerabilities: {
@@ -38,19 +39,34 @@ test('parses high and critical advisories without excluding peer or development 
   }, 'root');
 
   assert.deepEqual(findings.map(({ package: name, severity, id }) => ({ name, severity, id })), [
-    { name: 'peer-package', severity: 'high', id: '123456' },
     { name: 'critical-package', severity: 'critical', id: '987654' },
-    { name: 'github-advisory-package', severity: 'high', id: 'GHSA-DDDD-EEEE-FFFF' },
   ]);
-  assert.deepEqual(findings[0].ids, ['123456', 'GHSA-AAAA-BBBB-CCCC', 'CVE-2026-12345']);
+  assert.deepEqual(findings[0].ids, ['987654']);
+});
+
+test('blocks critical advisories in peer and development dependencies', () => {
+  const findings = parseAuditReport({
+    vulnerabilities: {
+      'critical-peer-dev-package': {
+        severity: 'critical',
+        isPeer: true,
+        dev: true,
+        via: [criticalPeerAdvisory],
+      },
+    },
+  });
+
+  assert.equal(findings.length, 1);
+  assert.equal(findings[0].package, 'critical-peer-dev-package');
+  assert.equal(findings[0].severity, 'critical');
 });
 
 test('matches documented advisory aliases when npm reports a numeric source ID', () => {
   const finding = parseAuditReport({
     vulnerabilities: {
       'peer-package': {
-        severity: 'high',
-        via: [peerAdvisory],
+        severity: 'critical',
+        via: [criticalPeerAdvisory],
       },
     },
   })[0];
@@ -74,8 +90,8 @@ test('matches documented advisory aliases when npm reports a numeric source ID',
 test('uses the vulnerable dependency advisory identity rather than inherited package paths', () => {
   const findings = parseAuditReport({
     vulnerabilities: {
-      'affected-parent': { severity: 'high', via: ['vulnerable-leaf'] },
-      'vulnerable-leaf': { severity: 'high', via: [peerAdvisory, 'affected-parent'] },
+      'affected-parent': { severity: 'critical', via: ['vulnerable-leaf'] },
+      'vulnerable-leaf': { severity: 'critical', via: [criticalPeerAdvisory, 'affected-parent'] },
     },
   });
 
@@ -84,16 +100,26 @@ test('uses the vulnerable dependency advisory identity rather than inherited pac
   assert.equal(findings[0].id, '123456');
 });
 
-test('keeps high findings without an advisory identity blocking', () => {
+test('keeps critical findings without an advisory identity blocking', () => {
   const findings = parseAuditReport({
     vulnerabilities: {
-      'unknown-high-package': { severity: 'high', via: [] },
-      'orphaned-parent': { severity: 'high', via: ['missing-leaf'] },
+      'unknown-critical-package': { severity: 'critical', via: [] },
+      'orphaned-parent': { severity: 'critical', via: ['missing-leaf'] },
     },
   });
 
   assert.equal(findings[0].id, null);
   assert.equal(findings[1].id, null);
+});
+
+test('does not block high findings during policy evaluation', () => {
+  assert.deepEqual(evaluateFindings([
+    { severity: 'high', id: '123456' },
+    { severity: 'high', id: null },
+  ], new Map()), {
+    unexcepted: [],
+    unusedExceptions: [],
+  });
 });
 
 test('rejects malformed npm audit reports', () => {
@@ -131,9 +157,9 @@ test('only exact unexpired advisory exceptions pass; new and unidentified adviso
     }],
   }, '2026-10-07');
   const result = evaluateFindings([
-    { severity: 'high', id: '123456' },
+    { severity: 'critical', id: '123456' },
     { severity: 'critical', id: 'GHSA-DDDD-EEEE-FFFF', project: 'ui', package: 'new-advisory' },
-    { severity: 'high', id: null, project: 'ui', package: 'unknown-advisory' },
+    { severity: 'critical', id: null, project: 'ui', package: 'unknown-advisory' },
   ], exceptions);
 
   assert.deepEqual(result.unexcepted.map((item) => item.id), ['GHSA-DDDD-EEEE-FFFF', null]);

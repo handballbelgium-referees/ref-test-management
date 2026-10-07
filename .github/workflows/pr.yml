@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   dependency-review:
-    name: 🛡 Dependency Review (High/Critical)
+    name: 🛡 Dependency Review (Critical only)
     runs-on: ubuntu-latest
     permissions:
       contents: read

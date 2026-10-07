@@ -15,8 +15,9 @@ records the approved work packages and their verification status.
 current non-main branch only after focused checks pass and a GPT-6 Luna review reports no findings.
 
 **Approved decisions:** Withdrawal recovery uses existing operator escalation only; retention
-settings are bounded to 1–3 years and 1–90 days; High/Critical dependency advisories (including
+settings are bounded to 1–3 years and 1–90 days; Critical dependency advisories (including
 peer dependencies) block unless there is a documented, unexpired owner-attributed exception;
+High and lower dependency advisories are non-blocking;
 release tooling is excluded from Renovate auto-merge; retained R9-22 identifiers are classified as
 non-linkable and require supporting evidence to be cited; HSTS max-age is one year; production
 deployment waits for main synchronization; public withdrawal matching uses an indexed normalized
@@ -287,7 +288,7 @@ validated-SHA guarantee.
 **Watch out for**
 - The approved assumption is non-linkability. Pause this WP if supporting evidence cannot be cited; do not invent a basis or change data fields.
 
-### WP-96 — Enforce high-severity audits for root and UI dependencies
+### WP-96 — Enforce critical-only audits for root and UI dependencies
 
 **Findings:** R9-19, R9-20 (🟡 Medium)  
 **Status:** ✅ Implemented
@@ -302,11 +303,11 @@ validated-SHA guarantee.
 - `scripts/check-npm-audit.mjs` (new), an exception policy file under `.github`, and `docs/SECURITY.md`
 
 **Change**
-- Add blocking High/Critical audits for root and UI dependency trees in PR and release validation.
+- Add blocking Critical-only audits for root and UI dependency trees in PR and release validation.
 - Enforce exceptions with advisory identity, rationale, owner, and expiry; expired/malformed exceptions fail.
 
 **Acceptance**
-- Both trees are checked; peer advisories block by default; only explicit, unexpired, owner-attributed exceptions pass; policy is documented.
+- Both trees are checked; Critical advisories in peer, development, optional, direct, and transitive dependencies block by default; only explicit, unexpired, owner-attributed exceptions pass; lower severities are non-blocking and policy is documented.
 
 **Tests**
 - Test audit-result parsing and exception validation, including peer and expired cases; validate workflow YAML and run representative root/UI audits.

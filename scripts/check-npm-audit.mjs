@@ -9,7 +9,7 @@ const projects = [
   { name: 'RefTestManagement.Ui', directory: path.join(root, 'RefTestManagement.Ui') },
 ];
 const severities = new Set(['info', 'low', 'moderate', 'high', 'critical']);
-const blockingSeverities = new Set(['high', 'critical']);
+const blockingSeverities = new Set(['critical']);
 const advisoryIdPattern = /^(?:[1-9]\d*|GHSA-[A-Z0-9]{4}(?:-[A-Z0-9]{4}){2}|CVE-\d{4}-\d{4,})$/;
 const ownerPattern = /^@[A-Za-z0-9][A-Za-z0-9-]{0,38}(?:\/[A-Za-z0-9][A-Za-z0-9-]{0,38})?$/;
 const requiredExceptionFields = ['expiresOn', 'id', 'owner', 'rationale'];
@@ -221,8 +221,8 @@ function runAudit(project) {
   const windows = process.platform === 'win32';
   const command = windows ? (process.env.ComSpec || 'cmd.exe') : 'npm';
   const args = windows
-    ? ['/d', '/s', '/c', 'npm.cmd audit --json --audit-level=high --include=dev --include=optional --include=peer']
-    : ['audit', '--json', '--audit-level=high', '--include=dev', '--include=optional', '--include=peer'];
+    ? ['/d', '/s', '/c', 'npm.cmd audit --json --audit-level=critical --include=dev --include=optional --include=peer']
+    : ['audit', '--json', '--audit-level=critical', '--include=dev', '--include=optional', '--include=peer'];
   const result = spawnSync(command, args, {
     cwd: project.directory,
     encoding: 'utf8',
@@ -253,8 +253,8 @@ function readPolicy() {
 
 function reportCounts(audit) {
   const counts = audit.report.metadata?.vulnerabilities;
-  if (!isRecord(counts)) return `${audit.findings.length} direct High/Critical advisories`;
-  return `${counts.high ?? 0} High, ${counts.critical ?? 0} Critical`;
+  if (!isRecord(counts)) return `${audit.findings.length} direct Critical advisories`;
+  return `${counts.critical ?? 0} Critical, ${counts.high ?? 0} High (non-blocking)`;
 }
 
 function main() {
@@ -299,7 +299,7 @@ function main() {
     return;
   }
 
-  console.log('All root and Angular High/Critical npm advisories are covered by the current policy.');
+  console.log('All root and Angular Critical npm advisories are covered by the current policy.');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

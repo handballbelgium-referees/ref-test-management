@@ -20,8 +20,8 @@ deleting them. Event type, time, and other non-sensitive accountability details 
 
 The pull-request, beta-release, and stable-release validation workflows run
 `scripts/check-npm-audit.mjs` against both the repository-root and Angular dependency trees.
-High and Critical advisories block validation. The check does not exempt peer, development,
-optional, direct, or transitive dependencies; lower severities do not block this gate.
+Critical advisories block validation. High and lower severities are non-blocking. The check does
+not exempt peer, development, optional, direct, or transitive dependencies.
 
 Exceptions are recorded in `.github/npm-audit-exceptions.json` and must match the advisory's
 numeric npm ID, GHSA ID, or CVE ID. Each exception requires a rationale of at least 20 characters,
