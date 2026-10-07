@@ -370,7 +370,7 @@ validated-SHA guarantee.
 ### WP-99 — Harden security headers and correct API/security documentation
 
 **Findings:** R9-25 through R9-29 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
 **Size:** M  
 **Priority:** P2  
 **Dependencies:** WP-96
@@ -393,7 +393,7 @@ validated-SHA guarantee.
 - Add/run focused response-header and controller tests; run solution build and documentation/code review.
 
 **Watch out for**
-- Do not add `includeSubDomains`; preserve styling while tightening CSP, using nonce/hash support if required.
+- Do not add `includeSubDomains`. A per-response nonce on `index.html` conflicts with Angular's precache hash; the narrowly scoped inline-style allowance is documented in `docs/SECURITY.md`.
 
 ### WP-100 — Align release ordering, fork handling, provenance, and badge publication
 

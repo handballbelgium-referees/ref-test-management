@@ -120,11 +120,15 @@ Valid values:
 | Key                      | Description                                                              | Required |
 | ------------------------ | ------------------------------------------------------------------------ | -------- |
 | `Domain`                 | Auth0 tenant domain                                                      | Yes      |
-| `ClientId`               | Auth0 application client ID (OIDC/JWT audience validation)               | Yes      |
+| `ClientId`               | Auth0 OIDC application client ID used for interactive sign-in and sign-out | Yes      |
 | `ClientSecret`           | Auth0 application client secret                                          | Yes      |
 | `Audience`               | Auth0 API identifier                                                     | Yes      |
 | `ManagementClientId`     | Client ID for a Machine-to-Machine app authorized for the Management API | Yes      |
 | `ManagementClientSecret` | Secret for the Management API M2M app                                    | Yes      |
+
+`ClientId` identifies the OIDC application; it is not the API token audience. `Audience` is the
+Auth0 API resource-server identifier sent during OIDC sign-in and validated on bearer tokens.
+`ManagementClientId` and `ManagementClientSecret` belong to a separate machine-to-machine app.
 
 The Management API credentials are used by `RefTestManagement.Auth0` to sync permissions shortly after startup (`PermissionSyncService`, running in the background), resolve approvers by permission, and refresh each user's effective permissions for authorization. The refresh uses the existing machine-to-machine client-credentials flow; it does not require or assume an end-user refresh token.
 
@@ -260,9 +264,9 @@ provider-retention limits.
 
 | Key                    | Description                                    | Default |
 | ---------------------- | ---------------------------------------------- | ------- |
-| `EnableCleanup`        | Enable automatic redaction of old audit events | `true`  |
+| `EnableCleanup`        | Enable automatic redaction and archiving of old audit events | `true`  |
 | `CleanupIntervalHours` | How often cleanup runs                         | `24`    |
-| `RetentionDays`        | Audit events older than this are redacted; accepted range is 1–90 days | `90` |
+| `RetentionDays`        | Older events have known personal-data fields and actor name/email redacted, then are archived; remaining accountability details are retained. Accepted range: 1–90 days | `90` |
 
 ### GraphQlLimitsConfiguration
 

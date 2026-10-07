@@ -15,11 +15,13 @@ public sealed class ProductionApiIntegrationCollection
 [Collection("Production API integration")]
 public sealed class PrivacyWithdrawalGetRequestTests
 {
+    private const string TestIndexHtml = "<!doctype html><html><body><app-root></app-root></body></html>";
+
     [Fact]
     public async Task ProductionApiSetsSecurityHeadersAndRejectsGraphQlGetMutations()
     {
         using var testEnvironment = new TestApiEnvironment();
-        using var factory = new ProductionApiFactory();
+        using var factory = new ProductionApiFactory(testEnvironment.WebRootPath);
         using var client = factory.CreateClient(new WebApplicationFactoryClientOptions
         {
             BaseAddress = new Uri("https://security-test.example")
@@ -38,25 +40,56 @@ public sealed class PrivacyWithdrawalGetRequestTests
             $"/graphql?query={Uri.EscapeDataString(mutation)}",
             TestContext.Current.CancellationToken);
 
+        var responsePolicy = response.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Contains("default-src 'self';", responsePolicy);
+        Assert.Contains("script-src 'self';", responsePolicy);
+        Assert.Contains("style-src 'self';", responsePolicy);
+        Assert.Contains("object-src 'none';", responsePolicy);
+        Assert.Contains("frame-src 'none';", responsePolicy);
+        Assert.Contains("connect-src 'self';", responsePolicy);
+        Assert.DoesNotContain("wss:", responsePolicy);
+        Assert.Contains("style-src-elem 'self' 'unsafe-inline';", responsePolicy);
+        Assert.Contains("style-src-attr 'unsafe-inline';", responsePolicy);
+        Assert.DoesNotContain("https:", responsePolicy);
+        Assert.DoesNotContain("script-src 'self' 'unsafe-inline'", responsePolicy);
+        Assert.DoesNotContain("style-src 'self' 'unsafe-inline'", responsePolicy);
+        Assert.DoesNotContain("nonce-", responsePolicy);
         Assert.Equal(
-            "default-src 'self' https:; script-src 'self'; worker-src 'self' blob:; style-src 'self' 'unsafe-inline'; connect-src 'self' wss:; img-src 'self' data: https:; font-src 'self' data:; base-uri 'self'; form-action 'self';",
-            response.Headers.GetValues("Content-Security-Policy").Single());
-        Assert.Equal(
-            "max-age=2592000",
+            "max-age=31536000",
             response.Headers.GetValues("Strict-Transport-Security").Single());
+        Assert.DoesNotContain(
+            "includeSubDomains",
+            response.Headers.GetValues("Strict-Transport-Security").Single(),
+            StringComparison.OrdinalIgnoreCase);
         Assert.Equal(HttpStatusCode.MethodNotAllowed, response.StatusCode);
         var responseBody = await response.Content.ReadAsStringAsync(
             TestContext.Current.CancellationToken);
         using var errorDocument = JsonDocument.Parse(responseBody);
         Assert.True(errorDocument.RootElement.TryGetProperty("errors", out var errors));
         Assert.NotEmpty(errors.EnumerateArray());
+
+        using var indexResponse = await client.GetAsync("/", TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, indexResponse.StatusCode);
+        var indexPolicy = indexResponse.Headers.GetValues("Content-Security-Policy").Single();
+        Assert.Equal(responsePolicy, indexPolicy);
+        var indexHtml = await indexResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(TestIndexHtml, indexHtml);
+
+        using var directIndexResponse = await client.GetAsync(
+            "/index.html",
+            TestContext.Current.CancellationToken);
+        Assert.Equal(HttpStatusCode.OK, directIndexResponse.StatusCode);
+        Assert.Equal(
+            TestIndexHtml,
+            await directIndexResponse.Content.ReadAsStringAsync(TestContext.Current.CancellationToken));
     }
 
-    private sealed class ProductionApiFactory : WebApplicationFactory<global::Program>
+    private sealed class ProductionApiFactory(string webRootPath) : WebApplicationFactory<global::Program>
     {
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             builder.UseEnvironment("Testing");
+            builder.UseWebRoot(webRootPath);
             builder.ConfigureTestServices(services =>
             {
                 // Do not start the production background workers against the throwaway test database.
@@ -75,6 +108,9 @@ public sealed class PrivacyWithdrawalGetRequestTests
 
     private sealed class TestApiEnvironment : IDisposable
     {
+        public string WebRootPath { get; } =
+            Path.Combine(Path.GetTempPath(), $"ref-test-management-api-{Guid.NewGuid():N}");
+
         private readonly Dictionary<string, string?> _previousValues = new()
         {
             ["DatabaseProvider"] = Environment.GetEnvironmentVariable("DatabaseProvider"),
@@ -90,6 +126,11 @@ public sealed class PrivacyWithdrawalGetRequestTests
 
         public TestApiEnvironment()
         {
+            Directory.CreateDirectory(WebRootPath);
+            File.WriteAllText(
+                Path.Combine(WebRootPath, "index.html"),
+                TestIndexHtml);
+
             Environment.SetEnvironmentVariable("DatabaseProvider", "SQLite");
             Environment.SetEnvironmentVariable(
                 "ConnectionStrings__RefTestManagement",
@@ -107,6 +148,8 @@ public sealed class PrivacyWithdrawalGetRequestTests
         {
             foreach (var (name, value) in _previousValues)
                 Environment.SetEnvironmentVariable(name, value);
+
+            Directory.Delete(WebRootPath, recursive: true);
         }
     }
 }

@@ -77,9 +77,12 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### Audit Log
 
-- Every meaningful RefTest change raises a typed domain event, persisted as an immutable, append-only audit record
+- Every meaningful RefTest change raises a typed domain event, recorded in an append-oriented audit log
+- Privacy erasure and retention cleanup redact known personal-data fields in event
+  payloads. Erasure also redacts participant actor identity on applicable events; after
+  the configured retention period, cleanup redacts actor name/email and archives records
+  without deleting the remaining accountability details.
 - Viewable in the admin UI behind the `audit-logs:view` permission
-- Old events are soft-archived (never hard-deleted) after a configurable retention period
 
 ### Internationalization
 
