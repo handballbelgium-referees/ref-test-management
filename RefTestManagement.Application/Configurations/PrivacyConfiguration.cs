@@ -8,4 +8,10 @@ public class PrivacyConfiguration
     public string NoticeVersion { get; init; } = "1.0";
     public DateOnly NoticeEffectiveDate { get; init; } = new(2026, 8, 3);
     public int RetentionYears { get; init; } = 3;
+
+    public void Validate()
+    {
+        if (RetentionYears is < 1 or > 3)
+            throw new InvalidOperationException("PrivacyConfiguration.RetentionYears must be between 1 and 3.");
+    }
 }

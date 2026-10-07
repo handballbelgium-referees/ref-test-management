@@ -41,7 +41,8 @@ public enum PersonalDataExportDeliveryFailureCode
 {
     DeliveryFailed,
     SizeLimitExceeded,
-    NoCurrentRecords
+    NoCurrentRecords,
+    DeliveryOutcomeUnknown
 }
 
 /// <summary>Records that all export PDF attachments were accepted for delivery.</summary>
@@ -72,7 +73,9 @@ public sealed record PersonalDataExportDeliveryFailedEvent(
     public override object GetChanges() => new
     {
         attempt = Attempt,
-        accepted = false,
+        accepted = FailureCode == PersonalDataExportDeliveryFailureCode.DeliveryOutcomeUnknown
+            ? (bool?)null
+            : false,
         terminal = IsTerminal,
         failureCode = FailureCode.ToString()
     };

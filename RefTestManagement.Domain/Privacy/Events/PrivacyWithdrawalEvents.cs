@@ -42,12 +42,18 @@ public sealed record PrivacyWithdrawalBatchConfirmedEvent(int TargetCount) : Dom
     public override object GetChanges() => new { targetCount = TargetCount };
 }
 
-/// <summary>Records that every durable target in a withdrawal batch finished.</summary>
-public sealed record PrivacyWithdrawalBatchCompletedEvent(int TargetCount) : DomainEventBase
+/// <summary>Records completed and retry-exhausted targets in a terminal withdrawal batch.</summary>
+public sealed record PrivacyWithdrawalBatchCompletedEvent(
+    int CompletedTargetCount,
+    int ExhaustedTargetCount) : DomainEventBase
 {
     public const string EventType = "PrivacyWithdrawalBatchCompleted";
 
     public override string ActionName => EventType;
 
-    public override object GetChanges() => new { completedTargetCount = TargetCount };
+    public override object GetChanges() => new
+    {
+        completedTargetCount = CompletedTargetCount,
+        exhaustedTargetCount = ExhaustedTargetCount
+    };
 }

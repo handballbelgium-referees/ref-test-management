@@ -161,16 +161,18 @@ public sealed class ApprovalNotificationEmailJobHandlerTests
             List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendPersonalDataExportVerificationAsync(
+        public Task<bool> SendPersonalDataExportVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendPrivacyWithdrawalVerificationAsync(
+        public Task<bool> SendPrivacyWithdrawalVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<bool> SendPersonalDataExportAsync(

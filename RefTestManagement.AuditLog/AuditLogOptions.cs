@@ -8,6 +8,12 @@ public class AuditLogOptions
     public int CleanupIntervalHours { get; set; } = 24;
     public int RetentionDays { get; set; } = 90;
 
+    public void Validate()
+    {
+        if (RetentionDays is < 1 or > 90)
+            throw new InvalidOperationException("AuditLogConfiguration.RetentionDays must be between 1 and 90.");
+    }
+
     internal HashSet<Type> ExcludedEntityTypes { get; } = [];
     internal HashSet<Type> ExcludedForSystemActorTypes { get; } = [];
     internal HashSet<string> ExcludedPropertyNames { get; } = [];

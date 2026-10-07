@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
 // Aliased: this namespace also has its own RefTestStartedEvent/RefTestCompletedEvent records
 // (see RefTestSubscriptionService.cs) used only for publishing GraphQL subscriptions — distinct
@@ -57,6 +58,15 @@ public interface IRefTestPrivacyErasureService
     Task EraseAsync(
         RefTest refTest,
         ErasureInitiator initiator,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Revalidates retention eligibility in the erasure transaction before anonymizing the
+    /// current persisted record. Returns false when the candidate is missing or no longer due.
+    /// </summary>
+    Task<bool> EraseIfDueForRetentionAsync(
+        Guid refTestId,
+        DateTime cutoff,
         CancellationToken cancellationToken = default);
 
     /// <summary>
@@ -160,6 +170,35 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
             await EraseCoreAsync(refTest, initiator, ct);
 
             await transaction.CommitAsync(ct);
+        });
+    }
+
+    public async Task<bool> EraseIfDueForRetentionAsync(
+        Guid refTestId,
+        DateTime cutoff,
+        CancellationToken cancellationToken = default)
+    {
+        var strategy = context.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(cancellationToken, async ct =>
+        {
+            await using var transaction = await context.Database.BeginTransactionAsync(ct);
+            var refTest = await context.RefTests
+                .SingleOrDefaultAsync(candidate => candidate.Id == refTestId, ct);
+            if (refTest is null)
+                return false;
+
+            // The caller's candidate list may be stale, and this context may already track an
+            // older version. Refresh within the transaction before deciding whether erasure is
+            // still lawful; the concurrency token protects the subsequent write from a racing edit.
+            await context.Entry(refTest).ReloadAsync(ct);
+            if (context.Entry(refTest).State == EntityState.Detached
+                || !PrivacyRetentionQueries.IsDueForErasure(cutoff).Compile()(refTest))
+                return false;
+
+            await EraseCoreAsync(refTest, ErasureInitiator.Operator, ct);
+            await transaction.CommitAsync(ct);
+            return true;
         });
     }
 

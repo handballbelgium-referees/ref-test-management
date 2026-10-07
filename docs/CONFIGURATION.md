@@ -208,7 +208,7 @@ limits before rollout.
 | `ContactEmail`        | Privacy contact email                                                     | –       |
 | `NoticeVersion`       | Current privacy-notice version string; participants must accept it        | –       |
 | `NoticeEffectiveDate` | Effective date of the current notice version                              | –       |
-| `RetentionYears`      | Years to retain completed/expired RefTests before automatic anonymization | `3`     |
+| `RetentionYears`      | Years to retain terminal RefTests before automatic anonymization; accepted range is 1–3 years | `3` |
 
 See [docs/PRIVACY.md](PRIVACY.md) for how retention and erasure actually work.
 
@@ -262,7 +262,7 @@ provider-retention limits.
 | ---------------------- | ---------------------------------------------- | ------- |
 | `EnableCleanup`        | Enable automatic redaction of old audit events | `true`  |
 | `CleanupIntervalHours` | How often cleanup runs                         | `24`    |
-| `RetentionDays`        | Audit events older than this are redacted      | `90`    |
+| `RetentionDays`        | Audit events older than this are redacted; accepted range is 1–90 days | `90` |
 
 ### GraphQlLimitsConfiguration
 

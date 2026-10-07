@@ -6,6 +6,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
+using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 using DomainEvents = Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
@@ -125,6 +126,51 @@ public class RefTestPrivacyErasureServiceTests
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         return refTest.Id;
+    }
+
+    [Fact]
+    public async Task RetentionErasureRevalidatesARejectedCandidateAfterItIsApproved()
+    {
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var cutoff = DateTime.UtcNow;
+        var refTest = NewRefTest(titleId, requiresApproval: true);
+        refTest.Reject("not this season");
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(refTest);
+            seed.Entry(refTest).Property(candidate => candidate.CreatedAt).CurrentValue = cutoff.AddYears(-1);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var retentionContext = database.CreateContext();
+        var staleCandidateIds = await retentionContext.RefTests
+            .Where(PrivacyRetentionQueries.IsDueForErasure(cutoff))
+            .Select(candidate => candidate.Id)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Equal([refTest.Id], staleCandidateIds);
+
+        await using (var reactivation = database.CreateContext())
+        {
+            var approved = await reactivation.RefTests.SingleAsync(
+                candidate => candidate.Id == refTest.Id,
+                TestContext.Current.CancellationToken);
+            approved.Approve();
+            await reactivation.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var erased = await new RefTestPrivacyErasureService(retentionContext)
+            .EraseIfDueForRetentionAsync(refTest.Id, cutoff, TestContext.Current.CancellationToken);
+        Assert.False(erased);
+
+        await using var verification = database.CreateContext();
+        var current = await verification.RefTests.SingleAsync(
+            candidate => candidate.Id == refTest.Id,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(RefTestStatus.Pending, current.Status);
+        Assert.False(current.IsAnonymized);
+        Assert.Equal(ParticipantEmail, current.Email);
     }
 
     private static Job ApprovalDecisionJobFor(string reason, params Guid[] refTestIds)

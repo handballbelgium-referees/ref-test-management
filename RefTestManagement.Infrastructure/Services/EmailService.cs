@@ -41,16 +41,18 @@ public interface IEmailService
         List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         CancellationToken cancellationToken);
 
-    Task SendPersonalDataExportVerificationAsync(
+    Task<bool> SendPersonalDataExportVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken);
 
-    Task SendPrivacyWithdrawalVerificationAsync(
+    Task<bool> SendPrivacyWithdrawalVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken);
 
     Task<bool> SendPersonalDataExportAsync(
@@ -343,10 +345,11 @@ public class EmailService(
         ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(creatorEmail));
     }
 
-    public async Task SendPersonalDataExportVerificationAsync(
+    public async Task<bool> SendPersonalDataExportVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(configuration.BaseUrl, UriKind.Absolute, out var baseUri)
@@ -372,19 +375,21 @@ public class EmailService(
         var emailBody = await templateService.BuildCompletePersonalDataExportVerificationEmailAsync(
             enabledLanguages);
 
-        await SendEmailAsync(
+        return await SendEmailAsync(
             recipientEmail,
             translationService.GetEmailPersonalDataExportVerificationTranslations("en")["subject"],
             emailBody,
             cancellationToken: cancellationToken,
             requireSuccessfulProviderResponse: true,
-            suppressFailureDetails: true);
+            suppressFailureDetails: true,
+            finalDeliverabilityCheck: finalDeliverabilityCheck);
     }
 
-    public async Task SendPrivacyWithdrawalVerificationAsync(
+    public async Task<bool> SendPrivacyWithdrawalVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(configuration.BaseUrl, UriKind.Absolute, out var baseUri)
@@ -410,14 +415,15 @@ public class EmailService(
         var emailBody = await templateService.BuildCompletePrivacyWithdrawalVerificationEmailAsync(
             enabledLanguages);
 
-        await SendEmailAsync(
+        return await SendEmailAsync(
             recipientEmail,
             translationService.GetEmailPrivacyWithdrawalVerificationTranslations("en")["subject"],
             emailBody,
             cancellationToken: cancellationToken,
             requireSuccessfulProviderResponse: true,
             suppressFailureDetails: true,
-            suppressedFailureLabel: "Privacy withdrawal");
+            suppressedFailureLabel: "Privacy withdrawal",
+            finalDeliverabilityCheck: finalDeliverabilityCheck);
     }
 
     public async Task<bool> SendPersonalDataExportAsync(

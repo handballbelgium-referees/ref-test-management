@@ -65,6 +65,7 @@ var auditLogOptions = services.AddAuditLogging(opts =>
     opts.RegisterEntityResolver("RefTestTitle", (id, ctx) =>
         ctx.Set<RefTestTitle>().Find(id)?.Value);
 });
+auditLogOptions.Validate();
 
 services.AddDatabaseProvider(configuration);
 
@@ -93,6 +94,7 @@ services.AddSingleton(reportConfig);
 
 var privacyConfig = configuration.GetSection("PrivacyConfiguration").Get<PrivacyConfiguration>()
                     ?? new PrivacyConfiguration();
+privacyConfig.Validate();
 services.AddSingleton(privacyConfig);
 
 var privacyChallengeConfig = configuration.GetSection("PrivacyChallengeConfiguration")

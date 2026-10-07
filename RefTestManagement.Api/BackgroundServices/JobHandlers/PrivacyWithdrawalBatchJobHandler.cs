@@ -75,9 +75,10 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
                 "Privacy-withdrawal batch exhausted retries for {TargetCount} target(s).",
                 exhaustedTargetCount);
 
+        int? terminalExhaustedTargetCount;
         try
         {
-            await MarkBatchCompletedIfReadyAsync(payload.BatchId, cancellationToken);
+            terminalExhaustedTargetCount = await MarkBatchCompletedIfReadyAsync(payload.BatchId, cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -88,6 +89,9 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
             logger.LogError("Privacy-withdrawal batch completion could not be recorded.");
             throw new PrivacyWithdrawalBatchProcessingException();
         }
+
+        if (terminalExhaustedTargetCount is > 0)
+            throw new JobPayloadException("One or more privacy-withdrawal targets exhausted their retries.");
     }
 
     private async Task<List<Guid>> LoadPendingTargetIdsAsync(Guid batchId, CancellationToken cancellationToken)
@@ -227,25 +231,40 @@ public sealed class PrivacyWithdrawalBatchJobHandler(
             : TargetProcessingOutcome.RetryExhausted;
     }
 
-    private async Task MarkBatchCompletedIfReadyAsync(Guid batchId, CancellationToken cancellationToken)
+    private async Task<int?> MarkBatchCompletedIfReadyAsync(Guid batchId, CancellationToken cancellationToken)
     {
         using var scope = scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
         var batch = await context.PrivacyWithdrawalBatches
             .SingleOrDefaultAsync(candidate => candidate.Id == batchId, cancellationToken);
 
-        if (batch is null || batch.CompletedAt is not null)
-            return;
+        if (batch is null)
+            return null;
+        if (batch.CompletedAt is not null)
+        {
+            return await context.PrivacyWithdrawalBatchTargets
+                .CountAsync(
+                    target => target.BatchId == batchId && target.RetryExhaustedAt != null,
+                    cancellationToken);
+        }
 
         var hasPendingTargets = await context.PrivacyWithdrawalBatchTargets
             .AnyAsync(
-                target => target.BatchId == batchId && target.CompletedAt == null,
+                target => target.BatchId == batchId
+                          && target.CompletedAt == null
+                          && target.RetryExhaustedAt == null,
                 cancellationToken);
         if (hasPendingTargets)
-            return;
+            return null;
 
-        if (batch.MarkCompleted(DateTime.UtcNow))
+        var exhaustedTargetCount = await context.PrivacyWithdrawalBatchTargets
+            .CountAsync(
+                target => target.BatchId == batchId && target.RetryExhaustedAt != null,
+                cancellationToken);
+        if (batch.MarkCompleted(DateTime.UtcNow, exhaustedTargetCount))
             await context.SaveChangesWithRetryAsync(cancellationToken);
+
+        return exhaustedTargetCount;
     }
 
     private enum TargetProcessingOutcome

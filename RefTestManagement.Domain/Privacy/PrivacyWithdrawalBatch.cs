@@ -64,14 +64,18 @@ public sealed class PrivacyWithdrawalBatch : IHasDomainEvents, IHasVerifiedParti
         return true;
     }
 
-    /// <summary>Marks the batch complete once all durable targets have finished.</summary>
-    public bool MarkCompleted(DateTime completedAt)
+    /// <summary>Marks the batch terminal after all targets completed or exhausted their retries.</summary>
+    public bool MarkCompleted(DateTime completedAt, int exhaustedTargetCount = 0)
     {
+        if (exhaustedTargetCount < 0 || exhaustedTargetCount > TargetCount)
+            throw new ArgumentOutOfRangeException(nameof(exhaustedTargetCount));
         if (CompletedAt is not null)
             return false;
 
         CompletedAt = completedAt;
-        _domainEvents.Add(new PrivacyWithdrawalBatchCompletedEvent(TargetCount)
+        _domainEvents.Add(new PrivacyWithdrawalBatchCompletedEvent(
+            TargetCount - exhaustedTargetCount,
+            exhaustedTargetCount)
         {
             OccurredAt = completedAt
         });

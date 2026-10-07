@@ -1,5 +1,6 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +118,12 @@ public sealed class PrivacyWithdrawalCleanupService(
         var completedTargets = await context.PrivacyWithdrawalBatchTargets
             .Where(target => context.PrivacyWithdrawalBatches
                 .Any(batch => batch.Id == target.BatchId && batch.CompletedAt != null))
+            .Where(target => target.RetryExhaustedAt == null
+                             || context.PrivacyWithdrawalBatches.Any(batch =>
+                                 batch.Id == target.BatchId
+                                 && batch.LatestJobId != null
+                                 && context.Jobs.Any(job => job.Id == batch.LatestJobId
+                                                            && job.Status == JobStatus.Failed)))
             .OrderBy(target => target.CompletedAt)
             .Take(BatchSize)
             .ToListAsync(cancellationToken);

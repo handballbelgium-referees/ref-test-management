@@ -153,6 +153,24 @@ public class Job
     }
 
     /// <summary>
+    /// Marks an abandoned final-attempt lease as failed and counts its in-flight attempt.
+    /// </summary>
+    public bool MarkAsFailedAfterAttemptsExhausted(DateTime failedAt, int maxAttempts, string errorMessage)
+    {
+        if (Status != JobStatus.Processing
+            || Attempts + 1 < maxAttempts
+            || LockedUntil is { } lockedUntil && lockedUntil > failedAt)
+            return false;
+
+        Attempts++;
+        Status = JobStatus.Failed;
+        CompletedAt = failedAt;
+        ErrorMessage = errorMessage;
+        LockedUntil = null;
+        return true;
+    }
+
+    /// <summary>
     /// Cancels the job. Clears <see cref="Payload"/>: a cancelled job will never run, so its
     /// payload has no further use, and for participant-facing jobs it holds personal data (name,
     /// email, invitation token, scores, answers) that must not survive an erasure request.

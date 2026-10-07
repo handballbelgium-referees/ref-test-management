@@ -1,8 +1,12 @@
+using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -194,6 +198,32 @@ public class PrivacyRetentionQueriesTests
         Assert.Empty(await DueIdsAsync(database, Cutoff.AddYears(-10)));
     }
 
+    [Fact]
+    public async Task ARejectedCandidateReactivatedBeforeTheSweepIsNoLongerDue()
+    {
+        var (database, titleId) = await SeedTitleAsync();
+        using var _ = database;
+        var id = await AddAsync(
+            database,
+            titleId,
+            refTest => refTest.Reject("not this season"),
+            requiresApproval: true);
+        await BackdateAsync(database, id, "CreatedAt", Cutoff.AddDays(-1));
+
+        Assert.Equal([id], await DueIdsAsync(database, Cutoff));
+
+        await using (var reactivation = database.CreateContext())
+        {
+            var refTest = await reactivation.RefTests.SingleAsync(
+                candidate => candidate.Id == id,
+                TestContext.Current.CancellationToken);
+            refTest.Approve();
+            await reactivation.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        Assert.Empty(await DueIdsAsync(database, Cutoff));
+    }
+
     /// <summary>
     /// The most important assertion here. A pending or in-progress test belongs to someone who may
     /// still be sitting it; erasing one on a timer would destroy a live assessment, irreversibly,
@@ -244,6 +274,68 @@ public class PrivacyRetentionQueriesTests
         await BackdateAsync(database, id, "CompletedAt", Cutoff.AddYears(-10));
 
         Assert.Empty(await DueIdsAsync(database, Cutoff));
+    }
+
+    [Fact]
+    public async Task OneRetentionCandidateFailureDoesNotSkipLaterCandidates()
+    {
+        using var database = SqliteTestDatabase.Create();
+        await using var context = database.CreateContext();
+        var failedId = Guid.NewGuid();
+        var laterId = Guid.NewGuid();
+        var visited = new List<Guid>();
+
+        var completed = await PrivacyRetentionService.ProcessCandidatesAsync(
+            context,
+            [failedId, laterId],
+            (candidateId, _) =>
+            {
+                visited.Add(candidateId);
+                return candidateId == failedId
+                    ? Task.FromException<bool>(new InvalidOperationException("participant@example.org"))
+                    : Task.FromResult(true);
+            },
+            NullLogger<PrivacyRetentionService>.Instance,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal([failedId, laterId], visited);
+        Assert.Equal(1, completed);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(3)]
+    public void PrivacyRetentionYearsAcceptsInclusiveBounds(int retentionYears)
+    {
+        var configuration = new PrivacyConfiguration { RetentionYears = retentionYears };
+        configuration.Validate();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(4)]
+    public void PrivacyRetentionYearsOutsidePolicyFailValidation(int retentionYears)
+    {
+        var configuration = new PrivacyConfiguration { RetentionYears = retentionYears };
+        Assert.Throws<InvalidOperationException>(configuration.Validate);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(90)]
+    public void AuditRetentionDaysAcceptsInclusiveBounds(int retentionDays)
+    {
+        var options = new AuditLogOptions { RetentionDays = retentionDays };
+        options.Validate();
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(91)]
+    public void AuditRetentionDaysOutsidePolicyFailValidation(int retentionDays)
+    {
+        var options = new AuditLogOptions { RetentionDays = retentionDays };
+        Assert.Throws<InvalidOperationException>(options.Validate);
     }
 
     /// <summary>

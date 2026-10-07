@@ -91,7 +91,7 @@ validated-SHA guarantee.
 ### WP-89 — Harden retention and terminal privacy-job recovery
 
 **Findings:** R9-03, R9-04, R9-05, R9-06, R9-07, R9-23 (🟡 Medium, ⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented  
 **Size:** L  
 **Priority:** P1  
 **Dependencies:** WP-88

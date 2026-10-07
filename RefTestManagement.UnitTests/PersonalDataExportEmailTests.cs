@@ -25,6 +25,7 @@ public sealed class PersonalDataExportEmailTests
             ParticipantEmail,
             ChallengeKey,
             DateTime.UtcNow.AddHours(24),
+            _ => Task.FromResult(true),
             TestContext.Current.CancellationToken);
 
         using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
@@ -69,6 +70,7 @@ public sealed class PersonalDataExportEmailTests
             ParticipantEmail,
             ChallengeKey,
             DateTime.UtcNow.AddHours(24),
+            _ => Task.FromResult(true),
             TestContext.Current.CancellationToken);
 
         using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
@@ -100,6 +102,36 @@ public sealed class PersonalDataExportEmailTests
             Assert.False(string.IsNullOrWhiteSpace(localized["introText"]));
             Assert.Contains("{0}", localized["expiryNote"], StringComparison.Ordinal);
         }
+    }
+
+    [Fact]
+    public async Task VerificationEmailsSkipProviderWhenFinalDeliverabilityCheckFails()
+    {
+        var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+        using var client = new HttpClient(handler);
+        var service = CreateService(client, NullLogger<EmailService>.Instance);
+        var finalCheckCount = 0;
+        Task<bool> RejectFinalCheck(CancellationToken _)
+        {
+            finalCheckCount++;
+            return Task.FromResult(false);
+        }
+
+        Assert.False(await service.SendPersonalDataExportVerificationAsync(
+            ParticipantEmail,
+            ChallengeKey,
+            DateTime.UtcNow.AddHours(24),
+            RejectFinalCheck,
+            TestContext.Current.CancellationToken));
+        Assert.False(await service.SendPrivacyWithdrawalVerificationAsync(
+            ParticipantEmail,
+            ChallengeKey,
+            DateTime.UtcNow.AddHours(24),
+            RejectFinalCheck,
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(2, finalCheckCount);
+        Assert.Null(handler.RequestBody);
     }
 
     [Fact]
@@ -304,6 +336,7 @@ public sealed class PersonalDataExportEmailTests
                 ParticipantEmail,
                 ChallengeKey,
                 DateTime.UtcNow.AddHours(24),
+                _ => Task.FromResult(true),
                 TestContext.Current.CancellationToken));
 
         var logs = string.Join(Environment.NewLine, loggerProvider.Messages);

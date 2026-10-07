@@ -215,7 +215,7 @@ public sealed class PrivacyWithdrawalRequestService(
                         .ToListAsync(retryToken);
 
                     var recovery = await EnsureProcessableTargetsAsync(dueTargetIds, now, retryToken);
-                    await CompleteFullyProcessedBatchesAsync(now, retryToken);
+                    await CompleteTerminalBatchesAsync(now, retryToken);
 
                     if (context.ChangeTracker.HasChanges())
                         await context.SaveChangesAsync(retryToken);
@@ -463,22 +463,37 @@ public sealed class PrivacyWithdrawalRequestService(
         }
     }
 
-    private async Task CompleteFullyProcessedBatchesAsync(
+    private async Task CompleteTerminalBatchesAsync(
         DateTime completedAt,
         CancellationToken cancellationToken)
     {
-        var completedBatches = await context.PrivacyWithdrawalBatches
+        var terminalBatches = await context.PrivacyWithdrawalBatches
             .Where(batch => batch.CompletedAt == null
                             && batch.TargetCount == context.PrivacyWithdrawalBatchTargets.Count(
-                                target => target.BatchId == batch.Id && target.CompletedAt != null)
+                                target => target.BatchId == batch.Id
+                                          && (target.CompletedAt != null || target.RetryExhaustedAt != null))
                             && !context.PrivacyWithdrawalBatchTargets.Any(
-                                target => target.BatchId == batch.Id && target.CompletedAt == null))
+                                target => target.BatchId == batch.Id
+                                          && target.CompletedAt == null
+                                          && target.RetryExhaustedAt == null))
             .OrderBy(batch => batch.CreatedAt)
             .Take(ReconciliationBatchSize)
             .ToListAsync(cancellationToken);
 
-        foreach (var batch in completedBatches)
-            batch.MarkCompleted(completedAt);
+        if (terminalBatches.Count == 0)
+            return;
+
+        var terminalBatchIds = terminalBatches.Select(batch => batch.Id).ToArray();
+        var exhaustedTargetCounts = await context.PrivacyWithdrawalBatchTargets
+            .Where(target => terminalBatchIds.Contains(target.BatchId)
+                             && target.CompletedAt == null
+                             && target.RetryExhaustedAt != null)
+            .GroupBy(target => target.BatchId)
+            .Select(group => new { BatchId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.BatchId, group => group.Count, cancellationToken);
+
+        foreach (var batch in terminalBatches)
+            batch.MarkCompleted(completedAt, exhaustedTargetCounts.GetValueOrDefault(batch.Id));
     }
 
     private bool HasProcessableBatchWork(Job job, DateTime now)
