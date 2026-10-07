@@ -5,7 +5,7 @@ This document tracks processor relationships and the contract/evidence needed to
 ## Controller vs processor (this project)
 
 - **Controller:** Handball Belgium / service owner (you, acting as controller)
-- **Processors:** Third-party providers processing personal data on your behalf (e.g., Microsoft Azure, Auth0, Brevo, IHF Rules Questions)
+- **Processors:** Third-party providers processing personal data on your behalf (e.g., Microsoft Azure, Auth0, Brevo). IHF Rules Questions is an external service under assessment; its processor and personal-data classification are not yet established.
 
 > Note: you are generally **not** both controller and processor for the same processing activity unless you process data on behalf of another controller as a separate legal role.
 
@@ -18,15 +18,15 @@ This document tracks processor relationships and the contract/evidence needed to
 | Microsoft (Azure) | Azure SQL, App Service, platform backups/logging | Participant identity, test data, operational logs | Hosting and infrastructure operations | Assumed yes (Microsoft standard DPA/Online Services Terms) — acceptance evidence pending | EEA hosting in use; non-EEA subprocessors/SCC details pending controller evidence | Azure SQL/App Service retention and deletion behavior documented in `GDPR-OPERATIONS-EVIDENCE.md` (some items pending) | Azure portal + Microsoft legal terms evidence (to be linked) | 2026-09-22 |
 | Auth0 | Identity/authz and management API (free tenant) | Admin/staff identity + permissions metadata | Authentication and authorization | Pending confirmation | Tenant indicated as Belgium/Europe; transfer safeguard details pending | Pending confirmation | Auth0 tenant settings + legal terms (to be linked) | 2026-09-22 |
 | Brevo | Email delivery (free account) | Recipient email, message metadata/content | Invitation/result/report email sending | Pending confirmation | Pending confirmation | Pending confirmation | Brevo account/legal terms (to be linked) | 2026-09-22 |
-| IHF Rules Questions | External question/result source | **No personal data processed** (per controller statement) | Question retrieval and score/report integration | N/A if no personal data processing (confirm periodically) | N/A if no personal data processing | N/A if no personal data processing | Controller statement; service contract/docs (to be linked) | 2026-09-22 |
+| IHF Rules Questions (classification under assessment) | External question-retrieval and score-calculation API | Shared question/answer content; scoring requests include question IDs and submitted selected-answer IDs. The app request contains no participant, RefTest, or attempt ID; whether these values or request metadata are participant data or linkable is unconfirmed. | Question retrieval and score calculation | Applicability pending data-classification review; contract evidence not provided | Pending confirmation | Service logging and retention terms pending confirmation | Owner attestation and source paths are recorded in the 2026-10-07 review-log entry; no independent IHF statement provided | 2026-10-07 |
 
-### Region/location notes (known)
+### Region/location and integration data-flow notes (known)
 
 - Azure App Services region: **West Europe**.
 - Azure SQL Server region: **Belgium Central**.
 - Auth0 tenant location: **Belgium/Europe** (controller-provided).
 - Brevo account tier: **Free** (controller-provided).
-- IHF Rules Questions service: **no personal data sent** (controller-provided).
+- IHF Rules Questions data flow (2026-10-07): the repository data owner, who also owns the question/answer repository, stated that no participant data goes to the service and clarified that only question retrieval and score calculation go to the API. Source review found that score requests include question IDs and submitted selected-answer IDs (`RefTestManagement.Api/Graphql/Mutations/Lifecycle/RefTestLifecycleMutations.cs` and `RefTestManagement.Application/Services/IHFRulesQuestionsService.cs`); no participant, RefTest, or attempt ID is present in the app request. Whether the transmitted values or service request metadata are participant data or linkable to an individual remains unconfirmed. Do not treat the flow as verified non-linkable until this is resolved. The owner statement is not independent IHF evidence; processor/personal-data classification, contract/DPA applicability, transfer, logging, retention, and deletion terms remain pending.
 
 ---
 
@@ -50,3 +50,4 @@ For each processor, store or link:
 |---|---|---|---|
 | 2026-09-22 | Kristof Gilis | Bootstrapped processor register with known Azure hosting regions and default-baseline assumptions. | Attach concrete DPA/transfer/retention evidence links for all processors. |
 | 2026-09-22 | Kristof Gilis | Added controller-provided facts: Auth0 Belgium/Europe tenant, Brevo free account, IHF service receives no personal data. | Attach supporting links/screenshots for Auth0/Brevo terms and IHF data-flow proof. |
+| 2026-10-07 | Repository data owner (attestation) | The owner, who also owns the question/answer repository, stated that no participant data goes to IHF and clarified that only question retrieval and score calculation go to the API. Separately, source review found that score requests include question IDs and submitted selected-answer IDs, with no participant, RefTest, or attempt ID in the app request. Whether those values or service-side request metadata are participant data or linkable to an individual is unresolved. | Confirm how the submitted selected-answer IDs and service-side request/log metadata are classified and whether they can be attributed to a participant; attach owner/processor evidence before classifying the flow or IHF's processor status. |

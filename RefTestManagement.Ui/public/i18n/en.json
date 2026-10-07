@@ -647,7 +647,7 @@
     "withdraw_link": "Withdraw consent and request anonymization",
     "withdraw_error": "We could not process your withdrawal. Please try again or contact us.",
     "withdrawal_queued_title": "Withdrawal request received",
-    "withdrawal_queued_message": "Your request has been queued for processing. Your identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
+    "withdrawal_queued_message": "Your request has been queued for background processing. Once processing succeeds, identifying details will be redacted (anonymized). A redacted RefTest record and audit trail may remain; permanently removing the RefTest record is a separate step.",
     "time_remaining": "Time Remaining",
     "progress": "Progress",
     "question": "Question",
@@ -691,8 +691,8 @@
       },
       "withdraw": {
         "title": "Withdraw consent?",
-        "message": "Your withdrawal request will be queued for background processing. Your identifying data will be anonymized after processing succeeds; an anonymized RefTest record may be retained for audit purposes.",
-        "warning": "Anonymization is not immediate. The request will be processed in the background, and your RefTest record may remain in anonymized form for audit purposes.",
+        "message": "Your withdrawal request will be queued for background processing. Once processing succeeds, identifying details will be redacted (anonymized). A redacted RefTest record and audit trail may remain; permanently removing the RefTest record is a separate step.",
+        "warning": "Processing runs in the background and is not immediate. It redacts identifying details, and a redacted RefTest record and audit trail may remain. Permanently removing the RefTest record is a separate step.",
         "confirm": "Withdraw consent and queue anonymization",
         "cancel": "Cancel"
       }
@@ -732,7 +732,7 @@
     },
     "retention": {
       "title": "Retention",
-      "body": "We erase assessment and invitation data {{retentionYears}} years after the assessment is completed or expires. If you withdraw consent after identity verification, we erase your assessment data and queued communications without delay. Email already delivered to your inbox cannot be recalled."
+      "body": "We anonymize (redact) identifying details in assessment and invitation records {{retentionYears}} years after completion or expiry for completed or expired assessments, or after creation for pending-approval or rejected records. If you withdraw consent, background processing redacts identifying details and cancels and clears queued communications once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; the RefTest row stays in place, and removing it entirely is a separate step. Email already delivered to your inbox cannot be recalled."
     },
     "rights": {
       "title": "Your rights",
@@ -759,21 +759,21 @@
     },
     "consentWithdrawal": {
       "title": "Withdraw consent and request anonymization",
-      "description": "Enter the email address associated with your participation. If one or more non-anonymized participant records match, a one-time confirmation link will be sent to that address. You do not need an account or invitation token.",
+      "description": "Enter the email address associated with your participation. If one or more non-anonymized participant records match, a one-time confirmation link will be sent to that address. You do not need an account or invitation token. After confirmation, background processing redacts identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; withdrawal leaves the RefTest row in place, and removing it entirely is a separate step.",
       "requestLink": "Open the withdrawal request form",
       "emailLabel": "Email address",
-      "emailHelp": "The same acknowledgement is shown for every address. After you confirm, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. This is not immediate.",
+      "emailHelp": "The same acknowledgement is shown for every address. After you confirm, background processing redacts (anonymizes) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain. The RefTest row stays in place; removing it entirely is a separate step.",
       "emailRequired": "Enter your email address.",
       "emailInvalid": "Enter a valid email address.",
       "requestButton": "Send withdrawal request",
       "requesting": "Sending your request...",
-      "requestAcknowledged": "If the address is associated with a participant record, a confirmation email will be sent. This page shows the same acknowledgement whether or not a record matches. After you confirm the withdrawal of consent, identifying data will be anonymized once processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
+      "requestAcknowledged": "If the address is associated with a participant record, a confirmation email will be sent. This page shows the same acknowledgement whether or not a record matches. After you confirm the withdrawal of your consent, background processing redacts (anonymizes) identifying details once it succeeds. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "requestError": "We could not process your request. Please try again.",
       "confirmationTitle": "Confirm withdrawal of consent",
-      "confirmationDescription": "Opening this page does not confirm the request. Select the button below only if you want to withdraw your consent. After confirmation, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmationDescription": "Opening this page does not confirm the request. Select the button below only if you want to withdraw your consent. After confirmation, background processing redacts (anonymizes) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "confirmButton": "Confirm withdrawal",
       "confirming": "Confirming your withdrawal request...",
-      "confirmed": "Your consent withdrawal has been confirmed. Identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmed": "Your consent withdrawal has been confirmed. Background processing will redact (anonymize) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "confirmationError": "We could not confirm this request. The link may be invalid, expired, or already used. Request a new link if needed; no participant information is shown here.",
       "confirmationKeyMissing": "This link does not contain confirmation information. Request a new link from the privacy notice."
     }

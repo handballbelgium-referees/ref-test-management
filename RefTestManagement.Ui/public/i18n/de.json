@@ -647,7 +647,7 @@
     "withdraw_link": "Einwilligung widerrufen und Anonymisierung beantragen",
     "withdraw_error": "Ihr Widerruf konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns.",
     "withdrawal_queued_title": "Antrag auf Widerruf eingegangen",
-    "withdrawal_queued_message": "Ihr Antrag wurde zur Verarbeitung vorgemerkt. Ihre identifizierenden Daten werden nach erfolgreicher Verarbeitung anonymisiert. Ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
+    "withdrawal_queued_message": "Ihr Antrag wurde zur Hintergrundverarbeitung vorgemerkt. Nach erfolgreicher Verarbeitung werden Ihre identifizierenden Angaben im RefTest und im Pr\u00fcfprotokoll geschw\u00e4rzt (anonymisiert). Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben; der RefTest-Datensatz bleibt nach diesem Schritt bestehen. Seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
     "time_remaining": "Verbleibende Zeit",
     "progress": "Fortschritt",
     "question": "Frage",
@@ -691,8 +691,8 @@
       },
       "withdraw": {
         "title": "Einwilligung widerrufen?",
-        "message": "Ihr Antrag auf Widerruf wird im Hintergrund verarbeitet. Ihre identifizierenden Daten werden nach erfolgreicher Verarbeitung anonymisiert; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
-        "warning": "Die Anonymisierung erfolgt nicht sofort. Ihr Antrag wird im Hintergrund bearbeitet; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
+        "message": "Ihr Antrag auf Widerruf wird im Hintergrund verarbeitet. Nach erfolgreicher Verarbeitung werden Ihre identifizierenden Angaben im RefTest und im Pr\u00fcfprotokoll geschw\u00e4rzt (anonymisiert). Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben; der RefTest-Datensatz bleibt nach diesem Schritt bestehen. Seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
+        "warning": "Die Hintergrundverarbeitung erfolgt nicht sofort. Sie schw\u00e4rzt und anonymisiert identifizierende Angaben; ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
         "confirm": "Einwilligung widerrufen und Anonymisierung beantragen",
         "cancel": "Abbrechen"
       }
@@ -732,7 +732,7 @@
     },
     "retention": {
       "title": "Speicherdauer",
-      "body": "Wir löschen Test- und Einladungsdaten {{retentionYears}} Jahre nach Abschluss oder Ablauf des Tests. Wenn Sie Ihre Einwilligung nach einer Identitätsprüfung widerrufen, löschen wir Ihre Testdaten und ausstehende Mitteilungen unverzüglich. Eine bereits in Ihr Postfach zugestellte E-Mail kann nicht zurückgerufen werden."
+      "body": "Wir anonymisieren (schw\u00e4rzen) die identifizierenden Angaben in Test- und Einladungseintr\u00e4gen {{retentionYears}} Jahre nach Abschluss oder Ablauf abgeschlossener oder abgelaufener Tests beziehungsweise nach Erstellung von Tests mit ausstehender Genehmigung oder abgelehnten Tests. Wenn Sie Ihre Einwilligung widerrufen, schw\u00e4rzt die Hintergrundverarbeitung identifizierende Angaben und bricht ausstehende Mitteilungen ab und bereinigt deren Daten, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben; der RefTest-Datensatz bleibt nach diesem Schritt bestehen. Seine vollst\u00e4ndige Beseitigung ist ein separater Schritt. Eine bereits in Ihr Postfach zugestellte E-Mail kann nicht zur\u00fcckgerufen werden."
     },
     "rights": {
       "title": "Ihre Rechte",
@@ -759,21 +759,21 @@
     },
     "consentWithdrawal": {
       "title": "Einwilligung widerrufen und Anonymisierung beantragen",
-      "description": "Geben Sie die mit Ihrer Teilnahme verkn\u00fcpfte E-Mail-Adresse ein. Wenn sie einem oder mehreren nicht anonymisierten Teilnehmereintr\u00e4gen entspricht, senden wir einen einmaligen Best\u00e4tigungslink an diese Adresse. Sie ben\u00f6tigen weder ein Konto noch ein Einladungstoken.",
+      "description": "Geben Sie die mit Ihrer Teilnahme verkn\u00fcpfte E-Mail-Adresse ein. Wenn sie einem oder mehreren nicht anonymisierten Teilnehmereintr\u00e4gen entspricht, senden wir einen einmaligen Best\u00e4tigungslink an diese Adresse. Sie ben\u00f6tigen weder ein Konto noch ein Einladungstoken. Nach der Best\u00e4tigung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "requestLink": "Formular zum Widerruf \u00f6ffnen",
       "emailLabel": "E-Mail-Adresse",
-      "emailHelp": "F\u00fcr jede Adresse wird dieselbe Best\u00e4tigung angezeigt. Nach Ihrer Best\u00e4tigung werden identifizierende Daten anonymisiert, sobald die Verarbeitung erfolgreich abgeschlossen ist; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden. Die Anonymisierung erfolgt nicht sofort.",
+      "emailHelp": "F\u00fcr jede Adresse wird dieselbe Best\u00e4tigung angezeigt. Nach Ihrer Best\u00e4tigung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "emailRequired": "Geben Sie Ihre E-Mail-Adresse ein.",
       "emailInvalid": "Geben Sie eine g\u00fcltige E-Mail-Adresse ein.",
       "requestButton": "Widerrufsantrag senden",
       "requesting": "Ihr Antrag wird gesendet...",
-      "requestAcknowledged": "Wenn die Adresse einem Teilnehmereintrag zugeordnet ist, senden wir eine Best\u00e4tigungs-E-Mail. Diese Seite zeigt unabh\u00e4ngig davon, ob ein Eintrag zugeordnet werden kann, dieselbe Best\u00e4tigung. Nach der Best\u00e4tigung Ihres Widerrufs der Einwilligung werden identifizierende Daten anonymisiert, sobald die Verarbeitung erfolgreich abgeschlossen ist. Ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
+      "requestAcknowledged": "Wenn die Adresse einem Teilnehmereintrag zugeordnet ist, senden wir eine Best\u00e4tigungs-E-Mail. Diese Seite zeigt unabh\u00e4ngig davon, ob ein Eintrag zugeordnet werden kann, dieselbe Best\u00e4tigung. Nach der Best\u00e4tigung Ihres Widerrufs der Einwilligung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "requestError": "Ihr Antrag konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
       "confirmationTitle": "Widerruf der Einwilligung best\u00e4tigen",
-      "confirmationDescription": "Das \u00d6ffnen dieser Seite best\u00e4tigt den Antrag nicht. W\u00e4hlen Sie die Schaltfl\u00e4che unten nur aus, wenn Sie Ihre Einwilligung widerrufen m\u00f6chten. Nach der Best\u00e4tigung werden identifizierende Daten anonymisiert, sobald die Verarbeitung erfolgreich abgeschlossen ist; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden. Die Anonymisierung erfolgt nicht sofort.",
+      "confirmationDescription": "Das \u00d6ffnen dieser Seite best\u00e4tigt den Antrag nicht. W\u00e4hlen Sie die Schaltfl\u00e4che unten nur aus, wenn Sie Ihre Einwilligung widerrufen m\u00f6chten. Nach der Best\u00e4tigung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "confirmButton": "Widerruf best\u00e4tigen",
       "confirming": "Ihr Widerrufsantrag wird best\u00e4tigt...",
-      "confirmed": "Ihr Widerruf der Einwilligung wurde best\u00e4tigt. Identifizierende Daten werden nach erfolgreicher Verarbeitung anonymisiert. Ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden. Die Anonymisierung erfolgt nicht sofort.",
+      "confirmed": "Ihr Widerruf der Einwilligung wurde best\u00e4tigt. Die Hintergrundverarbeitung anonymisiert identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "confirmationError": "Dieser Antrag konnte nicht best\u00e4tigt werden. Der Link ist m\u00f6glicherweise ung\u00fcltig, abgelaufen oder bereits verwendet. Fordern Sie bei Bedarf einen neuen Link an; diese Seite zeigt keine Teilnehmendeninformationen.",
       "confirmationKeyMissing": "Dieser Link enth\u00e4lt keine Best\u00e4tigungsinformationen. Fordern Sie \u00fcber den Datenschutzhinweis einen neuen Link an."
     }

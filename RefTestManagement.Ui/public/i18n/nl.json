@@ -647,7 +647,7 @@
     "withdraw_link": "Toestemming intrekken en anonimisatie aanvragen",
     "withdraw_error": "We konden uw intrekking niet verwerken. Probeer het opnieuw of neem contact met ons op.",
     "withdrawal_queued_title": "Aanvraag tot intrekking ontvangen",
-    "withdrawal_queued_message": "Uw aanvraag is in de wachtrij geplaatst. Uw identificerende gegevens worden geanonimiseerd zodra de verwerking is geslaagd. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
+    "withdrawal_queued_message": "Uw aanvraag staat in de wachtrij voor verwerking op de achtergrond. Zodra de verwerking slaagt, worden uw identificerende gegevens in de RefTest en de auditgeschiedenis afgeschermd (geanonimiseerd). Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
     "time_remaining": "Resterende Tijd",
     "progress": "Voortgang",
     "question": "Vraag",
@@ -691,8 +691,8 @@
       },
       "withdraw": {
         "title": "Toestemming intrekken?",
-        "message": "Uw aanvraag om toestemming in te trekken wordt op de achtergrond verwerkt. Uw identificerende gegevens worden geanonimiseerd zodra de verwerking is geslaagd; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
-        "warning": "Anonimisatie gebeurt niet onmiddellijk. Uw aanvraag wordt op de achtergrond verwerkt en het RefTest-record kan in geanonimiseerde vorm voor auditdoeleinden worden bewaard.",
+        "message": "Uw aanvraag om toestemming in te trekken wordt op de achtergrond verwerkt. Zodra de verwerking slaagt, worden uw identificerende gegevens in de RefTest en de auditgeschiedenis afgeschermd (geanonimiseerd). Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
+        "warning": "De verwerking gebeurt op de achtergrond en is niet onmiddellijk. Identificerende gegevens worden afgeschermd en geanonimiseerd; het RefTest-record en de auditgeschiedenis kunnen in deze vorm blijven bestaan. De RefTest-rij blijft staan; een aparte stap kan die definitief uit de administratie halen.",
         "confirm": "Toestemming intrekken en anonimisatie aanvragen",
         "cancel": "Annuleren"
       }
@@ -732,7 +732,7 @@
     },
     "retention": {
       "title": "Bewaartermijn",
-      "body": "We wissen toets- en uitnodigingsgegevens {{retentionYears}} jaar nadat de toets is voltooid of verlopen. Trekt u uw toestemming in na identiteitscontrole, dan wissen we uw toetsgegevens en geplande communicatie zonder onnodige vertraging. Een al afgeleverde e-mail kan niet uit uw inbox worden teruggehaald."
+      "body": "We anonimiseren de identificerende gegevens in toets- en uitnodigingsrecords {{retentionYears}} jaar na afronding of verstrijken van voltooide of verlopen toetsen, of na aanmaak van dossiers in afwachting van goedkeuring of afgewezen dossiers. Als u uw toestemming intrekt, schermt achtergrondverwerking identificerende gegevens af en annuleert en wist geplande communicatie zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald. Een al afgeleverde e-mail kan niet uit uw inbox worden teruggehaald."
     },
     "rights": {
       "title": "Uw rechten",
@@ -759,21 +759,21 @@
     },
     "consentWithdrawal": {
       "title": "Toestemming intrekken en anonimisatie aanvragen",
-      "description": "Vul het e-mailadres in dat bij uw deelname hoort. Als het overeenkomt met een of meer niet-geanonimiseerde deelnemersrecords, sturen we een eenmalige bevestigingslink naar dat adres. U hebt geen account of uitnodigingstoken nodig.",
+      "description": "Vul het e-mailadres in dat bij uw deelname hoort. Als het overeenkomt met een of meer niet-geanonimiseerde deelnemersrecords, sturen we een eenmalige bevestigingslink naar dat adres. U hebt geen account of uitnodigingstoken nodig. Na bevestiging schermt achtergrondverwerking uw identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "requestLink": "Open het formulier voor intrekking",
       "emailLabel": "E-mailadres",
-      "emailHelp": "Voor elk adres wordt dezelfde bevestiging getoond. Nadat u bevestigt, worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Dit gebeurt niet onmiddellijk.",
+      "emailHelp": "Voor elk adres wordt dezelfde bevestiging getoond. Na uw bevestiging schermt achtergrondverwerking identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "emailRequired": "Vul uw e-mailadres in.",
       "emailInvalid": "Vul een geldig e-mailadres in.",
       "requestButton": "Aanvraag tot intrekking verzenden",
       "requesting": "Uw aanvraag wordt verzonden...",
-      "requestAcknowledged": "Als het adres bij een deelnemersrecord hoort, sturen we een bevestigingsmail. Deze pagina toont dezelfde melding, ongeacht of er een record overeenkomt. Na bevestiging van uw intrekking van toestemming worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
+      "requestAcknowledged": "Als het adres bij een deelnemersrecord hoort, sturen we een bevestigingsmail. Deze pagina toont dezelfde melding, ongeacht of er een record overeenkomt. Na bevestiging van uw intrekking van toestemming schermt achtergrondverwerking identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "requestError": "We konden uw verzoek niet verwerken. Probeer het opnieuw.",
       "confirmationTitle": "Intrekking van toestemming bevestigen",
-      "confirmationDescription": "Het openen van deze pagina bevestigt uw aanvraag niet. Selecteer de knop hieronder alleen als u uw toestemming wilt intrekken. Na bevestiging worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Anonimisatie gebeurt niet onmiddellijk.",
+      "confirmationDescription": "Het openen van deze pagina bevestigt uw aanvraag niet. Selecteer de knop hieronder alleen als u uw toestemming wilt intrekken. Na bevestiging schermt achtergrondverwerking identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "confirmButton": "Intrekking bevestigen",
       "confirming": "Uw aanvraag tot intrekking wordt bevestigd...",
-      "confirmed": "Uw intrekking van toestemming is bevestigd. Identificerende gegevens worden geanonimiseerd zodra de verwerking slaagt. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Anonimisatie gebeurt niet onmiddellijk.",
+      "confirmed": "Uw intrekking van toestemming is bevestigd. Achtergrondverwerking schermt identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "confirmationError": "We konden deze aanvraag niet bevestigen. De link is mogelijk ongeldig, verlopen of al gebruikt. Vraag zo nodig een nieuwe link aan; deze pagina toont geen informatie over deelnemers.",
       "confirmationKeyMissing": "Deze link bevat geen bevestigingsgegevens. Vraag via de privacyverklaring een nieuwe link aan."
     }

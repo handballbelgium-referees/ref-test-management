@@ -6,6 +6,7 @@ import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { Observable, of } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetPrivacyNoticeGQL } from '../../../graphql/generated';
+import en from '../../../public/i18n/en.json';
 import { PrivacyNotice } from './privacy-notice';
 
 describe('PrivacyNotice', () => {
@@ -56,42 +57,7 @@ describe('PrivacyNotice', () => {
     });
 
     const translate = TestBed.inject(TranslateService);
-    translate.setTranslation(
-      'en',
-      {
-        common: { retry: 'Retry' },
-        privacy: {
-          title: 'Privacy notice',
-          loading: 'Loading privacy notice...',
-          empty: 'The privacy notice is not available.',
-          error: 'Could not load the privacy notice.',
-          updated: 'Effective from {{effectiveDate}} (version {{noticeVersion}}).',
-          controller: {
-            title: 'Data controller and contact',
-            body: '{{controllerName}}, {{controllerAddress}}. Contact {{contactEmail}}.',
-          },
-          data: { title: 'Data', body: 'Data body' },
-          purposes: { title: 'Purposes', body: 'Purposes body' },
-          basis: { title: 'Basis', body: 'Basis body' },
-          recipients: { title: 'Recipients', body: 'Recipients body' },
-          retention: { title: 'Retention', body: 'Retained for {{retentionYears}} years.' },
-          rights: { title: 'Rights', body: 'Contact {{contactEmail}}.' },
-          dataExport: {
-            title: 'Request a copy of your personal data',
-            description:
-              'Enter the email address associated with your participation. If it matches a participant record, we will send a confirmation link to that address.',
-            requestLink: 'Open the request form',
-          },
-          consentWithdrawal: {
-            title: 'Withdraw consent and request anonymization',
-            description:
-              'No account or invitation token is needed. After confirmation, identifying data will be anonymized when processing succeeds; an anonymized record may be kept for audit purposes.',
-            requestLink: 'Open the withdrawal request form',
-          },
-        },
-      },
-      true,
-    );
+    translate.setTranslation('en', en, true);
     await new Promise<void>((resolve) => {
       translate.use('en').subscribe(() => resolve());
     });
@@ -112,15 +78,35 @@ describe('PrivacyNotice', () => {
 
   it('renders the backend privacy notice metadata instead of hard-coded copy', async () => {
     const fixture = await renderPrivacyNotice();
+    const retentionCopy = en.privacy.retention.body.replace('{{retentionYears}}', '5');
 
     const text = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
 
     expect(text).toMatch(/Effective from .*2026.*\(version v2\.3\)\./);
     expect(text).toContain(
-      'Handball Belgium, Arena 1, 1000 Brussels, Belgium. Contact privacy@example.com.',
+      en.privacy.controller.body
+        .replace('{{controllerName}}', notice.controllerName)
+        .replace('{{controllerAddress}}', notice.controllerAddress)
+        .replace('{{contactEmail}}', notice.contactEmail),
     );
-    expect(text).toContain('Retained for 5 years.');
-    expect(text).toContain('Contact privacy@example.com.');
+    expect(retentionCopy).toContain(
+      'after creation for pending-approval or rejected records.',
+    );
+    expect(text).toContain(retentionCopy);
+    expect(text).toContain(
+      en.privacy.rights.body.replace('{{contactEmail}}', notice.contactEmail),
+    );
+  });
+
+  it('explains that withdrawal redacts identifiers without permanently deleting the RefTest', async () => {
+    const fixture = await renderPrivacyNotice();
+    const text = fixture.nativeElement.textContent.replace(/\s+/g, ' ').trim();
+    const withdrawalCopy = en.privacy.consentWithdrawal.description;
+
+    expect(text).toContain(withdrawalCopy);
+    expect(withdrawalCopy).toContain('background processing redacts identifying details');
+    expect(withdrawalCopy).toContain('A redacted RefTest record and audit trail may remain');
+    expect(withdrawalCopy).toContain('removing it entirely is a separate step');
   });
 
   it('links to a separate export request page without rendering the request form or confirmation card', async () => {
@@ -189,7 +175,10 @@ describe('PrivacyNotice', () => {
 
     expect(privacyNoticeWatch).toHaveBeenCalledTimes(2);
     expect(errorFixture.nativeElement.textContent).toContain(
-      'Handball Belgium, Arena 1, 1000 Brussels, Belgium.',
+      en.privacy.controller.body
+        .replace('{{controllerName}}', notice.controllerName)
+        .replace('{{controllerAddress}}', notice.controllerAddress)
+        .replace('{{contactEmail}}', notice.contactEmail),
     );
   });
 });
