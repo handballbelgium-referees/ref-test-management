@@ -398,7 +398,7 @@ validated-SHA guarantee.
 ### WP-100 — Align release ordering, fork handling, provenance, and badge publication
 
 **Findings:** R9-36, R9-38, R9-39, R9-41 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
 **Size:** L  
 **Priority:** P2  
 **Dependencies:** WP-96, WP-99
@@ -419,7 +419,7 @@ validated-SHA guarantee.
 - Validate workflow YAML, triggers, permissions, and dependencies; test fork/ref handling and simulated badge failure without production credentials; assert no tag on failure and validated-SHA identity on success.
 
 **Watch out for**
-- Badge generation already runs during semantic-release prepare, but branch push follows tag creation. Redesign must move branch update pre-publication without weakening validated-SHA provenance; stop for re-planning if unsafe.
+- Badge updates are pushed from a detached worktree during semantic-release prepare, leaving the release checkout at the validated SHA; failed pushes abort before tag creation.
 
 ### WP-101 — Correct code-owner coverage and release documentation claims
 

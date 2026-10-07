@@ -305,11 +305,11 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | -------------------- | ---------------------- | ------------------------------------------------------------------- |
 | `pr.yml`             | PR → `main`            | Build/test validation + i18n parity                                 |
 | `beta-release.yml`   | push → `main`          | semantic-release pre-release (`vX.Y.Z-alpha.N`) + deploy to testing |
-| `stable-release.yml` | manual, from `release` | Promote, tag a stable release, fast-forward `main`, deploy to production |
+| `stable-release.yml` | manual, from `release` | Promote; update badges before tagging the validated candidate; fast-forward `main` before production deployment |
 
 ## Versioning
 
-[Semantic Versioning](https://semver.org/) via [semantic-release](https://github.com/semantic-release/semantic-release), driven entirely by conventional commit types (`feat` → minor, `fix`/`perf`/`refactor`/etc. → patch, `!` or `BREAKING CHANGE:` → major). The release badges above are regenerated automatically on every release.
+[Semantic Versioning](https://semver.org/) via [semantic-release](https://github.com/semantic-release/semantic-release), driven entirely by conventional commit types (`feat` → minor, `fix`/`perf`/`refactor`/etc. → patch, `!` or `BREAKING CHANGE:` → major). Release badges are regenerated and fast-forwarded to the release branch before semantic-release creates a tag; a failed badge update aborts publication. Stable tags point to the validated candidate, and production deployment waits for the successful fast-forward back to `main`.
 
 ## Documentation
 

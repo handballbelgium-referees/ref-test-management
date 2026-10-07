@@ -100,7 +100,7 @@ export default {
     [
       '@semantic-release/exec',
       {
-        prepareCmd: 'node scripts/generate-badges.mjs ${nextRelease.version}',
+        prepareCmd: 'node scripts/generate-badges.mjs ${nextRelease.version} --publish',
       },
     ],
     '@semantic-release/github',

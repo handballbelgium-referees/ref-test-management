@@ -8,8 +8,8 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DOTNET_VERSION: 10.0.x
-  NODE_VERSION: 24
+  DOTNET_VERSION: 10.0.303
+  NODE_VERSION: 24.20.0
 
 jobs:
   promote:
@@ -65,14 +65,21 @@ jobs:
             echo "::error::The validated candidate is no longer present in main."
             exit 1
           fi
-          if ! git merge-base --is-ancestor "$RELEASE_SHA" "$VALIDATED_SHA"; then
-            echo "::error::The validated candidate cannot fast-forward the release branch."
-            exit 1
-          fi
           if [ "$RELEASE_SHA" = "$VALIDATED_SHA" ]; then
             echo "push-needed=false" >> "$GITHUB_OUTPUT"
-          else
+          elif [ "$(git rev-list --parents -n 1 "$RELEASE_SHA")" = "$RELEASE_SHA $VALIDATED_SHA" ]; then
+            CHANGED_FILES="$(git diff-tree --no-commit-id --name-only -r "$RELEASE_SHA")"
+            if [ -z "$CHANGED_FILES" ] || \
+               printf '%s\n' "$CHANGED_FILES" | grep -Ev '^badges/(release|pre-release)\.png$' >/dev/null; then
+              echo "::error::The release branch has an unexpected commit above the validated candidate."
+              exit 1
+            fi
+            echo "push-needed=false" >> "$GITHUB_OUTPUT"
+          elif git merge-base --is-ancestor "$RELEASE_SHA" "$VALIDATED_SHA"; then
             echo "push-needed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::The release branch cannot fast-forward to the validated candidate."
+            exit 1
           fi
 
       - name: 🔑 Mint promotion token
@@ -126,17 +133,27 @@ jobs:
           ACTUAL_SHA="$(git rev-parse HEAD)"
           if ! git show-ref --verify --quiet refs/remotes/origin/main || \
              ! git show-ref --verify --quiet refs/remotes/origin/release || \
-             [ "$ACTUAL_SHA" != "$VALIDATED_SHA" ] || \
-             [ "$(git rev-parse refs/remotes/origin/release)" != "$VALIDATED_SHA" ]; then
-            echo "::error::Release branch does not point to the validated candidate."
+             [ "$ACTUAL_SHA" != "$VALIDATED_SHA" ]; then
+            echo "::error::Release checkout does not match the validated candidate or required refs are missing."
             exit 1
+          fi
+          REMOTE_RELEASE_SHA="$(git rev-parse refs/remotes/origin/release)"
+          if [ "$REMOTE_RELEASE_SHA" != "$VALIDATED_SHA" ]; then
+            PARENTS="$(git rev-list --parents -n 1 "$REMOTE_RELEASE_SHA")"
+            CHANGED_FILES="$(git diff-tree --no-commit-id --name-only -r "$REMOTE_RELEASE_SHA")"
+            if [ "$PARENTS" != "$REMOTE_RELEASE_SHA $VALIDATED_SHA" ] || \
+               [ -z "$CHANGED_FILES" ] || \
+               printf '%s\n' "$CHANGED_FILES" | grep -Ev '^badges/(release|pre-release)\.png$' >/dev/null; then
+              echo "::error::The release branch moved beyond the candidate with an unexpected commit."
+              exit 1
+            fi
           fi
           MAIN_SHA="$(git rev-parse refs/remotes/origin/main)"
           if ! git merge-base --is-ancestor "$VALIDATED_SHA" "$MAIN_SHA"; then
             echo "::error::The validated candidate is no longer present in main."
             exit 1
           fi
-          git checkout -B release "$ACTUAL_SHA"
+          git checkout -B release "$REMOTE_RELEASE_SHA"
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -162,6 +179,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ steps.release-token.outputs.token }}
           VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
+          BADGE_BRANCH: release
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
@@ -183,18 +201,6 @@ jobs:
             echo "new_release_version=${LATEST_TAG_AFTER#v}" >> "$GITHUB_OUTPUT"
             echo "new_release_tag=$LATEST_TAG_AFTER" >> "$GITHUB_OUTPUT"
             echo "new_release_sha=$TAG_SHA" >> "$GITHUB_OUTPUT"
-            BRANCH_SHA="$VALIDATED_SHA"
-            VERSION="${LATEST_TAG_AFTER#v}"
-            git add badges/*.png
-            if ! git diff --cached --quiet; then
-              git commit -m "ci(release): update badges to v${VERSION} [skip ci]"
-              if git push origin HEAD:refs/heads/release; then
-                BRANCH_SHA="$(git rev-parse HEAD)"
-              else
-                echo "::warning::Release succeeded, but the release-branch badge update could not be pushed."
-              fi
-            fi
-            echo "release_branch_sha=$BRANCH_SHA" >> "$GITHUB_OUTPUT"
           else
             echo "new_release_published=false" >> "$GITHUB_OUTPUT"
             echo "new_release_version=" >> "$GITHUB_OUTPUT"
@@ -211,6 +217,15 @@ jobs:
     outputs:
       validated-sha: ${{ steps.verify-source.outputs.sha }}
       artifact-name: ${{ steps.verify-source.outputs.artifact-name }}
+      node-version: ${{ steps.publish.outputs.node-version }}
+      npm-version: ${{ steps.publish.outputs.npm-version }}
+      dotnet-sdk-version: ${{ steps.publish.outputs.dotnet-sdk-version }}
+      dotnet-sdks: ${{ steps.publish.outputs.dotnet-sdks }}
+      dotnet-runtimes: ${{ steps.publish.outputs.dotnet-runtimes }}
+      runner-os: ${{ steps.publish.outputs.runner-os }}
+      runner-arch: ${{ steps.publish.outputs.runner-arch }}
+      runner-image-os: ${{ steps.publish.outputs.runner-image-os }}
+      runner-image-version: ${{ steps.publish.outputs.runner-image-version }}
     permissions:
       contents: read
 
@@ -286,17 +301,39 @@ jobs:
         run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
 
       - name: 📦 Publish .NET application
+        id: publish
         env:
           VALIDATED_SHA: ${{ needs.validate.outputs.validated-sha }}
           RELEASE_TAG: ${{ needs.release.outputs.new-release-tag }}
         run: |
+          set -euo pipefail
           mkdir -p ./release-artifact
           dotnet publish RefTestManagement.Api/RefTestManagement.Api.csproj \
             --configuration Release \
             --no-build \
             --output ./release-artifact/application
-          printf 'validated-sha=%s\nrelease-tag=%s\n' \
-            "$VALIDATED_SHA" "$RELEASE_TAG" > ./release-artifact/provenance.txt
+          : "${ImageOS:?GitHub-hosted runner image name is required}"
+          : "${ImageVersion:?GitHub-hosted runner image version is required}"
+          NODE_TOOL_VERSION="$(node --version)"
+          NPM_TOOL_VERSION="$(npm --version)"
+          DOTNET_SDK_VERSION="$(dotnet --version)"
+          DOTNET_SDKS="$(dotnet --list-sdks | tr '\n' ';')"
+          DOTNET_RUNTIMES="$(dotnet --list-runtimes | tr '\n' ';')"
+          {
+            printf 'validated-sha=%s\nrelease-tag=%s\n' "$VALIDATED_SHA" "$RELEASE_TAG"
+            printf 'node-version=%s\nnpm-version=%s\n' "$NODE_TOOL_VERSION" "$NPM_TOOL_VERSION"
+            printf 'dotnet-sdk-version=%s\ndotnet-sdks=%s\ndotnet-runtimes=%s\n' \
+              "$DOTNET_SDK_VERSION" "$DOTNET_SDKS" "$DOTNET_RUNTIMES"
+            printf 'runner-os=%s\nrunner-arch=%s\nrunner-image-os=%s\nrunner-image-version=%s\n' \
+              "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "$ImageVersion"
+          } > ./release-artifact/provenance.txt
+          {
+            printf 'node-version=%s\nnpm-version=%s\n' "$NODE_TOOL_VERSION" "$NPM_TOOL_VERSION"
+            printf 'dotnet-sdk-version=%s\ndotnet-sdks=%s\ndotnet-runtimes=%s\n' \
+              "$DOTNET_SDK_VERSION" "$DOTNET_SDKS" "$DOTNET_RUNTIMES"
+            printf 'runner-os=%s\nrunner-arch=%s\nrunner-image-os=%s\nrunner-image-version=%s\n' \
+              "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "$ImageVersion"
+          } >> "$GITHUB_OUTPUT"
 
       - name: ⬆️ Upload build artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -340,7 +377,7 @@ jobs:
         run: npm ci
 
       - name: 🧪 Test npm audit policy checker
-        run: node --test scripts/check-npm-audit.test.mjs
+        run: node --test scripts/check-npm-audit.test.mjs scripts/release-safety.test.mjs
 
       - name: 🛡 Audit root and Angular dependencies
         run: node scripts/check-npm-audit.mjs
@@ -457,7 +494,7 @@ jobs:
   deploy-production:
     name: 🚀 Deploy to Production ${{needs.release.outputs.new-release-version}}
     runs-on: ubuntu-latest
-    needs: [release, build, validate]
+    needs: [release, build, validate, sync-to-main]
     if: needs.release.outputs.new-release-published == 'true'
     environment:
       name: production
@@ -480,13 +517,25 @@ jobs:
           BUILD_SHA: ${{ needs.build.outputs.validated-sha }}
           RELEASE_SHA: ${{ needs.release.outputs.new-release-sha }}
           RELEASE_TAG: ${{ needs.release.outputs.new-release-tag }}
+          BUILD_NODE_VERSION: ${{ needs.build.outputs.node-version }}
+          BUILD_NPM_VERSION: ${{ needs.build.outputs.npm-version }}
+          BUILD_DOTNET_SDK_VERSION: ${{ needs.build.outputs.dotnet-sdk-version }}
+          BUILD_DOTNET_SDKS: ${{ needs.build.outputs.dotnet-sdks }}
+          BUILD_DOTNET_RUNTIMES: ${{ needs.build.outputs.dotnet-runtimes }}
+          BUILD_RUNNER_OS: ${{ needs.build.outputs.runner-os }}
+          BUILD_RUNNER_ARCH: ${{ needs.build.outputs.runner-arch }}
+          BUILD_RUNNER_IMAGE_OS: ${{ needs.build.outputs.runner-image-os }}
+          BUILD_RUNNER_IMAGE_VERSION: ${{ needs.build.outputs.runner-image-version }}
         run: |
           set -euo pipefail
           if [ "$VALIDATED_SHA" != "$BUILD_SHA" ] || [ "$VALIDATED_SHA" != "$RELEASE_SHA" ]; then
             echo "::error::Deployment source does not match the validated candidate."
             exit 1
           fi
-          EXPECTED_PROVENANCE="$(printf 'validated-sha=%s\nrelease-tag=%s' "$VALIDATED_SHA" "$RELEASE_TAG")"
+          EXPECTED_PROVENANCE="$(printf 'validated-sha=%s\nrelease-tag=%s\nnode-version=%s\nnpm-version=%s\ndotnet-sdk-version=%s\ndotnet-sdks=%s\ndotnet-runtimes=%s\nrunner-os=%s\nrunner-arch=%s\nrunner-image-os=%s\nrunner-image-version=%s' \
+            "$VALIDATED_SHA" "$RELEASE_TAG" "$BUILD_NODE_VERSION" "$BUILD_NPM_VERSION" \
+            "$BUILD_DOTNET_SDK_VERSION" "$BUILD_DOTNET_SDKS" "$BUILD_DOTNET_RUNTIMES" \
+            "$BUILD_RUNNER_OS" "$BUILD_RUNNER_ARCH" "$BUILD_RUNNER_IMAGE_OS" "$BUILD_RUNNER_IMAGE_VERSION")"
           ACTUAL_PROVENANCE="$(cat "$GITHUB_WORKSPACE/release-artifact/provenance.txt")"
           if [ "$ACTUAL_PROVENANCE" != "$EXPECTED_PROVENANCE" ]; then
             echo "::error::Deployment artifact provenance does not match the validated release."
