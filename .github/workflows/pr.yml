@@ -79,8 +79,8 @@ jobs:
         working-directory: ./RefTestManagement.Ui
         run: npm ci
 
-      - name: 🧪 Test npm audit policy checker
-        run: node --test scripts/check-npm-audit.test.mjs
+      - name: 🧪 Test repository policy checkers
+        run: node --test scripts/check-npm-audit.test.mjs scripts/check-renovate-automerge.test.mjs
 
       - name: 🛡 Audit root and Angular dependencies
         run: node scripts/check-npm-audit.mjs

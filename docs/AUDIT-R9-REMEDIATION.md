@@ -317,7 +317,7 @@ validated-SHA guarantee.
 ### WP-97 — Exclude release tooling from dependency auto-merge
 
 **Findings:** R9-21 (🟡 Medium)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
 **Size:** S  
 **Priority:** P1  
 **Dependencies:** None
