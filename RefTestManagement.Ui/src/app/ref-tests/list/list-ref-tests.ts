@@ -148,6 +148,7 @@ export class ListRefTests {
           map(() => false),
           startWith(true),
           catchError((error: unknown) => {
+            this.loadMoreError.set(true);
             this._errorHandler.handleError(error);
             return of(false);
           }),
@@ -156,6 +157,7 @@ export class ListRefTests {
     ),
     { initialValue: false },
   );
+  protected readonly loadMoreError = signal(false);
 
   /** True when the user has at least one bulk-action permission, making row selection meaningful. */
   protected readonly showCheckboxes = computed(
@@ -207,7 +209,37 @@ export class ListRefTests {
   protected readonly totalCount = computed(() => this._queryData()?.totalCount ?? 0);
 
   protected readonly loading = this.dataService.loading;
+  protected readonly queryError = this.dataService.queryError;
   protected readonly statusCounts = this.dataService.statusCounts;
+  protected readonly isFiltered = computed(() => {
+    const filter = this.filterState.filter();
+    return (
+      filter.searchTerm.trim().length > 0 ||
+      Object.values({
+        status: filter.status,
+        invitationSent: filter.invitationSent,
+        resultsSent: filter.resultsSent,
+        isAnonymized: filter.isAnonymized,
+        titleValue: filter.titleValue,
+        language: filter.language,
+        minQuestionScore: filter.minQuestionScore,
+        maxQuestionScore: filter.maxQuestionScore,
+        minAnswerScore: filter.minAnswerScore,
+        maxAnswerScore: filter.maxAnswerScore,
+        percentageRange: filter.percentageRange,
+        minQuestions: filter.minQuestions,
+        maxQuestions: filter.maxQuestions,
+        minMaxTimeInMinutes: filter.minMaxTimeInMinutes,
+        maxMaxTimeInMinutes: filter.maxMaxTimeInMinutes,
+        startedAfter: filter.startedAfter,
+        startedBefore: filter.startedBefore,
+        completedAfter: filter.completedAfter,
+        completedBefore: filter.completedBefore,
+        scheduledAfter: filter.scheduledAfter,
+        scheduledBefore: filter.scheduledBefore,
+      }).some((value) => value !== undefined && value !== '')
+    );
+  });
 
   // Only show main loading spinner on initial load, not during pagination
   protected readonly showMainLoading = computed(() => {
@@ -365,6 +397,7 @@ export class ListRefTests {
   // ========================================================================
 
   private handleFilterChange(): void {
+    this.loadMoreError.set(false);
     this.resetPagination();
   }
 
@@ -389,6 +422,7 @@ export class ListRefTests {
       return;
     }
 
+    this.loadMoreError.set(false);
     this._fetchMoreRequests.next();
   }
 
@@ -404,6 +438,20 @@ export class ListRefTests {
     this.isRefreshing.set(true);
     this.resetPagination();
     this.dataService.reset();
+  }
+
+  protected retryQuery(): void {
+    this.dataService.retry();
+  }
+
+  protected clearFilters(): void {
+    if (this._searchDebounceTimer) {
+      clearTimeout(this._searchDebounceTimer);
+      this._searchDebounceTimer = null;
+    }
+    this.filterState.reset();
+    this.loadMoreError.set(false);
+    this.resetPagination();
   }
 
   private resetPagination(): void {

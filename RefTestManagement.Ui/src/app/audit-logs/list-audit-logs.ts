@@ -21,12 +21,20 @@ export class ListAuditLogs {
   private readonly _permissions = inject(PermissionsService);
 
   protected readonly loading = this._data.loading;
+  protected readonly queryError = this._data.queryError;
+  protected readonly loadingMore = this._data.loadingMore;
+  protected readonly loadMoreError = this._data.loadMoreError;
   protected readonly entries = computed<AuditLogEntry[]>(
-    () => this._data.queryResult()?.edges?.map((e) => e.node) ?? [],
+    () =>
+      this._data.queryResult().data?.edges
+        ?.map((edge) => edge?.node)
+        .filter((entry): entry is AuditLogEntry => !!entry) ?? [],
   );
-  protected readonly totalCount = computed(() => this._data.queryResult()?.totalCount ?? 0);
+  protected readonly totalCount = computed(
+    () => this._data.queryResult().data?.totalCount ?? 0,
+  );
   protected readonly hasNextPage = computed(
-    () => this._data.queryResult()?.pageInfo.hasNextPage ?? false,
+    () => this._data.queryResult().data?.pageInfo?.hasNextPage ?? false,
   );
   protected readonly isInitialLoading = computed(
     () => this.loading() && this.entries().length === 0,
@@ -36,6 +44,7 @@ export class ListAuditLogs {
   );
   protected readonly sortField = computed(() => this._data.sortField());
   protected readonly sortDirection = computed(() => this._data.sortDirection());
+  protected readonly isFiltered = computed(() => this._data.filter() !== null);
 
   protected onFilterChange(filter: AuditLogDtoFilterInput | null): void {
     this._data.applyFilter(filter);
@@ -51,5 +60,9 @@ export class ListAuditLogs {
 
   protected loadMore(): void {
     this._data.loadMore();
+  }
+
+  protected retry(): void {
+    this._data.retry();
   }
 }

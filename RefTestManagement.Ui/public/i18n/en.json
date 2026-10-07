@@ -20,6 +20,7 @@
     "save": "Save",
     "saving": "Saving...",
     "processing": "Processing...",
+    "retry": "Retry",
     "close": "Close",
     "deleting": "Deleting...",
     "sending": "Sending...",
@@ -71,6 +72,8 @@
       "create_new": "Create New RefTests",
       "search_placeholder": "Search by name or email...",
       "loading": "Loading RefTests...",
+      "query_error": "Could not load RefTests. Please try again.",
+      "load_more_error": "Could not load more RefTests. Please try again.",
       "load_more": "Load more RefTests",
       "loading_more": "Loading...",
       "performance_warning_title": "Performance Notice",
@@ -190,7 +193,10 @@
       "empty": {
         "title": "No RefTests found",
         "subtitle": "Get started by creating your first RefTests",
-        "action": "Create RefTests"
+        "action": "Create RefTests",
+        "filtered_title": "No RefTests match these filters",
+        "filtered_subtitle": "Change or clear your filters to see RefTests.",
+        "clear_filters": "Clear filters"
       },
       "actions": {
         "reftest_selected": "Selected",
@@ -480,6 +486,7 @@
           "tooltip": "Example: Training {{date}}",
           "no_results": "No existing titles found",
           "create_new": "Press Enter to create a new title with this name",
+          "search_error": "Could not search titles. Please try again.",
           "existing_title": "Using existing title",
           "new_title": "Will create new title",
           "clear": "Clear title"
@@ -540,6 +547,7 @@
           "import_button": "Import",
           "importing": "Importing...",
           "no_results": "No questions found",
+          "search_error": "Could not search questions. Please try again.",
           "table_number": "Number",
           "table_question": "Question",
           "remove_question": "Remove question"
@@ -567,6 +575,7 @@
         "cancel": "Cancel",
         "validation_error": "Please fix the validation errors before submitting",
         "no_participants": "Please add at least one participant",
+        "question_import_error": "Could not load the selected questions. Please try again.",
         "submit_error": "An error occurred while creating RefTests"
       },
       "success": {
@@ -679,6 +688,9 @@
   "privacy": {
     "eyebrow": "Privacy",
     "title": "Privacy notice",
+    "loading": "Loading privacy notice...",
+    "empty": "The privacy notice is not available.",
+    "error": "Could not load the privacy notice. Please try again.",
     "updated": "Effective from {{effectiveDate}} (version {{noticeVersion}}).",
     "controller": {
       "title": "Data controller and contact",
@@ -752,7 +764,11 @@
     "title": "Audit Log",
     "subtitle": "Complete history of all system changes",
     "loading": "Loading audit log...",
+    "query_error": "Could not load the audit log. Please try again.",
+    "load_more_error": "Could not load more audit log events. Please try again.",
     "empty": "No audit log events found",
+    "filtered_empty": "No audit log events match these filters.",
+    "clear_filters": "Clear filters",
     "loadMore": "Load more",
     "showing": "Showing {{displayed}} of {{total}} event",
     "showing_plural": "Showing {{displayed}} of {{total}} events",

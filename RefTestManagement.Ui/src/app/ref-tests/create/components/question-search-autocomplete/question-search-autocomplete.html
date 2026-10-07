@@ -48,7 +48,31 @@
           </button>
         }
       </div>
-    } @else if (showDropdown() && !searching() && searchTerm().trim().length > 0) {
+    } @else if (showDropdown() && searchError()) {
+      <div
+        role="alert"
+        class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg p-4"
+      >
+        <div class="flex items-center justify-between gap-3">
+          <p class="text-sm text-red-700">
+            {{ 'ref_tests.create.form.specific_question_numbers.search_error' | translate }}
+          </p>
+          <button
+            type="button"
+            (mousedown)="$event.preventDefault()"
+            (click)="onRetrySearch()"
+            class="shrink-0 text-sm font-medium text-primary-700 underline"
+          >
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
+      </div>
+    } @else if (
+      showDropdown() &&
+      searchSucceeded() &&
+      !searching() &&
+      searchTerm().trim().length > 0
+    ) {
       <div
         class="absolute z-10 w-full mt-1 bg-white border border-neutral-300 rounded-lg shadow-lg p-4"
       >

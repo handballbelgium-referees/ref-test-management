@@ -267,7 +267,7 @@ type TestSubscriptionEvent = {
   id: string;
   [field: string]: unknown;
 };
-type ListQueryResult = { data?: TestListData; loading?: boolean };
+type ListQueryResult = { data?: TestListData; loading?: boolean; error?: unknown };
 type CountsQueryResult = { data?: TestCountsData; loading?: boolean };
 type DetailQueryResult = { data?: { refTest?: TestRefTest }; loading: boolean };
 type ListSubscriptionResult = { data?: { refTestsUpdated: TestSubscriptionEvent } };
@@ -2849,5 +2849,33 @@ describe('RefTestCacheUpdater subscription reconciliation', () => {
       pending: { totalCount: 3 },
     });
     expect(harness.networkRequests()).toBe(0);
+  });
+
+  it('exposes list query failures and retries without discarding stale results', async () => {
+    const harness = createHarness();
+    expect(harness.data.loading()).toBe(true);
+    await vi.waitFor(() => expect(harness.listQueryRef.setVariables).toHaveBeenCalled());
+
+    const staleTest = makeRefTest('stale-query-result');
+    const staleResult: TestListData = {
+      refTests: {
+        edges: [{ cursor: 'stale-cursor', node: staleTest }],
+        totalCount: 1,
+        pageInfo: { hasNextPage: false, endCursor: 'stale-cursor' },
+      },
+    };
+    const queryError = new Error('query failed');
+    harness.listQueryResults.next({ data: staleResult, loading: false });
+    harness.listQueryResults.next({ data: staleResult, loading: false, error: queryError });
+
+    expect(harness.data.queryError()).toBe(queryError);
+    expect(harness.data.queryResult()?.data?.refTests?.edges?.[0]?.node?.id).toBe(staleTest.id);
+
+    harness.data.retry();
+
+    expect(harness.listQueryRef.refetch).toHaveBeenCalledTimes(1);
+    expect(harness.data.queryError()).toBe(queryError);
+    harness.listQueryResults.next({ data: staleResult, loading: false });
+    expect(harness.data.queryError()).toBeNull();
   });
 });

@@ -20,6 +20,7 @@
     "save": "Opslaan",
     "saving": "Opslaan...",
     "processing": "Bezig...",
+    "retry": "Opnieuw proberen",
     "close": "Sluiten",
     "deleting": "Verwijderen...",
     "sending": "Verzenden...",
@@ -71,6 +72,8 @@
       "create_new": "Nieuwe RefTests Aanmaken",
       "search_placeholder": "Zoeken op naam of e-mail...",
       "loading": "RefTests laden...",
+      "query_error": "RefTests konden niet worden geladen. Probeer het opnieuw.",
+      "load_more_error": "Meer RefTests konden niet worden geladen. Probeer het opnieuw.",
       "load_more": "Meer RefTests laden",
       "loading_more": "Laden...",
       "performance_warning_title": "Prestatiebericht",
@@ -190,7 +193,10 @@
       "empty": {
         "title": "Geen RefTests gevonden",
         "subtitle": "Begin met het aanmaken van uw eerste RefTests",
-        "action": "RefTests Aanmaken"
+        "action": "RefTests Aanmaken",
+        "filtered_title": "Geen RefTests voldoen aan deze filters",
+        "filtered_subtitle": "Pas de filters aan of wis ze om RefTests te zien.",
+        "clear_filters": "Filters wissen"
       },
       "actions": {
         "reftest_selected": "Geselecteerd",
@@ -480,6 +486,7 @@
           "tooltip": "Voorbeeld: Bijscholing {{date}}",
           "no_results": "Geen bestaande titels gevonden",
           "create_new": "Druk op Enter om een nieuwe titel aan te maken met deze naam",
+          "search_error": "Titels zoeken is mislukt. Probeer het opnieuw.",
           "existing_title": "Gebruik bestaande titel",
           "new_title": "Zal nieuwe titel aanmaken",
           "clear": "Wis titel"
@@ -540,6 +547,7 @@
           "import_button": "Importeren",
           "importing": "Importeren...",
           "no_results": "Geen vragen gevonden",
+          "search_error": "Vragen zoeken is mislukt. Probeer het opnieuw.",
           "table_number": "Nummer",
           "table_question": "Vraag",
           "remove_question": "Vraag verwijderen"
@@ -567,6 +575,7 @@
         "cancel": "Annuleren",
         "validation_error": "Corrigeer de validatiefouten voordat u verzendt",
         "no_participants": "Voeg minimaal één deelnemer toe",
+        "question_import_error": "De geselecteerde vragen konden niet worden geladen. Probeer het opnieuw.",
         "submit_error": "Er is een fout opgetreden bij het aanmaken van RefTests"
       },
       "success": {
@@ -679,6 +688,9 @@
   "privacy": {
     "eyebrow": "Privacy",
     "title": "Privacyverklaring",
+    "loading": "Privacyverklaring laden...",
+    "empty": "De privacyverklaring is niet beschikbaar.",
+    "error": "De privacyverklaring kon niet worden geladen. Probeer het opnieuw.",
     "updated": "Van kracht vanaf {{effectiveDate}} (versie {{noticeVersion}}).",
     "controller": {
       "title": "Verwerkingsverantwoordelijke en contact",
@@ -752,7 +764,11 @@
     "title": "Auditlogboek",
     "subtitle": "Volledige geschiedenis van alle systeemwijzigingen",
     "loading": "Auditlogboek laden...",
+    "query_error": "Het auditlogboek kon niet worden geladen. Probeer het opnieuw.",
+    "load_more_error": "Meer auditlogboekgebeurtenissen konden niet worden geladen. Probeer het opnieuw.",
     "empty": "Geen auditlogboek-gebeurtenissen gevonden",
+    "filtered_empty": "Geen auditlogboekgebeurtenissen voldoen aan deze filters.",
+    "clear_filters": "Filters wissen",
     "loadMore": "Meer laden",
     "showing": "{{displayed}} van {{total}} gebeurtenis weergegeven",
     "showing_plural": "{{displayed}} van {{total}} gebeurtenissen weergegeven",

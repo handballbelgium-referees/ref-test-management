@@ -30,6 +30,13 @@ export class AuditLogFilter {
     this._emit();
   }
 
+  clearFilters(): void {
+    this.streamId.set('');
+    this.type.set('');
+    this.actor.set('');
+    this._emit();
+  }
+
   private _emit(): void {
     const conditions: AuditLogDtoFilterInput[] = [];
 

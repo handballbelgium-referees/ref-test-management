@@ -83,9 +83,38 @@
       <div class="px-4 py-2 text-center text-sm text-neutral-500">
         <div class="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-600 mx-auto"></div>
       </div>
+      } @if (loadingMoreError()) {
+      <div role="alert" class="flex items-center justify-between gap-2 px-4 py-3 text-sm text-red-700">
+        <span>{{ 'ref_tests.create.form.title.search_error' | translate }}</span>
+        <button
+          type="button"
+          (mousedown)="$event.preventDefault()"
+          (click)="onRetryLoadMore()"
+          class="shrink-0 font-medium underline"
+        >
+          {{ 'common.retry' | translate }}
+        </button>
+      </div>
       }
     </div>
-    } @else if (searchTerm().trim().length > 0 && !searching()) {
+    } @else if (searchError()) {
+    <div
+      role="alert"
+      class="flex items-center justify-between gap-2 px-4 py-3 text-sm text-red-700"
+    >
+      <span>{{ 'ref_tests.create.form.title.search_error' | translate }}</span>
+      <button
+        type="button"
+        (mousedown)="$event.preventDefault()"
+        (click)="onRetrySearch()"
+        class="shrink-0 font-medium underline"
+      >
+        {{ 'common.retry' | translate }}
+      </button>
+    </div>
+    } @else if (
+      searchTerm().trim().length > 0 && searchSucceeded() && !searching()
+    ) {
     <div class="px-4 py-3 text-sm text-neutral-600">
       <div class="flex items-start gap-2">
         <svg

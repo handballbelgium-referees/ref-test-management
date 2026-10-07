@@ -1,4 +1,4 @@
-import { Component, output } from '@angular/core';
+import { Component, input, output } from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 
 /**
@@ -14,5 +14,7 @@ import { TranslatePipe } from '@ngx-translate/core';
   },
 })
 export class RefTestEmptyState {
+  readonly filtered = input(false);
   protected readonly createClick = output<void>();
+  protected readonly clearFiltersClick = output<void>();
 }

@@ -182,7 +182,8 @@ validated-SHA guarantee.
 ### WP-92 — Separate create, lookup, and query error states from empty results
 
 **Findings:** R9-13, R9-14, R9-15 (🟡 Medium), R9-33 (⚪ Low)  
-**Status:** ⏳ Pending  
+**Status:** ✅ Implemented
+
 **Size:** L  
 **Priority:** P1  
 **Dependencies:** None

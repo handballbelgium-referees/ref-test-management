@@ -20,6 +20,7 @@
     "save": "Speichern",
     "saving": "Speichern...",
     "processing": "Verarbeitung...",
+    "retry": "Erneut versuchen",
     "close": "Schließen",
     "deleting": "Löschen...",
     "sending": "Senden...",
@@ -71,6 +72,8 @@
       "create_new": "Neue RefTests Erstellen",
       "search_placeholder": "Nach Name oder E-Mail suchen...",
       "loading": "RefTests werden geladen...",
+      "query_error": "RefTests konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "load_more_error": "Weitere RefTests konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
       "load_more": "Weitere RefTests laden",
       "loading_more": "Lädt...",
       "performance_warning_title": "Leistungshinweis",
@@ -190,7 +193,10 @@
       "empty": {
         "title": "Keine RefTests gefunden",
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten RefTests",
-        "action": "RefTests Erstellen"
+        "action": "RefTests Erstellen",
+        "filtered_title": "Keine RefTests entsprechen diesen Filtern",
+        "filtered_subtitle": "\u00c4ndern oder l\u00f6schen Sie die Filter, um RefTests anzuzeigen.",
+        "clear_filters": "Filter l\u00f6schen"
       },
       "actions": {
         "reftest_selected": "Ausgewählt",
@@ -480,6 +486,7 @@
           "tooltip": "Beispiel: Schulung {{date}}",
           "no_results": "Keine vorhandenen Titel gefunden",
           "create_new": "Drücken Sie Enter, um einen neuen Titel mit diesem Namen zu erstellen",
+          "search_error": "Titel konnten nicht gesucht werden. Bitte versuchen Sie es erneut.",
           "existing_title": "Vorhandenen Titel verwenden",
           "new_title": "Wird neuen Titel erstellen",
           "clear": "Titel löschen"
@@ -540,6 +547,7 @@
           "import_button": "Importieren",
           "importing": "Importiert...",
           "no_results": "Keine Fragen gefunden",
+          "search_error": "Fragen konnten nicht gesucht werden. Bitte versuchen Sie es erneut.",
           "table_number": "Nummer",
           "table_question": "Frage",
           "remove_question": "Frage entfernen"
@@ -567,6 +575,7 @@
         "cancel": "Abbrechen",
         "validation_error": "Bitte beheben Sie die Validierungsfehler vor dem Absenden",
         "no_participants": "Bitte fügen Sie mindestens einen Teilnehmer hinzu",
+        "question_import_error": "Die ausgew\u00e4hlten Fragen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
         "submit_error": "Beim Erstellen der RefTests ist ein Fehler aufgetreten"
       },
       "success": {
@@ -679,6 +688,9 @@
   "privacy": {
     "eyebrow": "Datenschutz",
     "title": "Datenschutzhinweis",
+    "loading": "Datenschutzhinweis wird geladen...",
+    "empty": "Der Datenschutzhinweis ist nicht verf\u00fcgbar.",
+    "error": "Der Datenschutzhinweis konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
     "updated": "Gültig ab {{effectiveDate}} (Version {{noticeVersion}}).",
     "controller": {
       "title": "Verantwortlicher und Kontakt",
@@ -752,7 +764,11 @@
     "title": "Auditprotokoll",
     "subtitle": "Vollständige Historie aller Systemänderungen",
     "loading": "Auditprotokoll wird geladen...",
+    "query_error": "Das Auditprotokoll konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "load_more_error": "Weitere Auditprotokoll-Ereignisse konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
     "empty": "Keine Ereignisse gefunden",
+    "filtered_empty": "Keine Auditprotokoll-Ereignisse entsprechen diesen Filtern.",
+    "clear_filters": "Filter l\u00f6schen",
     "loadMore": "Mehr laden",
     "showing": "{{displayed}} von {{total}} Ereignis wird angezeigt",
     "showing_plural": "{{displayed}} von {{total}} Ereignisse werden angezeigt",

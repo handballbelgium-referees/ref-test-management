@@ -20,6 +20,7 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "processing": "Traitement...",
+    "retry": "Réessayer",
     "close": "Fermer",
     "deleting": "Suppression...",
     "sending": "Envoi...",
@@ -71,6 +72,8 @@
       "create_new": "Créer de Nouveaux RefTests",
       "search_placeholder": "Rechercher par nom ou e-mail...",
       "loading": "Chargement des RefTests...",
+      "query_error": "Impossible de charger les RefTests. Veuillez réessayer.",
+      "load_more_error": "Impossible de charger plus de RefTests. Veuillez réessayer.",
       "load_more": "Charger plus de RefTests",
       "loading_more": "Chargement...",
       "performance_warning_title": "Avis de Performance",
@@ -190,7 +193,10 @@
       "empty": {
         "title": "Aucune RefTest trouvée",
         "subtitle": "Commencez par créer vos premiers RefTests",
-        "action": "Créer des RefTests"
+        "action": "Créer des RefTests",
+        "filtered_title": "Aucun RefTest ne correspond à ces filtres",
+        "filtered_subtitle": "Modifiez ou effacez les filtres pour voir des RefTests.",
+        "clear_filters": "Effacer les filtres"
       },
       "actions": {
         "reftest_selected": "Sélectionné",
@@ -481,6 +487,7 @@
           "tooltip": "Exemple : Recyclage {{date}}",
           "no_results": "Aucun titre existant trouvé",
           "create_new": "Appuyez sur Entrée pour créer un nouveau titre avec ce nom",
+          "search_error": "Impossible de rechercher les titres. Veuillez réessayer.",
           "existing_title": "Utilisation du titre existant",
           "new_title": "Créera un nouveau titre",
           "clear": "Effacer le titre"
@@ -541,6 +548,7 @@
           "import_button": "Importer",
           "importing": "Importation...",
           "no_results": "Aucune question trouvée",
+          "search_error": "Impossible de rechercher les questions. Veuillez réessayer.",
           "table_number": "Numéro",
           "table_question": "Question",
           "remove_question": "Supprimer la question"
@@ -568,6 +576,7 @@
         "cancel": "Annuler",
         "validation_error": "Veuillez corriger les erreurs de validation avant de soumettre",
         "no_participants": "Veuillez ajouter au moins un participant",
+        "question_import_error": "Impossible de charger les questions sélectionnées. Veuillez réessayer.",
         "submit_error": "Une erreur s'est produite lors de la création des RefTests"
       },
       "success": {
@@ -680,6 +689,9 @@
   "privacy": {
     "eyebrow": "Confidentialité",
     "title": "Avis de confidentialité",
+    "loading": "Chargement de l'avis de confidentialité...",
+    "empty": "L'avis de confidentialité n'est pas disponible.",
+    "error": "Impossible de charger l'avis de confidentialité. Veuillez réessayer.",
     "updated": "En vigueur à partir du {{effectiveDate}} (version {{noticeVersion}}).",
     "controller": {
       "title": "Responsable du traitement et contact",
@@ -753,7 +765,11 @@
     "title": "Journal d'audit",
     "subtitle": "Historique complet de toutes les modifications du système",
     "loading": "Chargement du journal d'audit...",
+    "query_error": "Impossible de charger le journal d'audit. Veuillez réessayer.",
+    "load_more_error": "Impossible de charger davantage d'événements d'audit. Veuillez réessayer.",
     "empty": "Aucun événement trouvé",
+    "filtered_empty": "Aucun événement du journal d'audit ne correspond à ces filtres.",
+    "clear_filters": "Effacer les filtres",
     "loadMore": "Charger plus",
     "showing": "Affichage de {{displayed}} sur {{total}} événement",
     "showing_plural": "Affichage de {{displayed}} sur {{total}} événements",
