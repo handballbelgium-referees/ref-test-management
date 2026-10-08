@@ -140,20 +140,33 @@ startup; shutdown cancels a pending retry delay.
 
 #### Management API access and permission freshness
 
-Grant the M2M application only the endpoint-specific Management API scopes needed for these
-operations:
+The current Auth0 endpoint reference documents these least-privilege Management API scopes:
 
-- Read `GET /api/v2/users/{id}/permissions`, `GET /api/v2/users/{id}/roles`, and
-  `GET /api/v2/roles/{id}/permissions` to resolve current effective grants.
-- Read users, roles, role members, and their permissions for the existing
-  `GetUsersWithPermissionAsync` approval-notification lookup.
-- Read and update `/api/v2/resource-servers` only for the existing startup permission
-  synchronization.
+- Refresh current effective grants with `read:users` for `GET /api/v2/users/{id}` and
+  `GET /api/v2/users/{id}/permissions`, `read:users read:roles read:role_members` for
+  `GET /api/v2/users/{id}/roles`, and `read:roles` for
+  `GET /api/v2/roles/{id}/permissions`. See Auth0's [Get a User](https://auth0.com/docs/api/management/v2/users/get-users-by-id),
+  [Get a User's Permissions](https://auth0.com/docs/api/management/v2/users/get-permissions),
+  [Get a user's roles](https://auth0.com/docs/api/management/v2/users/get-user-roles), and
+  [Get permissions granted by role](https://auth0.com/docs/api/management/v2/roles/get-role-permission)
+  references.
+- Resolve approvers in `GetUsersWithPermissionAsync` with `read:roles` for
+  `GET /api/v2/roles` and `/api/v2/roles/{id}/permissions`, `read:users read:roles read:role_members` for
+  `GET /api/v2/roles/{id}/users`, and `read:users` for `GET /api/v2/users` and
+  `/api/v2/users/{id}/permissions`. See Auth0's [Get roles](https://auth0.com/docs/api/management/v2/roles/get-roles),
+  [Get a role's users](https://auth0.com/docs/api/management/v2/roles/get-role-user), [List or
+  Search Users](https://auth0.com/docs/api/management/v2/users/get-users), and permissions
+  references above.
+- Sync the API resource server at startup with `read:resource_servers` for
+  `GET /api/v2/resource-servers` and `update:resource_servers` for
+  `PATCH /api/v2/resource-servers/{id}`. See Auth0's [Get resource servers](https://auth0.com/docs/api/management/v2/resource-servers/get-resource-servers)
+  and [Update a resource server](https://auth0.com/docs/api/management/v2/resource-servers/patch-resource-servers-by-id)
+  references.
 
 The application does not write user metadata, assign users to roles, or request unrelated
-Management API access. The exact Auth0 scope names required by these endpoint paths and the M2M
-grant in the target tenant were not verified in this local change; confirm them against Auth0's
-endpoint documentation and tenant configuration before deployment.
+Management API access. The M2M scope grant in the target tenant was not inspected; confirm the
+application is authorized for the scopes above before deployment. If any are missing, an Auth0
+administrator must authorize them for the M2M application.
 
 Successful permission snapshots are cached per user and API process for at most four minutes.
 Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most

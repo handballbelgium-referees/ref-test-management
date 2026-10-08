@@ -31,31 +31,47 @@ internal sealed partial class Auth0ManagementService(
 
     private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
-        return await tokenCache.GetAccessTokenAsync(async ct =>
+        try
         {
-            var response = await httpClient.PostAsync(
-                $"https://{_config.Domain}/oauth/token",
-                JsonContent.Create(new
+            return await tokenCache.GetAccessTokenAsync(async ct =>
+            {
+                var response = await httpClient.PostAsync(
+                    $"https://{_config.Domain}/oauth/token",
+                    JsonContent.Create(new
+                    {
+                        client_id = _config.ManagementClientId,
+                        client_secret = _config.ManagementClientSecret,
+                        audience = $"https://{_config.Domain}/api/v2/",
+                        grant_type = "client_credentials"
+                    }),
+                    ct);
+
+                response.EnsureSuccessStatusCode();
+
+                var token = await response.Content.ReadFromJsonAsync<TokenResponse>(
+                    cancellationToken: ct);
+                if (token is null)
                 {
-                    client_id = _config.ManagementClientId,
-                    client_secret = _config.ManagementClientSecret,
-                    audience = $"https://{_config.Domain}/api/v2/",
-                    grant_type = "client_credentials"
-                }),
-                ct);
+                    logger.LogWarning(
+                        "Auth0 Management API token acquisition returned an empty token response.");
+                    throw new InvalidOperationException("Auth0 returned an empty token response");
+                }
 
-            response.EnsureSuccessStatusCode();
-
-            var token = await response.Content.ReadFromJsonAsync<TokenResponse>(
-                cancellationToken: ct)
-                ?? throw new InvalidOperationException("Auth0 returned an empty token response");
-
-            // Refresh 60 seconds before actual expiry to avoid edge-case races
-            var cacheLifetimeSeconds = Math.Max(1, token.ExpiresIn - 60);
-            return new Auth0ManagementTokenCache.CachedToken(
-                token.AccessToken,
-                DateTimeOffset.UtcNow.AddSeconds(cacheLifetimeSeconds));
-        }, cancellationToken);
+                // Refresh 60 seconds before actual expiry to avoid edge-case races
+                var cacheLifetimeSeconds = Math.Max(1, token.ExpiresIn - 60);
+                return new Auth0ManagementTokenCache.CachedToken(
+                    token.AccessToken,
+                    DateTimeOffset.UtcNow.AddSeconds(cacheLifetimeSeconds));
+            }, cancellationToken);
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(
+                "Auth0 Management API token acquisition failed; exception type: {ExceptionType}; HTTP status: {HttpStatusCode}.",
+                exception.GetType().Name,
+                exception.StatusCode is { } statusCode ? (int)statusCode : null);
+            throw;
+        }
     }
 
     // --- IAuth0ManagementService --------------------------------------------
@@ -229,58 +245,73 @@ internal sealed partial class Auth0ManagementService(
         CancellationToken cancellationToken = default)
     {
         var token = await GetAccessTokenAsync(cancellationToken);
-        var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        using var accountRequest = new HttpRequestMessage(
-            HttpMethod.Get,
-            $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}");
-        accountRequest.Headers.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
-        using var accountResponse = await httpClient.SendAsync(accountRequest, cancellationToken);
-        accountResponse.EnsureSuccessStatusCode();
-
-        var accountStatus = await accountResponse.Content.ReadFromJsonAsync<UserAccountStatusResponse>(
-            cancellationToken: cancellationToken);
-        if (accountStatus?.Blocked is not false)
-            throw new InvalidOperationException("Auth0 account status could not be verified.");
-
-        var directPermissions = await GetAllPagesAsync<PermissionResponse>(
-            $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/permissions",
-            token,
-            null,
-            cancellationToken);
-        AddPermissions(directPermissions);
-
-        var roles = await GetAllPagesAsync<RoleResponse>(
-            $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/roles",
-            token,
-            null,
-            cancellationToken);
-
-        foreach (var role in roles)
+        try
         {
-            var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
-                $"https://{_config.Domain}/api/v2/roles/{Uri.EscapeDataString(role.Id)}/permissions",
+            var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            using var accountRequest = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}?fields=blocked&include_fields=true");
+            accountRequest.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            using var accountResponse = await httpClient.SendAsync(accountRequest, cancellationToken);
+            accountResponse.EnsureSuccessStatusCode();
+
+            var accountStatus = await accountResponse.Content.ReadFromJsonAsync<UserAccountStatusResponse>(
+                cancellationToken: cancellationToken);
+            if (accountStatus is null || accountStatus.Blocked is true)
+            {
+                logger.LogWarning(
+                    "Auth0 permission refresh failed because the account is blocked or its status response is missing; authorization will fail closed.");
+                throw new InvalidOperationException("Auth0 account status could not be verified.");
+            }
+
+            var directPermissions = await GetAllPagesAsync<PermissionResponse>(
+                $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/permissions",
                 token,
                 null,
                 cancellationToken);
-            AddPermissions(rolePermissions);
-        }
+            AddPermissions(directPermissions);
 
-        return permissions;
+            var roles = await GetAllPagesAsync<RoleResponse>(
+                $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/roles",
+                token,
+                null,
+                cancellationToken);
 
-        void AddPermissions(IEnumerable<PermissionResponse> grants)
-        {
-            foreach (var grant in grants)
+            foreach (var role in roles)
             {
-                if (string.Equals(
-                        grant.ResourceServerIdentifier,
-                        _config.Audience,
-                        StringComparison.OrdinalIgnoreCase))
+                var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
+                    $"https://{_config.Domain}/api/v2/roles/{Uri.EscapeDataString(role.Id)}/permissions",
+                    token,
+                    null,
+                    cancellationToken);
+                AddPermissions(rolePermissions);
+            }
+
+            return permissions;
+
+            void AddPermissions(IEnumerable<PermissionResponse> grants)
+            {
+                foreach (var grant in grants)
                 {
-                    permissions.Add(grant.PermissionName);
+                    if (string.Equals(
+                            grant.ResourceServerIdentifier,
+                            _config.Audience,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        permissions.Add(grant.PermissionName);
+                    }
                 }
             }
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(
+                "Auth0 Management API permission lookup failed; exception type: {ExceptionType}; HTTP status: {HttpStatusCode}.",
+                exception.GetType().Name,
+                exception.StatusCode is { } statusCode ? (int)statusCode : null);
+            throw;
         }
     }
 

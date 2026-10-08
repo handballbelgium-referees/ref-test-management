@@ -56,15 +56,13 @@ public sealed class Auth0ManagementServiceTests
             permissions.OrderBy(value => value));
     }
 
-    [Theory]
-    [InlineData("blocked-user", true)]
-    [InlineData("unknown-user", null)]
-    public async Task GetUserPermissionsAsyncFailsClosedForBlockedOrIndeterminateAccounts(
-        string userId,
-        bool? blocked)
+    [Fact]
+    public async Task GetUserPermissionsAsyncFailsClosedForBlockedAccounts()
     {
-        var handler = new AccountStatusHandler(blocked);
-        using var provider = Auth0ManagementTestServices.CreateProvider(handler);
+        const string userId = "blocked-user";
+        var handler = new AccountStatusHandler(true);
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var provider = CreateProviderWithLogger(handler, loggerProvider);
         var auth0Service = provider.GetRequiredService<IAuth0ManagementService>();
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
@@ -72,6 +70,86 @@ public sealed class Auth0ManagementServiceTests
 
         Assert.Equal(1, handler.AccountStatusRequests);
         Assert.Equal(0, handler.PermissionRequests);
+        Assert.Contains(
+            loggerProvider.Messages,
+            message => message.Contains("account is blocked", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            loggerProvider.Messages,
+            message => message.Contains(userId, StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task GetUserPermissionsAsyncAllowsOmittedBlockedFieldOnSuccessfulResponse()
+    {
+        const string userId = "active-user-with-omitted-blocked-field";
+        var handler = new AccountStatusHandler(null);
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var provider = CreateProviderWithLogger(handler, loggerProvider);
+        var auth0Service = provider.GetRequiredService<IAuth0ManagementService>();
+
+        var permissions = await auth0Service.GetUserPermissionsAsync(
+            userId,
+            TestContext.Current.CancellationToken);
+
+        Assert.Empty(permissions);
+        Assert.Equal(1, handler.AccountStatusRequests);
+        Assert.Equal(2, handler.PermissionRequests);
+        Assert.DoesNotContain(
+            loggerProvider.Messages,
+            message => message.Contains("account is blocked", StringComparison.Ordinal));
+        Assert.DoesNotContain(
+            loggerProvider.Messages,
+            message => message.Contains(userId, StringComparison.Ordinal));
+    }
+
+    [Theory]
+    [InlineData(true, "token acquisition", HttpStatusCode.Unauthorized)]
+    [InlineData(false, "permission lookup", HttpStatusCode.Forbidden)]
+    public async Task GetUserPermissionsAsyncLogsSanitizedAuth0FailureStage(
+        bool failTokenRequest,
+        string expectedStage,
+        HttpStatusCode statusCode)
+    {
+        const string subject = "auth0_subject_stage_logging_sentinel";
+        const string clientSecret = "management-client-secret-sentinel";
+        const string responseBody = "auth0-error-body-sentinel";
+        var handler = new PermissionRefreshFailureHandler(failTokenRequest, responseBody);
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var provider = CreateProviderWithLogger(handler, loggerProvider, clientSecret);
+        var auth0Service = provider.GetRequiredService<IAuth0ManagementService>();
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            auth0Service.GetUserPermissionsAsync(subject, TestContext.Current.CancellationToken));
+
+        Assert.Contains(
+            loggerProvider.Messages,
+            message => message.Contains(expectedStage, StringComparison.OrdinalIgnoreCase) &&
+                message.Contains($"HTTP status: {(int)statusCode}", StringComparison.Ordinal));
+        var allLogs = string.Join(Environment.NewLine, loggerProvider.Messages);
+        Assert.DoesNotContain(subject, allLogs);
+        Assert.DoesNotContain(clientSecret, allLogs);
+        Assert.DoesNotContain(responseBody, allLogs);
+    }
+
+    [Fact]
+    public async Task GetUserPermissionsAsyncLogsEmptyTokenResponseWithoutSensitiveData()
+    {
+        const string subject = "auth0_subject_empty_token_sentinel";
+        const string clientSecret = "management-client-secret-sentinel";
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var provider = CreateProviderWithLogger(
+            new EmptyTokenResponseHandler(),
+            loggerProvider,
+            clientSecret);
+        var auth0Service = provider.GetRequiredService<IAuth0ManagementService>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            auth0Service.GetUserPermissionsAsync(subject, TestContext.Current.CancellationToken));
+
+        var allLogs = string.Join(Environment.NewLine, loggerProvider.Messages);
+        Assert.Contains("token acquisition returned an empty token response", allLogs);
+        Assert.DoesNotContain(subject, allLogs);
+        Assert.DoesNotContain(clientSecret, allLogs);
     }
 
     [Fact]
@@ -171,27 +249,7 @@ public sealed class Auth0ManagementServiceTests
         const string subject = "auth0_subject_logging_sentinel_77";
         var handler = new Auth0SubjectSentinelHandler(subject);
         using var loggerProvider = new CapturingLoggerProvider();
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Auth0:Domain"] = "tenant.example.test",
-                ["Auth0:Audience"] = Auth0ManagementTestServices.ApiAudience,
-                ["Auth0:ManagementClientId"] = "unit-test-client",
-                ["Auth0:ManagementClientSecret"] = "unit-test-secret"
-            })
-            .Build();
-
-        var services = new ServiceCollection();
-        services.AddLogging(builder =>
-            builder.AddProvider(loggerProvider).SetMinimumLevel(LogLevel.Trace));
-        services.AddMemoryCache();
-        services.AddAuth0ManagementServices(configuration);
-        services.Configure<HttpClientFactoryOptions>(
-            nameof(IAuth0ManagementService),
-            options => options.HttpMessageHandlerBuilderActions.Add(
-                builder => builder.PrimaryHandler = handler));
-
-        using var provider = services.BuildServiceProvider();
+        using var provider = CreateProviderWithLogger(handler, loggerProvider);
         var auth0Service = provider.GetRequiredService<IAuth0ManagementService>();
 
         var permissions = await auth0Service.GetUserPermissionsAsync(
@@ -206,9 +264,38 @@ public sealed class Auth0ManagementServiceTests
         Assert.Contains(
             handler.RequestUris,
             uri => uri.Contains($"/api/v2/users/{subject}/roles", StringComparison.Ordinal));
+        Assert.Equal("?fields=blocked&include_fields=true", handler.AccountStatusQuery);
         Assert.DoesNotContain(
             loggerProvider.Messages,
             message => message.Contains(subject, StringComparison.Ordinal));
+    }
+
+    private static ServiceProvider CreateProviderWithLogger(
+        HttpMessageHandler handler,
+        CapturingLoggerProvider loggerProvider,
+        string clientSecret = "unit-test-secret")
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Auth0:Domain"] = "tenant.example.test",
+                ["Auth0:Audience"] = Auth0ManagementTestServices.ApiAudience,
+                ["Auth0:ManagementClientId"] = "unit-test-client",
+                ["Auth0:ManagementClientSecret"] = clientSecret
+            })
+            .Build();
+
+        var services = new ServiceCollection();
+        services.AddLogging(builder =>
+            builder.AddProvider(loggerProvider).SetMinimumLevel(LogLevel.Trace));
+        services.AddMemoryCache();
+        services.AddAuth0ManagementServices(configuration);
+        services.Configure<HttpClientFactoryOptions>(
+            nameof(IAuth0ManagementService),
+            options => options.HttpMessageHandlerBuilderActions.Add(
+                builder => builder.PrimaryHandler = handler));
+
+        return services.BuildServiceProvider();
     }
 
     private sealed class Auth0SubjectSentinelHandler(string subject) : HttpMessageHandler
@@ -219,6 +306,8 @@ public sealed class Auth0ManagementServiceTests
         public string[] RequestUris => _requestUris.ToArray();
 
         public int UserPermissionRequestCount => Volatile.Read(ref _userPermissionRequestCount);
+
+        public string? AccountStatusQuery { get; private set; }
 
         protected override Task<HttpResponseMessage> SendAsync(
             HttpRequestMessage request,
@@ -232,7 +321,10 @@ public sealed class Auth0ManagementServiceTests
 
             if (request.Method == HttpMethod.Get &&
                 requestUri.AbsolutePath == $"/api/v2/users/{subject}")
+            {
+                AccountStatusQuery = requestUri.Query;
                 return Task.FromResult(Json(new { blocked = false }));
+            }
 
             if (request.Method == HttpMethod.Get &&
                 requestUri.AbsolutePath == $"/api/v2/users/{subject}/permissions")
@@ -252,6 +344,43 @@ public sealed class Auth0ManagementServiceTests
 
         private static HttpResponseMessage Json<T>(T value) =>
             new(HttpStatusCode.OK) { Content = JsonContent.Create(value) };
+    }
+
+    private sealed class PermissionRefreshFailureHandler(
+        bool failTokenRequest,
+        string responseBody) : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            var path = request.RequestUri!.AbsolutePath;
+            if (request.Method == HttpMethod.Post && path == "/oauth/token")
+            {
+                return Task.FromResult(failTokenRequest
+                    ? Failure(HttpStatusCode.Unauthorized, responseBody)
+                    : new HttpResponseMessage(HttpStatusCode.OK)
+                    {
+                        Content = JsonContent.Create(new { access_token = "unit-test-token", expires_in = 3600 })
+                    });
+            }
+
+            return Task.FromResult(Failure(HttpStatusCode.Forbidden, responseBody));
+        }
+
+        private static HttpResponseMessage Failure(HttpStatusCode statusCode, string responseBody) =>
+            new(statusCode) { Content = new StringContent(responseBody) };
+    }
+
+    private sealed class EmptyTokenResponseHandler : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken) =>
+            Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("null", System.Text.Encoding.UTF8, "application/json")
+            });
     }
 
     private sealed class CapturingLoggerProvider : ILoggerProvider

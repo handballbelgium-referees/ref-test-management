@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Auth0.Models;
 using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -40,20 +41,28 @@ public sealed class PermissionSnapshotServiceTests
     [Theory]
     [InlineData(HttpStatusCode.TooManyRequests)]
     [InlineData(HttpStatusCode.ServiceUnavailable)]
+    [InlineData(null)]
     public async Task FailedRefreshNeverReturnsStaleGrantsAndSuppressesImmediateRetries(
-        HttpStatusCode statusCode)
+        HttpStatusCode? statusCode)
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
+        const string sentinelSubject = "sentinel-subject-never-log";
+        const string sentinelToken = "sentinel-token-never-log";
+        const string sentinelExceptionText =
+            "sentinel-exception-never-log https://sentinel.invalid/?access_token=sentinel-token-never-log";
+        var logger = new CapturingLogger();
         var shouldFail = false;
         var managementService = new FakeAuth0ManagementService((_, _) =>
             shouldFail
                 ? Task.FromException<IReadOnlySet<string>>(
-                    new HttpRequestException("Auth0 request failed", null, statusCode))
+                    new HttpRequestException(sentinelExceptionText, null, statusCode))
                 : Task.FromResult(Set("ref-tests:delete")));
-        using var provider = CreateProvider(managementService, clock);
+        using var provider = CreateProvider(managementService, clock, logger);
         var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
-        var user = AuthenticatedUser("auth0|failure-test");
+        var user = AuthenticatedUser(
+            sentinelSubject,
+            new Claim("access_token", sentinelToken));
 
         Assert.Contains(
             "ref-tests:delete",
@@ -65,6 +74,18 @@ public sealed class PermissionSnapshotServiceTests
         Assert.Null(await permissionService.GetCurrentPermissionsAsync(user, cancellationToken));
         Assert.Equal(2, managementService.PermissionCalls);
 
+        var log = Assert.Single(logger.Entries);
+        Assert.Contains("HttpFailure", log.Message);
+        Assert.Contains(nameof(HttpRequestException), log.Message);
+        if (statusCode is { } value)
+            Assert.Contains($"HTTP status: {(int)value}", log.Message);
+        else
+            Assert.Contains("HTTP status: (null)", log.Message);
+        Assert.DoesNotContain(sentinelSubject, log.Message);
+        Assert.DoesNotContain(sentinelToken, log.Message);
+        Assert.DoesNotContain(sentinelExceptionText, log.Message);
+        Assert.Null(log.Exception);
+
         clock.Advance(TimeSpan.FromSeconds(30));
         shouldFail = false;
         var recovered = await permissionService.GetCurrentPermissionsAsync(user, cancellationToken);
@@ -74,19 +95,97 @@ public sealed class PermissionSnapshotServiceTests
     }
 
     [Fact]
-    public async Task RefreshThatCannotVerifyAccountStatusInvalidatesPreviouslyCachedPermissions()
+    public async Task MissingSubjectFailsClosedAndLogsOnlyTheFailureCategory()
+    {
+        var logger = new CapturingLogger();
+        var managementService = new FakeAuth0ManagementService((_, _) =>
+            Task.FromResult(Set("ref-tests:view-list")));
+        using var provider = CreateProvider(
+            managementService,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            logger);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+        var principal = new ClaimsPrincipal(new ClaimsIdentity([], "unit-test"));
+
+        Assert.Null(await permissionService.GetCurrentPermissionsAsync(
+            principal,
+            TestContext.Current.CancellationToken));
+        Assert.Equal(0, managementService.PermissionCalls);
+
+        var log = Assert.Single(logger.Entries);
+        Assert.Contains("MissingSubject", log.Message);
+        Assert.Null(log.Exception);
+    }
+
+    [Fact]
+    public async Task MissingAuth0ManagementServiceFailsClosedAndLogsSpecificCategory()
+    {
+        const string sentinelSubject = "sentinel-unregistered-management-service";
+        var logger = new CapturingLogger();
+        using var provider = CreateProvider(
+            null,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            logger);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+
+        Assert.Null(await permissionService.GetCurrentPermissionsAsync(
+            AuthenticatedUser(sentinelSubject),
+            TestContext.Current.CancellationToken));
+
+        var log = Assert.Single(logger.Entries);
+        Assert.Contains("ManagementServiceUnavailable", log.Message);
+        Assert.DoesNotContain(sentinelSubject, log.Message);
+        Assert.Null(log.Exception);
+    }
+
+    [Theory]
+    [InlineData(false, nameof(TimeoutException))]
+    [InlineData(true, nameof(TaskCanceledException))]
+    public async Task TimedOutRefreshFailsClosedAndLogsNoExceptionText(
+        bool useTaskCanceledException,
+        string expectedExceptionType)
+    {
+        const string sentinelExceptionText = "sentinel-timeout-exception-never-log";
+        var logger = new CapturingLogger();
+        Exception failure = useTaskCanceledException
+            ? new TaskCanceledException(sentinelExceptionText)
+            : new TimeoutException(sentinelExceptionText);
+        var managementService = new FakeAuth0ManagementService((_, _) =>
+            Task.FromException<IReadOnlySet<string>>(failure));
+        using var provider = CreateProvider(
+            managementService,
+            new ManualTimeProvider(DateTimeOffset.UtcNow),
+            logger);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+
+        Assert.Null(await permissionService.GetCurrentPermissionsAsync(
+            AuthenticatedUser("auth0|timeout-test"),
+            TestContext.Current.CancellationToken));
+
+        var log = Assert.Single(logger.Entries);
+        Assert.Contains("Timeout", log.Message);
+        Assert.Contains(expectedExceptionType, log.Message);
+        Assert.DoesNotContain(sentinelExceptionText, log.Message);
+        Assert.Null(log.Exception);
+    }
+
+    [Fact]
+    public async Task RefreshThatCannotVerifyAccountStatusInvalidatesCachedPermissionsAndLogsSanitizedFailure()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
+        const string sentinelSubject = "sentinel-account-subject-never-log";
+        const string sentinelExceptionText = "sentinel-account-status-exception-never-log";
+        var logger = new CapturingLogger();
         var accountStatusVerified = true;
         var managementService = new FakeAuth0ManagementService((_, _) =>
             accountStatusVerified
                 ? Task.FromResult(Set("ref-tests:delete"))
                 : Task.FromException<IReadOnlySet<string>>(
-                    new InvalidOperationException("Account status is blocked or indeterminate.")));
-        using var provider = CreateProvider(managementService, clock);
+                    new InvalidOperationException(sentinelExceptionText)));
+        using var provider = CreateProvider(managementService, clock, logger);
         var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
-        var user = AuthenticatedUser("auth0|account-status-refresh");
+        var user = AuthenticatedUser(sentinelSubject);
 
         Assert.Contains(
             "ref-tests:delete",
@@ -97,6 +196,13 @@ public sealed class PermissionSnapshotServiceTests
         Assert.Null(await permissionService.GetCurrentPermissionsAsync(user, cancellationToken));
         Assert.Null(await permissionService.GetCurrentPermissionsAsync(user, cancellationToken));
         Assert.Equal(2, managementService.PermissionCalls);
+
+        var log = Assert.Single(logger.Entries);
+        Assert.Contains("RefreshFailure", log.Message);
+        Assert.Contains(nameof(InvalidOperationException), log.Message);
+        Assert.DoesNotContain(sentinelSubject, log.Message);
+        Assert.DoesNotContain(sentinelExceptionText, log.Message);
+        Assert.Null(log.Exception);
     }
 
     [Fact]
@@ -171,6 +277,7 @@ public sealed class PermissionSnapshotServiceTests
             TaskCreationOptions.RunContinuationsAsynchronously);
         var started = new SemaphoreSlim(0);
         var firstCachedResponse = 0;
+        var logger = new CapturingLogger();
         var managementService = new FakeAuth0ManagementService((userId, _) =>
         {
             if (userId == cachedUserId && Interlocked.Exchange(ref firstCachedResponse, 1) == 0)
@@ -179,7 +286,7 @@ public sealed class PermissionSnapshotServiceTests
             started.Release();
             return release.Task;
         });
-        using var provider = CreateProvider(managementService, clock);
+        using var provider = CreateProvider(managementService, clock, logger);
         var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
         var cachedUser = AuthenticatedUser(cachedUserId);
 
@@ -201,6 +308,7 @@ public sealed class PermissionSnapshotServiceTests
         await Task.WhenAll(pendingRefreshes);
 
         Assert.Null(await rejectedRefresh);
+        Assert.Contains("Capacity", Assert.Single(logger.Entries).Message);
         var recovered = await permissionService.GetCurrentPermissionsAsync(cachedUser, cancellationToken);
         Assert.Contains("ref-tests:current", recovered!);
         Assert.DoesNotContain("ref-tests:stale", recovered!);
@@ -290,19 +398,23 @@ public sealed class PermissionSnapshotServiceTests
     }
 
     private static ServiceProvider CreateProvider(
-        FakeAuth0ManagementService managementService,
-        TimeProvider timeProvider)
+        FakeAuth0ManagementService? managementService,
+        TimeProvider timeProvider,
+        ILogger<PermissionSnapshotService>? logger = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
+        if (logger is not null)
+            services.AddSingleton(logger);
         services.AddSingleton<TimeProvider>(timeProvider);
-        services.AddSingleton<IAuth0ManagementService>(managementService);
+        if (managementService is not null)
+            services.AddSingleton<IAuth0ManagementService>(managementService);
         services.AddSingleton<IPermissionSnapshotService, PermissionSnapshotService>();
         return services.BuildServiceProvider();
     }
 
-    private static ClaimsPrincipal AuthenticatedUser(string subject) =>
-        new(new ClaimsIdentity([new Claim("sub", subject)], "unit-test"));
+    private static ClaimsPrincipal AuthenticatedUser(string subject, params Claim[] additionalClaims) =>
+        new(new ClaimsIdentity([new Claim("sub", subject), .. additionalClaims], "unit-test"));
 
     private static IReadOnlySet<string> Set(params string[] permissions) =>
         new HashSet<string>(permissions, StringComparer.OrdinalIgnoreCase);
@@ -342,4 +454,25 @@ public sealed class PermissionSnapshotServiceTests
             CancellationToken cancellationToken = default) =>
             throw new NotSupportedException();
     }
+
+    private sealed class CapturingLogger : ILogger<PermissionSnapshotService>
+    {
+        public List<CapturedLog> Entries { get; } = [];
+
+        public IDisposable? BeginScope<TState>(TState state)
+            where TState : notnull =>
+            null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(
+            LogLevel logLevel,
+            EventId eventId,
+            TState state,
+            Exception? exception,
+            Func<TState, Exception?, string> formatter) =>
+            Entries.Add(new CapturedLog(formatter(state, exception), exception));
+    }
+
+    private sealed record CapturedLog(string Message, Exception? Exception);
 }
