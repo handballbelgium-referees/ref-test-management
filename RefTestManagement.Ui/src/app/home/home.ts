@@ -26,7 +26,8 @@ export class Home {
     () =>
       this._permissions.hasPermission(Permissions.RefTests.Create) ||
       this._permissions.hasPermission(Permissions.RefTests.ViewList) ||
-      this._permissions.hasPermission(Permissions.AuditLogs.View),
+      this._permissions.hasPermission(Permissions.AuditLogs.View) ||
+      this._permissions.hasPermission(Permissions.PrivacyOperations.ReviewWithdrawals),
   );
 
   protected readonly languageCount = computed(() => this._translate.getLangs().length);

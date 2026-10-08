@@ -4,6 +4,7 @@ import { provideTranslateService, TranslateService } from '@ngx-translate/core';
 import { signal } from '@angular/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Auth } from '../auth/services/auth';
+import { Permissions } from '../auth/models/permissions';
 import { PermissionsService } from '../auth/services/permissions';
 import { Banner as BannerService } from '../services/banner';
 import { Home } from './home';
@@ -64,6 +65,7 @@ describe('Home', () => {
           },
           actions: { title: 'Quick Actions' },
         },
+        ref_tests: { list: { loading_more: 'Loading...' } },
       },
       true,
     );
@@ -89,6 +91,47 @@ describe('Home', () => {
     expect(fixture.nativeElement.querySelector('a[href="/ref-tests/create"]')).not.toBeNull();
     expect(button('Login')).toBeUndefined();
     expect(fixture.nativeElement.querySelector('[role="alert"]')).toBeNull();
+  });
+
+  it('shows privacy withdrawal review only for its dedicated permission', () => {
+    vi.spyOn(TestBed.inject(PermissionsService), 'hasPermission').mockImplementation(
+      (permission) => permission === Permissions.PrivacyOperations.ReviewWithdrawals,
+    );
+    authenticationState.set({ status: 'authenticated' });
+    fixture.detectChanges();
+
+    expect(fixture.nativeElement.querySelector('a[href="/privacy/withdrawal-review"]')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/ref-tests/create"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/ref-tests"]')).toBeNull();
+    expect(fixture.nativeElement.querySelector('a[href="/audit-logs"]')).toBeNull();
+  });
+
+  it('announces authentication loading through a status region', () => {
+    authenticationState.set({ status: 'checking' });
+    fixture.detectChanges();
+
+    const status = fixture.nativeElement.querySelector('[role="status"]') as HTMLElement | null;
+    const spinner = status?.querySelector('.animate-spin');
+
+    expect(status?.getAttribute('aria-atomic')).toBe('true');
+    expect(status?.textContent?.trim()).toBe('Loading...');
+    expect(spinner?.getAttribute('aria-hidden')).toBe('true');
+  });
+
+  it('keeps the manage-card description readable across its gradient', () => {
+    authenticationState.set({ status: 'authenticated' });
+    fixture.detectChanges();
+
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    const card = nativeElement.querySelector('a[href="/ref-tests"]') as HTMLAnchorElement | null;
+    const description = card?.querySelector('p');
+    expect(card).not.toBeNull();
+    expect(description).not.toBeNull();
+    expect(card?.classList).toContain('from-secondary-700');
+    expect(card?.classList).toContain('to-secondary-800');
+    expect(card?.classList).toContain('text-white');
+
+    expect(description?.classList).not.toContain('text-secondary-100');
   });
 
   it('shows login only after the check confirms the user is unauthenticated', () => {

@@ -3,8 +3,6 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
   ActivatedRoute,
   Router,
-  RouterLink,
-  RouterLinkActive,
   RouterOutlet,
 } from '@angular/router';
 import { TranslatePipe } from '@ngx-translate/core';
@@ -18,6 +16,7 @@ import { DeleteRefTestsDialog } from '../list/components/dialogs/delete-ref-test
 import { RejectRefTestsDialog } from '../list/components/dialogs/reject-ref-tests-dialog/reject-ref-tests-dialog';
 import { SendInvitationsDialog } from '../list/components/dialogs/send-invitations-dialog/send-invitations-dialog';
 import { SendResultsDialog } from '../list/components/dialogs/send-results-dialog/send-results-dialog';
+import { RefTestDetailTabs } from './components/ref-test-detail-tabs/ref-test-detail-tabs';
 import { RefTestDetailData } from './services/ref-test-detail-data';
 import { RefTestDetailOperationManager } from './services/ref-test-detail-operation-manager';
 
@@ -25,8 +24,6 @@ import { RefTestDetailOperationManager } from './services/ref-test-detail-operat
   selector: 'app-ref-test-detail',
   imports: [
     TranslatePipe,
-    RouterLink,
-    RouterLinkActive,
     RouterOutlet,
     SendInvitationsDialog,
     SendResultsDialog,
@@ -35,6 +32,7 @@ import { RefTestDetailOperationManager } from './services/ref-test-detail-operat
     RejectRefTestsDialog,
     Banner,
     HasPermission,
+    RefTestDetailTabs,
   ],
   providers: [RefTestDetailOperationManager],
   templateUrl: './ref-test-detail.html',

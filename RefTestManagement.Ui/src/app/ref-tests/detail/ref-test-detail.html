@@ -282,69 +282,7 @@
     }
 
     <!-- Tabs Navigation -->
-    <div class="bg-white rounded-t-xl shadow-sm border border-neutral-200 border-b-0">
-      <div class="border-b border-neutral-200">
-        <nav
-          class="flex -mb-px"
-          aria-label="{{ 'ref_tests.detail.tabs_aria' | translate }}"
-        >
-          <a
-            [routerLink]="['details']"
-            #detailsRoute="routerLinkActive"
-            routerLinkActive="!border-primary-600 !text-primary-600"
-            [routerLinkActiveOptions]="{ exact: false }"
-            [attr.aria-current]="detailsRoute.isActive ? 'page' : null"
-            class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
-          >
-            <div class="flex items-center justify-center gap-2">
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>{{ 'ref_tests.detail.tabs.details' | translate }}</span>
-            </div>
-          </a>
-
-          <a
-            *hasPermission="Permissions.RefTests.ViewDetailQuestions"
-            [routerLink]="['questions']"
-            #questionsRoute="routerLinkActive"
-            routerLinkActive="!border-primary-600 !text-primary-600"
-            [routerLinkActiveOptions]="{ exact: false }"
-            [attr.aria-current]="questionsRoute.isActive ? 'page' : null"
-            class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
-          >
-            <div class="flex items-center justify-center gap-2">
-              <svg
-                class="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <span>{{ 'ref_tests.detail.tabs.questions' | translate }}</span>
-            </div>
-          </a>
-        </nav>
-      </div>
-    </div>
+    <app-ref-test-detail-tabs />
 
     <!-- Tab Content -->
     <div class="bg-white rounded-b-xl shadow-sm border border-neutral-200">

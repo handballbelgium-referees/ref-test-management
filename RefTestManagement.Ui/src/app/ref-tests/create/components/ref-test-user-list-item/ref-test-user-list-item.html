@@ -18,13 +18,23 @@
         [class.border-red-500]="
           userFormControl().firstName().touched() && userFormControl().firstName().invalid()
         "
+        [attr.aria-invalid]="
+          userFormControl().firstName().touched() && userFormControl().firstName().invalid()
+            ? 'true'
+            : null
+        "
+        [attr.aria-describedby]="
+          userFormControl().firstName().touched() && userFormControl().firstName().invalid()
+            ? 'firstName-error-' + index()
+            : null
+        "
         [title]="'ref_tests.create.form.users.first_name' | translate"
         [attr.aria-label]="'ref_tests.create.form.users.first_name' | translate"
         class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
         placeholder="{{'ref_tests.create.form.users.first_name_placeholder' | translate }}"
       />
       @if (userFormControl().firstName().touched() && userFormControl().firstName().invalid()) {
-      <p class="text-xs text-red-600 mt-1">
+      <p [id]="'firstName-error-' + index()" class="text-xs text-red-600 mt-1">
         {{ userFormControl().firstName().errors()[0]?.message | translate }}
       </p>
       }
@@ -46,13 +56,23 @@
         [class.border-red-500]="
           userFormControl().lastName().touched() && userFormControl().lastName().invalid()
         "
+        [attr.aria-invalid]="
+          userFormControl().lastName().touched() && userFormControl().lastName().invalid()
+            ? 'true'
+            : null
+        "
+        [attr.aria-describedby]="
+          userFormControl().lastName().touched() && userFormControl().lastName().invalid()
+            ? 'lastName-error-' + index()
+            : null
+        "
         [title]="'ref_tests.create.form.users.last_name' | translate"
         [attr.aria-label]="'ref_tests.create.form.users.last_name' | translate"
         class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
         placeholder="{{'ref_tests.create.form.users.last_name_placeholder' | translate }}"
       />
       @if (userFormControl().lastName().touched() && userFormControl().lastName().invalid()) {
-      <p class="text-xs text-red-600 mt-1">
+      <p [id]="'lastName-error-' + index()" class="text-xs text-red-600 mt-1">
         {{ userFormControl().lastName().errors()[0]?.message | translate }}
       </p>
       }
@@ -74,13 +94,21 @@
         [class.border-red-500]="
           userFormControl().email().touched() && userFormControl().email().invalid()
         "
+        [attr.aria-invalid]="
+          userFormControl().email().touched() && userFormControl().email().invalid() ? 'true' : null
+        "
+        [attr.aria-describedby]="
+          userFormControl().email().touched() && userFormControl().email().invalid()
+            ? 'email-error-' + index()
+            : null
+        "
         [title]="'ref_tests.create.form.users.email' | translate"
         [attr.aria-label]="'ref_tests.create.form.users.email' | translate"
         class="w-full px-3 py-2 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm bg-white"
         placeholder="{{'ref_tests.create.form.users.email_placeholder' | translate }}"
       />
       @if (userFormControl().email().touched() && userFormControl().email().invalid()) {
-      <p class="text-xs text-red-600 mt-1">
+      <p [id]="'email-error-' + index()" class="text-xs text-red-600 mt-1">
         {{ userFormControl().email().errors()[0]?.message | translate }}
       </p>
       }

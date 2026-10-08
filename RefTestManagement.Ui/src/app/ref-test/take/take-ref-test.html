@@ -6,8 +6,11 @@
       <div class="text-center">
         <div
           class="animate-spin rounded-full h-16 w-16 border-b-4 border-primary-600 mx-auto"
+          aria-hidden="true"
         ></div>
-        <p class="mt-4 text-neutral-600">{{ 'ref_test.loading' | translate }}</p>
+        <p class="mt-4 text-neutral-600" role="status" aria-atomic="true">
+          {{ 'ref_test.loading' | translate }}
+        </p>
       </div>
     </div>
   } @else if (store.error()) {

@@ -103,6 +103,23 @@ describe('RefTestResults', () => {
     expect(text).toContain('1 of 1 answered');
   });
 
+  it('renders secondary score text with the higher-contrast token on its white card', () => {
+    const fixture = createComponent();
+    const nativeElement = fixture.nativeElement as HTMLElement;
+    const total = nativeElement.querySelector('.text-lg.text-neutral-500') as HTMLElement | null;
+    expect(total).not.toBeNull();
+    const scoreCard = total?.closest('.bg-white');
+    expect(scoreCard).not.toBeNull();
+
+    const secondaryText = Array.from(scoreCard?.querySelectorAll('.text-neutral-500') ?? []);
+
+    expect(secondaryText).toHaveLength(5);
+    expect(scoreCard?.classList).toContain('bg-white');
+    for (const element of secondaryText) {
+      expect(element.classList).toContain('text-neutral-500');
+    }
+  });
+
   it('keeps the result indeterminate when the passing threshold is unavailable or invalid', () => {
     for (const passingPercentage of [null, -1, 101, Number.NaN]) {
       const fixture = createComponent({ passingPercentage });
