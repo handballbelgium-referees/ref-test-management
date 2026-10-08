@@ -519,6 +519,10 @@ public sealed class PersonalDataExportEmailTests
             Assert.False(string.IsNullOrWhiteSpace(pdf["title"]));
             Assert.False(string.IsNullOrWhiteSpace(pdf["events"]));
             Assert.False(string.IsNullOrWhiteSpace(pdf["event.RefTestDetailsUpdated"]));
+            Assert.False(string.IsNullOrWhiteSpace(pdf["savedPosition"]));
+            Assert.False(string.IsNullOrWhiteSpace(pdf["savedPositionQuestion"]));
+            Assert.False(string.IsNullOrWhiteSpace(pdf["savedPositionReview"]));
+            Assert.False(string.IsNullOrWhiteSpace(pdf["questionAnswerTextUnavailable"]));
             if (locale != "en")
             {
                 Assert.NotEqual(englishSubject, email["subject"]);

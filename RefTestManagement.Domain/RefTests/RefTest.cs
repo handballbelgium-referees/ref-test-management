@@ -201,7 +201,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         };
 
         refTest.RaiseDomainEvent(new RefTestCreatedEvent(
-            firstName, lastName, email,
+            firstName, lastName, refTest.Email,
             TitleId: titleId,
             numberOfQuestions, maxTimeInMinutes,
             sendInvitationAutomatically, sendResultsAutomatically,
@@ -399,7 +399,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         RaiseDomainEvent(new RefTestDetailsUpdatedEvent(
             oldFirstName, firstName,
             oldLastName, lastName,
-            oldEmail, email));
+            oldEmail, Email));
     }
 
     public void UpdateTestConfiguration(
@@ -667,7 +667,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     private void SetEmail(string email)
     {
-        Email = email;
+        Email = email.Trim();
         EmailLookupKey = TokenService.HashBytes(PrivacyWithdrawalChallenge.NormalizeEmail(email));
     }
 

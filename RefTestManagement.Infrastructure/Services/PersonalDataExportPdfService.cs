@@ -229,6 +229,14 @@ public sealed class PersonalDataExportPdfService(
                                 .Italic();
                         }
 
+                        column.Item().PaddingBottom(8)
+                            .Background(Colors.Grey.Lighten4)
+                            .Border(1)
+                            .BorderColor(Colors.Grey.Lighten2)
+                            .Padding(8)
+                            .Text(translations["questionAnswerTextUnavailable"])
+                            .FontColor(Colors.Grey.Darken3);
+
                         foreach (var section in sections)
                             column.Item().PaddingBottom(10).Element(item =>
                                 ComposeRefTest(item, section, translations, culture));
@@ -318,6 +326,8 @@ public sealed class PersonalDataExportPdfService(
         AddField(column, translations["lastName"], refTest.LastName);
         AddField(column, translations["email"], refTest.Email);
         AddField(column, translations["numberOfQuestions"], refTest.NumberOfQuestions.ToString(culture));
+        AddField(column, translations["savedPosition"],
+            FormatSavedPosition(refTest.CurrentQuestionIndex, refTest.QuestionTotal, translations, culture));
         AddField(column, translations["maxTimeInMinutes"], refTest.MaxTimeInMinutes.ToString(culture));
         AddField(column, translations["createdAt"], FormatDate(refTest.CreatedAt, culture, translations));
         AddField(column, translations["startedAt"], FormatDate(refTest.StartedAt, culture, translations));
@@ -420,6 +430,24 @@ public sealed class PersonalDataExportPdfService(
         CultureInfo culture,
         IReadOnlyDictionary<string, string> translations) =>
         value?.ToString(culture) ?? translations["notRecorded"];
+
+    internal static string FormatSavedPosition(
+        int? currentQuestionIndex,
+        int? questionTotal,
+        IReadOnlyDictionary<string, string> translations,
+        CultureInfo culture)
+    {
+        if (currentQuestionIndex is not { } index
+            || questionTotal is not { } total
+            || total <= 0
+            || index < 0
+            || index > total)
+            return translations["notRecorded"];
+
+        return index == total
+            ? string.Format(culture, translations["savedPositionReview"], total)
+            : string.Format(culture, translations["savedPositionQuestion"], index + 1, total);
+    }
 
     private static string FormatBoolean(bool value, IReadOnlyDictionary<string, string> translations) =>
         translations[value ? "yes" : "no"];

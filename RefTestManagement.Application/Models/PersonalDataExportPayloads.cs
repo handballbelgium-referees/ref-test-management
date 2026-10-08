@@ -31,7 +31,9 @@ public sealed record PersonalDataExportRefTestData(
     string? Language,
     string? PrivacyNoticeVersion,
     DateTime? PrivacyNoticeAcceptedAt,
-    DateTime? ScheduledAt);
+    DateTime? ScheduledAt,
+    int? CurrentQuestionIndex = null,
+    int? QuestionTotal = null);
 
 /// <summary>Identifies a participant, system, or redacted actor in an exported audit event.</summary>
 public enum PersonalDataExportActorKind

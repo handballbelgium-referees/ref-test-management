@@ -1,10 +1,13 @@
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
+using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,7 +57,12 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
 
         try
         {
-            var refTests = await LoadCurrentRefTestsAsync(recipientEmail, cancellationToken);
+            var normalizedRecipientEmail = PrivacyWithdrawalChallenge.NormalizeEmail(recipientEmail);
+            var emailLookupKey = TokenService.HashBytes(normalizedRecipientEmail);
+            var refTests = await LoadCurrentRefTestsAsync(
+                normalizedRecipientEmail,
+                emailLookupKey,
+                cancellationToken);
             if (refTests.Count == 0)
             {
                 await RecordFailureAsync(
@@ -79,8 +87,8 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
             // Recheck both the request and every exported record after the email service has
             // prepared its provider payload. The query completes before the network call, so no
             // transaction or row lock spans I/O.
-            var exportedRefTestIds = refTests.Select(refTest => refTest.Id).ToArray();
-            var normalizedRecipientEmail = recipientEmail.Trim().ToUpperInvariant();
+            // Keep the ID collection as a List for consistent translation across database providers.
+            var exportedRefTestIds = refTests.Select(refTest => refTest.Id).ToList();
             var wasSent = await emailService.SendPersonalDataExportAsync(
                 recipientEmail,
                 attachments,
@@ -96,14 +104,21 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
                     if (!requestIsValid)
                         return false;
 
-                    var stillOwnedRecordCount = await context.RefTests
+                    await RefTestEmailLookupKeyBackfill.EnsureEmailLookupKeysBackfilledAsync(
+                        context,
+                        finalCheckCancellationToken);
+                    var stillOwnedRecords = await PrivacyWithdrawalQueries
+                        .MatchingRefTestsByEmailLookupKey(
+                            context.RefTests.Where(refTest => exportedRefTestIds.Contains(refTest.Id)),
+                            emailLookupKey)
                         .AsNoTracking()
-                        .CountAsync(
-                            refTest => exportedRefTestIds.Contains(refTest.Id)
-                                       && !refTest.IsAnonymized
-                                       && refTest.Email.ToUpper() == normalizedRecipientEmail,
-                            finalCheckCancellationToken);
-                    return stillOwnedRecordCount == exportedRefTestIds.Length;
+                        .Select(refTest => new { refTest.Id, refTest.Email })
+                        .ToListAsync(finalCheckCancellationToken);
+                    return stillOwnedRecords.Count == exportedRefTestIds.Count
+                           && stillOwnedRecords.All(refTest => string.Equals(
+                               PrivacyWithdrawalChallenge.NormalizeEmail(refTest.Email),
+                               normalizedRecipientEmail,
+                               StringComparison.Ordinal));
                 },
                 cancellationToken);
             if (!wasSent)
@@ -150,19 +165,54 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
     }
 
     private async Task<List<PersonalDataExportRefTestData>> LoadCurrentRefTestsAsync(
-        string recipientEmail,
+        string normalizedRecipientEmail,
+        byte[] emailLookupKey,
         CancellationToken cancellationToken)
     {
-        var normalizedEmail = recipientEmail.Trim().ToUpperInvariant();
-        var matches = await context.RefTests
+        await RefTestEmailLookupKeyBackfill.EnsureEmailLookupKeysBackfilledAsync(
+            context,
+            cancellationToken);
+        var candidates = await PrivacyWithdrawalQueries.MatchingRefTestsByEmailLookupKey(
+                context.RefTests,
+                emailLookupKey)
             .AsNoTracking()
-            .Where(refTest => !refTest.IsAnonymized && refTest.Email.ToUpper() == normalizedEmail)
             .OrderBy(refTest => refTest.CreatedAt)
             .ThenBy(refTest => refTest.Id)
             // Creator identity is staff data; rejection text is free-form and may mention unrelated people.
             // Invitation tokens and anonymization metadata are intentionally not selected either.
             .Select(refTest => new
             {
+                refTest.Id,
+                refTest.FirstName,
+                refTest.LastName,
+                refTest.Email,
+                refTest.NumberOfQuestions,
+                refTest.MaxTimeInMinutes,
+                refTest.QuestionIds,
+                refTest.CreatedAt,
+                refTest.StartedAt,
+                refTest.CompletedAt,
+                refTest.ExpiredAt,
+                refTest.CurrentQuestionIndex,
+                refTest.QuestionScore,
+                refTest.AnswerScore,
+                refTest.AnswerTotal,
+                refTest.Percentage,
+                refTest.Language,
+                refTest.PrivacyNoticeVersion,
+                refTest.PrivacyNoticeAcceptedAt,
+                refTest.ScheduledAt
+            })
+            .ToListAsync(cancellationToken);
+
+        // The indexed digest narrows database candidates; verify the full normalized address
+        // in application code so a hypothetical digest collision cannot add unrelated data.
+        return candidates
+            .Where(refTest => string.Equals(
+                PrivacyWithdrawalChallenge.NormalizeEmail(refTest.Email),
+                normalizedRecipientEmail,
+                StringComparison.Ordinal))
+            .Select(refTest => new PersonalDataExportRefTestData(
                 refTest.Id,
                 refTest.FirstName,
                 refTest.LastName,
@@ -180,29 +230,10 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
                 refTest.Language,
                 refTest.PrivacyNoticeVersion,
                 refTest.PrivacyNoticeAcceptedAt,
-                refTest.ScheduledAt
-            })
-            .ToListAsync(cancellationToken);
-
-        return matches.Select(refTest => new PersonalDataExportRefTestData(
-            refTest.Id,
-            refTest.FirstName,
-            refTest.LastName,
-            refTest.Email,
-            refTest.NumberOfQuestions,
-            refTest.MaxTimeInMinutes,
-            refTest.CreatedAt,
-            refTest.StartedAt,
-            refTest.CompletedAt,
-            refTest.ExpiredAt,
-            refTest.QuestionScore,
-            refTest.AnswerScore,
-            refTest.AnswerTotal,
-            refTest.Percentage,
-            refTest.Language,
-            refTest.PrivacyNoticeVersion,
-            refTest.PrivacyNoticeAcceptedAt,
-            refTest.ScheduledAt)).ToList();
+                refTest.ScheduledAt,
+                refTest.CurrentQuestionIndex,
+                refTest.QuestionIds.Count))
+            .ToList();
     }
 
     private async Task<List<PersonalDataExportAuditEventData>> LoadRetainedAuditEventsAsync(

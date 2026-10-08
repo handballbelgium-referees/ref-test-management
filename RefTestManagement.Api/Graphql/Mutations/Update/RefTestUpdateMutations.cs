@@ -43,11 +43,12 @@ public static partial class RefTestUpdateMutations
         if (refTest == null)
             throw new RefTestNotFoundException(input.Id);
 
-        var emailChanged = refTest.Email != input.Email;
+        var email = input.Email.Trim();
+        var emailChanged = refTest.Email.Trim() != email;
         var previousEmail = refTest.Email;
         var invitationWasSent = refTest.InvitationSentAt.HasValue;
 
-        refTest.UpdateBasicDetails(input.FirstName, input.LastName, input.Email);
+        refTest.UpdateBasicDetails(input.FirstName, input.LastName, email);
 
         if (emailChanged)
         {

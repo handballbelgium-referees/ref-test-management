@@ -4,6 +4,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -33,11 +34,24 @@ public sealed class PersonalDataExportRequestService(
 
         try
         {
-            var normalizedEmail = candidateEmail.ToUpperInvariant();
-            var storedEmail = await context.RefTests
-                .Where(refTest => !refTest.IsAnonymized && refTest.Email.ToUpper() == normalizedEmail)
+            var normalizedEmail = PrivacyWithdrawalChallenge.NormalizeEmail(candidateEmail);
+            var emailLookupKey = TokenService.HashBytes(normalizedEmail);
+            await RefTestEmailLookupKeyBackfill.EnsureEmailLookupKeysBackfilledAsync(
+                context,
+                cancellationToken);
+
+            var candidateEmails = await PrivacyWithdrawalQueries.MatchingRefTestsByEmailLookupKey(
+                    context.RefTests,
+                    emailLookupKey)
+                .AsNoTracking()
                 .Select(refTest => refTest.Email)
-                .FirstOrDefaultAsync(cancellationToken);
+                .ToListAsync(cancellationToken);
+            // The indexed digest narrows database candidates. Verify the complete normalized
+            // address in application code so even a hypothetical digest collision cannot match.
+            var storedEmail = candidateEmails.FirstOrDefault(candidate => string.Equals(
+                PrivacyWithdrawalChallenge.NormalizeEmail(candidate),
+                normalizedEmail,
+                StringComparison.Ordinal));
 
             if (storedEmail is null)
                 return;
@@ -45,7 +59,7 @@ public sealed class PersonalDataExportRequestService(
             var now = DateTime.UtcNow;
             var key = TokenService.GenerateBase64Url(32);
             var request = PersonalDataExportRequest.Create(
-                storedEmail,
+                storedEmail.Trim(),
                 key,
                 keyProtection.Protect(key),
                 now,

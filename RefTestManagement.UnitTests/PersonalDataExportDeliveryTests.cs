@@ -1,8 +1,10 @@
+using System.Globalization;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -15,6 +17,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
@@ -28,6 +31,69 @@ public sealed class PersonalDataExportDeliveryTests
     private const string ParticipantEmail = "ada@example.org";
     private static readonly string ChallengeKey = new('K', 43);
     private static readonly DateTime Now = new(2026, 9, 1, 12, 0, 0, DateTimeKind.Utc);
+
+    [Fact]
+    public async Task TabsAndNewlinesMatchLegacyPaddedEmailWithMissingLookupKeyThroughSelfServiceExport()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        const string storedEmail = "Ada@Example.org";
+        var legacyStoredEmail = $"\t\n{storedEmail}\r\n";
+        Guid refTestId;
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Whitespace-Padded Export");
+            seed.RefTestTitles.Add(title);
+            await seed.SaveChangesAsync(cancellationToken);
+
+            var refTest = CreateRefTest(title.Id, storedEmail, "Ada", "Lovelace");
+            refTestId = refTest.Id;
+            seed.RefTests.Add(refTest);
+            await seed.SaveChangesAsync(cancellationToken);
+
+            seed.Entry(refTest).Property(candidate => candidate.Email).CurrentValue = legacyStoredEmail;
+            seed.Entry(refTest).Property(candidate => candidate.EmailLookupKey).CurrentValue = null;
+            await seed.SaveChangesAsync(cancellationToken);
+        }
+
+        await using var context = database.CreateContext();
+        var keyProtection = new PersonalDataExportKeyProtection(new EphemeralDataProtectionProvider());
+        var requestService = new PersonalDataExportRequestService(
+            context,
+            NewJobEnqueueService(context),
+            keyProtection,
+            new PrivacyChallengeConfiguration(),
+            NullLogger<PersonalDataExportRequestService>.Instance);
+
+        await requestService.RequestAsync(
+            $"\t\n{storedEmail.ToUpperInvariant()}\r\n",
+            cancellationToken);
+
+        Assert.NotNull(await context.RefTests
+            .AsNoTracking()
+            .Where(candidate => candidate.Id == refTestId)
+            .Select(candidate => candidate.EmailLookupKey)
+            .SingleAsync(cancellationToken));
+        var request = await context.PersonalDataExportRequests.SingleAsync(cancellationToken);
+        Assert.Equal(storedEmail, request.Email);
+        Assert.True(await requestService.ConfirmAsync(
+            keyProtection.Unprotect(request.ProtectedDeliveryKey!),
+            cancellationToken));
+
+        var pdfService = new RecordingPdfService();
+        var emailService = new RecordingEmailService();
+        await CreateHandler(
+                context,
+                pdfService,
+                emailService,
+                new BackgroundJobConfiguration(),
+                NullLoggerFactory.Instance)
+            .HandleAsync(DeliveryJob(request.Id), cancellationToken);
+
+        Assert.Equal([storedEmail], emailService.Recipients);
+        Assert.Equal(refTestId, Assert.Single(pdfService.Document!.RefTests).Id);
+    }
 
     [Fact]
     public async Task DeliverySelectsAllCurrentStatusesAndRetainedEventsWithoutThirdPartyPii()
@@ -186,6 +252,17 @@ public sealed class PersonalDataExportDeliveryTests
         Assert.Equal(10, completed.AnswerTotal);
         Assert.Equal("v2", completed.PrivacyNoticeVersion);
         Assert.NotNull(completed.PrivacyNoticeAcceptedAt);
+
+        var inProgress = Assert.Single(document.RefTests, refTest => refTest.Language == "nl");
+        Assert.Equal(1, inProgress.CurrentQuestionIndex);
+        Assert.Equal(12, inProgress.QuestionTotal);
+        Assert.Equal(
+            "Question 2 of 12",
+            PersonalDataExportPdfService.FormatSavedPosition(
+                inProgress.CurrentQuestionIndex,
+                inProgress.QuestionTotal,
+                new TranslationService().GetPdfPersonalDataExportTranslations("en"),
+                CultureInfo.GetCultureInfo("en")));
 
         Assert.Equal(5, document.AuditEvents.Count);
         var archivedEvent = Assert.Single(document.AuditEvents, auditEvent => auditEvent.IsArchived);
@@ -1807,6 +1884,12 @@ public sealed class PersonalDataExportDeliveryTests
         return request;
     }
 
+    private static JobEnqueueService NewJobEnqueueService(RefTestManagementContext context) =>
+        new(
+            context,
+            new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider()),
+            NullLogger<JobEnqueueService>.Instance);
+
     private static AuditEvent CreateAuditEvent(
         long seqId,
         string streamId,
@@ -1932,7 +2015,7 @@ public sealed class PersonalDataExportDeliveryTests
             email,
             numberOfQuestions: 12,
             maxTimeInMinutes: 30,
-            questionIds: ["question-1", "question-2"],
+            questionIds: Enumerable.Range(1, 12).Select(index => $"question-{index}").ToList(),
             sendInvitationAutomatically: false,
             sendResultsAutomatically: status == RefTestStatus.Completed,
             requiresApproval: requiresApproval,
@@ -1966,6 +2049,28 @@ public sealed class PersonalDataExportDeliveryTests
         }
 
         return refTest;
+    }
+
+    [Theory]
+    [InlineData(0, 12, "Question 1 of 12")]
+    [InlineData(12, 12, "Review step after question 12")]
+    [InlineData(null, 12, "Not recorded")]
+    [InlineData(13, 12, "Not recorded")]
+    [InlineData(0, 0, "Not recorded")]
+    public void PdfSavedPositionIsReadableAndBoundsChecked(
+        int? currentQuestionIndex,
+        int? questionTotal,
+        string expected)
+    {
+        var translations = new TranslationService().GetPdfPersonalDataExportTranslations("en");
+
+        Assert.Equal(
+            expected,
+            PersonalDataExportPdfService.FormatSavedPosition(
+                currentQuestionIndex,
+                questionTotal,
+                translations,
+                CultureInfo.GetCultureInfo("en")));
     }
 
     private static RefTest CreateRefTest(Guid titleId, string email, string firstName, string lastName) =>

@@ -187,6 +187,67 @@ public sealed class PersonalDataExportRequestTests
     }
 
     [Fact]
+    public async Task UpdatingLegacyWhitespacePaddedEmailDoesNotInvalidateTheSameOwnersPendingExport()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var paddedEmail = $"\t\n{ParticipantEmail}\r\n";
+        var request = NewRequest(
+            Now,
+            Now.AddHours(24),
+            email: paddedEmail,
+            key: ChallengeKey);
+        Guid refTestId;
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Whitespace-Padded Email");
+            seed.RefTestTitles.Add(title);
+            await seed.SaveChangesAsync(cancellationToken);
+            var refTest = RefTest.Create(
+                title.Id,
+                "Ada",
+                "Lovelace",
+                ParticipantEmail,
+                numberOfQuestions: 10,
+                maxTimeInMinutes: 30,
+                questionIds: ["q1"],
+                sendInvitationAutomatically: false,
+                sendResultsAutomatically: false);
+            refTestId = refTest.Id;
+            seed.RefTests.Add(refTest);
+            seed.PersonalDataExportRequests.Add(request);
+            await seed.SaveChangesAsync(cancellationToken);
+
+            seed.Entry(refTest).Property(candidate => candidate.Email).CurrentValue =
+                paddedEmail;
+            await seed.SaveChangesAsync(cancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            await RefTestUpdateMutations.UpdateRefTestDetailsAsync(
+                new UpdateRefTestDetailsInput(
+                    refTestId,
+                    "Ada",
+                    "Lovelace",
+                    paddedEmail),
+                context,
+                NewJobEnqueueService(context),
+                cancellationToken);
+        }
+
+        await using var verification = database.CreateContext();
+        var persistedRefTest = await verification.RefTests
+            .SingleAsync(candidate => candidate.Id == refTestId, cancellationToken);
+        var persistedRequest = await verification.PersonalDataExportRequests
+            .SingleAsync(candidate => candidate.Id == request.Id, cancellationToken);
+        Assert.Equal(ParticipantEmail, persistedRefTest.Email);
+        Assert.Equal(paddedEmail, persistedRequest.Email);
+        Assert.NotNull(persistedRequest.KeyHash);
+    }
+
+    [Fact]
     public async Task RequestMutationAcknowledgesKnownAndUnknownAddressesIdenticallyAndEnqueuesIdOnly()
     {
         using var database = SqliteTestDatabase.Create();
