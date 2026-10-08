@@ -256,13 +256,13 @@
       },
       "HotChocolate.Caching.Core": {
         "type": "Transitive",
-        "resolved": "16.6.7",
-        "contentHash": "Zj/QY8MXISbd8OrfAOLXLjcf/Fh1Q0/tWOs3ScjI3mFLezhuvNuaaK3zg17yQtENrgFA3xMI4KO7m5UEWN3/KA==",
+        "resolved": "16.6.8",
+        "contentHash": "Ga6EFPsZvwgOF5B6v47kOxdO2sqQU4svvXU60Wo9rMUzYTtKT9oCQQ2r3gqOtKCKAJxt3mro10iTpGbqPaCqDA==",
         "dependencies": {
-          "HotChocolate.Abstractions": "16.6.7",
-          "HotChocolate.Execution.Abstractions": "16.6.7",
-          "HotChocolate.Execution.Operation.Abstractions": "16.6.7",
-          "HotChocolate.Types.Abstractions": "16.6.7",
+          "HotChocolate.Abstractions": "16.6.8",
+          "HotChocolate.Execution.Abstractions": "16.6.8",
+          "HotChocolate.Execution.Operation.Abstractions": "16.6.8",
+          "HotChocolate.Types.Abstractions": "16.6.8",
           "Microsoft.Extensions.Options": "10.0.0",
           "Microsoft.Net.Http.Headers": "10.0.0"
         }
@@ -1574,9 +1574,9 @@
           "HotChocolate.AspNetCore": "[16.6.8, )",
           "HotChocolate.AspNetCore.Authorization": "[16.6.8, )",
           "HotChocolate.AspNetCore.CommandLine": "[16.6.8, )",
-          "HotChocolate.Caching": "[16.6.7, )",
+          "HotChocolate.Caching": "[16.6.8, )",
           "HotChocolate.Data.EntityFramework": "[16.6.8, )",
-          "HotChocolate.Types.Analyzers": "[16.6.7, )",
+          "HotChocolate.Types.Analyzers": "[16.6.8, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.12, )",
           "Microsoft.AspNetCore.Authentication.OpenIdConnect": "[10.0.12, )",
           "Microsoft.Extensions.Http.Resilience": "[10.10.0, )",
@@ -1726,12 +1726,12 @@
       },
       "HotChocolate.Caching": {
         "type": "CentralTransitive",
-        "requested": "[16.6.7, )",
-        "resolved": "16.6.7",
-        "contentHash": "SB/BohIXlQo0+UqcM9/py6NYXM8pX0RZamIEw5d++R5yW+bW2fqBTDpNoKokTbDYABtvpmPF2Ga8fA0YnLT1dg==",
+        "requested": "[16.6.8, )",
+        "resolved": "16.6.8",
+        "contentHash": "+t0LfpBZ6JUG/3LALyuLt5ONkub7kgWaN7qcgUj5q4Pv1sngE2bVwONBK+T/Mj+WZ3K+4hock4u7Q6cgWIE8mg==",
         "dependencies": {
-          "HotChocolate.Caching.Core": "16.6.7",
-          "HotChocolate.Types": "16.6.7",
+          "HotChocolate.Caching.Core": "16.6.8",
+          "HotChocolate.Types": "16.6.8",
           "Microsoft.Net.Http.Headers": "10.0.0"
         }
       },
@@ -1751,9 +1751,9 @@
       },
       "HotChocolate.Types.Analyzers": {
         "type": "CentralTransitive",
-        "requested": "[16.6.7, )",
-        "resolved": "16.6.7",
-        "contentHash": "HNGBc5lJuWXh82vnF6z+mb+RIMVWHtfD8ncUIR97CW6NbWFmEe3S1/e0TxMELDCL3h82r8M9QeiZHVCeY+BNvA=="
+        "requested": "[16.6.8, )",
+        "resolved": "16.6.8",
+        "contentHash": "xThCT8xjVZey/XKlCYTcT/SnucP6cYHK3aezTa92MyHcr9KJVn9ws4MXtu7BmGsb6HhqSr3zNdCFhmbAjw97jQ=="
       },
       "Microsoft.AspNetCore.Authentication.JwtBearer": {
         "type": "CentralTransitive",
