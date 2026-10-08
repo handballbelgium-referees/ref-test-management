@@ -15,6 +15,22 @@ public sealed class PrivacyChallengeConfiguration
     /// <summary>Confirmation attempts allowed per client address in a rate-limit window.</summary>
     public int ConfirmationRateLimitPermitLimit { get; init; } = 10;
 
+    /// <summary>Rate-limit state backend; Local is only safe for a single API instance.</summary>
+    public PrivacyChallengeRateLimitBackend RateLimitBackend { get; init; } =
+        PrivacyChallengeRateLimitBackend.Local;
+
+    /// <summary>Authenticated TLS Redis endpoint used outside Development.</summary>
+    public string? RedisEndpoint { get; init; }
+
+    /// <summary>Secret used to pseudonymize client addresses in shared limiter keys.</summary>
+    public string? HmacSecret { get; init; }
+
     /// <summary>How often withdrawal batches are reconciled and expired or completed data is cleared, in minutes.</summary>
     public int CleanupIntervalMinutes { get; init; } = 15;
+}
+
+public enum PrivacyChallengeRateLimitBackend
+{
+    Local,
+    Redis
 }

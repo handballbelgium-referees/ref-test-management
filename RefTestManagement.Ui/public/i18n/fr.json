@@ -113,6 +113,8 @@
         "expired": "Expirées",
         "pending_approval": "En Attente d'Approbation",
         "rejected": "Refusées",
+        "scroll_left": "Faire défiler les filtres vers la gauche",
+        "scroll_right": "Faire défiler les filtres vers la droite",
         "title_label": "Titre du RefTest",
         "title_all": "Tous les Titres",
         "title_search_placeholder": "Rechercher des titres...",
@@ -752,10 +754,10 @@
       "requestAcknowledged": "Si l'adresse correspond à un dossier de participant, vous recevrez un e-mail contenant un lien pour confirmer votre demande.",
       "requestError": "Nous n'avons pas pu traiter votre demande. Veuillez réessayer.",
       "confirmationTitle": "Confirmer votre demande",
-      "confirmationDescription": "Confirmez ci-dessous pour recevoir par e-mail un PDF de vos données personnelles.",
+      "confirmationDescription": "Confirmez ci-dessous pour demander un PDF de vos données personnelles par e-mail.",
       "confirmButton": "Confirmer la demande",
       "confirming": "Confirmation de votre demande...",
-      "confirmed": "Votre demande est confirmée. Un PDF de vos données personnelles vous sera envoyé par e-mail.",
+      "confirmed": "Votre demande est confirmée. Nous tenterons de vous envoyer par e-mail un PDF de vos données personnelles.",
       "confirmationError": "Nous n'avons pas pu confirmer cette demande. Le lien est peut-être invalide ou expiré. Demandez un nouveau lien et réessayez."
     },
     "consentWithdrawal": {

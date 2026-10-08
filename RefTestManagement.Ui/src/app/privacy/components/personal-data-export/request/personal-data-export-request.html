@@ -91,6 +91,11 @@
             {{ 'privacy.dataExport.requestButton' | translate }}
           }
         </button>
+        <span class="sr-only" role="status" aria-live="polite">
+          @if (requestPending()) {
+            {{ 'privacy.dataExport.requesting' | translate }}
+          }
+        </span>
       </form>
 
       @if (requestError()) {

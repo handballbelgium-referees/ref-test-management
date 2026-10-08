@@ -286,15 +286,15 @@
       <div class="border-b border-neutral-200">
         <nav
           class="flex -mb-px"
-          role="tablist"
           aria-label="{{ 'ref_tests.detail.tabs_aria' | translate }}"
         >
           <a
             [routerLink]="['details']"
+            #detailsRoute="routerLinkActive"
             routerLinkActive="!border-primary-600 !text-primary-600"
             [routerLinkActiveOptions]="{ exact: false }"
+            [attr.aria-current]="detailsRoute.isActive ? 'page' : null"
             class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
-            role="tab"
           >
             <div class="flex items-center justify-center gap-2">
               <svg
@@ -318,10 +318,11 @@
           <a
             *hasPermission="Permissions.RefTests.ViewDetailQuestions"
             [routerLink]="['questions']"
+            #questionsRoute="routerLinkActive"
             routerLinkActive="!border-primary-600 !text-primary-600"
             [routerLinkActiveOptions]="{ exact: false }"
+            [attr.aria-current]="questionsRoute.isActive ? 'page' : null"
             class="flex-1 sm:flex-none whitespace-nowrap py-4 px-6 border-b-2 border-transparent text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 font-medium text-sm transition-colors outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary-500"
-            role="tab"
           >
             <div class="flex items-center justify-center gap-2">
               <svg
@@ -346,7 +347,7 @@
     </div>
 
     <!-- Tab Content -->
-    <div class="bg-white rounded-b-xl shadow-sm border border-neutral-200" role="tabpanel">
+    <div class="bg-white rounded-b-xl shadow-sm border border-neutral-200">
       <router-outlet />
     </div>
 

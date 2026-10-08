@@ -241,6 +241,18 @@
                   "
                   [title]="'ref_tests.create.form.number_of_questions.label' | translate"
                   [attr.aria-label]="'ref_tests.create.form.number_of_questions.label' | translate"
+                  [attr.aria-invalid]="
+                    refTestForm.numberOfQuestions().touched() &&
+                    refTestForm.numberOfQuestions().invalid()
+                      ? 'true'
+                      : null
+                  "
+                  [attr.aria-describedby]="
+                    refTestForm.numberOfQuestions().touched() &&
+                    refTestForm.numberOfQuestions().invalid()
+                      ? 'numberOfQuestions-error'
+                      : null
+                  "
                   class="w-full px-3 py-2.5 border border-neutral-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm bg-white disabled:bg-neutral-50 disabled:text-neutral-500 disabled:cursor-not-allowed"
                   placeholder="30"
                 />
@@ -248,7 +260,7 @@
                   refTestForm.numberOfQuestions().touched() &&
                   refTestForm.numberOfQuestions().invalid()
                 ) {
-                  <p class="text-xs text-red-600 mt-1">
+                  <p id="numberOfQuestions-error" class="text-xs text-red-600 mt-1" role="alert">
                     {{ refTestForm.numberOfQuestions().errors()[0]?.message | translate }}
                   </p>
                 }

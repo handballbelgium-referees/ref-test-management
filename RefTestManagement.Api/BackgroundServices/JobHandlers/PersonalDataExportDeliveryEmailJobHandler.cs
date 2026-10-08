@@ -76,18 +76,35 @@ public sealed class PersonalDataExportDeliveryEmailJobHandler(
 
             attachments = await pdfService.GenerateAttachmentsAsync(document);
 
-            // Recheck after the email service has prepared its provider payload. The query
-            // completes before the network call, so no transaction or row lock spans I/O.
+            // Recheck both the request and every exported record after the email service has
+            // prepared its provider payload. The query completes before the network call, so no
+            // transaction or row lock spans I/O.
+            var exportedRefTestIds = refTests.Select(refTest => refTest.Id).ToArray();
+            var normalizedRecipientEmail = recipientEmail.Trim().ToUpperInvariant();
             var wasSent = await emailService.SendPersonalDataExportAsync(
                 recipientEmail,
                 attachments,
-                finalCheckCancellationToken => context.PersonalDataExportRequests
-                    .AsNoTracking()
-                    .AnyAsync(
-                        candidate => candidate.Id == payload.RequestId
-                                     && candidate.VerifiedAt != null
-                                     && candidate.Email == recipientEmail,
-                        finalCheckCancellationToken),
+                async finalCheckCancellationToken =>
+                {
+                    var requestIsValid = await context.PersonalDataExportRequests
+                        .AsNoTracking()
+                        .AnyAsync(
+                            candidate => candidate.Id == payload.RequestId
+                                         && candidate.VerifiedAt != null
+                                         && candidate.Email == recipientEmail,
+                            finalCheckCancellationToken);
+                    if (!requestIsValid)
+                        return false;
+
+                    var stillOwnedRecordCount = await context.RefTests
+                        .AsNoTracking()
+                        .CountAsync(
+                            refTest => exportedRefTestIds.Contains(refTest.Id)
+                                       && !refTest.IsAnonymized
+                                       && refTest.Email.ToUpper() == normalizedRecipientEmail,
+                            finalCheckCancellationToken);
+                    return stillOwnedRecordCount == exportedRefTestIds.Length;
+                },
                 cancellationToken);
             if (!wasSent)
                 return;

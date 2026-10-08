@@ -113,6 +113,8 @@
         "expired": "Expired",
         "pending_approval": "Pending Approval",
         "rejected": "Rejected",
+        "scroll_left": "Scroll filters left",
+        "scroll_right": "Scroll filters right",
         "title_label": "RefTest Title",
         "title_all": "All Titles",
         "title_search_placeholder": "Search titles...",
@@ -751,10 +753,10 @@
       "requestAcknowledged": "If the address matches a participant record, you will receive an email with a link to confirm your request.",
       "requestError": "We could not process your request. Please try again.",
       "confirmationTitle": "Confirm your request",
-      "confirmationDescription": "Confirm below to have a PDF copy of your personal data sent by email.",
+      "confirmationDescription": "Confirm below to request an emailed PDF copy of your personal data.",
       "confirmButton": "Confirm request",
       "confirming": "Confirming your request...",
-      "confirmed": "Your request is confirmed. A PDF copy of your personal data will be emailed to you.",
+      "confirmed": "Your request is confirmed. We will attempt to email you a PDF copy of your personal data.",
       "confirmationError": "We could not confirm this request. The link may be invalid or expired. Please request a new link and try again."
     },
     "consentWithdrawal": {

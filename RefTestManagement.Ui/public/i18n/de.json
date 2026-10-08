@@ -4,15 +4,15 @@
     "page_title": "Handball-RefTest-Verwaltung"
   },
   "pwa": {
-    "update_available": "Eine neue Version ist verfügbar.",
+    "update_available": "Eine neue Version ist verf\u00fcgbar.",
     "update_now": "Aktualisieren"
   },
   "common": {
     "cancel": "Abbrechen",
     "today": "Heute",
-    "choose_date": "Datum auswählen",
-    "clear": "Löschen",
-    "previous": "Zurück",
+    "choose_date": "Datum ausw\u00e4hlen",
+    "clear": "L\u00f6schen",
+    "previous": "Zur\u00fcck",
     "next": "Weiter",
     "refreshing": "Aktualisierung...",
     "yes": "Ja",
@@ -32,8 +32,8 @@
       "add_minute": "1 Minute hinzuf\u00fcgen",
       "one_minute_short": "1 Min."
     },
-    "close": "Schließen",
-    "deleting": "Löschen...",
+    "close": "Schlie\u00dfen",
+    "deleting": "L\u00f6schen...",
     "sending": "Senden...",
     "copy": "Kopieren",
     "copied": "Kopiert"
@@ -46,7 +46,7 @@
   "home": {
     "hero": {
       "title": "Handball-RefTest-Verwaltungssystem",
-      "subtitle": "Erstellen und verwalten Sie Handball-RefTests für Schiedsrichter und Delegierte des Belgischen Handballverbands",
+      "subtitle": "Erstellen und verwalten Sie Handball-RefTests f\u00fcr Schiedsrichter und Delegierte des Belgischen Handballverbands",
       "login": "Zum Dashboard"
     },
     "authenticationCheckFailed": {
@@ -65,19 +65,19 @@
       },
       "auditLogs": {
         "title": "Auditprotokoll",
-        "description": "Sehen Sie eine vollständige Historie aller Änderungen im System"
+        "description": "Sehen Sie eine vollst\u00e4ndige Historie aller \u00c4nderungen im System"
       }
     },
     "about": {
       "title": "RefTest-Verwaltungssystem",
-      "description": "Diese Anwendung verwaltet Handball-Regeln-RefTests. Administratoren können RefTests für mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Fortschritt und Abschlussstatus verfolgen, RefTests nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschließlich Punktzahlen und Abschlussraten anzeigen. RefTests unterstützen {{count}} Sprachen ({{languages}}).",
+      "description": "Diese Anwendung verwaltet Handball-Regeln-RefTests. Administratoren k\u00f6nnen RefTests f\u00fcr mehrere Benutzer erstellen, E-Mail-Einladungen versenden, Fortschritt und Abschlussstatus verfolgen, RefTests nach verschiedenen Kriterien filtern und sortieren sowie Leistungsanalysen einschlie\u00dflich Punktzahlen und Abschlussraten anzeigen. RefTests unterst\u00fctzen {{count}} Sprachen ({{languages}}).",
       "creation": {
         "title": "RefTest-Erstellung",
-        "description": "Erstellen Sie RefTests für mehrere Benutzer auf einmal. Jeder RefTest wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
+        "description": "Erstellen Sie RefTests f\u00fcr mehrere Benutzer auf einmal. Jeder RefTest wird einem bestimmten Benutzer mit einzigartigen Nachverfolgungsfunktionen zugewiesen."
       },
       "management": {
         "title": "RefTest-Verwaltung",
-        "description": "Verfolgen Sie RefTests während ihres gesamten Lebenszyklus: ausstehend, in Bearbeitung, abgeschlossen oder abgelaufen. Filtern und sortieren Sie nach Status, Datum, Punktzahl oder Benutzer-E-Mail. Senden Sie Einladungen und verwalten Sie alle RefTest-Aktionen."
+        "description": "Verfolgen Sie RefTests w\u00e4hrend ihres gesamten Lebenszyklus: ausstehend, in Bearbeitung, abgeschlossen oder abgelaufen. Filtern und sortieren Sie nach Status, Datum, Punktzahl oder Benutzer-E-Mail. Senden Sie Einladungen und verwalten Sie alle RefTest-Aktionen."
       }
     }
   },
@@ -91,16 +91,16 @@
       "query_error": "RefTests konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
       "load_more_error": "Weitere RefTests konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
       "load_more": "Weitere RefTests laden",
-      "loading_more": "Lädt...",
+      "loading_more": "L\u00e4dt...",
       "performance_warning_title": "Leistungshinweis",
       "performance_warning_message": "Sie haben viele Elemente geladen. Verwenden Sie Filter, um die Ergebnisse einzugrenzen und die Leistung zu verbessern.",
       "max_capacity_title": "Maximale Anzahl Elemente Geladen",
       "max_capacity_message": "Zeigt die ersten {{limit}} Elemente an. Bitte verwenden Sie die obigen Filter, um Ihre Ergebnisse einzugrenzen und bestimmte RefTests zu finden.",
       "showing": "{{displayed}} von {{total}} RefTest wird angezeigt",
       "showing_plural": "{{displayed}} von {{total}} RefTests werden angezeigt",
-      "select_all": "Alle auswählen",
-      "select_ref_test": "{{name}} auswählen",
-      "selected": "ausgewählt",
+      "select_all": "Alle ausw\u00e4hlen",
+      "select_ref_test": "{{name}} ausw\u00e4hlen",
+      "selected": "ausgew\u00e4hlt",
       "filters": {
         "advanced_filters": "Erweiterte Filter",
         "performance_title": "Leistungsmetriken",
@@ -113,6 +113,8 @@
         "expired": "Abgelaufen",
         "pending_approval": "Warte auf Genehmigung",
         "rejected": "Abgelehnt",
+        "scroll_left": "Filter nach links scrollen",
+        "scroll_right": "Filter nach rechts scrollen",
         "title_label": "RefTest Titel",
         "title_all": "Alle Titel",
         "title_search_placeholder": "Titel suchen...",
@@ -180,7 +182,7 @@
         "participant": "Teilnehmer",
         "status": "Status",
         "anonymized_badge": "Anonymisiert",
-        "anonymized_badge_tooltip": "Die personenbezogenen Daten dieses RefTests wurden aufgrund einer Löschanfrage oder eines Widerrufs der Einwilligung geschwärzt.",
+        "anonymized_badge_tooltip": "Die personenbezogenen Daten dieses RefTests wurden aufgrund einer L\u00f6schanfrage oder eines Widerrufs der Einwilligung geschw\u00e4rzt.",
         "questions": "Fragen",
         "max_time": "Max. Zeit",
         "minutes_short": "Min",
@@ -215,27 +217,27 @@
         "clear_filters": "Filter l\u00f6schen"
       },
       "actions": {
-        "reftest_selected": "Ausgewählt",
-        "reftests_selected": "Ausgewählt",
+        "reftest_selected": "Ausgew\u00e4hlt",
+        "reftests_selected": "Ausgew\u00e4hlt",
         "send_invitation": "Einladung Senden",
         "send_invitations": "Einladungen Senden",
         "send_result": "Ergebnis Senden",
         "send_results": "Ergebnisse Senden",
         "generate_report": "Bericht Senden",
-        "reset_test": "Zurücksetzen",
-        "reset_tests": "Zurücksetzen",
+        "reset_test": "Zur\u00fccksetzen",
+        "reset_tests": "Zur\u00fccksetzen",
         "revive_test": "Wiederherstellen",
         "revive_tests": "Wiederherstellen",
         "approve_test": "Genehmigen",
         "approve_tests": "Genehmigen",
         "reject_test": "Ablehnen",
         "reject_tests": "Ablehnen",
-        "delete": "Löschen"
+        "delete": "L\u00f6schen"
       },
       "dialogs": {
         "send_invitations": {
           "title": "Einladungen Senden",
-          "message": "Sind Sie sicher, dass Sie Einladungen senden möchten?",
+          "message": "Sind Sie sicher, dass Sie Einladungen senden m\u00f6chten?",
           "new_invitations": "Neue Einladungen ({{count}})",
           "resend_invitations": "Erneut senden ({{count}})",
           "confirm": "Einladungen Senden",
@@ -243,49 +245,49 @@
         },
         "send_results": {
           "title": "Ergebnisse Senden",
-          "message": "Sind Sie sicher, dass Sie Ergebnisse senden möchten?",
+          "message": "Sind Sie sicher, dass Sie Ergebnisse senden m\u00f6chten?",
           "new_results": "Neue Ergebnisse ({{count}})",
           "resend_results": "Erneut senden ({{count}})",
           "confirm": "Ergebnisse Senden",
           "cancel": "Abbrechen"
         },
         "delete": {
-          "title": "RefTests Löschen",
-          "message": "Sind Sie sicher, dass Sie {{count}} RefTest(s) löschen möchten?",
-          "warning": "Diese Aktion kann nicht rückgängig gemacht werden.",
-          "ref_tests": "Zu löschende RefTests:",
-          "confirm": "Löschen",
+          "title": "RefTests L\u00f6schen",
+          "message": "Sind Sie sicher, dass Sie {{count}} RefTest(s) l\u00f6schen m\u00f6chten?",
+          "warning": "Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
+          "ref_tests": "Zu l\u00f6schende RefTests:",
+          "confirm": "L\u00f6schen",
           "cancel": "Abbrechen"
         },
         "generate_report": {
           "title": "Bericht Erstellen und Senden",
-          "message": "Sind Sie sicher, dass Sie einen Bericht für die ausgewählten RefTests erstellen und per E-Mail versenden möchten?",
-          "reftests_included": "Einzuschließende RefTests ({{count}})",
+          "message": "Sind Sie sicher, dass Sie einen Bericht f\u00fcr die ausgew\u00e4hlten RefTests erstellen und per E-Mail versenden m\u00f6chten?",
+          "reftests_included": "Einzuschlie\u00dfende RefTests ({{count}})",
           "more_ref_tests": "+ {{count}} weitere RefTest",
           "more_ref_tests_other": "+ {{count}} weitere RefTests",
-          "info": "Ein Bericht wird erstellt und per E-Mail mit den Details aller ausgewählten RefTests versendet.",
+          "info": "Ein Bericht wird erstellt und per E-Mail mit den Details aller ausgew\u00e4hlten RefTests versendet.",
           "confirm": "Bericht Erstellen und Senden",
           "cancel": "Abbrechen"
         },
         "reset": {
-          "title": "RefTests Zurücksetzen",
-          "message": "{{count}} RefTest(s) zurücksetzen?",
-          "warning": "Dies setzt den RefTest-Fortschritt zurück. Beantwortete Fragen werden gelöscht.",
+          "title": "RefTests Zur\u00fccksetzen",
+          "message": "{{count}} RefTest(s) zur\u00fccksetzen?",
+          "warning": "Dies setzt den RefTest-Fortschritt zur\u00fcck. Beantwortete Fragen werden gel\u00f6scht.",
           "options": "Reset-Optionen",
-          "soft_reset": "Weiches Zurücksetzen",
-          "soft_reset_description": "Antworten löschen, aber den Test mit demselben Token zugänglich halten",
-          "hard_reset": "Hartes Zurücksetzen",
-          "hard_reset_description": "Antworten löschen und ein neues Zugriffstoken generieren (altes Token wird ungültig)",
+          "soft_reset": "Weiches Zur\u00fccksetzen",
+          "soft_reset_description": "Antworten l\u00f6schen, aber den Test mit demselben Token zug\u00e4nglich halten",
+          "hard_reset": "Hartes Zur\u00fccksetzen",
+          "hard_reset_description": "Antworten l\u00f6schen und ein neues Zugriffstoken generieren (altes Token wird ung\u00fcltig)",
           "regenerate_token": "Zugriffstoken Neu Generieren",
-          "regenerate_token_description": "Ein neues Token generieren (nur bei Weichem Zurücksetzen verfügbar)",
-          "ref_tests": "Zurückzusetzende RefTests:",
-          "confirm": "RefTests Zurücksetzen",
+          "regenerate_token_description": "Ein neues Token generieren (nur bei Weichem Zur\u00fccksetzen verf\u00fcgbar)",
+          "ref_tests": "Zur\u00fcckzusetzende RefTests:",
+          "confirm": "RefTests Zur\u00fccksetzen",
           "cancel": "Abbrechen"
         },
         "revive": {
           "title": "RefTests Wiederbeleben",
           "message": "{{count}} abgelaufene RefTest(s) wiederbeleben?",
-          "info": "Dies macht die abgelaufenen RefTests wieder mit ihren aktuellen Tokens zugänglich.",
+          "info": "Dies macht die abgelaufenen RefTests wieder mit ihren aktuellen Tokens zug\u00e4nglich.",
           "ref_tests": "Wiederzubelebende RefTests:",
           "confirm": "RefTests Wiederbeleben",
           "cancel": "Abbrechen"
@@ -293,7 +295,7 @@
         "approve": {
           "title": "RefTests Genehmigen",
           "message": "{{count}} RefTest(s) genehmigen?",
-          "info": "Genehmigte Tests werden aktiviert und Einladungen gemäß ihren Einstellungen versendet.",
+          "info": "Genehmigte Tests werden aktiviert und Einladungen gem\u00e4\u00df ihren Einstellungen versendet.",
           "ref_tests": "Zu genehmigende RefTests:",
           "confirm": "Genehmigen",
           "cancel": "Abbrechen"
@@ -315,13 +317,13 @@
         "error": "Bericht konnte nicht erstellt oder gesendet werden",
         "ref_test_count": "{{count}} RefTest enthalten",
         "ref_test_count_other": "{{count}} RefTests enthalten",
-        "dismiss": "Schließen"
+        "dismiss": "Schlie\u00dfen"
       },
-      "delete_success": "RefTests erfolgreich gelöscht",
-      "delete_error": "Fehler beim Löschen der RefTests",
-      "reset_success": "{{count}} RefTest(s) erfolgreich zurückgesetzt",
-      "reset_error": "Fehler beim Zurücksetzen der RefTests",
-      "reset_partial_error": "{{count}} RefTest(s) konnten nicht zurückgesetzt werden",
+      "delete_success": "RefTests erfolgreich gel\u00f6scht",
+      "delete_error": "Fehler beim L\u00f6schen der RefTests",
+      "reset_success": "{{count}} RefTest(s) erfolgreich zur\u00fcckgesetzt",
+      "reset_error": "Fehler beim Zur\u00fccksetzen der RefTests",
+      "reset_partial_error": "{{count}} RefTest(s) konnten nicht zur\u00fcckgesetzt werden",
       "revive_success": "{{count}} RefTest(s) erfolgreich wiederbelebt",
       "revive_error": "Fehler beim Wiederbeleben der RefTests",
       "revive_partial_error": "{{count}} RefTest(s) konnten nicht wiederbelebt werden",
@@ -339,7 +341,7 @@
       "report_error": "Fehler beim Erstellen oder Senden des Berichts"
     },
     "detail": {
-      "back": "Zurück zur Liste",
+      "back": "Zur\u00fcck zur Liste",
       "loading": "Lade RefTest-Details...",
       "no_title": "Kein Titel",
       "tabs_aria": "RefTest-Detail-Registerkarten",
@@ -363,7 +365,7 @@
         "email": "E-Mail",
         "email_placeholder": "E-Mail-Adresse des Teilnehmers eingeben",
         "email_required": "E-Mail ist erforderlich",
-        "email_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+        "email_invalid": "Bitte geben Sie eine g\u00fcltige E-Mail-Adresse ein",
         "success": "Teilnehmerdaten erfolgreich aktualisiert",
         "error": "Teilnehmerdaten konnten nicht aktualisiert werden"
       },
@@ -378,8 +380,8 @@
         "number_of_questions_required": "Anzahl der Fragen ist erforderlich",
         "number_of_questions_min": "Mindestens 1 Frage erforderlich",
         "questions_disabled_hint": "Deaktiviert, wenn spezifische Fragen ausgew\u00e4hlt sind",
-        "random_questions_label": "Zufällige Fragen für Jeden Benutzer",
-        "random_questions_description": "Wenn aktiviert, erhält jeder Teilnehmer eine eindeutige Auswahl zufälliger Fragen aus dem Fragenpool. Wenn deaktiviert, erhalten alle Teilnehmer dieselben Fragen.",
+        "random_questions_label": "Zuf\u00e4llige Fragen f\u00fcr Jeden Benutzer",
+        "random_questions_description": "Wenn aktiviert, erh\u00e4lt jeder Teilnehmer eine eindeutige Auswahl zuf\u00e4lliger Fragen aus dem Fragenpool. Wenn deaktiviert, erhalten alle Teilnehmer dieselben Fragen.",
         "max_time": "Zeitlimit (Minuten)",
         "max_time_placeholder": "Zeitlimit in Minuten eingeben",
         "max_time_required": "Zeitlimit ist erforderlich",
@@ -399,53 +401,53 @@
         "error": "Benachrichtigungseinstellungen konnten nicht aktualisiert werden"
       },
       "extend_time": {
-        "title": "Testzeit Verlängern",
-        "subtitle": "Zusätzliche Zeit zum Zeitlimit des Tests hinzufügen",
-        "button": "Zeit verlängern",
+        "title": "Testzeit Verl\u00e4ngern",
+        "subtitle": "Zus\u00e4tzliche Zeit zum Zeitlimit des Tests hinzuf\u00fcgen",
+        "button": "Zeit verl\u00e4ngern",
         "current_max_time": "Aktuelles Zeitlimit",
         "new_max_time": "Neues Zeitlimit",
-        "additional_minutes": "Zusätzliche Minuten",
-        "additional_minutes_placeholder": "Zusätzliche Minuten eingeben",
-        "additional_minutes_required": "Zusätzliche Minuten sind erforderlich",
+        "additional_minutes": "Zus\u00e4tzliche Minuten",
+        "additional_minutes_placeholder": "Zus\u00e4tzliche Minuten eingeben",
+        "additional_minutes_required": "Zus\u00e4tzliche Minuten sind erforderlich",
         "additional_minutes_min": "Mindestens 1 Minute erforderlich",
         "minutes": "Minuten",
-        "extend_button": "Zeit Verlängern",
-        "success": "Testzeit erfolgreich verlängert",
-        "error": "Testzeit konnte nicht verlängert werden"
+        "extend_button": "Zeit Verl\u00e4ngern",
+        "success": "Testzeit erfolgreich verl\u00e4ngert",
+        "error": "Testzeit konnte nicht verl\u00e4ngert werden"
       },
       "regenerate_token": {
         "title": "Test-Token Neu Generieren",
         "subtitle": "Einen neuen Testlink generieren",
         "button": "Token neu generieren",
         "warning_title": "Warnung",
-        "warning_message": "Das Neugenerieren des Tokens macht den aktuellen Testlink ungültig. Der Teilnehmer muss den neuen Link verwenden, um auf den Test zuzugreifen.",
+        "warning_message": "Das Neugenerieren des Tokens macht den aktuellen Testlink ung\u00fcltig. Der Teilnehmer muss den neuen Link verwenden, um auf den Test zuzugreifen.",
         "confirm_button": "Token Neu Generieren",
         "success": "Test-Token erfolgreich neu generiert",
         "error": "Test-Token konnte nicht neu generiert werden"
       },
       "reset": {
-        "title": "RefTest Zurücksetzen",
-        "subtitle": "Testfortschritt zurücksetzen und optional Token neu generieren",
-        "reset_button": "Test zurücksetzen",
+        "title": "RefTest Zur\u00fccksetzen",
+        "subtitle": "Testfortschritt zur\u00fccksetzen und optional Token neu generieren",
+        "reset_button": "Test zur\u00fccksetzen",
         "warning_title": "Warnung",
-        "warning_message": "Durch das Zurücksetzen wird der Fortschritt des Teilnehmers gelöscht. Diese Aktion kann nicht rückgängig gemacht werden.",
+        "warning_message": "Durch das Zur\u00fccksetzen wird der Fortschritt des Teilnehmers gel\u00f6scht. Diese Aktion kann nicht r\u00fcckg\u00e4ngig gemacht werden.",
         "reset_type_label": "Reset-Typ",
         "soft_reset_label": "Weicher Reset",
-        "soft_reset_description": "Fortschritt und Ergebnisse löschen, Erstellungsdatum beibehalten",
+        "soft_reset_description": "Fortschritt und Ergebnisse l\u00f6schen, Erstellungsdatum beibehalten",
         "hard_reset_label": "Harter Reset",
-        "hard_reset_description": "Alle Daten löschen und Erstellungsdatum zurücksetzen (Ablauf-Timer neu starten)",
+        "hard_reset_description": "Alle Daten l\u00f6schen und Erstellungsdatum zur\u00fccksetzen (Ablauf-Timer neu starten)",
         "regenerate_token_label": "Token Neu Generieren",
-        "regenerate_token_description": "Neuen Testlink generieren (macht aktuellen Link ungültig). Wenn zuvor eine Einladung gesendet wurde, wird automatisch eine neue gesendet. Harter Reset generiert immer ein neues Token.",
-        "confirm_button": "Test Zurücksetzen",
-        "success": "RefTest erfolgreich zurückgesetzt",
-        "error": "RefTest konnte nicht zurückgesetzt werden"
+        "regenerate_token_description": "Neuen Testlink generieren (macht aktuellen Link ung\u00fcltig). Wenn zuvor eine Einladung gesendet wurde, wird automatisch eine neue gesendet. Harter Reset generiert immer ein neues Token.",
+        "confirm_button": "Test Zur\u00fccksetzen",
+        "success": "RefTest erfolgreich zur\u00fcckgesetzt",
+        "error": "RefTest konnte nicht zur\u00fcckgesetzt werden"
       },
       "revive": {
         "title": "Abgelaufenen RefTest Wiederherstellen",
         "subtitle": "Einen abgelaufenen Test reaktivieren",
         "revive_button": "Test wiederherstellen",
         "info_title": "Information",
-        "info_message": "Durch das Wiederherstellen dieses Tests wird ein neues Token generiert und der Test auf den Status 'Ausstehend' zurückgesetzt. Wenn zuvor eine Einladung gesendet wurde, wird automatisch eine neue Einladung mit dem aktualisierten Link gesendet.",
+        "info_message": "Durch das Wiederherstellen dieses Tests wird ein neues Token generiert und der Test auf den Status 'Ausstehend' zur\u00fcckgesetzt. Wenn zuvor eine Einladung gesendet wurde, wird automatisch eine neue Einladung mit dem aktualisierten Link gesendet.",
         "confirm_button": "Test Wiederherstellen",
         "success": "RefTest erfolgreich wiederhergestellt",
         "error": "RefTest konnte nicht wiederhergestellt werden"
@@ -470,27 +472,27 @@
       "failed": "Nicht Bestanden",
       "question_score": "Fragenpunktzahl",
       "answer_score": "Antwortpunktzahl",
-      "no_questions": "Keine Fragen Verfügbar",
+      "no_questions": "Keine Fragen Verf\u00fcgbar",
       "send_invitation": "Einladung Senden",
       "send_results": "Ergebnisse Senden",
-      "delete": "Löschen",
+      "delete": "L\u00f6schen",
       "invitation_sent": "Einladung erfolgreich gesendet",
       "invitation_error": "Fehler beim Senden der Einladung",
       "results_sent": "Ergebnisse erfolgreich gesendet",
       "results_error": "Fehler beim Senden der Ergebnisse",
-      "delete_success": "RefTest erfolgreich gelöscht",
-      "delete_error": "Fehler beim Löschen des RefTests",
-      "no_questions_desc": "Dieser RefTest wurde noch nicht gestartet oder Fragen sind nicht verfügbar.",
-      "selected": "Ausgewählt",
+      "delete_success": "RefTest erfolgreich gel\u00f6scht",
+      "delete_error": "Fehler beim L\u00f6schen des RefTests",
+      "no_questions_desc": "Dieser RefTest wurde noch nicht gestartet oder Fragen sind nicht verf\u00fcgbar.",
+      "selected": "Ausgew\u00e4hlt",
       "correct": "Richtig",
       "incorrect": "Falsch",
       "answers_summary": "Antworten Zusammenfassung",
       "answers_selected": "{{selected}} von {{total}} Fragen beantwortet"
     },
     "create": {
-      "back": "Zurück zur Startseite",
+      "back": "Zur\u00fcck zur Startseite",
       "title": "RefTest-Erstellung",
-      "subtitle": "Teilnehmer hinzufügen und RefTest-Einstellungen konfigurieren, um neue RefTests zu erstellen",
+      "subtitle": "Teilnehmer hinzuf\u00fcgen und RefTest-Einstellungen konfigurieren, um neue RefTests zu erstellen",
       "form": {
         "config": {
           "label": "RefTest-Konfiguration"
@@ -501,35 +503,35 @@
           "required": "Titel ist erforderlich",
           "tooltip": "Beispiel: Schulung {{date}}",
           "no_results": "Keine vorhandenen Titel gefunden",
-          "create_new": "Drücken Sie Enter, um einen neuen Titel mit diesem Namen zu erstellen",
+          "create_new": "Dr\u00fccken Sie Enter, um einen neuen Titel mit diesem Namen zu erstellen",
           "search_error": "Titel konnten nicht gesucht werden. Bitte versuchen Sie es erneut.",
           "existing_title": "Vorhandenen Titel verwenden",
           "new_title": "Wird neuen Titel erstellen",
-          "clear": "Titel löschen"
+          "clear": "Titel l\u00f6schen"
         },
         "users": {
           "label": "Benutzer",
-          "placeholder": "Hans Müller hans.mueller@example.com\nMaria Schmidt maria.schmidt@example.com\nbenutzer@example.com",
+          "placeholder": "Hans M\u00fcller hans.mueller@example.com\nMaria Schmidt maria.schmidt@example.com\nbenutzer@example.com",
           "hint": "Geben Sie einen Benutzer pro Zeile ein. Format: \"Vorname Nachname email@example.com\" oder \"email@example.com\"",
           "error": "Bitte geben Sie mindestens einen Benutzer ein",
           "first_name_required": "Vorname ist erforderlich",
           "last_name_required": "Nachname ist erforderlich",
           "email_required": "E-Mail ist erforderlich",
-          "email_invalid": "Bitte geben Sie eine gültige E-Mail-Adresse ein",
+          "email_invalid": "Bitte geben Sie eine g\u00fcltige E-Mail-Adresse ein",
           "count": "{{count}} Teilnehmer",
           "count_other": "{{count}} Teilnehmer",
           "import": "Massenimport",
-          "import_label": "Teilnehmerdaten einfügen (eine pro Zeile)",
+          "import_label": "Teilnehmerdaten einf\u00fcgen (eine pro Zeile)",
           "import_hint": "Format: \"Vorname Nachname E-Mail\" (alle Felder erforderlich)",
           "import_button": "Importieren",
           "first_name": "Vorname",
           "first_name_placeholder": "Hans",
           "last_name": "Nachname",
-          "last_name_placeholder": "Müller",
+          "last_name_placeholder": "M\u00fcller",
           "email": "E-Mail",
           "email_placeholder": "hans.mueller@example.com",
           "remove_participant": "Teilnehmer entfernen",
-          "add_participant": "Teilnehmer Hinzufügen"
+          "add_participant": "Teilnehmer Hinzuf\u00fcgen"
         },
         "number_of_questions": {
           "label": "Anzahl der Fragen",
@@ -539,13 +541,13 @@
           "min": "Muss mindestens 1 Frage haben"
         },
         "random_questions_for_each_user": {
-          "label": "Zufällige Fragen für jeden Teilnehmer",
-          "hint": "Aktivieren, um jedem Teilnehmer unterschiedliche zufällige Fragen zuzuweisen. Deaktivieren, um für alle dieselben Fragen zu verwenden.",
-          "description": "Wenn aktiviert, erhält jeder Teilnehmer einen einzigartigen Satz zufälliger Fragen aus dem Fragenpool. Wenn deaktiviert, erhalten alle Teilnehmer denselben Satz von Fragen."
+          "label": "Zuf\u00e4llige Fragen f\u00fcr jeden Teilnehmer",
+          "hint": "Aktivieren, um jedem Teilnehmer unterschiedliche zuf\u00e4llige Fragen zuzuweisen. Deaktivieren, um f\u00fcr alle dieselben Fragen zu verwenden.",
+          "description": "Wenn aktiviert, erh\u00e4lt jeder Teilnehmer einen einzigartigen Satz zuf\u00e4lliger Fragen aus dem Fragenpool. Wenn deaktiviert, erhalten alle Teilnehmer denselben Satz von Fragen."
         },
         "max_time_in_minutes": {
           "label": "Maximale Zeit (Minuten)",
-          "hint": "Maximale Zeit zum Abschließen des RefTests",
+          "hint": "Maximale Zeit zum Abschlie\u00dfen des RefTests",
           "error": "Die maximale Zeit muss mindestens 1 Minute betragen",
           "required": "Zeitlimit ist erforderlich",
           "min": "Muss mindestens 1 Minute betragen"
@@ -553,12 +555,12 @@
         "specific_question_numbers": {
           "label": "Spezifische Fragennummern (Optional)",
           "placeholder": "1.1, 1.2, 2.3",
-          "hint": "Kommagetrennte Liste spezifischer Fragennummern, die einbezogen werden sollen. Leer lassen für zufällige Fragen.",
+          "hint": "Kommagetrennte Liste spezifischer Fragennummern, die einbezogen werden sollen. Leer lassen f\u00fcr zuf\u00e4llige Fragen.",
           "import": "Importieren",
-          "count": "{{count}} Frage ausgewählt",
-          "count_other": "{{count}} Fragen ausgewählt",
-          "search_placeholder": "Fragen nach Nummer suchen und hinzufügen...",
-          "import_label": "Fragennummern einfügen (eine pro Zeile oder durch Kommas getrennt)",
+          "count": "{{count}} Frage ausgew\u00e4hlt",
+          "count_other": "{{count}} Fragen ausgew\u00e4hlt",
+          "search_placeholder": "Fragen nach Nummer suchen und hinzuf\u00fcgen...",
+          "import_label": "Fragennummern einf\u00fcgen (eine pro Zeile oder durch Kommas getrennt)",
           "import_hint": "Format: Eine Fragennummer pro Zeile oder durch Kommas getrennt",
           "import_button": "Importieren",
           "importing": "Importiert...",
@@ -577,7 +579,7 @@
           "description": "Teilnehmer erhalten eine E-Mail mit ihrem RefTest-Link"
         },
         "scheduled_at": {
-          "label": "Planen für",
+          "label": "Planen f\u00fcr",
           "optional": "(optional)",
           "date_label": "Geplantes Datum",
           "time_label": "Geplante Uhrzeit",
@@ -592,7 +594,7 @@
         "submitting": "Erstellen...",
         "cancel": "Abbrechen",
         "validation_error": "Bitte beheben Sie die Validierungsfehler vor dem Absenden",
-        "no_participants": "Bitte fügen Sie mindestens einen Teilnehmer hinzu",
+        "no_participants": "Bitte f\u00fcgen Sie mindestens einen Teilnehmer hinzu",
         "question_import_error": "Die ausgew\u00e4hlten Fragen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
         "submit_error": "Beim Erstellen der RefTests ist ein Fehler aufgetreten"
       },
@@ -616,17 +618,17 @@
     "saving_progress_before_leave": "Ihr Fortschritt wird vor dem Verlassen gespeichert...",
     "error": {
       "title": "RefTest kann nicht geladen werden",
-      "general": "Ein unerwarteter Fehler ist beim Laden des RefTests aufgetreten. Bitte versuchen Sie es später erneut.",
-      "network": "Ein Netzwerkfehler ist aufgetreten. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
+      "general": "Ein unerwarteter Fehler ist beim Laden des RefTests aufgetreten. Bitte versuchen Sie es sp\u00e4ter erneut.",
+      "network": "Ein Netzwerkfehler ist aufgetreten. \u00dcberpr\u00fcfen Sie Ihre Verbindung und versuchen Sie es erneut.",
       "submit_failed": "Das Absenden des RefTests ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
       "progress_save_failed": "Ihre letzte Antwort konnte nicht gespeichert werden. Bitte bleiben Sie auf dieser Seite und versuchen Sie es erneut.",
-      "ref_test_not_found_error": "Dieser RefTest wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
+      "ref_test_not_found_error": "Dieser RefTest wurde nicht gefunden. Bitte \u00fcberpr\u00fcfen Sie Ihren Link.",
       "ref_test_expired_error": "Dieser RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
-      "invalid_ref_test_status_error": "Dieser RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen.",
-      "session_already_active": "Dieser RefTest ist bereits in einem anderen Tab oder Fenster geöffnet. Bitte schließen Sie den anderen Tab und aktualisieren Sie diese Seite."
+      "invalid_ref_test_status_error": "Dieser RefTest ist nicht mehr verf\u00fcgbar oder wurde bereits abgeschlossen.",
+      "session_already_active": "Dieser RefTest ist bereits in einem anderen Tab oder Fenster ge\u00f6ffnet. Bitte schlie\u00dfen Sie den anderen Tab und aktualisieren Sie diese Seite."
     },
     "welcome_title": "Willkommen zu Ihrem RefTest",
-    "welcome_subtitle": "Bitte überprüfen Sie die folgenden Informationen, bevor Sie beginnen",
+    "welcome_subtitle": "Bitte \u00fcberpr\u00fcfen Sie die folgenden Informationen, bevor Sie beginnen",
     "participant_name": "Name",
     "participant_email": "E-Mail",
     "number_of_questions": "Fragen",
@@ -634,12 +636,12 @@
     "minutes": "Min",
     "no_limit": "Kein Limit",
     "instructions_title": "Anweisungen",
-    "instruction_1": "Lesen Sie jede Frage sorgfältig, bevor Sie Ihre Antworten auswählen",
-    "instruction_2": "Einige Fragen können mehrere richtige Antworten haben",
-    "instruction_3": "Sie können zwischen den Fragen hin und her navigieren",
-    "instruction_progress_saved": "Ihr Fortschritt wird automatisch gespeichert, aber die Zeit läuft weiter, auch wenn Sie die Seite schließen",
-    "instruction_single_session": "Der RefTest kann nur in einem Browser-Tab gleichzeitig geöffnet werden — ein zweiter Tab wird blockiert",
-    "instruction_4": "Schließen Sie den RefTest innerhalb des Zeitlimits ab",
+    "instruction_1": "Lesen Sie jede Frage sorgf\u00e4ltig, bevor Sie Ihre Antworten ausw\u00e4hlen",
+    "instruction_2": "Einige Fragen k\u00f6nnen mehrere richtige Antworten haben",
+    "instruction_3": "Sie k\u00f6nnen zwischen den Fragen hin und her navigieren",
+    "instruction_progress_saved": "Ihr Fortschritt wird automatisch gespeichert, aber die Zeit l\u00e4uft weiter, auch wenn Sie die Seite schlie\u00dfen",
+    "instruction_single_session": "Der RefTest kann nur in einem Browser-Tab gleichzeitig ge\u00f6ffnet werden \u2014 ein zweiter Tab wird blockiert",
+    "instruction_4": "Schlie\u00dfen Sie den RefTest innerhalb des Zeitlimits ab",
     "start_button": "RefTest starten",
     "privacy_consent": "Ich habe den folgenden Hinweis gelesen und akzeptiere ihn:",
     "privacy_consent_error": "Ihre Annahme des Datenschutzhinweises konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.",
@@ -654,18 +656,18 @@
     "of": "von",
     "answered": "beantwortet",
     "jump_to_question": "Zu Frage springen",
-    "time_warning_five_minutes": "Noch fünf Minuten",
+    "time_warning_five_minutes": "Noch f\u00fcnf Minuten",
     "time_warning_one_minute": "Noch eine Minute",
-    "previous": "Zurück",
+    "previous": "Zur\u00fcck",
     "next": "Weiter",
     "submit": "RefTest Einreichen",
-    "progress_restored": "Willkommen zurück!",
-    "continue_where_left": "Ihr Fortschritt wurde gespeichert. Sie können dort weitermachen, wo Sie aufgehört haben.",
+    "progress_restored": "Willkommen zur\u00fcck!",
+    "continue_where_left": "Ihr Fortschritt wurde gespeichert. Sie k\u00f6nnen dort weitermachen, wo Sie aufgeh\u00f6rt haben.",
     "results": {
       "title": "RefTest Abgeschlossen!",
       "subtitle": "Hier sind Ihre Ergebnisse",
       "email_info": "Sie erhalten innerhalb von {{minutes}} Minuten eine E-Mail mit Ihren detaillierten Ergebnissen und Antworten.",
-      "email_info_shortly": "Sie erhalten in Kürze eine E-Mail mit Ihren detaillierten Ergebnissen und Antworten.",
+      "email_info_shortly": "Sie erhalten in K\u00fcrze eine E-Mail mit Ihren detaillierten Ergebnissen und Antworten.",
       "question_score": "Fragen Punktzahl",
       "answer_score": "Antworten Punktzahl",
       "question_score_short": "F",
@@ -675,7 +677,7 @@
     "dialog": {
       "submit": {
         "title": "RefTest einreichen?",
-        "message": "Sind Sie sicher, dass Sie Ihren RefTest einreichen möchten? Nach dem Einreichen können Sie Ihre Antworten nicht mehr ändern.",
+        "message": "Sind Sie sicher, dass Sie Ihren RefTest einreichen m\u00f6chten? Nach dem Einreichen k\u00f6nnen Sie Ihre Antworten nicht mehr \u00e4ndern.",
         "answered": "Beantwortete Fragen",
         "unanswered": "Unbeantwortete Fragen",
         "warning": "Sie haben unbeantwortete Fragen. Diese werden als falsch markiert.",
@@ -684,7 +686,7 @@
       },
       "leave": {
         "title": "RefTest verlassen?",
-        "message": "Sind Sie sicher, dass Sie gehen möchten? Ihr Fortschritt geht verloren, wenn Sie den RefTest nicht eingereicht haben.",
+        "message": "Sind Sie sicher, dass Sie gehen m\u00f6chten? Ihr Fortschritt geht verloren, wenn Sie den RefTest nicht eingereicht haben.",
         "warning": "Ihr Fortschritt geht verloren, wenn Sie den RefTest nicht eingereicht haben.",
         "confirm": "RefTest Verlassen",
         "cancel": "Beim RefTest Bleiben"
@@ -699,7 +701,7 @@
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handball-RefTest-Verwaltung. Alle Rechte vorbehalten.",
+    "copyright": "\u00a9 {{year}} Handball-RefTest-Verwaltung. Alle Rechte vorbehalten.",
     "creator": "Eigentum von Kristof Gilis",
     "privacy": "Datenschutzhinweis"
   },
@@ -709,26 +711,26 @@
     "loading": "Datenschutzhinweis wird geladen...",
     "empty": "Der Datenschutzhinweis ist nicht verf\u00fcgbar.",
     "error": "Der Datenschutzhinweis konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
-    "updated": "Gültig ab {{effectiveDate}} (Version {{noticeVersion}}).",
+    "updated": "G\u00fcltig ab {{effectiveDate}} (Version {{noticeVersion}}).",
     "controller": {
       "title": "Verantwortlicher und Kontakt",
-      "body": "{{controllerName}}, {{controllerAddress}}, ist für diese Verarbeitung verantwortlich. Für Datenschutzanfragen wenden Sie sich bitte an {{contactEmail}}."
+      "body": "{{controllerName}}, {{controllerAddress}}, ist f\u00fcr diese Verarbeitung verantwortlich. F\u00fcr Datenschutzanfragen wenden Sie sich bitte an {{contactEmail}}."
     },
     "data": {
       "title": "Personenbezogene Daten, die wir verarbeiten",
-      "body": "Wir verarbeiten Ihren Namen, Ihre E-Mail-Adresse, Ihr Einladungstoken, Ihren Testfortschritt, Ihre Antworten, Ihr Ergebnis, Ihre bevorzugte Sprache und die Zeitpunkte Ihrer Interaktion mit dem Test. Außerdem speichern wir begrenzte Verwaltungs- und Auditinformationen, die für Betrieb und Sicherheit des Dienstes erforderlich sind."
+      "body": "Wir verarbeiten Ihren Namen, Ihre E-Mail-Adresse, Ihr Einladungstoken, Ihren Testfortschritt, Ihre Antworten, Ihr Ergebnis, Ihre bevorzugte Sprache und die Zeitpunkte Ihrer Interaktion mit dem Test. Au\u00dferdem speichern wir begrenzte Verwaltungs- und Auditinformationen, die f\u00fcr Betrieb und Sicherheit des Dienstes erforderlich sind."
     },
     "purposes": {
       "title": "Warum wir die Daten verarbeiten",
-      "body": "Wir verwenden diese Daten, um Sie einzuladen, den optionalen Test durchzuführen und auszuwerten, das Ergebnis mitzuteilen, Unterstützung zu leisten, Missbrauch zu verhindern und einen Auditverlauf für den Dienst zu führen."
+      "body": "Wir verwenden diese Daten, um Sie einzuladen, den optionalen Test durchzuf\u00fchren und auszuwerten, das Ergebnis mitzuteilen, Unterst\u00fctzung zu leisten, Missbrauch zu verhindern und einen Auditverlauf f\u00fcr den Dienst zu f\u00fchren."
     },
     "basis": {
       "title": "Rechtsgrundlage",
-      "body": "Wir nutzen berechtigte Interessen für die Verarbeitung der Kontaktdaten, die zum Versand und zur Verwaltung einer Einladung erforderlich sind. Die Teilnahme am Test ist freiwillig und setzt Ihre ausdrückliche Annahme dieses Hinweises vor Beginn voraus; Sie können diese Einwilligung jederzeit widerrufen."
+      "body": "Wir nutzen berechtigte Interessen f\u00fcr die Verarbeitung der Kontaktdaten, die zum Versand und zur Verwaltung einer Einladung erforderlich sind. Die Teilnahme am Test ist freiwillig und setzt Ihre ausdr\u00fcckliche Annahme dieses Hinweises vor Beginn voraus; Sie k\u00f6nnen diese Einwilligung jederzeit widerrufen."
     },
     "recipients": {
-      "title": "Empfänger und Dienstleister",
-      "body": "Teilnehmerdaten werden an die Prüfungsadministratoren von Handball Belgien weitergegeben, die Prüfungen verwalten und Ergebnisberichte erhalten, sowie, wenn eine Genehmigung erforderlich ist, an die benannten Genehmiger, die Genehmigungsmitteilungen erhalten. Wir verwenden außerdem Auth0 zur Authentifizierung, Brevo für den E-Mail-Versand und den Dienst IHF Rules Questions, um Testinhalte abzurufen und Ergebnisse zu berechnen. Diese Empfänger und Dienstleister erhalten nur die für diese Zwecke erforderlichen Daten."
+      "title": "Empf\u00e4nger und Dienstleister",
+      "body": "Teilnehmerdaten werden an die Pr\u00fcfungsadministratoren von Handball Belgien weitergegeben, die Pr\u00fcfungen verwalten und Ergebnisberichte erhalten, sowie, wenn eine Genehmigung erforderlich ist, an die benannten Genehmiger, die Genehmigungsmitteilungen erhalten. Wir verwenden au\u00dferdem Auth0 zur Authentifizierung, Brevo f\u00fcr den E-Mail-Versand und den Dienst IHF Rules Questions, um Testinhalte abzurufen und Ergebnisse zu berechnen. Diese Empf\u00e4nger und Dienstleister erhalten nur die f\u00fcr diese Zwecke erforderlichen Daten."
     },
     "retention": {
       "title": "Speicherdauer",
@@ -736,11 +738,11 @@
     },
     "rights": {
       "title": "Ihre Rechte",
-      "body": "Sie können Auskunft, Berichtigung, Löschung, Einschränkung, Widerspruch oder eine übertragbare Kopie Ihrer Daten verlangen und Ihre Einwilligung widerrufen. Kontaktieren Sie {{contactEmail}}. Sie können außerdem Beschwerde bei Ihrer Aufsichtsbehörde einreichen."
+      "body": "Sie k\u00f6nnen Auskunft, Berichtigung, L\u00f6schung, Einschr\u00e4nkung, Widerspruch oder eine \u00fcbertragbare Kopie Ihrer Daten verlangen und Ihre Einwilligung widerrufen. Kontaktieren Sie {{contactEmail}}. Sie k\u00f6nnen au\u00dferdem Beschwerde bei Ihrer Aufsichtsbeh\u00f6rde einreichen."
     },
     "dataExport": {
       "title": "Kopie Ihrer personenbezogenen Daten anfordern",
-      "description": "Geben Sie die mit Ihrer Teilnahme verknüpfte E-Mail-Adresse ein. Wenn sie einem Teilnehmereintrag entspricht, senden wir einen Bestätigungslink an diese Adresse.",
+      "description": "Geben Sie die mit Ihrer Teilnahme verkn\u00fcpfte E-Mail-Adresse ein. Wenn sie einem Teilnehmereintrag entspricht, senden wir einen Best\u00e4tigungslink an diese Adresse.",
       "requestLink": "Antragsformular \u00f6ffnen",
       "emailLabel": "E-Mail-Adresse",
       "emailHelp": "Wir verwenden diese Adresse nur, um Ihre Anfrage zu verifizieren und zuzustellen.",
@@ -751,10 +753,10 @@
       "requestAcknowledged": "Wenn die Adresse einem Teilnehmereintrag entspricht, erhalten Sie eine E-Mail mit einem Link zur Best\u00e4tigung Ihrer Anfrage.",
       "requestError": "Ihre Anfrage konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
       "confirmationTitle": "Anfrage best\u00e4tigen",
-      "confirmationDescription": "Best\u00e4tigen Sie unten, damit Ihnen eine PDF-Kopie Ihrer personenbezogenen Daten per E-Mail zugesendet wird.",
+      "confirmationDescription": "Best\u00e4tigen Sie unten, um eine PDF-Kopie Ihrer personenbezogenen Daten per E-Mail anzufordern.",
       "confirmButton": "Anfrage best\u00e4tigen",
       "confirming": "Ihre Anfrage wird best\u00e4tigt...",
-      "confirmed": "Ihre Anfrage wurde best\u00e4tigt. Eine PDF-Kopie Ihrer personenbezogenen Daten wird Ihnen per E-Mail zugesendet.",
+      "confirmed": "Ihre Anfrage wurde best\u00e4tigt. Wir versuchen, Ihnen eine PDF-Kopie Ihrer personenbezogenen Daten per E-Mail zuzusenden.",
       "confirmationError": "Diese Anfrage konnte nicht best\u00e4tigt werden. Der Link ist m\u00f6glicherweise ung\u00fcltig oder abgelaufen. Fordern Sie einen neuen Link an und versuchen Sie es erneut."
     },
     "consentWithdrawal": {
@@ -780,7 +782,7 @@
   },
   "audit-logs": {
     "title": "Auditprotokoll",
-    "subtitle": "Vollständige Historie aller Systemänderungen",
+    "subtitle": "Vollst\u00e4ndige Historie aller System\u00e4nderungen",
     "loading": "Auditprotokoll wird geladen...",
     "query_error": "Das Auditprotokoll konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
     "load_more_error": "Weitere Auditprotokoll-Ereignisse konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
@@ -799,7 +801,7 @@
       "actorPlaceholder": "Name oder E-Mail",
       "allTypes": "Alle Ereignistypen",
       "apply": "Anwenden",
-      "clear": "Löschen"
+      "clear": "L\u00f6schen"
     },
     "column": {
       "timestamp": "Zeitstempel",
@@ -820,12 +822,12 @@
       "RefTestDetailsUpdated": "Details aktualisiert",
       "RefTestConfigurationUpdated": "Konfiguration aktualisiert",
       "RefTestNotificationSettingsUpdated": "Benachrichtigungseinstellungen aktualisiert",
-      "RefTestTimeExtended": "Zeit verlängert",
+      "RefTestTimeExtended": "Zeit verl\u00e4ngert",
       "RefTestTokenRegenerated": "Token regeneriert",
       "RefTestSoftReset": "Soft-Reset",
       "RefTestHardReset": "Hard-Reset",
       "RefTestRevived": "Wiederbelebt",
-      "RefTestDeleted": "Gelöscht",
+      "RefTestDeleted": "Gel\u00f6scht",
       "RefTestAnonymized": "Anonymisiert",
       "RefTestInvitationSent": "Einladung gesendet",
       "RefTestResultsSent": "Ergebnisse gesendet",
@@ -845,8 +847,8 @@
       "PrivacyWithdrawalBatchConfirmed": "Widerruf vorgemerkt",
       "PrivacyWithdrawalBatchCompleted": "Widerruf abgeschlossen",
       "EntityCreated": "Erstellt",
-      "EntityModified": "Geändert",
-      "EntityDeleted": "Gelöscht"
+      "EntityModified": "Ge\u00e4ndert",
+      "EntityDeleted": "Gel\u00f6scht"
     },
     "failureCode": {
       "DeliveryFailed": "Zustellung fehlgeschlagen",
@@ -881,8 +883,8 @@
       "sendInvitationsAutomatically": "Einladungen automatisch senden",
       "sendResultsAutomatically": "Ergebnisse automatisch senden",
       "requiresApproval": "Genehmigung erforderlich",
-      "questionPoolCount": "Anzahl verfügbarer Fragen",
-      "additionalMinutes": "Zusätzliche Minuten",
+      "questionPoolCount": "Anzahl verf\u00fcgbarer Fragen",
+      "additionalMinutes": "Zus\u00e4tzliche Minuten",
       "tokenRegenerated": "Token regeneriert",
       "reason": "Grund",
       "value": "Wert",

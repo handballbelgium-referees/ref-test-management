@@ -27,6 +27,7 @@
             exercises the translation.
         -->
         <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" />
+        <PackageReference Include="Testcontainers.Redis" />
     </ItemGroup>
 
     <ItemGroup>
