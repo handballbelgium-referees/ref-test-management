@@ -173,11 +173,45 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter);
+        var deduplicationKey = $"expiration:{payload.RefTestId:N}:{payload.Action}";
+        var job = Job.Create(
+            JobType.RefTestExpiration,
+            payloadJson,
+            executeAfter,
+            deduplicationKey: deduplicationKey);
+
+        var alreadyQueuedLocally = dbContext.Jobs.Local.Any(candidate =>
+            candidate.JobType == JobType.RefTestExpiration
+            && (candidate.Status == JobStatus.Pending || candidate.Status == JobStatus.Processing)
+            && (candidate.DeduplicationKey == deduplicationKey
+                || candidate.DeduplicationKey is null && candidate.Payload == payloadJson));
+        var alreadyQueued = alreadyQueuedLocally || await dbContext.Jobs.AnyAsync(candidate =>
+            candidate.JobType == JobType.RefTestExpiration
+            && (candidate.Status == JobStatus.Pending || candidate.Status == JobStatus.Processing)
+            && (candidate.DeduplicationKey == deduplicationKey
+                || candidate.DeduplicationKey == null && candidate.Payload == payloadJson),
+            cancellationToken);
+        if (alreadyQueued)
+            return;
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
-            await dbContext.SaveChangesWithRetryAsync(cancellationToken);
+        {
+            try
+            {
+                await dbContext.SaveChangesWithRetryAsync(cancellationToken);
+            }
+            catch (DbUpdateException)
+            {
+                dbContext.DetachJob(job);
+                if (!await dbContext.Jobs.AnyAsync(candidate =>
+                        candidate.DeduplicationKey == deduplicationKey,
+                        cancellationToken))
+                    throw;
+
+                return;
+            }
+        }
 
         ServiceLoggerMessages.LogJobEnqueued(logger, JobType.RefTestExpiration, job.Id);
     }

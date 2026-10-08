@@ -97,6 +97,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("DeduplicationKey")
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ErrorMessage")
                         .HasColumnType("TEXT");
 
@@ -129,6 +133,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
                     b.HasIndex("CreatedAt")
                         .HasDatabaseName("IX_Jobs_CreatedAt");
+
+                    b.HasIndex("DeduplicationKey")
+                        .IsUnique()
+                        .HasDatabaseName("IX_Jobs_DeduplicationKey");
 
                     b.HasIndex("PrivacyWithdrawalBatchId")
                         .HasDatabaseName("IX_Jobs_PrivacyWithdrawalBatchId");

@@ -7,5 +7,7 @@ public interface IJobPersistenceContext
 {
     DbSet<Job> Jobs { get; }
 
+    void DetachJob(Job job);
+
     Task<int> SaveChangesWithRetryAsync(CancellationToken cancellationToken = default);
 }

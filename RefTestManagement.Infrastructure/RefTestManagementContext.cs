@@ -14,6 +14,8 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
     public DbSet<RefTest> RefTests { get; set; } = null!;
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
     public DbSet<Job> Jobs { get; set; } = null!;
+
+    public void DetachJob(Job job) => Entry(job).State = EntityState.Detached;
     public DbSet<PersonalDataExportRequest> PersonalDataExportRequests { get; set; } = null!;
     public DbSet<PrivacyWithdrawalChallenge> PrivacyWithdrawalChallenges { get; set; } = null!;
     public DbSet<PrivacyWithdrawalBatch> PrivacyWithdrawalBatches { get; set; } = null!;

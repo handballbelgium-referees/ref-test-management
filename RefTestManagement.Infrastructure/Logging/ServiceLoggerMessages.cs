@@ -244,8 +244,8 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Information, "Auto-completed expired RefTest {refTestId}")]
     public static partial void LogAutoCompleted(ILogger logger, Guid refTestId);
 
-    [LoggerMessage(LogLevel.Error, "Failed to auto-complete expired RefTest {refTestId}")]
-    public static partial void LogAutoCompleteFailed(ILogger logger, Exception ex, Guid refTestId);
+    [LoggerMessage(LogLevel.Error, "RefTest expiration job failed for job {jobId}")]
+    public static partial void LogRefTestExpirationJobFailed(ILogger logger, Guid jobId);
 
     [LoggerMessage(LogLevel.Information, "Expired RefTest {refTestId} in status {status}")]
     public static partial void LogExpired(ILogger logger, Guid refTestId, RefTestStatus status);

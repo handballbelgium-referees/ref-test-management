@@ -111,9 +111,9 @@ public sealed class RefTestExpirationJobHandler(
                     break;
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            ServiceLoggerMessages.LogAutoCompleteFailed(logger, ex, refTest.Id);
+            ServiceLoggerMessages.LogRefTestExpirationJobFailed(logger, job.Id);
             throw; // Re-throw so the job can be retried
         }
     }

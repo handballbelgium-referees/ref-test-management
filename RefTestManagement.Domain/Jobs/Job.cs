@@ -5,11 +5,14 @@
 /// </summary>
 public class Job
 {
+    private readonly string? _retainedDeduplicationKey;
+
     private Job(
         JobType jobType,
         string payload,
         DateTime executeAfter,
-        Guid? privacyWithdrawalBatchId)
+        Guid? privacyWithdrawalBatchId,
+        string? deduplicationKey)
     {
         Id = Guid.NewGuid();
         JobType = jobType;
@@ -19,6 +22,8 @@ public class Job
         CreatedAt = DateTime.UtcNow;
         ExecuteAfter = executeAfter;
         PrivacyWithdrawalBatchId = privacyWithdrawalBatchId;
+        DeduplicationKey = deduplicationKey;
+        _retainedDeduplicationKey = deduplicationKey;
     }
 
     public Guid Id { get; private set; }
@@ -44,6 +49,7 @@ public class Job
     public DateTime? CompletedAt { get; private set; }
     public string? ErrorMessage { get; private set; }
     public Guid? PrivacyWithdrawalBatchId { get; private set; }
+    public string? DeduplicationKey { get; private set; }
 
     /// <summary>
     /// Creates a new job
@@ -52,7 +58,8 @@ public class Job
         JobType jobType,
         string payload,
         DateTime? executeAfter = null,
-        Guid? privacyWithdrawalBatchId = null)
+        Guid? privacyWithdrawalBatchId = null,
+        string? deduplicationKey = null)
     {
         if (privacyWithdrawalBatchId is not null && jobType != JobType.PrivacyWithdrawalBatch)
             throw new ArgumentException(
@@ -60,8 +67,15 @@ public class Job
                 nameof(privacyWithdrawalBatchId));
         if (privacyWithdrawalBatchId == Guid.Empty)
             throw new ArgumentException("A privacy-withdrawal batch id cannot be empty.", nameof(privacyWithdrawalBatchId));
+        if (deduplicationKey is not null
+            && (jobType != JobType.RefTestExpiration
+                || string.IsNullOrWhiteSpace(deduplicationKey)
+                || deduplicationKey.Length > 64))
+            throw new ArgumentException(
+                "Only RefTest expiration jobs can use a non-empty deduplication key of at most 64 characters.",
+                nameof(deduplicationKey));
 
-        return new Job(jobType, payload, executeAfter ?? DateTime.UtcNow, privacyWithdrawalBatchId);
+        return new Job(jobType, payload, executeAfter ?? DateTime.UtcNow, privacyWithdrawalBatchId, deduplicationKey);
     }
 
     /// <summary>Links a legacy batch job to its batch after reading its ID-only payload.</summary>
@@ -110,6 +124,7 @@ public class Job
         CompletedAt = DateTime.UtcNow;
         LockedUntil = null;
         ErrorMessage = null;
+        DeduplicationKey = null;
     }
 
     /// <summary>
@@ -123,6 +138,7 @@ public class Job
         if (Status == JobStatus.Cancelled)
             return;
 
+        DeduplicationKey ??= _retainedDeduplicationKey;
         Attempts++;
         ErrorMessage = errorMessage;
 
@@ -131,7 +147,10 @@ public class Job
         // Stamp the terminal transition: cleanup keys its retention window off CompletedAt, so a
         // failed job that never sets it is retained forever.
         if (Status == JobStatus.Failed)
+        {
             CompletedAt = DateTime.UtcNow;
+            DeduplicationKey = null;
+        }
 
         LockedUntil = null;
     }
@@ -150,6 +169,7 @@ public class Job
         Status = JobStatus.Failed;
         CompletedAt = DateTime.UtcNow;
         LockedUntil = null;
+        DeduplicationKey = null;
     }
 
     /// <summary>
@@ -167,6 +187,7 @@ public class Job
         CompletedAt = failedAt;
         ErrorMessage = errorMessage;
         LockedUntil = null;
+        DeduplicationKey = null;
         return true;
     }
 
@@ -183,6 +204,7 @@ public class Job
         LockedUntil = null;
         CompletedAt = DateTime.UtcNow;
         Payload = string.Empty;
+        DeduplicationKey = null;
     }
 
     /// <summary>
