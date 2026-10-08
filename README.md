@@ -335,6 +335,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/Remediations/AUDIT-R8-REMEDIATION.md](docs/Remediations/AUDIT-R8-REMEDIATION.md)   | R8 remediation work packages                               |
 | [docs/Remediations/AUDIT-R9-REMEDIATION.md](docs/Remediations/AUDIT-R9-REMEDIATION.md)   | R9 remediation work packages                               |
 | [docs/Remediations/AUDIT-R10-REMEDIATION.md](docs/Remediations/AUDIT-R10-REMEDIATION.md) | R10 remediation work packages                              |
+| [docs/Remediations/AUDIT-R11-REMEDIATION.md](docs/Remediations/AUDIT-R11-REMEDIATION.md) | R11 remediation work packages                              |
 | [docs/Remediations/AUDIT-REMEDIATION.md](docs/Remediations/AUDIT-REMEDIATION.md)         | Phased remediation plan for the audit findings             |
 
 ## License
