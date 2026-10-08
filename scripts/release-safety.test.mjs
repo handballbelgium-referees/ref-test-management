@@ -11,7 +11,7 @@ import releaseConfig from '../.releaserc.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = join(ROOT, 'scripts/generate-badges.mjs');
 const WORKFLOWS = Object.fromEntries(
-  ['beta-release', 'stable-release', 'pr'].map((name) => {
+  ['beta-release', 'stable-release', 'pr', 'codeql'].map((name) => {
     const path = join(ROOT, `.github/workflows/${name}.yml`);
     const source = readFileSync(path, 'utf8');
     return [name, { source, workflow: yaml.load(source) }];
@@ -114,11 +114,47 @@ test('release workflows pin tool versions and record and verify complete build p
 
     const build = workflow.jobs.build;
     const publish = build.steps.find((step) => step.id === 'publish');
-    const deploy = Object.values(workflow.jobs)
-      .flatMap((job) => job.steps ?? [])
-      .find((step) => step.name === '🔒 Verify deployment artifact provenance');
+    const deployJob = Object.values(workflow.jobs).find((job) =>
+      job.steps?.some((step) => step.name === '🔒 Verify deployment artifact provenance'),
+    );
+    const deploy = deployJob?.steps.find((step) => step.name === '🔒 Verify deployment artifact provenance');
     assert.ok(publish);
     assert.ok(deploy);
+    assert.equal(build.outputs['application-sha256'], '${{ steps.publish.outputs.application-sha256 }}');
+    assert.match(publish.run, /APPLICATION_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
+    assert.equal((publish.run.match(/application-sha256=%s/g) ?? []).length, 2);
+    assert.match(
+      publish.run,
+      /\{\n\s+printf 'application-sha256=%s\\n' "\$APPLICATION_SHA256"[\s\S]*?\} >> "\$GITHUB_OUTPUT"/,
+    );
+    assert.equal(deploy.env.BUILD_APPLICATION_SHA256, '${{ needs.build.outputs.application-sha256 }}');
+    assert.match(deploy.run, /ACTUAL_APPLICATION_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
+    assert.match(deploy.run, /"\$BUILD_APPLICATION_SHA256" != "\$ACTUAL_APPLICATION_SHA256"/);
+    assert.ok(
+      deployJob.steps.findIndex((step) => step.name === '🔒 Verify deployment artifact provenance') <
+        deployJob.steps.findIndex((step) => step.name === '🔑 Azure Login'),
+      `${name} must verify the artifact before cloud authentication`,
+    );
+
+    const uiInstallJobs = Object.values(workflow.jobs).filter((job) =>
+      job.steps?.some(
+        (step) => step['working-directory'] === './RefTestManagement.Ui' && step.run === 'npm ci',
+      ),
+    );
+    assert.ok(uiInstallJobs.length > 0);
+    for (const job of uiInstallJobs) {
+      const npmSetupIndex = job.steps.findIndex((step) => step.name === '📦 Install and verify npm 12.2.0');
+      const uiInstallIndex = job.steps.findIndex(
+        (step) => step['working-directory'] === './RefTestManagement.Ui' && step.run === 'npm ci',
+      );
+      assert.ok(npmSetupIndex >= 0 && npmSetupIndex < uiInstallIndex);
+      assert.match(job.steps[npmSetupIndex].run, /npm install --global npm@12\.2\.0/);
+      assert.match(job.steps[npmSetupIndex].run, /ACTUAL_NPM_VERSION="\$\(npm --version\)"/);
+      assert.match(
+        job.steps[npmSetupIndex].run,
+        /if \[ "\$ACTUAL_NPM_VERSION" != "12\.2\.0" \]; then[\s\S]*?exit 1/,
+      );
+    }
 
     for (const field of PROVENANCE_FIELDS) {
       assert.equal(build.outputs[field], `\${{ steps.publish.outputs.${field} }}`);
@@ -132,6 +168,13 @@ test('release workflows pin tool versions and record and verify complete build p
     assert.match(publish.run, /ImageVersion/);
     assert.match(source, /node-version: \$\{\{ env\.NODE_VERSION \}\}/);
   }
+});
+
+test('CodeQL uses the release validation .NET SDK', () => {
+  const setupDotnet = WORKFLOWS.codeql.workflow.jobs.analyze.steps.find(
+    (step) => step.uses?.startsWith('actions/setup-dotnet@'),
+  );
+  assert.equal(setupDotnet.with['dotnet-version'], '10.0.303');
 });
 
 test('all workflow actions stay pinned to full commit SHAs with version comments', () => {

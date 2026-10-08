@@ -217,6 +217,7 @@ jobs:
     outputs:
       validated-sha: ${{ steps.verify-source.outputs.sha }}
       artifact-name: ${{ steps.verify-source.outputs.artifact-name }}
+      application-sha256: ${{ steps.publish.outputs.application-sha256 }}
       node-version: ${{ steps.publish.outputs.node-version }}
       npm-version: ${{ steps.publish.outputs.npm-version }}
       dotnet-sdk-version: ${{ steps.publish.outputs.dotnet-sdk-version }}
@@ -270,6 +271,15 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: 📦 Install and verify npm 12.2.0
+        run: |
+          npm install --global npm@12.2.0
+          ACTUAL_NPM_VERSION="$(npm --version)"
+          if [ "$ACTUAL_NPM_VERSION" != "12.2.0" ]; then
+            echo "::error::Expected npm 12.2.0, got $ACTUAL_NPM_VERSION."
+            exit 1
+          fi
+
       - name: 📝 Inject version into Angular
         run: |
           sed -i "s/__APP_VERSION__/${APP_VERSION}/g" RefTestManagement.Ui/src/version.ts
@@ -312,6 +322,7 @@ jobs:
             --configuration Release \
             --no-build \
             --output ./release-artifact/application
+          APPLICATION_SHA256="$(cd ./release-artifact/application && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)"
           : "${ImageOS:?GitHub-hosted runner image name is required}"
           : "${ImageVersion:?GitHub-hosted runner image version is required}"
           NODE_TOOL_VERSION="$(node --version)"
@@ -326,8 +337,10 @@ jobs:
               "$DOTNET_SDK_VERSION" "$DOTNET_SDKS" "$DOTNET_RUNTIMES"
             printf 'runner-os=%s\nrunner-arch=%s\nrunner-image-os=%s\nrunner-image-version=%s\n' \
               "$RUNNER_OS" "$RUNNER_ARCH" "$ImageOS" "$ImageVersion"
+            printf 'application-sha256=%s\n' "$APPLICATION_SHA256"
           } > ./release-artifact/provenance.txt
           {
+            printf 'application-sha256=%s\n' "$APPLICATION_SHA256"
             printf 'node-version=%s\nnpm-version=%s\n' "$NODE_TOOL_VERSION" "$NPM_TOOL_VERSION"
             printf 'dotnet-sdk-version=%s\ndotnet-sdks=%s\ndotnet-runtimes=%s\n' \
               "$DOTNET_SDK_VERSION" "$DOTNET_SDKS" "$DOTNET_RUNTIMES"
@@ -368,6 +381,15 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: ${{ env.NODE_VERSION }}
+
+      - name: 📦 Install and verify npm 12.2.0
+        run: |
+          npm install --global npm@12.2.0
+          ACTUAL_NPM_VERSION="$(npm --version)"
+          if [ "$ACTUAL_NPM_VERSION" != "12.2.0" ]; then
+            echo "::error::Expected npm 12.2.0, got $ACTUAL_NPM_VERSION."
+            exit 1
+          fi
 
       - name: 📦 Install root dependencies
         run: npm ci
@@ -519,6 +541,7 @@ jobs:
           RELEASE_TAG: ${{ needs.release.outputs.new-release-tag }}
           BUILD_NODE_VERSION: ${{ needs.build.outputs.node-version }}
           BUILD_NPM_VERSION: ${{ needs.build.outputs.npm-version }}
+          BUILD_APPLICATION_SHA256: ${{ needs.build.outputs.application-sha256 }}
           BUILD_DOTNET_SDK_VERSION: ${{ needs.build.outputs.dotnet-sdk-version }}
           BUILD_DOTNET_SDKS: ${{ needs.build.outputs.dotnet-sdks }}
           BUILD_DOTNET_RUNTIMES: ${{ needs.build.outputs.dotnet-runtimes }}
@@ -536,9 +559,15 @@ jobs:
             "$VALIDATED_SHA" "$RELEASE_TAG" "$BUILD_NODE_VERSION" "$BUILD_NPM_VERSION" \
             "$BUILD_DOTNET_SDK_VERSION" "$BUILD_DOTNET_SDKS" "$BUILD_DOTNET_RUNTIMES" \
             "$BUILD_RUNNER_OS" "$BUILD_RUNNER_ARCH" "$BUILD_RUNNER_IMAGE_OS" "$BUILD_RUNNER_IMAGE_VERSION")"
+          EXPECTED_PROVENANCE="${EXPECTED_PROVENANCE}"$'\n'"application-sha256=${BUILD_APPLICATION_SHA256}"
           ACTUAL_PROVENANCE="$(cat "$GITHUB_WORKSPACE/release-artifact/provenance.txt")"
           if [ "$ACTUAL_PROVENANCE" != "$EXPECTED_PROVENANCE" ]; then
             echo "::error::Deployment artifact provenance does not match the validated release."
+            exit 1
+          fi
+          ACTUAL_APPLICATION_SHA256="$(cd "$GITHUB_WORKSPACE/release-artifact/application" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)"
+          if [ "$BUILD_APPLICATION_SHA256" != "$ACTUAL_APPLICATION_SHA256" ]; then
+            echo "::error::Deployment application payload digest does not match the validated build."
             exit 1
           fi
 
