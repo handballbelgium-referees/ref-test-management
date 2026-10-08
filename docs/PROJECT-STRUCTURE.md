@@ -19,11 +19,12 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 - **`RefTestManagement.AuditLog/`** — 📋 Domain-event–driven audit log library (Marten-style event store)
 - **`RefTestManagement.Auth0/`** — 🔐 Auth0 Management API client (M2M token, role-based user discovery)
-- **`RefTestManagement.Application/`** — 🔷 Business logic — external GraphQL client (IHF Rules), configuration models
+- **`RefTestManagement.Application/`** — 🔷 Job payloads, configuration models, external GraphQL client (IHF Rules); target home of use cases and ports
 - **`RefTestManagement.Domain/`** — 🔷 Domain entities: RefTest, RefTestTitle, Job, and their domain events
 - **`RefTestManagement.Security/`** — 🔐 Permission constants, authorization handlers, dynamic policy provider
-- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, migrations, PDF/Excel/email service implementations
-- **`RefTestManagement.UnitTests/`** — 🧪 xUnit tests for privacy redaction and the background-job state machine
+- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, subscriptions, job enqueueing
+- **`RefTestManagement.Migrations.SqlServer/`, `.PostgreSQL/`, `.SQLite/`, `.MySQL/`** — 🗄️ Provider-specific EF Core migrations
+- **`RefTestManagement.UnitTests/`** — 🧪 xUnit tests, including the architecture dependency tests
 
 <details open>
 <summary><strong><code>RefTestManagement.Ui/</code></strong> — 🅰️ Angular frontend</summary>
@@ -43,6 +44,25 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 - **`package.json`** — Root dependencies (semantic-release, husky)
 - **`README.md`**
+
+## Project dependencies
+
+Arrows are `ProjectReference`s. The rule and its known violations are recorded in [ADR 0001](adr/0001-layered-architecture.md) and enforced by `RefTestManagement.UnitTests/ArchitectureDependencyTests.cs`.
+
+```mermaid
+flowchart TB
+    Api["Api (composition root)"] --> Infrastructure
+    Api --> Migrations["Migrations.* (4 providers)"]
+    Api --> Security
+    Api --> Auth0
+    Api --> AuditLog
+    Migrations --> Infrastructure
+    Infrastructure --> Application
+    Infrastructure --> AuditLog
+    Application --> Domain
+    AuditLog --> Domain
+    Auth0 --> Security
+```
 
 ## Key Directories
 
