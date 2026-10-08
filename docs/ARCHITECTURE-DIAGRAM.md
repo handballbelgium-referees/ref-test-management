@@ -4,26 +4,37 @@ Detailed flow diagrams for the background services and authorization system refe
 
 ## Background Services Overview
 
-All five hosted services run in-process alongside the API — no extra Azure resources or cost.
+All six unconditional hosted services run in-process alongside the API. `AuditLogCleanupService` is
+registered only when `AuditLogOptions.EnableCleanup` is enabled; neither registration needs a separate
+Azure resource.
 
 ```mermaid
 flowchart LR
-    subgraph Hosted["Hosted background services"]
+    subgraph Hosted["Six unconditional hosted-service registrations"]
         BJS["BackgroundJobService\npoll every 5s"]
         RES["RefTestExpirationService\nevery 5 min"]
         PRS["PrivacyRetentionService\ndaily"]
-        ALCS["AuditLogCleanupService\nevery 24h"]
+        PEDCS["PersonalDataExportRequestCleanupService\nexpired/terminal request cleanup"]
+        PWCS["PrivacyWithdrawalCleanupService\nreconciles batches; clears expired/completed data"]
         PSS["PermissionSyncService\nafter startup (background)"]
+    end
+
+    subgraph Conditional["Conditionally registered"]
+        ALCS["AuditLogCleanupService\nevery 24h"]
     end
 
     Jobs[("Jobs table")]
     RefTests[("RefTests table")]
     AuditEvents[("AuditEvents table")]
+    ExportRequests[("Personal-data export requests")]
+    WithdrawalRequests[("Privacy withdrawal data")]
     Auth0API[("Auth0 API resource")]
 
     BJS -->|processes| Jobs
     RES -->|enqueues jobs into| Jobs
     PRS -->|anonymizes| RefTests
+    PEDCS -->|clears expired or terminal data| ExportRequests
+    PWCS -->|cleans and reconciles| WithdrawalRequests
     ALCS -->|soft-archives| AuditEvents
     PSS -->|syncs permission list to| Auth0API
 ```

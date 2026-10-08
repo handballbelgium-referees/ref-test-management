@@ -15,6 +15,7 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
     "ClientId": "your-client-id",
     "ClientSecret": "your-client-secret",
     "Audience": "your-api-identifier",
+    "PublicOrigin": "https://ref-test.example",
     "ManagementClientId": "your-m2m-client-id",
     "ManagementClientSecret": "your-m2m-client-secret"
   },
@@ -146,6 +147,7 @@ Valid values:
 | `ClientId`               | Auth0 OIDC application client ID used for interactive sign-in and sign-out | Yes      |
 | `ClientSecret`           | Auth0 application client secret                                          | Yes      |
 | `Audience`               | Auth0 API identifier                                                     | Yes      |
+| `PublicOrigin`           | Canonical public HTTPS origin used for post-logout return targets        | Yes      |
 | `ManagementClientId`     | Client ID for a Machine-to-Machine app authorized for the Management API | Yes      |
 | `ManagementClientSecret` | Secret for the Management API M2M app                                    | Yes      |
 
@@ -465,6 +467,7 @@ dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
 dotnet user-secrets set "Auth0:ClientId" "your-client-id"
 dotnet user-secrets set "Auth0:ClientSecret" "your-client-secret"
 dotnet user-secrets set "Auth0:Audience" "your-api-identifier"
+dotnet user-secrets set "Auth0:PublicOrigin" "https://ref-test.example"
 dotnet user-secrets set "Auth0:ManagementClientId" "your-m2m-client-id"
 dotnet user-secrets set "Auth0:ManagementClientSecret" "your-m2m-client-secret"
 dotnet user-secrets set "EmailConfiguration:BrevoApiKey" "your-brevo-api-key"

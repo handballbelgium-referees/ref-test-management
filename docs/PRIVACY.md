@@ -11,7 +11,9 @@ This document describes the privacy controls implemented by RefTest Management a
 | Privacy contact        | kristof.gilis@outlook.be                   |
 | Current notice version | `1.0`, effective 3 August 2026             |
 
-The public privacy notice is available at `/privacy` in English, Dutch, French, and German.
+The public privacy notice defaults to English, Dutch, French, and German. Languages available at
+`/privacy` follow each deployment's enabled-language configuration (see
+[LanguageConfiguration](CONFIGURATION.md#languageconfiguration)).
 
 ## Data Processing
 
@@ -76,11 +78,13 @@ Access and portability requests for current RefTest records can be made through 
 
 ### Self-service access and portability export
 
-The participant enters the email address used for their RefTest. The application trims the address and matches it case-insensitively against RefTest records that have not been anonymized. The form returns the same acknowledgement whether or not a record matches; only a matching address is queued for a verification email with a section for every enabled language. The public GraphQL operations require no login or Auth0 permission. Control of the matching mailbox, demonstrated with a one-time key, is the confirmation method; it is not an independent legal-identity check.
+The participant enters the email address used for their RefTest. The application applies the provider-independent .NET `Trim().ToUpperInvariant()` rules and matches the address case-insensitively against RefTest records that have not been anonymized. The form returns the same acknowledgement whether or not a record matches; only a matching address is queued for a verification email with a section for every enabled language. The public GraphQL operations require no login or Auth0 permission. Control of the matching mailbox, demonstrated with a one-time key, is the confirmation method; it is not an independent legal-identity check.
 
 Each language section links to `/privacy/export-confirmation?lang=<language>#<key>`, so the confirmation page opens in that section's language. Opening a link only displays the confirmation page: the client removes the key from the address bar/history and sends it to the server only after the participant explicitly selects Confirm. The key is single-use and expires after 24 hours by default; its lifetime can be configured from 1 through 168 hours (see [PrivacyChallengeConfiguration](CONFIGURATION.md#privacychallengeconfiguration)).
 
 After confirmation, the application builds the export from the data available at delivery time, not from a snapshot taken when the request was submitted. It includes every then-current, non-anonymized RefTest matched to that email, regardless of RefTest status, and retained audit events attributable to the verified address, including staff actions. Ownership is determined by replaying each stream's creation and email-update events in sequence order. When an email change transfers a RefTest to a new address, the new owner receives that transition with the former owner's identity values redacted, but not events from prior owners; case-and-whitespace-only email changes do not change ownership. Events whose ownership cannot be determined from the retained history are omitted. Archived or previously redacted events are included in their retained form when attributable. Before export, staff/third-party actor identities and known third-party fields are omitted, other email addresses are redacted, and sensitive values such as invitation tokens are removed. Records anonymized before delivery are not included.
+
+The PDF includes the saved question position when it is available; this is a position, not a count of answered questions. Readable historical question and selected-answer text is not included because the saved RefTest has no IHF content-version reference to verify the wording. Internal question and answer IDs are omitted, and current wording is not substituted. This is a technical limitation of the self-service export, not a legal determination about the scope of a data-subject request.
 
 The export is sent to the verified address as PDF email attachment(s); each PDF contains a section in every enabled language, following the layout used by RefTest report PDFs. Larger exports may be split into numbered PDF parts, with every part containing all enabled languages. If a part exceeds the email provider's size limit, delivery fails rather than sending a truncated or partial export. Acceptance by the email provider does not prove that the recipient received or opened the message.
 
@@ -100,16 +104,19 @@ against non-anonymized RefTests, and returns the same
 `privacyWithdrawalRequestAcknowledgement.acknowledged: true` response whether or not anything
 matches. Only a matching address is queued for a one-time verification email. The response never
 includes RefTest records or participant details.
-Challenge and batch audit events contain only matching/target counts and delivery-attempt details;
-they do not contain the recipient address or raw one-time key.
+Challenge and batch audit events contain only non-identifying lifecycle details, such as
+matching/target counts and delivery-attempt details; a verified confirmation that queues no new
+work is represented by an event with no payload. They do not contain the recipient address or raw
+one-time key.
 
-Matching uses a nullable indexed 32-byte SHA-256 key of the UTF-8 form produced by the canonical
-`Trim().ToUpperInvariant()` email normalizer. The key is derived/pseudonymous personal data, not
-anonymization or confidentiality; it is maintained with every RefTest email change and cleared
-during erasure. The schema migration only adds the column and index: the API backfills existing
-non-anonymized rows in bounded batches using the same application helper and optimistic concurrency
-token before each indexed lookup. The lookup does not proceed until no eligible row has a missing
-key, and it verifies the full normalized email in application code after the digest lookup.
+Self-service export and withdrawal matching use a nullable indexed 32-byte SHA-256 key of the UTF-8
+form produced by the canonical `Trim().ToUpperInvariant()` email normalizer. The key is
+derived/pseudonymous personal data, not anonymization or confidentiality; it is maintained with
+every RefTest email change and cleared during erasure. The schema migration only adds the column and
+index: the API backfills existing non-anonymized rows in bounded batches using the same application
+helper and optimistic concurrency token before each indexed lookup. Neither lookup proceeds until
+no eligible row has a missing key, and both verify the full normalized email in application code
+after the digest lookup.
 
 For rollout, stop old application instances and other writers that do not maintain this key before
 applying the provider migration and deploying the new application. Keep account-free withdrawal
@@ -140,6 +147,18 @@ are not accepted. Request and confirmation attempts are separately rate-limited 
 ### Self-service invitation-token withdrawal (any status, including completed)
 
 A participant can request withdrawal of consent using only their invitation link, via the explicitly confirmed "withdraw consent" action on the welcome, in-progress, and results pages. The server verifies the invitation-token hash and atomically commits a one-RefTest withdrawal target and its durable worker job; no second email or mailbox check is involved. The page then acknowledges that processing is queued, not that anonymization has finished. an unfinished target suppresses duplicate work while a batch job is processable or its retry is waiting for backoff. If a job is missing or terminal and a target is due, either participant request flow or scheduled privacy cleanup reconciles the same batch and commits at most one replacement job; active leases and completed batches are left alone. Target failures use durable increasing backoff and stop after five attempts, with only a sanitized failure category retained for operational follow-up. Once every target is complete or exhausted, the batch is terminal; an exhausted target also fails the batch job through the existing job-queue failure/monitoring path. Completed target IDs are removed after that terminal failure is durable. The worker uses the same erasure path as bulk withdrawal and publishes the anonymization update only after the erasure transaction commits. The action is available regardless of RefTest status, including `Completed`, because anonymizing no longer destroys the record or its audit trail outright — the completion timestamp, score, and the fact that the RefTest happened remain visible to staff (with the name/email redacted); only a subsequent, separate request permanently deletes the row. A participant or controller may request permanent deletion of an already-anonymized RefTest at any time via the standard erasure process; since it no longer holds personal data, no further identity verification is needed for that step.
+
+### Failed withdrawal target review
+
+Exhausted withdrawal targets remain durably linked to their RefTests after the batch job reaches
+terminal failure so that the work is recoverable rather than silently discarded. The paginated
+`failedPrivacyWithdrawalTargets` query and `acknowledgeFailedPrivacyWithdrawalTarget` mutation both
+require `privacy-operations:review-withdrawals`. The query returns only an opaque target-row action
+token and a sanitized failure category; the review page displays only the category and does not
+render the token or any participant details. An operator acknowledgement revalidates the terminal
+state and records a typed audit event containing only the sanitized category before purging the
+target row, with the event and deletion committed atomically. A successful retry still follows the
+existing cleanup path and removes its completed target.
 
 ### Staff-assisted requests (correction, erasure, and export support)
 

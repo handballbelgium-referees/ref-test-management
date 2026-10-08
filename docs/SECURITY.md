@@ -20,17 +20,17 @@ deleting them. Event type, time, and other non-sensitive accountability details 
 
 The pull-request, beta-release, and stable-release validation workflows run
 `scripts/check-npm-audit.mjs` against both the repository-root and Angular dependency trees.
-Critical advisories block validation. High and lower severities are non-blocking. The check does
-not exempt peer, development, optional, direct, or transitive dependencies.
+Critical advisories always block validation. High advisories block unless covered by an exact,
+valid exception; Moderate and lower severities remain non-blocking. The check does not exempt
+peer, development, optional, direct, or transitive dependencies.
 
-Exceptions are recorded in `.github/npm-audit-exceptions.json` and must match the advisory's
-numeric npm ID, GHSA ID, or CVE ID. Each exception requires a rationale of at least 20 characters,
-an owner in `@user` or `@org/team` form, and a valid `expiresOn` date (`YYYY-MM-DD`). The expiry
-date remains valid through that UTC date; expired, malformed, duplicate, and unused entries fail
-validation. An advisory without an exact, valid exception remains blocking, and unlisted new
-advisory identities cannot be implicitly accepted. Keep the policy empty unless a specific
-advisory exception is reviewed and necessary; resolve the dependency issue instead whenever
-possible.
+High-advisory exceptions are recorded in `.github/npm-audit-exceptions.json` and must match the
+advisory's numeric npm ID, GHSA ID, or CVE ID. Each exception requires a rationale of at least 20
+characters, an owner in `@user` or `@org/team` form, and a valid `expiresOn` date (`YYYY-MM-DD`).
+The expiry date remains valid through that UTC date; expired, malformed, duplicate, and unused
+entries fail validation. An advisory without an exact, valid exception remains blocking, and
+unlisted new advisory identities cannot be implicitly accepted. Keep exceptions advisory-specific,
+reasoned, and short-lived; resolve the dependency issue instead whenever possible.
 
 ---
 
@@ -45,9 +45,16 @@ possible.
 5. **"Add Permissions in the Access Token"** is optional for this application: authorization uses current Management API grants, not a possibly stale JWT permission claim. Enable it only if another consumer needs it.
 6. Save
 
-### 2. Register permissions on the API
+### 2. Ensure permissions are registered on the API
 
-On the same API → **Permissions** tab, add each permission string listed in the [Permission Reference](#permission-reference) below.
+After startup, `PermissionSyncService` additively registers any missing individual permission value
+listed in the [Permission Reference](#permission-reference), plus `superadmin`, on the API resource
+server identified by `Audience`. Existing permissions are preserved. The startup sync does not add
+the three namespace wildcard values (`ref-tests:*`, `questions:*`, `audit-logs:*`); add a wildcard to
+the API's **Permissions** tab manually only if you intend to assign it to a role or user. If required
+Management API configuration is missing or synchronization fails, the API continues starting
+without the automatic sync. See [Management API access and permission freshness](CONFIGURATION.md#management-api-access-and-permission-freshness)
+for the required Management API scopes.
 
 ### 3. Create roles and assign permissions
 
@@ -123,6 +130,20 @@ subscription capability and do not expose it to unauthorized parties.
 | ----------------- | ------------------------------------------- | -------- |
 | `audit-logs:view` | `auditLogs` query (paginated, with filters) | Query    |
 | `audit-logs:*`    | Wildcard — grants all `audit-logs:*` perms  | Wildcard |
+
+### Privacy Operations
+
+| Permission                              | Protects                                                                                                      | Type             |
+| --------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ---------------- |
+| `privacy-operations:review-withdrawals` | `failedPrivacyWithdrawalTargets` query + `acknowledgeFailedPrivacyWithdrawalTarget` mutation                  | Query + Mutation |
+
+The failed-withdrawal query is paginated; each target node contains only an opaque target-row action
+token and a sanitized failure category, plus the connection's pagination metadata. It does not
+expose a `RefTestId`, participant data, or a total count. The operator UI renders only the category
+and never displays the action token. The acknowledgement mutation revalidates that the target is
+still exhausted in a completed batch, then records the typed
+`PrivacyWithdrawalFailedTargetAcknowledged` event and purges the target in one transaction. The
+event records only the sanitized category, not the action token or `RefTestId`.
 
 ## Public Personal-Data Export Verification
 
@@ -297,11 +318,12 @@ Protected routes use `permissionGuard` after `authGuard`. The guard waits for pe
 }
 ```
 
-| Route               | Required Permission     |
-| ------------------- | ----------------------- |
-| `/ref-tests`        | `ref-tests:view-list`   |
-| `/ref-tests/create` | `ref-tests:create`      |
-| `/ref-tests/:id`    | `ref-tests:view-detail` |
+| Route                       | Required Permission                    |
+| --------------------------- | -------------------------------------- |
+| `/ref-tests`                | `ref-tests:view-list`                  |
+| `/ref-tests/create`         | `ref-tests:create`                     |
+| `/ref-tests/:id`            | `ref-tests:view-detail`                |
+| `/privacy/withdrawal-review` | `privacy-operations:review-withdrawals` |
 
 ## The Participant Invitation Token
 

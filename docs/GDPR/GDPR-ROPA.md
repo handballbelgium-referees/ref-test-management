@@ -23,7 +23,7 @@ This document records the main personal-data processing activities for RefTest M
 - Azure SQL Server region: **Belgium Central**.
 - Auth0 tenant: **Belgium/Europe** (controller-provided).
 - Brevo account tier: **Free** (controller-provided).
-- IHF Rules Questions service: **no personal data sent** (controller-provided).
+- IHF Rules Questions API: the application sends globally assigned question-content IDs for retrieval and question IDs, selected-answer IDs, and scoring configuration for score calculation. Requests do not include a participant, RefTest, or attempt ID; the active RefTest association remains in the application. Whether this payload or broader controller-side processing is personal data, and whether IHF is a processor for it, remain for controller determination; see the processor register.
 
 ## International transfer note
 
