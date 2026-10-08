@@ -2,7 +2,7 @@ import { DOCUMENT } from '@angular/common';
 import { DestroyRef, Service, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { TranslateService } from '@ngx-translate/core';
-import { Observable, catchError, first, map, of, shareReplay } from 'rxjs';
+import { Observable, catchError, first, map, of, shareReplay, switchMap } from 'rxjs';
 import { GetEnabledLanguagesGQL } from '../../../graphql/generated';
 
 export type Language = 'en' | 'nl' | 'fr' | 'de';
@@ -77,7 +77,7 @@ export class LanguageConfig {
 
   initializeLanguages(): Observable<Language> {
     return this.getAvailableLanguages().pipe(
-      map((languages) => {
+      switchMap((languages) => {
         const langCodes = languages.map((l) => l.code);
         const firstEnabledLanguage = langCodes[0];
         if (!firstEnabledLanguage) {
@@ -102,8 +102,7 @@ export class LanguageConfig {
 
         this._initialLanguage = initialLanguage;
         this._document.documentElement.lang = initialLanguage;
-        this._translate.use(initialLanguage);
-        return initialLanguage;
+        return this._translate.use(initialLanguage).pipe(map(() => initialLanguage));
       }),
     );
   }

@@ -1,7 +1,7 @@
 import { DOCUMENT } from '@angular/common';
 import { TestBed } from '@angular/core/testing';
 import { TranslateService } from '@ngx-translate/core';
-import { firstValueFrom, of, Subject } from 'rxjs';
+import { firstValueFrom, Observable, of, Subject } from 'rxjs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { GetEnabledLanguagesGQL } from '../../../graphql/generated';
 import { LanguageConfig } from './language-config';
@@ -19,7 +19,7 @@ describe('LanguageConfig', () => {
     addLangs: (languages: string[]) => void;
     setFallbackLang: (language: string) => void;
     getBrowserLang: () => string | undefined;
-    use: (language: string) => void;
+    use: (language: string) => Observable<unknown>;
   };
 
   beforeEach(() => {
@@ -40,6 +40,7 @@ describe('LanguageConfig', () => {
       getBrowserLang: () => browserLanguage,
       use: (language) => {
         usedLanguage = language;
+        return of({});
       },
     };
 
@@ -75,6 +76,27 @@ describe('LanguageConfig', () => {
     expect(usedLanguage).toBe('nl');
     expect(TestBed.inject(DOCUMENT).documentElement.lang).toBe('nl');
     expect(registeredLanguageCodes).toEqual(['nl', 'fr']);
+  });
+
+  it('waits for the initial translation catalog to load', async () => {
+    const translationLoad = new Subject<unknown>();
+    translateService.use = (language) => {
+      usedLanguage = language;
+      return translationLoad;
+    };
+    const languageConfig = TestBed.inject(LanguageConfig);
+    let resolved = false;
+    const initialization = firstValueFrom(languageConfig.initializeLanguages()).then((language) => {
+      resolved = true;
+      return language;
+    });
+
+    expect(usedLanguage).toBe('nl');
+    expect(resolved).toBe(false);
+
+    translationLoad.next({});
+
+    await expect(initialization).resolves.toBe('nl');
   });
 
   it('updates the document language when the selected translation changes', async () => {
