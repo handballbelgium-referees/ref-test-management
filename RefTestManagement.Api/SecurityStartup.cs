@@ -11,6 +11,8 @@ public static class SecurityStartup
 {
     internal static void AddSecurityConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
+        var publicOrigin = GetCanonicalPublicOrigin(configuration);
+
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -38,7 +40,7 @@ public static class SecurityStartup
                         context.ShouldRenew = true;
                 };
             })
-            .AddOpenIdConnect("Auth0", options => ConfigureOpenIdConnect(options, configuration))
+            .AddOpenIdConnect("Auth0", options => ConfigureOpenIdConnect(options, configuration, publicOrigin))
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
                 options.Authority = $"https://{configuration["Auth0:Domain"]}";
@@ -101,7 +103,32 @@ public static class SecurityStartup
         }
     }
 
-    private static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration configuration)
+    private static string GetCanonicalPublicOrigin(IConfiguration configuration)
+    {
+        const string configurationKey = "Auth0:PublicOrigin";
+        var value = configuration[configurationKey];
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var origin)
+            || (origin.Scheme != Uri.UriSchemeHttps && !IsDevelopment())
+            || string.IsNullOrEmpty(origin.Host)
+            || origin.UserInfo.Length > 0
+            || origin.AbsolutePath != "/"
+            || origin.Query.Length > 0
+            || origin.Fragment.Length > 0)
+            throw new InvalidOperationException(
+                $"{configurationKey} must be an absolute HTTPS origin without credentials, path, query, or fragment.");
+
+        return origin.GetLeftPart(UriPartial.Authority);
+    }
+
+    private static bool IsDevelopment()
+    {
+        return Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development";
+    }
+
+    private static void ConfigureOpenIdConnect(
+        OpenIdConnectOptions options,
+        IConfiguration configuration,
+        string publicOrigin)
     {
         options.Authority = $"https://{configuration["Auth0:Domain"]}";
         options.ClientId = configuration["Auth0:ClientId"];
@@ -142,8 +169,7 @@ public static class SecurityStartup
                     if (postLogoutUri.StartsWith('/'))
                     {
                         // transform to absolute
-                        var request = context.Request;
-                        postLogoutUri = request.Scheme + "://" + request.Host + request.PathBase + postLogoutUri;
+                        postLogoutUri = publicOrigin + context.Request.PathBase + postLogoutUri;
                     }
 
                     logoutUri += $"&returnTo={Uri.EscapeDataString(postLogoutUri)}";

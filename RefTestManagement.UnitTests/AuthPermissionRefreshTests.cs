@@ -167,7 +167,12 @@ public sealed class AuthPermissionRefreshTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IPermissionSnapshotService>(snapshotService);
-        services.AddSecurityConfiguration(new ConfigurationBuilder().Build());
+        services.AddSecurityConfiguration(new ConfigurationBuilder()
+            .AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Auth0:PublicOrigin"] = "https://ref-test.example"
+            })
+            .Build());
         return services.BuildServiceProvider();
     }
 
