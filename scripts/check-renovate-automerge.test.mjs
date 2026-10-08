@@ -31,14 +31,16 @@ test('release and badge tooling cannot match npm dev-dependency auto-merge', () 
   assert.ok(Object.hasOwn(packageJson.devDependencies, 'semantic-release'));
 
   const matchers = exclusionMatchers();
-  // WP-97 intentionally excludes this release plugin even though it is not active in the current configuration.
+  // WP-97 keeps the release executor excluded if the badge hook changes later.
   const expectedExclusions = new Set([...releasePackages, '@semantic-release/exec']);
-  for (const packageName of expectedExclusions) {
-    assert.ok(matchers.some((matcher) => matcher.test(packageName)), `${packageName} is excluded`);
-  }
-  for (const matcher of matchers) {
-    assert.ok([...expectedExclusions].some((packageName) => matcher.test(packageName)), 'Exclusions stay release-specific');
-  }
+  const expectedMatcherSources = [...expectedExclusions]
+    .map((packageName) => new RegExp(`^${packageName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`).source)
+    .sort();
+  assert.deepEqual(
+    matchers.map((matcher) => matcher.source).sort(),
+    expectedMatcherSources,
+    'Only exact release and badge tooling package names are excluded',
+  );
 });
 
 test('unrelated patch auto-merge behavior and manual lockfile maintenance remain unchanged', () => {
