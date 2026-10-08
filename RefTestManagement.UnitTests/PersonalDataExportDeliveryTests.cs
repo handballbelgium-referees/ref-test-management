@@ -1112,6 +1112,65 @@ public sealed class PersonalDataExportDeliveryTests
     }
 
     [Fact]
+    public async Task EmailChangeDuringEmailPreparationPreventsStaleOwnerHandoff()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var request = CreateVerifiedRequest(ParticipantEmail);
+        Guid refTestId;
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Email Change During Delivery");
+            seed.RefTestTitles.Add(title);
+            await seed.SaveChangesAsync(cancellationToken);
+
+            var refTest = CreateRefTest(title.Id, ParticipantEmail, "Ada", "Lovelace");
+            seed.RefTests.Add(refTest);
+            seed.PersonalDataExportRequests.Add(request);
+            await seed.SaveChangesAsync(cancellationToken);
+            refTestId = refTest.Id;
+        }
+
+        var emailService = new RecordingEmailService
+        {
+            PrepareEmailAsync = async preparationCancellationToken =>
+            {
+                await using var updateContext = database.CreateContext();
+                var refTest = await updateContext.RefTests.SingleAsync(
+                    candidate => candidate.Id == refTestId,
+                    preparationCancellationToken);
+                refTest.UpdateBasicDetails("Ada", "Lovelace", "new-owner@example.org");
+                await updateContext.SaveChangesAsync(preparationCancellationToken);
+            }
+        };
+
+        await using (var deliveryContext = database.CreateContext())
+        {
+            await CreateHandler(
+                    deliveryContext,
+                    new RecordingPdfService(),
+                    emailService,
+                    new BackgroundJobConfiguration(),
+                    NullLoggerFactory.Instance)
+                .HandleAsync(DeliveryJob(request.Id), cancellationToken);
+        }
+
+        Assert.Equal(1, emailService.PreparationCount);
+        Assert.Equal(1, emailService.FinalDeliverabilityCheckCount);
+        Assert.Empty(emailService.Recipients);
+
+        await using var verification = database.CreateContext();
+        var persistedRequest = await verification.PersonalDataExportRequests
+            .SingleAsync(candidate => candidate.Id == request.Id, cancellationToken);
+        Assert.Equal(ParticipantEmail, persistedRequest.Email);
+        Assert.False(await verification.AuditEvents.AnyAsync(
+            auditEvent => auditEvent.StreamId == request.Id.ToString()
+                          && auditEvent.Type == PersonalDataExportDeliveredEvent.EventType,
+            cancellationToken));
+    }
+
+    [Fact]
     public async Task ErasureDuringEmailPreparationPreventsProviderHandoffAndDeliverySuccess()
     {
         using var database = SqliteTestDatabase.Create();

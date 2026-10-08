@@ -104,6 +104,11 @@ to `ref-tests:view-detail` users as limited result metadata. Completion subscrip
 `selectedAnswerIds` only on the per-RefTest `ViewDetail` subscription; the global `ViewList` event
 omits them.
 
+The `refTestTimeExtended` subscription is intentionally public for participants who need to see
+time extensions in real time. It accepts a RefTest GraphQL ID without participant authentication;
+anyone who knows that ID can observe time-extension metadata for that test. Treat the ID as the
+subscription capability and do not expose it to unauthorized parties.
+
 ### Questions
 
 | Permission         | Protects                                        | Type     |
@@ -132,6 +137,15 @@ verification email. The request and confirmation operations have separate per-cl
 limits; their permit counts, window, and cleanup interval are configured under
 `PrivacyChallengeConfiguration`. Export and withdrawal verification keys expire after 24 hours by
 default; deployments may set `PrivacyChallengeKeyLifetimeHours` from 1 through 168.
+The process-local backend is safe only for a single API instance and remains the default so the
+current single-instance production deployment can operate without Redis. Before running multiple
+instances, configure shared authenticated TLS Redis and an HMAC secret; Azure Container Apps rejects
+the local backend at startup. Redis keys contain only a service/environment/operation namespace and
+an HMAC of the normalized trusted client address. Missing/unknown addresses and Redis failures deny
+the operation. A request still returns its generic acknowledgement without processing when the
+limiter is unavailable. Confirmations are denied without processing. These failures do not affect
+unrelated API operations. Proxy trust and actual client-IP resolution must be validated before
+rollout; forwarded headers are not trusted from arbitrary peers.
 
 The email link is `/privacy/export-confirmation?lang=<locale>#<key>`. The initial page load must
 only display the confirmation page: the client reads the key from the fragment, removes it from
@@ -230,6 +244,12 @@ The API resolves direct user grants and permissions inherited through assigned r
 the configured API audience. Each API process caches a user's successful snapshot for four minutes
 and shares one in-flight refresh per user; an internal limit of four concurrent refreshes per
 process bounds work without asserting an Auth0 tenant quota.
+
+Auth0 grants are changed outside this application, and the application has no permission-change
+event callback for targeted cache invalidation. A revocation is therefore observed at the next
+authentication validation after the cached snapshot expires, with a maximum four-minute snapshot
+age per API process. This is the permission-revocation latency objective; it is not an immediate
+revocation guarantee.
 
 When a snapshot expires, a Management API 429, outage, or other refresh failure never falls back to
 the old grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable.

@@ -1,55 +1,190 @@
+using System.Security.Cryptography;
+using System.Text;
+using System.Diagnostics;
 using System.Threading.RateLimiting;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging.Abstractions;
+using StackExchange.Redis;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;
 
-/// <summary>
-/// Applies independent fixed-window limits to the public request and confirmation operations.
-/// </summary>
+/// <summary>Applies independent fixed-window limits to public privacy challenge operations.</summary>
 public interface IPrivacyChallengeRateLimiter
 {
-    bool TryAcquireRequest(string clientAddress);
-    bool TryAcquireConfirmation(string clientAddress);
+    Task<bool> TryAcquireRequestAsync(string clientAddress, CancellationToken cancellationToken);
+    Task<bool> TryAcquireConfirmationAsync(string clientAddress, CancellationToken cancellationToken);
 }
 
 public sealed class PrivacyChallengeRateLimiter : IPrivacyChallengeRateLimiter, IDisposable
 {
-    private readonly PartitionedRateLimiter<string> _requestLimiter;
-    private readonly PartitionedRateLimiter<string> _confirmationLimiter;
+    private readonly PrivacyChallengeConfiguration _configuration;
+    private readonly IHostEnvironment _environment;
+    private readonly IDatabase? _database;
+    private readonly byte[]? _hmacKey;
+    private readonly ILogger<PrivacyChallengeRateLimiter> _logger;
+    private readonly PartitionedRateLimiter<string>? _requestLocal;
+    private readonly PartitionedRateLimiter<string>? _confirmationLocal;
+    private int _outageLogged;
 
-    public PrivacyChallengeRateLimiter(PrivacyChallengeConfiguration configuration)
+    internal PrivacyChallengeRateLimiter(PrivacyChallengeConfiguration configuration)
+        : this(configuration, new DevelopmentHostEnvironment(), NullLogger<PrivacyChallengeRateLimiter>.Instance)
     {
-        var window = TimeSpan.FromSeconds(configuration.RateLimitWindowSeconds);
-        _requestLimiter = CreateLimiter(configuration.RequestRateLimitPermitLimit, window);
-        _confirmationLimiter = CreateLimiter(configuration.ConfirmationRateLimitPermitLimit, window);
     }
 
-    public bool TryAcquireRequest(string clientAddress) => TryAcquire(_requestLimiter, clientAddress);
+    public PrivacyChallengeRateLimiter(
+        PrivacyChallengeConfiguration configuration,
+        IHostEnvironment environment,
+        ILogger<PrivacyChallengeRateLimiter> logger,
+        IConnectionMultiplexer? redis = null)
+        : this(configuration, environment, logger, redis, false)
+    {
+    }
 
-    public bool TryAcquireConfirmation(string clientAddress) => TryAcquire(_confirmationLimiter, clientAddress);
+    internal PrivacyChallengeRateLimiter(
+        PrivacyChallengeConfiguration configuration,
+        IHostEnvironment environment,
+        ILogger<PrivacyChallengeRateLimiter> logger,
+        IConnectionMultiplexer? redis,
+        bool skipProductionValidationForTests)
+    {
+        _configuration = configuration;
+        _environment = environment;
+        _logger = logger;
+        if (configuration.RateLimitBackend == PrivacyChallengeRateLimitBackend.Local)
+        {
+            var window = TimeSpan.FromSeconds(configuration.RateLimitWindowSeconds);
+            _requestLocal = CreateLocal(configuration.RequestRateLimitPermitLimit, window);
+            _confirmationLocal = CreateLocal(configuration.ConfirmationRateLimitPermitLimit, window);
+            return;
+        }
+
+        if (!skipProductionValidationForTests)
+            ValidateRateLimitConfiguration(configuration, null);
+        _hmacKey = Encoding.UTF8.GetBytes(configuration.HmacSecret!);
+        _database = (redis ?? throw new InvalidOperationException("Redis limiter dependency is missing."))
+            .GetDatabase();
+    }
+
+    public Task<bool> TryAcquireRequestAsync(string clientAddress, CancellationToken cancellationToken) =>
+        TryAcquireAsync(clientAddress, "request", _configuration.RequestRateLimitPermitLimit, _requestLocal, cancellationToken);
+
+    public Task<bool> TryAcquireConfirmationAsync(string clientAddress, CancellationToken cancellationToken) =>
+        TryAcquireAsync(clientAddress, "confirmation", _configuration.ConfirmationRateLimitPermitLimit, _confirmationLocal, cancellationToken);
 
     public void Dispose()
     {
-        _requestLimiter.Dispose();
-        _confirmationLimiter.Dispose();
+        _requestLocal?.Dispose();
+        _confirmationLocal?.Dispose();
     }
 
-    private static PartitionedRateLimiter<string> CreateLimiter(int permitLimit, TimeSpan window) =>
-        PartitionedRateLimiter.Create<string, string>(clientAddress =>
-            RateLimitPartition.GetFixedWindowLimiter(
-                clientAddress,
-                _ => new FixedWindowRateLimiterOptions
-                {
-                    PermitLimit = permitLimit,
-                    Window = window,
-                    QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
-                    QueueLimit = 0,
-                    AutoReplenishment = true
-                }));
-
-    private static bool TryAcquire(PartitionedRateLimiter<string> limiter, string clientAddress)
+    public static void ValidateRateLimitConfiguration(
+        PrivacyChallengeConfiguration configuration,
+        string? containerAppName)
     {
-        using var lease = limiter.AttemptAcquire(clientAddress);
-        return lease.IsAcquired;
+        if (!string.IsNullOrWhiteSpace(containerAppName)
+            && configuration.RateLimitBackend != PrivacyChallengeRateLimitBackend.Redis)
+            throw new InvalidOperationException(
+                "Azure Container Apps requires the shared Redis privacy challenge rate-limit backend.");
+
+        if (configuration.RateLimitBackend == PrivacyChallengeRateLimitBackend.Redis
+            && (!HasAuthenticatedTlsEndpoint(configuration.RedisEndpoint)
+                || string.IsNullOrWhiteSpace(configuration.HmacSecret)
+                || Encoding.UTF8.GetByteCount(configuration.HmacSecret) < 32))
+            throw new InvalidOperationException(
+                "The Redis privacy challenge rate-limit backend requires an authenticated TLS endpoint and an HMAC secret of at least 32 UTF-8 bytes.");
+    }
+
+    private static bool HasAuthenticatedTlsEndpoint(string? value)
+    {
+        if (!Uri.TryCreate(value, UriKind.Absolute, out var endpoint)
+            || endpoint.Scheme != "rediss"
+            || endpoint.Port is < 1 or > 65535)
+            return false;
+        var credentials = endpoint.UserInfo.Split(':', 2);
+        return credentials.Length == 2 && !string.IsNullOrWhiteSpace(credentials[1]);
+    }
+
+    private async Task<bool> TryAcquireAsync(
+        string address,
+        string operation,
+        int limit,
+        PartitionedRateLimiter<string>? local,
+        CancellationToken cancellationToken)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        if (string.IsNullOrWhiteSpace(address) || address.Equals("unknown", StringComparison.OrdinalIgnoreCase))
+            return false;
+        if (_configuration.RateLimitBackend == PrivacyChallengeRateLimitBackend.Local)
+        {
+            using var lease = local!.AttemptAcquire(address);
+            return lease.IsAcquired;
+        }
+
+        var normalizedAddress = address.Trim().ToLowerInvariant();
+        var digest = Convert.ToHexString(HMACSHA256.HashData(_hmacKey!, Encoding.UTF8.GetBytes(normalizedAddress)));
+        var key = $"ref-test-management:{_environment.EnvironmentName}:{operation}:{digest}";
+        var started = Stopwatch.GetTimestamp();
+        try
+        {
+            var count = await IncrementWithFirstAttemptExpiryAsync(
+                    key,
+                    TimeSpan.FromSeconds(_configuration.RateLimitWindowSeconds))
+                .WaitAsync(TimeSpan.FromSeconds(1), cancellationToken);
+            if (Interlocked.Exchange(ref _outageLogged, 0) == 1)
+                _logger.LogInformation("Privacy challenge limiter dependency recovered for {Dependency} during {Operation}; duration {DurationMs} ms",
+                    "Redis", operation, Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            return count <= limit;
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is RedisException or TimeoutException or OperationCanceledException or InvalidOperationException)
+        {
+            if (Interlocked.Exchange(ref _outageLogged, 1) == 0)
+                _logger.LogWarning("Privacy challenge limiter dependency failure for {Dependency} during {Operation}; category {ErrorCategory}; duration {DurationMs} ms",
+                    "Redis", operation, exception is TimeoutException or OperationCanceledException ? "timeout" : "redis",
+                    Stopwatch.GetElapsedTime(started).TotalMilliseconds);
+            return false;
+        }
+    }
+
+    private async Task<long> IncrementWithFirstAttemptExpiryAsync(string key, TimeSpan window)
+    {
+        var transaction = _database!.CreateTransaction();
+        var countTask = transaction.StringIncrementAsync(key);
+        var expiryTask = transaction.KeyExpireAsync(key, window, ExpireWhen.HasNoExpiry);
+        var ttlTask = transaction.KeyTimeToLiveAsync(key);
+        if (!await transaction.ExecuteAsync())
+            throw new InvalidOperationException("Redis rate limit transaction was not executed.");
+
+        var count = await countTask;
+        var expiryApplied = await expiryTask;
+        var ttl = await ttlTask;
+        if (!expiryApplied && ttl is null)
+            throw new InvalidOperationException("Redis rate limit bucket has no expiry.");
+        if (ttl is null || ttl <= TimeSpan.Zero)
+            throw new InvalidOperationException("Redis rate limit bucket has no remaining lifetime.");
+        return count;
+    }
+
+    private static PartitionedRateLimiter<string> CreateLocal(int limit, TimeSpan window) =>
+        PartitionedRateLimiter.Create<string, string>(address =>
+            RateLimitPartition.GetFixedWindowLimiter(address, _ => new FixedWindowRateLimiterOptions
+            {
+                PermitLimit = limit,
+                Window = window,
+                QueueLimit = 0,
+                AutoReplenishment = true
+            }));
+
+    private sealed class DevelopmentHostEnvironment : IHostEnvironment
+    {
+        public string EnvironmentName { get; set; } = Environments.Development;
+        public string ApplicationName { get; set; } = "RefTestManagement";
+        public string ContentRootPath { get; set; } = AppContext.BaseDirectory;
+        public Microsoft.Extensions.FileProviders.IFileProvider ContentRootFileProvider { get; set; } =
+            new Microsoft.Extensions.FileProviders.NullFileProvider();
     }
 }

@@ -23,6 +23,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using System.Threading.RateLimiting;
 using System.Net;
 using Microsoft.AspNetCore.DataProtection;
+using StackExchange.Redis;
 
 // Configure QuestPDF license
 QuestPDF.Settings.License = LicenseType.Community;
@@ -79,6 +80,7 @@ var languageConfig = configuration.GetSection("LanguageConfiguration").Get<Langu
                      LanguageConfiguration.CreateDefault();
 if (languageConfig.EnabledLanguages.Length == 0)
     languageConfig = LanguageConfiguration.CreateDefault();
+languageConfig.Validate();
 
 if (string.IsNullOrEmpty(languageConfig.DefaultPhraseLanguage) ||
     !languageConfig.EnabledLanguages.Contains(languageConfig.DefaultPhraseLanguage))
@@ -112,6 +114,26 @@ if (privacyChallengeConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
 }
 
 services.AddSingleton(privacyChallengeConfig);
+PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(
+    privacyChallengeConfig,
+    configuration["CONTAINER_APP_NAME"]);
+if (privacyChallengeConfig.RateLimitBackend == PrivacyChallengeRateLimitBackend.Redis)
+{
+    var endpoint = new Uri(privacyChallengeConfig.RedisEndpoint!);
+    var credentials = endpoint.UserInfo.Split(':', 2);
+    var redisOptions = new ConfigurationOptions
+    {
+        AbortOnConnectFail = false,
+        Ssl = true,
+        User = Uri.UnescapeDataString(credentials[0]),
+        Password = Uri.UnescapeDataString(credentials.Length > 1 ? credentials[1] : string.Empty),
+        ConnectTimeout = 1000,
+        AsyncTimeout = 1000,
+        SyncTimeout = 1000
+    };
+    redisOptions.EndPoints.Add(endpoint.Host, endpoint.Port);
+    services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisOptions));
+}
 services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
 services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
 services.AddSingleton<IRefTestSessionTokenService, RefTestSessionTokenService>();

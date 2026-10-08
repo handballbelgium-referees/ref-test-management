@@ -46,11 +46,11 @@ describe('PersonalDataExportConfirmation', () => {
           dataExport: {
             confirmationTitle: 'Confirm your request',
             confirmationDescription:
-              'Confirm below to have a PDF copy of your personal data sent by email.',
+              'Confirm below to request an emailed PDF copy of your personal data.',
             confirmButton: 'Confirm request',
             confirming: 'Confirming your request...',
             confirmed:
-              'Your request is confirmed. A PDF copy of your personal data will be emailed to you.',
+              'Your request is confirmed. We will attempt to email you a PDF copy of your personal data.',
             confirmationError:
               'We could not confirm this request. The link may be invalid or expired. Please request a new link and try again.',
           },
@@ -114,9 +114,7 @@ describe('PersonalDataExportConfirmation', () => {
     });
     expect(
       fixture.nativeElement.querySelector('#privacy-data-export-confirmed')?.textContent,
-    ).toContain(
-      'Your request is confirmed. A PDF copy of your personal data will be emailed to you.',
-    );
+    ).toContain('Your request is confirmed. We will attempt to email you a PDF copy of your personal data.');
     const successCard = fixture.nativeElement.querySelector(
       '#privacy-data-export-confirmed',
     )?.parentElement;
@@ -177,7 +175,7 @@ describe('PersonalDataExportConfirmation', () => {
     fixture.detectChanges();
     expect(
       fixture.nativeElement.querySelector('#privacy-data-export-confirmed')?.textContent,
-    ).toContain('A PDF copy of your personal data will be emailed to you.');
+    ).toContain('We will attempt to email you a PDF copy of your personal data.');
   });
 
   it('keeps the confirmation available and hides server errors on failed attempts', async () => {

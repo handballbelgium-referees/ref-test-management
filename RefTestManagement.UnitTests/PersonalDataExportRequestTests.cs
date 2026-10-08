@@ -4,6 +4,7 @@ using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Update;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -129,6 +130,63 @@ public sealed class PersonalDataExportRequestTests
     }
 
     [Fact]
+    public async Task UpdatingRefTestEmailInvalidatesPendingExportForPreviousOwner()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        Guid refTestId;
+        var request = NewRequest(Now, Now.AddHours(24), key: ChallengeKey);
+        Assert.True(request.TryConfirm(ChallengeKey, Now.AddMinutes(1)));
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Email Mutation");
+            seed.RefTestTitles.Add(title);
+            await seed.SaveChangesAsync(cancellationToken);
+            var refTest = RefTest.Create(
+                title.Id,
+                "Ada",
+                "Lovelace",
+                ParticipantEmail,
+                numberOfQuestions: 10,
+                maxTimeInMinutes: 30,
+                questionIds: ["q1"],
+                sendInvitationAutomatically: false,
+                sendResultsAutomatically: false);
+            refTestId = refTest.Id;
+            seed.RefTests.Add(refTest);
+            seed.PersonalDataExportRequests.Add(request);
+            await seed.SaveChangesAsync(cancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var tokenProtection = new RefTestInvitationTokenProtection(
+                new EphemeralDataProtectionProvider());
+            var jobs = new JobEnqueueService(
+                context,
+                tokenProtection,
+                NullLogger<JobEnqueueService>.Instance);
+            await RefTestUpdateMutations.UpdateRefTestDetailsAsync(
+                new UpdateRefTestDetailsInput(
+                    refTestId,
+                    "Ada",
+                    "Lovelace",
+                    "new-owner@example.org"),
+                context,
+                jobs,
+                cancellationToken);
+        }
+
+        await using var verification = database.CreateContext();
+        var persistedRequest = await verification.PersonalDataExportRequests
+            .SingleAsync(candidate => candidate.Id == request.Id, cancellationToken);
+        Assert.Equal(string.Empty, persistedRequest.Email);
+        Assert.Null(persistedRequest.KeyHash);
+        Assert.Equal(Now.AddMinutes(1), persistedRequest.VerifiedAt);
+    }
+
+    [Fact]
     public async Task RequestMutationAcknowledgesKnownAndUnknownAddressesIdenticallyAndEnqueuesIdOnly()
     {
         using var database = SqliteTestDatabase.Create();
@@ -236,7 +294,7 @@ public sealed class PersonalDataExportRequestTests
     }
 
     [Fact]
-    public void RequestAndConfirmationRateLimitsAreIndependentAndPartitionedByClientAddress()
+    public async Task RequestAndConfirmationRateLimitsAreIndependentAndPartitionedByClientAddress()
     {
         using var limiter = new PrivacyChallengeRateLimiter(new PrivacyChallengeConfiguration
         {
@@ -244,10 +302,11 @@ public sealed class PersonalDataExportRequestTests
             ConfirmationRateLimitPermitLimit = 1
         });
 
-        Assert.True(limiter.TryAcquireRequest("192.0.2.10"));
-        Assert.False(limiter.TryAcquireRequest("192.0.2.10"));
-        Assert.True(limiter.TryAcquireConfirmation("192.0.2.10"));
-        Assert.True(limiter.TryAcquireRequest("192.0.2.11"));
+        var cancellationToken = TestContext.Current.CancellationToken;
+        Assert.True(await limiter.TryAcquireRequestAsync("192.0.2.10", cancellationToken));
+        Assert.False(await limiter.TryAcquireRequestAsync("192.0.2.10", cancellationToken));
+        Assert.True(await limiter.TryAcquireConfirmationAsync("192.0.2.10", cancellationToken));
+        Assert.True(await limiter.TryAcquireRequestAsync("192.0.2.11", cancellationToken));
     }
 
     [Fact]

@@ -44,9 +44,20 @@ public static partial class RefTestUpdateMutations
             throw new RefTestNotFoundException(input.Id);
 
         var emailChanged = refTest.Email != input.Email;
+        var previousEmail = refTest.Email;
         var invitationWasSent = refTest.InvitationSentAt.HasValue;
 
         refTest.UpdateBasicDetails(input.FirstName, input.LastName, input.Email);
+
+        if (emailChanged)
+        {
+            var normalizedPreviousEmail = previousEmail.Trim().ToUpperInvariant();
+            var pendingExports = await context.PersonalDataExportRequests
+                .Where(request => request.Email.Trim().ToUpper() == normalizedPreviousEmail)
+                .ToListAsync(cancellationToken);
+            foreach (var pendingExport in pendingExports)
+                pendingExport.ClearForPrivacyErasure();
+        }
 
         // If the email was changed and the ResendInvitation flag is true and the invitation was
         // previously sent, resend it — staged into the same save as the address change so the

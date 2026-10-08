@@ -92,6 +92,29 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
 }
 ```
 
+### Shared privacy challenge limiter
+
+`PrivacyChallengeConfiguration:RateLimitBackend` defaults to `Local`, which uses process-local
+state and is safe only when exactly one API instance is running. This keeps the current single-
+instance production deployment working without Redis. Select `Redis` and configure
+`PrivacyChallengeConfiguration:RedisEndpoint` and `PrivacyChallengeConfiguration:HmacSecret`
+before scaling to multiple instances. Azure Container Apps rejects `Local` at startup; other
+hosting platforms must be configured explicitly before scale-out. The endpoint must be an
+authenticated TLS URI (`rediss://:password@host:port`); provide the URI and HMAC secret through the
+hosting environment or Azure Key Vault references, never source control. Use a dedicated
+Redis-compatible deployment/ACL namespace for this application. The limiter uses an atomic
+`MULTI`/`EXEC` transaction with `INCR`, conditional `EXPIRE`/`PEXPIRE NX` (`ExpireWhen.HasNoExpiry`),
+and `PTTL` verification; use Redis 7.0 or later and grant the configured identity permission for
+those commands. Operations have a one-second deadline, do not retry in application code, and deny
+only the privacy challenge operation during an outage. HMAC secret rotation changes all active
+bucket keys and effectively resets quotas.
+
+Configure a reachable shared Redis service in the App Service environment and future Container
+Apps environment before deployment; this application does not provision infrastructure. Before
+rollout, verify ingress proxy addresses/networks in `ForwardedHeadersConfiguration` and verify
+that the existing trusted client-IP resolver returns the actual client address. Do not trust
+forwarded headers from untrusted peers.
+
 ## Sections
 
 ### DatabaseProvider
@@ -171,9 +194,11 @@ administrator must authorize them for the M2M application.
 Successful permission snapshots are cached per user and API process for at most four minutes.
 Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most
 four simultaneous refreshes per API process. Expired snapshots are never reused after a refresh
-failure; authorization fails closed. Tenant/plan rate limits were not verified, and no quota
-figure is assumed. Monitor the Auth0 tenant's own rate-limit signals and verify its operational
-limits before rollout.
+failure; authorization fails closed. Since permission grants are changed externally in Auth0 and
+there is no change-event callback for targeted invalidation, the revocation-latency objective is
+the next authentication validation after cache expiry, bounded by four minutes per API process.
+Tenant/plan rate limits were not verified, and no quota figure is assumed. Monitor the Auth0
+tenant's own rate-limit signals and verify its operational limits before rollout.
 
 ### EmailConfiguration
 
@@ -198,6 +223,8 @@ limits before rollout.
 | ----------------------- | --------------------------------------------------- | -------- | -------- |
 | `DefaultPhraseLanguage` | Default language for question phrasing              | Yes      | –        |
 | `EnabledLanguages`      | Array of enabled UI languages (`en`/`nl`/`fr`/`de`) | No       | all four |
+
+Unsupported non-empty `EnabledLanguages` values cause the API to fail startup with a configuration error.
 
 ### ScoreConfiguration
 

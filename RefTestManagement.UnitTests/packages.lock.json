@@ -28,6 +28,15 @@
           "SQLitePCLRaw.core": "2.1.12"
         }
       },
+      "Testcontainers.Redis": {
+        "type": "Direct",
+        "requested": "[4.5.0, )",
+        "resolved": "4.5.0",
+        "contentHash": "+sxUzwR0vSBfvedfz+VZ6boXwJRSFZFPknuqDgwbSz81DB/6WEBpl9MPWGVUHit0oQih7FI8YQ4ym5D0xtItGg==",
+        "dependencies": {
+          "Testcontainers": "4.5.0"
+        }
+      },
       "xunit.v3": {
         "type": "Direct",
         "requested": "[4.0.1, )",
@@ -74,6 +83,22 @@
         "type": "Transitive",
         "resolved": "2.0.0",
         "contentHash": "ngTqjYreDYNytG1W5d3ewHsw0ukmmrgV7EKnS4/40rXoYZGt07jrBvo+N+GxT49rcageUMUiprV0jYT4nwVBHQ=="
+      },
+      "Docker.DotNet.Enhanced": {
+        "type": "Transitive",
+        "resolved": "3.128.1",
+        "contentHash": "uzme+90PSNBjgWph3jxboxoL4K3j5ZPHj14WHL7TNkcGxtpP8EFxibNTrXGpEvsmiom0aaIW60ju/JPdNvUSng==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3"
+        }
+      },
+      "Docker.DotNet.Enhanced.X509": {
+        "type": "Transitive",
+        "resolved": "3.128.1",
+        "contentHash": "v2H5XK7HAyDkACpdgodzTcMXIYwjJ9fmwl7mYQ3nVZ/d/XsI1Eh3DrBvCuSNAyNFUL4kz55wFqdzApyRfU01gw==",
+        "dependencies": {
+          "Docker.DotNet.Enhanced": "3.128.1"
+        }
       },
       "DocumentFormat.OpenXml": {
         "type": "Transitive",
@@ -1209,6 +1234,11 @@
           "Microsoft.Extensions.Logging.Abstractions": "10.0.0"
         }
       },
+      "Pipelines.Sockets.Unofficial": {
+        "type": "Transitive",
+        "resolved": "2.2.8",
+        "contentHash": "zG2FApP5zxSx6OcdJQLbZDk2AVlN2BNQD6MorwIfV6gVj0RRxWPEp2LXAxqDGZqeNV1Zp0BNPcNaey/GXmTdvQ=="
+      },
       "Polly.Core": {
         "type": "Transitive",
         "resolved": "8.4.2",
@@ -1238,6 +1268,11 @@
         "resolved": "4.0.0",
         "contentHash": "aP5KQxL5RnFNGW1f0euYVBfCatkLw5iEzMRJcXKq8LWWP4Cp3+qoSq1tDDL2vvJ2rM0ychmVMa2VaEKLS6uX4w=="
       },
+      "SharpZipLib": {
+        "type": "Transitive",
+        "resolved": "1.4.2",
+        "contentHash": "yjj+3zgz8zgXpiiC3ZdF/iyTBbz2fFvMxZFEBPUcwZjIvXOf37Ylm+K58hqMfIBt5JgU/Z2uoUS67JmTLe973A=="
+      },
       "SixLabors.Fonts": {
         "type": "Transitive",
         "resolved": "1.0.0",
@@ -1263,6 +1298,14 @@
         "contentHash": "W3oH4XIfCzFrgUSDKHhN6N+dgzA5YHOR2VxX8GB6Qy7CyrJJgxPEG8NirgYWlPQC5P2jz2knSsexWu4tDUL33g==",
         "dependencies": {
           "SQLitePCLRaw.core": "2.1.12"
+        }
+      },
+      "SSH.NET": {
+        "type": "Transitive",
+        "resolved": "2024.2.0",
+        "contentHash": "9r+4UF2P51lTztpd+H7SJywk7WgmlWB//Cm2o96c6uGVZU5r58ys2/cD9pCgTk0zCdSkfflWL1WtqQ9I4IVO9Q==",
+        "dependencies": {
+          "BouncyCastle.Cryptography": "2.4.0"
         }
       },
       "StrawberryShake.Core": {
@@ -1386,6 +1429,18 @@
         "resolved": "10.0.8",
         "contentHash": "4hnHSbtc1FP91qiOsweSa/3My/tkKAU9WcUyCZNSUPhfNyFtIhTl9qEPaSK2g4XzTMaq4huRerF6tSV9q44Cnw=="
       },
+      "Testcontainers": {
+        "type": "Transitive",
+        "resolved": "4.5.0",
+        "contentHash": "2xv1dwf3wjbUpEPIpFIrSaHJNDT0helyOTci2u++jvpTurRYtiNacxYWk7rGnEb1sct2EjBtoI6t5wXsOH8yhw==",
+        "dependencies": {
+          "Docker.DotNet.Enhanced": "3.128.1",
+          "Docker.DotNet.Enhanced.X509": "3.128.1",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "SSH.NET": "2024.2.0",
+          "SharpZipLib": "1.4.2"
+        }
+      },
       "xunit.analyzers": {
         "type": "Transitive",
         "resolved": "2.1.0",
@@ -1486,7 +1541,8 @@
           "RefTestManagement.Migrations.PostgreSQL": "[1.0.0, )",
           "RefTestManagement.Migrations.SQLite": "[1.0.0, )",
           "RefTestManagement.Migrations.SqlServer": "[1.0.0, )",
-          "RefTestManagement.Security": "[1.0.0, )"
+          "RefTestManagement.Security": "[1.0.0, )",
+          "StackExchange.Redis": "[2.8.31, )"
         }
       },
       "reftestmanagement.application": {
@@ -1794,6 +1850,16 @@
         "requested": "[3.53.3, )",
         "resolved": "3.53.3",
         "contentHash": "ZXiSbBkrlw2Of/dBqny/qtQol7dlThrUD8zH/jkQicCFm2yn2BbhKsQW0+YHAzhANWz4ZJCz7gvo88BwluVhkA=="
+      },
+      "StackExchange.Redis": {
+        "type": "CentralTransitive",
+        "requested": "[2.8.31, )",
+        "resolved": "2.8.31",
+        "contentHash": "RCHVQa9Zke8k0oBgJn1Yl6BuYy8i6kv+sdMObiH60nOwD6QvWAjxdDwOm+LO78E8WsGiPqgOuItkz98fPS6haQ==",
+        "dependencies": {
+          "Microsoft.Extensions.Logging.Abstractions": "6.0.0",
+          "Pipelines.Sockets.Unofficial": "2.2.8"
+        }
       },
       "StrawberryShake.Server": {
         "type": "CentralTransitive",

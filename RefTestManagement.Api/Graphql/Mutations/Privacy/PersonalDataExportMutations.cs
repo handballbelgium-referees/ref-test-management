@@ -22,7 +22,7 @@ public static partial class PersonalDataExportMutations
             ? clientIpResolver.Resolve(httpContext)
             : "unknown";
 
-        if (rateLimiter.TryAcquireRequest(clientAddress))
+        if (await rateLimiter.TryAcquireRequestAsync(clientAddress, cancellationToken))
             await requestService.RequestAsync(input.Email, cancellationToken);
 
         return new PersonalDataExportRequestAcknowledgement(Acknowledged: true);
@@ -44,7 +44,7 @@ public static partial class PersonalDataExportMutations
             ? clientIpResolver.Resolve(httpContext)
             : "unknown";
 
-        if (!rateLimiter.TryAcquireConfirmation(clientAddress))
+        if (!await rateLimiter.TryAcquireConfirmationAsync(clientAddress, cancellationToken))
             return new PersonalDataExportConfirmationResult(Confirmed: false);
 
         var confirmed = await requestService.ConfirmAsync(key, cancellationToken);

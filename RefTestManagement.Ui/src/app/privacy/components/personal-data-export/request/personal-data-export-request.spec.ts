@@ -218,6 +218,9 @@ describe('PersonalDataExportRequest', () => {
     expect(requestButton.disabled).toBe(true);
     expect(requestButton.textContent).toContain('Sending your request...');
     expect(requestButton.querySelector('.animate-spin')?.getAttribute('aria-hidden')).toBe('true');
+    expect(
+      fixture.nativeElement.querySelector('[role="status"][aria-live="polite"]')?.textContent,
+    ).toContain('Sending your request...');
 
     requestResult.next({
       loading: false,

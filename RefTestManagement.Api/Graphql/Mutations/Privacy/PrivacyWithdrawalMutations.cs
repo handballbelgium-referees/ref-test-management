@@ -22,7 +22,7 @@ public static partial class PrivacyWithdrawalMutations
             ? clientIpResolver.Resolve(httpContext)
             : "unknown";
 
-        if (rateLimiter.TryAcquireRequest(clientAddress))
+        if (await rateLimiter.TryAcquireRequestAsync(clientAddress, cancellationToken))
             await requestService.RequestAsync(input.Email, cancellationToken);
 
         return new PrivacyWithdrawalRequestAcknowledgement(Acknowledged: true);
@@ -45,7 +45,7 @@ public static partial class PrivacyWithdrawalMutations
             ? clientIpResolver.Resolve(httpContext)
             : "unknown";
 
-        if (!rateLimiter.TryAcquireConfirmation(clientAddress))
+        if (!await rateLimiter.TryAcquireConfirmationAsync(clientAddress, cancellationToken))
             return new PrivacyWithdrawalConfirmationResult(Accepted: false);
 
         var accepted = await requestService.ConfirmAsync(key, cancellationToken);
