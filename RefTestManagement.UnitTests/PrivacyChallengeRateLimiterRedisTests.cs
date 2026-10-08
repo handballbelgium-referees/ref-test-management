@@ -14,7 +14,7 @@ public sealed class PrivacyChallengeRateLimiterRedisTests
     [Fact]
     public async Task IndependentInstancesShareAtomicQuotaAndKeepBucketsIsolated()
     {
-        await using var redis = new RedisBuilder()
+        await using var redis = new RedisBuilder("redis:latest")
             .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("Ready to accept connections"))
             .Build();
         await redis.StartAsync(TestContext.Current.CancellationToken);

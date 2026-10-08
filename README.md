@@ -103,7 +103,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 | Technology | Version | Purpose |
 | --- | --- | --- |
 | **.NET** | 10.0 | Runtime and framework for the Web API |
-| **Hot Chocolate** | 16.6.7 | GraphQL server with authorization, data loaders, and filtering |
+| **Hot Chocolate** | 16.6.8 | GraphQL server with authorization, data loaders, and filtering |
 | **Entity Framework Core** | 10.0.12 | ORM for data access and migrations |
 | **ClosedXML** | 0.105.1 | Excel report generation |
 | **QuestPDF** | 2026.9.1 | PDF report generation |
@@ -313,28 +313,28 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 
 ## Documentation
 
-| Doc                                                                         | Covers                                                     |
-| --------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| [docs/SECURITY.md](docs/SECURITY.md)                                        | Auth0 setup, full permission reference, suggested roles    |
-| [docs/PRIVACY.md](docs/PRIVACY.md)                                          | GDPR data flows, retention, erasure, data-subject requests |
-| [docs/CONFIGURATION.md](docs/CONFIGURATION.md)                              | Full `appsettings.json` reference                          |
-| [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)                      | Annotated directory tree                                   |
-| [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md)                | Background job-queue flow in detail                        |
-| [docs/AUDIT.md](docs/AUDIT.md)                                              | Full-stack audit findings and GDPR compliance assessment   |
-| [docs/Audits/AUDIT-R2.md](docs/Audits/AUDIT-R2.md)                          | Re-audit after Phase 1 remediation; current finding status |
-| [docs/Audits/AUDIT-R3.md](docs/Audits/AUDIT-R3.md)                          | Third audit wave findings and evidence                     |
-| [docs/Audits/AUDIT-R4.md](docs/Audits/AUDIT-R4.md)                          | Fourth audit wave findings and evidence                    |
-| [docs/Audits/AUDIT-R5.md](docs/Audits/AUDIT-R5.md)                          | Fifth audit wave findings and evidence                     |
-| [docs/Audits/AUDIT-R6.md](docs/Audits/AUDIT-R6.md)                          | Sixth audit wave findings and evidence                      |
-| [docs/Audits/AUDIT-R7.md](docs/Audits/AUDIT-R7.md)                          | Seventh audit wave findings and evidence                   |
-| [docs/Audits/AUDIT-R8.md](docs/Audits/AUDIT-R8.md)                          | Eighth audit wave findings and evidence                     |
-| [docs/Audits/AUDIT-R9.md](docs/Audits/AUDIT-R9.md)                          | Ninth audit wave findings and evidence                      |
-| [docs/Audits/AUDIT-R10.md](docs/Audits/AUDIT-R10.md)                        | Tenth audit round findings and validation evidence         |
-| [docs/AUDIT-R7-REMEDIATION.md](docs/Remediations/AUDIT-R7-REMEDIATION.md)   | R7 remediation work packages                               |
-| [docs/AUDIT-R8-REMEDIATION.md](docs/Remediations/AUDIT-R8-REMEDIATION.md)   | R8 remediation work packages                               |
-| [docs/AUDIT-R9-REMEDIATION.md](docs/Remediations/AUDIT-R9-REMEDIATION.md)   | R9 remediation work packages                               |
+| Doc                                                                                      | Covers                                                     |
+| ---------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| [docs/SECURITY.md](docs/SECURITY.md)                                                     | Auth0 setup, full permission reference, suggested roles    |
+| [docs/PRIVACY.md](docs/PRIVACY.md)                                                       | GDPR data flows, retention, erasure, data-subject requests |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md)                                           | Full `appsettings.json` reference                          |
+| [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)                                   | Annotated directory tree                                   |
+| [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md)                             | Background job-queue flow in detail                        |
+| [docs/AUDIT.md](docs/AUDIT.md)                                                           | Full-stack audit findings and GDPR compliance assessment   |
+| [docs/Audits/AUDIT-R2.md](docs/Audits/AUDIT-R2.md)                                       | Re-audit after Phase 1 remediation; current finding status |
+| [docs/Audits/AUDIT-R3.md](docs/Audits/AUDIT-R3.md)                                       | Third audit wave findings and evidence                     |
+| [docs/Audits/AUDIT-R4.md](docs/Audits/AUDIT-R4.md)                                       | Fourth audit wave findings and evidence                    |
+| [docs/Audits/AUDIT-R5.md](docs/Audits/AUDIT-R5.md)                                       | Fifth audit wave findings and evidence                     |
+| [docs/Audits/AUDIT-R6.md](docs/Audits/AUDIT-R6.md)                                       | Sixth audit wave findings and evidence                     |
+| [docs/Audits/AUDIT-R7.md](docs/Audits/AUDIT-R7.md)                                       | Seventh audit wave findings and evidence                   |
+| [docs/Audits/AUDIT-R8.md](docs/Audits/AUDIT-R8.md)                                       | Eighth audit wave findings and evidence                    |
+| [docs/Audits/AUDIT-R9.md](docs/Audits/AUDIT-R9.md)                                       | Ninth audit wave findings and evidence                     |
+| [docs/Audits/AUDIT-R10.md](docs/Audits/AUDIT-R10.md)                                     | Tenth audit round findings and validation evidence         |
+| [docs/Remediations/AUDIT-R7-REMEDIATION.md](docs/Remediations/AUDIT-R7-REMEDIATION.md)   | R7 remediation work packages                               |
+| [docs/Remediations/AUDIT-R8-REMEDIATION.md](docs/Remediations/AUDIT-R8-REMEDIATION.md)   | R8 remediation work packages                               |
+| [docs/Remediations/AUDIT-R9-REMEDIATION.md](docs/Remediations/AUDIT-R9-REMEDIATION.md)   | R9 remediation work packages                               |
 | [docs/Remediations/AUDIT-R10-REMEDIATION.md](docs/Remediations/AUDIT-R10-REMEDIATION.md) | R10 remediation work packages                              |
-| [docs/AUDIT-REMEDIATION.md](docs/Remediations/AUDIT-REMEDIATION.md)         | Phased remediation plan for the audit findings             |
+| [docs/Remediations/AUDIT-REMEDIATION.md](docs/Remediations/AUDIT-REMEDIATION.md)         | Phased remediation plan for the audit findings             |
 
 ## License
 
