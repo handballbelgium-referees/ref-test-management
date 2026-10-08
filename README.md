@@ -154,17 +154,18 @@ flowchart TB
         BG["Background services"]
     end
 
-    subgraph Layers["Backend layers"]
+    subgraph Layers["Backend layers (arrows = project references)"]
+        Infrastructure["Infrastructure"]
         Application["Application"]
         Domain["Domain"]
-        Infrastructure["Infrastructure"]
-        Security["Security"]
         AuditLog["AuditLog"]
+        Migrations["Migrations.*"]
+        Security["Security"]
         Auth0Proj["Auth0 client"]
     end
 
     subgraph External["External services"]
-        DB[("SQL Server")]
+        DB[("SQL Server / PostgreSQL / SQLite / MySQL")]
         Brevo["Brevo email API"]
         IHF["IHF Rules Questions (GraphQL)"]
         PDF["QuestPDF / ClosedXML"]
@@ -172,30 +173,36 @@ flowchart TB
 
     UI -->|"GraphQL over HTTP/SSE"| GQL
     UI -->|"OIDC login / cookie session"| A0
-    GQL --> Security
-    GQL --> Application
+    Api --> Infrastructure
+    Api --> Migrations
+    Api --> Security
+    Api --> Auth0Proj
+    Api --> AuditLog
+    Migrations --> Infrastructure
+    Infrastructure --> Application
+    Infrastructure --> AuditLog
     Application --> Domain
-    Application --> Infrastructure
-    Application -->|"StrawberryShake client"| IHF
-    Infrastructure --> DB
-    Infrastructure --> Brevo
-    Infrastructure --> PDF
-    Domain --> AuditLog
-    BG --> Infrastructure
-    BG --> Auth0Proj
-    Auth0Proj -->|"Management API"| A0
+    AuditLog --> Domain
+    Auth0Proj --> Security
+    Application -.->|"StrawberryShake client"| IHF
+    Infrastructure -.-> DB
+    Infrastructure -.-> Brevo
+    Infrastructure -.-> PDF
+    Auth0Proj -.->|"Management API"| A0
 ```
 
 | Project                            | Role                                                                                            |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `RefTestManagement.Api`            | ASP.NET Core Web API — GraphQL schema, controllers, background services                         |
-| `RefTestManagement.Application`    | Business logic, StrawberryShake IHF client, job payloads, configuration models                  |
+| `RefTestManagement.Application`    | Job payloads, configuration models, IHF client; target home of use cases (see ADR 0001)         |
 | `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
 | `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel generation, subscriptions, job enqueueing                     |
 | `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
 | `RefTestManagement.AuditLog`       | Domain-event-driven audit trail — event store, EF Core interceptor, retention                   |
 | `RefTestManagement.Auth0`          | Auth0 Management API client — permission sync, approver resolution                              |
 | `RefTestManagement.Ui`             | Angular 22 SPA — Apollo Client, GraphQL Codegen, Tailwind CSS, PWA                              |
+
+The allowed dependency direction is recorded in [ADR 0001](docs/adr/0001-layered-architecture.md) and enforced by `ArchitectureDependencyTests`.
 
 ## Getting Started
 
@@ -320,6 +327,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md)                                           | Full `appsettings.json` reference                          |
 | [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)                                   | Annotated directory tree                                   |
 | [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md)                             | Background job-queue flow in detail                        |
+| [docs/adr/0001-layered-architecture.md](docs/adr/0001-layered-architecture.md)           | Backend dependency rule, known violations                  |
 | [docs/AUDIT.md](docs/AUDIT.md)                                                           | Full-stack audit findings and GDPR compliance assessment   |
 | [docs/Audits/AUDIT-R2.md](docs/Audits/AUDIT-R2.md)                                       | Re-audit after Phase 1 remediation; current finding status |
 | [docs/Audits/AUDIT-R3.md](docs/Audits/AUDIT-R3.md)                                       | Third audit wave findings and evidence                     |
