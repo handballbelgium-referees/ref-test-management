@@ -331,6 +331,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/Audits/AUDIT-R9.md](docs/Audits/AUDIT-R9.md)                                       | Ninth audit wave findings and evidence                     |
 | [docs/Audits/AUDIT-R10.md](docs/Audits/AUDIT-R10.md)                                     | Tenth audit round findings and validation evidence         |
 | [docs/Audits/AUDIT-R11.md](docs/Audits/AUDIT-R11.md)                                     | Eleventh audit round findings and validation evidence      |
+| [docs/Audits/AUDIT-R12.md](docs/Audits/AUDIT-R12.md)                                     | Twelfth audit round findings and validation evidence       |
 | [docs/Remediations/AUDIT-R7-REMEDIATION.md](docs/Remediations/AUDIT-R7-REMEDIATION.md)   | R7 remediation work packages                               |
 | [docs/Remediations/AUDIT-R8-REMEDIATION.md](docs/Remediations/AUDIT-R8-REMEDIATION.md)   | R8 remediation work packages                               |
 | [docs/Remediations/AUDIT-R9-REMEDIATION.md](docs/Remediations/AUDIT-R9-REMEDIATION.md)   | R9 remediation work packages                               |
