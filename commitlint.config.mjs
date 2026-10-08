@@ -58,6 +58,8 @@ export default {
         'config',
         'release',
         'docs',
+
+        'audits',
       ],
     ],
 
