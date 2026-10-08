@@ -8,9 +8,9 @@
     <PackageVersion Include="HotChocolate.AspNetCore" Version="16.6.8" />
     <PackageVersion Include="HotChocolate.AspNetCore.Authorization" Version="16.6.8" />
     <PackageVersion Include="HotChocolate.AspNetCore.CommandLine" Version="16.6.8" />
-    <PackageVersion Include="HotChocolate.Caching" Version="16.6.7" />
+    <PackageVersion Include="HotChocolate.Caching" Version="16.6.8" />
     <PackageVersion Include="HotChocolate.Data.EntityFramework" Version="16.6.8" />
-    <PackageVersion Include="HotChocolate.Types.Analyzers" Version="16.6.7" />
+    <PackageVersion Include="HotChocolate.Types.Analyzers" Version="16.6.8" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.12" />
     <PackageVersion Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" Version="10.0.12" />
     <PackageVersion Include="Microsoft.AspNetCore.Http.Abstractions" Version="2.3.13" />

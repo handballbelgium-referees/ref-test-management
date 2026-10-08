@@ -72,7 +72,7 @@ Backups, email-provider retention, and third-party logs are outside the applicat
 
 ## Handling Requests
 
-Access and portability requests for current RefTest records can be made through the public self-service form at `/privacy`. Other requests, including corrections and requests that cannot be completed through the self-service flow, can be sent to `kristof.gilis@outlook.be`.
+Access and portability requests for current RefTest records can be made through the public self-service export request form at `/privacy/export-request`, linked from the privacy notice at `/privacy`. Other requests, including corrections and requests that cannot be completed through the self-service flow, can be sent to `kristof.gilis@outlook.be`.
 
 ### Self-service access and portability export
 

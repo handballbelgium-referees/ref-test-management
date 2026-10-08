@@ -108,6 +108,7 @@ describe('PersonalDataExportRequest', () => {
     expect(text).toContain('Request a copy of your personal data');
     expect(text).not.toContain('Privacy notice');
     expect(fixture.nativeElement.querySelector('form')).not.toBeNull();
+    expect(getEmailInput(fixture).getAttribute('aria-required')).toBe('true');
     expect(
       fixture.nativeElement.querySelector('#privacy-data-export-confirmation-title'),
     ).toBeNull();

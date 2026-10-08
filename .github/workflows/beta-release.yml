@@ -86,7 +86,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore RefTestManagement.slnx --locked-mode
+        run: dotnet restore RefTestManagement.slnx --locked-mode -p:NuGetAuditMode=all -p:NuGetAuditLevel=low '-warnaserror:NU1901;NU1902;NU1903;NU1904'
 
       - name: 🏗 Build .NET application
         run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
@@ -287,7 +287,7 @@ jobs:
           dotnet-version: ${{ env.DOTNET_VERSION }}
 
       - name: 🔄 Restore .NET dependencies
-        run: dotnet restore RefTestManagement.slnx --locked-mode
+        run: dotnet restore RefTestManagement.slnx --locked-mode -p:NuGetAuditMode=all -p:NuGetAuditLevel=low '-warnaserror:NU1901;NU1902;NU1903;NU1904'
 
       - name: 🏗 Build .NET application
         run: dotnet build RefTestManagement.slnx --configuration Release --no-restore
