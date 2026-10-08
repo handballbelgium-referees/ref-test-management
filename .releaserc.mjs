@@ -34,7 +34,13 @@ function indentBody(body) {
 }
 
 export default {
-  branches: ['main'],
+  branches: [
+    'release',
+    {
+      name: 'main',
+      prerelease: 'alpha',
+    },
+  ],
   tagFormat: 'v${version}',
   plugins: [
     [
