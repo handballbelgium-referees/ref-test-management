@@ -11,7 +11,7 @@ const peerAdvisory = {
 };
 const criticalPeerAdvisory = { ...peerAdvisory, severity: 'critical' };
 
-test('blocks critical advisories and ignores high and moderate advisories', () => {
+test('blocks high and critical advisories while ignoring moderate advisories', () => {
   const findings = parseAuditReport({
     auditReportVersion: 2,
     vulnerabilities: {
@@ -39,14 +39,22 @@ test('blocks critical advisories and ignores high and moderate advisories', () =
   }, 'root');
 
   assert.deepEqual(findings.map(({ package: name, severity, id }) => ({ name, severity, id })), [
+    { name: 'peer-package', severity: 'high', id: '123456' },
     { name: 'critical-package', severity: 'critical', id: '987654' },
+    { name: 'github-advisory-package', severity: 'high', id: 'GHSA-DDDD-EEEE-FFFF' },
   ]);
-  assert.deepEqual(findings[0].ids, ['987654']);
+  assert.deepEqual(findings[0].ids, ['123456', 'GHSA-AAAA-BBBB-CCCC', 'CVE-2026-12345']);
 });
 
-test('blocks critical advisories in peer and development dependencies', () => {
+test('blocks high and critical advisories in peer and development dependencies', () => {
   const findings = parseAuditReport({
     vulnerabilities: {
+      'high-peer-dev-package': {
+        severity: 'high',
+        isPeer: true,
+        dev: true,
+        via: [peerAdvisory],
+      },
       'critical-peer-dev-package': {
         severity: 'critical',
         isPeer: true,
@@ -56,17 +64,18 @@ test('blocks critical advisories in peer and development dependencies', () => {
     },
   });
 
-  assert.equal(findings.length, 1);
-  assert.equal(findings[0].package, 'critical-peer-dev-package');
-  assert.equal(findings[0].severity, 'critical');
+  assert.deepEqual(findings.map(({ package: name, severity }) => ({ name, severity })), [
+    { name: 'high-peer-dev-package', severity: 'high' },
+    { name: 'critical-peer-dev-package', severity: 'critical' },
+  ]);
 });
 
 test('matches documented advisory aliases when npm reports a numeric source ID', () => {
   const finding = parseAuditReport({
     vulnerabilities: {
       'peer-package': {
-        severity: 'critical',
-        via: [criticalPeerAdvisory],
+        severity: 'high',
+        via: [peerAdvisory],
       },
     },
   })[0];
@@ -85,6 +94,27 @@ test('matches documented advisory aliases when npm reports a numeric source ID',
       unusedExceptions: [],
     });
   }
+});
+
+test('allows a valid unexpired exception for an exact high advisory', () => {
+  const finding = parseAuditReport({
+    vulnerabilities: {
+      'high-package': { severity: 'high', via: [peerAdvisory] },
+    },
+  })[0];
+  const exceptions = validateExceptionPolicy({
+    exceptions: [{
+      id: 'GHSA-AAAA-BBBB-CCCC',
+      rationale: 'The compatible upstream patch is pending and tracked for the next maintenance release.',
+      owner: '@maintainer',
+      expiresOn: '2026-10-31',
+    }],
+  }, '2026-10-07');
+
+  assert.deepEqual(evaluateFindings([finding], exceptions), {
+    unexcepted: [],
+    unusedExceptions: [],
+  });
 });
 
 test('uses the vulnerable dependency advisory identity rather than inherited package paths', () => {
@@ -112,12 +142,16 @@ test('keeps critical findings without an advisory identity blocking', () => {
   assert.equal(findings[1].id, null);
 });
 
-test('does not block high findings during policy evaluation', () => {
-  assert.deepEqual(evaluateFindings([
+test('blocks unexcepted high findings but not moderate findings', () => {
+  const highFindings = [
     { severity: 'high', id: '123456' },
     { severity: 'high', id: null },
+  ];
+  assert.deepEqual(evaluateFindings([
+    ...highFindings,
+    { severity: 'moderate', id: '234567' },
   ], new Map()), {
-    unexcepted: [],
+    unexcepted: highFindings,
     unusedExceptions: [],
   });
 });
@@ -157,14 +191,36 @@ test('only exact unexpired advisory exceptions pass; new and unidentified adviso
     }],
   }, '2026-10-07');
   const result = evaluateFindings([
-    { severity: 'critical', id: '123456' },
+    { severity: 'high', id: '123456' },
+    { severity: 'high', id: 'GHSA-DDDD-EEEE-FFFF', project: 'ui', package: 'new-high-advisory' },
     { severity: 'critical', id: 'GHSA-DDDD-EEEE-FFFF', project: 'ui', package: 'new-advisory' },
     { severity: 'critical', id: null, project: 'ui', package: 'unknown-advisory' },
   ], exceptions);
 
-  assert.deepEqual(result.unexcepted.map((item) => item.id), ['GHSA-DDDD-EEEE-FFFF', null]);
+  assert.deepEqual(result.unexcepted.map((item) => item.id), [
+    'GHSA-DDDD-EEEE-FFFF',
+    'GHSA-DDDD-EEEE-FFFF',
+    null,
+  ]);
   assert.deepEqual(result.unusedExceptions, []);
   assert.deepEqual(evaluateFindings([], exceptions).unusedExceptions, ['123456']);
+});
+
+test('critical advisories remain blocking even when an exception matches', () => {
+  const exceptions = validateExceptionPolicy({
+    exceptions: [{
+      id: '123456',
+      rationale: 'Upstream patch is pending and is tracked for the next maintenance release.',
+      owner: '@maintainer',
+      expiresOn: '2026-10-31',
+    }],
+  }, '2026-10-07');
+  const finding = { severity: 'critical', id: '123456' };
+
+  assert.deepEqual(evaluateFindings([finding], exceptions), {
+    unexcepted: [finding],
+    unusedExceptions: ['123456'],
+  });
 });
 
 test('rejects stale, duplicate, and malformed exceptions', () => {

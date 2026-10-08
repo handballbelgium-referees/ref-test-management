@@ -46,12 +46,11 @@
       "commitMessageAction": "pin"
     },
     {
-      "description": "Auto-merge digest updates for GitHub Actions",
+      "description": "Require human review for GitHub Action digest updates",
       "matchManagers": ["github-actions"],
       "matchUpdateTypes": ["digest"],
-      "automerge": true,
-      "automergeType": "pr",
-      "platformAutomerge": true
+      "automerge": false,
+      "platformAutomerge": false
     },
     {
       "description": "Security/vulnerability fixes bypass schedule and dashboard approval, but still require CI + human merge",

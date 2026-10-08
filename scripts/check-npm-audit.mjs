@@ -9,7 +9,7 @@ const projects = [
   { name: 'RefTestManagement.Ui', directory: path.join(root, 'RefTestManagement.Ui') },
 ];
 const severities = new Set(['info', 'low', 'moderate', 'high', 'critical']);
-const blockingSeverities = new Set(['critical']);
+const blockingSeverities = new Set(['high', 'critical']);
 const advisoryIdPattern = /^(?:[1-9]\d*|GHSA-[A-Z0-9]{4}(?:-[A-Z0-9]{4}){2}|CVE-\d{4}-\d{4,})$/;
 const ownerPattern = /^@[A-Za-z0-9][A-Za-z0-9-]{0,38}(?:\/[A-Za-z0-9][A-Za-z0-9-]{0,38})?$/;
 const requiredExceptionFields = ['expiresOn', 'id', 'owner', 'rationale'];
@@ -133,7 +133,7 @@ export function parseAuditReport(input, project = 'unknown') {
       }
 
       // Package-name references can form cycles; accept them only when the reachable graph
-      // contains a direct high-severity advisory. Unresolved or unexplained paths stay blocking.
+      // contains a direct blocking advisory. Unresolved or unexplained paths stay blocking.
       if (
         !hasUnresolvedReference &&
         ![...relatedPackages].some((name) => directAdvisories.has(name))
@@ -206,6 +206,11 @@ export function evaluateFindings(findings, exceptions) {
   const usedExceptions = new Set();
   for (const item of findings) {
     if (!blockingSeverities.has(item.severity)) continue;
+    if (item.severity === 'critical') {
+      unexcepted.push(item);
+      continue;
+    }
+
     const matchedId = (item.ids ?? (item.id ? [item.id] : [])).find((id) => exceptions.has(id));
     if (matchedId) usedExceptions.add(matchedId);
     else unexcepted.push(item);
@@ -221,8 +226,8 @@ function runAudit(project) {
   const windows = process.platform === 'win32';
   const command = windows ? (process.env.ComSpec || 'cmd.exe') : 'npm';
   const args = windows
-    ? ['/d', '/s', '/c', 'npm.cmd audit --json --audit-level=critical --include=dev --include=optional --include=peer']
-    : ['audit', '--json', '--audit-level=critical', '--include=dev', '--include=optional', '--include=peer'];
+    ? ['/d', '/s', '/c', 'npm.cmd audit --json --audit-level=high --include=dev --include=optional --include=peer']
+    : ['audit', '--json', '--audit-level=high', '--include=dev', '--include=optional', '--include=peer'];
   const result = spawnSync(command, args, {
     cwd: project.directory,
     encoding: 'utf8',
@@ -253,8 +258,8 @@ function readPolicy() {
 
 function reportCounts(audit) {
   const counts = audit.report.metadata?.vulnerabilities;
-  if (!isRecord(counts)) return `${audit.findings.length} direct Critical advisories`;
-  return `${counts.critical ?? 0} Critical, ${counts.high ?? 0} High (non-blocking)`;
+  if (!isRecord(counts)) return `${audit.findings.length} direct High or Critical advisories`;
+  return `${counts.critical ?? 0} Critical, ${counts.high ?? 0} High`;
 }
 
 function main() {
@@ -299,7 +304,7 @@ function main() {
     return;
   }
 
-  console.log('All root and Angular Critical npm advisories are covered by the current policy.');
+  console.log('No unexcepted High or Critical npm advisories remain in root or Angular dependencies.');
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

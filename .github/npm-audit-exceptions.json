@@ -1,3 +1,40 @@
 {
-  "exceptions": []
+  "exceptions": [
+    {
+      "id": "GHSA-6j4f-fj2g-mc7p",
+      "rationale": "The latest npm 11 accepted by @semantic-release/npm 13.2.0 still bundles affected brace-expansion 5.0.9; remove after a patched compatible npm release.",
+      "owner": "@handballbelgium-referees",
+      "expiresOn": "2026-11-08"
+    },
+    {
+      "id": "GHSA-7mx3-vvmw-hjmv",
+      "rationale": "Apollo Angular codegen 5.0.1 uses helpers requiring @graphql-tools/utils ^11.0.0; affected 11.2.2 is the latest 11.x release.",
+      "owner": "@handballbelgium-referees",
+      "expiresOn": "2026-11-08"
+    },
+    {
+      "id": "GHSA-ch52-4w7c-c8xp",
+      "rationale": "The latest npm 11 accepted by @semantic-release/npm 13.2.0 still bundles affected http-cache-semantics 4.2.0; remove when a patched compatible npm is available.",
+      "owner": "@handballbelgium-referees",
+      "expiresOn": "2026-11-08"
+    },
+    {
+      "id": "GHSA-qhr7-859c-m2p7",
+      "rationale": "The latest npm 11 accepted by @semantic-release/npm 13.2.0 still bundles affected brace-expansion 5.0.9; remove after a patched compatible npm release.",
+      "owner": "@handballbelgium-referees",
+      "expiresOn": "2026-11-08"
+    },
+    {
+      "id": "GHSA-rfgv-xxqx-mfg5",
+      "rationale": "The latest npm 11 accepted by @semantic-release/npm 13.2.0 still bundles affected undici 6.28.0; remove after a patched compatible npm release.",
+      "owner": "@handballbelgium-referees",
+      "expiresOn": "2026-11-08"
+    },
+    {
+      "id": "GHSA-vfj7-8cjw-p6xm",
+      "rationale": "micromatch 4.0.8 requires braces ^3.0.3 and 3.0.3 is the latest 3.x release; remove when a patched compatible version appears.",
+      "owner": "@handballbelgium-referees",
+      "expiresOn": "2026-11-08"
+    }
+  ]
 }

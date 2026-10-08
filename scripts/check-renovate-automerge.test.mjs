@@ -11,6 +11,9 @@ const badgeDependencies = [...badgeScript.matchAll(/from\s+['"]([^'"]+)['"]/g)]
   .map(([, packageName]) => packageName)
   .filter((packageName) => Object.hasOwn(packageJson.devDependencies, packageName));
 const releasePackages = new Set(['semantic-release', ...releasePlugins, ...badgeDependencies]);
+const actionDigestRule = renovate.packageRules.find(
+  ({ description }) => description === 'Require human review for GitHub Action digest updates',
+);
 const autoMergeRule = renovate.packageRules.find(
   ({ description }) => description === 'Auto-merge patch-level npm dev dependencies once CI passes',
 );
@@ -24,6 +27,20 @@ function exclusionMatchers() {
     return matcher;
   });
 }
+
+test('GitHub Action digest updates require human review', () => {
+  assert.ok(actionDigestRule, 'GitHub Action digest review rule exists');
+  assert.deepEqual(actionDigestRule.matchManagers, ['github-actions']);
+  assert.deepEqual(actionDigestRule.matchUpdateTypes, ['digest']);
+  assert.equal(actionDigestRule.automerge, false);
+  assert.equal(actionDigestRule.platformAutomerge, false);
+
+  const digestPinRule = renovate.packageRules.find(
+    ({ description }) => description === 'Pin all GitHub Actions to immutable SHA digests for supply-chain security',
+  );
+  assert.ok(digestPinRule, 'GitHub Actions remain pinned to immutable digests');
+  assert.equal(digestPinRule.pinDigests, true);
+});
 
 test('release and badge tooling cannot match npm dev-dependency auto-merge', () => {
   assert.ok(autoMergeRule, 'Patch-level npm dev-dependency auto-merge rule exists');
