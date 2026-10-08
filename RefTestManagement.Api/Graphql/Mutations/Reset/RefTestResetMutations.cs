@@ -49,8 +49,6 @@ public static partial class RefTestResetMutations
             .Where(rt => input.Ids.Contains(rt.Id))
             .ToListAsync(cancellationToken);
 
-        var successCount = 0;
-        var failedCount = 0;
         var errors = new List<ResetRefTestsError>();
         var resetEvents = new List<(
             Guid Id,
@@ -61,9 +59,10 @@ public static partial class RefTestResetMutations
 
         foreach (var id in input.Ids)
         {
+            RefTest? refTest = null;
             try
             {
-                var refTest = refTests.FirstOrDefault(rt => rt.Id == id);
+                refTest = refTests.FirstOrDefault(rt => rt.Id == id);
 
                 if (refTest == null)
                     throw new RefTestNotFoundException(id);
@@ -115,19 +114,33 @@ public static partial class RefTestResetMutations
                         cancellationToken: cancellationToken);
                 }
 
-                successCount++;
-                result.ResetRefTests.Add(refTest.ToDto());
+                var refTestDto = refTest.ToDto();
+                await context.SaveChangesWithRetryAsync(cancellationToken);
+
+                result.ResetRefTests.Add(refTestDto);
                 resetEvents.Add((
                     refTest.Id,
                     oldStatus,
                     refTest.Status,
                     refTest.CreatedAt,
                     refTest.InvitationSentAt.HasValue));
-                
             }
             catch (Exception ex)
             {
-                failedCount++;
+                if (refTest is not null)
+                {
+                    var restoredRefTest = await RollbackFailedRefTestOperationAsync(
+                        context, refTest, cancellationToken);
+                    var refTestIndex = refTests.IndexOf(refTest);
+                    if (refTestIndex >= 0)
+                    {
+                        if (restoredRefTest is null)
+                            refTests.RemoveAt(refTestIndex);
+                        else
+                            refTests[refTestIndex] = restoredRefTest;
+                    }
+                }
+
                 errors.Add(new ResetRefTestsError
                 {
                     RefTestId = id,
@@ -136,8 +149,6 @@ public static partial class RefTestResetMutations
                 MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ResetRefTestsAsync), correlationId, id);
             }
         }
-
-        await context.SaveChangesWithRetryAsync(cancellationToken);
 
         foreach (var resetEvent in resetEvents)
         {
@@ -153,8 +164,8 @@ public static partial class RefTestResetMutations
 
         return result with
         {
-            SuccessfullyReset = successCount,
-            Failed = failedCount,
+            SuccessfullyReset = resetEvents.Count,
+            Failed = input.Ids.Count - resetEvents.Count,
             Errors = errors
         };
     }
@@ -241,7 +252,8 @@ public static partial class RefTestResetMutations
             {
                 if (refTest is not null)
                 {
-                    var restoredRefTest = await RollbackFailedReviveAsync(context, refTest, cancellationToken);
+                    var restoredRefTest = await RollbackFailedRefTestOperationAsync(
+                        context, refTest, cancellationToken);
                     var refTestIndex = refTests.IndexOf(refTest);
                     if (refTestIndex >= 0)
                     {
@@ -282,9 +294,9 @@ public static partial class RefTestResetMutations
 
     /// <summary>Discards staged job/entity changes and returns a clean copy of the persisted RefTest.</summary>
     /// <param name="context">The RefTest unit of work.</param>
-    /// <param name="refTest">The aggregate modified by the failed revive attempt.</param>
+    /// <param name="refTest">The aggregate modified by the failed reset or revive attempt.</param>
     /// <param name="cancellationToken">Token for the cleanup queries.</param>
-    private static async Task<RefTest?> RollbackFailedReviveAsync(
+    private static async Task<RefTest?> RollbackFailedRefTestOperationAsync(
         RefTestManagementContext context,
         RefTest refTest,
         CancellationToken cancellationToken)

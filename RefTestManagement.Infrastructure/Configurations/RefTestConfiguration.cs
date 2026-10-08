@@ -34,6 +34,9 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
             .IsRequired()
             .HasMaxLength(256);
 
+        builder.Property(x => x.EmailLookupKey)
+            .HasMaxLength(32);
+
         builder.Property(x => x.SendInvitationsAutomatically);
         builder.Property(x => x.InvitationSentAt);
 
@@ -141,6 +144,8 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
             .HasDefaultValue(string.Empty);
 
         builder.HasIndex(x => x.Email);
+        builder.HasIndex(x => x.EmailLookupKey)
+            .HasDatabaseName("IX_RefTests_EmailLookupKey");
         builder.HasIndex(x => x.Status);
         builder.HasIndex(x => x.CreatedAt);
 

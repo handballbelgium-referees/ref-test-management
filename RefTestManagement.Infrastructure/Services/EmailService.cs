@@ -11,10 +11,10 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
 public interface IEmailService
 {
-    Task SendRefTestInvitationAsync(Guid refTestId, string name, string email, string token, int numberOfQuestions,
+    Task<bool> SendRefTestInvitationAsync(Guid refTestId, string name, string email, string token, int numberOfQuestions,
         int maxTimeInMinutes, CancellationToken cancellationToken);
 
-    Task SendRefTestResultsAsync(Guid refTestId, string name, string email, int questionScore, int answerScore, int totalQuestions,
+    Task<bool> SendRefTestResultsAsync(Guid refTestId, string name, string email, int questionScore, int answerScore, int totalQuestions,
         int answerTotal, double percentage, List<string> selectedAnswerIds, List<string> wrongQuestionIds,
         List<string> wrongAnswerIds, List<Question> questionsWithCorrectAnswers, bool scheduleEmail,
         CancellationToken cancellationToken);
@@ -41,16 +41,18 @@ public interface IEmailService
         List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
         CancellationToken cancellationToken);
 
-    Task SendPersonalDataExportVerificationAsync(
+    Task<bool> SendPersonalDataExportVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken);
 
-    Task SendPrivacyWithdrawalVerificationAsync(
+    Task<bool> SendPrivacyWithdrawalVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken);
 
     Task<bool> SendPersonalDataExportAsync(
@@ -75,12 +77,13 @@ public class EmailService(
     private const int MaxProviderRequestBytes = 20 * 1024 * 1024;
     private const int ProviderRequestHeadroomBytes = 256 * 1024;
     private const int MaxPersonalDataExportAttachments = 10;
+    private const int MaxLoggedEmailErrorTypeLength = 64;
 
     // Compiled regex for performance (allocated once)
     private static readonly Regex HtmlTagRegex = new("<[^>]*>", RegexOptions.Compiled);
     private static readonly Regex WhitespaceRegex = new(@"\s+", RegexOptions.Compiled);
 
-    public async Task SendRefTestInvitationAsync(Guid refTestId, string name, string email, string token, int numberOfQuestions,
+    public async Task<bool> SendRefTestInvitationAsync(Guid refTestId, string name, string email, string token, int numberOfQuestions,
         int maxTimeInMinutes, CancellationToken cancellationToken)
     {
         var enabledLanguages = GetEnabledLanguagesForInvitation(token);
@@ -93,12 +96,10 @@ public class EmailService(
         ServiceLoggerMessages.LogSendingRefTestInvitation(logger, refTestId, LogRedaction.MaskEmail(email),
             numberOfQuestions, maxTimeInMinutes);
 
-        await SendEmailAsync(email, subject, emailBody, cancellationToken: cancellationToken);
-
-        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(email));
+        return await SendEmailAsync(email, subject, emailBody, cancellationToken: cancellationToken);
     }
 
-    public async Task SendRefTestResultsAsync(Guid refTestId, string name, string email, int questionScore, int answerScore,
+    public async Task<bool> SendRefTestResultsAsync(Guid refTestId, string name, string email, int questionScore, int answerScore,
         int totalQuestions, int answerTotal, double percentage,
         List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
         List<Question> questionsWithCorrectAnswers, bool scheduleEmail, CancellationToken cancellationToken)
@@ -130,9 +131,7 @@ public class EmailService(
 
         ServiceLoggerMessages.LogSendingRefTestResults(logger, refTestId, LogRedaction.MaskEmail(email));
 
-        await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail, cancellationToken);
-
-        ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(email));
+        return await SendEmailAsync(email, subject, emailBody, attachments, scheduleEmail, cancellationToken);
     }
 
 
@@ -201,7 +200,7 @@ public class EmailService(
                     return false;
             }
 
-            var response = await httpClient.PostAsync(brevoUrl, content, cancellationToken);
+            using var response = await httpClient.PostAsync(brevoUrl, content, cancellationToken);
 
             if (response.IsSuccessStatusCode)
             {
@@ -211,16 +210,14 @@ public class EmailService(
 
             if (requireSuccessfulProviderResponse)
             {
-                // A provider response may echo the message body, including the one-time key
-                // in its URL fragment. Never log that body for verification mail.
+                // Provider-controlled response content can echo token-bearing request data.
                 ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
-                    (int)response.StatusCode, string.Empty);
+                    (int)response.StatusCode);
                 throw new EmailException(toEmail);
             }
 
-            var responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
             ServiceLoggerMessages.LogEmailFailed(logger, LogRedaction.MaskEmail(toEmail),
-                (int)response.StatusCode, LogRedaction.MaskEmailsInText(responseBody) ?? string.Empty);
+                (int)response.StatusCode);
             return false;
         }
         catch (OperationCanceledException) when (
@@ -244,7 +241,11 @@ public class EmailService(
             }
             else
             {
-                ServiceLoggerMessages.LogEmailError(logger, LogRedaction.MaskEmails(ex), LogRedaction.MaskEmail(toEmail));
+                var errorType = ex.GetType().Name;
+                ServiceLoggerMessages.LogEmailError(
+                    logger,
+                    LogRedaction.MaskEmail(toEmail),
+                    errorType[..Math.Min(errorType.Length, MaxLoggedEmailErrorTypeLength)]);
             }
 
             throw new EmailException(toEmail);
@@ -270,7 +271,13 @@ public class EmailService(
             new($"RefTest_Report_{timestamp}.pdf", pdfReport)
         };
 
-        await SendEmailAsync(recipientEmail, subject, emailBody, attachments, cancellationToken: cancellationToken);
+        await SendEmailAsync(
+            recipientEmail,
+            subject,
+            emailBody,
+            attachments,
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true);
 
         ServiceLoggerMessages.LogReportEmailSent(logger, LogRedaction.MaskEmail(recipientEmail));
     }
@@ -296,7 +303,12 @@ public class EmailService(
         var emailBody = await templateService.BuildCompleteApprovalNotificationEmailAsync(
             enabledLanguages, creatorName, titleValue, refTestItems, baseUrl);
 
-        await SendEmailAsync(approverEmail, subject, emailBody, cancellationToken: cancellationToken);
+        await SendEmailAsync(
+            approverEmail,
+            subject,
+            emailBody,
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true);
 
         ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(approverEmail));
     }
@@ -323,15 +335,21 @@ public class EmailService(
         var emailBody = await templateService.BuildCompleteApprovalDecisionEmailAsync(
             enabledLanguages, approverName, isApproved, rejectionReason, titleValue, refTestItems);
 
-        await SendEmailAsync(creatorEmail, subject, emailBody, cancellationToken: cancellationToken);
+        await SendEmailAsync(
+            creatorEmail,
+            subject,
+            emailBody,
+            cancellationToken: cancellationToken,
+            requireSuccessfulProviderResponse: true);
 
         ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(creatorEmail));
     }
 
-    public async Task SendPersonalDataExportVerificationAsync(
+    public async Task<bool> SendPersonalDataExportVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(configuration.BaseUrl, UriKind.Absolute, out var baseUri)
@@ -357,19 +375,21 @@ public class EmailService(
         var emailBody = await templateService.BuildCompletePersonalDataExportVerificationEmailAsync(
             enabledLanguages);
 
-        await SendEmailAsync(
+        return await SendEmailAsync(
             recipientEmail,
             translationService.GetEmailPersonalDataExportVerificationTranslations("en")["subject"],
             emailBody,
             cancellationToken: cancellationToken,
             requireSuccessfulProviderResponse: true,
-            suppressFailureDetails: true);
+            suppressFailureDetails: true,
+            finalDeliverabilityCheck: finalDeliverabilityCheck);
     }
 
-    public async Task SendPrivacyWithdrawalVerificationAsync(
+    public async Task<bool> SendPrivacyWithdrawalVerificationAsync(
         string recipientEmail,
         string challengeKey,
         DateTime expiresAt,
+        Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
         CancellationToken cancellationToken)
     {
         if (!Uri.TryCreate(configuration.BaseUrl, UriKind.Absolute, out var baseUri)
@@ -395,14 +415,15 @@ public class EmailService(
         var emailBody = await templateService.BuildCompletePrivacyWithdrawalVerificationEmailAsync(
             enabledLanguages);
 
-        await SendEmailAsync(
+        return await SendEmailAsync(
             recipientEmail,
             translationService.GetEmailPrivacyWithdrawalVerificationTranslations("en")["subject"],
             emailBody,
             cancellationToken: cancellationToken,
             requireSuccessfulProviderResponse: true,
             suppressFailureDetails: true,
-            suppressedFailureLabel: "Privacy withdrawal");
+            suppressedFailureLabel: "Privacy withdrawal",
+            finalDeliverabilityCheck: finalDeliverabilityCheck);
     }
 
     public async Task<bool> SendPersonalDataExportAsync(

@@ -8,7 +8,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { TranslatePipe } from '@ngx-translate/core';
-import { catchError, debounceTime, distinctUntilChanged, map, of, Subject, switchMap } from 'rxjs';
+import { catchError, debounceTime, map, of, Subject, switchMap } from 'rxjs';
 import { SearchQuestionsByNumberGQL } from '../../../../../../graphql/generated';
 import { TranslationPipe } from '../../../../pipes/translation-pipe';
 
@@ -18,8 +18,10 @@ interface IQuestion {
 }
 
 interface ISearchResult {
+  searchTerm: string;
   questions: Array<IQuestion & { id: string }>;
   isSearching: boolean;
+  error: boolean;
 }
 
 @Component({
@@ -43,6 +45,8 @@ export class QuestionSearchAutocomplete {
   protected readonly searchTerm = signal('');
   protected readonly suggestions = signal<Array<IQuestion & { id: string }>>([]);
   protected readonly searching = signal(false);
+  protected readonly searchError = signal(false);
+  protected readonly searchSucceeded = signal(false);
   protected readonly showDropdown = signal(false);
   protected readonly highlightedIndex = signal(-1);
 
@@ -51,18 +55,27 @@ export class QuestionSearchAutocomplete {
   private readonly _searchResult = toSignal(
     this._searchSubject.pipe(
       debounceTime(300),
-      distinctUntilChanged(),
       switchMap((searchTerm) => {
-        if (!searchTerm || searchTerm.trim().length === 0) {
-          return of({ questions: [], isSearching: false } as ISearchResult);
+        const trimmedTerm = searchTerm.trim();
+        if (!trimmedTerm) {
+          return of({
+            searchTerm: trimmedTerm,
+            questions: [],
+            isSearching: false,
+            error: false,
+          } as ISearchResult);
         }
 
+        this.searching.set(true);
+        this.searchError.set(false);
+        this.searchSucceeded.set(false);
         return this._searchQuestionsByNumberGQL
-          .watch({ variables: { number: searchTerm }, fetchPolicy: 'cache-and-network' })
+          .watch({ variables: { number: trimmedTerm }, fetchPolicy: 'cache-and-network' })
           .valueChanges.pipe(
             map((result) => {
               const questions = result.data?.searchQuestionsByNumber ?? [];
               return {
+                searchTerm: trimmedTerm,
                 questions: questions
                   .filter((q) => !!q)
                   .map((q) => ({
@@ -71,21 +84,45 @@ export class QuestionSearchAutocomplete {
                     phrase: q!.phrase as Record<string, string>,
                   })),
                 isSearching: result.loading,
+                error:
+                  !!result.error ||
+                  (!result.loading && !result.data?.searchQuestionsByNumber),
               } as ISearchResult;
             }),
-            catchError(() => of({ questions: [], isSearching: false } as ISearchResult)),
+            catchError(() =>
+              of({
+                searchTerm: trimmedTerm,
+                questions: [],
+                isSearching: false,
+                error: true,
+              } as ISearchResult),
+            ),
           );
       }),
     ),
-    { initialValue: { questions: [], isSearching: false } },
+    { initialValue: { searchTerm: '', questions: [], isSearching: false, error: false } },
   );
 
   constructor() {
     effect(() => {
       const result = this._searchResult();
+      const currentTerm = this.searchTerm().trim();
+      if (result.searchTerm !== currentTerm) return;
+
+      if (result.error) {
+        this.suggestions.set([]);
+        this.searching.set(false);
+        this.searchError.set(true);
+        this.searchSucceeded.set(false);
+        this.showDropdown.set(currentTerm.length > 0);
+        return;
+      }
+
       this.suggestions.set(result.questions);
       this.searching.set(result.isSearching);
-      this.showDropdown.set(result.questions.length > 0 || this.searchTerm().trim().length > 0);
+      this.searchError.set(false);
+      this.searchSucceeded.set(!result.isSearching);
+      this.showDropdown.set(currentTerm.length > 0);
 
       // Auto-select first suggestion when results arrive
       if (result.questions.length > 0) {
@@ -99,10 +136,22 @@ export class QuestionSearchAutocomplete {
     this.searchTerm.set(value);
     this._searchSubject.next(value);
     this.highlightedIndex.set(-1);
+    this.suggestions.set([]);
+    this.searching.set(value.trim().length > 0);
+    this.searchError.set(false);
+    this.searchSucceeded.set(false);
+    this.showDropdown.set(value.trim().length > 0);
   }
 
   protected onKeyDown(event: KeyboardEvent): void {
     switch (event.key) {
+      case 'Tab':
+        if (this.showDropdown() && this.suggestions().length > 0) {
+          const index = this.highlightedIndex();
+          const question = this.suggestions()[index >= 0 ? index : 0];
+          if (question) this.onSelectQuestion(question);
+        }
+        break;
       case 'ArrowDown':
         if (this.showDropdown() && this.suggestions().length > 0) {
           event.preventDefault();
@@ -130,7 +179,8 @@ export class QuestionSearchAutocomplete {
         break;
       case 'Escape':
         event.preventDefault();
-        this.closeDropdown();
+        this.showDropdown.set(false);
+        this.highlightedIndex.set(-1);
         break;
     }
   }
@@ -144,6 +194,14 @@ export class QuestionSearchAutocomplete {
 
   protected onRemoveQuestion(questionNumber: string): void {
     this.removeQuestion.emit(questionNumber);
+  }
+
+  protected onRetrySearch(): void {
+    this.searching.set(true);
+    this.searchError.set(false);
+    this.searchSucceeded.set(false);
+    this.showDropdown.set(true);
+    this._searchSubject.next(this.searchTerm());
   }
 
   protected closeDropdown(): void {

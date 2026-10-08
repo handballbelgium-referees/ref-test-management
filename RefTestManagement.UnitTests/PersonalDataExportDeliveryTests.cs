@@ -2009,7 +2009,7 @@ public sealed class PersonalDataExportDeliveryTests
             return true;
         }
 
-        public Task SendRefTestInvitationAsync(
+        public Task<bool> SendRefTestInvitationAsync(
             Guid refTestId,
             string name,
             string email,
@@ -2018,7 +2018,7 @@ public sealed class PersonalDataExportDeliveryTests
             int maxTimeInMinutes,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendRefTestResultsAsync(
+        public Task<bool> SendRefTestResultsAsync(
             Guid refTestId,
             string name,
             string email,
@@ -2061,16 +2061,18 @@ public sealed class PersonalDataExportDeliveryTests
             List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendPersonalDataExportVerificationAsync(
+        public Task<bool> SendPersonalDataExportVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendPrivacyWithdrawalVerificationAsync(
+        public Task<bool> SendPrivacyWithdrawalVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken) => throw new NotSupportedException();
     }
 }

@@ -20,6 +20,8 @@ import { TimePicker } from './components/time-picker/time-picker';
 export class DatetimePicker {
   /** Current "YYYY-MM-DDTHH:mm" string, or empty. */
   readonly value = input<string>('');
+  readonly dateLabel = input<string>('');
+  readonly timeLabel = input<string>('');
 
   readonly valueChange = output<string>();
 

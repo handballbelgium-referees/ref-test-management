@@ -20,7 +20,19 @@
     "save": "Opslaan",
     "saving": "Opslaan...",
     "processing": "Bezig...",
+    "retry": "Opnieuw proberen",
     "close": "Sluiten",
+    "change_calendar_view": "Kalenderweergave wijzigen",
+    "time_picker": {
+      "label": "Tijdkiezer",
+      "back_to_hours": "Terug naar uren",
+      "close": "Tijdkiezer sluiten",
+      "hour": "{{hour}} uur",
+      "minute": "{{minute}} minuten",
+      "subtract_minute": "1 minuut aftrekken",
+      "add_minute": "1 minuut toevoegen",
+      "one_minute_short": "1 min"
+    },
     "deleting": "Verwijderen...",
     "sending": "Verzenden...",
     "copy": "Kopiëren",
@@ -28,6 +40,7 @@
   },
   "nav": {
     "language": "Taal",
+    "select_language": "Overschakelen naar {{language}}",
     "logout": "Uitloggen"
   },
   "home": {
@@ -35,6 +48,10 @@
       "title": "Handbal RefTest Beheersysteem",
       "subtitle": "Creëer en beheer RefTests voor scheidsrechters en waarnemers van de Belgische Handbalbond",
       "login": "Inloggen op Dashboard"
+    },
+    "authenticationCheckFailed": {
+      "title": "Aanmeldstatus niet beschikbaar",
+      "description": "We konden uw aanmeldstatus niet controleren. Probeer de controle opnieuw."
     },
     "actions": {
       "title": "Snelle Acties",
@@ -71,6 +88,8 @@
       "create_new": "Nieuwe RefTests Aanmaken",
       "search_placeholder": "Zoeken op naam of e-mail...",
       "loading": "RefTests laden...",
+      "query_error": "RefTests konden niet worden geladen. Probeer het opnieuw.",
+      "load_more_error": "Meer RefTests konden niet worden geladen. Probeer het opnieuw.",
       "load_more": "Meer RefTests laden",
       "loading_more": "Laden...",
       "performance_warning_title": "Prestatiebericht",
@@ -190,7 +209,10 @@
       "empty": {
         "title": "Geen RefTests gevonden",
         "subtitle": "Begin met het aanmaken van uw eerste RefTests",
-        "action": "RefTests Aanmaken"
+        "action": "RefTests Aanmaken",
+        "filtered_title": "Geen RefTests voldoen aan deze filters",
+        "filtered_subtitle": "Pas de filters aan of wis ze om RefTests te zien.",
+        "clear_filters": "Filters wissen"
       },
       "actions": {
         "reftest_selected": "Geselecteerd",
@@ -480,6 +502,7 @@
           "tooltip": "Voorbeeld: Bijscholing {{date}}",
           "no_results": "Geen bestaande titels gevonden",
           "create_new": "Druk op Enter om een nieuwe titel aan te maken met deze naam",
+          "search_error": "Titels zoeken is mislukt. Probeer het opnieuw.",
           "existing_title": "Gebruik bestaande titel",
           "new_title": "Zal nieuwe titel aanmaken",
           "clear": "Wis titel"
@@ -540,6 +563,7 @@
           "import_button": "Importeren",
           "importing": "Importeren...",
           "no_results": "Geen vragen gevonden",
+          "search_error": "Vragen zoeken is mislukt. Probeer het opnieuw.",
           "table_number": "Nummer",
           "table_question": "Vraag",
           "remove_question": "Vraag verwijderen"
@@ -555,7 +579,9 @@
         "scheduled_at": {
           "label": "Inplannen voor",
           "optional": "(optioneel)",
-          "description": "Leeg laten om de uitnodiging onmiddellijk te versturen. Stel een datum/tijd in om te wachten tot dat moment."
+          "description": "Leeg laten om de uitnodiging onmiddellijk te versturen. Stel een datum/tijd in om te wachten tot dat moment.",
+          "date_label": "Geplande datum",
+          "time_label": "Geplande tijd"
         },
         "send_results": {
           "label": "Resultatenmails versturen",
@@ -567,6 +593,7 @@
         "cancel": "Annuleren",
         "validation_error": "Corrigeer de validatiefouten voordat u verzendt",
         "no_participants": "Voeg minimaal één deelnemer toe",
+        "question_import_error": "De geselecteerde vragen konden niet worden geladen. Probeer het opnieuw.",
         "submit_error": "Er is een fout opgetreden bij het aanmaken van RefTests"
       },
       "success": {
@@ -585,11 +612,14 @@
   "ref_test": {
     "page_title": "Handbal RefTest",
     "loading": "RefTest laden...",
+    "retry_submission": "Opnieuw indienen",
+    "saving_progress_before_leave": "Uw voortgang wordt opgeslagen voordat u vertrekt...",
     "error": {
       "title": "Kan RefTest niet laden",
       "general": "Er is een onverwachte fout opgetreden bij het laden van de RefTest. Probeer het later opnieuw.",
       "network": "Er is een netwerkfout opgetreden. Controleer uw verbinding en probeer het opnieuw.",
-      "submit_failed": "Het indienen van de RefTest is mislukt. Probeer het later opnieuw.",
+      "submit_failed": "Het indienen van de RefTest is mislukt. Probeer opnieuw in te dienen.",
+      "progress_save_failed": "Uw laatste antwoord kon niet worden opgeslagen. Blijf op deze pagina en probeer opnieuw te vertrekken.",
       "ref_test_not_found_error": "Deze RefTest kon niet worden gevonden. Controleer de link.",
       "ref_test_expired_error": "Deze RefTest is verlopen. Neem contact op met de beheerder.",
       "invalid_ref_test_status_error": "Deze RefTest is niet meer beschikbaar of is al voltooid.",
@@ -617,7 +647,7 @@
     "withdraw_link": "Toestemming intrekken en anonimisatie aanvragen",
     "withdraw_error": "We konden uw intrekking niet verwerken. Probeer het opnieuw of neem contact met ons op.",
     "withdrawal_queued_title": "Aanvraag tot intrekking ontvangen",
-    "withdrawal_queued_message": "Uw aanvraag is in de wachtrij geplaatst. Uw identificerende gegevens worden geanonimiseerd zodra de verwerking is geslaagd. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
+    "withdrawal_queued_message": "Uw aanvraag staat in de wachtrij voor verwerking op de achtergrond. Zodra de verwerking slaagt, worden uw identificerende gegevens in de RefTest en de auditgeschiedenis afgeschermd (geanonimiseerd). Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
     "time_remaining": "Resterende Tijd",
     "progress": "Voortgang",
     "question": "Vraag",
@@ -661,8 +691,8 @@
       },
       "withdraw": {
         "title": "Toestemming intrekken?",
-        "message": "Uw aanvraag om toestemming in te trekken wordt op de achtergrond verwerkt. Uw identificerende gegevens worden geanonimiseerd zodra de verwerking is geslaagd; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
-        "warning": "Anonimisatie gebeurt niet onmiddellijk. Uw aanvraag wordt op de achtergrond verwerkt en het RefTest-record kan in geanonimiseerde vorm voor auditdoeleinden worden bewaard.",
+        "message": "Uw aanvraag om toestemming in te trekken wordt op de achtergrond verwerkt. Zodra de verwerking slaagt, worden uw identificerende gegevens in de RefTest en de auditgeschiedenis afgeschermd (geanonimiseerd). Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
+        "warning": "De verwerking gebeurt op de achtergrond en is niet onmiddellijk. Identificerende gegevens worden afgeschermd en geanonimiseerd; het RefTest-record en de auditgeschiedenis kunnen in deze vorm blijven bestaan. De RefTest-rij blijft staan; een aparte stap kan die definitief uit de administratie halen.",
         "confirm": "Toestemming intrekken en anonimisatie aanvragen",
         "cancel": "Annuleren"
       }
@@ -676,6 +706,9 @@
   "privacy": {
     "eyebrow": "Privacy",
     "title": "Privacyverklaring",
+    "loading": "Privacyverklaring laden...",
+    "empty": "De privacyverklaring is niet beschikbaar.",
+    "error": "De privacyverklaring kon niet worden geladen. Probeer het opnieuw.",
     "updated": "Van kracht vanaf {{effectiveDate}} (versie {{noticeVersion}}).",
     "controller": {
       "title": "Verwerkingsverantwoordelijke en contact",
@@ -699,7 +732,7 @@
     },
     "retention": {
       "title": "Bewaartermijn",
-      "body": "We wissen toets- en uitnodigingsgegevens {{retentionYears}} jaar nadat de toets is voltooid of verlopen. Trekt u uw toestemming in na identiteitscontrole, dan wissen we uw toetsgegevens en geplande communicatie zonder onnodige vertraging. Een al afgeleverde e-mail kan niet uit uw inbox worden teruggehaald."
+      "body": "We anonimiseren de identificerende gegevens in toets- en uitnodigingsrecords {{retentionYears}} jaar na afronding of verstrijken van voltooide of verlopen toetsen, of na aanmaak van dossiers in afwachting van goedkeuring of afgewezen dossiers. Als u uw toestemming intrekt, schermt achtergrondverwerking identificerende gegevens af en annuleert en wist geplande communicatie zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald. Een al afgeleverde e-mail kan niet uit uw inbox worden teruggehaald."
     },
     "rights": {
       "title": "Uw rechten",
@@ -726,21 +759,21 @@
     },
     "consentWithdrawal": {
       "title": "Toestemming intrekken en anonimisatie aanvragen",
-      "description": "Vul het e-mailadres in dat bij uw deelname hoort. Als het overeenkomt met een of meer niet-geanonimiseerde deelnemersrecords, sturen we een eenmalige bevestigingslink naar dat adres. U hebt geen account of uitnodigingstoken nodig.",
+      "description": "Vul het e-mailadres in dat bij uw deelname hoort. Als het overeenkomt met een of meer niet-geanonimiseerde deelnemersrecords, sturen we een eenmalige bevestigingslink naar dat adres. U hebt geen account of uitnodigingstoken nodig. Na bevestiging schermt achtergrondverwerking uw identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "requestLink": "Open het formulier voor intrekking",
       "emailLabel": "E-mailadres",
-      "emailHelp": "Voor elk adres wordt dezelfde bevestiging getoond. Nadat u bevestigt, worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Dit gebeurt niet onmiddellijk.",
+      "emailHelp": "Voor elk adres wordt dezelfde bevestiging getoond. Na uw bevestiging schermt achtergrondverwerking identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "emailRequired": "Vul uw e-mailadres in.",
       "emailInvalid": "Vul een geldig e-mailadres in.",
       "requestButton": "Aanvraag tot intrekking verzenden",
       "requesting": "Uw aanvraag wordt verzonden...",
-      "requestAcknowledged": "Als het adres bij een deelnemersrecord hoort, sturen we een bevestigingsmail. Deze pagina toont dezelfde melding, ongeacht of er een record overeenkomt. Na bevestiging van uw intrekking van toestemming worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard.",
+      "requestAcknowledged": "Als het adres bij een deelnemersrecord hoort, sturen we een bevestigingsmail. Deze pagina toont dezelfde melding, ongeacht of er een record overeenkomt. Na bevestiging van uw intrekking van toestemming schermt achtergrondverwerking identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "requestError": "We konden uw verzoek niet verwerken. Probeer het opnieuw.",
       "confirmationTitle": "Intrekking van toestemming bevestigen",
-      "confirmationDescription": "Het openen van deze pagina bevestigt uw aanvraag niet. Selecteer de knop hieronder alleen als u uw toestemming wilt intrekken. Na bevestiging worden identificerende gegevens geanonimiseerd zodra de verwerking slaagt; een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Anonimisatie gebeurt niet onmiddellijk.",
+      "confirmationDescription": "Het openen van deze pagina bevestigt uw aanvraag niet. Selecteer de knop hieronder alleen als u uw toestemming wilt intrekken. Na bevestiging schermt achtergrondverwerking identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "confirmButton": "Intrekking bevestigen",
       "confirming": "Uw aanvraag tot intrekking wordt bevestigd...",
-      "confirmed": "Uw intrekking van toestemming is bevestigd. Identificerende gegevens worden geanonimiseerd zodra de verwerking slaagt. Een geanonimiseerd RefTest-record kan voor auditdoeleinden worden bewaard. Anonimisatie gebeurt niet onmiddellijk.",
+      "confirmed": "Uw intrekking van toestemming is bevestigd. Achtergrondverwerking schermt identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "confirmationError": "We konden deze aanvraag niet bevestigen. De link is mogelijk ongeldig, verlopen of al gebruikt. Vraag zo nodig een nieuwe link aan; deze pagina toont geen informatie over deelnemers.",
       "confirmationKeyMissing": "Deze link bevat geen bevestigingsgegevens. Vraag via de privacyverklaring een nieuwe link aan."
     }
@@ -749,7 +782,11 @@
     "title": "Auditlogboek",
     "subtitle": "Volledige geschiedenis van alle systeemwijzigingen",
     "loading": "Auditlogboek laden...",
+    "query_error": "Het auditlogboek kon niet worden geladen. Probeer het opnieuw.",
+    "load_more_error": "Meer auditlogboekgebeurtenissen konden niet worden geladen. Probeer het opnieuw.",
     "empty": "Geen auditlogboek-gebeurtenissen gevonden",
+    "filtered_empty": "Geen auditlogboekgebeurtenissen voldoen aan deze filters.",
+    "clear_filters": "Filters wissen",
     "loadMore": "Meer laden",
     "showing": "{{displayed}} van {{total}} gebeurtenis weergegeven",
     "showing_plural": "{{displayed}} van {{total}} gebeurtenissen weergegeven",

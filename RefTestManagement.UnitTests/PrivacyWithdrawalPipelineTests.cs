@@ -11,6 +11,7 @@ using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
@@ -50,6 +51,22 @@ public sealed class PrivacyWithdrawalPipelineTests
             privacyWithdrawalBatchId: batch.Id);
         batch.MarkJobEnqueued(job.Id);
         return job;
+    }
+
+    private static PrivacyWithdrawalBatchTarget ExhaustedTarget(Guid batchId)
+    {
+        var target = PrivacyWithdrawalBatchTarget.Create(batchId, Guid.NewGuid());
+        var attemptAt = Now;
+        for (var attempt = 1; attempt <= PrivacyWithdrawalBatchTarget.MaximumAttempts; attempt++)
+        {
+            target.TryStartAttempt(attemptAt);
+            var failedAt = attemptAt.AddSeconds(1);
+            target.RecordProcessingFailure(failedAt);
+            if (attempt < PrivacyWithdrawalBatchTarget.MaximumAttempts)
+                attemptAt = target.NextAttemptAt!.Value;
+        }
+
+        return target;
     }
 
     private static IRefTestSessionTokenService NewSessionTokenService() =>
@@ -208,12 +225,29 @@ public sealed class PrivacyWithdrawalPipelineTests
     }
 
     [Fact]
+    public void BatchCompletionAuditSeparatesCompletedAndExhaustedTargets()
+    {
+        var batch = PrivacyWithdrawalBatch.Create(Now, targetCount: 3);
+
+        Assert.True(batch.MarkCompleted(Now.AddMinutes(1), exhaustedTargetCount: 1));
+
+        var completionEvent = batch.DomainEvents.Single(
+            domainEvent => domainEvent.ActionName == "PrivacyWithdrawalBatchCompleted");
+        var changes = JsonSerializer.Serialize(completionEvent.GetChanges());
+        Assert.Contains("\"completedTargetCount\":2", changes, StringComparison.Ordinal);
+        Assert.Contains("\"exhaustedTargetCount\":1", changes, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task RequestDoesNotQueueUnknownAddressesAndSuppressesRepeatedNormalizedRequests()
     {
         using var database = SqliteTestDatabase.Create();
         var titleId = await SeedTitleAsync(database);
         await using var context = database.CreateContext();
-        context.RefTests.Add(NewRefTest(titleId, ParticipantEmail));
+        var legacyRefTest = NewRefTest(titleId, ParticipantEmail);
+        context.RefTests.Add(legacyRefTest);
+        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+        context.Entry(legacyRefTest).Property(refTest => refTest.EmailLookupKey).CurrentValue = null;
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
 
         var keyProtection = new CapturingKeyProtection();
@@ -226,6 +260,9 @@ public sealed class PrivacyWithdrawalPipelineTests
             });
         await service.RequestAsync("missing@example.org", TestContext.Current.CancellationToken);
 
+        Assert.Equal(
+            TokenService.HashBytes(PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            legacyRefTest.EmailLookupKey);
         Assert.Empty(await context.PrivacyWithdrawalChallenges.ToListAsync(TestContext.Current.CancellationToken));
         Assert.Empty(await context.Jobs.ToListAsync(TestContext.Current.CancellationToken));
 
@@ -260,6 +297,26 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Equal(challenge.Id, emailPayload.RootElement.GetProperty("challengeId").GetGuid());
         Assert.DoesNotContain(ParticipantEmail, emailJob.Payload, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(keyProtection.ProtectedKeys[0], emailJob.Payload, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RefTestEmailChangesKeepTheNormalizedLookupKeyInSyncAndErasureClearsIt()
+    {
+        var refTest = NewRefTest(Guid.NewGuid(), "before@example.org");
+
+        refTest.UpdateBasicDetails("Ada", "Lovelace", " New@Example.org ");
+
+        Assert.Equal(
+            TokenService.HashBytes(
+                PrivacyWithdrawalChallenge.NormalizeEmail(" New@Example.org ")),
+            refTest.EmailLookupKey);
+
+        refTest.Anonymize();
+        Assert.Null(refTest.EmailLookupKey);
+
+        // Repeated erasure also clears any stale derived key without restoring a match.
+        refTest.Anonymize();
+        Assert.Null(refTest.EmailLookupKey);
     }
 
     [Fact]
@@ -942,6 +999,75 @@ public sealed class PrivacyWithdrawalPipelineTests
     }
 
     [Fact]
+    public async Task ErasureDuringWithdrawalEmailPreparationPreventsProviderHandoff()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var titleId = await SeedTitleAsync(database);
+        var refTest = NewRefTest(titleId, ParticipantEmail);
+        var now = DateTime.UtcNow;
+        var protectedKey = $"protected:{ChallengeKey}";
+        var challenge = PrivacyWithdrawalChallenge.Create(
+            ParticipantEmail,
+            PrivacyWithdrawalChallenge.HashNormalizedEmail(
+                PrivacyWithdrawalChallenge.NormalizeEmail(ParticipantEmail)),
+            ChallengeKey,
+            protectedKey,
+            now,
+            now.AddHours(2),
+            matchingRefTestCount: 1);
+        var payload = JsonSerializer.Serialize(
+            new PrivacyWithdrawalChallengeEmailPayload(challenge.Id),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var job = Job.Create(JobType.PrivacyWithdrawalChallengeEmail, payload);
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(refTest);
+            seed.PrivacyWithdrawalChallenges.Add(challenge);
+            seed.Jobs.Add(job);
+            await seed.SaveChangesAsync(cancellationToken);
+        }
+
+        var emailService = DispatchProxy.Create<IEmailService, RecordingPrivacyWithdrawalEmailProxy>();
+        var emailProxy = (RecordingPrivacyWithdrawalEmailProxy)(object)emailService;
+        emailProxy.BeforeFinalCheck = async () =>
+        {
+            await using var erasureContext = database.CreateContext();
+            var current = await erasureContext.RefTests
+                .SingleAsync(candidate => candidate.Id == refTest.Id, cancellationToken);
+            await new RefTestPrivacyErasureService(erasureContext)
+                .EraseAsync(current, ErasureInitiator.Operator, cancellationToken);
+        };
+
+        await using (var handlingContext = database.CreateContext())
+        {
+            var handler = new PrivacyWithdrawalChallengeEmailJobHandler(
+                handlingContext,
+                emailService,
+                new CapturingKeyProtection(),
+                new BackgroundJobConfiguration(),
+                NullLogger<PrivacyWithdrawalChallengeEmailJobHandler>.Instance);
+            await handler.HandleAsync(job, cancellationToken);
+        }
+
+        Assert.Equal(1, emailProxy.InvocationCount);
+        Assert.Equal(0, emailProxy.ProviderSubmissionCount);
+        await using var verification = database.CreateContext();
+        var erasedRefTest = await verification.RefTests
+            .SingleAsync(candidate => candidate.Id == refTest.Id, cancellationToken);
+        var erasedChallenge = await verification.PrivacyWithdrawalChallenges
+            .SingleAsync(candidate => candidate.Id == challenge.Id, cancellationToken);
+        var cancelledJob = await verification.Jobs.SingleAsync(candidate => candidate.Id == job.Id, cancellationToken);
+        Assert.True(erasedRefTest.IsAnonymized);
+        Assert.Null(erasedRefTest.EmailLookupKey);
+        Assert.Equal(string.Empty, erasedChallenge.Email);
+        Assert.Null(erasedChallenge.ProtectedDeliveryKey);
+        Assert.Equal(JobStatus.Cancelled, cancelledJob.Status);
+        Assert.Empty(cancelledJob.Payload);
+    }
+
+    [Fact]
     public async Task FinalChallengeEmailFailureExpiresChallengeAndRepeatRequestQueuesFreshDelivery()
     {
         using var database = SqliteTestDatabase.Create();
@@ -1193,15 +1319,40 @@ public sealed class PrivacyWithdrawalPipelineTests
         var pendingTargetForActiveBatch = PrivacyWithdrawalBatchTarget.Create(
             incompleteBatch.Id,
             Guid.NewGuid());
+        var exhaustedBatchWithPendingJob = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        exhaustedBatchWithPendingJob.MarkCompleted(Now.AddMinutes(1));
+        var exhaustedBatchWithFailedJob = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        exhaustedBatchWithFailedJob.MarkCompleted(Now.AddMinutes(1));
+        var exhaustedBatchWithActiveReplacement = PrivacyWithdrawalBatch.Create(Now, targetCount: 1);
+        exhaustedBatchWithActiveReplacement.MarkCompleted(Now.AddMinutes(1));
+        var exhaustedTargetWithPendingJob = ExhaustedTarget(exhaustedBatchWithPendingJob.Id);
+        var exhaustedTargetWithFailedJob = ExhaustedTarget(exhaustedBatchWithFailedJob.Id);
+        var exhaustedTargetWithActiveReplacement = ExhaustedTarget(exhaustedBatchWithActiveReplacement.Id);
+        var pendingBatchJob = NewBatchJob(exhaustedBatchWithPendingJob);
+        var failedBatchJob = NewBatchJob(exhaustedBatchWithFailedJob);
+        failedBatchJob.MarkAsPermanentlyFailed("One or more privacy-withdrawal targets exhausted their retries.");
+        var historicalFailedJob = NewBatchJob(exhaustedBatchWithActiveReplacement);
+        historicalFailedJob.MarkAsPermanentlyFailed("Earlier replacement failed.");
+        var activeReplacementJob = NewBatchJob(exhaustedBatchWithActiveReplacement);
+        activeReplacementJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
 
         await using (var seed = database.CreateContext())
         {
             seed.PrivacyWithdrawalChallenges.AddRange(expired, active);
-            seed.PrivacyWithdrawalBatches.AddRange(completedBatch, incompleteBatch);
+            seed.PrivacyWithdrawalBatches.AddRange(
+                completedBatch,
+                incompleteBatch,
+                exhaustedBatchWithPendingJob,
+                exhaustedBatchWithFailedJob,
+                exhaustedBatchWithActiveReplacement);
             seed.PrivacyWithdrawalBatchTargets.AddRange(
                 completedTargetForCompletedBatch,
                 completedTargetForActiveBatch,
-                pendingTargetForActiveBatch);
+                pendingTargetForActiveBatch,
+                exhaustedTargetWithPendingJob,
+                exhaustedTargetWithFailedJob,
+                exhaustedTargetWithActiveReplacement);
+            seed.Jobs.AddRange(pendingBatchJob, failedBatchJob, historicalFailedJob, activeReplacementJob);
             await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
@@ -1214,7 +1365,7 @@ public sealed class PrivacyWithdrawalPipelineTests
                     Now,
                     TestContext.Current.CancellationToken));
             Assert.Equal(
-                1,
+                2,
                 await PrivacyWithdrawalCleanupService.ClearCompletedBatchTargetsAsync(
                     cleanup,
                     TestContext.Current.CancellationToken));
@@ -1235,6 +1386,9 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.DoesNotContain(completedTargetForCompletedBatch.Id, remainingTargets);
         Assert.Contains(completedTargetForActiveBatch.Id, remainingTargets);
         Assert.Contains(pendingTargetForActiveBatch.Id, remainingTargets);
+        Assert.Contains(exhaustedTargetWithPendingJob.Id, remainingTargets);
+        Assert.Contains(exhaustedTargetWithActiveReplacement.Id, remainingTargets);
+        Assert.DoesNotContain(exhaustedTargetWithFailedJob.Id, remainingTargets);
     }
 
     [Fact]
@@ -1546,6 +1700,79 @@ public sealed class PrivacyWithdrawalPipelineTests
     }
 
     [Fact]
+    public async Task ScheduledReconciliationCompletesBatchWithExhaustedTargetsAndPreservesEscalation()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var batch = PrivacyWithdrawalBatch.Create(Now, targetCount: 2);
+        var completedTarget = PrivacyWithdrawalBatchTarget.Create(batch.Id, Guid.NewGuid());
+        Assert.True(completedTarget.MarkCompleted(Now.AddMinutes(1)));
+        var exhaustedTarget = ExhaustedTarget(batch.Id);
+        var interruptedJob = NewBatchJob(batch);
+        interruptedJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
+        const string escalationMessage = "One or more privacy-withdrawal targets exhausted their retries.";
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PrivacyWithdrawalBatches.Add(batch);
+            seed.PrivacyWithdrawalBatchTargets.AddRange(completedTarget, exhaustedTarget);
+            seed.Jobs.Add(interruptedJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var auditInterceptor = new AuditSaveChangesInterceptor(
+            new HttpContextAccessor { HttpContext = new DefaultHttpContext() },
+            new AuditLogOptions());
+        await using (var context = database.CreateContext(auditInterceptor))
+        {
+            var service = NewRequestService(context, new CapturingKeyProtection());
+
+            Assert.Equal(
+                0,
+                await service.ReconcileIncompleteBatchesAsync(TestContext.Current.CancellationToken));
+
+            var completionAudit = await context.AuditEvents
+                .AsNoTracking()
+                .SingleAsync(
+                    auditEvent => auditEvent.Type == "PrivacyWithdrawalBatchCompleted",
+                    TestContext.Current.CancellationToken);
+            using var completionData = JsonDocument.Parse(completionAudit.Data!);
+            Assert.Equal(
+                ["completedTargetCount", "exhaustedTargetCount"],
+                completionData.RootElement.EnumerateObject().Select(property => property.Name).ToArray());
+            Assert.Equal(1, completionData.RootElement.GetProperty("completedTargetCount").GetInt32());
+            Assert.Equal(1, completionData.RootElement.GetProperty("exhaustedTargetCount").GetInt32());
+        }
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddScoped<RefTestManagementContext>(_ => database.CreateContext());
+        services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalBatchJobHandler>(
+            JobType.PrivacyWithdrawalBatch);
+        using var serviceProvider = services.BuildServiceProvider();
+        using var processingScope = serviceProvider.CreateScope();
+        var processingContext = processingScope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
+        var recoveredJob = await processingContext.Jobs.SingleAsync(
+            candidate => candidate.Id == interruptedJob.Id,
+            TestContext.Current.CancellationToken);
+        await BackgroundJobService.ProcessJobAsync(
+            recoveredJob,
+            processingScope.ServiceProvider,
+            processingContext,
+            NullLogger.Instance,
+            maxAttempts: 3,
+            TestContext.Current.CancellationToken);
+
+        await using var verification = database.CreateContext();
+        var recoveredBatch = await verification.PrivacyWithdrawalBatches.SingleAsync(
+            candidate => candidate.Id == batch.Id,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(recoveredBatch.CompletedAt);
+        var retainedJob = await verification.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(JobStatus.Failed, retainedJob.Status);
+        Assert.Equal(escalationMessage, retainedJob.ErrorMessage);
+    }
+
+    [Fact]
     public async Task ScheduledRecoveryRacesParticipantRequestWithoutDuplicateJobs()
     {
         using var database = new ConcurrentSqliteTestDatabase();
@@ -1765,6 +1992,70 @@ public sealed class PrivacyWithdrawalPipelineTests
     }
 
     [Fact]
+    public async Task ExhaustedWithdrawalTargetCompletesBatchAndEscalatesThroughTheFailedJob()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        var refTest = NewRefTest(titleId, ParticipantEmail);
+        var batch = PrivacyWithdrawalBatch.Create(DateTime.UtcNow, targetCount: 1);
+        var target = PrivacyWithdrawalBatchTarget.Create(batch.Id, refTest.Id);
+        var attemptAt = DateTime.UtcNow;
+        for (var attempt = 1; attempt <= PrivacyWithdrawalBatchTarget.MaximumAttempts; attempt++)
+        {
+            Assert.True(target.TryStartAttempt(attemptAt));
+            var failedAt = attemptAt.AddSeconds(1);
+            Assert.True(target.RecordProcessingFailure(failedAt));
+            if (attempt < PrivacyWithdrawalBatchTarget.MaximumAttempts)
+                attemptAt = target.NextAttemptAt!.Value;
+        }
+
+        var job = NewBatchJob(batch);
+        job.MarkAsProcessing(TimeSpan.FromMinutes(5));
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(refTest);
+            seed.PrivacyWithdrawalBatches.Add(batch);
+            seed.PrivacyWithdrawalBatchTargets.Add(target);
+            seed.Jobs.Add(job);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddScoped<RefTestManagementContext>(_ => database.CreateContext());
+        services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalBatchJobHandler>(
+            JobType.PrivacyWithdrawalBatch);
+        using var serviceProvider = services.BuildServiceProvider();
+        using var processingScope = serviceProvider.CreateScope();
+        var context = processingScope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
+        var trackedJob = await context.Jobs.SingleAsync(
+            candidate => candidate.Id == job.Id,
+            TestContext.Current.CancellationToken);
+
+        await BackgroundJobService.ProcessJobAsync(
+            trackedJob,
+            processingScope.ServiceProvider,
+            context,
+            NullLogger.Instance,
+            maxAttempts: 3,
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal(JobStatus.Failed, trackedJob.Status);
+        Assert.Equal("One or more privacy-withdrawal targets exhausted their retries.", trackedJob.ErrorMessage);
+
+        await using var verification = database.CreateContext();
+        var completedBatch = await verification.PrivacyWithdrawalBatches.SingleAsync(
+            candidate => candidate.Id == batch.Id,
+            TestContext.Current.CancellationToken);
+        var exhaustedTarget = await verification.PrivacyWithdrawalBatchTargets.SingleAsync(
+            candidate => candidate.Id == target.Id,
+            TestContext.Current.CancellationToken);
+        Assert.NotNull(completedBatch.CompletedAt);
+        Assert.NotNull(exhaustedTarget.RetryExhaustedAt);
+        Assert.Equal(PrivacyWithdrawalTargetFailureCode.ProcessingFailed, exhaustedTarget.FailureCode);
+    }
+
+    [Fact]
     public async Task BatchWorkerReloadsARefTestEditedAfterTargetLoadBeforeErasure()
     {
         using var database = SqliteTestDatabase.Create();
@@ -1978,8 +2269,28 @@ public sealed class PrivacyWithdrawalPipelineTests
         }
 
         using var context = new RefTestManagementContext(builder.Options);
+        var refTestEntity = context.Model.FindEntityType(typeof(RefTest))!;
+        var emailLookupKeyProperty = refTestEntity.FindProperty(nameof(RefTest.EmailLookupKey))!;
+        Assert.Equal(typeof(byte[]), emailLookupKeyProperty.ClrType);
+        Assert.Equal(32, emailLookupKeyProperty.GetMaxLength());
+        Assert.True(emailLookupKeyProperty.IsNullable);
+        Assert.Contains(
+            refTestEntity.GetIndexes(),
+            index => index.Properties.Contains(emailLookupKeyProperty));
+
+        var lookupKey = TokenService.HashBytes(
+            PrivacyWithdrawalChallenge.NormalizeEmail("participant@example.org"));
         var eligibleSql = PrivacyWithdrawalQueries.EligibleRefTests(context.RefTests)
             .Select(refTest => new { refTest.Id, refTest.Email })
+            .ToQueryString();
+        var matchingSql = PrivacyWithdrawalQueries.MatchingRefTestsByEmailLookupKey(
+                context.RefTests,
+                lookupKey)
+            .Select(refTest => new { refTest.Id, refTest.Email })
+            .ToQueryString();
+        var backfillSql = PrivacyWithdrawalQueries.EligibleRefTestsMissingEmailLookupKey(context.RefTests)
+            .Select(refTest => new { refTest.Id, refTest.Email, refTest.Version })
+            .Take(250)
             .ToQueryString();
         var cleanupSql = context.PrivacyWithdrawalChallenges
             .Where(PrivacyWithdrawalCleanupQueries.IsDueForChallengeCleanup(Now))
@@ -2023,6 +2334,11 @@ public sealed class PrivacyWithdrawalPipelineTests
 
         Assert.Contains("IsAnonymized", eligibleSql, StringComparison.Ordinal);
         Assert.Contains("Email", eligibleSql, StringComparison.Ordinal);
+        Assert.Contains("EmailLookupKey", matchingSql, StringComparison.Ordinal);
+        Assert.Contains("IsAnonymized", matchingSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPPER", matchingSql, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("EmailLookupKey", backfillSql, StringComparison.Ordinal);
+        Assert.Contains("IsAnonymized", backfillSql, StringComparison.Ordinal);
         var pendingTargetSql = context.PrivacyWithdrawalBatchTargets
             .Where(target => target.RefTestId == Guid.Empty && target.CompletedAt == null)
             .Select(target => target.Id)
@@ -2101,7 +2417,9 @@ public sealed class PrivacyWithdrawalPipelineTests
     public class RecordingPrivacyWithdrawalEmailProxy : DispatchProxy
     {
         public Exception? Failure { get; set; }
+        public Func<Task>? BeforeFinalCheck { get; set; }
         public int InvocationCount { get; private set; }
+        public int ProviderSubmissionCount { get; private set; }
         public string? RecipientEmail { get; private set; }
         public string? ChallengeKey { get; private set; }
 
@@ -2115,7 +2433,24 @@ public sealed class PrivacyWithdrawalPipelineTests
             InvocationCount++;
             RecipientEmail = (string)args![0]!;
             ChallengeKey = (string)args[1]!;
-            return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
+            return SubmitAsync(
+                (Func<CancellationToken, Task<bool>>)args[3]!,
+                (CancellationToken)args[4]!);
+        }
+
+        private async Task<bool> SubmitAsync(
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
+            CancellationToken cancellationToken)
+        {
+            if (BeforeFinalCheck is not null)
+                await BeforeFinalCheck();
+            if (!await finalDeliverabilityCheck(cancellationToken))
+                return false;
+
+            ProviderSubmissionCount++;
+            if (Failure is not null)
+                throw Failure;
+            return true;
         }
     }
 
@@ -2170,6 +2505,15 @@ public sealed class PrivacyWithdrawalPipelineTests
             await new RefTestPrivacyErasureService(context).EraseAsync(refTest, initiator, cancellationToken);
         }
 
+        public Task<bool> EraseIfDueForRetentionAsync(
+            Guid refTestId,
+            DateTime cutoff,
+            CancellationToken cancellationToken = default) =>
+            new RefTestPrivacyErasureService(context).EraseIfDueForRetentionAsync(
+                refTestId,
+                cutoff,
+                cancellationToken);
+
         public Task EraseAndDeleteAsync(
             RefTest refTest,
             ErasureInitiator initiator,
@@ -2195,6 +2539,15 @@ public sealed class PrivacyWithdrawalPipelineTests
 
             await new RefTestPrivacyErasureService(context).EraseAsync(refTest, initiator, cancellationToken);
         }
+
+        public Task<bool> EraseIfDueForRetentionAsync(
+            Guid refTestId,
+            DateTime cutoff,
+            CancellationToken cancellationToken = default) =>
+            new RefTestPrivacyErasureService(context).EraseIfDueForRetentionAsync(
+                refTestId,
+                cutoff,
+                cancellationToken);
 
         public Task EraseAndDeleteAsync(
             RefTest refTest,

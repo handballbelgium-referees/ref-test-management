@@ -19,7 +19,7 @@ export class RefTestResults {
   readonly answerScore = input.required<number>();
   readonly answerTotal = input.required<number>();
   readonly percentage = input.required<number>();
-  readonly passingPercentage = input.required<number>();
+  readonly passingPercentage = input.required<number | null>();
   readonly emailDelayMinutes = input.required<number>();
   readonly currentLanguage = input.required<string>();
   readonly selectedAnswerIds = input.required<string[]>();
@@ -27,6 +27,19 @@ export class RefTestResults {
   readonly resultsSent = input.required<boolean>();
 
   protected readonly selectedAnswerIdsSet = computed(() => new Set(this.selectedAnswerIds()));
+  protected readonly passed = computed(() => {
+    const threshold = this.passingPercentage();
+    if (
+      threshold === null ||
+      !Number.isFinite(threshold) ||
+      threshold < 0 ||
+      threshold > 100
+    ) {
+      return null;
+    }
+
+    return this.percentage() >= threshold;
+  });
   protected readonly reviewQuestions = computed(() =>
     this.questions().map((question) => ({
       id: question.id,

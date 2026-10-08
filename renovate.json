@@ -70,6 +70,16 @@
       "matchManagers": ["npm"],
       "matchDepTypes": ["devDependencies"],
       "matchUpdateTypes": ["patch"],
+      "matchPackageNames": [
+        "!/^@semantic-release\\/commit-analyzer$/",
+        "!/^@semantic-release\\/exec$/",
+        "!/^@semantic-release\\/github$/",
+        "!/^@semantic-release\\/npm$/",
+        "!/^@semantic-release\\/release-notes-generator$/",
+        "!/^badge-maker$/",
+        "!/^semantic-release$/",
+        "!/^sharp$/"
+      ],
       "automerge": true,
       "automergeType": "pr",
       "platformAutomerge": true

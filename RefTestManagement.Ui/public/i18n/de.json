@@ -20,6 +20,18 @@
     "save": "Speichern",
     "saving": "Speichern...",
     "processing": "Verarbeitung...",
+    "retry": "Erneut versuchen",
+    "change_calendar_view": "Kalenderansicht \u00e4ndern",
+    "time_picker": {
+      "label": "Zeitauswahl",
+      "back_to_hours": "Zur\u00fcck zu den Stunden",
+      "close": "Zeitauswahl schlie\u00dfen",
+      "hour": "{{hour}} Uhr",
+      "minute": "{{minute}} Minuten",
+      "subtract_minute": "1 Minute abziehen",
+      "add_minute": "1 Minute hinzuf\u00fcgen",
+      "one_minute_short": "1 Min."
+    },
     "close": "Schließen",
     "deleting": "Löschen...",
     "sending": "Senden...",
@@ -28,6 +40,7 @@
   },
   "nav": {
     "language": "Sprache",
+    "select_language": "Zu {{language}} wechseln",
     "logout": "Abmelden"
   },
   "home": {
@@ -35,6 +48,10 @@
       "title": "Handball-RefTest-Verwaltungssystem",
       "subtitle": "Erstellen und verwalten Sie Handball-RefTests für Schiedsrichter und Delegierte des Belgischen Handballverbands",
       "login": "Zum Dashboard"
+    },
+    "authenticationCheckFailed": {
+      "title": "Anmeldestatus nicht verf\u00fcgbar",
+      "description": "Ihr Anmeldestatus konnte nicht \u00fcberpr\u00fcft werden. Bitte versuchen Sie die Pr\u00fcfung erneut."
     },
     "actions": {
       "title": "Schnellaktionen",
@@ -71,6 +88,8 @@
       "create_new": "Neue RefTests Erstellen",
       "search_placeholder": "Nach Name oder E-Mail suchen...",
       "loading": "RefTests werden geladen...",
+      "query_error": "RefTests konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "load_more_error": "Weitere RefTests konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
       "load_more": "Weitere RefTests laden",
       "loading_more": "Lädt...",
       "performance_warning_title": "Leistungshinweis",
@@ -190,7 +209,10 @@
       "empty": {
         "title": "Keine RefTests gefunden",
         "subtitle": "Beginnen Sie mit der Erstellung Ihrer ersten RefTests",
-        "action": "RefTests Erstellen"
+        "action": "RefTests Erstellen",
+        "filtered_title": "Keine RefTests entsprechen diesen Filtern",
+        "filtered_subtitle": "\u00c4ndern oder l\u00f6schen Sie die Filter, um RefTests anzuzeigen.",
+        "clear_filters": "Filter l\u00f6schen"
       },
       "actions": {
         "reftest_selected": "Ausgewählt",
@@ -480,6 +502,7 @@
           "tooltip": "Beispiel: Schulung {{date}}",
           "no_results": "Keine vorhandenen Titel gefunden",
           "create_new": "Drücken Sie Enter, um einen neuen Titel mit diesem Namen zu erstellen",
+          "search_error": "Titel konnten nicht gesucht werden. Bitte versuchen Sie es erneut.",
           "existing_title": "Vorhandenen Titel verwenden",
           "new_title": "Wird neuen Titel erstellen",
           "clear": "Titel löschen"
@@ -540,6 +563,7 @@
           "import_button": "Importieren",
           "importing": "Importiert...",
           "no_results": "Keine Fragen gefunden",
+          "search_error": "Fragen konnten nicht gesucht werden. Bitte versuchen Sie es erneut.",
           "table_number": "Nummer",
           "table_question": "Frage",
           "remove_question": "Frage entfernen"
@@ -555,6 +579,8 @@
         "scheduled_at": {
           "label": "Planen für",
           "optional": "(optional)",
+          "date_label": "Geplantes Datum",
+          "time_label": "Geplante Uhrzeit",
           "description": "Leer lassen, um die Einladung sofort zu senden. Datum/Uhrzeit festlegen, um bis zu diesem Zeitpunkt zu warten."
         },
         "send_results": {
@@ -567,6 +593,7 @@
         "cancel": "Abbrechen",
         "validation_error": "Bitte beheben Sie die Validierungsfehler vor dem Absenden",
         "no_participants": "Bitte fügen Sie mindestens einen Teilnehmer hinzu",
+        "question_import_error": "Die ausgew\u00e4hlten Fragen konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
         "submit_error": "Beim Erstellen der RefTests ist ein Fehler aufgetreten"
       },
       "success": {
@@ -585,11 +612,14 @@
   "ref_test": {
     "page_title": "Handball-RefTest",
     "loading": "RefTest wird geladen...",
+    "retry_submission": "Erneut einreichen",
+    "saving_progress_before_leave": "Ihr Fortschritt wird vor dem Verlassen gespeichert...",
     "error": {
       "title": "RefTest kann nicht geladen werden",
       "general": "Ein unerwarteter Fehler ist beim Laden des RefTests aufgetreten. Bitte versuchen Sie es später erneut.",
       "network": "Ein Netzwerkfehler ist aufgetreten. Überprüfen Sie Ihre Verbindung und versuchen Sie es erneut.",
-      "submit_failed": "Das Absenden des RefTests ist fehlgeschlagen. Bitte versuchen Sie es später erneut.",
+      "submit_failed": "Das Absenden des RefTests ist fehlgeschlagen. Bitte versuchen Sie es erneut.",
+      "progress_save_failed": "Ihre letzte Antwort konnte nicht gespeichert werden. Bitte bleiben Sie auf dieser Seite und versuchen Sie es erneut.",
       "ref_test_not_found_error": "Dieser RefTest wurde nicht gefunden. Bitte überprüfen Sie Ihren Link.",
       "ref_test_expired_error": "Dieser RefTest ist abgelaufen. Bitte kontaktieren Sie den Administrator.",
       "invalid_ref_test_status_error": "Dieser RefTest ist nicht mehr verfügbar oder wurde bereits abgeschlossen.",
@@ -617,7 +647,7 @@
     "withdraw_link": "Einwilligung widerrufen und Anonymisierung beantragen",
     "withdraw_error": "Ihr Widerruf konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut oder kontaktieren Sie uns.",
     "withdrawal_queued_title": "Antrag auf Widerruf eingegangen",
-    "withdrawal_queued_message": "Ihr Antrag wurde zur Verarbeitung vorgemerkt. Ihre identifizierenden Daten werden nach erfolgreicher Verarbeitung anonymisiert. Ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
+    "withdrawal_queued_message": "Ihr Antrag wurde zur Hintergrundverarbeitung vorgemerkt. Nach erfolgreicher Verarbeitung werden Ihre identifizierenden Angaben im RefTest und im Pr\u00fcfprotokoll geschw\u00e4rzt (anonymisiert). Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben; der RefTest-Datensatz bleibt nach diesem Schritt bestehen. Seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
     "time_remaining": "Verbleibende Zeit",
     "progress": "Fortschritt",
     "question": "Frage",
@@ -661,8 +691,8 @@
       },
       "withdraw": {
         "title": "Einwilligung widerrufen?",
-        "message": "Ihr Antrag auf Widerruf wird im Hintergrund verarbeitet. Ihre identifizierenden Daten werden nach erfolgreicher Verarbeitung anonymisiert; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
-        "warning": "Die Anonymisierung erfolgt nicht sofort. Ihr Antrag wird im Hintergrund bearbeitet; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
+        "message": "Ihr Antrag auf Widerruf wird im Hintergrund verarbeitet. Nach erfolgreicher Verarbeitung werden Ihre identifizierenden Angaben im RefTest und im Pr\u00fcfprotokoll geschw\u00e4rzt (anonymisiert). Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben; der RefTest-Datensatz bleibt nach diesem Schritt bestehen. Seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
+        "warning": "Die Hintergrundverarbeitung erfolgt nicht sofort. Sie schw\u00e4rzt und anonymisiert identifizierende Angaben; ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
         "confirm": "Einwilligung widerrufen und Anonymisierung beantragen",
         "cancel": "Abbrechen"
       }
@@ -676,6 +706,9 @@
   "privacy": {
     "eyebrow": "Datenschutz",
     "title": "Datenschutzhinweis",
+    "loading": "Datenschutzhinweis wird geladen...",
+    "empty": "Der Datenschutzhinweis ist nicht verf\u00fcgbar.",
+    "error": "Der Datenschutzhinweis konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
     "updated": "Gültig ab {{effectiveDate}} (Version {{noticeVersion}}).",
     "controller": {
       "title": "Verantwortlicher und Kontakt",
@@ -699,7 +732,7 @@
     },
     "retention": {
       "title": "Speicherdauer",
-      "body": "Wir löschen Test- und Einladungsdaten {{retentionYears}} Jahre nach Abschluss oder Ablauf des Tests. Wenn Sie Ihre Einwilligung nach einer Identitätsprüfung widerrufen, löschen wir Ihre Testdaten und ausstehende Mitteilungen unverzüglich. Eine bereits in Ihr Postfach zugestellte E-Mail kann nicht zurückgerufen werden."
+      "body": "Wir anonymisieren (schw\u00e4rzen) die identifizierenden Angaben in Test- und Einladungseintr\u00e4gen {{retentionYears}} Jahre nach Abschluss oder Ablauf abgeschlossener oder abgelaufener Tests beziehungsweise nach Erstellung von Tests mit ausstehender Genehmigung oder abgelehnten Tests. Wenn Sie Ihre Einwilligung widerrufen, schw\u00e4rzt die Hintergrundverarbeitung identifizierende Angaben und bricht ausstehende Mitteilungen ab und bereinigt deren Daten, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben; der RefTest-Datensatz bleibt nach diesem Schritt bestehen. Seine vollst\u00e4ndige Beseitigung ist ein separater Schritt. Eine bereits in Ihr Postfach zugestellte E-Mail kann nicht zur\u00fcckgerufen werden."
     },
     "rights": {
       "title": "Ihre Rechte",
@@ -726,21 +759,21 @@
     },
     "consentWithdrawal": {
       "title": "Einwilligung widerrufen und Anonymisierung beantragen",
-      "description": "Geben Sie die mit Ihrer Teilnahme verkn\u00fcpfte E-Mail-Adresse ein. Wenn sie einem oder mehreren nicht anonymisierten Teilnehmereintr\u00e4gen entspricht, senden wir einen einmaligen Best\u00e4tigungslink an diese Adresse. Sie ben\u00f6tigen weder ein Konto noch ein Einladungstoken.",
+      "description": "Geben Sie die mit Ihrer Teilnahme verkn\u00fcpfte E-Mail-Adresse ein. Wenn sie einem oder mehreren nicht anonymisierten Teilnehmereintr\u00e4gen entspricht, senden wir einen einmaligen Best\u00e4tigungslink an diese Adresse. Sie ben\u00f6tigen weder ein Konto noch ein Einladungstoken. Nach der Best\u00e4tigung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "requestLink": "Formular zum Widerruf \u00f6ffnen",
       "emailLabel": "E-Mail-Adresse",
-      "emailHelp": "F\u00fcr jede Adresse wird dieselbe Best\u00e4tigung angezeigt. Nach Ihrer Best\u00e4tigung werden identifizierende Daten anonymisiert, sobald die Verarbeitung erfolgreich abgeschlossen ist; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden. Die Anonymisierung erfolgt nicht sofort.",
+      "emailHelp": "F\u00fcr jede Adresse wird dieselbe Best\u00e4tigung angezeigt. Nach Ihrer Best\u00e4tigung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "emailRequired": "Geben Sie Ihre E-Mail-Adresse ein.",
       "emailInvalid": "Geben Sie eine g\u00fcltige E-Mail-Adresse ein.",
       "requestButton": "Widerrufsantrag senden",
       "requesting": "Ihr Antrag wird gesendet...",
-      "requestAcknowledged": "Wenn die Adresse einem Teilnehmereintrag zugeordnet ist, senden wir eine Best\u00e4tigungs-E-Mail. Diese Seite zeigt unabh\u00e4ngig davon, ob ein Eintrag zugeordnet werden kann, dieselbe Best\u00e4tigung. Nach der Best\u00e4tigung Ihres Widerrufs der Einwilligung werden identifizierende Daten anonymisiert, sobald die Verarbeitung erfolgreich abgeschlossen ist. Ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden.",
+      "requestAcknowledged": "Wenn die Adresse einem Teilnehmereintrag zugeordnet ist, senden wir eine Best\u00e4tigungs-E-Mail. Diese Seite zeigt unabh\u00e4ngig davon, ob ein Eintrag zugeordnet werden kann, dieselbe Best\u00e4tigung. Nach der Best\u00e4tigung Ihres Widerrufs der Einwilligung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "requestError": "Ihr Antrag konnte nicht verarbeitet werden. Bitte versuchen Sie es erneut.",
       "confirmationTitle": "Widerruf der Einwilligung best\u00e4tigen",
-      "confirmationDescription": "Das \u00d6ffnen dieser Seite best\u00e4tigt den Antrag nicht. W\u00e4hlen Sie die Schaltfl\u00e4che unten nur aus, wenn Sie Ihre Einwilligung widerrufen m\u00f6chten. Nach der Best\u00e4tigung werden identifizierende Daten anonymisiert, sobald die Verarbeitung erfolgreich abgeschlossen ist; ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden. Die Anonymisierung erfolgt nicht sofort.",
+      "confirmationDescription": "Das \u00d6ffnen dieser Seite best\u00e4tigt den Antrag nicht. W\u00e4hlen Sie die Schaltfl\u00e4che unten nur aus, wenn Sie Ihre Einwilligung widerrufen m\u00f6chten. Nach der Best\u00e4tigung anonymisiert die Hintergrundverarbeitung identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "confirmButton": "Widerruf best\u00e4tigen",
       "confirming": "Ihr Widerrufsantrag wird best\u00e4tigt...",
-      "confirmed": "Ihr Widerruf der Einwilligung wurde best\u00e4tigt. Identifizierende Daten werden nach erfolgreicher Verarbeitung anonymisiert. Ein anonymisierter RefTest-Datensatz kann zu Pr\u00fcfzwecken aufbewahrt werden. Die Anonymisierung erfolgt nicht sofort.",
+      "confirmed": "Ihr Widerruf der Einwilligung wurde best\u00e4tigt. Die Hintergrundverarbeitung anonymisiert identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "confirmationError": "Dieser Antrag konnte nicht best\u00e4tigt werden. Der Link ist m\u00f6glicherweise ung\u00fcltig, abgelaufen oder bereits verwendet. Fordern Sie bei Bedarf einen neuen Link an; diese Seite zeigt keine Teilnehmendeninformationen.",
       "confirmationKeyMissing": "Dieser Link enth\u00e4lt keine Best\u00e4tigungsinformationen. Fordern Sie \u00fcber den Datenschutzhinweis einen neuen Link an."
     }
@@ -749,7 +782,11 @@
     "title": "Auditprotokoll",
     "subtitle": "Vollständige Historie aller Systemänderungen",
     "loading": "Auditprotokoll wird geladen...",
+    "query_error": "Das Auditprotokoll konnte nicht geladen werden. Bitte versuchen Sie es erneut.",
+    "load_more_error": "Weitere Auditprotokoll-Ereignisse konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
     "empty": "Keine Ereignisse gefunden",
+    "filtered_empty": "Keine Auditprotokoll-Ereignisse entsprechen diesen Filtern.",
+    "clear_filters": "Filter l\u00f6schen",
     "loadMore": "Mehr laden",
     "showing": "{{displayed}} von {{total}} Ereignis wird angezeigt",
     "showing_plural": "{{displayed}} von {{total}} Ereignisse werden angezeigt",

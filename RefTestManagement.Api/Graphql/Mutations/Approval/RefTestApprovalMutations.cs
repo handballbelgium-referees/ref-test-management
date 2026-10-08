@@ -53,22 +53,58 @@ public static partial class RefTestApprovalMutations
 
         foreach (var id in input.Ids)
         {
+            RefTest? refTest = null;
+            var trackedJobIds = context.Jobs.Local.Select(job => job.Id).ToHashSet();
+            var failedPreparingInvitation = false;
             try
             {
-                var refTest = refTests.FirstOrDefault(rt => rt.Id == id)
+                refTest = refTests.FirstOrDefault(rt => rt.Id == id)
                               ?? throw new RefTestNotFoundException(id);
+
+                if (approvedOldStatuses.ContainsKey(refTest.Id))
+                    throw new InvalidOperationException("A RefTest can only be approved once per request.");
 
                 var oldStatus = refTest.Status;
                 refTest.Approve();
+
+                if (refTest.SendInvitationsAutomatically)
+                {
+                    refTest.RegenerateToken();
+                    failedPreparingInvitation = true;
+                    await jobEnqueueService.EnqueueInvitationEmailAsync(
+                        refTest,
+                        executeAfter: refTest.ScheduledAt,
+                        saveChanges: false,
+                        unitOfWorkContext: context,
+                        cancellationToken: cancellationToken);
+                    failedPreparingInvitation = false;
+                }
+
                 approved.Add(refTest);
                 approvedOldStatuses.Add(refTest.Id, oldStatus);
             }
             catch (Exception ex)
             {
+                if (refTest is not null && !approvedOldStatuses.ContainsKey(refTest.Id))
+                {
+                    var restoredRefTest = await RollbackFailedApprovalAsync(
+                        context, refTest, trackedJobIds, cancellationToken);
+                    var refTestIndex = refTests.IndexOf(refTest);
+                    if (refTestIndex >= 0)
+                    {
+                        if (restoredRefTest is null)
+                            refTests.RemoveAt(refTestIndex);
+                        else
+                            refTests[refTestIndex] = restoredRefTest;
+                    }
+                }
+
                 errors.Add(new ApproveRefTestsError
                 {
                     RefTestId = id,
-                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
+                    ErrorMessage = failedPreparingInvitation
+                        ? $"Invitation email could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
+                        : MutationErrorHandling.GetUserSafeMessage(ex)
                 });
                 MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ApproveRefTestsAsync), correlationId, id);
             }
@@ -79,40 +115,12 @@ public static partial class RefTestApprovalMutations
             {
                 TotalRequested = input.Ids.Count,
                 SuccessfullyApproved = approved.Count,
-                Failed = errors.Count(e => approved.All(r => r.Id != e.RefTestId)),
+                Failed = input.Ids.Count - approved.Count,
                 ApprovedRefTests = approved.Select(r => r.ToDto()).ToList(),
                 Errors = errors
             };
 
         var now = DateTime.UtcNow;
-
-        // Approvals and the emails they owe are staged into one unit of work: an approved RefTest
-        // whose invitation job was lost would silently never reach the participant.
-        foreach (var refTest in approved)
-        {
-            if (!refTest.SendInvitationsAutomatically)
-                continue;
-
-            try
-            {
-                refTest.RegenerateToken();
-                await jobEnqueueService.EnqueueInvitationEmailAsync(
-                    refTest,
-                    executeAfter: refTest.ScheduledAt,
-                    saveChanges: false,
-                    unitOfWorkContext: context,
-                    cancellationToken: cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                errors.Add(new ApproveRefTestsError
-                {
-                    RefTestId = refTest.Id,
-                    ErrorMessage = $"Invitation email could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
-                });
-                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ApproveRefTestsAsync), correlationId, refTest.Id);
-            }
-        }
 
         // Stage a decision confirmation email for each distinct creator
         foreach (var creatorGroup in approved.GroupBy(rt => rt.CreatorEmail))
@@ -148,10 +156,33 @@ public static partial class RefTestApprovalMutations
         {
             TotalRequested = input.Ids.Count,
             SuccessfullyApproved = approved.Count,
-            Failed = errors.Count(e => approved.All(r => r.Id != e.RefTestId)),
+            Failed = input.Ids.Count - approved.Count,
             ApprovedRefTests = approved.Select(r => r.ToDto()).ToList(),
             Errors = errors
         };
+    }
+
+    /// <summary>
+    /// Discards the failed approval's staged invitation job and restores a clean RefTest instance.
+    /// </summary>
+    /// <param name="context">The RefTest unit of work.</param>
+    /// <param name="refTest">The aggregate modified by the failed approval attempt.</param>
+    /// <param name="trackedJobIds">Job IDs already staged before the item was processed.</param>
+    /// <param name="cancellationToken">Token for the cleanup query.</param>
+    private static async Task<RefTest?> RollbackFailedApprovalAsync(
+        RefTestManagementContext context,
+        RefTest refTest,
+        HashSet<Guid> trackedJobIds,
+        CancellationToken cancellationToken)
+    {
+        var refTestId = refTest.Id;
+
+        foreach (var job in context.Jobs.Local.Where(job => !trackedJobIds.Contains(job.Id)).ToList())
+            context.Entry(job).State = EntityState.Detached;
+
+        refTest.ClearDomainEvents();
+        context.Entry(refTest).State = EntityState.Detached;
+        return await context.RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
     }
 
     /// <summary>

@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 
 public sealed class PrivacyRetentionService(
-    IServiceProvider serviceProvider,
+    IServiceScopeFactory scopeFactory,
     ILogger<PrivacyRetentionService> logger,
     PrivacyConfiguration privacyConfiguration) : BackgroundService
 {
@@ -45,44 +45,96 @@ public sealed class PrivacyRetentionService(
 
     private async Task EraseExpiredDataAsync(CancellationToken cancellationToken)
     {
-        using var scope = serviceProvider.CreateScope();
+        using var scope = scopeFactory.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
         var erasureService = scope.ServiceProvider.GetRequiredService<IRefTestPrivacyErasureService>();
         var cutoff = DateTime.UtcNow.AddYears(-privacyConfiguration.RetentionYears);
 
-        var refTests = await context.RefTests
+        var candidateIds = await context.RefTests
             .Where(PrivacyRetentionQueries.IsDueForErasure(cutoff))
+            .OrderBy(refTest => refTest.Id)
+            .Select(refTest => refTest.Id)
             .ToListAsync(cancellationToken);
 
-        foreach (var refTest in refTests)
-        {
-            await erasureService.EraseAsync(refTest, ErasureInitiator.Operator, cancellationToken);
-        }
+        var erasedCount = await ProcessCandidatesAsync(
+            context,
+            candidateIds,
+            (refTestId, ct) => erasureService.EraseIfDueForRetentionAsync(refTestId, cutoff, ct),
+            logger,
+            cancellationToken);
 
-        if (refTests.Count > 0)
-            logger.LogInformation("Erased {Count} RefTest records that exceeded privacy retention", refTests.Count);
+        if (erasedCount > 0)
+            logger.LogInformation("Erased {Count} RefTest records that exceeded privacy retention", erasedCount);
 
-        var repaired = await RepairAnonymizedRejectionReasonsAsync(context, erasureService, cancellationToken);
+        var repaired = await RepairAnonymizedRejectionReasonsAsync(
+            context,
+            erasureService,
+            cancellationToken,
+            logger);
         if (repaired > 0)
             logger.LogInformation("Repaired residual rejection data on {Count} already-anonymized RefTests", repaired);
+    }
+
+    internal static async Task<int> ProcessCandidatesAsync(
+        RefTestManagementContext context,
+        IReadOnlyCollection<Guid> candidateIds,
+        Func<Guid, CancellationToken, Task<bool>> processCandidate,
+        ILogger<PrivacyRetentionService>? logger,
+        CancellationToken cancellationToken)
+    {
+        var completedCount = 0;
+        foreach (var candidateId in candidateIds)
+        {
+            try
+            {
+                if (await processCandidate(candidateId, cancellationToken))
+                    completedCount++;
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                // Discard failed tracked writes before the next candidate and never log exception
+                // contents: database errors can include participant values.
+                context.ChangeTracker.Clear();
+                logger?.LogError("Privacy retention processing failed for one RefTest candidate");
+            }
+        }
+
+        return completedCount;
     }
 
     internal static async Task<int> RepairAnonymizedRejectionReasonsAsync(
         RefTestManagementContext context,
         IRefTestPrivacyErasureService erasureService,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        ILogger<PrivacyRetentionService>? logger = null)
     {
         // EraseAsync clears the residual reason, so the next daily run advances to the next page
         // without a durable cursor or selecting already-repaired rows again.
-        var refTests = await context.RefTests
+        var refTestIds = await context.RefTests
             .Where(refTest => refTest.IsAnonymized && refTest.RejectionReason != null)
             .OrderBy(refTest => refTest.Id)
             .Take(AnonymizedRejectionRepairBatchSize)
+            .Select(refTest => refTest.Id)
             .ToListAsync(cancellationToken);
 
-        foreach (var refTest in refTests)
-            await erasureService.EraseAsync(refTest, ErasureInitiator.Operator, cancellationToken);
+        return await ProcessCandidatesAsync(
+            context,
+            refTestIds,
+            async (refTestId, ct) =>
+            {
+                var refTest = await context.RefTests
+                    .SingleOrDefaultAsync(candidate => candidate.Id == refTestId, ct);
+                if (refTest is null)
+                    return false;
 
-        return refTests.Count;
+                await erasureService.EraseAsync(refTest, ErasureInitiator.Operator, ct);
+                return true;
+            },
+            logger,
+            cancellationToken);
     }
 }

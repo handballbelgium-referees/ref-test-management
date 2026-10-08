@@ -8,6 +8,30 @@ The application uses **Auth0** for authentication and a **task-based permission 
 
 The backend enforcement lives in the `RefTestManagement.Security` class library. The Angular frontend uses a `PermissionsService` and a `HasPermission` structural directive for reactive, signal-based UI control.
 
+## Audit records and privacy redaction
+
+Meaningful RefTest changes are recorded as append-oriented audit events. The event stream is not
+strictly immutable: privacy erasure and retention cleanup replace known personal-data values in
+event payloads with `***`. Erasure also replaces the actor name/email on participant-attributed
+events; retention cleanup redacts actor name/email on expired rows and archives them instead of
+deleting them. Event type, time, and other non-sensitive accountability details remain.
+
+## npm Dependency Audit Gate
+
+The pull-request, beta-release, and stable-release validation workflows run
+`scripts/check-npm-audit.mjs` against both the repository-root and Angular dependency trees.
+Critical advisories block validation. High and lower severities are non-blocking. The check does
+not exempt peer, development, optional, direct, or transitive dependencies.
+
+Exceptions are recorded in `.github/npm-audit-exceptions.json` and must match the advisory's
+numeric npm ID, GHSA ID, or CVE ID. Each exception requires a rationale of at least 20 characters,
+an owner in `@user` or `@org/team` form, and a valid `expiresOn` date (`YYYY-MM-DD`). The expiry
+date remains valid through that UTC date; expired, malformed, duplicate, and unused entries fail
+validation. An advisory without an exact, valid exception remains blocking, and unlisted new
+advisory identities cannot be implicitly accepted. Keep the policy empty unless a specific
+advisory exception is reviewed and necessary; resolve the dependency issue instead whenever
+possible.
+
 ---
 
 ## Auth0 Setup
@@ -34,6 +58,10 @@ On the same API → **Permissions** tab, add each permission string listed in th
 ### 4. Verify the token
 
 Ensure the access token is a signed JWT for the API **audience** configured by the application. The application does not use a JWT `permissions` array as its authorization source; it reads the user's current effective grants from the Management API.
+
+The OIDC `ClientId` identifies the browser application used for sign-in and sign-out; it is not
+the API audience. `Audience` identifies the API resource server and is used to validate bearer
+tokens and scope the effective permissions resolved from Auth0.
 
 ---
 
@@ -204,10 +232,13 @@ and shares one in-flight refresh per user; an internal limit of four concurrent 
 process bounds work without asserting an Auth0 tenant quota.
 
 When a snapshot expires, a Management API 429, outage, or other refresh failure never falls back to
-the old grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable,
-and `/Account/Permissions` returns no grants (or an authentication error) rather than stale claims.
-The UI polls this endpoint every minute and clears its permissions on errors. No refresh token is
-used or assumed.
+the old grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable.
+When an authenticated request reaches `/Account/Permissions` but no current snapshot is available,
+the endpoint returns an empty-body `503 Service Unavailable` rather than a permission list; a
+failure during authentication can instead reject the cookie or bearer authentication before the
+controller runs. The UI treats any permissions-request error, including 503, as an empty permission
+set and retries on its next one-minute poll while still authenticated; callers can also request an
+immediate refresh after a role change. No refresh token is used or assumed.
 
 Admin subscription resolvers check the current snapshot before mapping each event. Revoked or
 unverifiable permissions produce an authorization error without an event payload; the WebSocket
@@ -312,30 +343,40 @@ Development:
 
 | Header                       | Value                                                  | Why                                                                     |
 | ---------------------------- | ------------------------------------------------------ | ----------------------------------------------------------------------- |
-| `Content-Security-Policy`    | See directives below                                   | Allows same-origin external scripts and blocks inline scripts.          |
+| `Content-Security-Policy`    | See directives below                                   | Restricts resource sources, limits inline allowances to styles, and blocks objects and frames. |
 | `Referrer-Policy`            | `no-referrer`                                           | Prevents this page's URL from being sent as a referrer.                 |
-| `Strict-Transport-Security` | `max-age=2592000` (30 days; non-Development HTTPS only) | Requires HTTPS on later visits after a successful HTTPS response.       |
+| `Strict-Transport-Security` | `max-age=31536000` (one year; non-Development HTTPS only) | Requires HTTPS on later visits after a successful HTTPS response.   |
 | `X-Content-Type-Options`    | `nosniff`                                               | Stops content-type sniffing.                                             |
 | `X-Frame-Options`           | `DENY`                                                  | Blocks framing, so the test cannot be clickjacked.                       |
 
 The API's Content-Security-Policy response header has these directives (shown one per line):
 
 ```text
-default-src 'self' https:;
+default-src 'self';
 script-src 'self';
 worker-src 'self' blob:;
-style-src 'self' 'unsafe-inline';
-connect-src 'self' wss:;
-img-src 'self' data: https:;
+style-src 'self';
+style-src-elem 'self' 'unsafe-inline';
+style-src-attr 'unsafe-inline';
+connect-src 'self';
+img-src 'self' data:;
 font-src 'self' data:;
+object-src 'none';
+frame-src 'none';
 base-uri 'self';
 form-action 'self';
 ```
 
-Production builds disable Angular's `inlineCritical` optimization because it emits inline CSS and
-a media-switch script; the stylesheet remains a same-origin external asset. `style-src` continues
-to allow inline styles, independently of the stricter script policy. HSTS is added by ASP.NET
-Core's HSTS middleware for HTTPS responses outside Development.
+Angular injects component styles into runtime-created `<style>` elements and the UI uses dynamic
+style attributes for progress and time-picker positioning. The Angular service worker verifies
+`/index.html` against its precache hash, so injecting a per-response nonce into that file would
+change its bytes and break service-worker installation or updates. The API therefore serves the
+index unchanged and limits inline allowances to styles; scripts remain same-origin only, and
+objects and frames remain blocked. A stricter style-element policy requires a service-worker-safe
+nonce or generated-hash design. Production builds disable Angular's `inlineCritical` optimization,
+keeping critical CSS and its media-switch script out of the HTML; the stylesheet remains a
+same-origin external asset. HSTS is added by ASP.NET Core's HSTS middleware for HTTPS responses
+outside Development, with a one-year max-age and no subdomain scope.
 
 `index.html` has best-effort meta fallbacks for `Referrer-Policy` and `X-Content-Type-Options`,
 but CSP is intentionally response-header-only to avoid duplicate policies. Browsers ignore

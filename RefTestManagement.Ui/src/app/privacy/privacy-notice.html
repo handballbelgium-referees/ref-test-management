@@ -16,6 +16,34 @@
   </div>
 </div>
 
+@if (loading() && !privacyNotice()) {
+  <p role="status" class="max-w-7xl mx-auto px-4 pt-6 text-sm text-neutral-600">
+    {{ 'privacy.loading' | translate }}
+  </p>
+}
+
+@if (error()) {
+  <div
+    role="alert"
+    class="max-w-7xl mx-auto mt-6 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+  >
+    <p>{{ 'privacy.error' | translate }}</p>
+    <button type="button" (click)="retry()" class="shrink-0 font-medium underline">
+      {{ 'common.retry' | translate }}
+    </button>
+  </div>
+} @else if (!loading() && !privacyNotice()) {
+  <div
+    role="status"
+    class="max-w-7xl mx-auto mt-6 flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-700"
+  >
+    <p>{{ 'privacy.empty' | translate }}</p>
+    <button type="button" (click)="retry()" class="shrink-0 font-medium underline">
+      {{ 'common.retry' | translate }}
+    </button>
+  </div>
+}
+
 <article class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8 space-y-9 text-neutral-700 leading-7">
   <section>
     <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.controller.title' | translate }}</h2>

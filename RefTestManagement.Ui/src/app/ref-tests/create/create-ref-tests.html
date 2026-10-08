@@ -152,6 +152,22 @@
                 (import)="onQuestionImport($event)"
                 (cancel)="onQuestionCancel()"
               />
+              @if (questionImportError()) {
+                <div
+                  role="alert"
+                  class="flex items-center justify-between gap-3 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700"
+                >
+                  <p>{{ 'ref_tests.create.form.question_import_error' | translate }}</p>
+                  <button
+                    type="button"
+                    (click)="retryQuestionImport()"
+                    [disabled]="loadingQuestions()"
+                    class="shrink-0 font-medium underline disabled:opacity-50"
+                  >
+                    {{ 'common.retry' | translate }}
+                  </button>
+                </div>
+              }
               <app-question-search-autocomplete
                 [currentLanguage]="currentLanguage() ?? 'en'"
                 [selectedQuestions]="selectedQuestions()"
@@ -350,6 +366,8 @@
                   </label>
                   <app-datetime-picker
                     [value]="refTestModel().scheduledAt"
+                    [dateLabel]="'ref_tests.create.form.scheduled_at.date_label' | translate"
+                    [timeLabel]="'ref_tests.create.form.scheduled_at.time_label' | translate"
                     (valueChange)="onScheduledAtChange($event)"
                   />
                   <p class="text-xs text-neutral-500">

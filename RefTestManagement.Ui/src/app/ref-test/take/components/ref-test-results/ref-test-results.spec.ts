@@ -100,4 +100,21 @@ describe('RefTestResults', () => {
     expect(text).toContain('Answers summary');
     expect(text).toContain('1 of 1 answered');
   });
+
+  it('keeps the result indeterminate when the passing threshold is unavailable or invalid', () => {
+    for (const passingPercentage of [null, -1, 101, Number.NaN]) {
+      const fixture = createComponent({ passingPercentage });
+      expect(fixture.nativeElement.querySelector('.w-20')).toBeNull();
+      expect(
+        (fixture.nativeElement.querySelector('.text-5xl') as HTMLElement).classList,
+      ).toContain('text-neutral-900');
+    }
+  });
+
+  it('uses a configured zero passing threshold normally', () => {
+    const fixture = createComponent({ percentage: 0, passingPercentage: 0 });
+
+    expect(fixture.nativeElement.querySelector('.w-20')).not.toBeNull();
+    expect(fixture.nativeElement.querySelector('.w-20').classList).toContain('bg-success-100');
+  });
 });

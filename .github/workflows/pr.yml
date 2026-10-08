@@ -6,8 +6,8 @@ on:
     branches: [main]
 
 env:
-  DOTNET_VERSION: 10.0.x
-  NODE_VERSION: 24
+  DOTNET_VERSION: 10.0.303
+  NODE_VERSION: 24.20.0
 
 # Least privilege by default. No pull-request check needs to write to the repository.
 permissions:
@@ -15,7 +15,7 @@ permissions:
 
 jobs:
   dependency-review:
-    name: 🛡 Dependency Review (High/Critical)
+    name: 🛡 Dependency Review (Critical only)
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -79,6 +79,12 @@ jobs:
         working-directory: ./RefTestManagement.Ui
         run: npm ci
 
+      - name: 🧪 Test repository policy checkers
+        run: node --test scripts/check-npm-audit.test.mjs scripts/check-renovate-automerge.test.mjs scripts/release-safety.test.mjs
+
+      - name: 🛡 Audit root and Angular dependencies
+        run: node scripts/check-npm-audit.mjs
+
       - name: 🏗 Build Angular application
         working-directory: ./RefTestManagement.Ui
         run: npm run build -- --configuration production
@@ -115,12 +121,16 @@ jobs:
   sync-readme-versions:
     name: 📄 Sync README Versions
     runs-on: ubuntu-latest
+    if: github.event.pull_request.head.repo != null
+    permissions:
+      contents: read
 
     steps:
       - name: 📥 Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
-          ref: ${{ github.head_ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.ref }}
           persist-credentials: false
 
       - name: 🔄 Run version sync script

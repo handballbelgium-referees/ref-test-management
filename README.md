@@ -77,9 +77,12 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### Audit Log
 
-- Every meaningful RefTest change raises a typed domain event, persisted as an immutable, append-only audit record
+- Every meaningful RefTest change raises a typed domain event, recorded in an append-oriented audit log
+- Privacy erasure and retention cleanup redact known personal-data fields in event
+  payloads. Erasure also redacts participant actor identity on applicable events; after
+  the configured retention period, cleanup redacts actor name/email and archives records
+  without deleting the remaining accountability details.
 - Viewable in the admin UI behind the `audit-logs:view` permission
-- Old events are soft-archived (never hard-deleted) after a configurable retention period
 
 ### Internationalization
 
@@ -301,12 +304,12 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | Workflow             | Trigger                | Purpose                                                             |
 | -------------------- | ---------------------- | ------------------------------------------------------------------- |
 | `pr.yml`             | PR → `main`            | Build/test validation + i18n parity                                 |
-| `beta-release.yml`   | push → `main`          | semantic-release pre-release (`vX.Y.Z-alpha.N`) + deploy to testing |
-| `stable-release.yml` | manual, from `release` | Promote, tag a stable release, fast-forward `main`, deploy to production |
+| `beta-release.yml`   | push → `main`          | Publishes a pre-release and deploys to testing when commit rules select a release |
+| `stable-release.yml` | manual, from `release` | Promote; update badges before tagging the validated candidate; fast-forward `main` before production deployment |
 
 ## Versioning
 
-[Semantic Versioning](https://semver.org/) via [semantic-release](https://github.com/semantic-release/semantic-release), driven entirely by conventional commit types (`feat` → minor, `fix`/`perf`/`refactor`/etc. → patch, `!` or `BREAKING CHANGE:` → major). The release badges above are regenerated automatically on every release.
+[Semantic Versioning](https://semver.org/) via [semantic-release](https://github.com/semantic-release/semantic-release), driven entirely by conventional commit types (`feat` → minor, `fix`/`perf`/`refactor`/etc. → patch, `!` or `BREAKING CHANGE:` → major). Every push to `main` triggers the beta workflow, but semantic-release publishes a pre-release only when commit analysis finds a releasable change. Release badges are regenerated and fast-forwarded to the release branch before semantic-release creates a tag; a failed badge update aborts publication. Stable tags point to the validated candidate, and production deployment waits for the successful fast-forward back to `main`.
 
 ## Documentation
 
@@ -325,8 +328,10 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/AUDIT-R6.md](docs/AUDIT-R6.md)                         | Sixth audit wave findings and evidence                     |
 | [docs/AUDIT-R7.md](docs/AUDIT-R7.md)                         | Seventh audit wave findings and evidence                   |
 | [docs/AUDIT-R8.md](docs/AUDIT-R8.md)                         | Eighth audit wave findings and evidence                    |
+| [docs/AUDIT-R9.md](docs/AUDIT-R9.md)                         | Ninth audit wave findings and evidence                     |
 | [docs/AUDIT-R7-REMEDIATION.md](docs/AUDIT-R7-REMEDIATION.md) | R7 remediation work packages                               |
 | [docs/AUDIT-R8-REMEDIATION.md](docs/AUDIT-R8-REMEDIATION.md) | R8 remediation work packages                               |
+| [docs/AUDIT-R9-REMEDIATION.md](docs/AUDIT-R9-REMEDIATION.md) | R9 remediation work packages                               |
 | [docs/AUDIT-REMEDIATION.md](docs/AUDIT-REMEDIATION.md)       | Phased remediation plan for the audit findings             |
 
 ## License

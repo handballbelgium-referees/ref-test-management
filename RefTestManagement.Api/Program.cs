@@ -13,6 +13,7 @@ using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
+using Microsoft.AspNetCore.HttpsPolicy;
 using Handball.Belgium.RefTestManagement.Api.Extensions;
 using QuestPDF.Infrastructure;
 using StrawberryShake;
@@ -37,6 +38,7 @@ services.AddHttpContextAccessor();
 services.AddDataProtection().SetApplicationName("RefTestManagement");
 services.AddSingleton<TimeProvider>(TimeProvider.System);
 services.AddControllersWithViews();
+services.Configure<HstsOptions>(options => options.MaxAge = TimeSpan.FromDays(365));
 
 // Add CORS for development (allows WebSocket connections from Angular dev server)
 services.AddCors(options =>
@@ -65,6 +67,7 @@ var auditLogOptions = services.AddAuditLogging(opts =>
     opts.RegisterEntityResolver("RefTestTitle", (id, ctx) =>
         ctx.Set<RefTestTitle>().Find(id)?.Value);
 });
+auditLogOptions.Validate();
 
 services.AddDatabaseProvider(configuration);
 
@@ -93,6 +96,7 @@ services.AddSingleton(reportConfig);
 
 var privacyConfig = configuration.GetSection("PrivacyConfiguration").Get<PrivacyConfiguration>()
                     ?? new PrivacyConfiguration();
+privacyConfig.Validate();
 services.AddSingleton(privacyConfig);
 
 var privacyChallengeConfig = configuration.GetSection("PrivacyChallengeConfiguration")
@@ -360,21 +364,26 @@ app.UseForwardedHeaders(forwardedHeadersOptions);
 // meta Referrer-Policy applies only after the parser reaches it.
 //
 // no-referrer also avoids leaking URL data to other origins.
-const string contentSecurityPolicy =
-    "default-src 'self' https:; " +
-    "script-src 'self'; " +
-    "worker-src 'self' blob:; " +
-    "style-src 'self' 'unsafe-inline'; " +
-    "connect-src 'self' wss:; " +
-    "img-src 'self' data: https:; " +
-    "font-src 'self' data:; " +
-    "base-uri 'self'; " +
-    "form-action 'self';";
+// Keep the SPA index byte-for-byte stable because Angular's service worker verifies its precache hash.
 
 app.Use(async (context, next) =>
 {
     var headers = context.Response.Headers;
-    headers["Content-Security-Policy"] = contentSecurityPolicy;
+    headers["Content-Security-Policy"] =
+        "default-src 'self'; " +
+        "script-src 'self'; " +
+        "worker-src 'self' blob:; " +
+        "style-src 'self'; " +
+        "style-src-elem 'self' 'unsafe-inline'; " +
+        "style-src-attr 'unsafe-inline'; " +
+        "connect-src 'self'; " +
+        "img-src 'self' data:; " +
+        "font-src 'self' data:; " +
+        "object-src 'none'; " +
+        "frame-src 'none'; " +
+        "base-uri 'self'; " +
+        "form-action 'self';";
+
     headers["Referrer-Policy"] = "no-referrer";
     headers["X-Content-Type-Options"] = "nosniff";
     headers["X-Frame-Options"] = "DENY";
@@ -387,6 +396,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 // Enable CORS for development

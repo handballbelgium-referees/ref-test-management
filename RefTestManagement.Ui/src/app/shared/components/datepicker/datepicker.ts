@@ -6,10 +6,13 @@ import {
   input,
   output,
   signal,
+  viewChild,
 } from '@angular/core';
 import { DatepickerCalendar } from './components/datepicker-calendar/datepicker-calendar';
 import { DatepickerInput } from './components/datepicker-input/datepicker-input';
 import { Datepicker as DatePickerService } from './services/datepicker';
+
+let nextDatepickerId = 0;
 
 @Component({
   selector: 'app-datepicker',
@@ -26,10 +29,14 @@ export class Datepicker {
   private readonly _destroyRef = inject(DestroyRef);
   private _scrollListener?: () => void;
   private _resizeListener?: () => void;
+  private _isRestoringFocus = false;
 
   readonly value = input<string>('');
   readonly placeholder = input<string>('dd/mm/yyyy');
+  readonly calendarId = `datepicker-calendar-${nextDatepickerId++}`;
   protected readonly dateChange = output<string>();
+
+  readonly label = input<string>('');
 
   protected readonly isOpen = signal(false);
   protected readonly displayValue = signal('');
@@ -37,6 +44,8 @@ export class Datepicker {
   protected readonly selectedDate = signal<Date | null>(null);
   protected readonly isSmallTouchDevice = signal(this._dateService.detectSmallTouchDevice());
   protected readonly openMode = signal<'mobile' | 'desktop'>('desktop');
+  private readonly _dateInput = viewChild(DatepickerInput);
+  private readonly _calendar = viewChild(DatepickerCalendar);
 
   constructor() {
     // Initialize from input value
@@ -82,10 +91,13 @@ export class Datepicker {
   }
 
   protected onEscape(): void {
+    if (!this.isOpen()) return;
     this.isOpen.set(false);
+    this.focusDateInput();
   }
 
   protected onInputFocus(): void {
+    if (this._isRestoringFocus) return;
     this.openMode.set(this._dateService.detectSmallTouchDevice() ? 'mobile' : 'desktop');
 
     this.isOpen.set(true);
@@ -125,6 +137,12 @@ export class Datepicker {
     }
   }
 
+  protected onInputKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'ArrowDown' || !this.isOpen()) return;
+    event.preventDefault();
+    queueMicrotask(() => this._calendar()?.focusActiveDay());
+  }
+
   protected onDateSelect(date: Date | null): void {
     const currentSelected = this.selectedDate();
     const isDifferent =
@@ -138,6 +156,7 @@ export class Datepicker {
     }
 
     this.isOpen.set(false);
+    this.focusDateInput();
   }
 
   protected onClear(): void {
@@ -149,9 +168,22 @@ export class Datepicker {
 
   protected onClose(): void {
     this.isOpen.set(false);
+    if (this.openMode() === 'mobile') this.focusDateInput();
   }
 
   protected onCurrentDateChange(date: Date): void {
     this.currentDate.set(date);
+  }
+
+  private focusDateInput(): void {
+    const input = this._dateInput()?.inputElement()?.nativeElement;
+    if (!input) return;
+
+    this._isRestoringFocus = true;
+    try {
+      input.focus();
+    } finally {
+      this._isRestoringFocus = false;
+    }
   }
 }

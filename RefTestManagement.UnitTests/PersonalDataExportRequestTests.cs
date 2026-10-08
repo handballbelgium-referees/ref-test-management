@@ -1,3 +1,4 @@
+﻿using System.Data.Common;
 using System.Security.Claims;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
@@ -18,6 +19,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -256,17 +258,19 @@ public sealed class PersonalDataExportRequestTests
         var active = NewRequest(Now.AddHours(-1), Now.AddHours(23), email: "active@example.org", key: "active-key");
         var verified = NewRequest(Now.AddHours(-2), Now.AddHours(22), email: "verified@example.org", key: "verified-key");
         Assert.True(verified.TryConfirm("verified-key", Now.AddMinutes(-1)));
+        var deliveryJob = DeliveryJob(verified.Id);
 
         await using (var seed = database.CreateContext())
         {
             seed.PersonalDataExportRequests.AddRange(expired, active, verified);
+            seed.Jobs.Add(deliveryJob);
             await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
         }
 
         await using (var context = database.CreateContext())
         {
             var dueIds = await context.PersonalDataExportRequests
-                .Where(PersonalDataExportRequestCleanupQueries.IsDueForCleanup(Now))
+                .Where(PersonalDataExportRequestCleanupQueries.IsDueForCleanup(Now, []))
                 .Select(request => request.Id)
                 .ToListAsync(TestContext.Current.CancellationToken);
             Assert.Equal([expired.Id], dueIds);
@@ -291,6 +295,194 @@ public sealed class PersonalDataExportRequestTests
         Assert.NotNull(preservedActiveRequest.KeyHash);
         Assert.Equal("verified@example.org", preservedVerifiedRequest.Email);
         Assert.Null(preservedVerifiedRequest.KeyHash);
+    }
+
+    [Fact]
+    public async Task CleanupClearsVerifiedRequestAfterDeliveryJobIsTerminal()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var request = NewRequest(
+            Now.AddHours(-2),
+            Now.AddHours(22),
+            email: "verified@example.org",
+            key: "verified-key");
+        Assert.True(request.TryConfirm("verified-key", Now.AddMinutes(-1)));
+        var deliveryJob = DeliveryJob(request.Id);
+        deliveryJob.MarkAsFailed("Personal-data export delivery failed.", maxAttempts: 1);
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PersonalDataExportRequests.Add(request);
+            seed.Jobs.Add(deliveryJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var dueIds = await context.PersonalDataExportRequests
+                .Where(PersonalDataExportRequestCleanupQueries.IsDueForCleanup(Now, [request.Id]))
+                .Select(candidate => candidate.Id)
+                .ToListAsync(TestContext.Current.CancellationToken);
+            Assert.Equal([request.Id], dueIds);
+            var trackedRequest = await context.PersonalDataExportRequests.SingleAsync(
+                candidate => candidate.Id == request.Id, TestContext.Current.CancellationToken);
+
+            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
+                context,
+                Now,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(1, cleared);
+            var failure = Assert.Single(
+                trackedRequest.DomainEvents.OfType<PersonalDataExportDeliveryFailedEvent>());
+            Assert.Equal(PersonalDataExportDeliveryFailureCode.DeliveryOutcomeUnknown, failure.FailureCode);
+            Assert.True(failure.IsTerminal);
+        }
+
+        await using var verification = database.CreateContext();
+        var terminal = await verification.PersonalDataExportRequests
+            .SingleAsync(candidate => candidate.Id == request.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(string.Empty, terminal.Email);
+        Assert.Null(terminal.KeyHash);
+        Assert.Null(terminal.ProtectedDeliveryKey);
+        Assert.NotNull(terminal.VerifiedAt);
+    }
+
+    [Theory]
+    [InlineData(JobStatus.Pending)]
+    [InlineData(JobStatus.Processing)]
+    public async Task CleanupPreservesVerifiedRequestWhenFailedJobHasAnActiveDuplicate(
+        JobStatus activeJobStatus)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var request = NewRequest(Now.AddHours(-2), Now.AddHours(22));
+        Assert.True(request.TryConfirm("challenge-key", Now.AddMinutes(-1)));
+        var failedJob = DeliveryJob(request.Id);
+        failedJob.MarkAsFailed("Personal-data export delivery failed.", maxAttempts: 1);
+        var activeJob = DeliveryJob(request.Id);
+        if (activeJobStatus == JobStatus.Processing)
+            activeJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PersonalDataExportRequests.Add(request);
+            seed.Jobs.AddRange(failedJob, activeJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var terminalRequestIds = await PersonalDataExportRequestCleanupService
+                .GetTerminalDeliveryRequestIdsAsync(context, TestContext.Current.CancellationToken);
+            Assert.DoesNotContain(request.Id, terminalRequestIds);
+
+            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
+                context,
+                Now,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(0, cleared);
+        }
+
+        await using var verification = database.CreateContext();
+        var preserved = await verification.PersonalDataExportRequests.SingleAsync(
+            candidate => candidate.Id == request.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(ParticipantEmail, preserved.Email);
+        Assert.NotNull(preserved.VerifiedAt);
+        Assert.Empty(preserved.DomainEvents);
+    }
+
+    [Fact]
+    public async Task CleanupRechecksForAnActiveDuplicateAddedAfterTerminalJobSnapshot()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var request = NewRequest(Now.AddHours(-2), Now.AddHours(22));
+        Assert.True(request.TryConfirm("challenge-key", Now.AddMinutes(-1)));
+        var failedJob = DeliveryJob(request.Id);
+        failedJob.MarkAsFailed("Personal-data export delivery failed.", maxAttempts: 1);
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PersonalDataExportRequests.Add(request);
+            seed.Jobs.Add(failedJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext(
+                         new AddActiveDeliveryJobBeforeCleanupSelectionInterceptor(database, request.Id)))
+        {
+            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
+                context,
+                Now,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(0, cleared);
+        }
+
+        await using var verification = database.CreateContext();
+        var preserved = await verification.PersonalDataExportRequests.SingleAsync(
+            candidate => candidate.Id == request.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(ParticipantEmail, preserved.Email);
+        var deliveryStatuses = await verification.Jobs
+            .OrderBy(job => job.Status)
+            .Select(job => job.Status)
+            .ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Contains(JobStatus.Failed, deliveryStatuses);
+        Assert.Contains(JobStatus.Pending, deliveryStatuses);
+    }
+
+    [Fact]
+    public async Task CleanupPreservesRequestConfirmedAfterItsTerminalJobSnapshot()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var createdAt = DateTime.UtcNow;
+        var request = NewRequest(
+            createdAt,
+            createdAt.AddHours(24),
+            key: ChallengeKey,
+            protectedKey: $"protected:{ChallengeKey}");
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PersonalDataExportRequests.Add(request);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        Guid[] terminalRequestIds;
+        await using (var cleanupSnapshot = database.CreateContext())
+        {
+            terminalRequestIds = await PersonalDataExportRequestCleanupService
+                .GetTerminalDeliveryRequestIdsAsync(cleanupSnapshot, TestContext.Current.CancellationToken);
+        }
+
+        Assert.Empty(terminalRequestIds);
+
+        await using (var confirmationContext = database.CreateContext())
+        {
+            var confirmationService = new PersonalDataExportRequestService(
+                confirmationContext,
+                NewJobEnqueueService(confirmationContext),
+                new TestKeyProtection(),
+                new PrivacyChallengeConfiguration(),
+                NullLogger<PersonalDataExportRequestService>.Instance);
+            Assert.True(await confirmationService.ConfirmAsync(
+                ChallengeKey,
+                TestContext.Current.CancellationToken));
+        }
+
+        await using var verification = database.CreateContext();
+        var dueRequests = await verification.PersonalDataExportRequests
+            .Where(PersonalDataExportRequestCleanupQueries.IsDueForCleanup(
+                createdAt,
+                terminalRequestIds))
+            .ToListAsync(TestContext.Current.CancellationToken);
+        Assert.Empty(dueRequests);
+
+        var confirmedRequest = await verification.PersonalDataExportRequests
+            .SingleAsync(candidate => candidate.Id == request.Id, TestContext.Current.CancellationToken);
+        Assert.NotNull(confirmedRequest.VerifiedAt);
+        Assert.Equal(ParticipantEmail, confirmedRequest.Email);
+
+        var queuedJob = await verification.Jobs.SingleAsync(TestContext.Current.CancellationToken);
+        Assert.Equal(JobType.PersonalDataExportDeliveryEmail, queuedJob.JobType);
+        Assert.Equal(JobStatus.Pending, queuedJob.Status);
     }
 
     [Fact]
@@ -364,6 +556,81 @@ public sealed class PersonalDataExportRequestTests
         var payloadText = job.Payload;
         Assert.DoesNotContain(ChallengeKey, payloadText, StringComparison.Ordinal);
         Assert.DoesNotContain(ParticipantEmail, payloadText, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ErasureDuringExportChallengePreparationPreventsProviderHandoff()
+    {
+        using var database = SqliteTestDatabase.Create();
+        Guid refTestId;
+        PersonalDataExportRequest request;
+        Job challengeJob;
+
+        await using (var seed = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Season 2026");
+            seed.RefTestTitles.Add(title);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+            var refTest = RefTest.Create(
+                title.Id,
+                "Ada",
+                "Lovelace",
+                ParticipantEmail,
+                numberOfQuestions: 10,
+                maxTimeInMinutes: 30,
+                questionIds: ["q1"],
+                sendInvitationAutomatically: false,
+                sendResultsAutomatically: false);
+            var createdAt = DateTime.UtcNow;
+            request = NewRequest(
+                createdAt,
+                createdAt.AddHours(24),
+                key: ChallengeKey,
+                protectedKey: $"protected:{ChallengeKey}");
+            challengeJob = ChallengeJob(request.Id);
+            seed.RefTests.Add(refTest);
+            seed.PersonalDataExportRequests.Add(request);
+            seed.Jobs.Add(challengeJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+            refTestId = refTest.Id;
+        }
+
+        var emailService = new StubEmailService
+        {
+            BeforeFinalCheck = async () =>
+            {
+                await using var erasureContext = database.CreateContext();
+                var refTest = await erasureContext.RefTests.SingleAsync(
+                    candidate => candidate.Id == refTestId,
+                    TestContext.Current.CancellationToken);
+                await new RefTestPrivacyErasureService(erasureContext).EraseAsync(
+                    refTest,
+                    ErasureInitiator.Operator,
+                    TestContext.Current.CancellationToken);
+            }
+        };
+
+        await using (var handlingContext = database.CreateContext())
+        {
+            var handler = new PersonalDataExportChallengeEmailJobHandler(
+                handlingContext,
+                emailService,
+                new TestKeyProtection(),
+                NullLogger<PersonalDataExportChallengeEmailJobHandler>.Instance);
+            await handler.HandleAsync(challengeJob, TestContext.Current.CancellationToken);
+        }
+
+        Assert.Equal(0, emailService.ProviderSubmissionCount);
+        await using var verification = database.CreateContext();
+        var erasedRequest = await verification.PersonalDataExportRequests
+            .SingleAsync(candidate => candidate.Id == request.Id, TestContext.Current.CancellationToken);
+        var cancelledJob = await verification.Jobs
+            .SingleAsync(candidate => candidate.Id == challengeJob.Id, TestContext.Current.CancellationToken);
+        Assert.Equal(string.Empty, erasedRequest.Email);
+        Assert.Null(erasedRequest.ProtectedDeliveryKey);
+        Assert.Null(erasedRequest.KeyHash);
+        Assert.Equal(JobStatus.Cancelled, cancelledJob.Status);
     }
 
     [Fact]
@@ -564,6 +831,33 @@ public sealed class PersonalDataExportRequestTests
         return Job.Create(JobType.PersonalDataExportDeliveryEmail, payload);
     }
 
+    private sealed class AddActiveDeliveryJobBeforeCleanupSelectionInterceptor(
+        SqliteTestDatabase database,
+        Guid requestId) : DbCommandInterceptor
+    {
+        private bool _added;
+
+        public override async ValueTask<InterceptionResult<DbDataReader>> ReaderExecutingAsync(
+            DbCommand command,
+            CommandEventData eventData,
+            InterceptionResult<DbDataReader> result,
+            CancellationToken cancellationToken = default)
+        {
+            if (!_added
+                && command.CommandText.Contains(
+                    nameof(RefTestManagementContext.PersonalDataExportRequests),
+                    StringComparison.Ordinal))
+            {
+                _added = true;
+                await using var context = database.CreateContext();
+                context.Jobs.Add(DeliveryJob(requestId));
+                await context.SaveChangesAsync(cancellationToken);
+            }
+
+            return result;
+        }
+    }
+
     private sealed class TestKeyProtection : IPersonalDataExportKeyProtection
     {
         public string Protect(string key) => $"protected:{key}";
@@ -582,31 +876,49 @@ public sealed class PersonalDataExportRequestTests
     private sealed class StubEmailService : IEmailService
     {
         public Exception? Failure { get; set; }
+        public Func<Task>? BeforeFinalCheck { get; set; }
+        public int ProviderSubmissionCount { get; private set; }
         public string? RecipientEmail { get; private set; }
         public string? ChallengeKey { get; private set; }
         public string? ExportRecipientEmail { get; private set; }
         public IReadOnlyList<EmailAttachment>? ExportAttachments { get; private set; }
 
-        public Task SendPersonalDataExportVerificationAsync(
+        public async Task<bool> SendPersonalDataExportVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken)
         {
             RecipientEmail = recipientEmail;
             ChallengeKey = challengeKey;
-            return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
+            if (Failure is not null)
+                throw Failure;
+            if (BeforeFinalCheck is not null)
+                await BeforeFinalCheck();
+            var wasDeliverable = await finalDeliverabilityCheck(cancellationToken);
+            if (wasDeliverable)
+                ProviderSubmissionCount++;
+            return wasDeliverable;
         }
 
-        public Task SendPrivacyWithdrawalVerificationAsync(
+        public async Task<bool> SendPrivacyWithdrawalVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken)
         {
             RecipientEmail = recipientEmail;
             ChallengeKey = challengeKey;
-            return Failure is null ? Task.CompletedTask : Task.FromException(Failure);
+            if (Failure is not null)
+                throw Failure;
+            if (BeforeFinalCheck is not null)
+                await BeforeFinalCheck();
+            var wasDeliverable = await finalDeliverabilityCheck(cancellationToken);
+            if (wasDeliverable)
+                ProviderSubmissionCount++;
+            return wasDeliverable;
         }
 
         public async Task<bool> SendPersonalDataExportAsync(
@@ -626,7 +938,7 @@ public sealed class PersonalDataExportRequestTests
             return true;
         }
 
-        public Task SendRefTestInvitationAsync(
+        public Task<bool> SendRefTestInvitationAsync(
             Guid refTestId,
             string name,
             string email,
@@ -635,7 +947,7 @@ public sealed class PersonalDataExportRequestTests
             int maxTimeInMinutes,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendRefTestResultsAsync(
+        public Task<bool> SendRefTestResultsAsync(
             Guid refTestId,
             string name,
             string email,

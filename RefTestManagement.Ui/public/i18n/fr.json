@@ -20,7 +20,19 @@
     "save": "Enregistrer",
     "saving": "Enregistrement...",
     "processing": "Traitement...",
+    "retry": "Réessayer",
     "close": "Fermer",
+    "change_calendar_view": "Changer l’affichage du calendrier",
+    "time_picker": {
+      "label": "Sélecteur d'heure",
+      "back_to_hours": "Retour aux heures",
+      "close": "Fermer le sélecteur d'heure",
+      "hour": "{{hour}} heures",
+      "minute": "{{minute}} minutes",
+      "subtract_minute": "Retirer 1 minute",
+      "add_minute": "Ajouter 1 minute",
+      "one_minute_short": "1 min"
+    },
     "deleting": "Suppression...",
     "sending": "Envoi...",
     "copy": "Copier",
@@ -28,6 +40,7 @@
   },
   "nav": {
     "language": "Langue",
+    "select_language": "Passer à {{language}}",
     "logout": "Déconnexion"
   },
   "home": {
@@ -35,6 +48,10 @@
       "title": "Système de Gestion des RefTests sur les Règles de Handball",
       "subtitle": "Créer et gérer des RefTests sur les règles de handball pour les arbitres et délégués de la Fédération Belge de Handball",
       "login": "Accéder au Tableau de Bord"
+    },
+    "authenticationCheckFailed": {
+      "title": "Statut de connexion indisponible",
+      "description": "Impossible de vérifier votre statut de connexion. Réessayez la vérification."
     },
     "actions": {
       "title": "Actions Rapides",
@@ -71,6 +88,8 @@
       "create_new": "Créer de Nouveaux RefTests",
       "search_placeholder": "Rechercher par nom ou e-mail...",
       "loading": "Chargement des RefTests...",
+      "query_error": "Impossible de charger les RefTests. Veuillez réessayer.",
+      "load_more_error": "Impossible de charger plus de RefTests. Veuillez réessayer.",
       "load_more": "Charger plus de RefTests",
       "loading_more": "Chargement...",
       "performance_warning_title": "Avis de Performance",
@@ -190,7 +209,10 @@
       "empty": {
         "title": "Aucune RefTest trouvée",
         "subtitle": "Commencez par créer vos premiers RefTests",
-        "action": "Créer des RefTests"
+        "action": "Créer des RefTests",
+        "filtered_title": "Aucun RefTest ne correspond à ces filtres",
+        "filtered_subtitle": "Modifiez ou effacez les filtres pour voir des RefTests.",
+        "clear_filters": "Effacer les filtres"
       },
       "actions": {
         "reftest_selected": "Sélectionné",
@@ -481,6 +503,7 @@
           "tooltip": "Exemple : Recyclage {{date}}",
           "no_results": "Aucun titre existant trouvé",
           "create_new": "Appuyez sur Entrée pour créer un nouveau titre avec ce nom",
+          "search_error": "Impossible de rechercher les titres. Veuillez réessayer.",
           "existing_title": "Utilisation du titre existant",
           "new_title": "Créera un nouveau titre",
           "clear": "Effacer le titre"
@@ -541,6 +564,7 @@
           "import_button": "Importer",
           "importing": "Importation...",
           "no_results": "Aucune question trouvée",
+          "search_error": "Impossible de rechercher les questions. Veuillez réessayer.",
           "table_number": "Numéro",
           "table_question": "Question",
           "remove_question": "Supprimer la question"
@@ -556,7 +580,9 @@
         "scheduled_at": {
           "label": "Planifier pour",
           "optional": "(facultatif)",
-          "description": "Laissez vide pour envoyer l'invitation immédiatement. Définissez une date/heure pour retarder jusqu'à ce moment."
+          "description": "Laissez vide pour envoyer l'invitation immédiatement. Définissez une date/heure pour retarder jusqu'à ce moment.",
+          "date_label": "Date prévue",
+          "time_label": "Heure prévue"
         },
         "send_results": {
           "label": "Envoyer les e-mails de résultats",
@@ -568,6 +594,7 @@
         "cancel": "Annuler",
         "validation_error": "Veuillez corriger les erreurs de validation avant de soumettre",
         "no_participants": "Veuillez ajouter au moins un participant",
+        "question_import_error": "Impossible de charger les questions sélectionnées. Veuillez réessayer.",
         "submit_error": "Une erreur s'est produite lors de la création des RefTests"
       },
       "success": {
@@ -586,11 +613,14 @@
   "ref_test": {
     "page_title": "RefTest de Handball",
     "loading": "Chargement du RefTest...",
+    "retry_submission": "Réessayer l'envoi",
+    "saving_progress_before_leave": "Votre progression est en cours d'enregistrement avant votre départ...",
     "error": {
       "title": "Impossible de charger le RefTest",
       "general": "Une erreur inattendue s'est produite lors du chargement du RefTest. Veuillez réessayer plus tard.",
       "network": "Une erreur réseau est survenue. Vérifiez votre connexion et réessayez.",
-      "submit_failed": "L'envoi du RefTest a échoué. Veuillez réessayer plus tard.",
+      "submit_failed": "L'envoi du RefTest a échoué. Veuillez réessayer l'envoi.",
+      "progress_save_failed": "Votre dernière réponse n'a pas pu être enregistrée. Restez sur cette page et réessayez de partir.",
       "ref_test_not_found_error": "Ce RefTest est introuvable. Veuillez vérifier votre lien.",
       "ref_test_expired_error": "Ce RefTest a expiré. Veuillez contacter l'administrateur.",
       "invalid_ref_test_status_error": "Ce RefTest n'est plus disponible ou a déjà été complété.",
@@ -618,7 +648,7 @@
     "withdraw_link": "Retirer mon consentement et demander l'anonymisation",
     "withdraw_error": "Nous n'avons pas pu traiter votre retrait. Veuillez réessayer ou nous contacter.",
     "withdrawal_queued_title": "Demande de retrait reçue",
-    "withdrawal_queued_message": "Votre demande a été mise en file d'attente. Vos données d'identification seront anonymisées une fois le traitement terminé. Un enregistrement RefTest anonymisé peut être conservé à des fins d'audit.",
+    "withdrawal_queued_message": "Votre demande a été mise en file d'attente pour un traitement en arrière-plan. Une fois le traitement réussi, les données permettant de vous identifier seront masquées (anonymisées) dans le RefTest et sa piste d’audit. Un enregistrement RefTest expurgé et sa piste d’audit peuvent être conservés ; la ligne RefTest reste présente et sa purge définitive relève d’une étape distincte.",
     "time_remaining": "Temps Restant",
     "progress": "Progrès",
     "question": "Question",
@@ -662,8 +692,8 @@
       },
       "withdraw": {
         "title": "Retirer votre consentement ?",
-        "message": "Votre demande de retrait sera mise en file d'attente pour traitement en arrière-plan. Vos données d'identification seront anonymisées une fois le traitement terminé ; un enregistrement RefTest anonymisé peut être conservé à des fins d'audit.",
-        "warning": "L'anonymisation n'est pas immédiate. Votre demande sera traitée en arrière-plan et l'enregistrement RefTest peut être conservé sous forme anonymisée à des fins d'audit.",
+        "message": "Votre demande de retrait sera mise en file d’attente pour traitement en arrière-plan. Une fois le traitement réussi, les données permettant de vous identifier seront masquées (anonymisées) dans le RefTest et sa piste d’audit. Un enregistrement RefTest expurgé et sa piste d’audit peuvent être conservés ; la ligne RefTest reste présente et sa purge définitive relève d’une étape distincte.",
+        "warning": "Le traitement en arrière-plan n’est pas immédiat. Il masque les données permettant de vous identifier (anonymisation) ; l’enregistrement RefTest expurgé et sa piste d’audit peuvent être conservés. La ligne RefTest reste présente ; sa purge définitive relève d’une étape distincte.",
         "confirm": "Retirer le consentement et demander l'anonymisation",
         "cancel": "Annuler"
       }
@@ -677,6 +707,9 @@
   "privacy": {
     "eyebrow": "Confidentialité",
     "title": "Avis de confidentialité",
+    "loading": "Chargement de l'avis de confidentialité...",
+    "empty": "L'avis de confidentialité n'est pas disponible.",
+    "error": "Impossible de charger l'avis de confidentialité. Veuillez réessayer.",
     "updated": "En vigueur à partir du {{effectiveDate}} (version {{noticeVersion}}).",
     "controller": {
       "title": "Responsable du traitement et contact",
@@ -700,7 +733,7 @@
     },
     "retention": {
       "title": "Conservation",
-      "body": "Nous effaçons les données d'évaluation et d'invitation {{retentionYears}} ans après la fin ou l'expiration de l'évaluation. Si vous retirez votre consentement après vérification de votre identité, nous effaçons sans délai vos données d'évaluation et les communications en attente. Un e-mail déjà remis dans votre boîte de réception ne peut pas être rappelé."
+      "body": "Nous anonymisons (masquons) les données permettant de vous identifier dans les dossiers d’évaluation et d’invitation {{retentionYears}} ans après la fin ou l’expiration des évaluations terminées ou expirées, ou après la création des dossiers en attente d’approbation ou rejetés. Si vous retirez votre consentement, le traitement en arrière-plan masque ces données et annule et efface les communications en attente une fois le traitement abouti ; ce n’est pas immédiat. L’enregistrement RefTest et sa piste d’audit, expurgés des données identifiantes, peuvent être conservés ; la ligne RefTest reste présente après cette étape. Sa purge définitive est distincte. Un e-mail déjà remis dans votre boîte de réception ne peut pas être rappelé."
     },
     "rights": {
       "title": "Vos droits",
@@ -727,21 +760,21 @@
     },
     "consentWithdrawal": {
       "title": "Retirer votre consentement et demander l’anonymisation",
-      "description": "Saisissez l’adresse e-mail associée à votre participation. Si elle correspond à un ou plusieurs dossiers de participants non anonymisés, un lien de confirmation à usage unique sera envoyé à cette adresse. Aucun compte ni jeton d’invitation n’est nécessaire.",
+      "description": "Saisissez l’adresse e-mail associée à votre participation. Si elle correspond à un ou plusieurs dossiers de participants non anonymisés, un lien de confirmation à usage unique sera envoyé à cette adresse. Aucun compte ni jeton d’invitation n’est nécessaire. Après confirmation, le traitement en arrière-plan masquera (anonymisera) les données permettant de vous identifier une fois terminé ; ce n’est pas immédiat. L’enregistrement RefTest et sa piste d’audit expurgés peuvent être conservés ; la ligne RefTest reste présente et sa purge définitive relève d’une étape distincte.",
       "requestLink": "Ouvrir le formulaire de retrait",
       "emailLabel": "Adresse e-mail",
-      "emailHelp": "Le même message s’affiche pour toutes les adresses. Après votre confirmation, les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti ; un enregistrement RefTest anonymisé pourra être conservé à des fins d’audit. L’anonymisation n’est pas immédiate.",
+      "emailHelp": "Le même message s’affiche pour toutes les adresses. Après votre confirmation, le traitement en arrière-plan masque (anonymise) les données permettant de vous identifier une fois abouti ; ce n’est pas immédiat. L’enregistrement RefTest et sa piste d’audit expurgés peuvent être conservés ; la ligne RefTest reste présente et sa purge définitive est distincte.",
       "emailRequired": "Saisissez votre adresse e-mail.",
       "emailInvalid": "Saisissez une adresse e-mail valide.",
       "requestButton": "Envoyer la demande de retrait",
       "requesting": "Envoi de votre demande...",
-      "requestAcknowledged": "Si l’adresse est associée à un dossier de participant, un e-mail de confirmation sera envoyé. Cette page affiche le même message qu’un dossier corresponde ou non. Après confirmation du retrait de votre consentement, les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti. Un enregistrement RefTest anonymisé peut être conservé à des fins d’audit.",
+      "requestAcknowledged": "Si l’adresse est associée à un dossier de participant, un e-mail de confirmation sera envoyé. Cette page affiche le même message qu’un dossier corresponde ou non. Après confirmation du retrait de votre consentement, le traitement en arrière-plan anonymise (masque) les données permettant de vous identifier une fois abouti. L’enregistrement RefTest et sa piste d’audit expurgés peuvent être conservés ; la ligne reste présente et sa purge définitive est une étape distincte.",
       "requestError": "Nous n’avons pas pu traiter votre demande. Veuillez réessayer.",
       "confirmationTitle": "Confirmer le retrait de votre consentement",
-      "confirmationDescription": "L’ouverture de cette page ne confirme pas la demande. Sélectionnez le bouton ci-dessous uniquement si vous souhaitez retirer votre consentement. Après confirmation, les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti ; un enregistrement RefTest anonymisé peut être conservé à des fins d’audit. L’anonymisation n’est pas immédiate.",
+      "confirmationDescription": "L’ouverture de cette page ne confirme pas la demande. Sélectionnez le bouton ci-dessous uniquement si vous souhaitez retirer votre consentement. Après confirmation, le traitement en arrière-plan anonymisera (masquera) les données permettant de vous identifier une fois terminé ; ce n’est pas immédiat. L’enregistrement RefTest et sa piste d’audit expurgés peuvent être conservés ; la ligne reste présente et sa purge définitive est une étape distincte.",
       "confirmButton": "Confirmer le retrait",
       "confirming": "Confirmation de votre demande de retrait...",
-      "confirmed": "Le retrait de votre consentement est confirmé. Les données permettant de vous identifier seront anonymisées lorsque le traitement aura abouti. Un enregistrement RefTest anonymisé peut être conservé à des fins d’audit. L’anonymisation n’est pas immédiate.",
+      "confirmed": "Le retrait de votre consentement est confirmé. Le traitement en arrière-plan anonymisera (masquera) les données permettant de vous identifier une fois terminé ; ce n’est pas immédiat. L’enregistrement RefTest et sa piste d’audit expurgés peuvent être conservés ; la ligne reste présente et sa purge définitive est distincte.",
       "confirmationError": "Nous n’avons pas pu confirmer cette demande. Le lien est peut-être invalide, expiré ou déjà utilisé. Vous pouvez demander un nouveau lien ; cette page ne révèle aucune information sur les dossiers des participants.",
       "confirmationKeyMissing": "Ce lien ne contient pas les informations de confirmation. Demandez un nouveau lien depuis l’avis de confidentialité."
     }
@@ -750,7 +783,11 @@
     "title": "Journal d'audit",
     "subtitle": "Historique complet de toutes les modifications du système",
     "loading": "Chargement du journal d'audit...",
+    "query_error": "Impossible de charger le journal d'audit. Veuillez réessayer.",
+    "load_more_error": "Impossible de charger davantage d'événements d'audit. Veuillez réessayer.",
     "empty": "Aucun événement trouvé",
+    "filtered_empty": "Aucun événement du journal d'audit ne correspond à ces filtres.",
+    "clear_filters": "Effacer les filtres",
     "loadMore": "Charger plus",
     "showing": "Affichage de {{displayed}} sur {{total}} événement",
     "showing_plural": "Affichage de {{displayed}} sur {{total}} événements",

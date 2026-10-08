@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -122,10 +123,10 @@ public static partial class RefTestUpdateMutations
                 break;
             case null when input.Title.Name is not null:
             {
-                var title = RefTestTitle.Create(input.Title.Name);
-                context.RefTestTitles.Add(title);
-                await context.SaveChangesWithRetryAsync(cancellationToken);
-
+                var title = await RefTestTitleResolution.ResolveOrCreateAsync(
+                    context,
+                    input.Title.Name,
+                    cancellationToken);
                 titleId = title.Id;
                 break;
             }

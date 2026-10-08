@@ -289,7 +289,7 @@ public sealed class RefTestEmailMutationPersistenceTests
         public string? SentToken { get; private set; }
         public int SentCount { get; private set; }
 
-        public Task SendRefTestInvitationAsync(
+        public Task<bool> SendRefTestInvitationAsync(
             Guid refTestId,
             string name,
             string email,
@@ -301,10 +301,10 @@ public sealed class RefTestEmailMutationPersistenceTests
             SentRefTestId = refTestId;
             SentToken = token;
             SentCount++;
-            return Task.CompletedTask;
+            return Task.FromResult(true);
         }
 
-        public Task SendRefTestResultsAsync(
+        public Task<bool> SendRefTestResultsAsync(
             Guid refTestId,
             string name,
             string email,
@@ -347,16 +347,18 @@ public sealed class RefTestEmailMutationPersistenceTests
             List<(string FullName, string Email, DateTime? ScheduledAt)> refTestItems,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendPersonalDataExportVerificationAsync(
+        public Task<bool> SendPersonalDataExportVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
-        public Task SendPrivacyWithdrawalVerificationAsync(
+        public Task<bool> SendPrivacyWithdrawalVerificationAsync(
             string recipientEmail,
             string challengeKey,
             DateTime expiresAt,
+            Func<CancellationToken, Task<bool>> finalDeliverabilityCheck,
             CancellationToken cancellationToken) => throw new NotSupportedException();
 
         public Task<bool> SendPersonalDataExportAsync(

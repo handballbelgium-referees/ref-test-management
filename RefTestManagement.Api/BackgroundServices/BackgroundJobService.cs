@@ -1,4 +1,4 @@
-﻿using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -27,7 +27,8 @@ public class BackgroundJobService : BackgroundService
 
     private const string MaskingFailedMessage =
         "Job failed. The original error message was withheld because it could not be scrubbed of personal data.";
-
+    private const string ExhaustedLeaseMessage =
+        "Job processing lease expired after all attempts were exhausted.";
     public BackgroundJobService(
         IServiceProvider serviceProvider,
         ILogger<BackgroundJobService> logger,
@@ -95,6 +96,13 @@ public class BackgroundJobService : BackgroundService
         using var scope = _serviceProvider.CreateScope();
         var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
 
+        await FailExpiredFinalAttemptJobsAsync(
+            context,
+            _logger,
+            _maxAttempts,
+            _batchSize,
+            cancellationToken);
+
         // Find jobs that are ready to be processed
         // Note: This query mirrors the logic in Job.IsReadyToProcess() for database-level filtering
         //
@@ -109,6 +117,8 @@ public class BackgroundJobService : BackgroundService
             .Where(j => (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing)
                         && j.ExecuteAfter <= now
                         && j.Attempts < _maxAttempts
+                        && (j.Status == JobStatus.Pending
+                            || j.Attempts + 1 < _maxAttempts)
                         && (j.LockedUntil == null || j.LockedUntil <= now))
             .OrderBy(j => j.ExecuteAfter)
             .Take(_batchSize)
@@ -136,6 +146,88 @@ public class BackgroundJobService : BackgroundService
     }
 
     /// <summary>
+    /// Terminalizes expired processing leases that cannot be reclaimed because their attempt
+    /// budget is exhausted. Their export requests are cleared as unknown outcomes only when no
+    /// active delivery job remains for the request.
+    /// </summary>
+    internal static async Task<int> FailExpiredFinalAttemptJobsAsync(
+        RefTestManagementContext context,
+        ILogger logger,
+        int maxAttempts,
+        int batchSize,
+        CancellationToken cancellationToken)
+    {
+        var now = DateTime.UtcNow;
+        var candidateIds = await context.Jobs
+            .Where(job => job.Status == JobStatus.Processing
+                          && job.Attempts + 1 >= maxAttempts
+                          && (job.LockedUntil == null || job.LockedUntil <= now))
+            .OrderBy(job => job.LockedUntil)
+            .Take(batchSize)
+            .Select(job => job.Id)
+            .ToListAsync(cancellationToken);
+
+        var failedCount = 0;
+        foreach (var candidateId in candidateIds)
+        {
+            try
+            {
+                var job = await context.Jobs
+                    .SingleOrDefaultAsync(candidate => candidate.Id == candidateId, cancellationToken);
+                if (job is null
+                    || !job.MarkAsFailedAfterAttemptsExhausted(
+                        now,
+                        maxAttempts,
+                        ExhaustedLeaseMessage))
+                    continue;
+
+                await context.SaveChangesWithRetryAsync(cancellationToken);
+                failedCount++;
+                ServiceLoggerMessages.LogJobFailedPermanently(
+                    logger,
+                    job.Id,
+                    job.JobType,
+                    job.Attempts);
+
+                if (job.JobType == JobType.PersonalDataExportDeliveryEmail)
+                {
+                    try
+                    {
+                        await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
+                            context,
+                            DateTime.UtcNow,
+                            cancellationToken);
+                    }
+                    catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+                    {
+                        throw;
+                    }
+                    catch (Exception)
+                    {
+                        // The failed job is already durable. The duplicate-aware cleanup service
+                        // retries clearing a verified request after active delivery work ends.
+                        context.ChangeTracker.Clear();
+                        logger.LogError(
+                            "Terminal export-request cleanup failed for background job {JobId}",
+                            candidateId);
+                    }
+                }
+            }
+            catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+            {
+                throw;
+            }
+            catch (Exception)
+            {
+                context.ChangeTracker.Clear();
+                logger.LogError("Could not terminalize exhausted background job {JobId}", candidateId);
+            }
+        }
+
+        return failedCount;
+    }
+
+    /// <summary>
     /// Takes exclusive ownership of a job, or returns <c>null</c> if another worker got there
     /// first.
     /// </summary>
@@ -152,8 +244,9 @@ public class BackgroundJobService : BackgroundService
     ///
     /// The attempt counter mirrors <see cref="Job.MarkAsProcessing"/>: re-claiming a row that is
     /// already <see cref="JobStatus.Processing"/> means its previous lock expired without the
-    /// worker reporting back, so that counts as a spent attempt. The <c>CASE</c> reads the
-    /// pre-update status, which is what an SQL <c>UPDATE</c> guarantees.
+    /// worker reporting back, so that counts as a spent attempt. A final in-flight attempt is not
+    /// reclaimable; the expired-lease pass terminalizes it. The <c>CASE</c> reads the pre-update
+    /// status, which is what an SQL <c>UPDATE</c> guarantees.
     ///
     /// Static and <c>internal</c> so the race can be exercised directly from tests against a real
     /// provider — the translation of that <c>CASE</c> is the part worth proving.
@@ -173,6 +266,8 @@ public class BackgroundJobService : BackgroundService
                         && (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing)
                         && j.ExecuteAfter <= now
                         && j.Attempts < maxAttempts
+                        && (j.Status == JobStatus.Pending
+                            || j.Attempts + 1 < maxAttempts)
                         && (j.LockedUntil == null || j.LockedUntil <= now))
             .ExecuteUpdateAsync(setters => setters
                     .SetProperty(j => j.Attempts, j => j.Status == JobStatus.Processing ? j.Attempts + 1 : j.Attempts)

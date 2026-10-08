@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using Handball.Belgium.RefTestManagement.Auth0.Configurations;
 using Handball.Belgium.RefTestManagement.Auth0.Models;
 using Handball.Belgium.RefTestManagement.Security;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -15,40 +16,62 @@ internal sealed partial class Auth0ManagementService(
     HttpClient httpClient,
     IOptions<Auth0ManagementConfiguration> options,
     Auth0ManagementTokenCache tokenCache,
+    IMemoryCache approverCache,
     ILogger<Auth0ManagementService> logger)
     : IAuth0ManagementService
 {
+    // ponytail: Direct grants require per-user lookups; replace this cap with indexed discovery if tenant size outgrows it.
+    internal const int MaximumApproverDiscoveryRequests = 128;
+
+    private static readonly SemaphoreSlim ApproverDiscoveryGate = new(1, 1);
+    private static readonly TimeSpan ApproverCacheLifetime = TimeSpan.FromMinutes(5);
     private readonly Auth0ManagementConfiguration _config = options.Value;
 
     // --- Token acquisition --------------------------------------------------
 
     private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)
     {
-        return await tokenCache.GetAccessTokenAsync(async ct =>
+        try
         {
-            var response = await httpClient.PostAsync(
-                $"https://{_config.Domain}/oauth/token",
-                JsonContent.Create(new
+            return await tokenCache.GetAccessTokenAsync(async ct =>
+            {
+                var response = await httpClient.PostAsync(
+                    $"https://{_config.Domain}/oauth/token",
+                    JsonContent.Create(new
+                    {
+                        client_id = _config.ManagementClientId,
+                        client_secret = _config.ManagementClientSecret,
+                        audience = $"https://{_config.Domain}/api/v2/",
+                        grant_type = "client_credentials"
+                    }),
+                    ct);
+
+                response.EnsureSuccessStatusCode();
+
+                var token = await response.Content.ReadFromJsonAsync<TokenResponse>(
+                    cancellationToken: ct);
+                if (token is null)
                 {
-                    client_id = _config.ManagementClientId,
-                    client_secret = _config.ManagementClientSecret,
-                    audience = $"https://{_config.Domain}/api/v2/",
-                    grant_type = "client_credentials"
-                }),
-                ct);
+                    logger.LogWarning(
+                        "Auth0 Management API token acquisition returned an empty token response.");
+                    throw new InvalidOperationException("Auth0 returned an empty token response");
+                }
 
-            response.EnsureSuccessStatusCode();
-
-            var token = await response.Content.ReadFromJsonAsync<TokenResponse>(
-                cancellationToken: ct)
-                ?? throw new InvalidOperationException("Auth0 returned an empty token response");
-
-            // Refresh 60 seconds before actual expiry to avoid edge-case races
-            var cacheLifetimeSeconds = Math.Max(1, token.ExpiresIn - 60);
-            return new Auth0ManagementTokenCache.CachedToken(
-                token.AccessToken,
-                DateTimeOffset.UtcNow.AddSeconds(cacheLifetimeSeconds));
-        }, cancellationToken);
+                // Refresh 60 seconds before actual expiry to avoid edge-case races
+                var cacheLifetimeSeconds = Math.Max(1, token.ExpiresIn - 60);
+                return new Auth0ManagementTokenCache.CachedToken(
+                    token.AccessToken,
+                    DateTimeOffset.UtcNow.AddSeconds(cacheLifetimeSeconds));
+            }, cancellationToken);
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(
+                "Auth0 Management API token acquisition failed; exception type: {ExceptionType}; HTTP status: {HttpStatusCode}.",
+                exception.GetType().Name,
+                exception.StatusCode is { } statusCode ? (int)statusCode : null);
+            throw;
+        }
     }
 
     // --- IAuth0ManagementService --------------------------------------------
@@ -58,7 +81,32 @@ internal sealed partial class Auth0ManagementService(
         string permission,
         CancellationToken cancellationToken = default)
     {
+        var cacheKey = $"Auth0ApproverDiscovery:{_config.Domain}:{_config.Audience}:{permission}";
+        if (approverCache.TryGetValue(cacheKey, out IReadOnlyList<Auth0User>? cachedUsers))
+            return cachedUsers!;
+
+        // ponytail: Global serialization assumes one Auth0 tenant; use per-key gates if the app becomes multi-tenant.
+        await ApproverDiscoveryGate.WaitAsync(cancellationToken);
+        try
+        {
+            if (approverCache.TryGetValue(cacheKey, out cachedUsers))
+                return cachedUsers!;
+
+            return await DiscoverUsersWithPermissionAsync(permission, cacheKey, cancellationToken);
+        }
+        finally
+        {
+            ApproverDiscoveryGate.Release();
+        }
+    }
+
+    private async Task<IReadOnlyList<Auth0User>> DiscoverUsersWithPermissionAsync(
+        string permission,
+        string cacheKey,
+        CancellationToken cancellationToken)
+    {
         var token = await GetAccessTokenAsync(cancellationToken);
+        var requestBudget = new ApiRequestBudget(MaximumApproverDiscoveryRequests);
 
         var matchingUserIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
@@ -79,13 +127,21 @@ internal sealed partial class Auth0ManagementService(
         var roles = await GetAllPagesAsync<RoleResponse>(
             $"https://{_config.Domain}/api/v2/roles",
             token,
+            requestBudget,
             cancellationToken);
 
         foreach (var role in roles)
         {
+            if (requestBudget.IsExhausted)
+            {
+                requestBudget.MarkLimitReached();
+                break;
+            }
+
             var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
                 $"https://{_config.Domain}/api/v2/roles/{role.Id}/permissions",
                 token,
+                requestBudget,
                 cancellationToken);
 
             if (!rolePermissions.Any(PermissionMatches))
@@ -94,6 +150,7 @@ internal sealed partial class Auth0ManagementService(
             var roleUsers = await GetAllPagesAsync<UserIdResponse>(
                 $"https://{_config.Domain}/api/v2/roles/{role.Id}/users",
                 token,
+                requestBudget,
                 cancellationToken);
 
             foreach (var u in roleUsers)
@@ -106,26 +163,38 @@ internal sealed partial class Auth0ManagementService(
         var allUsers = await GetAllPagesAsync<UserResponse>(
             $"https://{_config.Domain}/api/v2/users",
             token,
+            requestBudget,
             cancellationToken);
 
         foreach (var userRef in allUsers)
         {
+            if (requestBudget.IsExhausted)
+            {
+                requestBudget.MarkLimitReached();
+                break;
+            }
+
             if (userRef.UserId is null || matchingUserIds.Contains(userRef.UserId))
                 continue;
 
             var userPermissions = await GetAllPagesAsync<PermissionResponse>(
                 $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userRef.UserId)}/permissions",
                 token,
+                requestBudget,
                 cancellationToken);
 
             if (userPermissions.Any(PermissionMatches))
                 matchingUserIds.Add(userRef.UserId);
         }
 
+        ThrowIfApproverDiscoveryLimitReached(requestBudget);
+
         if (matchingUserIds.Count == 0)
         {
             LogNoUsersFoundWithPermissionPermission(permission);
-            return [];
+            IReadOnlyList<Auth0User> noUsers = [];
+            approverCache.Set(cacheKey, noUsers, ApproverCacheLifetime);
+            return noUsers;
         }
 
         // Build result from the already-fetched user list to avoid redundant API calls
@@ -143,15 +212,31 @@ internal sealed partial class Auth0ManagementService(
             else
             {
                 // Fallback for users found via role but absent from the /users page (edge case)
-                var user = await GetUserAsync(userId, token, cancellationToken);
+                var user = await GetUserAsync(userId, token, requestBudget, cancellationToken);
                 if (user is not null)
                     users.Add(user);
             }
         }
 
+        ThrowIfApproverDiscoveryLimitReached(requestBudget);
+
         LogFoundCountUserSWithPermissionPermission(users.Count, permission);
 
-        return users;
+        IReadOnlyList<Auth0User> discoveredUsers = users.ToArray();
+        approverCache.Set(cacheKey, discoveredUsers, ApproverCacheLifetime);
+        return discoveredUsers;
+    }
+
+    private void ThrowIfApproverDiscoveryLimitReached(ApiRequestBudget requestBudget)
+    {
+        if (!requestBudget.LimitReached)
+            return;
+
+        logger.LogWarning(
+            "Auth0 approver discovery reached its limit of {RequestLimit} Management API requests; no partial result will be returned",
+            MaximumApproverDiscoveryRequests);
+        throw new InvalidOperationException(
+            "Auth0 approver discovery exceeded its Management API request limit.");
     }
 
     /// <inheritdoc />
@@ -160,42 +245,73 @@ internal sealed partial class Auth0ManagementService(
         CancellationToken cancellationToken = default)
     {
         var token = await GetAccessTokenAsync(cancellationToken);
-        var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        var directPermissions = await GetAllPagesAsync<PermissionResponse>(
-            $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/permissions",
-            token,
-            cancellationToken);
-        AddPermissions(directPermissions);
-
-        var roles = await GetAllPagesAsync<RoleResponse>(
-            $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/roles",
-            token,
-            cancellationToken);
-
-        foreach (var role in roles)
+        try
         {
-            var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
-                $"https://{_config.Domain}/api/v2/roles/{Uri.EscapeDataString(role.Id)}/permissions",
-                token,
-                cancellationToken);
-            AddPermissions(rolePermissions);
-        }
+            var permissions = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        return permissions;
+            using var accountRequest = new HttpRequestMessage(
+                HttpMethod.Get,
+                $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}?fields=blocked&include_fields=true");
+            accountRequest.Headers.Authorization =
+                new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            using var accountResponse = await httpClient.SendAsync(accountRequest, cancellationToken);
+            accountResponse.EnsureSuccessStatusCode();
 
-        void AddPermissions(IEnumerable<PermissionResponse> grants)
-        {
-            foreach (var grant in grants)
+            var accountStatus = await accountResponse.Content.ReadFromJsonAsync<UserAccountStatusResponse>(
+                cancellationToken: cancellationToken);
+            if (accountStatus is null || accountStatus.Blocked is true)
             {
-                if (string.Equals(
-                        grant.ResourceServerIdentifier,
-                        _config.Audience,
-                        StringComparison.OrdinalIgnoreCase))
+                logger.LogWarning(
+                    "Auth0 permission refresh failed because the account is blocked or its status response is missing; authorization will fail closed.");
+                throw new InvalidOperationException("Auth0 account status could not be verified.");
+            }
+
+            var directPermissions = await GetAllPagesAsync<PermissionResponse>(
+                $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/permissions",
+                token,
+                null,
+                cancellationToken);
+            AddPermissions(directPermissions);
+
+            var roles = await GetAllPagesAsync<RoleResponse>(
+                $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}/roles",
+                token,
+                null,
+                cancellationToken);
+
+            foreach (var role in roles)
+            {
+                var rolePermissions = await GetAllPagesAsync<PermissionResponse>(
+                    $"https://{_config.Domain}/api/v2/roles/{Uri.EscapeDataString(role.Id)}/permissions",
+                    token,
+                    null,
+                    cancellationToken);
+                AddPermissions(rolePermissions);
+            }
+
+            return permissions;
+
+            void AddPermissions(IEnumerable<PermissionResponse> grants)
+            {
+                foreach (var grant in grants)
                 {
-                    permissions.Add(grant.PermissionName);
+                    if (string.Equals(
+                            grant.ResourceServerIdentifier,
+                            _config.Audience,
+                            StringComparison.OrdinalIgnoreCase))
+                    {
+                        permissions.Add(grant.PermissionName);
+                    }
                 }
             }
+        }
+        catch (HttpRequestException exception)
+        {
+            logger.LogWarning(
+                "Auth0 Management API permission lookup failed; exception type: {ExceptionType}; HTTP status: {HttpStatusCode}.",
+                exception.GetType().Name,
+                exception.StatusCode is { } statusCode ? (int)statusCode : null);
+            throw;
         }
     }
 
@@ -210,6 +326,7 @@ internal sealed partial class Auth0ManagementService(
         var apis = await GetAllPagesAsync<ResourceServerResponse>(
             $"https://{_config.Domain}/api/v2/resource-servers",
             token,
+            null,
             cancellationToken);
 
         var api = apis.FirstOrDefault(a =>
@@ -223,13 +340,22 @@ internal sealed partial class Auth0ManagementService(
             return;
         }
 
-        var existing = (api.Scopes ?? [])
-            .Select(s => s.Value)
+        if (api.Scopes is null)
+        {
+            logger.LogWarning(
+                "Auth0 resource server scopes were unavailable for audience '{Audience}' — skipping permission sync",
+                _config.Audience);
+            return;
+        }
+
+        var existingScopes = api.Scopes;
+        var existing = existingScopes
+            .Select(scope => scope.Value)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var toAdd = permissions
-            .Where(p => !existing.Contains(p))
-            .Select(p => new { value = p, description = p })
+            .Where(existing.Add)
+            .Select(permission => new ScopeItem(permission, permission))
             .ToList();
 
         if (toAdd.Count == 0)
@@ -240,8 +366,6 @@ internal sealed partial class Auth0ManagementService(
             return;
         }
 
-        // PATCH is additive: send only the new scopes
-        var existingScopes = existing.Select(s => new { value = s, description = s }).ToList();
         var allScopes = existingScopes.Concat(toAdd).ToList();
         var patchBody = new { scopes = allScopes };
         var request = new HttpRequestMessage(
@@ -264,6 +388,7 @@ internal sealed partial class Auth0ManagementService(
     private async Task<List<T>> GetAllPagesAsync<T>(
         string url,
         string token,
+        ApiRequestBudget? requestBudget,
         CancellationToken cancellationToken)
     {
         var results = new List<T>();
@@ -272,6 +397,9 @@ internal sealed partial class Auth0ManagementService(
 
         while (true)
         {
+            if (requestBudget is not null && !requestBudget.TryTake())
+                break;
+
             var separator = url.Contains('?') ? '&' : '?';
             var pagedUrl = $"{url}{separator}page={page}&per_page={perPage}";
 
@@ -299,8 +427,12 @@ internal sealed partial class Auth0ManagementService(
     private async Task<Auth0User?> GetUserAsync(
         string userId,
         string token,
+        ApiRequestBudget? requestBudget,
         CancellationToken cancellationToken)
     {
+        if (requestBudget is not null && !requestBudget.TryTake())
+            return null;
+
         var request = new HttpRequestMessage(
             HttpMethod.Get,
             $"https://{_config.Domain}/api/v2/users/{Uri.EscapeDataString(userId)}");
@@ -342,13 +474,41 @@ internal sealed partial class Auth0ManagementService(
         [property: JsonPropertyName("name")] string? Name,
         [property: JsonPropertyName("email")] string Email);
 
+    private record UserAccountStatusResponse(
+        [property: JsonPropertyName("blocked")] bool? Blocked);
+
     private record ResourceServerResponse(
         [property: JsonPropertyName("id")] string Id,
         [property: JsonPropertyName("identifier")] string Identifier,
         [property: JsonPropertyName("scopes")] List<ScopeItem>? Scopes);
 
     private record ScopeItem(
-        [property: JsonPropertyName("value")] string Value);
+        [property: JsonPropertyName("value")] string Value,
+        [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+        [property: JsonPropertyName("description")] string? Description);
+
+    private sealed class ApiRequestBudget(int limit)
+    {
+        private int _remaining = limit;
+
+        public bool IsExhausted => _remaining == 0;
+
+        public bool LimitReached { get; private set; }
+
+        public void MarkLimitReached() => LimitReached = true;
+
+        public bool TryTake()
+        {
+            if (_remaining == 0)
+            {
+                LimitReached = true;
+                return false;
+            }
+
+            _remaining--;
+            return true;
+        }
+    }
     
     // --- Logger messages --------------------------------------------------
 

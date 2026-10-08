@@ -25,6 +25,7 @@
       </label>
       <app-datepicker
         [value]="afterDate() ?? ''"
+        [label]="'ref_tests.list.filters.from' | translate"
         (dateChange)="onAfterChange($event)"
         placeholder="dd/mm/yyyy"
       />
@@ -35,6 +36,7 @@
       </label>
       <app-datepicker
         [value]="beforeDate() ?? ''"
+        [label]="'ref_tests.list.filters.to' | translate"
         (dateChange)="onBeforeChange($event)"
         placeholder="dd/mm/yyyy"
       />

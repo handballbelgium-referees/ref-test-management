@@ -396,6 +396,10 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<byte[]>("EmailLookupKey")
+                        .HasMaxLength(32)
+                        .HasColumnType("varbinary(32)");
+
                     b.Property<DateTime?>("ExpiredAt")
                         .HasColumnType("datetime2");
 
@@ -503,6 +507,9 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("Email");
+
+                    b.HasIndex("EmailLookupKey")
+                        .HasDatabaseName("IX_RefTests_EmailLookupKey");
 
                     b.HasIndex("IsAnonymized");
 

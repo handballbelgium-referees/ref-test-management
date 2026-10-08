@@ -36,6 +36,8 @@ public sealed class PrivacyWithdrawalRequestService(
     ILogger<PrivacyWithdrawalRequestService> logger) : IPrivacyWithdrawalRequestService
 {
     private const int ReconciliationBatchSize = 500;
+    private const int EmailLookupBackfillBatchSize = 250;
+    private const int MaximumEmailLookupConcurrencyRetries = 3;
 
     private static readonly JsonSerializerOptions BatchJobPayloadJsonOptions = new()
     {
@@ -118,9 +120,25 @@ public sealed class PrivacyWithdrawalRequestService(
             || !new EmailAddressAttribute().IsValid(candidateEmail))
             return;
 
+        var normalizedEmail = PrivacyWithdrawalChallenge.NormalizeEmail(candidateEmail);
         try
         {
-            var normalizedEmail = PrivacyWithdrawalChallenge.NormalizeEmail(candidateEmail);
+            await EnsureEmailLookupKeysBackfilledAsync(cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception)
+        {
+            // Do not acknowledge a matching attempt if the legacy lookup keys could not be
+            // verified and backfilled; no indexed matching or challenge creation has occurred.
+            logger.LogError("Privacy-withdrawal lookup backfill failed; matching was not attempted.");
+            throw;
+        }
+
+        try
+        {
             var matchingRefTests = await FindMatchingRefTestsAsync(context, normalizedEmail, cancellationToken);
             if (matchingRefTests.Count == 0)
                 return;
@@ -215,7 +233,7 @@ public sealed class PrivacyWithdrawalRequestService(
                         .ToListAsync(retryToken);
 
                     var recovery = await EnsureProcessableTargetsAsync(dueTargetIds, now, retryToken);
-                    await CompleteFullyProcessedBatchesAsync(now, retryToken);
+                    await CompleteTerminalBatchesAsync(now, retryToken);
 
                     if (context.ChangeTracker.HasChanges())
                         await context.SaveChangesAsync(retryToken);
@@ -241,6 +259,16 @@ public sealed class PrivacyWithdrawalRequestService(
         {
             var key = challengeKey!;
             var keyHash = PrivacyWithdrawalChallenge.HashKey(key);
+            var hasPendingChallenge = await context.PrivacyWithdrawalChallenges
+                .AsNoTracking()
+                .AnyAsync(challenge => challenge.KeyHash == keyHash, cancellationToken);
+            if (!hasPendingChallenge)
+                return false;
+
+            // Backfill before opening the serializable confirmation transaction. A failure is
+            // caught below and the confirmation is not accepted.
+            await EnsureEmailLookupKeysBackfilledAsync(cancellationToken);
+
             var strategy = context.Database.CreateExecutionStrategy();
 
             return await strategy.ExecuteAsync(cancellationToken, async retryToken =>
@@ -272,8 +300,8 @@ public sealed class PrivacyWithdrawalRequestService(
                 if (!challenge.TryConfirm(key, now))
                     return false;
 
-                // Match in memory using the same invariant normalization for every provider.
-                // Status is intentionally absent: every non-anonymized RefTest is eligible.
+                // The indexed digest narrows database candidates. Verify the complete normalized
+                // address in application code so even a hypothetical digest collision cannot match.
                 var matchingRefTests = await FindMatchingRefTestsAsync(context, normalizedEmail, retryToken);
                 if (matchingRefTests.Count > 0)
                 {
@@ -463,22 +491,37 @@ public sealed class PrivacyWithdrawalRequestService(
         }
     }
 
-    private async Task CompleteFullyProcessedBatchesAsync(
+    private async Task CompleteTerminalBatchesAsync(
         DateTime completedAt,
         CancellationToken cancellationToken)
     {
-        var completedBatches = await context.PrivacyWithdrawalBatches
+        var terminalBatches = await context.PrivacyWithdrawalBatches
             .Where(batch => batch.CompletedAt == null
                             && batch.TargetCount == context.PrivacyWithdrawalBatchTargets.Count(
-                                target => target.BatchId == batch.Id && target.CompletedAt != null)
+                                target => target.BatchId == batch.Id
+                                          && (target.CompletedAt != null || target.RetryExhaustedAt != null))
                             && !context.PrivacyWithdrawalBatchTargets.Any(
-                                target => target.BatchId == batch.Id && target.CompletedAt == null))
+                                target => target.BatchId == batch.Id
+                                          && target.CompletedAt == null
+                                          && target.RetryExhaustedAt == null))
             .OrderBy(batch => batch.CreatedAt)
             .Take(ReconciliationBatchSize)
             .ToListAsync(cancellationToken);
 
-        foreach (var batch in completedBatches)
-            batch.MarkCompleted(completedAt);
+        if (terminalBatches.Count == 0)
+            return;
+
+        var terminalBatchIds = terminalBatches.Select(batch => batch.Id).ToArray();
+        var exhaustedTargetCounts = await context.PrivacyWithdrawalBatchTargets
+            .Where(target => terminalBatchIds.Contains(target.BatchId)
+                             && target.CompletedAt == null
+                             && target.RetryExhaustedAt != null)
+            .GroupBy(target => target.BatchId)
+            .Select(group => new { BatchId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(group => group.BatchId, group => group.Count, cancellationToken);
+
+        foreach (var batch in terminalBatches)
+            batch.MarkCompleted(completedAt, exhaustedTargetCounts.GetValueOrDefault(batch.Id));
     }
 
     private bool HasProcessableBatchWork(Job job, DateTime now)
@@ -548,7 +591,10 @@ public sealed class PrivacyWithdrawalRequestService(
         string normalizedEmail,
         CancellationToken cancellationToken)
     {
-        var candidates = await PrivacyWithdrawalQueries.EligibleRefTests(dbContext.RefTests)
+        var lookupKey = TokenService.HashBytes(normalizedEmail);
+        var candidates = await PrivacyWithdrawalQueries.MatchingRefTestsByEmailLookupKey(
+                dbContext.RefTests,
+                lookupKey)
             .AsNoTracking()
             .Select(refTest => new MatchingRefTest(refTest.Id, refTest.Email))
             .ToListAsync(cancellationToken);
@@ -559,6 +605,44 @@ public sealed class PrivacyWithdrawalRequestService(
                 normalizedEmail,
                 StringComparison.Ordinal))
             .ToList();
+    }
+
+    private async Task EnsureEmailLookupKeysBackfilledAsync(CancellationToken cancellationToken)
+    {
+        var concurrencyRetries = 0;
+        while (true)
+        {
+            var pendingRefTests = await PrivacyWithdrawalQueries
+                .EligibleRefTestsMissingEmailLookupKey(context.RefTests)
+                .OrderBy(refTest => refTest.Id)
+                .Take(EmailLookupBackfillBatchSize)
+                .ToListAsync(cancellationToken);
+            if (pendingRefTests.Count == 0)
+                return;
+
+            foreach (var refTest in pendingRefTests)
+                refTest.BackfillEmailLookupKey();
+
+            try
+            {
+                await context.SaveChangesWithRetryAsync(cancellationToken);
+                foreach (var refTest in pendingRefTests)
+                    context.Entry(refTest).State = EntityState.Detached;
+                concurrencyRetries = 0;
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                // An email change or erasure won the optimistic-concurrency race. Discard the
+                // stale values and reread current database state before deciding lookup is ready.
+                foreach (var refTest in pendingRefTests)
+                {
+                    await context.Entry(refTest).ReloadAsync(cancellationToken);
+                    context.Entry(refTest).State = EntityState.Detached;
+                }
+                if (++concurrencyRetries >= MaximumEmailLookupConcurrencyRetries)
+                    throw;
+            }
+        }
     }
 
     private static bool IsValidChallengeKey(string? key) =>

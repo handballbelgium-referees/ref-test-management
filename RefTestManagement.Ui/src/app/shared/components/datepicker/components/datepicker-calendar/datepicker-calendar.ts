@@ -1,4 +1,16 @@
-import { Component, DestroyRef, ElementRef, computed, effect, inject, input, output, signal, viewChild } from '@angular/core';
+import {
+  afterNextRender,
+  Component,
+  DestroyRef,
+  ElementRef,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { TranslatePipe } from '@ngx-translate/core';
 import { ViewMode } from '../../models/datepicker.types';
 import { Datepicker } from '../../services/datepicker';
@@ -19,10 +31,12 @@ export class DatepickerCalendar {
   private readonly _elRef = inject(ElementRef);
   private readonly _destroyRef = inject(DestroyRef);
   private _clickListener?: (event: MouseEvent) => void;
+  private _focusListener?: (event: FocusEvent) => void;
   private _viewportResizeListener?: () => void;
 
   readonly selectedDate = input<Date | null>(null);
   readonly currentDate = input.required<Date>();
+  readonly calendarId = input.required<string>();
   readonly inputElement = input<ElementRef | undefined>(undefined);
   readonly openMode = input<'mobile' | 'desktop'>();
 
@@ -31,6 +45,7 @@ export class DatepickerCalendar {
   protected readonly currentDateChange = output<Date>();
 
   protected readonly calendar = viewChild<ElementRef>('calendar');
+  private readonly _mobileDialog = viewChild<ElementRef<HTMLElement>>('mobileDialog');
 
   protected readonly viewMode = signal<ViewMode>('days');
 
@@ -41,6 +56,18 @@ export class DatepickerCalendar {
   protected readonly isPositioned = signal(false);
 
   constructor() {
+    afterNextRender(() => {
+      if (this.openMode() === 'mobile') {
+        this.focusActiveDay();
+        return;
+      }
+
+      this._clickListener = (event) => this.closeIfOutside(event.target as Node);
+      this._focusListener = (event) => this.closeIfOutside(event.target as Node);
+      document.addEventListener('click', this._clickListener);
+      document.addEventListener('focusin', this._focusListener);
+    });
+
     // Position calendar when opened
     effect(() => {
       if (this.openMode() === 'desktop') {
@@ -53,34 +80,14 @@ export class DatepickerCalendar {
       }
     });
 
-    // Click listener for desktop
-    setTimeout(() => {
-      if (this.openMode() === 'desktop') {
-        this._clickListener = (event: MouseEvent) => {
-          const target = event.target as Node;
-          const calendar = this.calendar();
-          const inputEl = this.inputElement();
-
-          if (
-            this._elRef.nativeElement.contains(target) ||
-            (calendar && calendar.nativeElement.contains(target)) ||
-            (inputEl && inputEl.nativeElement.contains(target))
-          ) {
-            return;
-          }
-          this.close.emit();
-        };
-        if (this.openMode() === 'desktop') {
-          document.addEventListener('click', this._clickListener);
-        }
+    this._destroyRef.onDestroy(() => {
+      if (this._clickListener) {
+        document.removeEventListener('click', this._clickListener);
       }
-
-      this._destroyRef.onDestroy(() => {
-        if (this._clickListener) {
-          document.removeEventListener('click', this._clickListener);
-        }
-      });
-    }, 300);
+      if (this._focusListener) {
+        document.removeEventListener('focusin', this._focusListener);
+      }
+    });
 
     // Viewport resize listener
     const viewport = window.visualViewport;
@@ -102,8 +109,10 @@ export class DatepickerCalendar {
     const mode = this.viewMode();
     if (mode === 'days') {
       this.viewMode.set('months');
+      this.focusActiveView();
     } else if (mode === 'months') {
       this.viewMode.set('years');
+      this.focusActiveView();
     }
   }
 
@@ -147,6 +156,7 @@ export class DatepickerCalendar {
     newDate.setMonth(monthIndex);
     this.currentDateChange.emit(newDate);
     this.viewMode.set('days');
+    this.focusActiveView();
   }
 
   protected onYearSelect(year: number): void {
@@ -154,6 +164,7 @@ export class DatepickerCalendar {
     newDate.setFullYear(year);
     this.currentDateChange.emit(newDate);
     this.viewMode.set('months');
+    this.focusActiveView();
   }
 
   protected onToday(): void {
@@ -165,6 +176,67 @@ export class DatepickerCalendar {
   protected onClear(): void {
     this.dateSelect.emit(null);
     this.close.emit();
+  }
+
+  focusActiveDay(): void {
+    const dialog =
+      this.openMode() === 'mobile'
+        ? this._mobileDialog()?.nativeElement
+        : this.calendar()?.nativeElement;
+    const activeDay = (dialog as HTMLElement | undefined)?.querySelector(
+      'button[data-calendar-day][tabindex="0"]',
+    ) as HTMLElement | null;
+    activeDay?.focus();
+  }
+
+  private focusActiveView(): void {
+    window.setTimeout(() => {
+      const dialog =
+        this.openMode() === 'mobile'
+          ? this._mobileDialog()?.nativeElement
+          : this.calendar()?.nativeElement;
+      const selector =
+        this.viewMode() === 'days'
+          ? 'button[data-calendar-day][tabindex="0"]'
+          : 'button[aria-pressed="true"]';
+      (dialog as HTMLElement | undefined)?.querySelector<HTMLElement>(selector)?.focus();
+    }, 0);
+  }
+
+  private closeIfOutside(target: Node): void {
+    const calendar = this.calendar();
+    const inputEl = this.inputElement();
+
+    if (
+      this._elRef.nativeElement.contains(target) ||
+      (calendar && calendar.nativeElement.contains(target)) ||
+      (inputEl && inputEl.nativeElement.contains(target))
+    ) {
+      return;
+    }
+    this.close.emit();
+  }
+
+  protected onMobileDialogKeydown(event: KeyboardEvent): void {
+    if (event.key !== 'Tab') return;
+
+    const dialog = event.currentTarget as HTMLElement;
+    const focusable = Array.from(
+      dialog.querySelectorAll<HTMLElement>(
+        'button:not(:disabled), input:not(:disabled), [href], [tabindex]:not([tabindex="-1"])',
+      ),
+    );
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!first || !last) return;
+
+    if (event.shiftKey && document.activeElement === first) {
+      event.preventDefault();
+      last.focus();
+    } else if (!event.shiftKey && document.activeElement === last) {
+      event.preventDefault();
+      first.focus();
+    }
   }
 
   private positionCalendar(): void {

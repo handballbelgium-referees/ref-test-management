@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations.Schema;
 using Handball.Belgium.RefTestManagement.Domain.Events;
+using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Domain.RefTests.Events;
@@ -59,7 +60,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         TitleId = titleId;
         FirstName = firstName;
         LastName = lastName;
-        Email = email;
+        SetEmail(email);
         SendInvitationsAutomatically = sendInvitationsAutomatically;
         NumberOfQuestions = numberOfQuestions;
         MaxTimeInMinutes = maxTimeInMinutes;
@@ -96,7 +97,13 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
     [NotMapped] public string FullName => $"{FirstName} {LastName}";
 
-    public string Email { get; private set; }
+    public string Email { get; private set; } = string.Empty;
+    /// <summary>
+    /// Deterministic SHA-256 lookup key for the normalized email. This is derived, pseudonymous
+    /// personal data, not anonymization or confidentiality, and is cleared during erasure.
+    /// </summary>
+    public byte[]? EmailLookupKey { get; private set; }
+
     /// <summary>The SHA-256 hash used to look up the invitation token.</summary>
     public string Token { get; private set; } = string.Empty;
     /// <summary>A protected copy used only while retrying invitation email delivery.</summary>
@@ -387,7 +394,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
 
         FirstName = firstName;
         LastName = lastName;
-        Email = email;
+        SetEmail(email);
 
         RaiseDomainEvent(new RefTestDetailsUpdatedEvent(
             oldFirstName, firstName,
@@ -623,11 +630,15 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         RejectionReason = null;
 
         if (IsAnonymized)
+        {
+            EmailLookupKey = null;
             return;
+        }
 
         FirstName = RedactedValue;
         LastName = RedactedValue;
-        Email = RedactedValue;
+        SetEmail(RedactedValue);
+        EmailLookupKey = null;
 
         // Token must stay unique (unique index) — a random placeholder still hides the real
         // token value while satisfying that constraint, unlike a fixed "***" for every RefTest.
@@ -642,6 +653,22 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         AnonymizedAt = DateTime.UtcNow;
 
         RaiseDomainEvent(new RefTestAnonymizedEvent());
+    }
+
+    /// <summary>
+    /// Computes the normalized-email lookup key for an existing record during the application-side
+    /// migration backfill. The caller must save this with the entity's concurrency token.
+    /// </summary>
+    public void BackfillEmailLookupKey()
+    {
+        if (EmailLookupKey is null && !IsAnonymized)
+            EmailLookupKey = TokenService.HashBytes(PrivacyWithdrawalChallenge.NormalizeEmail(Email));
+    }
+
+    private void SetEmail(string email)
+    {
+        Email = email;
+        EmailLookupKey = TokenService.HashBytes(PrivacyWithdrawalChallenge.NormalizeEmail(email));
     }
 
     #endregion

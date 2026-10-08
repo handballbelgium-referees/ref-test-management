@@ -13,7 +13,10 @@
 <div class="bg-neutral-50 py-8 px-4 sm:px-6 lg:px-8">
   <div class="max-w-7xl mx-auto space-y-6">
     <!-- Filters -->
-    <app-audit-log-filter (filterChange)="onFilterChange($event)" />
+    <app-audit-log-filter
+      #auditLogFilters
+      (filterChange)="onFilterChange($event)"
+    />
 
     <!-- Sorting -->
     <app-audit-log-sort-panel
@@ -31,14 +34,51 @@
         <p class="text-neutral-600">{{ 'audit-logs.loading' | translate }}</p>
       </div>
     } @else {
-      <!-- Table / Cards -->
-      <app-audit-log-table
-        [entries]="entries()"
-        [canLink]="canLink()"
-        [sortField]="sortField()"
-        [sortDirection]="sortDirection()"
-        (sortColumn)="onSortColumn($event)"
-      />
+      @if (queryError()) {
+        <div
+          role="alert"
+          class="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          <p>{{ 'audit-logs.query_error' | translate }}</p>
+          <button type="button" (click)="retry()" class="shrink-0 font-medium underline">
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
+      }
+
+      @if (loadMoreError()) {
+        <div
+          role="alert"
+          class="flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          <p>{{ 'audit-logs.load_more_error' | translate }}</p>
+          <button type="button" (click)="loadMore()" class="shrink-0 font-medium underline">
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
+      }
+
+      @if (entries().length === 0 && isFiltered() && !queryError()) {
+        <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-12 text-center">
+          <p class="text-sm text-neutral-600">{{ 'audit-logs.filtered_empty' | translate }}</p>
+          <button
+            type="button"
+            (click)="auditLogFilters.clearFilters()"
+            class="mt-6 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium"
+          >
+            {{ 'audit-logs.clear_filters' | translate }}
+          </button>
+        </div>
+      } @else if (entries().length > 0 || !queryError()) {
+        <!-- Table / Cards -->
+        <app-audit-log-table
+          [entries]="entries()"
+          [canLink]="canLink()"
+          [sortField]="sortField()"
+          [sortDirection]="sortDirection()"
+          (sortColumn)="onSortColumn($event)"
+        />
+      }
 
       <!-- Pagination -->
       @if (entries().length > 0) {
@@ -60,11 +100,11 @@
             <button
               type="button"
               (click)="loadMore()"
-              [disabled]="loading()"
+              [disabled]="loadingMore()"
               class="mx-auto flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
               [attr.aria-label]="'audit-logs.loadMore' | translate"
             >
-              @if (loading()) {
+              @if (loadingMore()) {
                 <svg
                   class="animate-spin h-4 w-4"
                   fill="none"

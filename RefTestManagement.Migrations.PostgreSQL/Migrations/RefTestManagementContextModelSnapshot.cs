@@ -396,6 +396,10 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                         .HasMaxLength(256)
                         .HasColumnType("character varying(256)");
 
+                    b.Property<byte[]>("EmailLookupKey")
+                        .HasMaxLength(32)
+                        .HasColumnType("bytea");
+
                     b.Property<DateTime?>("ExpiredAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -503,6 +507,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.PostgreSQL.Migrations
                     b.HasIndex("CreatedAt");
 
                     b.HasIndex("Email");
+
+                    b.HasIndex("EmailLookupKey")
+                        .HasDatabaseName("IX_RefTests_EmailLookupKey");
 
                     b.HasIndex("IsAnonymized");
 

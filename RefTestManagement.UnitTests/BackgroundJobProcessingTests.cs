@@ -1,6 +1,12 @@
+using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Domain.Privacy;
+using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
+using Handball.Belgium.RefTestManagement.Infrastructure;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -158,6 +164,202 @@ public class BackgroundJobProcessingTests
         Assert.Equal(JobStatus.Failed, job.Status);
         Assert.Equal(MaxAttempts, job.Attempts);
         Assert.NotNull(job.CompletedAt);
+    }
+
+    [Fact]
+    public async Task ExpiredFinalAttemptLeaseFailsAndClearsExportRequestAsUnknown()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var now = DateTime.UtcNow;
+        var key = new string('K', 43);
+        var request = PersonalDataExportRequest.Create(
+            "ada@example.org",
+            key,
+            $"protected:{key}",
+            now.AddMinutes(-1),
+            now.AddHours(1));
+        Assert.True(request.TryConfirm(key, now));
+        var payload = JsonSerializer.Serialize(
+            new PersonalDataExportDeliveryEmailPayload(request.Id),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var job = Job.Create(JobType.PersonalDataExportDeliveryEmail, payload);
+        job.MarkAsProcessing(TimeSpan.FromMinutes(-1));
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PersonalDataExportRequests.Add(request);
+            seed.Jobs.Add(job);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        PersonalDataExportRequest finalizedRequest;
+        await using (var context = database.CreateContext())
+        {
+            var reclaimed = await BackgroundJobService.ClaimJobAsync(
+                context,
+                job.Id,
+                maxAttempts: 1,
+                TimeSpan.FromMinutes(5),
+                TestContext.Current.CancellationToken);
+            Assert.Null(reclaimed);
+
+            var failed = await BackgroundJobService.FailExpiredFinalAttemptJobsAsync(
+                context,
+                NullLogger.Instance,
+                maxAttempts: 1,
+                batchSize: 10,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(1, failed);
+            finalizedRequest = await context.PersonalDataExportRequests.SingleAsync(
+                candidate => candidate.Id == request.Id,
+                TestContext.Current.CancellationToken);
+        }
+
+        await using var verification = database.CreateContext();
+        var failedJob = await verification.Jobs.SingleAsync(
+            candidate => candidate.Id == job.Id,
+            TestContext.Current.CancellationToken);
+        var clearedRequest = await verification.PersonalDataExportRequests.SingleAsync(
+            candidate => candidate.Id == request.Id,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(JobStatus.Failed, failedJob.Status);
+        Assert.Equal(1, failedJob.Attempts);
+        Assert.NotNull(failedJob.CompletedAt);
+        Assert.DoesNotContain("ada@example.org", failedJob.ErrorMessage!, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(string.Empty, clearedRequest.Email);
+        Assert.Null(clearedRequest.KeyHash);
+        Assert.Null(clearedRequest.ProtectedDeliveryKey);
+        var terminalFailure = Assert.IsType<PersonalDataExportDeliveryFailedEvent>(
+            Assert.Single(finalizedRequest.DomainEvents.OfType<PersonalDataExportDeliveryFailedEvent>()));
+        Assert.Equal(PersonalDataExportDeliveryFailureCode.DeliveryOutcomeUnknown, terminalFailure.FailureCode);
+    }
+
+    [Theory]
+    [InlineData(JobStatus.Pending)]
+    [InlineData(JobStatus.Processing)]
+    public async Task ExpiredFinalAttemptLeasePreservesRequestUntilActiveDuplicateFinishes(
+        JobStatus duplicateStatus)
+    {
+        using var database = SqliteTestDatabase.Create();
+        var now = DateTime.UtcNow;
+        var key = new string('K', 43);
+        var request = PersonalDataExportRequest.Create(
+            "ada@example.org",
+            key,
+            $"protected:{key}",
+            now.AddMinutes(-1),
+            now.AddHours(1));
+        Assert.True(request.TryConfirm(key, now));
+        var payload = JsonSerializer.Serialize(
+            new PersonalDataExportDeliveryEmailPayload(request.Id),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        var expiredJob = Job.Create(JobType.PersonalDataExportDeliveryEmail, payload);
+        expiredJob.MarkAsProcessing(TimeSpan.FromMinutes(-1));
+        var duplicateJob = Job.Create(JobType.PersonalDataExportDeliveryEmail, payload);
+        if (duplicateStatus == JobStatus.Processing)
+            duplicateJob.MarkAsProcessing(TimeSpan.FromMinutes(5));
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.PersonalDataExportRequests.Add(request);
+            seed.Jobs.AddRange(expiredJob, duplicateJob);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var failed = await BackgroundJobService.FailExpiredFinalAttemptJobsAsync(
+                context,
+                NullLogger.Instance,
+                maxAttempts: 1,
+                batchSize: 10,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(1, failed);
+        }
+
+        await using (var verification = database.CreateContext())
+        {
+            var preserved = await verification.PersonalDataExportRequests.SingleAsync(
+                candidate => candidate.Id == request.Id,
+                TestContext.Current.CancellationToken);
+            var activeDuplicate = await verification.Jobs.SingleAsync(
+                candidate => candidate.Id == duplicateJob.Id,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(duplicateStatus, activeDuplicate.Status);
+            Assert.Equal("ada@example.org", preserved.Email);
+            Assert.NotNull(preserved.VerifiedAt);
+            Assert.Empty(preserved.DomainEvents);
+        }
+
+        await using (var context = database.CreateContext())
+        {
+            var activeDuplicate = await context.Jobs.SingleAsync(
+                candidate => candidate.Id == duplicateJob.Id,
+                TestContext.Current.CancellationToken);
+            if (activeDuplicate.Status == JobStatus.Pending)
+                activeDuplicate.MarkAsProcessing(TimeSpan.FromMinutes(5));
+            activeDuplicate.MarkAsFailed("Personal-data export delivery failed.", maxAttempts: 1);
+            await context.SaveChangesAsync(TestContext.Current.CancellationToken);
+
+            var trackedRequest = await context.PersonalDataExportRequests.SingleAsync(
+                candidate => candidate.Id == request.Id,
+                TestContext.Current.CancellationToken);
+            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
+                context,
+                DateTime.UtcNow,
+                TestContext.Current.CancellationToken);
+            Assert.Equal(1, cleared);
+            Assert.Equal(string.Empty, trackedRequest.Email);
+            Assert.Null(trackedRequest.KeyHash);
+            Assert.Null(trackedRequest.ProtectedDeliveryKey);
+            var terminalFailure = Assert.IsType<PersonalDataExportDeliveryFailedEvent>(
+                Assert.Single(trackedRequest.DomainEvents.OfType<PersonalDataExportDeliveryFailedEvent>()));
+            Assert.Equal(PersonalDataExportDeliveryFailureCode.DeliveryOutcomeUnknown, terminalFailure.FailureCode);
+            Assert.True(terminalFailure.IsTerminal);
+
+            Assert.Equal(
+                0,
+                await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
+                    context,
+                    DateTime.UtcNow,
+                    TestContext.Current.CancellationToken));
+            Assert.Single(trackedRequest.DomainEvents.OfType<PersonalDataExportDeliveryFailedEvent>());
+        }
+    }
+
+    [Fact]
+    public async Task ExpiredNonFinalLeaseRemainsEligibleForRetry()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var job = Job.Create(JobType.InvitationEmail, "{}");
+        job.MarkAsProcessing(TimeSpan.FromMinutes(-1));
+
+        await using (var seed = database.CreateContext())
+        {
+            seed.Jobs.Add(job);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
+
+        await using var context = database.CreateContext();
+        var failed = await BackgroundJobService.FailExpiredFinalAttemptJobsAsync(
+            context,
+            NullLogger.Instance,
+            maxAttempts: 2,
+            batchSize: 10,
+            TestContext.Current.CancellationToken);
+        Assert.Equal(0, failed);
+
+        var reclaimed = await BackgroundJobService.ClaimJobAsync(
+            context,
+            job.Id,
+            maxAttempts: 2,
+            TimeSpan.FromMinutes(5),
+            TestContext.Current.CancellationToken);
+
+        Assert.NotNull(reclaimed);
+        Assert.Equal(JobStatus.Processing, reclaimed.Status);
+        Assert.Equal(1, reclaimed.Attempts);
+        Assert.True(reclaimed.LockedUntil > DateTime.UtcNow);
     }
 
     /// <summary>

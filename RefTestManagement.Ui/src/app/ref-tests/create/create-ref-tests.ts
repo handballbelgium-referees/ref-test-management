@@ -141,6 +141,8 @@ export class CreateRefTests {
   >([]);
   protected readonly showQuestionImport = signal(false);
   protected readonly loadingQuestions = signal(false);
+  protected readonly questionImportError = signal(false);
+  private _questionImportText = '';
   readonly currentLanguage = this._translate.currentLang;
 
   // Computed signals
@@ -230,6 +232,10 @@ export class CreateRefTests {
   }
 
   protected onQuestionImport(text: string): void {
+    if (this.loadingQuestions()) {
+      return;
+    }
+
     const lines = text
       .split('\n')
       .map((line) => line.trim())
@@ -242,16 +248,24 @@ export class CreateRefTests {
 
     if (questionNumbers.length === 0) {
       this.showQuestionImport.set(false);
+      this.questionImportError.set(false);
+      this._questionImportText = '';
       return;
     }
 
     this.loadingQuestions.set(true);
+    this.questionImportError.set(false);
+    this._questionImportText = text;
 
     // Validate and add questions
     this._getQuestionsByNumberGQL
       .fetch({ variables: { numbers: questionNumbers } })
       .pipe(
         map((result) => {
+          if (result.error) {
+            throw result.error;
+          }
+
           const questions = result.data?.questionsByNumber ?? [];
           return questions
             .filter((q) => q.phrase != null)
@@ -270,10 +284,13 @@ export class CreateRefTests {
         tap(() => {
           this.loadingQuestions.set(false);
           this.showQuestionImport.set(false);
+          this.questionImportError.set(false);
+          this._questionImportText = '';
           this.resetQuestionCount();
         }),
         catchError(() => {
           this.loadingQuestions.set(false);
+          this.questionImportError.set(true);
           return of([]);
         }),
         takeUntilDestroyed(this._destroyRef),
@@ -331,9 +348,21 @@ export class CreateRefTests {
 
   protected onQuestionCancel(): void {
     this.showQuestionImport.set(false);
+    this.questionImportError.set(false);
+    this._questionImportText = '';
+  }
+
+  protected retryQuestionImport(): void {
+    if (this._questionImportText) {
+      this.onQuestionImport(this._questionImportText);
+    }
   }
 
   protected onSubmit(): void {
+    if (this.loading()) {
+      return;
+    }
+
     // Check form validity
     if (this.refTestForm().invalid()) {
       // Mark all fields as touched to reveal validation errors
@@ -354,7 +383,7 @@ export class CreateRefTests {
       .map((q) => q.trim())
       .filter((q) => q.length > 0);
 
-    const { loading } = runMutation(
+    runMutation(
       this._createRefTestsGQL.mutate({
         variables: {
           input: {
@@ -377,6 +406,7 @@ export class CreateRefTests {
       }),
       this._destroyRef,
       {
+        onStart: () => this.loading.set(true),
         onSuccess: (data: CreateRefTestsMutation['createRefTests']['createRefTestsResult']) => {
           if (data) {
             if (data.errors.length > 0) {
@@ -427,10 +457,10 @@ export class CreateRefTests {
             message || this._translate.instant('ref_tests.create.form.submit_error'),
           );
         },
+        onComplete: () => this.loading.set(false),
       },
       (result) => result.data?.createRefTests?.createRefTestsResult ?? null,
     );
-    this.loading.set(loading());
   }
 
   protected cancel(): void {

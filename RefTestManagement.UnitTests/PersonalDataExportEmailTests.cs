@@ -25,6 +25,7 @@ public sealed class PersonalDataExportEmailTests
             ParticipantEmail,
             ChallengeKey,
             DateTime.UtcNow.AddHours(24),
+            _ => Task.FromResult(true),
             TestContext.Current.CancellationToken);
 
         using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
@@ -69,6 +70,7 @@ public sealed class PersonalDataExportEmailTests
             ParticipantEmail,
             ChallengeKey,
             DateTime.UtcNow.AddHours(24),
+            _ => Task.FromResult(true),
             TestContext.Current.CancellationToken);
 
         using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
@@ -103,6 +105,36 @@ public sealed class PersonalDataExportEmailTests
     }
 
     [Fact]
+    public async Task VerificationEmailsSkipProviderWhenFinalDeliverabilityCheckFails()
+    {
+        var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+        using var client = new HttpClient(handler);
+        var service = CreateService(client, NullLogger<EmailService>.Instance);
+        var finalCheckCount = 0;
+        Task<bool> RejectFinalCheck(CancellationToken _)
+        {
+            finalCheckCount++;
+            return Task.FromResult(false);
+        }
+
+        Assert.False(await service.SendPersonalDataExportVerificationAsync(
+            ParticipantEmail,
+            ChallengeKey,
+            DateTime.UtcNow.AddHours(24),
+            RejectFinalCheck,
+            TestContext.Current.CancellationToken));
+        Assert.False(await service.SendPrivacyWithdrawalVerificationAsync(
+            ParticipantEmail,
+            ChallengeKey,
+            DateTime.UtcNow.AddHours(24),
+            RejectFinalCheck,
+            TestContext.Current.CancellationToken));
+
+        Assert.Equal(2, finalCheckCount);
+        Assert.Null(handler.RequestBody);
+    }
+
+    [Fact]
     public async Task InvitationEmailUsesFragmentCredentialsAndLanguageSpecificLinks()
     {
         var token = new string('a', 32);
@@ -110,7 +142,7 @@ public sealed class PersonalDataExportEmailTests
         using var client = new HttpClient(handler);
         var service = CreateService(client, NullLogger<EmailService>.Instance);
 
-        await service.SendRefTestInvitationAsync(
+        var wasAccepted = await service.SendRefTestInvitationAsync(
             Guid.NewGuid(),
             "Ada Lovelace",
             ParticipantEmail,
@@ -119,6 +151,7 @@ public sealed class PersonalDataExportEmailTests
             maxTimeInMinutes: 30,
             TestContext.Current.CancellationToken);
 
+        Assert.True(wasAccepted);
         using var providerRequest = JsonDocument.Parse(handler.RequestBody!);
         var html = providerRequest.RootElement.GetProperty("htmlContent").GetString()!;
         foreach (var language in new[] { "en", "nl", "fr", "de" })
@@ -128,6 +161,163 @@ public sealed class PersonalDataExportEmailTests
         }
 
         Assert.DoesNotContain($"/ref-test/{token}", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task RejectedInvitationReturnsFailureAndLogsOnlyTheProviderStatus()
+    {
+        var token = new string('t', 32);
+        var providerResponse = $"Provider echoed /ref-test?lang=en#{token} and {ParticipantEmail}.";
+        var handler = new RecordingHttpMessageHandler(HttpStatusCode.BadRequest, providerResponse);
+        using var client = new HttpClient(handler);
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(loggerProvider));
+        var service = CreateService(client, loggerFactory.CreateLogger<EmailService>());
+
+        var wasAccepted = await service.SendRefTestInvitationAsync(
+            Guid.NewGuid(),
+            "Ada Lovelace",
+            ParticipantEmail,
+            token,
+            numberOfQuestions: 10,
+            maxTimeInMinutes: 30,
+            TestContext.Current.CancellationToken);
+
+        Assert.False(wasAccepted);
+        var failedLog = Assert.Single(
+            loggerProvider.Entries,
+            entry => entry.Template.Contains("rejected by provider", StringComparison.Ordinal));
+        Assert.Equal("Email to {recipient} rejected by provider with status code {statusCode}", failedLog.Template);
+        Assert.Equal((int)HttpStatusCode.BadRequest, failedLog.Properties["statusCode"]);
+        Assert.DoesNotContain("responseBody", failedLog.Template, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("responseBody", failedLog.Properties.Keys, StringComparer.OrdinalIgnoreCase);
+
+        var loggedData = string.Join(
+            Environment.NewLine,
+            loggerProvider.Entries.Select(entry =>
+                $"{entry.Template} {string.Join(" ", entry.Properties.Values)}"));
+        Assert.DoesNotContain(providerResponse, loggedData, StringComparison.Ordinal);
+        Assert.DoesNotContain(token, loggedData, StringComparison.Ordinal);
+        Assert.DoesNotContain(ParticipantEmail, loggedData, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task ProviderSubmissionExceptionDoesNotLogItsMessageOrInvitationToken()
+    {
+        var token = new string('e', 32);
+        var providerError = $"Provider echoed /ref-test?lang=en#{token}.";
+        var handler = new RecordingHttpMessageHandler(
+            HttpStatusCode.Accepted,
+            exception: new HttpRequestException(providerError));
+        using var client = new HttpClient(handler);
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(loggerProvider));
+        var service = CreateService(client, loggerFactory.CreateLogger<EmailService>());
+
+        var exception = await Assert.ThrowsAsync<EmailException>(() =>
+            service.SendRefTestInvitationAsync(
+                Guid.NewGuid(),
+                "Ada Lovelace",
+                ParticipantEmail,
+                token,
+                numberOfQuestions: 10,
+                maxTimeInMinutes: 30,
+                TestContext.Current.CancellationToken));
+
+        Assert.DoesNotContain(token, exception.Message, StringComparison.Ordinal);
+        var errorLog = Assert.Single(
+            loggerProvider.Entries,
+            entry => entry.Template.StartsWith("Error sending email", StringComparison.Ordinal));
+        Assert.Equal("HttpRequestException", errorLog.Properties["errorType"]);
+        var loggedData = string.Join(
+            Environment.NewLine,
+            loggerProvider.Entries.Select(entry =>
+                $"{entry.Template} {string.Join(" ", entry.Properties.Values)}"));
+        Assert.DoesNotContain(providerError, loggedData, StringComparison.Ordinal);
+        Assert.DoesNotContain(token, loggedData, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task ResultEmailReturnsWhetherTheProviderAcceptedSubmission()
+    {
+        using var acceptedClient = new HttpClient(new RecordingHttpMessageHandler(HttpStatusCode.Accepted));
+        using var rejectedClient = new HttpClient(new RecordingHttpMessageHandler(HttpStatusCode.BadRequest));
+        var acceptedService = CreateService(acceptedClient, NullLogger<EmailService>.Instance);
+        var rejectedService = CreateService(rejectedClient, NullLogger<EmailService>.Instance);
+
+        var accepted = await SendResultEmailAsync(acceptedService);
+        var rejected = await SendResultEmailAsync(rejectedService);
+
+        Assert.True(accepted);
+        Assert.False(rejected);
+    }
+
+    [Theory]
+    [InlineData("report", true)]
+    [InlineData("report", false)]
+    [InlineData("approval-notification", true)]
+    [InlineData("approval-notification", false)]
+    [InlineData("approval-decision", true)]
+    [InlineData("approval-decision", false)]
+    public async Task JobBackedEmailLogsSuccessOnlyAfterProviderAcceptance(
+        string emailType,
+        bool providerAccepts)
+    {
+        var providerResponse = $"Provider echoed a private value and {ParticipantEmail}.";
+        var statusCode = providerAccepts ? HttpStatusCode.Accepted : HttpStatusCode.BadRequest;
+        using var client = new HttpClient(new RecordingHttpMessageHandler(statusCode, providerResponse));
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(loggerProvider));
+        var service = CreateService(client, loggerFactory.CreateLogger<EmailService>());
+
+        if (providerAccepts)
+        {
+            await SendJobBackedEmailAsync(service, emailType);
+        }
+        else
+        {
+            await Assert.ThrowsAsync<EmailException>(() => SendJobBackedEmailAsync(service, emailType));
+            var rejectedLog = Assert.Single(
+                loggerProvider.Entries,
+                entry => entry.Template.Contains("rejected by provider", StringComparison.Ordinal));
+            Assert.Equal((int)statusCode, rejectedLog.Properties["statusCode"]);
+        }
+
+        Assert.Equal(
+            providerAccepts,
+            loggerProvider.Entries.Any(entry =>
+                entry.Template == "Email sent successfully to {recipient}"));
+
+        var loggedData = string.Join(
+            Environment.NewLine,
+            loggerProvider.Entries.Select(entry =>
+                $"{entry.Template} {string.Join(" ", entry.Properties.Values)}"));
+        Assert.DoesNotContain(providerResponse, loggedData, StringComparison.Ordinal);
+        Assert.DoesNotContain(ParticipantEmail, loggedData, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task JobBackedEmailSubmissionFailurePropagatesWithoutSuccessLog()
+    {
+        var providerError = $"Provider transport failure for {ParticipantEmail}.";
+        using var client = new HttpClient(new RecordingHttpMessageHandler(
+            HttpStatusCode.Accepted,
+            exception: new HttpRequestException(providerError)));
+        using var loggerProvider = new CapturingLoggerProvider();
+        using var loggerFactory = LoggerFactory.Create(builder => builder.AddProvider(loggerProvider));
+        var service = CreateService(client, loggerFactory.CreateLogger<EmailService>());
+
+        await Assert.ThrowsAsync<EmailException>(() =>
+            SendJobBackedEmailAsync(service, "approval-notification"));
+
+        var loggedData = string.Join(
+            Environment.NewLine,
+            loggerProvider.Entries.Select(entry =>
+                $"{entry.Template} {string.Join(" ", entry.Properties.Values)}"));
+        Assert.DoesNotContain(providerError, loggedData, StringComparison.Ordinal);
+        Assert.DoesNotContain(
+            loggerProvider.Entries,
+            entry => entry.Template == "Email sent successfully to {recipient}");
     }
 
     [Fact]
@@ -146,6 +336,7 @@ public sealed class PersonalDataExportEmailTests
                 ParticipantEmail,
                 ChallengeKey,
                 DateTime.UtcNow.AddHours(24),
+                _ => Task.FromResult(true),
                 TestContext.Current.CancellationToken));
 
         var logs = string.Join(Environment.NewLine, loggerProvider.Messages);
@@ -355,10 +546,73 @@ public sealed class PersonalDataExportEmailTests
             LanguageConfiguration.CreateDefault(),
             new ScoreConfiguration(),
             new RefTestExpirationConfiguration(),
-            pdfService: null!,
+            new EmptyResultsPdfService(),
             templateService,
             new TranslationService(),
             client);
+    }
+
+    private static Task<bool> SendResultEmailAsync(IEmailService service) =>
+        service.SendRefTestResultsAsync(
+            Guid.NewGuid(),
+            "Ada Lovelace",
+            ParticipantEmail,
+            questionScore: 8,
+            answerScore: 12,
+            totalQuestions: 10,
+            answerTotal: 15,
+            percentage: 80,
+            selectedAnswerIds: [],
+            wrongQuestionIds: [],
+            wrongAnswerIds: [],
+            questionsWithCorrectAnswers: [],
+            scheduleEmail: false,
+            TestContext.Current.CancellationToken);
+
+    private static Task SendJobBackedEmailAsync(IEmailService service, string emailType)
+    {
+        var refTestItems = new List<(string FullName, string Email, DateTime? ScheduledAt)>();
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        return emailType switch
+        {
+            "report" => service.SendReportEmailAsync(
+                ParticipantEmail, [], [], "20261006_2316", 1, cancellationToken),
+            "approval-notification" => service.SendApprovalNotificationAsync(
+                "Approver",
+                ParticipantEmail,
+                "Creator",
+                "Season",
+                refTestItems,
+                "https://app.example.org",
+                cancellationToken),
+            "approval-decision" => service.SendApprovalDecisionAsync(
+                "Creator",
+                ParticipantEmail,
+                "Approver",
+                isApproved: true,
+                rejectionReason: null,
+                titleValue: "Season",
+                refTestItems: refTestItems,
+                cancellationToken: cancellationToken),
+            _ => throw new ArgumentOutOfRangeException(nameof(emailType), emailType, "Unknown job-backed email.")
+        };
+    }
+
+    private sealed class EmptyResultsPdfService : IRefTestResultsPdfService
+    {
+        public byte[] GenerateRefTestResultsPdf(
+            string name,
+            string language,
+            int questionScore,
+            int answerScore,
+            int totalQuestions,
+            int answerTotal,
+            double percentage,
+            List<string> selectedAnswerIds,
+            List<string> wrongQuestionIds,
+            List<string> wrongAnswerIds,
+            List<Question> questionsWithCorrectAnswers) => [];
     }
 
     private sealed class EmptyLogoService : ILogoService
@@ -370,7 +624,8 @@ public sealed class PersonalDataExportEmailTests
 
     private sealed class RecordingHttpMessageHandler(
         HttpStatusCode statusCode,
-        string? responseBody = null) : HttpMessageHandler
+        string? responseBody = null,
+        Exception? exception = null) : HttpMessageHandler
     {
         public string? RequestBody { get; private set; }
 
@@ -379,6 +634,9 @@ public sealed class PersonalDataExportEmailTests
             CancellationToken cancellationToken)
         {
             RequestBody = await request.Content!.ReadAsStringAsync(cancellationToken);
+            if (exception is not null)
+                throw exception;
+
             var response = new HttpResponseMessage(statusCode);
             if (responseBody is not null)
                 response.Content = new StringContent(responseBody);
@@ -389,6 +647,7 @@ public sealed class PersonalDataExportEmailTests
     private sealed class CapturingLoggerProvider : ILoggerProvider
     {
         public List<string> Messages { get; } = [];
+        public List<CapturedLog> Entries { get; } = [];
 
         public ILogger CreateLogger(string categoryName) => new CapturingLogger(this);
 
@@ -407,8 +666,23 @@ public sealed class PersonalDataExportEmailTests
                 EventId eventId,
                 TState state,
                 Exception? exception,
-                Func<TState, Exception?, string> formatter) =>
-                provider.Messages.Add(formatter(state, exception));
+                Func<TState, Exception?, string> formatter)
+            {
+                var properties = state is IEnumerable<KeyValuePair<string, object?>> values
+                    ? values.ToDictionary(value => value.Key, value => value.Value)
+                    : new Dictionary<string, object?>();
+                var message = formatter(state, exception);
+                var template = properties.TryGetValue("{OriginalFormat}", out var originalFormat)
+                    ? originalFormat?.ToString() ?? string.Empty
+                    : message;
+                provider.Messages.Add(message);
+                provider.Entries.Add(new CapturedLog(template, properties, message));
+            }
         }
     }
+
+    private sealed record CapturedLog(
+        string Template,
+        IReadOnlyDictionary<string, object?> Properties,
+        string Message);
 }

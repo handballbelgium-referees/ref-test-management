@@ -37,14 +37,29 @@ export class Home {
       .join(', '),
   );
 
-  protected readonly isLoggedIn = computed(() => !!this._auth.isAuthenticated());
+  protected readonly isLoggedIn = computed(
+    () => this._auth.authenticationState().status === 'authenticated',
+  );
+
+  protected readonly hasAuthenticationCheckError = computed(
+    () => this._auth.authenticationState().status === 'error',
+  );
 
   protected readonly isLoading = computed(() => {
-    const isAuthenticated = this._auth.isAuthenticated();
-    if (isAuthenticated === undefined) return true;
-    if (isAuthenticated && this._permissions.permissions() === undefined) return true;
+    const authenticationState = this._auth.authenticationState();
+    if (authenticationState.status === 'checking') return true;
+    if (
+      authenticationState.status === 'authenticated' &&
+      this._permissions.permissions() === undefined
+    ) {
+      return true;
+    }
     return false;
   });
+
+  protected retryAuthenticationCheck(): void {
+    this._auth.retryAuthenticationCheck();
+  }
 
   protected login(): void {
     this._auth.login();

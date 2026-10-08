@@ -61,7 +61,10 @@ public sealed class PermissionSnapshotService(
         if (string.IsNullOrWhiteSpace(userId))
             userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (string.IsNullOrWhiteSpace(userId))
+        {
+            PermissionSnapshotLogger.RefreshFailed(logger, "MissingSubject", null, null);
             return null;
+        }
 
         Task<IReadOnlySet<string>?>? refreshTask = null;
         TaskCompletionSource<IReadOnlySet<string>?>? refresh = null;
@@ -85,7 +88,7 @@ public sealed class PermissionSnapshotService(
 
         if (refreshTask is null)
         {
-            PermissionSnapshotLogger.RefreshFailed(logger);
+            PermissionSnapshotLogger.RefreshFailed(logger, "Capacity", null, null);
             return null;
         }
 
@@ -131,15 +134,47 @@ public sealed class PermissionSnapshotService(
             hasRefreshPermit = true;
 
             using var scope = scopeFactory.CreateScope();
-            var managementService = scope.ServiceProvider.GetRequiredService<IAuth0ManagementService>();
-            var grants = await managementService
-                .GetUserPermissionsAsync(userId, timeout.Token)
-                .WaitAsync(timeout.Token);
-            permissions = grants.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+            var managementService = scope.ServiceProvider.GetService<IAuth0ManagementService>();
+            if (managementService is null)
+            {
+                PermissionSnapshotLogger.RefreshFailed(
+                    logger,
+                    "ManagementServiceUnavailable",
+                    null,
+                    null);
+            }
+            else
+            {
+                var grants = await managementService
+                    .GetUserPermissionsAsync(userId, timeout.Token)
+                    .WaitAsync(timeout.Token);
+                permissions = grants.ToFrozenSet(StringComparer.OrdinalIgnoreCase);
+            }
         }
-        catch (Exception)
+        catch (Exception exception) when (
+            exception is OperationCanceledException or TimeoutException)
         {
-            PermissionSnapshotLogger.RefreshFailed(logger);
+            PermissionSnapshotLogger.RefreshFailed(
+                logger,
+                "Timeout",
+                exception.GetType().Name,
+                null);
+        }
+        catch (HttpRequestException exception)
+        {
+            PermissionSnapshotLogger.RefreshFailed(
+                logger,
+                "HttpFailure",
+                exception.GetType().Name,
+                exception.StatusCode is { } statusCode ? (int)statusCode : null);
+        }
+        catch (Exception exception)
+        {
+            PermissionSnapshotLogger.RefreshFailed(
+                logger,
+                "RefreshFailure",
+                exception.GetType().Name,
+                null);
         }
         finally
         {
@@ -173,6 +208,10 @@ internal static partial class PermissionSnapshotLogger
 {
     [LoggerMessage(
         LogLevel.Warning,
-        "Permission refresh failed or capacity was exhausted; the request was denied.")]
-    internal static partial void RefreshFailed(ILogger logger);
+        "Permission refresh failed; the request was denied. Category: {FailureCategory}; Exception type: {ExceptionType}; HTTP status: {HttpStatusCode}.")]
+    internal static partial void RefreshFailed(
+        ILogger logger,
+        string failureCategory,
+        string? exceptionType,
+        int? httpStatusCode);
 }

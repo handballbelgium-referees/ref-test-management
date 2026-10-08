@@ -132,14 +132,13 @@ public static partial class ServiceLoggerMessages
     [LoggerMessage(LogLevel.Information, "Email sent successfully to {recipient}")]
     public static partial void LogEmailSentSuccessfully(ILogger logger, string recipient);
 
-    // responseBody is the email provider's raw error payload, logged for diagnosis. It can echo
-    // back the address that was rejected, so callers must scrub it with
-    // LogRedaction.MaskEmailsInText before passing it in.
-    [LoggerMessage(LogLevel.Warning, "Email to {recipient} failed with status code {statusCode}: {responseBody}")]
-    public static partial void LogEmailFailed(ILogger logger, string recipient, int statusCode, string responseBody);
+    // Provider-controlled response content can echo token-bearing request data, so only the
+    // numeric status is logged.
+    [LoggerMessage(LogLevel.Warning, "Email to {recipient} rejected by provider with status code {statusCode}")]
+    public static partial void LogEmailFailed(ILogger logger, string recipient, int statusCode);
 
-    [LoggerMessage(LogLevel.Error, "Error sending email to {recipient}")]
-    public static partial void LogEmailError(ILogger logger, Exception ex, string recipient);
+    [LoggerMessage(LogLevel.Error, "Error sending email to {recipient} ({errorType})")]
+    public static partial void LogEmailError(ILogger logger, string recipient, string errorType);
 
     [LoggerMessage(LogLevel.Warning, "API key not configured. Email not sent.")]
     public static partial void LogApiKeyNotConfigured(ILogger logger);

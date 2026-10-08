@@ -20,7 +20,19 @@
     "save": "Save",
     "saving": "Saving...",
     "processing": "Processing...",
+    "retry": "Retry",
     "close": "Close",
+    "change_calendar_view": "Change calendar view",
+    "time_picker": {
+      "label": "Time picker",
+      "back_to_hours": "Back to hours",
+      "close": "Close time picker",
+      "hour": "{{hour}} hours",
+      "minute": "{{minute}} minutes",
+      "subtract_minute": "Subtract 1 minute",
+      "add_minute": "Add 1 minute",
+      "one_minute_short": "1 min"
+    },
     "deleting": "Deleting...",
     "sending": "Sending...",
     "copy": "Copy",
@@ -28,6 +40,7 @@
   },
   "nav": {
     "language": "Language",
+    "select_language": "Switch to {{language}}",
     "logout": "Logout"
   },
   "home": {
@@ -35,6 +48,10 @@
       "title": "Handball RefTest Management System",
       "subtitle": "Create and manage handball rules RefTests for referees and delegates of the Belgian Handball Federation",
       "login": "Login to Dashboard"
+    },
+    "authenticationCheckFailed": {
+      "title": "Sign-in status unavailable",
+      "description": "We couldn't confirm your sign-in status. Retry the check to continue."
     },
     "actions": {
       "title": "Quick Actions",
@@ -71,6 +88,8 @@
       "create_new": "Create New RefTests",
       "search_placeholder": "Search by name or email...",
       "loading": "Loading RefTests...",
+      "query_error": "Could not load RefTests. Please try again.",
+      "load_more_error": "Could not load more RefTests. Please try again.",
       "load_more": "Load more RefTests",
       "loading_more": "Loading...",
       "performance_warning_title": "Performance Notice",
@@ -190,7 +209,10 @@
       "empty": {
         "title": "No RefTests found",
         "subtitle": "Get started by creating your first RefTests",
-        "action": "Create RefTests"
+        "action": "Create RefTests",
+        "filtered_title": "No RefTests match these filters",
+        "filtered_subtitle": "Change or clear your filters to see RefTests.",
+        "clear_filters": "Clear filters"
       },
       "actions": {
         "reftest_selected": "Selected",
@@ -480,6 +502,7 @@
           "tooltip": "Example: Training {{date}}",
           "no_results": "No existing titles found",
           "create_new": "Press Enter to create a new title with this name",
+          "search_error": "Could not search titles. Please try again.",
           "existing_title": "Using existing title",
           "new_title": "Will create new title",
           "clear": "Clear title"
@@ -540,6 +563,7 @@
           "import_button": "Import",
           "importing": "Importing...",
           "no_results": "No questions found",
+          "search_error": "Could not search questions. Please try again.",
           "table_number": "Number",
           "table_question": "Question",
           "remove_question": "Remove question"
@@ -555,7 +579,9 @@
         "scheduled_at": {
           "label": "Schedule for",
           "optional": "(optional)",
-          "description": "Leave empty to send the invitation immediately. Set a date/time to delay until that moment."
+          "description": "Leave empty to send the invitation immediately. Set a date/time to delay until that moment.",
+          "date_label": "Schedule date",
+          "time_label": "Schedule time"
         },
         "send_results": {
           "label": "Send result emails",
@@ -567,6 +593,7 @@
         "cancel": "Cancel",
         "validation_error": "Please fix the validation errors before submitting",
         "no_participants": "Please add at least one participant",
+        "question_import_error": "Could not load the selected questions. Please try again.",
         "submit_error": "An error occurred while creating RefTests"
       },
       "success": {
@@ -585,11 +612,14 @@
   "ref_test": {
     "page_title": "Handball RefTest",
     "loading": "Loading RefTest...",
+    "retry_submission": "Retry submission",
+    "saving_progress_before_leave": "Saving your progress before you leave...",
     "error": {
       "title": "Unable to Load RefTest",
       "general": "An unexpected error occurred while loading the RefTest. Please try again later.",
       "network": "A network error occurred. Please check your connection and try again.",
-      "submit_failed": "Submitting the RefTest failed. Please try again later.",
+      "submit_failed": "Submitting the RefTest failed. Please retry your submission.",
+      "progress_save_failed": "Your latest answer could not be saved. Please stay on this page and try leaving again.",
       "ref_test_not_found_error": "This RefTest could not be found. Please check your link.",
       "ref_test_expired_error": "This RefTest has expired. Please contact the administrator.",
       "invalid_ref_test_status_error": "This RefTest is no longer available or has already been completed.",
@@ -617,7 +647,7 @@
     "withdraw_link": "Withdraw consent and request anonymization",
     "withdraw_error": "We could not process your withdrawal. Please try again or contact us.",
     "withdrawal_queued_title": "Withdrawal request received",
-    "withdrawal_queued_message": "Your request has been queued for processing. Your identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
+    "withdrawal_queued_message": "Your request has been queued for background processing. Once processing succeeds, identifying details will be redacted (anonymized). A redacted RefTest record and audit trail may remain; permanently removing the RefTest record is a separate step.",
     "time_remaining": "Time Remaining",
     "progress": "Progress",
     "question": "Question",
@@ -661,8 +691,8 @@
       },
       "withdraw": {
         "title": "Withdraw consent?",
-        "message": "Your withdrawal request will be queued for background processing. Your identifying data will be anonymized after processing succeeds; an anonymized RefTest record may be retained for audit purposes.",
-        "warning": "Anonymization is not immediate. The request will be processed in the background, and your RefTest record may remain in anonymized form for audit purposes.",
+        "message": "Your withdrawal request will be queued for background processing. Once processing succeeds, identifying details will be redacted (anonymized). A redacted RefTest record and audit trail may remain; permanently removing the RefTest record is a separate step.",
+        "warning": "Processing runs in the background and is not immediate. It redacts identifying details, and a redacted RefTest record and audit trail may remain. Permanently removing the RefTest record is a separate step.",
         "confirm": "Withdraw consent and queue anonymization",
         "cancel": "Cancel"
       }
@@ -676,6 +706,9 @@
   "privacy": {
     "eyebrow": "Privacy",
     "title": "Privacy notice",
+    "loading": "Loading privacy notice...",
+    "empty": "The privacy notice is not available.",
+    "error": "Could not load the privacy notice. Please try again.",
     "updated": "Effective from {{effectiveDate}} (version {{noticeVersion}}).",
     "controller": {
       "title": "Data controller and contact",
@@ -699,7 +732,7 @@
     },
     "retention": {
       "title": "Retention",
-      "body": "We erase assessment and invitation data {{retentionYears}} years after the assessment is completed or expires. If you withdraw consent after identity verification, we erase your assessment data and queued communications without delay. Email already delivered to your inbox cannot be recalled."
+      "body": "We anonymize (redact) identifying details in assessment and invitation records {{retentionYears}} years after completion or expiry for completed or expired assessments, or after creation for pending-approval or rejected records. If you withdraw consent, background processing redacts identifying details and cancels and clears queued communications once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; the RefTest row stays in place, and removing it entirely is a separate step. Email already delivered to your inbox cannot be recalled."
     },
     "rights": {
       "title": "Your rights",
@@ -726,21 +759,21 @@
     },
     "consentWithdrawal": {
       "title": "Withdraw consent and request anonymization",
-      "description": "Enter the email address associated with your participation. If one or more non-anonymized participant records match, a one-time confirmation link will be sent to that address. You do not need an account or invitation token.",
+      "description": "Enter the email address associated with your participation. If one or more non-anonymized participant records match, a one-time confirmation link will be sent to that address. You do not need an account or invitation token. After confirmation, background processing redacts identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; withdrawal leaves the RefTest row in place, and removing it entirely is a separate step.",
       "requestLink": "Open the withdrawal request form",
       "emailLabel": "Email address",
-      "emailHelp": "The same acknowledgement is shown for every address. After you confirm, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. This is not immediate.",
+      "emailHelp": "The same acknowledgement is shown for every address. After you confirm, background processing redacts (anonymizes) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain. The RefTest row stays in place; removing it entirely is a separate step.",
       "emailRequired": "Enter your email address.",
       "emailInvalid": "Enter a valid email address.",
       "requestButton": "Send withdrawal request",
       "requesting": "Sending your request...",
-      "requestAcknowledged": "If the address is associated with a participant record, a confirmation email will be sent. This page shows the same acknowledgement whether or not a record matches. After you confirm the withdrawal of consent, identifying data will be anonymized once processing succeeds. An anonymized RefTest record may be retained for audit purposes.",
+      "requestAcknowledged": "If the address is associated with a participant record, a confirmation email will be sent. This page shows the same acknowledgement whether or not a record matches. After you confirm the withdrawal of your consent, background processing redacts (anonymizes) identifying details once it succeeds. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "requestError": "We could not process your request. Please try again.",
       "confirmationTitle": "Confirm withdrawal of consent",
-      "confirmationDescription": "Opening this page does not confirm the request. Select the button below only if you want to withdraw your consent. After confirmation, identifying data will be anonymized once processing succeeds; an anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmationDescription": "Opening this page does not confirm the request. Select the button below only if you want to withdraw your consent. After confirmation, background processing redacts (anonymizes) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "confirmButton": "Confirm withdrawal",
       "confirming": "Confirming your withdrawal request...",
-      "confirmed": "Your consent withdrawal has been confirmed. Identifying data will be anonymized after processing succeeds. An anonymized RefTest record may be retained for audit purposes. Anonymization is not immediate.",
+      "confirmed": "Your consent withdrawal has been confirmed. Background processing will redact (anonymize) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "confirmationError": "We could not confirm this request. The link may be invalid, expired, or already used. Request a new link if needed; no participant information is shown here.",
       "confirmationKeyMissing": "This link does not contain confirmation information. Request a new link from the privacy notice."
     }
@@ -749,7 +782,11 @@
     "title": "Audit Log",
     "subtitle": "Complete history of all system changes",
     "loading": "Loading audit log...",
+    "query_error": "Could not load the audit log. Please try again.",
+    "load_more_error": "Could not load more audit log events. Please try again.",
     "empty": "No audit log events found",
+    "filtered_empty": "No audit log events match these filters.",
+    "clear_filters": "Clear filters",
     "loadMore": "Load more",
     "showing": "Showing {{displayed}} of {{total}} event",
     "showing_plural": "Showing {{displayed}} of {{total}} events",

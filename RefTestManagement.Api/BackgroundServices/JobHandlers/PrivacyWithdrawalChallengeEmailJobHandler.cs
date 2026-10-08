@@ -55,13 +55,28 @@ public sealed class PrivacyWithdrawalChallengeEmailJobHandler(
             throw new JobPayloadException("The protected withdrawal challenge is no longer available.");
         }
 
+        var recipientEmail = challenge.Email;
+        var expiresAt = challenge.ExpiresAt;
         try
         {
-            await emailService.SendPrivacyWithdrawalVerificationAsync(
-                challenge.Email,
+            var wasSent = await emailService.SendPrivacyWithdrawalVerificationAsync(
+                recipientEmail,
                 key,
-                challenge.ExpiresAt,
+                expiresAt,
+                finalCheckCancellationToken => context.PrivacyWithdrawalChallenges
+                    .AsNoTracking()
+                    .AnyAsync(
+                        candidate => candidate.Id == payload.ChallengeId
+                                     && candidate.VerifiedAt == null
+                                     && candidate.ExpiresAt > DateTime.UtcNow
+                                     && candidate.Email == recipientEmail
+                                     && candidate.KeyHash != null
+                                     && candidate.ProtectedDeliveryKey == protectedKey
+                                     && candidate.ChallengeEmailSentAt == null,
+                        finalCheckCancellationToken),
                 cancellationToken);
+            if (!wasSent)
+                return;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

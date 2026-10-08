@@ -14,6 +14,25 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 public sealed class AccountControllerTests
 {
+    [Fact]
+    public async Task GetPermissionsReturnsServiceUnavailableWhenSnapshotIsUnavailable()
+    {
+        var controller = new AccountController(
+            new NullPermissionSnapshotService(),
+            CreateEnvironment("Production"))
+        {
+            ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext()
+            }
+        };
+
+        var result = Assert.IsType<StatusCodeResult>(
+            await controller.GetPermissions(CancellationToken.None));
+
+        Assert.Equal(StatusCodes.Status503ServiceUnavailable, result.StatusCode);
+    }
+
     [Theory]
     [InlineData(
         "Development",

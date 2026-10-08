@@ -73,59 +73,95 @@
       </div>
     }
 
-    <!-- Empty State -->
-    @else if (refTests().length === 0) {
-      <app-ref-test-empty-state (createClick)="navigateToCreate()" />
-    }
-
-    <!-- ref_tests List -->
     @else {
-      <!-- Desktop Table View -->
-      <app-ref-test-table
-        [refTests]="refTests()"
-        [visibleColumns]="columnVisibility.visibleColumns()"
-        [filter]="filterState.filter()"
-        [passingPercentage]="passingPercentage()"
-        [allSelected]="allSelected()"
-        [someSelected]="someSelected()"
-        [selectedIds]="selectionManager.selectedIds()"
-        [showCheckboxes]="showCheckboxes()"
-        [canNavigate]="canNavigate()"
-        (toggleSelectAll)="toggleSelectAll()"
-        (toggleSelection)="toggleRefTestSelection($event)"
-        (sortColumn)="sortByColumn($event)"
-      />
-
-      <!-- Mobile Card View -->
-      <app-ref-test-mobile-list
-        [refTests]="refTests()"
-        [visibleColumns]="columnVisibility.visibleColumns()"
-        [passingPercentage]="passingPercentage()"
-        [allSelected]="allSelected()"
-        [someSelected]="someSelected()"
-        [selectedCount]="selectedCount()"
-        [selectedIds]="selectionManager.selectedIds()"
-        [showCheckboxes]="showCheckboxes()"
-        [canNavigate]="canNavigate()"
-        (toggleSelectAll)="toggleSelectAll()"
-        (toggleSelection)="toggleRefTestSelection($event)"
-      />
-
-      <!-- Performance Warning -->
-      @if (dataService.showPerformanceWarning()) {
-        <app-ref-test-performance-warning />
+      @if (queryError()) {
+        <div
+          role="alert"
+          class="mb-6 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          <p>{{ 'ref_tests.list.query_error' | translate }}</p>
+          <button
+            type="button"
+            (click)="retryQuery()"
+            class="shrink-0 font-medium underline"
+          >
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
       }
 
-      <!-- Pagination -->
-      <app-ref-test-pagination
-        [displayedCount]="refTests().length"
-        [totalCount]="totalCount()"
-        [canLoadMore]="dataService.canLoadMore()"
-        [isAtMaxCapacity]="dataService.isAtMaxCapacity()"
-        [loadingMore]="loadingMore()"
-        [maxLoadableItems]="REF_TEST_CONFIG.MAX_LOADABLE_ITEMS"
-        (loadMore)="loadMore()"
-      />
+      @if (loadMoreError()) {
+        <div
+          role="alert"
+          class="mb-6 flex items-center justify-between gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+        >
+          <p>{{ 'ref_tests.list.load_more_error' | translate }}</p>
+          <button
+            type="button"
+            (click)="loadMore()"
+            class="shrink-0 font-medium underline"
+          >
+            {{ 'common.retry' | translate }}
+          </button>
+        </div>
+      }
+
+      @if (refTests().length === 0) {
+        @if (!queryError()) {
+          <app-ref-test-empty-state
+            [filtered]="isFiltered()"
+            (createClick)="navigateToCreate()"
+            (clearFiltersClick)="clearFilters()"
+          />
+        }
+      } @else {
+        <!-- Desktop Table View -->
+        <app-ref-test-table
+          [refTests]="refTests()"
+          [visibleColumns]="columnVisibility.visibleColumns()"
+          [filter]="filterState.filter()"
+          [passingPercentage]="passingPercentage()"
+          [allSelected]="allSelected()"
+          [someSelected]="someSelected()"
+          [selectedIds]="selectionManager.selectedIds()"
+          [showCheckboxes]="showCheckboxes()"
+          [canNavigate]="canNavigate()"
+          (toggleSelectAll)="toggleSelectAll()"
+          (toggleSelection)="toggleRefTestSelection($event)"
+          (sortColumn)="sortByColumn($event)"
+        />
+
+        <!-- Mobile Card View -->
+        <app-ref-test-mobile-list
+          [refTests]="refTests()"
+          [visibleColumns]="columnVisibility.visibleColumns()"
+          [passingPercentage]="passingPercentage()"
+          [allSelected]="allSelected()"
+          [someSelected]="someSelected()"
+          [selectedCount]="selectedCount()"
+          [selectedIds]="selectionManager.selectedIds()"
+          [showCheckboxes]="showCheckboxes()"
+          [canNavigate]="canNavigate()"
+          (toggleSelectAll)="toggleSelectAll()"
+          (toggleSelection)="toggleRefTestSelection($event)"
+        />
+
+        <!-- Performance Warning -->
+        @if (dataService.showPerformanceWarning()) {
+          <app-ref-test-performance-warning />
+        }
+
+        <!-- Pagination -->
+        <app-ref-test-pagination
+          [displayedCount]="refTests().length"
+          [totalCount]="totalCount()"
+          [canLoadMore]="dataService.canLoadMore()"
+          [isAtMaxCapacity]="dataService.isAtMaxCapacity()"
+          [loadingMore]="loadingMore()"
+          [maxLoadableItems]="REF_TEST_CONFIG.MAX_LOADABLE_ITEMS"
+          (loadMore)="loadMore()"
+        />
+      }
     }
   </div>
 

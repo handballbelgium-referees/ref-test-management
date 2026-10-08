@@ -3,6 +3,7 @@
   [currentDate]="currentDate()"
   [selectedDate]="selectedDate()"
   (dateSelect)="dateSelect.emit($event)"
+  (currentDateChange)="currentDateChange.emit($event)"
 />
 } @else if (viewMode() === 'months') {
 <app-months-grid [currentDate]="currentDate()" (monthSelect)="monthSelect.emit($event)" />

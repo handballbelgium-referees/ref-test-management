@@ -53,13 +53,28 @@ public sealed class PersonalDataExportChallengeEmailJobHandler(
             throw new JobPayloadException("The protected export challenge is no longer available.");
         }
 
+        var recipientEmail = request.Email;
+        var expiresAt = request.ExpiresAt;
         try
         {
-            await emailService.SendPersonalDataExportVerificationAsync(
-                request.Email,
+            var wasSent = await emailService.SendPersonalDataExportVerificationAsync(
+                recipientEmail,
                 key,
-                request.ExpiresAt,
+                expiresAt,
+                finalCheckCancellationToken => context.PersonalDataExportRequests
+                    .AsNoTracking()
+                    .AnyAsync(
+                        candidate => candidate.Id == payload.RequestId
+                                     && candidate.VerifiedAt == null
+                                     && candidate.ExpiresAt > DateTime.UtcNow
+                                     && candidate.Email == recipientEmail
+                                     && candidate.KeyHash != null
+                                     && candidate.ProtectedDeliveryKey == protectedKey
+                                     && candidate.ChallengeEmailSentAt == null,
+                        finalCheckCancellationToken),
                 cancellationToken);
+            if (!wasSent)
+                return;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

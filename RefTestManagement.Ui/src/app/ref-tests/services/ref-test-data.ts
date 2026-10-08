@@ -1,8 +1,18 @@
-import { computed, DestroyRef, ErrorHandler, inject, Service, Signal } from '@angular/core';
+import { computed, DestroyRef, ErrorHandler, inject, Service, Signal, signal } from '@angular/core';
 import { takeUntilDestroyed, toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ApolloClient } from '@apollo/client';
 import { Apollo } from 'apollo-angular';
-import { catchError, EMPTY, map, Observable, switchMap, tap } from 'rxjs';
+import {
+  catchError,
+  combineLatest,
+  EMPTY,
+  map,
+  Observable,
+  startWith,
+  Subject,
+  switchMap,
+  tap,
+} from 'rxjs';
 import {
   ApproveRefTestsGQL,
   DeleteRefTestsGQL,
@@ -22,7 +32,7 @@ import { MutationCallbacks, runMutation } from '../../shared/utils/apollo-utils'
 import { REF_TEST_CONFIG } from '../list/services/constants';
 import { RefTestFilterState } from '../list/services/ref-test-filter-state';
 import { RefTestQueryBuilder } from '../list/services/ref-test-query-builder';
-import { IReportResult } from '../list/services/types';
+import { IRefTestFilter, IReportResult } from '../list/services/types';
 import { RefTestCacheUpdater } from './ref-test-cache-updater';
 
 /* -------------------------------------------------------------------------- */
@@ -49,6 +59,9 @@ export class RefTestData {
   private readonly _filterState = inject(RefTestFilterState);
   private readonly _queryBuilder = inject(RefTestQueryBuilder);
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _queryError = signal<unknown | null>(null);
+  private readonly _queryLoading = signal(true);
+  private readonly _queryRefresh = new Subject<void>();
 
   /* ------------------------------------------------------------------------ */
   /* Queries                                                                  */
@@ -68,6 +81,8 @@ export class RefTestData {
     variables: this._cacheUpdater.buildCountsVariables(),
     notifyOnNetworkStatusChange: true,
   });
+  private readonly _lastQueryData = signal(this._queryRef.getCurrentResult().data);
+  private _activeFilter: IRefTestFilter = this._filterState.filter();
 
   constructor() {
     this._cacheUpdater.refreshRequests
@@ -75,9 +90,17 @@ export class RefTestData {
       .subscribe((refresh) => this.refreshActiveQueries(refresh));
   }
 
-  readonly queryResult = toSignal(
-    toObservable(this._filterState.filter).pipe(
-      switchMap((filter) => {
+  private readonly _queryResult = toSignal(
+    combineLatest([
+      toObservable(this._filterState.filter),
+      this._queryRefresh.pipe(startWith(undefined)),
+    ]).pipe(
+      switchMap(([filter]) => {
+        if (this._activeFilter !== filter) {
+          this._activeFilter = filter;
+          this._lastQueryData.set(undefined);
+          this._queryLoading.set(true);
+        }
         this._queryRef.setVariables({
           first: filter.pagingInfo.first,
           after: filter.pagingInfo.after,
@@ -85,14 +108,33 @@ export class RefTestData {
           order: this._queryBuilder.buildOrderClause(filter),
         });
         return this._queryRef.valueChanges.pipe(
+          tap((result) => {
+            if (result.data) this._lastQueryData.set(result.data);
+            this._queryError.set(result.error ?? null);
+            this._queryLoading.set(result.loading);
+          }),
           tap((result) => this._cacheUpdater.setListQueryLoading(result.loading)),
           tap(() => this._cacheUpdater.replayPendingEvents()),
+          catchError((error: unknown) => {
+            this._queryError.set(error);
+            this._queryLoading.set(false);
+            this._cacheUpdater.setListQueryLoading(false);
+            return EMPTY;
+          }),
         );
       }),
     ),
   );
 
-  readonly loading = computed(() => this.queryResult()?.loading ?? false);
+  readonly queryResult = computed(() => {
+    const result = this._queryResult();
+    const lastData = this._lastQueryData();
+    return result && !result.data && lastData ? { ...result, data: lastData } : result;
+  });
+
+  readonly queryError = this._queryError.asReadonly();
+
+  readonly loading = computed(() => !this.queryError() && this._queryLoading());
 
   readonly hasData = computed(() => (this.queryResult()?.data?.refTests?.edges?.length ?? 0) > 0);
 
@@ -176,10 +218,19 @@ export class RefTestData {
     this.refreshActiveQueries({ lists: true, counts: true });
   }
 
+  retry(): void {
+    this.refreshActiveQueries({ lists: true, counts: true });
+  }
+
   private refreshActiveQueries(refresh: { lists: boolean; counts: boolean }): void {
     if (refresh.lists) {
+      this._queryLoading.set(true);
+      this._queryRefresh.next();
       this._cacheUpdater.trackListRead(() => this._queryRef.refetch()).subscribe({
-        error: (error: unknown) => this._errorHandler.handleError(error),
+        error: (error: unknown) => {
+          this._queryError.set(error);
+          this._errorHandler.handleError(error);
+        },
       });
     }
     if (refresh.counts) {
