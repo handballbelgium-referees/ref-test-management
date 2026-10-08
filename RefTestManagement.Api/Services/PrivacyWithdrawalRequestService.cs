@@ -18,6 +18,7 @@ public interface IPrivacyWithdrawalRequestService
     Task RequestAsync(string? email, CancellationToken cancellationToken);
     Task<bool> RequestForParticipantAsync(string token, CancellationToken cancellationToken);
     Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken);
+    Task<bool> AcknowledgeFailedTargetAsync(Guid actionToken, CancellationToken cancellationToken);
     Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken);
 }
 
@@ -36,8 +37,6 @@ public sealed class PrivacyWithdrawalRequestService(
     ILogger<PrivacyWithdrawalRequestService> logger) : IPrivacyWithdrawalRequestService
 {
     private const int ReconciliationBatchSize = 500;
-    private const int EmailLookupBackfillBatchSize = 250;
-    private const int MaximumEmailLookupConcurrencyRetries = 3;
 
     private static readonly JsonSerializerOptions BatchJobPayloadJsonOptions = new()
     {
@@ -123,7 +122,9 @@ public sealed class PrivacyWithdrawalRequestService(
         var normalizedEmail = PrivacyWithdrawalChallenge.NormalizeEmail(candidateEmail);
         try
         {
-            await EnsureEmailLookupKeysBackfilledAsync(cancellationToken);
+            await RefTestEmailLookupKeyBackfill.EnsureEmailLookupKeysBackfilledAsync(
+                context,
+                cancellationToken);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -250,6 +251,76 @@ public sealed class PrivacyWithdrawalRequestService(
         }
     }
 
+    /// <summary>
+    /// Acknowledges a still-terminal failed target, recording its sanitized category before
+    /// removing the operational reference in the same transaction.
+    /// </summary>
+    /// <returns>True when acknowledged; otherwise false when the target is no longer available.</returns>
+    public async Task<bool> AcknowledgeFailedTargetAsync(
+        Guid actionToken,
+        CancellationToken cancellationToken)
+    {
+        var strategy = context.Database.CreateExecutionStrategy();
+
+        for (var concurrencyRetry = 0; ; concurrencyRetry++)
+        {
+            try
+            {
+                return await strategy.ExecuteAsync(cancellationToken, async retryToken =>
+                {
+                    context.ChangeTracker.Clear();
+                    await using var transaction = await context.Database.BeginTransactionAsync(
+                        IsolationLevel.Serializable,
+                        retryToken);
+
+                    var target = await context.PrivacyWithdrawalBatchTargets
+                        .SingleOrDefaultAsync(candidate => candidate.Id == actionToken, retryToken);
+                    if (target is null
+                        || target.CompletedAt is not null
+                        || target.RetryExhaustedAt is null
+                        || target.FailureCode is null)
+                    {
+                        await transaction.CommitAsync(retryToken);
+                        return false;
+                    }
+
+                    var failureCategory = target.FailureCode.Value;
+                    if (failureCategory is not (PrivacyWithdrawalTargetFailureCode.ProcessingFailed
+                        or PrivacyWithdrawalTargetFailureCode.AttemptLimitReached))
+                    {
+                        await transaction.CommitAsync(retryToken);
+                        return false;
+                    }
+
+                    var batch = await context.PrivacyWithdrawalBatches
+                        .SingleOrDefaultAsync(
+                            candidate => candidate.Id == target.BatchId && candidate.CompletedAt != null,
+                            retryToken);
+                    if (batch is null
+                        || !batch.RecordFailedTargetAcknowledgement(failureCategory, DateTime.UtcNow))
+                    {
+                        await transaction.CommitAsync(retryToken);
+                        return false;
+                    }
+
+                    // Persist the typed audit event before deleting the target, but keep both
+                    // writes inside this explicit transaction so either both commit or neither.
+                    await context.SaveChangesAsync(retryToken);
+                    context.PrivacyWithdrawalBatchTargets.Remove(target);
+                    await context.SaveChangesAsync(retryToken);
+
+                    await transaction.CommitAsync(retryToken);
+                    return true;
+                });
+            }
+            catch (DbUpdateConcurrencyException) when (concurrencyRetry < 1)
+            {
+                // Another operator or worker changed the target; revalidate terminal state once.
+                context.ChangeTracker.Clear();
+            }
+        }
+    }
+
     public async Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken)
     {
         if (!IsValidChallengeKey(challengeKey))
@@ -267,7 +338,9 @@ public sealed class PrivacyWithdrawalRequestService(
 
             // Backfill before opening the serializable confirmation transaction. A failure is
             // caught below and the confirmation is not accepted.
-            await EnsureEmailLookupKeysBackfilledAsync(cancellationToken);
+            await RefTestEmailLookupKeyBackfill.EnsureEmailLookupKeysBackfilledAsync(
+                context,
+                cancellationToken);
 
             var strategy = context.Database.CreateExecutionStrategy();
 
@@ -320,6 +393,8 @@ public sealed class PrivacyWithdrawalRequestService(
                         matchingRefTests.Select(refTest => refTest.Id).ToArray(),
                         now,
                         retryToken);
+                else
+                    challenge.RecordConfirmationWithoutWork();
 
                 // The consumed challenge, batch, target snapshot, and ID-only outbox job share
                 // this serializable transaction.
@@ -605,44 +680,6 @@ public sealed class PrivacyWithdrawalRequestService(
                 normalizedEmail,
                 StringComparison.Ordinal))
             .ToList();
-    }
-
-    private async Task EnsureEmailLookupKeysBackfilledAsync(CancellationToken cancellationToken)
-    {
-        var concurrencyRetries = 0;
-        while (true)
-        {
-            var pendingRefTests = await PrivacyWithdrawalQueries
-                .EligibleRefTestsMissingEmailLookupKey(context.RefTests)
-                .OrderBy(refTest => refTest.Id)
-                .Take(EmailLookupBackfillBatchSize)
-                .ToListAsync(cancellationToken);
-            if (pendingRefTests.Count == 0)
-                return;
-
-            foreach (var refTest in pendingRefTests)
-                refTest.BackfillEmailLookupKey();
-
-            try
-            {
-                await context.SaveChangesWithRetryAsync(cancellationToken);
-                foreach (var refTest in pendingRefTests)
-                    context.Entry(refTest).State = EntityState.Detached;
-                concurrencyRetries = 0;
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                // An email change or erasure won the optimistic-concurrency race. Discard the
-                // stale values and reread current database state before deciding lookup is ready.
-                foreach (var refTest in pendingRefTests)
-                {
-                    await context.Entry(refTest).ReloadAsync(cancellationToken);
-                    context.Entry(refTest).State = EntityState.Detached;
-                }
-                if (++concurrencyRetries >= MaximumEmailLookupConcurrencyRetries)
-                    throw;
-            }
-        }
     }
 
     private static bool IsValidChallengeKey(string? key) =>

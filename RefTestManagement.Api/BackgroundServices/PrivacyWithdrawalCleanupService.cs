@@ -1,13 +1,15 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Api.Services;
-using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 
-/// <summary>Reconciles incomplete withdrawal batches and clears expired or completed data.</summary>
+/// <summary>
+/// Reconciles incomplete withdrawal batches, clears expired challenges and completed targets,
+/// and retains unresolved exhausted targets for authorized review.
+/// </summary>
 public sealed class PrivacyWithdrawalCleanupService(
     IServiceProvider serviceProvider,
     PrivacyChallengeConfiguration configuration,
@@ -118,12 +120,9 @@ public sealed class PrivacyWithdrawalCleanupService(
         var completedTargets = await context.PrivacyWithdrawalBatchTargets
             .Where(target => context.PrivacyWithdrawalBatches
                 .Any(batch => batch.Id == target.BatchId && batch.CompletedAt != null))
-            .Where(target => target.RetryExhaustedAt == null
-                             || context.PrivacyWithdrawalBatches.Any(batch =>
-                                 batch.Id == target.BatchId
-                                 && batch.LatestJobId != null
-                                 && context.Jobs.Any(job => job.Id == batch.LatestJobId
-                                                            && job.Status == JobStatus.Failed)))
+            // Exhausted targets remain until processing succeeds or an authorized operator
+            // acknowledges them, regardless of the final worker-job status.
+            .Where(target => target.CompletedAt != null || target.RetryExhaustedAt == null)
             .OrderBy(target => target.CompletedAt)
             .Take(BatchSize)
             .ToListAsync(cancellationToken);

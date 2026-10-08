@@ -66,6 +66,10 @@
       "auditLogs": {
         "title": "Audit Log",
         "description": "View a complete history of all changes made to the system"
+      },
+      "privacyWithdrawalReview": {
+        "title": "Privacy Withdrawal Review",
+        "description": "Review exhausted withdrawal requests"
       }
     },
     "about": {
@@ -778,6 +782,26 @@
       "confirmed": "Your consent withdrawal has been confirmed. Background processing will redact (anonymize) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "confirmationError": "We could not confirm this request. The link may be invalid, expired, or already used. Request a new link if needed; no participant information is shown here.",
       "confirmationKeyMissing": "This link does not contain confirmation information. Request a new link from the privacy notice."
+    },
+    "withdrawalReview": {
+      "title": "Failed privacy-withdrawal targets",
+      "description": "This screen shows only sanitized failure categories. Acknowledging a failure permanently purges its retained operational reference; no participant details are shown.",
+      "loading": "Loading failed withdrawal targets...",
+      "queryError": "Could not load failed withdrawal targets. Please try again.",
+      "retry": "Retry",
+      "empty": "There are no failed withdrawal targets to review.",
+      "failureCategory": {
+        "PROCESSING_FAILED": "Processing failed",
+        "ATTEMPT_LIMIT_REACHED": "Retry limit reached"
+      },
+      "acknowledge": "Acknowledge and purge reference",
+      "acknowledging": "Acknowledging...",
+      "acknowledgementError": "Could not acknowledge this target. Please try again.",
+      "acknowledged": "Acknowledgement recorded; the operational reference was purged.",
+      "notAvailable": "This failed target is no longer available and was removed from the list.",
+      "loadMore": "Load more",
+      "loadingMore": "Loading more...",
+      "loadMoreError": "Could not load more failed withdrawal targets. Please try again."
     }
   },
   "audit-logs": {
@@ -846,6 +870,7 @@
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Withdrawal email failed",
       "PrivacyWithdrawalBatchConfirmed": "Withdrawal queued",
       "PrivacyWithdrawalBatchCompleted": "Withdrawal complete",
+      "PrivacyWithdrawalFailedTargetAcknowledged": "Withdrawal failure acknowledged",
       "EntityCreated": "Created",
       "EntityModified": "Modified",
       "EntityDeleted": "Deleted"

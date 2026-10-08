@@ -1,0 +1,97 @@
+<main class="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+  <section
+    aria-labelledby="privacy-withdrawal-review-title"
+    class="space-y-6 rounded-xl border border-neutral-200 bg-white p-6 shadow-sm sm:p-8"
+  >
+    <header class="space-y-2">
+      <h1 id="privacy-withdrawal-review-title" class="text-2xl font-bold text-neutral-900">
+        {{ 'privacy.withdrawalReview.title' | translate }}
+      </h1>
+      <p class="text-neutral-700">{{ 'privacy.withdrawalReview.description' | translate }}</p>
+    </header>
+
+    @if (acknowledgementStatus() === 'acknowledged') {
+      <p class="rounded-md bg-success-50 p-3 text-success-800" role="status" aria-live="polite">
+        {{ 'privacy.withdrawalReview.acknowledged' | translate }}
+      </p>
+    } @else if (acknowledgementStatus() === 'notAvailable') {
+      <p class="rounded-md bg-neutral-100 p-3 text-neutral-800" role="status" aria-live="polite">
+        {{ 'privacy.withdrawalReview.notAvailable' | translate }}
+      </p>
+    }
+
+    @if (acknowledgementError()) {
+      <p class="rounded-md bg-red-50 p-3 text-red-800" role="alert">
+        {{ 'privacy.withdrawalReview.acknowledgementError' | translate }}
+      </p>
+    }
+
+    @if (queryError()) {
+      <div class="space-y-3 rounded-md bg-red-50 p-4 text-red-800" role="alert">
+        <p>{{ 'privacy.withdrawalReview.queryError' | translate }}</p>
+        <button
+          type="button"
+          (click)="retry()"
+          class="rounded-md bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700"
+        >
+          {{ 'privacy.withdrawalReview.retry' | translate }}
+        </button>
+      </div>
+    } @else if (loading() && targets().length === 0) {
+      <p class="text-neutral-700" role="status" aria-live="polite">
+        {{ 'privacy.withdrawalReview.loading' | translate }}
+      </p>
+    } @else {
+      @if (targets().length > 0) {
+        <ul class="divide-y divide-neutral-200">
+          @for (target of targets(); track $index) {
+            <li class="flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <p class="font-medium text-neutral-900">
+                {{
+                  'privacy.withdrawalReview.failureCategory.' + target.failureCategory | translate
+                }}
+              </p>
+              <button
+                type="button"
+                [disabled]="acknowledging()"
+                (click)="acknowledge(target.actionToken)"
+                class="shrink-0 rounded-md bg-primary-700 px-4 py-2 font-semibold text-white hover:bg-primary-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                @if (acknowledging()) {
+                  {{ 'privacy.withdrawalReview.acknowledging' | translate }}
+                } @else {
+                  {{ 'privacy.withdrawalReview.acknowledge' | translate }}
+                }
+              </button>
+            </li>
+          }
+        </ul>
+      } @else if (!hasNextPage()) {
+        <p class="text-neutral-700" role="status" aria-live="polite">
+          {{ 'privacy.withdrawalReview.empty' | translate }}
+        </p>
+      }
+
+      @if (loadMoreError()) {
+        <p class="text-red-800" role="alert">
+          {{ 'privacy.withdrawalReview.loadMoreError' | translate }}
+        </p>
+      }
+
+      @if (hasNextPage()) {
+        <button
+          type="button"
+          [disabled]="loadingMore() || acknowledging()"
+          (click)="loadMore()"
+          class="rounded-md border border-primary-700 px-4 py-2 font-semibold text-primary-800 hover:bg-primary-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary-700 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          @if (loadingMore()) {
+            {{ 'privacy.withdrawalReview.loadingMore' | translate }}
+          } @else {
+            {{ 'privacy.withdrawalReview.loadMore' | translate }}
+          }
+        </button>
+      }
+    }
+  </section>
+</main>

@@ -3,6 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -44,6 +45,26 @@ public class AuthorizationSchemaTests
         Assert.DoesNotContain(
             methods,
             method => method.GetCustomAttribute<AuthorizeAttribute>() is not null);
+    }
+
+    [Fact]
+    public void FailedWithdrawalReviewOperationsRequireTheDedicatedPermissionAndExposeMinimalFields()
+    {
+        var permission = Permissions.PrivacyOperations.ReviewWithdrawals;
+        var queryMethod = typeof(PrivacyWithdrawalReviewQueries)
+            .GetMethod(nameof(PrivacyWithdrawalReviewQueries.GetFailedPrivacyWithdrawalTargets))!;
+        var mutationMethod = typeof(PrivacyWithdrawalReviewMutations)
+            .GetMethod(nameof(PrivacyWithdrawalReviewMutations.AcknowledgeFailedPrivacyWithdrawalTargetAsync))!;
+
+        Assert.Equal(permission, queryMethod.GetCustomAttribute<AuthorizeAttribute>()?.Policy);
+        Assert.Equal(permission, mutationMethod.GetCustomAttribute<AuthorizeAttribute>()?.Policy);
+        Assert.Contains(permission, Permissions.All);
+        Assert.Equal(
+            ["ActionToken", "FailureCategory"],
+            typeof(FailedPrivacyWithdrawalTarget)
+                .GetProperties()
+                .Select(property => property.Name)
+                .OrderBy(name => name, StringComparer.Ordinal));
     }
 
     [Fact]

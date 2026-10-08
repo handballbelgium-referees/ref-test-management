@@ -293,6 +293,9 @@ public sealed class PrivacyWithdrawalMutationsTests
             return Task.FromResult(challengeKey == ValidKey);
         }
 
+        public Task<bool> AcknowledgeFailedTargetAsync(Guid actionToken, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
         public Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken) =>
             Task.FromResult(0);
     }

@@ -121,7 +121,8 @@ public sealed class PrivacyWithdrawalGetRequestTests
             ["Auth0__Domain"] = Environment.GetEnvironmentVariable("Auth0__Domain"),
             ["Auth0__Audience"] = Environment.GetEnvironmentVariable("Auth0__Audience"),
             ["Auth0__ClientId"] = Environment.GetEnvironmentVariable("Auth0__ClientId"),
-            ["Auth0__ClientSecret"] = Environment.GetEnvironmentVariable("Auth0__ClientSecret")
+            ["Auth0__ClientSecret"] = Environment.GetEnvironmentVariable("Auth0__ClientSecret"),
+            ["Auth0__PublicOrigin"] = Environment.GetEnvironmentVariable("Auth0__PublicOrigin")
         };
 
         public TestApiEnvironment()
@@ -142,6 +143,7 @@ public sealed class PrivacyWithdrawalGetRequestTests
             Environment.SetEnvironmentVariable("Auth0__Audience", "test-api");
             Environment.SetEnvironmentVariable("Auth0__ClientId", "test-client");
             Environment.SetEnvironmentVariable("Auth0__ClientSecret", "unused-test-placeholder");
+            Environment.SetEnvironmentVariable("Auth0__PublicOrigin", "https://ref-test.example");
         }
 
         public void Dispose()

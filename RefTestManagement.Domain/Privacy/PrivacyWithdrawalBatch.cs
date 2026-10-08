@@ -8,7 +8,8 @@ namespace Handball.Belgium.RefTestManagement.Domain.Privacy;
 /// </summary>
 /// <remarks>
 /// The batch stores only lifecycle metadata and counts. Its RefTest IDs live in separate target
-/// rows so the job payload can remain batch-ID-only and target rows can be removed after completion.
+/// rows so the job payload can remain batch-ID-only. Completed targets can be removed after
+/// processing, while unresolved exhausted targets remain available for authorized review.
 /// </remarks>
 public sealed class PrivacyWithdrawalBatch : IHasDomainEvents, IHasVerifiedParticipantActor
 {
@@ -38,7 +39,10 @@ public sealed class PrivacyWithdrawalBatch : IHasDomainEvents, IHasVerifiedParti
     public DateTime? CompletedAt { get; private set; }
 
     /// <inheritdoc />
-    public bool IsVerifiedParticipantActor => true;
+    // An acknowledgement is a staff action; its audit event must use the authenticated operator.
+    public bool IsVerifiedParticipantActor =>
+        _domainEvents.All(domainEvent =>
+            domainEvent is not PrivacyWithdrawalFailedTargetAcknowledgedEvent);
 
     /// <inheritdoc />
     public IReadOnlyList<IDomainEvent> DomainEvents => _domainEvents.AsReadOnly();
@@ -78,6 +82,25 @@ public sealed class PrivacyWithdrawalBatch : IHasDomainEvents, IHasVerifiedParti
             exhaustedTargetCount)
         {
             OccurredAt = completedAt
+        });
+        return true;
+    }
+
+    /// <summary>Records an authorized acknowledgement without storing the target reference.</summary>
+    public bool RecordFailedTargetAcknowledgement(
+        PrivacyWithdrawalTargetFailureCode failureCategory,
+        DateTime acknowledgedAt)
+    {
+        if (CompletedAt is null
+            || failureCategory is not (PrivacyWithdrawalTargetFailureCode.ProcessingFailed
+                or PrivacyWithdrawalTargetFailureCode.AttemptLimitReached))
+            return false;
+
+        // Mark the batch as changed so the existing row/domain-event audit path records this action.
+        Version++;
+        _domainEvents.Add(new PrivacyWithdrawalFailedTargetAcknowledgedEvent(failureCategory)
+        {
+            OccurredAt = acknowledgedAt
         });
         return true;
     }

@@ -2,7 +2,9 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 
-/// <summary>Database-translatable selection shared by withdrawal request and confirmation.</summary>
+/// <summary>
+/// Database-translatable selection shared by privacy withdrawal and personal-data export.
+/// </summary>
 public static class PrivacyWithdrawalQueries
 {
     /// <summary>

@@ -62,7 +62,9 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 - Auth0 OIDC (browser) + JWT Bearer (API), with a task-based permission model — one named permission per GraphQL operation
 - `superadmin` bypass and `namespace:*` wildcards; OR-semantics via a dynamic `anyof:` policy provider
-- Permissions are auto-synced to the Auth0 API resource on startup, so nothing needs manual registration
+- Startup sync additively registers the individual Auth0 API permissions and `superadmin`; namespace
+  wildcards (`ref-tests:*`, `questions:*`, `audit-logs:*`) must be registered manually when assigned
+  to a role. Sync failures do not block API startup.
 - Full reference: [docs/SECURITY.md](docs/SECURITY.md)
 
 ### Privacy & GDPR
@@ -86,8 +88,9 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### Internationalization
 
-- Full UI, email, and PDF translations in English, Dutch, French, and German
-- Enabled languages are configurable per deployment; language preference is stored in browser `localStorage`, not on the user's account
+- UI, email, and PDF translations default to English, Dutch, French, and German; enabled languages
+  follow each deployment's configuration
+- Language preference is stored in browser `localStorage`, not on the user's account
 
 ### User Experience
 
@@ -280,15 +283,19 @@ cd RefTestManagement.Ui && npm test             # frontend
 
 ## Background Services
 
-Five hosted services run in-process — no extra infrastructure or cost on Azure.
+Six hosted services are registered unconditionally and run in-process. `AuditLogCleanupService` is
+registered only when `AuditLogOptions.EnableCleanup` is enabled; no separate Azure resources are
+needed.
 
-| Service                    | Runs          | Purpose                                                                  |
-| -------------------------- | ------------- | ------------------------------------------------------------------------ |
-| `BackgroundJobService`     | poll every 5s | Processes the async job queue: invitation/result/report/approval emails  |
-| `RefTestExpirationService` | every 5 min   | Auto-expires pending tests, auto-completes overdue in-progress tests     |
-| `PrivacyRetentionService`  | daily         | Anonymizes completed/expired RefTests past the retention period          |
-| `AuditLogCleanupService`   | every 24h     | Redacts personal data from audit events past the retention period        |
-| `PermissionSyncService`    | after startup | Syncs all permissions to the Auth0 API resource (additive, non-blocking) |
+| Service                                | Runs                   | Purpose                                                                                   |
+| -------------------------------------- | ---------------------- | ----------------------------------------------------------------------------------------- |
+| `BackgroundJobService`                | poll every 5s           | Processes the async job queue: invitation/result/report/approval emails                   |
+| `RefTestExpirationService`            | every 5 min             | Auto-expires pending tests, auto-completes overdue in-progress tests                      |
+| `PrivacyRetentionService`             | daily                   | Anonymizes completed/expired RefTests past the retention period                           |
+| `PersonalDataExportRequestCleanupService` | configured interval     | Clears expired challenges and terminal requests with inactive delivery jobs               |
+| `PrivacyWithdrawalCleanupService`     | configured interval     | Reconciles incomplete batches and clears expired or completed withdrawal data             |
+| `PermissionSyncService`               | after startup           | Additively registers individual permissions and `superadmin`; wildcards are not synced   |
+| `AuditLogCleanupService`               | every 24h, when enabled  | Redacts personal data from audit events past the retention period                         |
 
 For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md).
 
@@ -337,6 +344,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/Remediations/AUDIT-R9-REMEDIATION.md](docs/Remediations/AUDIT-R9-REMEDIATION.md)   | R9 remediation work packages                               |
 | [docs/Remediations/AUDIT-R10-REMEDIATION.md](docs/Remediations/AUDIT-R10-REMEDIATION.md) | R10 remediation work packages                              |
 | [docs/Remediations/AUDIT-R11-REMEDIATION.md](docs/Remediations/AUDIT-R11-REMEDIATION.md) | R11 remediation work packages                              |
+| [docs/Remediations/AUDIT-R12-REMEDIATION.md](docs/Remediations/AUDIT-R12-REMEDIATION.md) | R12 remediation work packages                              |
 | [docs/Remediations/AUDIT-REMEDIATION.md](docs/Remediations/AUDIT-REMEDIATION.md)         | Phased remediation plan for the audit findings             |
 
 ## License

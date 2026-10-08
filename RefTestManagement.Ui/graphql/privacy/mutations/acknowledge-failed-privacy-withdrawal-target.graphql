@@ -1,0 +1,9 @@
+mutation AcknowledgeFailedPrivacyWithdrawalTarget(
+  $input: AcknowledgeFailedPrivacyWithdrawalTargetInput!
+) {
+  acknowledgeFailedPrivacyWithdrawalTarget(input: $input) {
+    privacyWithdrawalTargetAcknowledgementResult {
+      status
+    }
+  }
+}

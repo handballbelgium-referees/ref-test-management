@@ -179,8 +179,8 @@ public sealed class PrivacyWithdrawalChallenge : IHasDomainEvents, IHasVerifiedP
     }
 
     /// <summary>
-    /// Atomically consumes a valid challenge. A concurrency token on this entity makes only one
-    /// competing confirmation persist the associated withdrawal batch.
+    /// Atomically consumes a valid challenge. A concurrency token on this entity ensures only one
+    /// competing confirmation can consume the key.
     /// </summary>
     public bool TryConfirm(string challengeKey, DateTime confirmedAt)
     {
@@ -193,6 +193,19 @@ public sealed class PrivacyWithdrawalChallenge : IHasDomainEvents, IHasVerifiedP
         VerifiedAt = confirmedAt;
         ClearChallengeData();
         return true;
+    }
+
+    /// <summary>Records a verified confirmation for which no new withdrawal work was queued.</summary>
+    public void RecordConfirmationWithoutWork()
+    {
+        if (VerifiedAt is not { } verifiedAt)
+            throw new InvalidOperationException(
+                "A privacy withdrawal challenge must be verified before recording a no-work confirmation.");
+
+        _domainEvents.Add(new PrivacyWithdrawalChallengeConfirmedWithoutWorkEvent
+        {
+            OccurredAt = verifiedAt
+        });
     }
 
     /// <summary>Clears the recipient and key material when an unverified challenge expires.</summary>

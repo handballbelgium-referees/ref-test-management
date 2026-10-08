@@ -1,0 +1,14 @@
+query GetFailedPrivacyWithdrawalTargets($first: Int, $after: String) {
+  failedPrivacyWithdrawalTargets(first: $first, after: $after) {
+    edges {
+      node {
+        actionToken
+        failureCategory
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}

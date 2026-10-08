@@ -29,4 +29,7 @@ export const Permissions = {
     View: 'audit-logs:view',
     All: 'audit-logs:*',
   },
+  PrivacyOperations: {
+    ReviewWithdrawals: 'privacy-operations:review-withdrawals',
+  },
 } as const;

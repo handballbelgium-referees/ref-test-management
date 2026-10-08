@@ -66,6 +66,10 @@
       "auditLogs": {
         "title": "Journal d'audit",
         "description": "Consultez l'historique complet de toutes les modifications apportées au système"
+      },
+      "privacyWithdrawalReview": {
+        "title": "Revue des retraits de consentement",
+        "description": "Consultez les demandes de retrait dont les tentatives sont épuisées"
       }
     },
     "about": {
@@ -779,6 +783,26 @@
       "confirmed": "Le retrait de votre consentement est confirmé. Le traitement en arrière-plan anonymisera (masquera) les données permettant de vous identifier une fois terminé ; ce n’est pas immédiat. L’enregistrement RefTest et sa piste d’audit expurgés peuvent être conservés ; la ligne reste présente et sa purge définitive est distincte.",
       "confirmationError": "Nous n’avons pas pu confirmer cette demande. Le lien est peut-être invalide, expiré ou déjà utilisé. Vous pouvez demander un nouveau lien ; cette page ne révèle aucune information sur les dossiers des participants.",
       "confirmationKeyMissing": "Ce lien ne contient pas les informations de confirmation. Demandez un nouveau lien depuis l’avis de confidentialité."
+    },
+    "withdrawalReview": {
+      "title": "Échecs de retrait de consentement",
+      "description": "Cette page affiche uniquement les catégories d’échec expurgées. Confirmer un échec purge définitivement sa référence opérationnelle conservée ; aucune donnée de participant n’est affichée.",
+      "loading": "Chargement des retraits échoués...",
+      "queryError": "Impossible de charger les retraits échoués. Veuillez réessayer.",
+      "retry": "Réessayer",
+      "empty": "Aucun retrait échoué n’est à examiner.",
+      "failureCategory": {
+        "PROCESSING_FAILED": "Échec du traitement",
+        "ATTEMPT_LIMIT_REACHED": "Nombre maximal de tentatives atteint"
+      },
+      "acknowledge": "Confirmer et purger la référence",
+      "acknowledging": "Confirmation...",
+      "acknowledgementError": "Impossible de confirmer ce retrait. Veuillez réessayer.",
+      "acknowledged": "Confirmation enregistrée ; la référence opérationnelle a été purgée.",
+      "notAvailable": "Ce retrait échoué n’est plus disponible et a été retiré de la liste.",
+      "loadMore": "Charger plus",
+      "loadingMore": "Chargement...",
+      "loadMoreError": "Impossible de charger d’autres retraits échoués. Veuillez réessayer."
     }
   },
   "audit-logs": {
@@ -847,6 +871,7 @@
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Échec de l’e-mail de retrait",
       "PrivacyWithdrawalBatchConfirmed": "Retrait en attente",
       "PrivacyWithdrawalBatchCompleted": "Retrait terminé",
+      "PrivacyWithdrawalFailedTargetAcknowledged": "Échec de retrait confirmé",
       "EntityCreated": "Créé",
       "EntityModified": "Modifié",
       "EntityDeleted": "Supprimé"

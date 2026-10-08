@@ -13,8 +13,8 @@ public enum PrivacyWithdrawalTargetFailureCode
 /// Durable per-RefTest progress for a privacy-withdrawal batch.
 /// </summary>
 /// <remarks>
-/// Targets deliberately opt out of property-diff audit logging: their IDs are operational
-/// processing state, while the parent batch records counts-only evidence.
+/// Targets deliberately opt out of property-diff audit logging because their identifiers are
+/// operational processing state. The parent batch records sanitized acknowledgement evidence.
 /// </remarks>
 public sealed class PrivacyWithdrawalBatchTarget : IHasDomainEvents
 {

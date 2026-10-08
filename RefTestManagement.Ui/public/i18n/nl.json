@@ -66,6 +66,10 @@
       "auditLogs": {
         "title": "Auditlogboek",
         "description": "Bekijk een volledige geschiedenis van alle wijzigingen in het systeem"
+      },
+      "privacyWithdrawalReview": {
+        "title": "Intrekkingsverzoeken beoordelen",
+        "description": "Bekijk uitgeputte intrekkingsverzoeken"
       }
     },
     "about": {
@@ -778,6 +782,26 @@
       "confirmed": "Uw intrekking van toestemming is bevestigd. Achtergrondverwerking schermt identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "confirmationError": "We konden deze aanvraag niet bevestigen. De link is mogelijk ongeldig, verlopen of al gebruikt. Vraag zo nodig een nieuwe link aan; deze pagina toont geen informatie over deelnemers.",
       "confirmationKeyMissing": "Deze link bevat geen bevestigingsgegevens. Vraag via de privacyverklaring een nieuwe link aan."
+    },
+    "withdrawalReview": {
+      "title": "Mislukte privacy-intrekkingen",
+      "description": "Dit scherm toont alleen geschoonde foutcategorieën. Een mislukking bevestigen verwijdert de bewaarde operationele verwijzing definitief; er worden geen gegevens van deelnemers getoond.",
+      "loading": "Mislukte intrekkingen laden...",
+      "queryError": "De mislukte intrekkingen konden niet worden geladen. Probeer het opnieuw.",
+      "retry": "Opnieuw proberen",
+      "empty": "Er zijn geen mislukte intrekkingen om te beoordelen.",
+      "failureCategory": {
+        "PROCESSING_FAILED": "Verwerking mislukt",
+        "ATTEMPT_LIMIT_REACHED": "Maximumaantal pogingen bereikt"
+      },
+      "acknowledge": "Bevestigen en verwijzing verwijderen",
+      "acknowledging": "Bevestigen...",
+      "acknowledgementError": "Deze intrekking kon niet worden bevestigd. Probeer het opnieuw.",
+      "acknowledged": "De bevestiging is vastgelegd; de operationele verwijzing is verwijderd.",
+      "notAvailable": "Deze mislukte intrekking is niet meer beschikbaar en is uit de lijst verwijderd.",
+      "loadMore": "Meer laden",
+      "loadingMore": "Meer laden...",
+      "loadMoreError": "Meer mislukte intrekkingen konden niet worden geladen. Probeer het opnieuw."
     }
   },
   "audit-logs": {
@@ -846,6 +870,7 @@
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Intrekkingsmail mislukt",
       "PrivacyWithdrawalBatchConfirmed": "Intrekking ingepland",
       "PrivacyWithdrawalBatchCompleted": "Intrekking voltooid",
+      "PrivacyWithdrawalFailedTargetAcknowledged": "Mislukte intrekking bevestigd",
       "EntityCreated": "Aangemaakt",
       "EntityModified": "Gewijzigd",
       "EntityDeleted": "Verwijderd"

@@ -66,6 +66,10 @@
       "auditLogs": {
         "title": "Auditprotokoll",
         "description": "Sehen Sie eine vollst\u00e4ndige Historie aller \u00c4nderungen im System"
+      },
+      "privacyWithdrawalReview": {
+        "title": "Widerrufe pr\u00fcfen",
+        "description": "Widerrufe mit ausgesch\u00f6pften Wiederholungsversuchen pr\u00fcfen"
       }
     },
     "about": {
@@ -778,6 +782,26 @@
       "confirmed": "Ihr Widerruf der Einwilligung wurde best\u00e4tigt. Die Hintergrundverarbeitung anonymisiert identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "confirmationError": "Dieser Antrag konnte nicht best\u00e4tigt werden. Der Link ist m\u00f6glicherweise ung\u00fcltig, abgelaufen oder bereits verwendet. Fordern Sie bei Bedarf einen neuen Link an; diese Seite zeigt keine Teilnehmendeninformationen.",
       "confirmationKeyMissing": "Dieser Link enth\u00e4lt keine Best\u00e4tigungsinformationen. Fordern Sie \u00fcber den Datenschutzhinweis einen neuen Link an."
+    },
+    "withdrawalReview": {
+      "title": "Fehlgeschlagene Datenschutz-Widerrufe",
+      "description": "Dieser Bildschirm zeigt nur bereinigte Fehlerkategorien. Die Best\u00e4tigung eines Fehlers l\u00f6scht die gespeicherte operative Referenz unwiderruflich; Teilnehmerdaten werden nicht angezeigt.",
+      "loading": "Fehlgeschlagene Widerrufe werden geladen...",
+      "queryError": "Fehlgeschlagene Widerrufe konnten nicht geladen werden. Bitte versuchen Sie es erneut.",
+      "retry": "Erneut versuchen",
+      "empty": "Es gibt keine fehlgeschlagenen Widerrufe zur Pr\u00fcfung.",
+      "failureCategory": {
+        "PROCESSING_FAILED": "Verarbeitung fehlgeschlagen",
+        "ATTEMPT_LIMIT_REACHED": "Maximale Anzahl an Versuchen erreicht"
+      },
+      "acknowledge": "Best\u00e4tigen und Referenz l\u00f6schen",
+      "acknowledging": "Wird best\u00e4tigt...",
+      "acknowledgementError": "Dieser Widerruf konnte nicht best\u00e4tigt werden. Bitte versuchen Sie es erneut.",
+      "acknowledged": "Best\u00e4tigung gespeichert; die operative Referenz wurde gel\u00f6scht.",
+      "notAvailable": "Dieser fehlgeschlagene Widerruf ist nicht mehr verf\u00fcgbar und wurde aus der Liste entfernt.",
+      "loadMore": "Weitere laden",
+      "loadingMore": "Weitere werden geladen...",
+      "loadMoreError": "Weitere fehlgeschlagene Widerrufe konnten nicht geladen werden. Bitte versuchen Sie es erneut."
     }
   },
   "audit-logs": {
@@ -846,6 +870,7 @@
       "PrivacyWithdrawalChallengeEmailDeliveryFailed": "Widerrufs-E-Mail fehlgeschlagen",
       "PrivacyWithdrawalBatchConfirmed": "Widerruf vorgemerkt",
       "PrivacyWithdrawalBatchCompleted": "Widerruf abgeschlossen",
+      "PrivacyWithdrawalFailedTargetAcknowledged": "Fehlgeschlagener Widerruf best\u00e4tigt",
       "EntityCreated": "Erstellt",
       "EntityModified": "Ge\u00e4ndert",
       "EntityDeleted": "Gel\u00f6scht"

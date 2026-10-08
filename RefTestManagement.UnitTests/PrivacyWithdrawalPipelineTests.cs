@@ -10,6 +10,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
+using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
@@ -159,6 +160,9 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Null(challenge.ProtectedDeliveryKey);
         Assert.True(challenge.IsPendingAt(Now.AddMinutes(1)));
         Assert.True(challenge.TryConfirm(ChallengeKey, Now.AddMinutes(2)));
+        Assert.DoesNotContain(
+            challenge.DomainEvents,
+            domainEvent => domainEvent is PrivacyWithdrawalChallengeConfirmedWithoutWorkEvent);
         Assert.False(challenge.TryConfirm(ChallengeKey, Now.AddMinutes(3)));
         Assert.Equal(Now.AddMinutes(2), challenge.VerifiedAt);
         Assert.Equal(string.Empty, challenge.Email);
@@ -503,16 +507,42 @@ public sealed class PrivacyWithdrawalPipelineTests
             now.AddHours(24),
             matchingRefTestCount: 1);
 
-        await using var context = database.CreateContext();
-        context.RefTests.Add(refTest);
-        context.PrivacyWithdrawalChallenges.Add(challenge);
-        await context.SaveChangesAsync(TestContext.Current.CancellationToken);
-        var service = NewRequestService(context, new CapturingKeyProtection());
+        await using (var seed = database.CreateContext())
+        {
+            seed.RefTests.Add(refTest);
+            seed.PrivacyWithdrawalChallenges.Add(challenge);
+            await seed.SaveChangesAsync(TestContext.Current.CancellationToken);
+        }
 
-        Assert.True(await service.RequestForParticipantAsync(
-            refTest.GetIssuedToken(),
-            TestContext.Current.CancellationToken));
-        Assert.True(await service.ConfirmAsync(ChallengeKey, TestContext.Current.CancellationToken));
+        await using (var participantRequest = database.CreateContext())
+        {
+            var service = NewRequestService(participantRequest, new CapturingKeyProtection());
+            Assert.True(await service.RequestForParticipantAsync(
+                refTest.GetIssuedToken(),
+                TestContext.Current.CancellationToken));
+        }
+
+        var auditInterceptor = new AuditSaveChangesInterceptor(
+            new HttpContextAccessor { HttpContext = new DefaultHttpContext() },
+            new AuditLogOptions());
+        await using (var confirmationContext = database.CreateContext(auditInterceptor))
+        {
+            var service = NewRequestService(confirmationContext, new CapturingKeyProtection());
+            Assert.True(await service.ConfirmAsync(ChallengeKey, TestContext.Current.CancellationToken));
+
+            var noWorkConfirmation = await confirmationContext.AuditEvents
+                .AsNoTracking()
+                .SingleAsync(
+                    auditEvent => auditEvent.Type == PrivacyWithdrawalChallengeConfirmedWithoutWorkEvent.EventType,
+                    TestContext.Current.CancellationToken);
+            Assert.Null(noWorkConfirmation.Data);
+            Assert.Equal("Verified participant", noWorkConfirmation.ActorName);
+            Assert.Equal(string.Empty, noWorkConfirmation.ActorEmail);
+            Assert.DoesNotContain(
+                ParticipantEmail,
+                noWorkConfirmation.ActorEmail,
+                StringComparison.OrdinalIgnoreCase);
+        }
 
         await using var verification = database.CreateContext();
         Assert.Single(await verification.PrivacyWithdrawalBatches
@@ -1365,7 +1395,7 @@ public sealed class PrivacyWithdrawalPipelineTests
                     Now,
                     TestContext.Current.CancellationToken));
             Assert.Equal(
-                2,
+                1,
                 await PrivacyWithdrawalCleanupService.ClearCompletedBatchTargetsAsync(
                     cleanup,
                     TestContext.Current.CancellationToken));
@@ -1387,8 +1417,8 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.Contains(completedTargetForActiveBatch.Id, remainingTargets);
         Assert.Contains(pendingTargetForActiveBatch.Id, remainingTargets);
         Assert.Contains(exhaustedTargetWithPendingJob.Id, remainingTargets);
+        Assert.Contains(exhaustedTargetWithFailedJob.Id, remainingTargets);
         Assert.Contains(exhaustedTargetWithActiveReplacement.Id, remainingTargets);
-        Assert.DoesNotContain(exhaustedTargetWithFailedJob.Id, remainingTargets);
     }
 
     [Fact]
@@ -2292,6 +2322,12 @@ public sealed class PrivacyWithdrawalPipelineTests
             .Select(refTest => new { refTest.Id, refTest.Email, refTest.Version })
             .Take(250)
             .ToQueryString();
+        var exportedRefTestIds = new List<Guid> { Guid.Empty, Guid.NewGuid() };
+        var finalOwnershipSql = PrivacyWithdrawalQueries.MatchingRefTestsByEmailLookupKey(
+                context.RefTests.Where(refTest => exportedRefTestIds.Contains(refTest.Id)),
+                lookupKey)
+            .Select(refTest => new { refTest.Id, refTest.Email })
+            .ToQueryString();
         var cleanupSql = context.PrivacyWithdrawalChallenges
             .Where(PrivacyWithdrawalCleanupQueries.IsDueForChallengeCleanup(Now))
             .Select(challenge => challenge.Id)
@@ -2339,6 +2375,10 @@ public sealed class PrivacyWithdrawalPipelineTests
         Assert.DoesNotContain("UPPER", matchingSql, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("EmailLookupKey", backfillSql, StringComparison.Ordinal);
         Assert.Contains("IsAnonymized", backfillSql, StringComparison.Ordinal);
+        Assert.Contains("EmailLookupKey", finalOwnershipSql, StringComparison.Ordinal);
+        Assert.Contains("IsAnonymized", finalOwnershipSql, StringComparison.Ordinal);
+        Assert.Contains("Email", finalOwnershipSql, StringComparison.Ordinal);
+        Assert.DoesNotContain("UPPER", finalOwnershipSql, StringComparison.OrdinalIgnoreCase);
         var pendingTargetSql = context.PrivacyWithdrawalBatchTargets
             .Where(target => target.RefTestId == Guid.Empty && target.CompletedAt == null)
             .Select(target => target.Id)
@@ -2611,6 +2651,9 @@ public sealed class PrivacyWithdrawalPipelineTests
             Task.FromResult(false);
 
         public Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken) =>
+            Task.FromResult(false);
+
+        public Task<bool> AcknowledgeFailedTargetAsync(Guid actionToken, CancellationToken cancellationToken) =>
             Task.FromResult(false);
 
         public Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken) =>

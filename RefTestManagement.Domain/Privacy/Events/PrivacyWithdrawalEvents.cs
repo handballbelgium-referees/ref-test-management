@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Domain.Events;
+using Handball.Belgium.RefTestManagement.Domain.Privacy;
 
 namespace Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
 
@@ -32,6 +33,16 @@ public sealed record PrivacyWithdrawalChallengeEmailDeliveryFailedEvent(int Atte
     public override object GetChanges() => new { attempt = Attempt, accepted = false };
 }
 
+/// <summary>Records a verified withdrawal confirmation when no new work was queued.</summary>
+public sealed record PrivacyWithdrawalChallengeConfirmedWithoutWorkEvent : DomainEventBase
+{
+    public const string EventType = "PrivacyWithdrawalChallengeConfirmedWithoutWork";
+
+    public override string ActionName => EventType;
+
+    public override object? GetChanges() => null;
+}
+
 /// <summary>Records mailbox-verified batch completion using target counts only.</summary>
 public sealed record PrivacyWithdrawalBatchConfirmedEvent(int TargetCount) : DomainEventBase
 {
@@ -56,4 +67,15 @@ public sealed record PrivacyWithdrawalBatchCompletedEvent(
         completedTargetCount = CompletedTargetCount,
         exhaustedTargetCount = ExhaustedTargetCount
     };
+}
+
+/// <summary>Records an operator acknowledgement using only the sanitized failure category.</summary>
+public sealed record PrivacyWithdrawalFailedTargetAcknowledgedEvent(
+    PrivacyWithdrawalTargetFailureCode FailureCategory) : DomainEventBase
+{
+    public const string EventType = "PrivacyWithdrawalFailedTargetAcknowledged";
+
+    public override string ActionName => EventType;
+
+    public override object GetChanges() => new { failureCategory = FailureCategory.ToString() };
 }

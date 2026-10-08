@@ -10,6 +10,10 @@ export type AcceptPrivacyNoticeInput = {
   token: string;
 };
 
+export type AcknowledgeFailedPrivacyWithdrawalTargetInput = {
+  actionToken: string;
+};
+
 export type ApproveRefTestsInput = {
   ids: Array<string | number>;
 };
@@ -155,6 +159,14 @@ export type PersonalDataExportRequestInput = {
 export type PrivacyWithdrawalRequestInput = {
   email: string;
 };
+
+export type PrivacyWithdrawalTargetAcknowledgementStatus =
+  | 'ACKNOWLEDGED'
+  | 'NOT_AVAILABLE';
+
+export type PrivacyWithdrawalTargetFailureCode =
+  | 'ATTEMPT_LIMIT_REACHED'
+  | 'PROCESSING_FAILED';
 
 /** Filter RefTests based on Id, Email or Status */
 export type RefTestFilterInput = {
@@ -422,6 +434,21 @@ export type GetAuditLogsQueryVariables = Exact<{
 
 
 export type GetAuditLogsQuery = { auditLogs: { totalCount: number, edges: Array<{ cursor: string, node: { seqId: number, id: string, streamId: string, version: number, data: string | null, type: string, timestamp: string, actorName: string, actorEmail: string, headers: string | null, nodeId: string | null } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
+
+export type AcknowledgeFailedPrivacyWithdrawalTargetMutationVariables = Exact<{
+  input: AcknowledgeFailedPrivacyWithdrawalTargetInput;
+}>;
+
+
+export type AcknowledgeFailedPrivacyWithdrawalTargetMutation = { acknowledgeFailedPrivacyWithdrawalTarget: { privacyWithdrawalTargetAcknowledgementResult: { status: PrivacyWithdrawalTargetAcknowledgementStatus } | null } };
+
+export type GetFailedPrivacyWithdrawalTargetsQueryVariables = Exact<{
+  first?: number | null | undefined;
+  after?: string | null | undefined;
+}>;
+
+
+export type GetFailedPrivacyWithdrawalTargetsQuery = { failedPrivacyWithdrawalTargets: { edges: Array<{ node: { actionToken: string, failureCategory: PrivacyWithdrawalTargetFailureCode } }> | null, pageInfo: { hasNextPage: boolean, endCursor: string | null } } | null };
 
 export type AcceptPrivacyNoticeMutationVariables = Exact<{
   input: AcceptPrivacyNoticeInput;
@@ -793,6 +820,53 @@ export const GetAuditLogsDocument = gql`
   })
   export class GetAuditLogsGQL extends Apollo.Query<GetAuditLogsQuery, GetAuditLogsQueryVariables> {
     override document = GetAuditLogsDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const AcknowledgeFailedPrivacyWithdrawalTargetDocument = gql`
+    mutation AcknowledgeFailedPrivacyWithdrawalTarget($input: AcknowledgeFailedPrivacyWithdrawalTargetInput!) {
+  acknowledgeFailedPrivacyWithdrawalTarget(input: $input) {
+    privacyWithdrawalTargetAcknowledgementResult {
+      status
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class AcknowledgeFailedPrivacyWithdrawalTargetGQL extends Apollo.Mutation<AcknowledgeFailedPrivacyWithdrawalTargetMutation, AcknowledgeFailedPrivacyWithdrawalTargetMutationVariables> {
+    override document = AcknowledgeFailedPrivacyWithdrawalTargetDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetFailedPrivacyWithdrawalTargetsDocument = gql`
+    query GetFailedPrivacyWithdrawalTargets($first: Int, $after: String) {
+  failedPrivacyWithdrawalTargets(first: $first, after: $after) {
+    edges {
+      node {
+        actionToken
+        failureCategory
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetFailedPrivacyWithdrawalTargetsGQL extends Apollo.Query<GetFailedPrivacyWithdrawalTargetsQuery, GetFailedPrivacyWithdrawalTargetsQueryVariables> {
+    override document = GetFailedPrivacyWithdrawalTargetsDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

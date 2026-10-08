@@ -54,6 +54,12 @@ public static class Permissions
         public const string All = "audit-logs:*";
     }
 
+    public static class PrivacyOperations
+    {
+        /// <summary>Allows reviewing and acknowledging exhausted privacy-withdrawal targets.</summary>
+        public const string ReviewWithdrawals = "privacy-operations:review-withdrawals";
+    }
+
     /// <summary>
     /// All individual (non-wildcard) permissions. Used to register authorization policies.
     /// </summary>
@@ -79,5 +85,6 @@ public static class Permissions
         Questions.Search,
         Questions.View,
         AuditLogs.View,
+        PrivacyOperations.ReviewWithdrawals,
     ];
 }

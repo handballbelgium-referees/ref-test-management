@@ -50,6 +50,15 @@ export const routes: Routes = [
       ),
   },
   {
+    path: 'privacy/withdrawal-review',
+    pathMatch: 'full',
+    loadComponent: () =>
+      import('./privacy/components/withdrawal-review/privacy-withdrawal-review').then(
+        (m) => m.PrivacyWithdrawalReview,
+      ),
+    canActivate: [authGuard, permissionGuard(Permissions.PrivacyOperations.ReviewWithdrawals)],
+  },
+  {
     path: 'privacy',
     loadComponent: () => import('./privacy/privacy-notice').then((m) => m.PrivacyNotice),
   },
