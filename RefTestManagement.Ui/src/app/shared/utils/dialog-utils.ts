@@ -5,7 +5,7 @@ export type DialogOperationCallback<TParams = void> = (
   ids: string[],
   params: TParams,
   bannerManager?: IsolatedBannerManager,
-) => { loading: Signal<boolean>; success: Signal<boolean> } | void;
+) => { loading: Signal<boolean>; success: Signal<boolean>; error?: Signal<unknown> } | void;
 
 export function createDialogOperation<TParams = void, TExtra = void>(
   callback: DialogOperationCallback<TParams>,
@@ -13,6 +13,7 @@ export function createDialogOperation<TParams = void, TExtra = void>(
 ) {
   const show = signal(false);
   const loading = signal(false);
+  let confirmationInFlight = false;
   const initialData = signal<TExtra | undefined>(undefined);
   const injector = inject(Injector);
   const bannerManager = signal<IsolatedBannerManager>({} as IsolatedBannerManager);
@@ -25,8 +26,9 @@ export function createDialogOperation<TParams = void, TExtra = void>(
       show.set(true);
     },
     confirm(params: TParams): void {
-      if (getSelectedIds && getSelectedIds().length === 0) return;
+      if (confirmationInFlight || (getSelectedIds && getSelectedIds().length === 0)) return;
       const ids = getSelectedIds ? getSelectedIds() : [];
+      confirmationInFlight = true;
 
       let closed = false;
       const dialogControl = {
@@ -39,25 +41,40 @@ export function createDialogOperation<TParams = void, TExtra = void>(
         },
       };
 
-      const result = callback(ids, params, bannerManager());
-      if (result) {
-        const effectRef = effect(
-          () => {
-            const isLoading = result.loading();
-            const isSuccess = result.success();
-            loading.set(isLoading);
-
-            // Auto-close when loading completes (assumes success if no error was thrown)
-            if (!isLoading && isSuccess) {
-              dialogControl.close();
-              effectRef.destroy();
-            } else if (!isLoading) {
-              effectRef.destroy();
-            }
-          },
-          { injector },
-        );
+      let result: ReturnType<DialogOperationCallback<TParams>>;
+      try {
+        result = callback(ids, params, bannerManager());
+      } catch (error) {
+        confirmationInFlight = false;
+        throw error;
       }
+
+      if (!result) {
+        confirmationInFlight = false;
+        return;
+      }
+
+      let observedLoading = false;
+      const effectRef = effect(
+        () => {
+          const isLoading = result.loading();
+          const isSuccess = result.success();
+          const hasError = result.error?.() != null;
+          if (isLoading) observedLoading = true;
+
+          if (!isLoading && (observedLoading || isSuccess || hasError)) {
+            confirmationInFlight = false;
+            loading.set(false);
+            if (isSuccess) {
+              dialogControl.close();
+            }
+            effectRef.destroy();
+          } else {
+            loading.set(true);
+          }
+        },
+        { injector },
+      );
     },
     cancel(): void {
       show.set(false);

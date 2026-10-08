@@ -40,6 +40,8 @@ describe('RefTestResults', () => {
           detail: {
             correct: 'Correct',
             incorrect: 'Incorrect',
+            passed: 'Passed',
+            failed: 'Failed',
             answers_summary: 'Answers summary',
             answers_selected: '{{selected}} of {{total}} answered',
           },
@@ -116,5 +118,12 @@ describe('RefTestResults', () => {
 
     expect(fixture.nativeElement.querySelector('.w-20')).not.toBeNull();
     expect(fixture.nativeElement.querySelector('.w-20').classList).toContain('bg-success-100');
+    expect(fixture.nativeElement.textContent).toContain('Passed');
+  });
+
+  it('renders an explicit failed result when the score is below the threshold', () => {
+    const fixture = createComponent({ percentage: 79, passingPercentage: 80 });
+
+    expect(fixture.nativeElement.textContent).toContain('Failed');
   });
 });

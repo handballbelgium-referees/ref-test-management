@@ -4,7 +4,7 @@
       type="button"
       (click)="scrollFilters('left')"
       [disabled]="!canScrollLeft()"
-      aria-label="Scroll filters left"
+      [attr.aria-label]="'ref_tests.list.filters.scroll_left' | translate"
       class="md:hidden shrink-0 p-1 rounded-md hover:bg-neutral-100 text-neutral-600 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
@@ -20,6 +20,7 @@
         <button
           type="button"
           (click)="onStatusChange(undefined, $event.target)"
+          [attr.aria-pressed]="!selectedStatus()"
           [class.bg-primary-100]="!selectedStatus()"
           [class.text-primary-700]="!selectedStatus()"
           [class.font-medium]="!selectedStatus()"
@@ -30,6 +31,7 @@
         <button
           type="button"
           (click)="onStatusChange('PENDING', $event.target)"
+          [attr.aria-pressed]="selectedStatus() === 'PENDING'"
           [class.bg-primary-100]="selectedStatus() === 'PENDING'"
           [class.text-primary-700]="selectedStatus() === 'PENDING'"
           [class.font-medium]="selectedStatus() === 'PENDING'"
@@ -40,6 +42,7 @@
         <button
           type="button"
           (click)="onStatusChange('IN_PROGRESS', $event.target)"
+          [attr.aria-pressed]="selectedStatus() === 'IN_PROGRESS'"
           [class.bg-primary-100]="selectedStatus() === 'IN_PROGRESS'"
           [class.text-primary-700]="selectedStatus() === 'IN_PROGRESS'"
           [class.font-medium]="selectedStatus() === 'IN_PROGRESS'"
@@ -50,6 +53,7 @@
         <button
           type="button"
           (click)="onStatusChange('COMPLETED', $event.target)"
+          [attr.aria-pressed]="selectedStatus() === 'COMPLETED'"
           [class.bg-primary-100]="selectedStatus() === 'COMPLETED'"
           [class.text-primary-700]="selectedStatus() === 'COMPLETED'"
           [class.font-medium]="selectedStatus() === 'COMPLETED'"
@@ -60,6 +64,7 @@
         <button
           type="button"
           (click)="onStatusChange('EXPIRED', $event.target)"
+          [attr.aria-pressed]="selectedStatus() === 'EXPIRED'"
           [class.bg-primary-100]="selectedStatus() === 'EXPIRED'"
           [class.text-primary-700]="selectedStatus() === 'EXPIRED'"
           [class.font-medium]="selectedStatus() === 'EXPIRED'"
@@ -72,6 +77,7 @@
             *hasPermission="Permissions.RefTests.Approve"
             type="button"
             (click)="onStatusChange('PENDING_APPROVAL', $event.target)"
+            [attr.aria-pressed]="selectedStatus() === 'PENDING_APPROVAL'"
             [class.bg-orange-100]="selectedStatus() === 'PENDING_APPROVAL'"
             [class.text-orange-700]="selectedStatus() === 'PENDING_APPROVAL'"
             [class.font-medium]="selectedStatus() === 'PENDING_APPROVAL'"
@@ -86,6 +92,7 @@
           <button
             type="button"
             (click)="onStatusChange('REJECTED', $event.target)"
+            [attr.aria-pressed]="selectedStatus() === 'REJECTED'"
             [class.bg-error-100]="selectedStatus() === 'REJECTED'"
             [class.text-error-700]="selectedStatus() === 'REJECTED'"
             [class.font-medium]="selectedStatus() === 'REJECTED'"
@@ -100,7 +107,7 @@
       type="button"
       (click)="scrollFilters('right')"
       [disabled]="!canScrollRight()"
-      aria-label="Scroll filters right"
+      [attr.aria-label]="'ref_tests.list.filters.scroll_right' | translate"
       class="md:hidden shrink-0 p-1 rounded-md hover:bg-neutral-100 text-neutral-600 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
