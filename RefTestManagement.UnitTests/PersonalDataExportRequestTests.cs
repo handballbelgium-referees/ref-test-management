@@ -2,7 +2,7 @@
 using System.Security.Claims;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Update;
 using Handball.Belgium.RefTestManagement.Api.Services;

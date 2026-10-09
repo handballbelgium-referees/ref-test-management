@@ -7,8 +7,9 @@ using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 
 /// <summary>
 /// Builds and sends the verified participant's export from current RefTest and retained audit

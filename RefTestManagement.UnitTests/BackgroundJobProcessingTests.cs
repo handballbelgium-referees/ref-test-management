@@ -1,6 +1,6 @@
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;

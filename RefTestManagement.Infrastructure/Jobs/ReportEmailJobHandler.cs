@@ -2,8 +2,9 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Microsoft.Extensions.Logging;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 
 /// <summary>
 /// Sends the staff-facing summary report for a batch of RefTests.
