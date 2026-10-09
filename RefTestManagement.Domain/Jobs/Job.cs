@@ -10,6 +10,7 @@ public class Job
         string payload,
         DateTime executeAfter,
         Guid? privacyWithdrawalBatchId,
+        Guid? refTestId,
         DateTime createdAt)
     {
         Id = Guid.NewGuid();
@@ -20,6 +21,7 @@ public class Job
         CreatedAt = createdAt;
         ExecuteAfter = executeAfter;
         PrivacyWithdrawalBatchId = privacyWithdrawalBatchId;
+        RefTestId = refTestId;
     }
 
     public Guid Id { get; private set; }
@@ -47,6 +49,13 @@ public class Job
     public Guid? PrivacyWithdrawalBatchId { get; private set; }
 
     /// <summary>
+    /// The RefTest a per-RefTest job (invitation, result, expiration) acts on, so cancelling a
+    /// RefTest's jobs is an indexed lookup instead of a scan of every payload. Null for other job
+    /// types and for jobs queued before the column existed.
+    /// </summary>
+    public Guid? RefTestId { get; private set; }
+
+    /// <summary>
     /// Creates a new job
     /// </summary>
     public static Job Create(
@@ -54,7 +63,8 @@ public class Job
         string payload,
         DateTime? executeAfter = null,
         Guid? privacyWithdrawalBatchId = null,
-        DateTime? now = null)
+        DateTime? now = null,
+        Guid? refTestId = null)
     {
         if (privacyWithdrawalBatchId is not null && jobType != JobType.PrivacyWithdrawalBatch)
             throw new ArgumentException(
@@ -62,9 +72,14 @@ public class Job
                 nameof(privacyWithdrawalBatchId));
         if (privacyWithdrawalBatchId == Guid.Empty)
             throw new ArgumentException("A privacy-withdrawal batch id cannot be empty.", nameof(privacyWithdrawalBatchId));
+        if (refTestId is not null
+            && jobType is not (JobType.InvitationEmail or JobType.ResultEmail or JobType.RefTestExpiration))
+            throw new ArgumentException("Only per-RefTest jobs can reference a RefTest.", nameof(refTestId));
+        if (refTestId == Guid.Empty)
+            throw new ArgumentException("A RefTest id cannot be empty.", nameof(refTestId));
 
         var createdAt = Clock(now);
-        return new Job(jobType, payload, executeAfter ?? createdAt, privacyWithdrawalBatchId, createdAt);
+        return new Job(jobType, payload, executeAfter ?? createdAt, privacyWithdrawalBatchId, refTestId, createdAt);
     }
 
     /// <summary>Links a legacy batch job to its batch after reading its ID-only payload.</summary>
