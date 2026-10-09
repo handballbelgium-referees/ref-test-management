@@ -134,6 +134,15 @@ public sealed class CreateRefTestsHandlerTests
 
         public void AddRefTests(IEnumerable<RefTest> refTests) => Added.AddRange(refTests);
 
+        public Task<IReadOnlyList<RefTest>> GetRefTestsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task<RefTest?> RevertRefTestAsync(RefTest refTest, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task StageApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
         public Task StageInvitationEmailAsync(RefTest refTest, DateTime? executeAfter, CancellationToken cancellationToken)
         {
             Jobs.Add($"invitation:{refTest.Id}");

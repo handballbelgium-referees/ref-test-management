@@ -10,13 +10,25 @@ namespace Handball.Belgium.RefTestManagement.Application.Abstractions;
 /// </summary>
 public interface IRefTestUnitOfWork
 {
+    /// <summary>Loads the RefTests with the given ids that exist, tracked for update.</summary>
+    Task<IReadOnlyList<RefTest>> GetRefTestsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken);
+
     void AddRefTests(IEnumerable<RefTest> refTests);
+
+    /// <summary>
+    /// Throws away the unsaved changes made to <paramref name="refTest"/> and returns its persisted
+    /// state, or <see langword="null"/> when it no longer exists.
+    /// </summary>
+    Task<RefTest?> RevertRefTestAsync(RefTest refTest, CancellationToken cancellationToken);
 
     /// <summary>Stages the invitation email job for <paramref name="refTest"/>; nothing is saved.</summary>
     Task StageInvitationEmailAsync(RefTest refTest, DateTime? executeAfter, CancellationToken cancellationToken);
 
     /// <summary>Stages the approval notification job; nothing is saved.</summary>
     Task StageApprovalNotificationAsync(ApprovalNotificationEmailPayload payload, CancellationToken cancellationToken);
+
+    /// <summary>Stages the approval decision email job; nothing is saved.</summary>
+    Task StageApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload, CancellationToken cancellationToken);
 
     /// <summary>
     /// Starts tracking jobs staged from now on, so a staging attempt that fails part-way can drop

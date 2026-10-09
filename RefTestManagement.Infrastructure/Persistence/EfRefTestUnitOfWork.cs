@@ -13,7 +13,26 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 public sealed class EfRefTestUnitOfWork(RefTestManagementContext context, IJobEnqueueService jobEnqueueService)
     : IRefTestUnitOfWork
 {
+    public async Task<IReadOnlyList<RefTest>> GetRefTestsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
+        await context.RefTests.Where(refTest => ids.Contains(refTest.Id)).ToListAsync(cancellationToken);
+
     public void AddRefTests(IEnumerable<RefTest> refTests) => context.RefTests.AddRange(refTests);
+
+    public async Task<RefTest?> RevertRefTestAsync(RefTest refTest, CancellationToken cancellationToken)
+    {
+        // Detaching drops the in-memory changes; the domain events they raised must go too, or the
+        // audit interceptor would record a transition that was never saved.
+        refTest.ClearDomainEvents();
+        context.Entry(refTest).State = EntityState.Detached;
+        return await context.RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTest.Id, cancellationToken);
+    }
+
+    public Task StageApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload, CancellationToken cancellationToken) =>
+        jobEnqueueService.EnqueueApprovalDecisionEmailAsync(
+            payload,
+            saveChanges: false,
+            unitOfWorkContext: context,
+            cancellationToken: cancellationToken);
 
     public Task StageInvitationEmailAsync(RefTest refTest, DateTime? executeAfter, CancellationToken cancellationToken) =>
         jobEnqueueService.EnqueueInvitationEmailAsync(
