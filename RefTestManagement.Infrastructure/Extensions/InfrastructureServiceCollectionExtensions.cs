@@ -2,6 +2,7 @@ using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure.IhfRules;
 using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Privacy;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
 using StrawberryShake;
@@ -48,6 +49,14 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
         services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
         services.AddScoped<IRefTestUnitOfWork, EfRefTestUnitOfWork>();
+
+        // Privacy challenges and participant credentials. Token protection is a singleton because
+        // Data Protection keys are process-wide; the request services are scoped to the DbContext.
+        services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
+        services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
+        services.AddSingleton<IRefTestSessionTokenService, RefTestSessionTokenService>();
+        services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
+        services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
         // ponytail: process-local session lock; R1-ARCH WP9 replaces it with a shared one for
         // multi-replica deployments.
         services.AddSingleton<IRefTestSessionService, RefTestSessionService>();

@@ -1,13 +1,6 @@
 using Microsoft.AspNetCore.DataProtection;
 
-namespace Handball.Belgium.RefTestManagement.Api.Services;
-
-/// <summary>Protects the short-lived challenge key needed by retryable email delivery.</summary>
-public interface IPersonalDataExportKeyProtection
-{
-    string Protect(string key);
-    string Unprotect(string protectedKey);
-}
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Privacy;
 
 public sealed class PersonalDataExportKeyProtection : IPersonalDataExportKeyProtection
 {
