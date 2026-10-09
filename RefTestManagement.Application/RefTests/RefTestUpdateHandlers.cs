@@ -106,20 +106,7 @@ public static class RefTestUpdateHandler
         if (sendResultsAutomatically == true && !resultsWereAutomatic
             && refTest.Status == RefTestStatus.Completed && !resultWasSent)
         {
-            await unitOfWork.StageResultEmailAsync(
-                new ResultEmailPayload(
-                    refTest.Id,
-                    refTest.FullName,
-                    refTest.Email,
-                    refTest.QuestionScore ?? 0,
-                    refTest.AnswerScore ?? 0,
-                    refTest.QuestionTotal,
-                    refTest.AnswerTotal ?? 0,
-                    refTest.Percentage ?? 0,
-                    [.. refTest.SelectedAnswerIds],
-                    [.. refTest.WrongQuestionIds],
-                    [.. refTest.WrongAnswerIds]),
-                cancellationToken);
+            await unitOfWork.StageResultEmailAsync(ResultEmailPayloadFactory.For(refTest), executeAfter: null, cancellationToken);
         }
 
         await unitOfWork.SaveChangesAsync(cancellationToken);

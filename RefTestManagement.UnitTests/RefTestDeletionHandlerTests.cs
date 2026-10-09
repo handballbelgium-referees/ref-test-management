@@ -90,7 +90,7 @@ public sealed class RefTestDeletionHandlerTests
         public Task StageInvitationEmailAsync(RefTest refTest, DateTime? executeAfter, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task StageApprovalNotificationAsync(ApprovalNotificationEmailPayload payload, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task StageApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload, CancellationToken cancellationToken) => throw new NotSupportedException();
-        public Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken) => throw new NotSupportedException();
+        public Task StageResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Task ClearPersonalDataExportRequestsAsync(string email, CancellationToken cancellationToken) => throw new NotSupportedException();
         public Action BeginJobStaging() => throw new NotSupportedException();
         public Task SaveChangesAsync(CancellationToken cancellationToken) => throw new NotSupportedException();

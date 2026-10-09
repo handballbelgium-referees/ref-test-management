@@ -140,7 +140,7 @@ public sealed class CreateRefTestsHandlerTests
         public Task<RefTest?> RevertRefTestAsync(RefTest refTest, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
-        public Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken) =>
+        public Task StageResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
         public Task ClearPersonalDataExportRequestsAsync(string email, CancellationToken cancellationToken) =>

@@ -117,7 +117,7 @@ public sealed class RefTestResetHandlerTests
         public Task<IReadOnlyList<RefTest>> GetRefTestsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken) =>
             Task.FromResult<IReadOnlyList<RefTest>>([.. stored.Where(refTest => ids.Contains(refTest.Id))]);
 
-        public Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken) =>
+        public Task StageResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 
         public Task ClearPersonalDataExportRequestsAsync(string email, CancellationToken cancellationToken) =>

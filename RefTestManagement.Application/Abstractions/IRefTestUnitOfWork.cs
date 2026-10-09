@@ -43,8 +43,8 @@ public interface IRefTestUnitOfWork
     /// <summary>Stages the approval decision email job; nothing is saved.</summary>
     Task StageApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload, CancellationToken cancellationToken);
 
-    /// <summary>Stages the result email job; nothing is saved.</summary>
-    Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken);
+    /// <summary>Stages the result email job, sent no earlier than <paramref name="executeAfter"/>; nothing is saved.</summary>
+    Task StageResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter, CancellationToken cancellationToken);
 
     /// <summary>
     /// Clears the personal data of pending data-export requests made for <paramref name="email"/>,
