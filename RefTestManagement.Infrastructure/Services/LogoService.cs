@@ -4,12 +4,6 @@ using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
-public interface ILogoService
-{
-    Task<byte[]?> GetLogoBytesAsync(CancellationToken cancellationToken = default);
-    Task<string> GetLogoAsBase64Async(CancellationToken cancellationToken = default);
-}
-
 public class LogoService(ILogger<LogoService> logger, EmailConfiguration configuration, HttpClient httpClient) : ILogoService
 {
     private byte[]? _cachedLogoBytes;
