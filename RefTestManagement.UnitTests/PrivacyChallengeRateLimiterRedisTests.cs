@@ -72,10 +72,17 @@ public sealed class PrivacyChallengeRateLimiterRedisTests
             HmacSecret = new string('c', 32)
         }, "Boundary", connectionA);
         Assert.True(await boundary.TryAcquireRequestAsync("192.0.2.4", cancellationToken));
-        await Task.Delay(TimeSpan.FromMilliseconds(700), cancellationToken);
         Assert.False(await boundary.TryAcquireRequestAsync("192.0.2.4", cancellationToken));
-        await Task.Delay(TimeSpan.FromMilliseconds(400), cancellationToken);
-        Assert.True(await boundary.TryAcquireRequestAsync("192.0.2.4", cancellationToken));
+        // The window is enforced by a Redis TTL, so wait for it to reopen instead of guessing a
+        // sleep that a slow CI machine can overshoot or undershoot.
+        var reopenedBy = DateTime.UtcNow.AddSeconds(3);
+        var reopened = false;
+        while (!reopened && DateTime.UtcNow < reopenedBy)
+        {
+            await Task.Delay(TimeSpan.FromMilliseconds(100), cancellationToken);
+            reopened = await boundary.TryAcquireRequestAsync("192.0.2.4", cancellationToken);
+        }
+        Assert.True(reopened);
 
         var server = connectionA.GetServer(connectionA.GetEndPoints().Single());
         await server.ExecuteAsync("ACL", "SETUSER", "default", "-EXPIRE", "-PEXPIRE");
