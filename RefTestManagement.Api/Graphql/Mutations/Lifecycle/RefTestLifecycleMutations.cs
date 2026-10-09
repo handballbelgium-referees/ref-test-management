@@ -288,7 +288,7 @@ public static partial class RefTestLifecycleMutations
     /// </summary>
     internal static async Task<RefTest> CompleteRefTestCoreAsync(
         RefTest refTest,
-        List<string> selectedAnswerIds,
+        IReadOnlyList<string> selectedAnswerIds,
         string? language,
         RefTestManagementContext context,
         IIhfRulesQuestionsService ihfRulesQuestionsService,
@@ -334,9 +334,9 @@ public static partial class RefTestLifecycleMutations
                 refTest.QuestionTotal,
                 refTest.AnswerTotal ?? 0,
                 refTest.Percentage ?? 0,
-                refTest.SelectedAnswerIds,
-                refTest.WrongQuestionIds,
-                refTest.WrongAnswerIds
+                [.. refTest.SelectedAnswerIds],
+                [.. refTest.WrongQuestionIds],
+                [.. refTest.WrongAnswerIds]
             );
 
             DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0

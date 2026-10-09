@@ -57,16 +57,7 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
         builder.Property(x => x.MaxTimeInMinutes)
             .IsRequired();
 
-        builder.Property(x => x.QuestionIds)
-            .HasConversion(
-                v => string.Join(',', v.Select(g => g.ToString())),
-                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .ToList())
-            .HasMaxLength(4000)
-            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
-                (c1, c2) => c1!.SequenceEqual(c2!),
-                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                c => c.ToList()));
+        ConfigureIdList(builder.Property(x => x.QuestionIds));
 
         builder.Property(x => x.Status)
             .IsRequired()
@@ -79,40 +70,13 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
 
         builder.Property(x => x.Percentage);
         
-        builder.Property(x => x.SelectedAnswerIds)
-            .HasConversion(
-                v => string.Join(',', v.Select(g => g.ToString())),
-                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .ToList())
-            .HasMaxLength(4000)
-            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
-                (c1, c2) => c1!.SequenceEqual(c2!),
-                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                c => c.ToList()));
+        ConfigureIdList(builder.Property(x => x.SelectedAnswerIds));
 
         builder.Property(x => x.QuestionScore);
         builder.Property(x => x.StartedAt);
-        builder.Property(x => x.WrongQuestionIds)
-            .HasConversion(
-                v => string.Join(',', v.Select(g => g.ToString())),
-                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .ToList())
-            .HasMaxLength(4000)
-            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
-                (c1, c2) => c1!.SequenceEqual(c2!),
-                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                c => c.ToList()));
+        ConfigureIdList(builder.Property(x => x.WrongQuestionIds));
         
-        builder.Property(x => x.WrongAnswerIds)
-            .HasConversion(
-                v => string.Join(',', v.Select(g => g.ToString())),
-                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries)
-                    .ToList())
-            .HasMaxLength(4000)
-            .Metadata.SetValueComparer(new ValueComparer<List<string>>(
-                (c1, c2) => c1!.SequenceEqual(c2!),
-                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
-                c => c.ToList()));
+        ConfigureIdList(builder.Property(x => x.WrongAnswerIds));
 
         builder.Property(x => x.SendResultsAutomatically);
         builder.Property(x => x.ResultsSentAt);
@@ -173,4 +137,19 @@ public class RefTestConfiguration : IEntityTypeConfiguration<RefTest>
             .HasIndex(x => new { x.Status, x.IsAnonymized, x.ExpiredAt })
             .HasDatabaseName("IX_RefTests_Status_IsAnonymized_ExpiredAt");
     }
+
+    /// <summary>
+    /// Stores an ID list as a comma-separated string. The comparer compares by content and
+    /// snapshots a copy, so change tracking sees a replaced list as modified.
+    /// </summary>
+    private static void ConfigureIdList(PropertyBuilder<IReadOnlyList<string>> property)
+        => property
+            .HasConversion(
+                v => string.Join(',', v),
+                v => v.Split(',', StringSplitOptions.RemoveEmptyEntries).ToList())
+            .HasMaxLength(4000)
+            .Metadata.SetValueComparer(new ValueComparer<IReadOnlyList<string>>(
+                (c1, c2) => c1!.SequenceEqual(c2!),
+                c => c.Aggregate(0, (a, v) => HashCode.Combine(a, v.GetHashCode())),
+                c => c.ToList()));
 }

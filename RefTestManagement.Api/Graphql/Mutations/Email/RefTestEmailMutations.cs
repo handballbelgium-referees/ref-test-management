@@ -166,9 +166,9 @@ public static partial class RefTestEmailMutations
                     refTest.QuestionTotal,
                     refTest.AnswerTotal ?? 0,
                     refTest.Percentage ?? 0,
-                    refTest.SelectedAnswerIds,
-                    refTest.WrongQuestionIds,
-                    refTest.WrongAnswerIds
+                    [.. refTest.SelectedAnswerIds],
+                    [.. refTest.WrongQuestionIds],
+                    [.. refTest.WrongAnswerIds]
                 );
 
                 await jobEnqueueService.EnqueueResultEmailAsync(payload, cancellationToken: cancellationToken);

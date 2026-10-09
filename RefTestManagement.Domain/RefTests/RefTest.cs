@@ -53,7 +53,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         string email,
         int numberOfQuestions,
         int maxTimeInMinutes,
-        List<string> questionIds,
+        IReadOnlyList<string> questionIds,
         bool sendInvitationsAutomatically,
         bool sendResultsAutomatically)
     {
@@ -113,7 +113,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     public DateTime? InvitationSentAt { get; private set; }
     public int NumberOfQuestions { get; private set; }
     public int MaxTimeInMinutes { get; private set; }
-    public List<string> QuestionIds { get; private set; }
+    public IReadOnlyList<string> QuestionIds { get; private set; }
     public DateTime CreatedAt { get; private set; }
     public DateTime? StartedAt { get; private set; }
     public DateTime? CompletedAt { get; private set; }
@@ -125,9 +125,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     public int QuestionTotal => QuestionIds.Count;
     public int? AnswerTotal { get; private set; }
     public double? Percentage { get; private set; }
-    public List<string> SelectedAnswerIds { get; private set; } = [];
-    public List<string> WrongQuestionIds { get; private set; } = [];
-    public List<string> WrongAnswerIds { get; private set; } = [];
+    public IReadOnlyList<string> SelectedAnswerIds { get; private set; } = [];
+    public IReadOnlyList<string> WrongQuestionIds { get; private set; } = [];
+    public IReadOnlyList<string> WrongAnswerIds { get; private set; } = [];
     public bool SendResultsAutomatically { get; private set; }
     public DateTime? ResultsSentAt { get; private set; }
     public string? Language { get; private set; }
@@ -168,7 +168,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         string email,
         int numberOfQuestions,
         int maxTimeInMinutes,
-        List<string> questionIds,
+        IEnumerable<string> questionIds,
         bool sendInvitationAutomatically,
         bool sendResultsAutomatically,
         bool requiresApproval = false,
@@ -192,7 +192,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new ArgumentException("Max time must be greater than 0", nameof(maxTimeInMinutes));
 
         var refTest = new RefTest(titleId, firstName, lastName, email, numberOfQuestions, maxTimeInMinutes,
-            questionIds, sendInvitationAutomatically, sendResultsAutomatically)
+            [.. questionIds ?? []], sendInvitationAutomatically, sendResultsAutomatically)
         {
             Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending,
             ScheduledAt = scheduledAt,
@@ -291,7 +291,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         RaiseDomainEvent(new RefTestStartedEvent(FirstName, LastName, Email));
     }
 
-    public void SaveProgress(int currentQuestionIndex, List<string> selectedAnswerIds, string? language = null)
+    public void SaveProgress(int currentQuestionIndex, IEnumerable<string> selectedAnswerIds, string? language = null)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot save progress for a RefTest whose consent has been withdrawn");
@@ -303,12 +303,12 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
 
         CurrentQuestionIndex = currentQuestionIndex;
-        SelectedAnswerIds = selectedAnswerIds ?? [];
+        SelectedAnswerIds = [.. selectedAnswerIds ?? []];
         Language = language;
     }
 
     public void Complete(int questionScore, int answerScore, int answerTotal, double percentage,
-        List<string> selectedAnswerIds, List<string> wrongQuestionIds, List<string> wrongAnswerIds,
+        IEnumerable<string> selectedAnswerIds, IEnumerable<string> wrongQuestionIds, IEnumerable<string> wrongAnswerIds,
         string? language = null,
         RefTestCompletionSource source = RefTestCompletionSource.Participant)
     {
@@ -327,9 +327,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         AnswerScore = answerScore;
         AnswerTotal = answerTotal;
         Percentage = percentage;
-        SelectedAnswerIds = selectedAnswerIds;
-        WrongQuestionIds = wrongQuestionIds;
-        WrongAnswerIds = wrongAnswerIds;
+        SelectedAnswerIds = [.. selectedAnswerIds];
+        WrongQuestionIds = [.. wrongQuestionIds];
+        WrongAnswerIds = [.. wrongAnswerIds];
         Language = language;
 
         RaiseDomainEvent(new RefTestCompletedEvent(
@@ -406,7 +406,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         Guid titleId,
         int numberOfQuestions,
         int maxTimeInMinutes,
-        List<string> questionIds)
+        IEnumerable<string> questionIds)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot update configuration for a RefTest whose consent has been withdrawn");
@@ -428,7 +428,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         TitleId = titleId;
         NumberOfQuestions = numberOfQuestions;
         MaxTimeInMinutes = maxTimeInMinutes;
-        QuestionIds = questionIds ?? [];
+        QuestionIds = [.. questionIds ?? []];
 
         RaiseDomainEvent(new RefTestConfigurationUpdatedEvent(
             OldTitleId: oldTitleId,

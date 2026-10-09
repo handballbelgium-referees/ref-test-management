@@ -103,7 +103,7 @@ public static partial class RefTestUpdateMutations
             throw new RefTestNotFoundException(input.Id);
 
         // Get questionIds based on input parameters (similar to CreateBulkRefTestsAsync)
-        List<string> questionIds;
+        IReadOnlyList<string> questionIds;
 
         if (input.SpecificQuestionNumbers is not null)
         {
@@ -265,9 +265,9 @@ public static partial class RefTestUpdateMutations
                 refTest.QuestionTotal,
                 refTest.AnswerTotal ?? 0,
                 refTest.Percentage ?? 0,
-                refTest.SelectedAnswerIds,
-                refTest.WrongQuestionIds,
-                refTest.WrongAnswerIds
+                [.. refTest.SelectedAnswerIds],
+                [.. refTest.WrongQuestionIds],
+                [.. refTest.WrongAnswerIds]
             );
 
             await jobEnqueueService.EnqueueResultEmailAsync(resultPayload,
