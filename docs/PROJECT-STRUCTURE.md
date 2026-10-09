@@ -19,7 +19,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 - **`RefTestManagement.AuditLog/`** — 📋 Domain-event–driven audit log library (Marten-style event store)
 - **`RefTestManagement.Auth0/`** — 🔐 Auth0 Management API client (M2M token, role-based user discovery)
-- **`RefTestManagement.Application/`** — 🔷 Ports (`Abstractions/`: email, PDF, report, translation, session, subscription and privacy-erasure services), job payloads, configuration models, external GraphQL client (IHF Rules); target home of use cases
+- **`RefTestManagement.Application/`** — 🔷 Ports (`Abstractions/`: email, PDF, report, translation, session, subscription, privacy-erasure and IHF question-bank services), job payloads, configuration models; target home of use cases
 - **`RefTestManagement.Domain/`** — 🔷 Domain entities: RefTest, RefTestTitle, Job, and their domain events
 - **`RefTestManagement.Security/`** — 🔐 Permission constants, authorization handlers, dynamic policy provider
 - **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, subscriptions, job enqueueing; `AddInfrastructureServices()` registers them
@@ -73,7 +73,7 @@ flowchart TB
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |
 | `RefTestManagement.Application/Abstractions`                     | Ports implemented by Infrastructure; job enqueueing follows once a unit-of-work port exists |
-| `RefTestManagement.Application/GraphQL`                          | External GraphQL client schemas and queries (IHF Rules)                       |
+| `RefTestManagement.Infrastructure/IhfRules`                      | IHF Rules question-bank GraphQL client (StrawberryShake schema, queries) and its service |
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
 | `RefTestManagement.UnitTests`                                    | Unit tests for audit/log redaction, job state machine, RefTest anonymization  |
