@@ -109,6 +109,11 @@ time extensions in real time. It accepts a RefTest GraphQL ID without participan
 anyone who knows that ID can observe time-extension metadata for that test. Treat the ID as the
 subscription capability and do not expose it to unauthorized parties.
 
+`createRefTests` accepts at most 200 users and 200 questions per request. Larger requests fail
+with the GraphQL error code `REFTEST_BATCH_TOO_LARGE` before any database or question-bank work,
+so one `ref-tests:create` holder cannot tie up the API or the external IHF service with a single
+oversized batch.
+
 ### Questions
 
 | Permission         | Protects                                        | Type     |

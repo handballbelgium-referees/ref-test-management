@@ -16,6 +16,13 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 [MutationType]
 public static partial class RefTestCreationMutations
 {
+    /// <summary>Largest number of users and of questions a single createRefTests request may ask for.</summary>
+    /// <remarks>
+    /// Each user can cost an upstream question-bank call and a database row, so an unbounded
+    /// request lets one caller tie up the API and the IHF service.
+    /// </remarks>
+    internal const int MaxBatchSize = 200;
+
     /// <summary>
     /// Create RefTests for one or more users with the same configuration.
     /// Depending on the caller's permissions, the created RefTests may require approval before invitations can be sent.
@@ -41,6 +48,12 @@ public static partial class RefTestCreationMutations
         CancellationToken cancellationToken,
         [Service] TimeProvider? timeProvider = null)
     {
+        if (input.Users.Count > MaxBatchSize || input.NumberOfQuestions > MaxBatchSize)
+            throw new GraphQLException(ErrorBuilder.New()
+                .SetMessage($"A single request can create at most {MaxBatchSize} RefTests with at most {MaxBatchSize} questions each.")
+                .SetCode("REFTEST_BATCH_TOO_LARGE")
+                .Build());
+
         var logger = loggerFactory.CreateLogger(nameof(RefTestCreationMutations));
         var currentUser = httpContextAccessor.HttpContext?.User;
         var callerPermissions = currentUser?.GetPermissions() ?? [];
