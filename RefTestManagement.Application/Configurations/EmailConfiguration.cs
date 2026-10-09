@@ -1,4 +1,6 @@
-﻿namespace Handball.Belgium.RefTestManagement.Application.Configurations;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Handball.Belgium.RefTestManagement.Application.Configurations;
 
 public class EmailConfiguration
 {
@@ -7,6 +9,7 @@ public class EmailConfiguration
     public string BrevoApiUrl { get; init; } = "https://api.brevo.com/v3";
     public string FromEmail { get; init; } = string.Empty;
     public string FromName { get; init; } = string.Empty;
+    [Range(0, int.MaxValue)]
     public int ScheduledDelayMinutes { get; init; } = 0;
 }
 

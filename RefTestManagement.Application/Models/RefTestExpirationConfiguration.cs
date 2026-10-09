@@ -1,4 +1,6 @@
-﻿namespace Handball.Belgium.RefTestManagement.Application.Models;
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace Handball.Belgium.RefTestManagement.Application.Models;
 
 /// <summary>
 /// Configuration for the RefTest Expiration background service
@@ -8,15 +10,18 @@ public class RefTestExpirationConfiguration
     /// <summary>
     /// How often to check for expired RefTests (in minutes)
     /// </summary>
+    [Range(1, int.MaxValue)]
     public int ExpirationCheckIntervalMinutes { get; init; } = 5;
     
     /// <summary>
     /// Startup delay before the first expiration check (in seconds)
     /// </summary>
+    [Range(0, int.MaxValue)]
     public int StartupDelaySeconds { get; init; } = 30;
     
     /// <summary>
     /// How long a RefTest is valid if not started (TimeSpan format: d.hh:mm:ss)
     /// </summary>
+    [Range(typeof(TimeSpan), "00:00:01", "3650.00:00:00")]
     public TimeSpan ExpirationIfNotStarted { get; init; } = TimeSpan.FromDays(7);
 }

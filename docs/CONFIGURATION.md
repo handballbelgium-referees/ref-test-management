@@ -117,6 +117,19 @@ forwarded headers from untrusted peers.
 
 ## Sections
 
+The API validates each settings section below when it starts, and refuses to start if a value is
+out of range; the error names the section. Besides the rules listed per section, these bounds
+apply:
+
+| Section                          | Rule                                                                                                                                       |
+| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `BackgroundJobConfiguration`     | `PollingIntervalSeconds`, `LockDurationMinutes`, `MaxAttempts`, `BatchSize`, `CleanupIntervalHours` ≥ 1; `StartupDelaySeconds` and the `Retain*Days` values ≥ 0 |
+| `EmailConfiguration`             | `ScheduledDelayMinutes` ≥ 0                                                                                                                |
+| `GraphQlLimitsConfiguration`     | `MaxFieldCost`, `MaxTypeCost`, `RateLimitPermitLimit`, `RateLimitWindowSeconds` ≥ 1; `RateLimitQueueLimit` ≥ 0                            |
+| `ScoreConfiguration`             | `PassingPercentage` from `0` through `100`                                                                                                 |
+| `RefTestExpirationConfiguration` | `ExpirationCheckIntervalMinutes` ≥ 1; `StartupDelaySeconds` ≥ 0; `ExpirationIfNotStarted` at least one second                              |
+| `ForwardedHeadersConfiguration`  | `ForwardLimit` ≥ 1                                                                                                                         |
+
 ### DatabaseProvider
 
 | Key                | Description                           | Required | Default       |
