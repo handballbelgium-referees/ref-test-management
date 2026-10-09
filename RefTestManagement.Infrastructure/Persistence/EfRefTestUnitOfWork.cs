@@ -27,6 +27,43 @@ public sealed class EfRefTestUnitOfWork(RefTestManagementContext context, IJobEn
         return await context.RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTest.Id, cancellationToken);
     }
 
+    public async Task<RefTest?> DiscardChangesAsync(RefTest refTest, CancellationToken cancellationToken)
+    {
+        var refTestId = refTest.Id;
+        var changedEntries = context.ChangeTracker.Entries()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .ToList();
+
+        try
+        {
+            foreach (var entry in changedEntries)
+            {
+                if (entry.State == EntityState.Added)
+                    entry.State = EntityState.Detached;
+                else
+                    await entry.ReloadAsync(cancellationToken);
+            }
+        }
+        finally
+        {
+            // Domain events are transient and are not restored by EF's ReloadAsync.
+            refTest.ClearDomainEvents();
+        }
+
+        // Reload does not restore RefTest's transient IssuedToken. Detach it and query a clean
+        // aggregate so a failed token rotation cannot leak into a later item in this batch.
+        context.Entry(refTest).State = EntityState.Detached;
+        return await context.RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
+    }
+
+    public Task CancelPendingJobsAsync(Guid refTestId, CancellationToken cancellationToken) =>
+        jobEnqueueService.CancelPendingJobsForRefTestAsync(
+            refTestId, saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
+
+    public Task CancelPendingResultEmailsAsync(Guid refTestId, CancellationToken cancellationToken) =>
+        jobEnqueueService.CancelPendingResultEmailsAsync(
+            refTestId, saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
+
     public Task StageApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload, CancellationToken cancellationToken) =>
         jobEnqueueService.EnqueueApprovalDecisionEmailAsync(
             payload,

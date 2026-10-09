@@ -129,6 +129,15 @@ public sealed class RefTestApprovalHandlerTests
             return Task.FromResult<RefTest?>(null);
         }
 
+        public Task<RefTest?> DiscardChangesAsync(RefTest refTest, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task CancelPendingJobsAsync(Guid refTestId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task CancelPendingResultEmailsAsync(Guid refTestId, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
         public Task StageInvitationEmailAsync(RefTest refTest, DateTime? executeAfter, CancellationToken cancellationToken)
         {
             Jobs.Add($"invitation:{refTest.Id}");

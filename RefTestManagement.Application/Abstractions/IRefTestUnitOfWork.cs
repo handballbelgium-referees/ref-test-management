@@ -21,6 +21,19 @@ public interface IRefTestUnitOfWork
     /// </summary>
     Task<RefTest?> RevertRefTestAsync(RefTest refTest, CancellationToken cancellationToken);
 
+    /// <summary>
+    /// Throws away every unsaved change in the unit of work (staged jobs, cancelled jobs and entity
+    /// changes) and returns <paramref name="refTest"/>'s persisted state, or <see langword="null"/>
+    /// when it no longer exists. For use cases that save per item.
+    /// </summary>
+    Task<RefTest?> DiscardChangesAsync(RefTest refTest, CancellationToken cancellationToken);
+
+    /// <summary>Cancels the RefTest's pending invitation, result and expiration jobs; nothing is saved.</summary>
+    Task CancelPendingJobsAsync(Guid refTestId, CancellationToken cancellationToken);
+
+    /// <summary>Cancels the RefTest's pending result emails only; nothing is saved.</summary>
+    Task CancelPendingResultEmailsAsync(Guid refTestId, CancellationToken cancellationToken);
+
     /// <summary>Stages the invitation email job for <paramref name="refTest"/>; nothing is saved.</summary>
     Task StageInvitationEmailAsync(RefTest refTest, DateTime? executeAfter, CancellationToken cancellationToken);
 

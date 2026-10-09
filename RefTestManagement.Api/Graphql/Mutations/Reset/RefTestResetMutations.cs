@@ -1,11 +1,11 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
-using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Application.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Reset;
 
@@ -46,131 +46,30 @@ public static partial class RefTestResetMutations
             Errors = []
         };
 
-        var refTests = await context.RefTests
-            .Where(rt => input.Ids.Contains(rt.Id))
-            .ToListAsync(cancellationToken);
+        var outcome = await new ResetRefTestsHandler(subscriptionService, timeProvider ?? TimeProvider.System)
+            .HandleAsync(input.Ids, input.ResetType, input.RegenerateToken,
+                new EfRefTestUnitOfWork(context, jobEnqueueService), cancellationToken);
 
         var errors = new List<ResetRefTestsError>();
-        var resetEvents = new List<(
-            Guid Id,
-            RefTestStatus OldStatus,
-            RefTestStatus Status,
-            DateTime CreatedAt,
-            bool InvitationSent)>();
-
-        foreach (var id in input.Ids)
+        foreach (var failure in outcome.Failures)
         {
-            RefTest? refTest = null;
-            try
+            errors.Add(new ResetRefTestsError
             {
-                refTest = refTests.FirstOrDefault(rt => rt.Id == id);
-
-                if (refTest == null)
-                    throw new RefTestNotFoundException(id);
-
-                // Determine if the token will be regenerated
-                var willRegenerateToken = input.ResetType == RefTestResetType.Hard ||
-                                         input is { ResetType: RefTestResetType.Soft, RegenerateToken: true };
-
-                // Always cancel result email jobs (results are being cleared in both soft and hard reset)
-                // For invitation and expiration jobs, only cancel if the token will be regenerated
-                if (willRegenerateToken)
-                {
-                    // Cancel all pending jobs (invitations with old token, results, expiration checks)
-                    await jobEnqueueService.CancelPendingJobsForRefTestAsync(id,
-                        saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
-                }
-                else
-                {
-                    // Soft reset without token regeneration: only cancel result emails
-                    // Keep pending invitation emails (token is still valid) and expiration jobs
-                    await jobEnqueueService.CancelPendingResultEmailsAsync(id,
-                        saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
-                }
-
-                // Check if the invitation was previously sent
-                var invitationWasSent = refTest.InvitationSentAt.HasValue;
-
-                var oldStatus = refTest.Status;
-
-                if (input.ResetType == RefTestResetType.Soft)
-                {
-                    refTest.SoftReset(input.RegenerateToken);
-                }
-                else
-                {
-                    refTest.HardReset(timeProvider?.GetUtcNow().UtcDateTime);
-                }
-
-                // If an invitation was previously sent and the token was regenerated, send a new invitation
-                var shouldSendInvitation = invitationWasSent &&
-                                           (input.ResetType == RefTestResetType.Hard ||
-                                            input is { ResetType: RefTestResetType.Soft, RegenerateToken: true });
-
-                if (shouldSendInvitation)
-                {
-                    await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
-                        saveChanges: false,
-                        unitOfWorkContext: context,
-                        cancellationToken: cancellationToken);
-                }
-
-                var refTestDto = refTest.ToDto();
-                await context.SaveChangesWithRetryAsync(cancellationToken);
-
-                result.ResetRefTests.Add(refTestDto);
-                resetEvents.Add((
-                    refTest.Id,
-                    oldStatus,
-                    refTest.Status,
-                    refTest.CreatedAt,
-                    refTest.InvitationSentAt.HasValue));
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                if (refTest is not null)
-                {
-                    var restoredRefTest = await RollbackFailedRefTestOperationAsync(
-                        context, refTest, cancellationToken);
-                    var refTestIndex = refTests.IndexOf(refTest);
-                    if (refTestIndex >= 0)
-                    {
-                        if (restoredRefTest is null)
-                            refTests.RemoveAt(refTestIndex);
-                        else
-                            refTests[refTestIndex] = restoredRefTest;
-                    }
-                }
-
-                errors.Add(new ResetRefTestsError
-                {
-                    RefTestId = id,
-                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
-                });
-                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ResetRefTestsAsync), correlationId, id);
-            }
+                RefTestId = failure.RefTestId,
+                ErrorMessage = MutationErrorHandling.GetUserSafeMessage(failure.Exception)
+            });
+            MutationErrorHandling.LogMutationFailure(
+                logger, failure.Exception, nameof(ResetRefTestsAsync), correlationId, failure.RefTestId);
         }
 
-        foreach (var resetEvent in resetEvents)
-        {
-            await subscriptionService.PublishRefTestResetAsync(
-                resetEvent.Id,
-                resetEvent.OldStatus,
-                input.ResetType,
-                resetEvent.Status,
-                resetEvent.CreatedAt,
-                resetEvent.InvitationSent,
-                cancellationToken);
-        }
-
+        result.ResetRefTests.AddRange(outcome.Reset.Select(item => item.RefTest.ToDto()));
         return result with
         {
-            SuccessfullyReset = resetEvents.Count,
-            Failed = input.Ids.Count - resetEvents.Count,
+            SuccessfullyReset = outcome.Reset.Count,
+            Failed = input.Ids.Count - outcome.Reset.Count,
             Errors = errors
         };
     }
-
     /// <summary>
     /// Revive one or more expired RefTests by resetting them to Pending status with a new token and fresh expiration timer
     /// </summary>
@@ -202,131 +101,27 @@ public static partial class RefTestResetMutations
             Errors = []
         };
 
-        var refTests = await context.RefTests
-            .Where(rt => ids.Contains(rt.Id))
-            .ToListAsync(cancellationToken);
+        var outcome = await new ReviveRefTestsHandler(subscriptionService, timeProvider ?? TimeProvider.System)
+            .HandleAsync(ids, new EfRefTestUnitOfWork(context, jobEnqueueService), cancellationToken);
 
-        var successCount = 0;
-        var failedCount = 0;
         var errors = new List<ReviveRefTestsError>();
-        var revivedEvents = new List<(Guid Id, RefTestStatus Status, DateTime CreatedAt, bool InvitationSent)>();
-
-        foreach (var id in ids)
+        foreach (var failure in outcome.Failures)
         {
-            var refTest = refTests.FirstOrDefault(rt => rt.Id == id);
-            try
+            errors.Add(new ReviveRefTestsError
             {
-                if (refTest == null)
-                    throw new RefTestNotFoundException(id);
-
-                // Cancel any pending jobs for this RefTest to prevent outdated operations
-                // (invitations with old token, results with old scores, expiration checks)
-                await jobEnqueueService.CancelPendingJobsForRefTestAsync(id,
-                    saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
-
-                // Check if the invitation was previously sent
-                var invitationWasSent = refTest.InvitationSentAt.HasValue;
-
-                refTest.Revive(timeProvider?.GetUtcNow().UtcDateTime);
-
-                // If an invitation was previously sent, send a new one with the new token
-                // (Revive always regenerates the token)
-                if (invitationWasSent)
-                {
-                    await jobEnqueueService.EnqueueInvitationEmailAsync(refTest,
-                        saveChanges: false,
-                        unitOfWorkContext: context,
-                        cancellationToken: cancellationToken);
-                }
-
-                var refTestDto = refTest.ToDto();
-                await context.SaveChangesWithRetryAsync(cancellationToken);
-
-                successCount++;
-                result.RevivedRefTests.Add(refTestDto);
-                revivedEvents.Add((
-                    refTest.Id,
-                    refTest.Status,
-                    refTest.CreatedAt,
-                    refTest.InvitationSentAt.HasValue));
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                if (refTest is not null)
-                {
-                    var restoredRefTest = await RollbackFailedRefTestOperationAsync(
-                        context, refTest, cancellationToken);
-                    var refTestIndex = refTests.IndexOf(refTest);
-                    if (refTestIndex >= 0)
-                    {
-                        if (restoredRefTest is null)
-                            refTests.RemoveAt(refTestIndex);
-                        else
-                            refTests[refTestIndex] = restoredRefTest;
-                    }
-                }
-
-                failedCount++;
-                errors.Add(new ReviveRefTestsError
-                {
-                    RefTestId = id,
-                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
-                });
-                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(ReviveRefTestsAsync), correlationId, id);
-            }
+                RefTestId = failure.RefTestId,
+                ErrorMessage = MutationErrorHandling.GetUserSafeMessage(failure.Exception)
+            });
+            MutationErrorHandling.LogMutationFailure(
+                logger, failure.Exception, nameof(ReviveRefTestsAsync), correlationId, failure.RefTestId);
         }
 
-        foreach (var revivedEvent in revivedEvents)
-        {
-            await subscriptionService.PublishRefTestRevivedAsync(
-                revivedEvent.Id,
-                revivedEvent.Status,
-                revivedEvent.CreatedAt,
-                revivedEvent.InvitationSent,
-                cancellationToken);
-        }
-
+        result.RevivedRefTests.AddRange(outcome.Revived.Select(refTest => refTest.ToDto()));
         return result with
         {
-            SuccessfullyRevived = successCount,
-            Failed = failedCount,
+            SuccessfullyRevived = outcome.Revived.Count,
+            Failed = outcome.Failures.Count,
             Errors = errors
         };
-    }
-
-    /// <summary>Discards staged job/entity changes and returns a clean copy of the persisted RefTest.</summary>
-    /// <param name="context">The RefTest unit of work.</param>
-    /// <param name="refTest">The aggregate modified by the failed reset or revive attempt.</param>
-    /// <param name="cancellationToken">Token for the cleanup queries.</param>
-    private static async Task<RefTest?> RollbackFailedRefTestOperationAsync(
-        RefTestManagementContext context,
-        RefTest refTest,
-        CancellationToken cancellationToken)
-    {
-        var refTestId = refTest.Id;
-        var changedEntries = context.ChangeTracker.Entries()
-            .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
-            .ToList();
-
-        try
-        {
-            foreach (var entry in changedEntries)
-            {
-                if (entry.State == EntityState.Added)
-                    entry.State = EntityState.Detached;
-                else
-                    await entry.ReloadAsync(cancellationToken);
-            }
-        }
-        finally
-        {
-            // Domain events are transient and are not restored by EF's ReloadAsync.
-            refTest.ClearDomainEvents();
-        }
-
-        // Reload does not restore RefTest's transient IssuedToken. Detach it and query a clean
-        // aggregate so a failed token rotation cannot leak into a later item in this batch.
-        context.Entry(refTest).State = EntityState.Detached;
-        return await context.RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
     }
 }
