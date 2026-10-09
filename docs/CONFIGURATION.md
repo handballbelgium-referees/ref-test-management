@@ -92,22 +92,33 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
 }
 ```
 
+### Shared Redis (multi-replica)
+
+`RedisConfiguration:Endpoint` is optional. Leave it empty for development and single-instance
+hosting: subscriptions and the participant single-tab session lock then stay in-process. Set it
+before running more than one API instance; the API then opens one shared connection and uses it
+for GraphQL subscription events (so a mutation on one replica reaches subscribers on another) and
+for the session lock, held as a 90-second lease that the open session renews every 30 seconds, so
+a crashed replica cannot keep a RefTest locked. Azure Container Apps refuses to start without it.
+The endpoint must be an authenticated TLS URI (`rediss://:password@host:port`); provide it through
+the hosting environment or Azure Key Vault references, never source control. Use Redis 7.0 or later
+and a dedicated deployment/ACL namespace for this application; besides the limiter commands below,
+grant `SET`, `EVAL`/`EVALSHA`, `PUBLISH` and `SUBSCRIBE`. This replaces
+`PrivacyChallengeConfiguration:RedisEndpoint`, which is no longer read: move its value to
+`RedisConfiguration:Endpoint`.
+
 ### Shared privacy challenge limiter
 
 `PrivacyChallengeConfiguration:RateLimitBackend` defaults to `Local`, which uses process-local
-state and is safe only when exactly one API instance is running. This keeps the current single-
-instance production deployment working without Redis. Select `Redis` and configure
-`PrivacyChallengeConfiguration:RedisEndpoint` and `PrivacyChallengeConfiguration:HmacSecret`
-before scaling to multiple instances. Azure Container Apps rejects `Local` at startup; other
-hosting platforms must be configured explicitly before scale-out. The endpoint must be an
-authenticated TLS URI (`rediss://:password@host:port`); provide the URI and HMAC secret through the
-hosting environment or Azure Key Vault references, never source control. Use a dedicated
-Redis-compatible deployment/ACL namespace for this application. The limiter uses an atomic
-`MULTI`/`EXEC` transaction with `INCR`, conditional `EXPIRE`/`PEXPIRE NX` (`ExpireWhen.HasNoExpiry`),
-and `PTTL` verification; use Redis 7.0 or later and grant the configured identity permission for
-those commands. Operations have a one-second deadline, do not retry in application code, and deny
-only the privacy challenge operation during an outage. HMAC secret rotation changes all active
-bucket keys and effectively resets quotas.
+state and is safe only when exactly one API instance is running. Select `Redis` and configure
+`RedisConfiguration:Endpoint` and `PrivacyChallengeConfiguration:HmacSecret` before scaling to
+multiple instances; Azure Container Apps rejects `Local` at startup, and `Redis` without an endpoint
+fails at startup everywhere. The limiter uses an atomic `MULTI`/`EXEC` transaction with `INCR`,
+conditional `EXPIRE`/`PEXPIRE NX` (`ExpireWhen.HasNoExpiry`), and `PTTL` verification; grant the
+configured identity permission for those commands. Operations have a one-second deadline, do not
+retry in application code, and deny only the privacy challenge operation during an outage. Provide
+the HMAC secret like the endpoint; rotating it changes all active bucket keys and effectively
+resets quotas.
 
 Configure a reachable shared Redis service in the App Service environment and future Container
 Apps environment before deployment; this application does not provision infrastructure. Before

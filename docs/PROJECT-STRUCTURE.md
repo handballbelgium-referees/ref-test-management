@@ -14,6 +14,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 - `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; timer-driven ones derive from `PollingBackgroundService`; `JobHandlers/` keeps only the Auth0-backed approval notification handler
 - `Controllers/` — Auth0 login/callback endpoints
 - `Graphql/` — Mutations, Queries, Subscriptions, Types, ReadModels
+- `Services/` — Host-side services, including the Redis-backed privacy rate limiter and participant session lease
 
 </details>
 

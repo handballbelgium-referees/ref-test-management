@@ -21,12 +21,12 @@ public sealed class PrivacyChallengeConfiguration
     [Range(1, int.MaxValue)]
     public int ConfirmationRateLimitPermitLimit { get; init; } = 10;
 
-    /// <summary>Rate-limit state backend; Local is only safe for a single API instance.</summary>
+    /// <summary>
+    /// Rate-limit state backend; Local is only safe for a single API instance. Redis uses the
+    /// shared connection from <see cref="RedisConfiguration"/>.
+    /// </summary>
     public PrivacyChallengeRateLimitBackend RateLimitBackend { get; init; } =
         PrivacyChallengeRateLimitBackend.Local;
-
-    /// <summary>Authenticated TLS Redis endpoint used outside Development.</summary>
-    public string? RedisEndpoint { get; init; }
 
     /// <summary>Secret used to pseudonymize client addresses in shared limiter keys.</summary>
     public string? HmacSecret { get; init; }

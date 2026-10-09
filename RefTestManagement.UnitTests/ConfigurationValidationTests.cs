@@ -27,6 +27,7 @@ public sealed class ConfigurationValidationTests
         services.AddValidatedConfiguration<EmailConfiguration>(empty, "EmailConfiguration");
         services.AddValidatedConfiguration<GraphQlLimitsConfiguration>(empty, "GraphQlLimitsConfiguration");
         services.AddValidatedConfiguration<PrivacyChallengeConfiguration>(empty, "PrivacyChallengeConfiguration");
+        services.AddValidatedConfiguration<RedisConfiguration>(empty, "RedisConfiguration", c => c.Validate(null));
         services.AddValidatedConfiguration<PrivacyConfiguration>(empty, "PrivacyConfiguration", c => c.Validate());
         services.AddValidatedConfiguration<ReportConfiguration>(empty, "ReportConfiguration");
         services.AddValidatedConfiguration<ScoreConfiguration>(empty, "ScoreConfiguration");

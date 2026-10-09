@@ -92,14 +92,17 @@ services.AddValidatedConfiguration<ScoreConfiguration>(configuration, "ScoreConf
 services.AddValidatedConfiguration<ReportConfiguration>(configuration, "ReportConfiguration");
 services.AddValidatedConfiguration<PrivacyConfiguration>(configuration, "PrivacyConfiguration", c => c.Validate());
 
+var containerAppName = configuration["CONTAINER_APP_NAME"];
+var redisConfig = services.AddValidatedConfiguration<RedisConfiguration>(
+    configuration, "RedisConfiguration", c => c.Validate(containerAppName));
+var useRedis = redisConfig.IsConfigured;
+
 var privacyChallengeConfig = services.AddValidatedConfiguration<PrivacyChallengeConfiguration>(
     configuration, "PrivacyChallengeConfiguration");
-PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(
-    privacyChallengeConfig,
-    configuration["CONTAINER_APP_NAME"]);
-if (privacyChallengeConfig.RateLimitBackend == PrivacyChallengeRateLimitBackend.Redis)
+PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(privacyChallengeConfig, useRedis, containerAppName);
+if (useRedis)
 {
-    var endpoint = new Uri(privacyChallengeConfig.RedisEndpoint!);
+    var endpoint = new Uri(redisConfig.Endpoint!);
     var credentials = endpoint.UserInfo.Split(':', 2);
     var redisOptions = new ConfigurationOptions
     {
@@ -113,6 +116,8 @@ if (privacyChallengeConfig.RateLimitBackend == PrivacyChallengeRateLimitBackend.
     };
     redisOptions.EndPoints.Add(endpoint.Host, endpoint.Port);
     services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisOptions));
+    // Registered before AddInfrastructureServices, whose in-memory lock only fills the gap.
+    services.AddSingleton<IRefTestSessionService, RedisRefTestSessionService>();
 }
 services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>();
 
@@ -171,14 +176,21 @@ if (auditLogOptions.EnableCleanup)
 
 services.AddIhfRulesQuestionsHttpClient(configuration["RulesQuestions:Url"]);
 
-services.AddGraphQLServer()
+// With Redis configured the API may run as several replicas, so subscription events must reach
+// subscribers connected to any of them; without it, in-process delivery is enough.
+var graphQlBuilder = services.AddGraphQLServer();
+if (useRedis)
+    graphQlBuilder.AddRedisSubscriptions(sp => sp.GetRequiredService<IConnectionMultiplexer>());
+else
+    graphQlBuilder.AddInMemorySubscriptions();
+
+graphQlBuilder
     .AddQueryType()
     .AddMutationType()
     .AddSubscriptionType()
     .AddApiTypes()
     .AddQueryConventions()
     .AddMutationConventions()
-    .AddInMemorySubscriptions()
     .AddApplicationService<IHttpContextAccessor>()
     .AddApplicationService<ILogger<UnhandledExceptionLoggingErrorFilter>>()
     .AddApplicationService<ILogger<ConcurrencyErrorFilter>>()

@@ -7,6 +7,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Privacy;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using StrawberryShake;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
@@ -61,7 +62,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
         // ponytail: process-local session lock; R1-ARCH WP9 replaces it with a shared one for
         // multi-replica deployments.
-        services.AddSingleton<IRefTestSessionService, RefTestSessionService>();
+        // TryAdd: a multi-replica host registers its distributed lock first.
+        services.TryAddSingleton<IRefTestSessionService, RefTestSessionService>();
 
         return services;
     }

@@ -178,7 +178,8 @@ public sealed class RefTestSubscriptionsTests
         Assert.False(nextEvent.IsCompleted);
         subscriptionCancellation.Cancel();
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() => nextEvent);
-        Assert.True(sessionService.TryAcquireSession(refTest.Id.ToString("N"), "replacement-session"));
+        Assert.True(await sessionService.TryAcquireSessionAsync(
+            refTest.Id.ToString("N"), "replacement-session", TestContext.Current.CancellationToken));
     }
 
     [Fact]
