@@ -1,0 +1,26 @@
+{
+  "claude": {
+    "default": "haiku-5.5",
+    "agents": {
+      "implementer": null,
+      "auditor": null,
+      "reviewer": null
+    }
+  },
+  "codex": {
+    "default": "gpt-6-luna",
+    "agents": {
+      "implementer": null,
+      "auditor": null,
+      "reviewer": null
+    }
+  },
+  "github-copilot": {
+    "default": "gpt-6-luna",
+    "agents": {
+      "implementer": null,
+      "auditor": null,
+      "reviewer": null
+    }
+  }
+}

@@ -304,13 +304,15 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 - **Branches**: `main` (default, protected, every push triggers an automatic pre-release) → `release` (protected, promoted manually for stable releases with a fast-forward-only sync back to `main`); use `feat/*`, `fix/*`, `chore/*` for work in progress
 - **Commits**: [Conventional Commits](https://www.conventionalcommits.org/), enforced by commitlint via a Husky `commit-msg` hook
 - **Pre-commit**: Husky re-syncs the README's dependency-version tables, then builds the Angular app
-- **AI workflow**: plan-first with explicit approval, then `/deliver` from an issue, feature, audit, or saved plan; `/audit` creates evidence-backed rounds. Repository settings pin GPT-6 Luna where the host honors them (GPT-5.6 Luna is the fallback). Keep one model per session, avoid Auto for `/deliver` and `/audit`, and use 1M context only when needed. Repository hooks guard oversized reads and invalid PR titles.
+- **AI workflow**: follow [AGENTS.md](AGENTS.md) and the [shared workflow guide](.ai/README.md): investigate → complete plan → explicit approval → bounded implementation → validation → read-only review → handoff. Choose per-provider defaults and implementer/auditor/reviewer overrides in [`.ai/models.json`](.ai/models.json); see [model selection and inheritance](.ai/README.md#agent-model-configuration). Tool permissions remain host/user choices; approval is a human workflow gate, not a repository sandbox.
+- **AI skills and templates**: use `deliver` for a feature, issue, saved plan, or audit remediation; use `audit` for fresh evidence and a proposed report. [Provider entry points](.ai/README.md#provider-capability-and-evidence) document CLI/IDE/cloud support and limits. Start with the [resource index](.ai/README.md#resource-index) for intake, plan/WPs, audit, remediation, review, PR, and handoff templates. Report publication, remediation, and Git/PR side effects require separate authorization.
+- **AI checks**: `node .ai/scripts/sync.mjs --check` and `node --test tests/ai-workflow.test.mjs` validate generated parity and static contracts locally and in the independent PR job, without package installation or AI credentials. See [verification limits](.ai/README.md#maintenance-and-verification); these checks do not prove live provider behavior or human consent.
 
 ## Deployment
 
 | Workflow             | Trigger                | Purpose                                                                                                         |
 | -------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `pr.yml`             | PR → `main`            | Build/test validation + i18n parity                                                                             |
+| `pr.yml`             | PR → `main`            | Build/test validation + i18n parity + AI workflow consistency                                                    |
 | `beta-release.yml`   | push → `main`          | Publishes a pre-release and deploys to testing when commit rules select a release                               |
 | `stable-release.yml` | manual, from `release` | Promote; update badges before tagging the validated candidate; fast-forward `main` before production deployment |
 
@@ -322,6 +324,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 
 | Doc                                                                            | Covers                                                     |
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
+| [.ai/README.md](.ai/README.md)                                                | AI lifecycle, providers, templates, checks, and limits     |
 | [docs/SECURITY.md](docs/SECURITY.md)                                           | Auth0 setup, full permission reference, suggested roles    |
 | [docs/PRIVACY.md](docs/PRIVACY.md)                                             | GDPR data flows, retention, erasure, data-subject requests |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md)                                 | Full `appsettings.json` reference                          |

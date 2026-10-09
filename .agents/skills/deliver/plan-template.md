@@ -1,0 +1,86 @@
+# Plan: {outcome}
+
+<!-- Keep the complete plan in a native session artifact/conversation unless repository
+publication is explicitly authorized. Replace every placeholder. A plan is not approval. -->
+
+## Identity, intake, and baseline
+
+- Plan ID / version / location: {stable identity and exact approved content reference}
+- Source: {feature request, issue URL, audit finding IDs, or saved plan/handoff}
+- Goal and acceptance examples: {observable outcome}
+- Repository / branch / HEAD / date: {verified values}
+- Working-tree state: {changed/untracked paths, ownership, preserved edits}
+- Prior rounds / existing WPs: {discovered IDs and links, or none}
+- Applicable instructions: {AGENTS.md and matching shared scope paths}
+
+## Confirmed decisions and boundaries
+
+- In scope / impact: {behavior, components, consumers, data, generated outputs, docs}
+- Non-goals: {explicit exclusions}
+- Decisions and evidence: {resolved ambiguities, source references}
+- Assumptions / open questions / blockers: {do not conceal missing evidence}
+- Host capabilities: {approval surface, reviewer, tools, cloud handoff limitations}
+
+## Acceptance criteria
+
+1. {Verifiable user outcome and preserved behavior}
+2. {Relevant repository invariants and regression coverage}
+
+## Work packages
+
+Repeat this complete block for each WP; avoid duplicating its definition in trackers.
+
+### WP-{NN}: {bounded outcome}
+
+- Source: {request / issue / finding IDs}
+- Size / priority: {S/M/L and P0/P1/P2, with rationale when useful}
+- Dependencies: {none or actual prerequisite WP IDs}
+- Files: {exact bounded paths; explain any narrowly scoped pattern and generated outputs}
+- Change: {complete implementation steps and direct documentation changes}
+- Acceptance: {observable pass conditions, including regression expectations}
+- Verification: {exact commands and working directories, manual checks, required evidence}
+- Risks / boundaries: {security, data, migration, compatibility and rollback considerations}
+- Stop conditions: {scope growth, overlap, missing prerequisites or persistent failures}
+
+## Execution and review
+
+- Sequential order: {dependency-valid WP order}
+- Verification selection: {why these checks cover the change; conditional wider checks}
+- Missing tools / credentials / evidence: {known limitations and completion impact}
+- Review: {Separate read-only reviewer when supported/permitted; otherwise
+  Self-review (not independent), lacking independent context, with the same criteria}
+- Failure handling: {bounded focused correction/recheck, then report blockers}
+- Handoff: {changed files, acceptance, checks, review, blockers, remaining WPs, next action}
+
+## Approval record
+
+- Status: {Pending / Approved / Superseded}
+- Complete plan presented at: {native artifact/message and version}
+- Approver and authority: {trusted user or eligible maintainer}
+- Exact approval quote: {verbatim, only after approval}
+- Native message/comment reference: {original verifiable record, not a copied token}
+- Approved WPs and limitations: {IDs and exact scope reference}
+
+Present the full plan before native approval (or explicit conversational approval when
+no native surface exists). Tool consent, assignment, and silence are not approval.
+Resume the same verified approved WP without duplicate approval; material scope/baseline
+changes or unverifiable authority require renewed approval.
+
+## Separate side-effect authority
+
+{None by default. Record each explicitly authorized action category, target, named branch,
+limits, quote, and native reference. Implementation approval does not authorize staging,
+commits, pushes, branch mutations, publication/updates of issues or PRs, merges, releases,
+deployments, or intrinsic cloud-host side effects.}
+
+## Resources
+
+- [Intake](../../../.ai/templates/issue.md)
+- [Remediation tracker](../../../.ai/templates/remediation.md)
+- [Review](../../../.ai/templates/review.md)
+- [Handoff](../../../.ai/templates/handoff.md)
+- [PR draft](../../../.ai/templates/pull-request.md)
+
+These links are relative to this source template (and its generated Claude copy).
+When copying the template elsewhere, resolve links from the destination or use repository
+paths; do not preserve relative links that no longer point to the resources.
