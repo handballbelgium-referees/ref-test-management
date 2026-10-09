@@ -113,12 +113,7 @@ if (privacyChallengeConfig.RateLimitBackend == PrivacyChallengeRateLimitBackend.
     redisOptions.EndPoints.Add(endpoint.Host, endpoint.Port);
     services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisOptions));
 }
-services.AddSingleton<IPersonalDataExportKeyProtection, PersonalDataExportKeyProtection>();
-services.AddSingleton<IRefTestInvitationTokenProtection, RefTestInvitationTokenProtection>();
-services.AddSingleton<IRefTestSessionTokenService, RefTestSessionTokenService>();
 services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>();
-services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
-services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
 
 services.AddValidatedConfiguration<RefTestExpirationConfiguration>(configuration, "RefTestExpirationConfiguration");
 services.AddValidatedConfiguration<BackgroundJobConfiguration>(configuration, "BackgroundJobConfiguration");

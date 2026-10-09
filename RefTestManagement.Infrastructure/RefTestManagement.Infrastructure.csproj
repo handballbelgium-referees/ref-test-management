@@ -18,6 +18,11 @@
     </ItemGroup>
 
     <ItemGroup>
+        <!-- Data Protection for privacy challenge keys and participant credentials. -->
+        <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference
             Include="..\RefTestManagement.Application\RefTestManagement.Application.csproj" />
         <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />

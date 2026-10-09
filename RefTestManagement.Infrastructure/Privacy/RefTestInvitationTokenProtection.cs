@@ -1,7 +1,7 @@
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace Handball.Belgium.RefTestManagement.Api.Services;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Privacy;
 
 /// <summary>Data-protects participant invitation tokens stored for delivery retries.</summary>
 public sealed class RefTestInvitationTokenProtection : IRefTestInvitationTokenProtection

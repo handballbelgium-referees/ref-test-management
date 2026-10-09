@@ -6,14 +6,9 @@ using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
-namespace Handball.Belgium.RefTestManagement.Api.Services;
-
-public interface IPersonalDataExportRequestService
-{
-    Task RequestAsync(string? email, CancellationToken cancellationToken);
-    Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken);
-}
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Privacy;
 
 /// <summary>Creates and atomically consumes public personal-data export verification challenges.</summary>
 public sealed class PersonalDataExportRequestService(

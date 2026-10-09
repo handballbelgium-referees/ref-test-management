@@ -1,9 +1,9 @@
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.EntityFrameworkCore;
 
-namespace Handball.Belgium.RefTestManagement.Api.Services;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Privacy;
 
-internal static class RefTestTokenQueryExtensions
+public static class RefTestTokenQueryExtensions
 {
     public static IQueryable<RefTest> WithParticipantToken(this IQueryable<RefTest> query, string token)
     {

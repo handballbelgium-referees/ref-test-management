@@ -40,5 +40,6 @@
     <ItemGroup>
         <!-- Application ports, moved out of Infrastructure.Services, without a using in every consumer. -->
         <Using Include="Handball.Belgium.RefTestManagement.Application.Abstractions" />
+        <Using Include="Handball.Belgium.RefTestManagement.Infrastructure.Privacy" />
     </ItemGroup>
 </Project>
