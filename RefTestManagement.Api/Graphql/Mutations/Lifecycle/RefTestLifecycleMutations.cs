@@ -236,88 +236,21 @@ public static partial class RefTestLifecycleMutations
         CancellationToken cancellationToken,
         [Service] TimeProvider? timeProvider = null)
     {
-        var refTest = await CompleteRefTestCoreAsync(
-            input,
-            context,
-            ihfRulesQuestionsService,
-            jobEnqueueService,
-            emailConfiguration,
-            subscriptionService,
-            sessionTokenService,
-            RefTestCompletionSource.Participant,
-            cancellationToken,
-            timeProvider?.GetUtcNow().UtcDateTime);
-        return refTest.ToParticipantDto();
-    }
-
-    /// <summary>
-    /// Shared body behind <see cref="CompleteRefTestAsync"/>. Kept internal so it stays out of the
-    /// GraphQL schema: <paramref name="source"/> decides whether the participant's time limit is
-    /// enforced, and that is not something a caller of the API may choose.
-    /// </summary>
-    internal static async Task<RefTest> CompleteRefTestCoreAsync(
-        CompleteRefTestInput input,
-        RefTestManagementContext context,
-        IIhfRulesQuestionsService ihfRulesQuestionsService,
-        IJobEnqueueService jobEnqueueService,
-        EmailConfiguration emailConfiguration,
-        IRefTestSubscriptionService subscriptionService,
-        IRefTestSessionTokenService sessionTokenService,
-        RefTestCompletionSource source,
-        CancellationToken cancellationToken,
-        DateTime? now = null)
-    {
         var token = ParticipantInput.Token(input.Token);
         var selectedAnswerIds = ParticipantInput.AnswerIds(input.SelectedAnswerIds);
         var language = ParticipantInput.Language(input.Language);
 
         var refTest = await context.RefTests
-            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
+            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken)
+            ?? throw new RefTestNotFoundException();
 
-        if (refTest is null)
-            throw new RefTestNotFoundException();
-
-        return await CompleteRefTestCoreAsync(
-            refTest,
-            selectedAnswerIds,
-            language,
-            context,
-            ihfRulesQuestionsService,
-            jobEnqueueService,
-            emailConfiguration,
-            subscriptionService,
-            source,
-            cancellationToken,
-            now);
-    }
-
-    /// <summary>
-    /// Shared completion logic for participant submissions and expiration jobs that already have
-    /// the RefTest loaded from the database.
-    /// </summary>
-    internal static async Task<RefTest> CompleteRefTestCoreAsync(
-        RefTest refTest,
-        IReadOnlyList<string> selectedAnswerIds,
-        string? language,
-        RefTestManagementContext context,
-        IIhfRulesQuestionsService ihfRulesQuestionsService,
-        IJobEnqueueService jobEnqueueService,
-        EmailConfiguration emailConfiguration,
-        IRefTestSubscriptionService subscriptionService,
-        RefTestCompletionSource source,
-        CancellationToken cancellationToken,
-        DateTime? now = null)
-    {
-        // The expiration job handler calls this directly, so the signature stays while the logic
-        // lives in the Application use case.
-        var timeProvider = now is { } fixedNow ? new FixedTimeProvider(fixedNow) : TimeProvider.System;
-        return await new CompleteRefTestHandler(ihfRulesQuestionsService, subscriptionService, emailConfiguration, timeProvider)
-            .HandleAsync(refTest, selectedAnswerIds, language, source,
+        // The completion source is fixed here: whether the time limit is enforced is not something
+        // a caller of the API may choose.
+        await new CompleteRefTestHandler(
+                ihfRulesQuestionsService, subscriptionService, emailConfiguration,
+                timeProvider ?? TimeProvider.System)
+            .HandleAsync(refTest, selectedAnswerIds, language, RefTestCompletionSource.Participant,
                 new EfRefTestUnitOfWork(context, jobEnqueueService), cancellationToken);
+        return refTest.ToParticipantDto();
     }
-
-    /// <summary>Hands a caller-supplied instant to the use case, which reads the time from a TimeProvider.</summary>
-    private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider
-    {
-        public override DateTimeOffset GetUtcNow() => new(DateTime.SpecifyKind(utcNow, DateTimeKind.Utc));
-    }}
+}

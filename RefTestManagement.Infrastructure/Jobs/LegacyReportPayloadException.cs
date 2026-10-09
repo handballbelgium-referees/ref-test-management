@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 
 /// <summary>
 /// Indicates that a report payload predates the required per-RefTest association.

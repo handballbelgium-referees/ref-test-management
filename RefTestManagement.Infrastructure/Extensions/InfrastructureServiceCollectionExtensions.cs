@@ -1,6 +1,8 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.IhfRules;
+using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Privacy;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -60,6 +62,29 @@ public static class InfrastructureServiceCollectionExtensions
         // ponytail: process-local session lock; R1-ARCH WP9 replaces it with a shared one for
         // multi-replica deployments.
         services.AddSingleton<IRefTestSessionService, RefTestSessionService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the Infrastructure background job handlers, keyed by the job type the worker
+    /// dispatches on. A job type with no handler registered fails as "Unknown job type" rather than
+    /// silently doing nothing. The approval notification handler needs Auth0, so the host registers it.
+    /// </summary>
+    public static IServiceCollection AddJobHandlers(this IServiceCollection services)
+    {
+        services.AddKeyedScoped<IJobHandler, InvitationEmailJobHandler>(JobType.InvitationEmail);
+        services.AddKeyedScoped<IJobHandler, ResultEmailJobHandler>(JobType.ResultEmail);
+        services.AddKeyedScoped<IJobHandler, ReportEmailJobHandler>(JobType.ReportEmail);
+        services.AddKeyedScoped<IJobHandler, RefTestExpirationJobHandler>(JobType.RefTestExpiration);
+        services.AddKeyedScoped<IJobHandler, ApprovalDecisionEmailJobHandler>(JobType.ApprovalDecisionEmail);
+        services.AddKeyedScoped<IJobHandler, PersonalDataExportChallengeEmailJobHandler>(
+            JobType.PersonalDataExportChallengeEmail);
+        services.AddKeyedScoped<IJobHandler, PersonalDataExportDeliveryEmailJobHandler>(
+            JobType.PersonalDataExportDeliveryEmail);
+        services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalChallengeEmailJobHandler>(
+            JobType.PrivacyWithdrawalChallengeEmail);
+        services.AddKeyedScoped<IJobHandler, PrivacyWithdrawalBatchJobHandler>(JobType.PrivacyWithdrawalBatch);
 
         return services;
     }

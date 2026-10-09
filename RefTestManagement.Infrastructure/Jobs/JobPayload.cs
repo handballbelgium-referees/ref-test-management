@@ -2,8 +2,9 @@ using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
+using Microsoft.Extensions.Logging;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 
 /// <summary>
 /// Reads a job's JSON payload into its typed shape.

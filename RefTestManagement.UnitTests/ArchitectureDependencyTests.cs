@@ -105,6 +105,7 @@ public sealed class ArchitectureDependencyTests
     private static readonly string[] KnownInfrastructureInterfaces =
     [
         "Handball.Belgium.RefTestManagement.Infrastructure.IJobPersistenceContext",
+        "Handball.Belgium.RefTestManagement.Infrastructure.Jobs.IJobHandler",
         "Handball.Belgium.RefTestManagement.Infrastructure.Services.IJobEnqueueService"
     ];
 

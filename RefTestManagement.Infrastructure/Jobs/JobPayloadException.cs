@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 
 /// <summary>
 /// Thrown when a job's payload cannot be turned into the type the handler expects. Distinct from

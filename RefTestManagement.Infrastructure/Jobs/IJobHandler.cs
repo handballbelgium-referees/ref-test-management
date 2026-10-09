@@ -1,6 +1,6 @@
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 
 /// <summary>
 /// Handles one <see cref="JobType"/>.

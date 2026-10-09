@@ -11,7 +11,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 <details open>
 <summary><strong><code>RefTestManagement.Api/</code></strong> — 🔷 .NET Web API (.NET 10) — entry point, GraphQL, background services</summary>
 
-- `BackgroundServices/` — Hosted services: jobs, expiration, privacy retention, audit cleanup, permission sync
+- `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; `JobHandlers/` keeps only the Auth0-backed approval notification handler
 - `Controllers/` — Auth0 login/callback endpoints
 - `Graphql/` — Mutations, Queries, Subscriptions, Types, ReadModels
 
@@ -78,6 +78,7 @@ flowchart TB
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
 | `RefTestManagement.Infrastructure/Privacy`                       | Consent-withdrawal and data-export challenges, participant session and invitation-token protection. Withdrawal stays an Infrastructure service behind its Application port: every step is a serializable transaction under EF's retry strategy |
+| `RefTestManagement.Infrastructure/Jobs`                          | Background job handlers keyed by job type, payload parsing; `AddJobHandlers()` registers them |
 | `RefTestManagement.UnitTests`                                    | Unit tests for audit/log redaction, job state machine, RefTest anonymization  |
 | `RefTestManagement.Ui/src/app/ref-tests`                         | RefTest creation, detail view, and management UI                              |
 | `RefTestManagement.Ui/src/app/ref-tests/list`                    | List view with mobile/desktop layouts, filters and operations                 |
