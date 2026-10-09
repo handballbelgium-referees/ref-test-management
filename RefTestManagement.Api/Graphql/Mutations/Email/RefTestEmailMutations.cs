@@ -2,8 +2,10 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
@@ -39,69 +41,29 @@ public static partial class RefTestEmailMutations
         var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
         var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
 
-        var refTests = await context.RefTests
-            .Where(s => input.Ids.Contains(s.Id))
-            .ToListAsync(cancellationToken);
+        var outcome = await RefTestEmailHandler.SendInvitationsAsync(
+            input.Ids, new EfRefTestUnitOfWork(context, jobEnqueueService), cancellationToken);
 
         var result = new SendInvitationsResult
         {
             TotalRequested = input.Ids.Count,
-            SentRefTests = [],
+            SuccessfullySent = outcome.Sent.Count,
+            Failed = outcome.Failures.Count,
+            SentRefTests = [.. outcome.Sent.Select(refTest => refTest.ToDto())],
             Errors = []
         };
 
-        foreach (var id in input.Ids)
+        // Failures are reported per RefTest and never fail the whole operation.
+        foreach (var failure in outcome.Failures)
         {
-            var refTest = refTests.FirstOrDefault(x => x.Id == id);
-
-            try
+            MutationErrorHandling.LogMutationFailure(
+                logger, failure.Exception, nameof(SendInvitationsAsync), correlationId, failure.RefTestId);
+            result.Errors.Add(new SendInvitationError
             {
-                if (refTest is not null && context.Entry(refTest).State == EntityState.Detached)
-                {
-                    refTest = await context.RefTests
-                        .FirstOrDefaultAsync(candidate => candidate.Id == id, cancellationToken);
-                }
-
-                if (refTest is null)
-                    throw new RefTestNotFoundException(id.ToString());
-
-                if (refTest.IsAnonymized)
-                    throw new InvalidRefTestStatusException("Cannot send an invitation for a RefTest whose consent has been withdrawn");
-
-                if (refTest.Status != RefTestStatus.Pending)
-                    throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Pending);
-
-                refTest.RegenerateToken();
-                await jobEnqueueService.EnqueueInvitationEmailAsync(
-                    refTest,
-                    unitOfWorkContext: context,
-                    cancellationToken: cancellationToken);
-
-                result.SentRefTests.Add(refTest.ToDto());
-                result.SuccessfullySent++;
-            }
-            catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                MutationErrorHandling.LogMutationFailure(
-                    logger,
-                    e,
-                    nameof(SendInvitationsAsync),
-                    correlationId,
-                    id);
-                result.Failed++;
-
-                // Email failed, or RefTest was not found, or RefTest is not pending
-                // Log the error but don't fail the entire operation
-                result.Errors.Add(new SendInvitationError
-                {
-                    RefTestId = id,
-                    User = refTest is null ? null : new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = "Failed to send invitation email."
-                });
-
-                // Discard the failed RefTest/job state; later IDs are reloaded before they are saved.
-                context.ChangeTracker.Clear();
-            }
+                RefTestId = failure.RefTestId,
+                User = ToUser(failure.Participant),
+                ErrorMessage = "Failed to send invitation email."
+            });
         }
 
         return result;
@@ -131,70 +93,29 @@ public static partial class RefTestEmailMutations
         var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
         var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
 
-        var refTests = await context.RefTests
-            .Where(s => input.Ids.Contains(s.Id))
-            .ToListAsync(cancellationToken);
+        var outcome = await RefTestEmailHandler.SendResultsAsync(
+            input.Ids, new EfRefTestUnitOfWork(context, jobEnqueueService), cancellationToken);
 
         var result = new SendResultsResult
         {
             TotalRequested = input.Ids.Count,
-            SentRefTests = [],
+            SuccessfullySent = outcome.Sent.Count,
+            Failed = outcome.Failures.Count,
+            SentRefTests = [.. outcome.Sent.Select(refTest => refTest.ToDto())],
             Errors = []
         };
 
-        foreach (var id in input.Ids)
+        // Failures are reported per RefTest and never fail the whole operation.
+        foreach (var failure in outcome.Failures)
         {
-            var refTest = refTests.FirstOrDefault(x => x.Id == id);
-
-            try
+            MutationErrorHandling.LogMutationFailure(
+                logger, failure.Exception, nameof(SendResultsAsync), correlationId, failure.RefTestId);
+            result.Errors.Add(new SendResultError
             {
-                if (refTest is null)
-                    throw new RefTestNotFoundException(id.ToString());
-
-                if (refTest.IsAnonymized)
-                    throw new InvalidRefTestStatusException("Cannot send results for a RefTest whose consent has been withdrawn");
-
-                if (refTest.Status != RefTestStatus.Completed)
-                    throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Completed);
-
-                var payload = new ResultEmailPayload(
-                    refTest.Id,
-                    refTest.FullName,
-                    refTest.Email,
-                    refTest.QuestionScore ?? 0,
-                    refTest.AnswerScore ?? 0,
-                    refTest.QuestionTotal,
-                    refTest.AnswerTotal ?? 0,
-                    refTest.Percentage ?? 0,
-                    [.. refTest.SelectedAnswerIds],
-                    [.. refTest.WrongQuestionIds],
-                    [.. refTest.WrongAnswerIds]
-                );
-
-                await jobEnqueueService.EnqueueResultEmailAsync(payload, cancellationToken: cancellationToken);
-
-                result.SentRefTests.Add(refTest.ToDto());
-                result.SuccessfullySent++;
-            }
-            catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                MutationErrorHandling.LogMutationFailure(
-                    logger,
-                    e,
-                    nameof(SendResultsAsync),
-                    correlationId,
-                    id);
-                result.Failed++;
-
-                // Email failed, or RefTest was not found, or RefTest is not pending
-                // Log the error but don't fail the entire operation
-                result.Errors.Add(new SendResultError
-                {
-                    RefTestId = id,
-                    User = refTest is null ? null : new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = "Failed to send result email."
-                });
-            }
+                RefTestId = failure.RefTestId,
+                User = ToUser(failure.Participant),
+                ErrorMessage = "Failed to send result email."
+            });
         }
 
         return result;
@@ -303,4 +224,7 @@ public static partial class RefTestEmailMutations
             };
         }
     }
+
+    private static User? ToUser(RefTestParticipant? participant) =>
+        participant is null ? null : new User(participant.FirstName, participant.LastName, participant.Email);
 }
