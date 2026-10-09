@@ -1,15 +1,13 @@
 using Handball.Belgium.RefTestManagement.Api.Extensions;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
-using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
-using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Application.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 
@@ -65,63 +63,69 @@ public static partial class RefTestCreationMutations
         var result = new CreateRefTestsResult { TotalRequested = input.Users.Count };
 
         var (titleId, titleValue) = await ResolveTitleAsync(input.Title, context, cancellationToken);
-        var specifiedQuestionIds =
-            await ResolveSharedQuestionIdsAsync(input, ihfRulesQuestionsService, cancellationToken);
-        var createdRefTests = await BuildRefTestsAsync(input, titleId, specifiedQuestionIds, requiresApproval,
-            creatorName, creatorEmail, ihfRulesQuestionsService, result, logger, correlationId, cancellationToken,
-            timeProvider?.GetUtcNow().UtcDateTime);
 
-        if (createdRefTests.Count == 0)
-            return result;
+        var handler = new CreateRefTestsHandler(
+            ihfRulesQuestionsService, subscriptionService, timeProvider ?? TimeProvider.System);
+        var outcome = await handler.HandleAsync(
+            new CreateRefTestsCommand(
+                [.. input.Users.Select(user => new RefTestParticipant(user.FirstName, user.LastName, user.Email))],
+                titleId,
+                titleValue,
+                input.NumberOfQuestions,
+                input.MaxTimeInMinutes,
+                input.RandomQuestionsForEachUser,
+                input.SpecificQuestionNumbers,
+                input.SendAutomatedInvitations,
+                input.SendAutomatedResults,
+                input.ScheduledAt,
+                requiresApproval,
+                creatorName,
+                creatorEmail),
+            new EfRefTestUnitOfWork(context, jobEnqueueService),
+            cancellationToken);
 
-        if (requiresApproval)
+        foreach (var failure in outcome.Failures)
         {
-            var trackedJobIds = GetTrackedJobIds(context);
-            try
+            result.Failed++;
+            result.Errors.Add(new CreateRefTestsError
             {
-                await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
-                    jobEnqueueService, context, cancellationToken);
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                DetachNewJobs(context, trackedJobIds);
-                result.Failed += createdRefTests.Count;
-                result.Errors.AddRange(createdRefTests.Select(refTest => new CreateRefTestsError
-                {
-                    User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage =
-                        $"Approval notification could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
-                }));
-                MutationErrorHandling.LogMutationFailure(
-                    logger, ex, nameof(CreateRefTestsAsync), correlationId);
-                return result;
-            }
+                User = new User(failure.Participant.FirstName, failure.Participant.LastName, failure.Participant.Email),
+                ErrorMessage = ErrorMessage(failure)
+            });
         }
-        else if (input.SendAutomatedInvitations)
-            await EnqueueInvitationEmailsAsync(createdRefTests, jobEnqueueService, context, result, logger, correlationId,
-                cancellationToken);
 
-        if (createdRefTests.Count == 0)
-            return result;
+        // An approval failure is one exception shared by the whole batch, so it is logged once.
+        var approvalFailureLogged = false;
+        foreach (var failure in outcome.Failures)
+        {
+            if (failure.Stage == CreateRefTestsFailureStage.ApprovalNotification)
+            {
+                if (approvalFailureLogged)
+                    continue;
+                approvalFailureLogged = true;
+            }
 
-        // The RefTests and the jobs they owe are staged together and committed by the single
-        // SaveChanges below, so a persisted RefTest can never exist without its invitation or
-        // approval-notification job. Payloads can be built before the save because ids are
-        // domain-generated, not database-generated.
-        context.RefTests.AddRange(createdRefTests);
-        await context.SaveChangesWithRetryAsync(cancellationToken);
-        result.SuccessfullyCreated = createdRefTests.Count;
+            MutationErrorHandling.LogMutationFailure(
+                logger, failure.Exception, nameof(CreateRefTestsAsync), correlationId, failure.RefTestId);
+        }
 
-        await PublishCreatedEventsAsync(createdRefTests, titleId, titleValue, subscriptionService, cancellationToken);
-
-        if (requiresApproval || !input.SendAutomatedInvitations)
-            result.CreatedRefTests.AddRange(createdRefTests.Select(rt => rt.ToDto()));
-
+        result.SuccessfullyCreated = outcome.Created.Count;
+        result.CreatedRefTests.AddRange(outcome.Created.Select(refTest => refTest.ToDto()));
         return result;
     }
 
-    // --- Helpers ------------------------------------------------------------
+    private static string ErrorMessage(CreateRefTestsFailure failure)
+    {
+        var message = MutationErrorHandling.GetUserSafeMessage(failure.Exception);
+        return failure.Stage switch
+        {
+            CreateRefTestsFailureStage.ApprovalNotification => $"Approval notification could not be prepared: {message}",
+            CreateRefTestsFailureStage.Invitation => $"Invitation email could not be prepared: {message}",
+            _ => message
+        };
+    }
 
+    // --- Helpers ------------------------------------------------------------
     /// <summary>
     /// Resolve RefTest title ID and value from input.
     /// If Title.Id is provided, it is used. Otherwise, a new title is created with the provided Name.
@@ -150,215 +154,5 @@ public static partial class RefTestCreationMutations
             titleInput.Name,
             cancellationToken);
         return (title.Id, title.Value);
-    }
-
-    /// <summary>
-    /// Resolve question IDs to be shared among all RefTests.
-    /// If SpecificQuestionNumbers are provided, it takes precedence over RandomQuestionsForEachUser.
-    /// </summary>
-    /// <param name="input">The input parameters for question resolution.</param>
-    /// <param name="ihfRulesQuestionsService">Service for fetching IHF Rules questions.</param>
-    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    /// <returns>A list of question IDs to be shared among RefTests.</returns>
-    private static async Task<List<string>> ResolveSharedQuestionIdsAsync(
-        CreateRefTestsInput input,
-        IIhfRulesQuestionsService ihfRulesQuestionsService,
-        CancellationToken cancellationToken)
-    {
-        if (input.SpecificQuestionNumbers is not null)
-            return await ihfRulesQuestionsService.GetQuestionIdsByNumberAsync(
-                input.SpecificQuestionNumbers, cancellationToken);
-
-        if (!input.RandomQuestionsForEachUser)
-            return await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(
-                input.NumberOfQuestions, cancellationToken);
-
-        return [];
-    }
-
-    /// <summary>
-    /// Build RefTests for each user. If RandomQuestionsForEachUser is true, each RefTest gets its own set of random questions; otherwise, all RefTests share the same question IDs.
-    /// </summary>
-    /// <param name="input">The input containing RefTest creation details.</param>
-    /// <param name="titleId">The ID of the RefTest title.</param>
-    /// <param name="sharedQuestionIds">The list of question IDs to be shared among RefTests.</param>
-    /// <param name="requiresApproval">Indicates if RefTests require approval.</param>
-    /// <param name="creatorName">The name of the RefTest creator.</param>
-    /// <param name="creatorEmail">The email of the RefTest creator.</param>
-    /// <param name="ihfRulesQuestionsService">Service for managing IHF rules questions.</param>
-    /// <param name="result">The result object for tracking creation status.</param>
-    /// <param name="logger">The logger for logging information and errors.</param>
-    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
-    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    /// <returns>A list of created RefTests.</returns>
-    private static async Task<List<RefTest>> BuildRefTestsAsync(
-        CreateRefTestsInput input,
-        Guid titleId,
-        List<string> sharedQuestionIds,
-        bool requiresApproval,
-        string creatorName,
-        string creatorEmail,
-        IIhfRulesQuestionsService ihfRulesQuestionsService,
-        CreateRefTestsResult result,
-        ILogger logger,
-        string correlationId,
-        CancellationToken cancellationToken,
-        DateTime? now = null)
-    {
-        var created = new List<RefTest>();
-
-        foreach (var user in input.Users)
-        {
-            try
-            {
-                var questionIds = input.RandomQuestionsForEachUser
-                    ? await ihfRulesQuestionsService.GetRandomQuestionIdsAsync(input.NumberOfQuestions,
-                        cancellationToken)
-                    : sharedQuestionIds;
-
-                created.Add(RefTest.Create(
-                    titleId,
-                    user.FirstName, user.LastName, user.Email,
-                    input.NumberOfQuestions, input.MaxTimeInMinutes,
-                    questionIds,
-                    input.SendAutomatedInvitations, input.SendAutomatedResults,
-                    requiresApproval: requiresApproval,
-                    scheduledAt: input.ScheduledAt,
-                    creatorName: creatorName,
-                    creatorEmail: creatorEmail,
-                    now: now));
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                result.Failed++;
-                result.Errors.Add(new CreateRefTestsError
-                {
-                    User = user,
-                    ErrorMessage = MutationErrorHandling.GetUserSafeMessage(ex)
-                });
-                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId);
-            }
-        }
-
-        return created;
-    }
-
-    /// <summary>
-    /// Publish RefTestCreated events for all created RefTests.
-    /// </summary>
-    /// <param name="refTests">The list of created RefTests.</param>
-    /// <param name="titleId">The ID of the RefTest title.</param>
-    /// <param name="titleValue">The value of the RefTest title.</param>
-    /// <param name="subscriptionService">Service for publishing RefTestCreated events.</param>
-    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    private static async Task PublishCreatedEventsAsync(
-        List<RefTest> refTests,
-        Guid titleId,
-        string? titleValue,
-        IRefTestSubscriptionService subscriptionService,
-        CancellationToken cancellationToken)
-    {
-        foreach (var refTest in refTests)
-            await subscriptionService.PublishRefTestCreatedAsync(
-                refTest.Id, refTest.FullName, refTest.Email,
-                titleId, titleValue,
-                refTest.InvitationSentAt.HasValue, refTest.ResultsSentAt.HasValue,
-                refTest.SendInvitationsAutomatically, refTest.SendResultsAutomatically,
-                refTest.Status, refTest.NumberOfQuestions, refTest.MaxTimeInMinutes,
-                refTest.FirstName, refTest.LastName, refTest.CreatedAt, refTest.ScheduledAt,
-                cancellationToken);
-    }
-
-    /// <summary>
-    /// Stage the approval notification email for all created RefTests. The notification is sent to the creator and includes details of all RefTests awaiting approval.
-    /// The job row is added to the same unit of work as the RefTests, so it is committed with them or not at all.
-    /// </summary>
-    /// <param name="refTests">The list of created RefTests.</param>
-    /// <param name="creatorName">The name of the RefTest creator.</param>
-    /// <param name="creatorEmail">The email address of the RefTest creator.</param>
-    /// <param name="titleValue">The value of the RefTest title.</param>
-    /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
-    /// <param name="context">The database context for accessing RefTests and related entities.</param>
-    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    private static async Task EnqueueApprovalNotificationAsync(
-        List<RefTest> refTests,
-        string creatorName,
-        string creatorEmail,
-        string? titleValue,
-        IJobEnqueueService jobEnqueueService,
-        RefTestManagementContext context,
-        CancellationToken cancellationToken)
-    {
-        var payload = new ApprovalNotificationEmailPayload(
-            creatorName, creatorEmail, titleValue,
-            refTests.Select(rt => new ApprovalNotificationRefTestItem(
-                rt.Id, rt.FirstName, rt.LastName, rt.Email, rt.ScheduledAt)).ToList());
-
-        await jobEnqueueService.EnqueueApprovalNotificationAsync(payload,
-            saveChanges: false, unitOfWorkContext: context, cancellationToken: cancellationToken);
-    }
-
-    /// <summary>
-    /// Stage invitation emails for all created RefTests.
-    /// If SendAutomatedInvitations is false, the RefTests are created but the emails are not sent.
-    /// The job rows are added to the same unit of work as the RefTests.
-    /// </summary>
-    /// <param name="refTests">The list of created RefTests.</param>
-    /// <param name="jobEnqueueService">Service for enqueuing job notifications.</param>
-    /// <param name="context">The database context for accessing RefTests and related entities.</param>
-    /// <param name="result">The result object for tracking operation status.</param>
-    /// <param name="logger">The logger for logging information and errors.</param>
-    /// <param name="correlationId">The correlation ID for tracking the operation.</param>
-    /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    private static async Task EnqueueInvitationEmailsAsync(
-        List<RefTest> refTests,
-        IJobEnqueueService jobEnqueueService,
-        RefTestManagementContext context,
-        CreateRefTestsResult result,
-        ILogger logger,
-        string correlationId,
-        CancellationToken cancellationToken)
-    {
-        foreach (var refTest in refTests.ToList())
-        {
-            var trackedJobIds = GetTrackedJobIds(context);
-            try
-            {
-                await jobEnqueueService.EnqueueInvitationEmailAsync(
-                    refTest,
-                    executeAfter: refTest.ScheduledAt,
-                    saveChanges: false,
-                    unitOfWorkContext: context,
-                    cancellationToken: cancellationToken);
-
-                result.CreatedRefTests.Add(refTest.ToDto());
-            }
-            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-            {
-                DetachNewJobs(context, trackedJobIds);
-                refTests.Remove(refTest);
-                result.Failed++;
-                result.Errors.Add(new CreateRefTestsError
-                {
-                    User = new User(refTest.FirstName, refTest.LastName, refTest.Email),
-                    ErrorMessage = $"Invitation email could not be prepared: {MutationErrorHandling.GetUserSafeMessage(ex)}"
-                });
-                MutationErrorHandling.LogMutationFailure(logger, ex, nameof(CreateRefTestsAsync), correlationId, refTest.Id);
-            }
-        }
-    }
-
-    /// <summary>Captures the jobs already tracked so a failed enqueue can discard only its own staged rows.</summary>
-    /// <param name="context">The RefTest unit of work.</param>
-    private static HashSet<Guid> GetTrackedJobIds(RefTestManagementContext context) =>
-        context.Jobs.Local.Select(job => job.Id).ToHashSet();
-
-    /// <summary>Detaches jobs added by an enqueue attempt that did not complete.</summary>
-    /// <param name="context">The RefTest unit of work.</param>
-    /// <param name="trackedJobIds">Job IDs present before the enqueue attempt.</param>
-    private static void DetachNewJobs(RefTestManagementContext context, HashSet<Guid> trackedJobIds)
-    {
-        foreach (var job in context.Jobs.Local.Where(job => !trackedJobIds.Contains(job.Id)).ToList())
-            context.Entry(job).State = EntityState.Detached;
     }
 }

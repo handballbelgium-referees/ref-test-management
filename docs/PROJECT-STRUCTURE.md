@@ -72,7 +72,8 @@ flowchart TB
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |
-| `RefTestManagement.Application/Abstractions`                     | Ports implemented by Infrastructure; job enqueueing follows once a unit-of-work port exists |
+| `RefTestManagement.Application/Abstractions`                     | Ports implemented by Infrastructure, including `IRefTestUnitOfWork` (one write use case's transaction) |
+| `RefTestManagement.Application/RefTests`                         | Use-case handlers; `CreateRefTestsHandler` is the first, called by the `createRefTests` resolver |
 | `RefTestManagement.Infrastructure/IhfRules`                      | IHF Rules question-bank GraphQL client (StrawberryShake schema, queries) and its service |
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
