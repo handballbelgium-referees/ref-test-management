@@ -8,6 +8,8 @@ public interface IRefTestRepository
         string credential,
         bool asNoTracking = false,
         CancellationToken cancellationToken = default);
+    Task<RefTest?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<RefTest>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
+    Task LoadTitleAsync(RefTest refTest, CancellationToken cancellationToken = default);
     void AddRange(IEnumerable<RefTest> refTests);
 }

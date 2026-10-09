@@ -62,6 +62,48 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
             Entry(job).State = EntityState.Detached;
     }
 
+    async Task<RefTest?> IUnitOfWork.RestoreRefTestAsync(
+        RefTest refTest, CancellationToken cancellationToken)
+    {
+        var refTestId = refTest.Id;
+        refTest.ClearDomainEvents();
+        Entry(refTest).State = EntityState.Detached;
+        return await RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
+    }
+
+    async Task<RefTest?> IUnitOfWork.RestoreChangesAsync(
+        RefTest refTest, CancellationToken cancellationToken)
+    {
+        var refTestId = refTest.Id;
+        var changedEntries = ChangeTracker.Entries()
+            .Where(entry => entry.State is EntityState.Added or EntityState.Modified or EntityState.Deleted)
+            .ToList();
+
+        try
+        {
+            foreach (var entry in changedEntries)
+            {
+                if (entry.State == EntityState.Added)
+                    entry.State = EntityState.Detached;
+                else
+                    await entry.ReloadAsync(cancellationToken);
+            }
+        }
+        finally
+        {
+            // Domain events are transient and are not restored by EF's ReloadAsync.
+            refTest.ClearDomainEvents();
+        }
+
+        // Reload does not restore RefTest's transient IssuedToken. Detach it and query a clean
+        // aggregate so a failed token rotation cannot leak into a later item in this batch.
+        Entry(refTest).State = EntityState.Detached;
+        return await RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
+    }
+
+    bool IUnitOfWork.IsConcurrencyException(Exception exception) =>
+        exception is DbUpdateConcurrencyException;
+
     public Task<int> SaveChangesWithRetryAsync(CancellationToken cancellationToken = default)
     {
         var strategy = Database.CreateExecutionStrategy();

@@ -9,6 +9,7 @@ using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Update;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
@@ -16,6 +17,8 @@ using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
@@ -168,15 +171,17 @@ public sealed class PersonalDataExportRequestTests
                 context,
                 tokenProtection,
                 NullLogger<JobEnqueueService>.Instance);
-            await RefTestUpdateMutations.UpdateRefTestDetailsAsync(
-                new UpdateRefTestDetailsInput(
-                    refTestId,
-                    "Ada",
-                    "Lovelace",
-                    "new-owner@example.org"),
+            var handler = new RefTestUpdateHandler(
+                new RefTestRepository(context, new RefTestSessionTokenService(
+                    new EphemeralDataProtectionProvider(), TimeProvider.System)),
+                new RefTestTitleRepository(context),
+                new PersonalDataExportRequestRepository(context),
                 context,
+                ihfRulesQuestionsService: null!,
                 jobs,
-                cancellationToken);
+                subscriptionService: null!);
+            await handler.UpdateDetailsAsync(new UpdateRefTestDetailsCommand(
+                refTestId, "Ada", "Lovelace", "new-owner@example.org", ResendInvitation: false), cancellationToken);
         }
 
         await using var verification = database.CreateContext();

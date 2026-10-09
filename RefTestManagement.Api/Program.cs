@@ -81,6 +81,7 @@ services.AddApplication();
 services.AddScoped<ICurrentUser, HttpCurrentUser>();
 services.AddScoped<IRefTestRepository, RefTestRepository>();
 services.AddScoped<IRefTestTitleRepository, RefTestTitleRepository>();
+services.AddScoped<IPersonalDataExportRequestRepository, PersonalDataExportRequestRepository>();
 services.AddScoped<IUnitOfWork>(serviceProvider =>
     serviceProvider.GetRequiredService<RefTestManagementContext>());
 

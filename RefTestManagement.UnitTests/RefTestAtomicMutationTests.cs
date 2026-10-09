@@ -8,6 +8,8 @@ using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Application.RefTests.Creation;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Approval;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Reset;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -74,6 +76,32 @@ public sealed class RefTestAtomicMutationTests
         IReadOnlyList<CreateRefTestUser> users,
         bool requiresApproval) =>
         new(titleId, null, users, 2, false, 30, null, true, true, null, requiresApproval);
+
+    private static RefTestApprovalHandler CreateApprovalHandler(
+        RefTestManagementContext context,
+        IHttpContextAccessor accessor,
+        IJobEnqueueService jobService) =>
+        new(
+            new RefTestRepository(context, new RefTestSessionTokenService(
+                new EphemeralDataProtectionProvider(), TimeProvider.System)),
+            (IUnitOfWork)context,
+            jobService,
+            SubscriptionService(),
+            new HttpCurrentUser(accessor),
+            NullLogger<RefTestApprovalHandler>.Instance);
+
+    private static RefTestResetHandler CreateResetHandler(
+        RefTestManagementContext context,
+        IHttpContextAccessor accessor,
+        IJobEnqueueService jobService) =>
+        new(
+            new RefTestRepository(context, new RefTestSessionTokenService(
+                new EphemeralDataProtectionProvider(), TimeProvider.System)),
+            (IUnitOfWork)context,
+            jobService,
+            SubscriptionService(),
+            new HttpCurrentUser(accessor),
+            NullLogger<RefTestResetHandler>.Instance);
 
     private static RefTestCreationHandler CreateHandler(
         RefTestManagementContext context,
@@ -214,21 +242,16 @@ public sealed class RefTestAtomicMutationTests
         var accessor = HttpContextAccessor();
         await using (var context = database.CreateContext(AuditInterceptor(accessor)))
         {
-            var result = await RefTestResetMutations.ResetRefTestsAsync(
-                new ResetRefTestsInput(
-                    [failedRefTest.Id, resetRefTest.Id],
-                    RefTestResetType.Soft,
-                    RegenerateToken: false),
-                context,
-                new JobEnqueueService(context, TokenProtection(), NullLogger<JobEnqueueService>.Instance),
-                SubscriptionService(),
-                accessor,
-                NullLoggerFactory.Instance,
-                cancellationToken);
+            var result = await CreateResetHandler(
+                    context, accessor,
+                    new JobEnqueueService(context, TokenProtection(), NullLogger<JobEnqueueService>.Instance))
+                .ResetAsync(
+                    [failedRefTest.Id, resetRefTest.Id], RefTestResetType.Soft, regenerateToken: false,
+                    cancellationToken);
 
             Assert.Equal(2, result.TotalRequested);
             Assert.Equal(1, result.SuccessfullyReset);
-            Assert.Equal(1, result.Failed);
+            Assert.Single(result.Errors);
             Assert.Equal(failedRefTest.Id, Assert.Single(result.Errors).RefTestId);
             Assert.Equal(resetRefTest.Id, Assert.Single(result.ResetRefTests).Id);
         }
@@ -296,19 +319,12 @@ public sealed class RefTestAtomicMutationTests
                 nameof(IJobEnqueueService.EnqueueInvitationEmailAsync),
                 args => args[0] is RefTest { FirstName: "Grace" });
 
-            var result = await RefTestApprovalMutations.ApproveRefTestsAsync(
-                new ApproveRefTestsInput(
-                    [invalidRefTest.Id, failedInvitationRefTest.Id, approvedRefTest.Id]),
-                context,
-                jobService,
-                SubscriptionService(),
-                accessor,
-                NullLoggerFactory.Instance,
-                cancellationToken);
+            var result = await CreateApprovalHandler(context, accessor, jobService).ApproveAsync(
+                [invalidRefTest.Id, failedInvitationRefTest.Id, approvedRefTest.Id], cancellationToken);
 
             Assert.Equal(3, result.TotalRequested);
-            Assert.Equal(1, result.SuccessfullyApproved);
-            Assert.Equal(2, result.Failed);
+            Assert.Single(result.ApprovedRefTests);
+            Assert.Equal(2, result.Errors.Count);
             Assert.Equal(2, result.Errors.Count);
             Assert.Equal(approvedRefTest.Id, Assert.Single(result.ApprovedRefTests).Id);
             Assert.Contains(result.Errors, error => error.RefTestId == invalidRefTest.Id);
@@ -364,18 +380,12 @@ public sealed class RefTestAtomicMutationTests
             nameof(IJobEnqueueService.EnqueueInvitationEmailAsync),
             args => args[0] is RefTest refTest && refTest.Id == fixtures[0].Id);
 
-        var result = await RefTestResetMutations.ReviveRefTestsAsync(
-            [fixtures[0].Id, fixtures[1].Id],
-            context,
-            jobService,
-            SubscriptionService(),
-            accessor,
-            NullLoggerFactory.Instance,
-            cancellationToken);
+        var result = await CreateResetHandler(context, accessor, jobService)
+            .ReviveAsync([fixtures[0].Id, fixtures[1].Id], cancellationToken);
 
         Assert.Equal(2, result.TotalRequested);
-        Assert.Equal(1, result.SuccessfullyRevived);
-        Assert.Equal(1, result.Failed);
+        Assert.Single(result.RevivedRefTests);
+        Assert.Single(result.Errors);
         Assert.Equal(fixtures[0].Id, Assert.Single(result.Errors).RefTestId);
         Assert.Equal(fixtures[1].Id, Assert.Single(result.RevivedRefTests).Id);
         var restoredRefTest = context.RefTests.Local.Single(refTest => refTest.Id == fixtures[0].Id);

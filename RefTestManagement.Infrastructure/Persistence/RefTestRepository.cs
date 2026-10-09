@@ -36,6 +36,12 @@ public sealed class RefTestRepository(
         CancellationToken cancellationToken = default) =>
         context.RefTests.Where(refTest => ids.Contains(refTest.Id)).ToListAsync(cancellationToken);
 
+    public Task<RefTest?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default) =>
+        context.RefTests.FirstOrDefaultAsync(refTest => refTest.Id == id, cancellationToken);
+
+    public async Task LoadTitleAsync(RefTest refTest, CancellationToken cancellationToken = default) =>
+        await context.Entry(refTest).Reference(candidate => candidate.Title).LoadAsync(cancellationToken);
+
     public void AddRange(IEnumerable<RefTest> refTests) => context.RefTests.AddRange(refTests);
 
 }
