@@ -1,4 +1,5 @@
 ﻿using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Handball.Belgium.RefTestManagement.Infrastructure;
 
 public class RefTestManagementContext(DbContextOptions<RefTestManagementContext> options)
-    : DbContext(options), IJobPersistenceContext
+    : DbContext(options), IUnitOfWork
 {
     public DbSet<RefTest> RefTests { get; set; } = null!;
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
@@ -51,6 +52,15 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
     IQueryable<Job> IJobPersistenceContext.Jobs => Jobs;
 
     void IJobPersistenceContext.AddJob(Job job) => Jobs.Add(job);
+
+    IReadOnlySet<Guid> IUnitOfWork.CaptureStagedJobIds() =>
+        Jobs.Local.Select(job => job.Id).ToHashSet();
+
+    void IUnitOfWork.DiscardJobsStagedSince(IReadOnlySet<Guid> checkpoint)
+    {
+        foreach (var job in Jobs.Local.Where(job => !checkpoint.Contains(job.Id)).ToList())
+            Entry(job).State = EntityState.Detached;
+    }
 
     public Task<int> SaveChangesWithRetryAsync(CancellationToken cancellationToken = default)
     {

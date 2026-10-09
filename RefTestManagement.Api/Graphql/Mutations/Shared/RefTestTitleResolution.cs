@@ -1,29 +1,14 @@
-using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
-using Handball.Belgium.RefTestManagement.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 
+/// <summary>Compatibility adapter for mutation groups that have not yet moved to Application handlers.</summary>
 internal static class RefTestTitleResolution
 {
-    public static async Task<RefTestTitle> ResolveOrCreateAsync(
+    public static Task<Handball.Belgium.RefTestManagement.Domain.RefTestTitles.RefTestTitle> ResolveOrCreateAsync(
         RefTestManagementContext context,
         string value,
-        CancellationToken cancellationToken)
-    {
-        var normalizedValue = value.ToLowerInvariant();
-        var existingTitle = await context.RefTestTitles
-            .AsNoTracking()
-            .FirstOrDefaultAsync(
-                title => title.Value.ToLower() == normalizedValue,
-                cancellationToken);
-        if (existingTitle is not null)
-            return existingTitle;
-
-        var title = RefTestTitle.Create(value);
-        context.RefTestTitles.Add(title);
-        await context.SaveChangesWithRetryAsync(cancellationToken);
-        return title;
-    }
+        CancellationToken cancellationToken) =>
+        new RefTestTitleRepository(context).ResolveOrCreateAsync(value, cancellationToken);
 }

@@ -2,11 +2,12 @@ using System.Reflection;
 using System.Security.Claims;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Approval;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Creation;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Reset;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Creation;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -14,6 +15,7 @@ using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.DataProtection;
@@ -66,15 +68,25 @@ public sealed class RefTestAtomicMutationTests
         return title.Id;
     }
 
-    private static CreateRefTestsInput CreateInput(Guid titleId, List<User> users) =>
+    private static CreateRefTestsCommand CreateCommand(
+        Guid titleId,
+        IReadOnlyList<CreateRefTestUser> users,
+        bool requiresApproval) =>
+        new(titleId, null, users, 2, false, 30, null, true, true, null, requiresApproval);
+
+    private static RefTestCreationHandler CreateHandler(
+        RefTestManagementContext context,
+        IHttpContextAccessor accessor,
+        IJobEnqueueService jobService) =>
         new(
-            new Title(titleId, null),
-            users,
-            NumberOfQuestions: 2,
-            RandomQuestionsForEachUser: false,
-            MaxTimeInMinutes: 30,
-            SendAutomatedInvitations: true,
-            SendAutomatedResults: true);
+            new RefTestRepository(context),
+            new RefTestTitleRepository(context),
+            (IUnitOfWork)context,
+            QuestionService(),
+            jobService,
+            SubscriptionService(),
+            new HttpCurrentUser(accessor),
+            NullLogger<RefTestCreationHandler>.Instance);
 
     [Fact]
     public async Task CreateRefTestsAsync_DropsOnlyItemsWhoseInvitationCouldNotBeEnqueued()
@@ -93,18 +105,13 @@ public sealed class RefTestAtomicMutationTests
             nameof(IJobEnqueueService.EnqueueInvitationEmailAsync),
             args => args[0] is RefTest { FirstName: "Grace" });
 
-        var result = await RefTestCreationMutations.CreateRefTestsAsync(
-            CreateInput(titleId,
+        var result = await CreateHandler(context, accessor, jobService).HandleAsync(
+            CreateCommand(titleId,
             [
-                new User("Grace", "Hopper", "grace@example.org"),
-                new User("Ada", "Lovelace", "ada@example.org")
-            ]),
-            context,
-            QuestionService(),
-            jobService,
-            SubscriptionService(),
-            accessor,
-            NullLoggerFactory.Instance,
+                new CreateRefTestUser("Grace", "Hopper", "grace@example.org"),
+                new CreateRefTestUser("Ada", "Lovelace", "ada@example.org")
+            ],
+            requiresApproval: false),
             cancellationToken);
 
         Assert.Equal(2, result.TotalRequested);
@@ -144,18 +151,13 @@ public sealed class RefTestAtomicMutationTests
             nameof(IJobEnqueueService.EnqueueApprovalNotificationAsync),
             _ => true);
 
-        var result = await RefTestCreationMutations.CreateRefTestsAsync(
-            CreateInput(titleId,
+        var result = await CreateHandler(context, accessor, jobService).HandleAsync(
+            CreateCommand(titleId,
             [
-                new User("Grace", "Hopper", "grace@example.org"),
-                new User("Ada", "Lovelace", "ada@example.org")
-            ]),
-            context,
-            QuestionService(),
-            jobService,
-            SubscriptionService(),
-            accessor,
-            NullLoggerFactory.Instance,
+                new CreateRefTestUser("Grace", "Hopper", "grace@example.org"),
+                new CreateRefTestUser("Ada", "Lovelace", "ada@example.org")
+            ],
+            requiresApproval: true),
             cancellationToken);
 
         Assert.Equal(2, result.TotalRequested);

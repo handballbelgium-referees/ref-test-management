@@ -1,8 +1,11 @@
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Ihf;
 using Handball.Belgium.RefTestManagement.Api;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
@@ -73,6 +76,12 @@ var auditLogOptions = services.AddAuditLogging(opts =>
 auditLogOptions.Validate();
 
 services.AddDatabaseProvider(configuration);
+services.AddApplication();
+services.AddScoped<ICurrentUser, HttpCurrentUser>();
+services.AddScoped<IRefTestRepository, RefTestRepository>();
+services.AddScoped<IRefTestTitleRepository, RefTestTitleRepository>();
+services.AddScoped<IUnitOfWork>(serviceProvider =>
+    serviceProvider.GetRequiredService<RefTestManagementContext>());
 
 // Add services
 var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>()

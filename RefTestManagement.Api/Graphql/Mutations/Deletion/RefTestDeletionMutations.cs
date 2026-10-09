@@ -1,10 +1,9 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Deletion;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
-using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Deletion;
 
@@ -22,72 +21,29 @@ public static partial class RefTestDeletionMutations
     /// staff delete leaves no personal data behind anywhere; the row itself is then removed
     /// (see <see cref="IRefTestPrivacyErasureService.EraseAndDeleteAsync"/>).
     /// </summary>
-    /// <param name="input"></param>
-    /// <param name="context"></param>
-    /// <param name="privacyErasureService"></param>
-    /// <param name="subscriptionService"></param>
-    /// <param name="cancellationToken"></param>
-    /// <returns></returns>
+    /// <param name="input">The requested RefTest IDs.</param>
+    /// <param name="handler">Application handler for RefTest deletion.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>The result of the deletion operation.</returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     [Authorize(Policy = Permissions.RefTests.Delete)]
     public static async Task<DeleteRefTestsResult> DeleteRefTestsAsync(
         DeleteRefTestsInput input,
-        RefTestManagementContext context,
-        [Service] IRefTestPrivacyErasureService privacyErasureService,
-        [Service] IRefTestSubscriptionService subscriptionService,
+        [Service] RefTestDeletionHandler handler,
         CancellationToken cancellationToken)
     {
-        var refTests = await context.RefTests
-            .Where(s => input.Ids.Contains(s.Id))
-            .ToListAsync(cancellationToken);
-
-        var result = new DeleteRefTestsResult
+        var result = await handler.HandleAsync(new DeleteRefTestsCommand(input.Ids), cancellationToken);
+        return new DeleteRefTestsResult
         {
-            TotalRequested = input.Ids.Count,
-            DeletedRefTests = [],
-            Errors = []
+            TotalRequested = result.TotalRequested,
+            SuccessfullyDeleted = result.SuccessfullyDeleted,
+            Failed = result.Failed,
+            DeletedRefTests = result.DeletedRefTests.Select(snapshot => snapshot.ToDto()).ToList(),
+            Errors = result.Errors.Select(error => new DeleteRefTestError
+            {
+                RefTestId = error.RefTestId,
+                ErrorMessage = error.ErrorMessage
+            }).ToList()
         };
-
-        foreach (var id in input.Ids)
-        {
-            var refTest = refTests.FirstOrDefault(x => x.Id == id);
-
-            try
-            {
-                if (refTest is null)
-                    throw new RefTestNotFoundException(id.ToString());
-
-                // Capture the DTO before erasing: EraseAsync anonymizes the entity in memory,
-                // so reading it afterwards would return redacted placeholders instead of the
-                // participant's details the caller expects back.
-                var deletedDto = refTest.ToDto();
-
-                // Redact personal data from the audit trail before removing the row, in one
-                // transaction. DeleteAsync only removes the RefTest record; audit events carry no
-                // FK to it and would otherwise retain the participant's name and email until audit
-                // retention expires them.
-                await privacyErasureService.EraseAndDeleteAsync(refTest, ErasureInitiator.Operator, cancellationToken);
-
-                result.SuccessfullyDeleted++;
-                result.DeletedRefTests.Add(deletedDto);
-            }
-            catch (Exception e)
-            {
-                result.Failed++;
-                result.Errors.Add(new DeleteRefTestError
-                {
-                    RefTestId = id,
-                    ErrorMessage = e.Message
-                });
-            }
-        }
-
-        foreach (var deletedDto in result.DeletedRefTests)
-        {
-            await subscriptionService.PublishRefTestDeletedAsync(deletedDto.Id, deletedDto.Status, cancellationToken);
-        }
-
-        return result;
     }
 }
-

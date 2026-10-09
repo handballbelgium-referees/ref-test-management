@@ -1,5 +1,5 @@
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -16,8 +16,7 @@ public sealed class RefTestTitleResolutionTests
         context.RefTestTitles.Add(existingTitle);
         await context.SaveChangesAsync(cancellationToken);
 
-        var resolvedTitle = await RefTestTitleResolution.ResolveOrCreateAsync(
-            context,
+        var resolvedTitle = await new RefTestTitleRepository(context).ResolveOrCreateAsync(
             "season 2026",
             cancellationToken);
 
@@ -33,8 +32,7 @@ public sealed class RefTestTitleResolutionTests
         using var database = SqliteTestDatabase.Create();
         await using var context = database.CreateContext();
 
-        var resolvedTitle = await RefTestTitleResolution.ResolveOrCreateAsync(
-            context,
+        var resolvedTitle = await new RefTestTitleRepository(context).ResolveOrCreateAsync(
             "New season",
             cancellationToken);
 
