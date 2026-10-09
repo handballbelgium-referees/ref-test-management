@@ -3,8 +3,8 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import {
-  cpSync, existsSync, linkSync, lstatSync, mkdirSync, mkdtempSync,
-  readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync,
+  closeSync, constants, cpSync, existsSync, fstatSync, linkSync, lstatSync, mkdirSync, mkdtempSync,
+  openSync, readFileSync, readdirSync, readlinkSync, renameSync, rmSync, symlinkSync, writeFileSync,
 } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -58,6 +58,22 @@ function fixture(t) {
   return base;
 }
 
+function snapshotFile(file, expected) {
+  const descriptor = openSync(file, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+  try {
+    const stat = fstatSync(descriptor);
+    assert.ok(stat.isFile() && stat.dev === expected.dev && stat.ino === expected.ino,
+      "snapshot file changed after lstat");
+    return {
+      mode: stat.mode,
+      mtime: stat.mtimeMs,
+      content: readFileSync(descriptor).toString("base64"),
+    };
+  } finally {
+    closeSync(descriptor);
+  }
+}
+
 function snapshot(base) {
   const result = {};
   function visit(directory) {
@@ -65,11 +81,10 @@ function snapshot(base) {
       const file = path.join(directory, name);
       const stat = lstatSync(file);
       const relative = path.relative(base, file).split(path.sep).join("/");
-      result[relative] = {
+      result[relative] = stat.isFile() ? snapshotFile(file, stat) : {
         mode: stat.mode,
         mtime: stat.mtimeMs,
-        content: stat.isSymbolicLink() ? readlinkSync(file)
-          : stat.isFile() ? readFileSync(file).toString("base64") : null,
+        content: stat.isSymbolicLink() ? readlinkSync(file) : null,
       };
       if (stat.isDirectory() && !stat.isSymbolicLink()) visit(file);
     }
@@ -99,6 +114,31 @@ function cli(base, args, cwd = base, script = "sync.mjs") {
 
 const modelProviders = ["claude", "codex", "github-copilot"];
 const modelAgents = ["implementer", "auditor", "reviewer"];
+
+test("snapshot preserves regular-file binary content and descriptor metadata", (t) => {
+  const base = fixture(t);
+  const file = path.join(base, "binary.dat");
+  const content = Buffer.from([0, 255, 128, 13, 10]);
+  writeFileSync(file, content);
+  const stat = lstatSync(file);
+
+  assert.deepEqual(snapshot(base)["binary.dat"], {
+    mode: stat.mode,
+    mtime: stat.mtimeMs,
+    content: content.toString("base64"),
+  });
+});
+
+test("snapshot rejects a different file replacing the checked pathname", (t) => {
+  const base = fixture(t);
+  const file = path.join(base, "original.dat");
+  writeFileSync(file, "original");
+  const stat = lstatSync(file);
+  renameSync(file, path.join(base, "retained.dat"));
+  writeFileSync(file, "replacement");
+
+  assert.throws(() => snapshotFile(file, stat), /snapshot file changed after lstat/);
+});
 
 test("repository model preferences resolve for every provider and agent", () => {
   const config = loadModelConfig(root);
