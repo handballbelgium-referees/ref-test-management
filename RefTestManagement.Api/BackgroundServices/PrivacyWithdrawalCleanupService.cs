@@ -1,5 +1,5 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;

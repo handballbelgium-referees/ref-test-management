@@ -225,20 +225,19 @@ public sealed class PersonalDataExportRequestTests
         });
         var contextAccessor = new HttpContextAccessor { HttpContext = new DefaultHttpContext() };
         var clientIpResolver = new FixedClientIpResolver();
+        var currentClientAddress = new CurrentClientAddress(contextAccessor, clientIpResolver);
 
         var knownAddressResult = await PersonalDataExportMutations.RequestPersonalDataExportAsync(
             new PersonalDataExportRequestInput(ParticipantEmail),
             service,
             limiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             cancellationToken);
         var unknownAddressResult = await PersonalDataExportMutations.RequestPersonalDataExportAsync(
             new PersonalDataExportRequestInput("unknown@example.org"),
             service,
             limiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             cancellationToken);
 
         Assert.Equal(knownAddressResult, unknownAddressResult);

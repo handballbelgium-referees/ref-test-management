@@ -1,6 +1,10 @@
 using System.CodeDom.Compiler;
+using System.Reflection;
 using System.Xml.Linq;
+using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -117,6 +121,27 @@ public sealed class ArchitectureDependencyTests
         Assert.True(interfaces.Count == 0,
             $"RefTestManagement.Infrastructure declares {string.Join(", ", interfaces)}. " +
             "Declare the interface in RefTestManagement.Application.Abstractions and implement it in Infrastructure.");
+    }
+
+    [Fact]
+    public void MutationMethodsDoNotExposePersistenceOrHttpDependencies()
+    {
+        var violations = typeof(PrivacyWithdrawalMutations).Assembly.GetTypes()
+            .Where(type => type.Namespace is { } typeNamespace
+                && (typeNamespace == "Handball.Belgium.RefTestManagement.Api.Graphql.Mutations"
+                    || typeNamespace.StartsWith(
+                        "Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.",
+                        StringComparison.Ordinal)))
+            .SelectMany(type => type.GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+                .SelectMany(method => method.GetParameters()
+                    .Where(parameter =>
+                        parameter.ParameterType == typeof(IHttpContextAccessor)
+                        || typeof(DbContext).IsAssignableFrom(parameter.ParameterType))
+                    .Select(parameter => $"{type.FullName}.{method.Name}({parameter.ParameterType.FullName})")))
+            .ToList();
+
+        Assert.True(violations.Count == 0,
+            $"GraphQL mutation methods expose persistence or HTTP dependencies: {string.Join(", ", violations)}.");
     }
 
     private static bool IsForbiddenInApplication(string package) =>

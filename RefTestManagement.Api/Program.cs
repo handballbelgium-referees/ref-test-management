@@ -175,6 +175,7 @@ var forwardedHeadersConfig = configuration.GetSection("ForwardedHeadersConfigura
 ConfigurableHeaderClientIpResolver.ValidateConfiguration(forwardedHeadersConfig);
 services.Configure<ForwardedHeadersConfiguration>(configuration.GetSection("ForwardedHeadersConfiguration"));
 services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
+services.AddScoped<ICurrentClientAddress, CurrentClientAddress>();
 
 const string graphQlRateLimiterPolicy = "graphql";
 

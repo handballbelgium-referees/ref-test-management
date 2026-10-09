@@ -55,7 +55,6 @@ These are tolerated for now and tracked as remediation work.
 
 | Violation                                                                                                      | Enforced                | Planned fix                                                       |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- |
-| Remaining use cases live in GraphQL mutations and `Api/Services` (creation, deletion, lifecycle, approval, reset/revive, update and email handlers now live in Application) | Not yet (type-level)    | WP3: move the remaining use cases into Application handlers |
 | Subscription events are published by hand from mutations, separately from domain events                        | Not yet                 | WP4: one event pipeline                                           |
 | Job handlers and background services live in Api                                                               | Not yet                 | WP5: separate the worker from the web host                        |
 
@@ -63,9 +62,10 @@ Resolved:
 
 - WP2 (IHF client): the StrawberryShake client and `IhfRulesQuestionsService` live in `RefTestManagement.Infrastructure/Ihf`; Application keeps only the `IIhfRulesQuestionsService` port. Application has no forbidden package references, so the tests no longer carry an allow-list.
 - WP2 (ports): the service interfaces (`IJobEnqueueService`, `IEmailService`, `IRefTestSubscriptionService`, …) and the records in their signatures live in `RefTestManagement.Application/Abstractions`. `IJobPersistenceContext` exposes `IQueryable<Job>` and `AddJob` instead of an EF Core `DbSet`, so a job still commits in the caller's unit of work. `ArchitectureDependencyTests.InfrastructureDeclaresNoPorts` fails if Infrastructure declares an interface again.
+- WP3 (remaining mutations): use cases and EF-backed privacy request services now live behind Application ports, and `ArchitectureDependencyTests.MutationMethodsDoNotExposePersistenceOrHttpDependencies` enforces that public mutation methods accept no EF context or `IHttpContextAccessor`.
 
 ## Consequences
 
 - The declared project graph is checked on every test run, so a wrong-direction `ProjectReference` fails CI immediately.
-- Where interfaces live is enforced by a type-level test. What mutations may call is not enforced yet; extend the tests when WP3 lands.
+- Where interfaces live and which dependencies public mutation methods accept are enforced by type-level tests.
 - The README and `docs/PROJECT-STRUCTURE.md` describe the actual graph. Update them together with this ADR when the graph changes.

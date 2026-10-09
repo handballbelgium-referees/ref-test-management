@@ -1,5 +1,6 @@
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
+using Microsoft.AspNetCore.Http;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 
@@ -17,8 +18,8 @@ public static class MutationErrorHandling
         _ => GenericFailure
     };
 
-    public static string GetCorrelationId(IHttpContextAccessor? httpContextAccessor) =>
-        httpContextAccessor?.HttpContext?.TraceIdentifier ?? "(none)";
+    public static string GetCorrelationId(HttpContext? httpContext) =>
+        httpContext?.TraceIdentifier ?? "(none)";
 
     public static void LogMutationFailure(
         ILogger logger,

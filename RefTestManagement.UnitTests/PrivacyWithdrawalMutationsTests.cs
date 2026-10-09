@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using HotChocolate;
 using HotChocolate.Execution;
@@ -21,22 +22,19 @@ public sealed class PrivacyWithdrawalMutationsTests
     {
         var service = new RecordingPrivacyWithdrawalRequestService();
         using var rateLimiter = NewRateLimiter(requestLimit: 2);
-        var contextAccessor = NewHttpContextAccessor();
-        var clientIpResolver = new FixedClientIpResolver();
+        var currentClientAddress = new FixedCurrentClientAddress();
 
         var matchingResult = await PrivacyWithdrawalMutations.RequestPrivacyWithdrawalAsync(
             new PrivacyWithdrawalRequestInput(ParticipantEmail),
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
         var nonmatchingResult = await PrivacyWithdrawalMutations.RequestPrivacyWithdrawalAsync(
             new PrivacyWithdrawalRequestInput("unknown@example.org"),
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
 
         Assert.Equal(matchingResult, nonmatchingResult);
@@ -54,22 +52,19 @@ public sealed class PrivacyWithdrawalMutationsTests
     {
         var service = new RecordingPrivacyWithdrawalRequestService();
         using var rateLimiter = NewRateLimiter(requestLimit: 1);
-        var contextAccessor = NewHttpContextAccessor();
-        var clientIpResolver = new FixedClientIpResolver();
+        var currentClientAddress = new FixedCurrentClientAddress();
 
         var firstResult = await PrivacyWithdrawalMutations.RequestPrivacyWithdrawalAsync(
             new PrivacyWithdrawalRequestInput(ParticipantEmail),
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
         var rateLimitedResult = await PrivacyWithdrawalMutations.RequestPrivacyWithdrawalAsync(
             new PrivacyWithdrawalRequestInput("unknown@example.org"),
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
 
         Assert.Equal(new PrivacyWithdrawalRequestAcknowledgement(Acknowledged: true), firstResult);
@@ -82,22 +77,19 @@ public sealed class PrivacyWithdrawalMutationsTests
     {
         var service = new RecordingPrivacyWithdrawalRequestService();
         using var rateLimiter = NewRateLimiter(confirmationLimit: 2);
-        var contextAccessor = NewHttpContextAccessor();
-        var clientIpResolver = new FixedClientIpResolver();
+        var currentClientAddress = new FixedCurrentClientAddress();
 
         var validResult = await PrivacyWithdrawalMutations.ConfirmPrivacyWithdrawalAsync(
             ValidKey,
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
         var invalidResult = await PrivacyWithdrawalMutations.ConfirmPrivacyWithdrawalAsync(
             "invalid-one-time-key",
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
 
         Assert.True(validResult.Accepted);
@@ -113,22 +105,19 @@ public sealed class PrivacyWithdrawalMutationsTests
     {
         var service = new RecordingPrivacyWithdrawalRequestService();
         using var rateLimiter = NewRateLimiter(confirmationLimit: 1);
-        var contextAccessor = NewHttpContextAccessor();
-        var clientIpResolver = new FixedClientIpResolver();
+        var currentClientAddress = new FixedCurrentClientAddress();
 
         var acceptedResult = await PrivacyWithdrawalMutations.ConfirmPrivacyWithdrawalAsync(
             ValidKey,
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
         var rateLimitedResult = await PrivacyWithdrawalMutations.ConfirmPrivacyWithdrawalAsync(
             ValidKey,
             service,
             rateLimiter,
-            clientIpResolver,
-            contextAccessor,
+            currentClientAddress,
             TestContext.Current.CancellationToken);
 
         Assert.True(acceptedResult.Accepted);
@@ -239,6 +228,7 @@ public sealed class PrivacyWithdrawalMutationsTests
         services.AddSingleton<IPrivacyChallengeRateLimiter>(rateLimiter);
         services.AddSingleton<IClientIpResolver>(new FixedClientIpResolver());
         services.AddSingleton<IHttpContextAccessor>(NewHttpContextAccessor());
+        services.AddSingleton<ICurrentClientAddress, CurrentClientAddress>();
         services
             .AddGraphQLServer()
             .AddQueryType<SchemaQuery>()
@@ -271,6 +261,11 @@ public sealed class PrivacyWithdrawalMutationsTests
     private sealed class FixedClientIpResolver : IClientIpResolver
     {
         public string Resolve(HttpContext context) => ClientAddress;
+    }
+
+    private sealed class FixedCurrentClientAddress : ICurrentClientAddress
+    {
+        public string Resolve() => ClientAddress;
     }
 
     private sealed class RecordingPrivacyWithdrawalRequestService : IPrivacyWithdrawalRequestService
@@ -309,15 +304,13 @@ public sealed class PrivacyWithdrawalMutationsTests
             PrivacyWithdrawalRequestInput input,
             [Service] IPrivacyWithdrawalRequestService requestService,
             [Service] IPrivacyChallengeRateLimiter rateLimiter,
-            [Service] IClientIpResolver clientIpResolver,
-            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ICurrentClientAddress currentClientAddress,
             CancellationToken cancellationToken) =>
             PrivacyWithdrawalMutations.RequestPrivacyWithdrawalAsync(
                 input,
                 requestService,
                 rateLimiter,
-                clientIpResolver,
-                httpContextAccessor,
+                currentClientAddress,
                 cancellationToken);
 
         [GraphQLName("confirmPrivacyWithdrawal")]
@@ -325,15 +318,13 @@ public sealed class PrivacyWithdrawalMutationsTests
             string key,
             [Service] IPrivacyWithdrawalRequestService requestService,
             [Service] IPrivacyChallengeRateLimiter rateLimiter,
-            [Service] IClientIpResolver clientIpResolver,
-            [Service] IHttpContextAccessor httpContextAccessor,
+            [Service] ICurrentClientAddress currentClientAddress,
             CancellationToken cancellationToken) =>
             PrivacyWithdrawalMutations.ConfirmPrivacyWithdrawalAsync(
                 key,
                 requestService,
                 rateLimiter,
-                clientIpResolver,
-                httpContextAccessor,
+                currentClientAddress,
                 cancellationToken);
     }
 }

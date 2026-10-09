@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 
@@ -14,13 +15,10 @@ public static partial class PrivacyWithdrawalMutations
         PrivacyWithdrawalRequestInput input,
         [Service] IPrivacyWithdrawalRequestService requestService,
         [Service] IPrivacyChallengeRateLimiter rateLimiter,
-        [Service] IClientIpResolver clientIpResolver,
-        [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ICurrentClientAddress currentClientAddress,
         CancellationToken cancellationToken)
     {
-        var clientAddress = httpContextAccessor.HttpContext is { } httpContext
-            ? clientIpResolver.Resolve(httpContext)
-            : "unknown";
+        var clientAddress = currentClientAddress.Resolve();
 
         if (await rateLimiter.TryAcquireRequestAsync(clientAddress, cancellationToken))
             await requestService.RequestAsync(input.Email, cancellationToken);
@@ -37,13 +35,10 @@ public static partial class PrivacyWithdrawalMutations
         string key,
         [Service] IPrivacyWithdrawalRequestService requestService,
         [Service] IPrivacyChallengeRateLimiter rateLimiter,
-        [Service] IClientIpResolver clientIpResolver,
-        [Service] IHttpContextAccessor httpContextAccessor,
+        [Service] ICurrentClientAddress currentClientAddress,
         CancellationToken cancellationToken)
     {
-        var clientAddress = httpContextAccessor.HttpContext is { } httpContext
-            ? clientIpResolver.Resolve(httpContext)
-            : "unknown";
+        var clientAddress = currentClientAddress.Resolve();
 
         if (!await rateLimiter.TryAcquireConfirmationAsync(clientAddress, cancellationToken))
             return new PrivacyWithdrawalConfirmationResult(Accepted: false);

@@ -11,16 +11,9 @@ using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 
-namespace Handball.Belgium.RefTestManagement.Api.Services;
-
-public interface IPrivacyWithdrawalRequestService
-{
-    Task RequestAsync(string? email, CancellationToken cancellationToken);
-    Task<bool> RequestForParticipantAsync(string token, CancellationToken cancellationToken);
-    Task<bool> ConfirmAsync(string? challengeKey, CancellationToken cancellationToken);
-    Task<int> ReconcileIncompleteBatchesAsync(CancellationToken cancellationToken);
-}
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
 /// <summary>
 /// Creates mailbox-verification challenges and atomically turns valid confirmations or
