@@ -9,43 +9,30 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 public class AuditLogCleanupService(
     IServiceProvider serviceProvider,
     ILogger<AuditLogCleanupService> logger,
-    AuditLogOptions options) : BackgroundService
+    AuditLogOptions options) : PollingBackgroundService
 {
     private readonly IServiceProvider _serviceProvider = serviceProvider;
     private readonly ILogger<AuditLogCleanupService> _logger = logger;
     private readonly AuditLogOptions _options = options;
 
+    protected override TimeSpan StartupDelay => TimeSpan.FromSeconds(10);
+
+    protected override TimeSpan Interval => TimeSpan.FromHours(_options.CleanupIntervalHours);
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         ServiceLoggerMessages.LogServiceStarting(_logger, nameof(AuditLogCleanupService));
-
-        await Task.Delay(TimeSpan.FromSeconds(10), stoppingToken);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await CleanupOldAuditLogsAsync(stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                // A database failure here is raised while reading and rewriting the audit
-                // Data column, which holds the personal data this service exists to redact.
-                ServiceLoggerMessages.LogCleanupError(_logger, LogRedaction.MaskEmails(ex), "AuditLogs");
-            }
-
-            try
-            {
-                await Task.Delay(TimeSpan.FromHours(_options.CleanupIntervalHours), stoppingToken);
-            }
-            catch (TaskCanceledException)
-            {
-                break;
-            }
-        }
-
+        await base.ExecuteAsync(stoppingToken);
         ServiceLoggerMessages.LogServiceStopping(_logger, nameof(AuditLogCleanupService));
     }
+
+    protected override Task RunOnceAsync(CancellationToken cancellationToken) =>
+        CleanupOldAuditLogsAsync(cancellationToken);
+
+    // A database failure here is raised while reading and rewriting the audit Data column, which
+    // holds the personal data this service exists to redact.
+    protected override void LogFailure(Exception exception) =>
+        ServiceLoggerMessages.LogCleanupError(_logger, LogRedaction.MaskEmails(exception), "AuditLogs");
 
     private const int RedactionBatchSize = 500;
 

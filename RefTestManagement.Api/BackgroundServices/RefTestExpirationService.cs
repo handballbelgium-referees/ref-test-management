@@ -12,7 +12,7 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 /// Background service that checks for expired RefTests and enqueues specific jobs to handle them.
 /// This approach is more efficient than processing all tests - it only creates jobs for tests that need action.
 /// </summary>
-public class RefTestExpirationService : BackgroundService
+public class RefTestExpirationService : PollingBackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<RefTestExpirationService> _logger;
@@ -34,37 +34,22 @@ public class RefTestExpirationService : BackgroundService
         _expirationIfNotStarted = configuration.ExpirationIfNotStarted;
     }
 
+    protected override TimeSpan StartupDelay => _startupDelay;
+
+    protected override TimeSpan Interval => _checkInterval;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         ServiceLoggerMessages.LogServiceStarting(_logger, nameof(RefTestExpirationService));
-
-        // Wait a bit before the first execution to let the app fully start
-        await Task.Delay(_startupDelay, stoppingToken);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await CheckAndEnqueueExpiredTestsAsync(stoppingToken);
-            }
-            catch (Exception ex)
-            {
-                ServiceLoggerMessages.LogServiceError(_logger, ex, nameof(RefTestExpirationService));
-            }
-
-            try
-            {
-                await Task.Delay(_checkInterval, stoppingToken);
-            }
-            catch (TaskCanceledException)
-            {
-                // Expected when the service is stopping
-                break;
-            }
-        }
-
+        await base.ExecuteAsync(stoppingToken);
         ServiceLoggerMessages.LogServiceStopping(_logger, nameof(RefTestExpirationService));
     }
+
+    protected override Task RunOnceAsync(CancellationToken cancellationToken) =>
+        CheckAndEnqueueExpiredTestsAsync(cancellationToken);
+
+    protected override void LogFailure(Exception exception) =>
+        ServiceLoggerMessages.LogServiceError(_logger, exception, nameof(RefTestExpirationService));
 
     private async Task CheckAndEnqueueExpiredTestsAsync(CancellationToken cancellationToken)
     {

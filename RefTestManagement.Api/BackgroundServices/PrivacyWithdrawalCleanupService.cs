@@ -11,42 +11,23 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 public sealed class PrivacyWithdrawalCleanupService(
     IServiceProvider serviceProvider,
     PrivacyChallengeConfiguration configuration,
-    ILogger<PrivacyWithdrawalCleanupService> logger) : BackgroundService
+    ILogger<PrivacyWithdrawalCleanupService> logger) : PollingBackgroundService
 {
     private const int BatchSize = 500;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                using var scope = serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
-                var requestService = scope.ServiceProvider.GetRequiredService<IPrivacyWithdrawalRequestService>();
-                var now = DateTime.UtcNow;
-                await RunCleanupCycleAsync(context, requestService, now, logger, stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception)
-            {
-                // Challenge rows retain participant addresses and protected keys until they expire.
-                logger.LogError("Privacy-withdrawal cleanup failed.");
-            }
+    protected override TimeSpan Interval => TimeSpan.FromMinutes(configuration.CleanupIntervalMinutes);
 
-            try
-            {
-                await Task.Delay(TimeSpan.FromMinutes(configuration.CleanupIntervalMinutes), stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-        }
+    protected override async Task RunOnceAsync(CancellationToken cancellationToken)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
+        var requestService = scope.ServiceProvider.GetRequiredService<IPrivacyWithdrawalRequestService>();
+        await RunCleanupCycleAsync(context, requestService, DateTime.UtcNow, logger, cancellationToken);
     }
+
+    // Challenge rows retain participant addresses and protected keys until they expire.
+    protected override void LogFailure(Exception exception) =>
+        logger.LogError("Privacy-withdrawal cleanup failed.");
 
     internal static async Task RunCleanupCycleAsync(
         RefTestManagementContext context,
