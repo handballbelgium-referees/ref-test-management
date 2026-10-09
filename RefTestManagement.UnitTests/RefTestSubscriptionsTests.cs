@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -187,7 +188,7 @@ public sealed class RefTestSubscriptionsTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var eventSender = new RecordingTopicEventSender();
-        var subscriptionService = new RefTestSubscriptionService(eventSender);
+        var subscriptionService = new RefTestSubscriptionService(eventSender, NullLogger<RefTestSubscriptionService>.Instance);
         var refTestId = Guid.NewGuid();
         var firstAt = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc);
         var secondAt = firstAt.AddMinutes(1);
@@ -223,7 +224,7 @@ public sealed class RefTestSubscriptionsTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var eventSender = new RecordingTopicEventSender();
-        var subscriptionService = new RefTestSubscriptionService(eventSender);
+        var subscriptionService = new RefTestSubscriptionService(eventSender, NullLogger<RefTestSubscriptionService>.Instance);
         var refTestId = Guid.NewGuid();
         var titleId = Guid.NewGuid();
         var createdAt = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc);
@@ -405,6 +406,35 @@ public sealed class RefTestSubscriptionsTests
             Calls++;
             return Task.FromResult(_snapshots.Dequeue());
         }
+    }
+
+    [Fact]
+    public async Task APublishFailureAfterCommitIsSwallowedButCancellationStillPropagates()
+    {
+        var subscriptionService = new RefTestSubscriptionService(
+            new FailingTopicEventSender(), NullLogger<RefTestSubscriptionService>.Instance);
+
+        await subscriptionService.PublishRefTestDeletedAsync(
+            Guid.NewGuid(), RefTestStatus.Pending, TestContext.Current.CancellationToken);
+
+        using var cancelled = new CancellationTokenSource();
+        cancelled.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
+            subscriptionService.PublishRefTestDeletedAsync(Guid.NewGuid(), RefTestStatus.Pending, cancelled.Token));
+    }
+
+    private sealed class FailingTopicEventSender : ITopicEventSender
+    {
+        public ValueTask SendAsync<TMessage>(
+            string topicName,
+            TMessage message,
+            CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            throw new InvalidOperationException("Redis is unavailable");
+        }
+
+        public ValueTask CompleteAsync(string topicName) => ValueTask.CompletedTask;
     }
 
     private sealed class RecordingTopicEventSender : ITopicEventSender

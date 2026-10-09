@@ -107,6 +107,11 @@ grant `SET`, `EVAL`/`EVALSHA`, `PUBLISH` and `SUBSCRIBE`. This replaces
 `PrivacyChallengeConfiguration:RedisEndpoint`, which is no longer read: move its value to
 `RedisConfiguration:Endpoint`.
 
+Subscription events are live-refresh hints published after the change commits. Publishing is best
+effort: during a Redis outage the change still succeeds, a warning is logged, and open screens
+catch up on their next query. Emails do not depend on this; they are queued as jobs in the same
+transaction as the change.
+
 ### Shared privacy challenge limiter
 
 `PrivacyChallengeConfiguration:RateLimitBackend` defaults to `Local`, which uses process-local
