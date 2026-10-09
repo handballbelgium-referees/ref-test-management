@@ -342,7 +342,7 @@ public class AuthorizationSchemaTests
             LastName = "User",
             FullName = "Test User",
             Email = "test@example.org",
-            QuestionIds = ["source-question-id"],
+            QuestionIds = [NestedQuestionId],
             WrongQuestionIds = [ResultQuestionId],
             WrongAnswerIds = [ResultAnswerId],
             SelectedAnswerIds = [SelectedAnswerId]

@@ -113,7 +113,7 @@ public class RefTestType : ObjectType<RefTestDto>
             .Argument("includeIsCorrect", x => x.Type<BooleanType>().DefaultValue(false))
             .Argument("randomAnswerOrder", x => x.Type<BooleanType>().DefaultValue(true))
             .Resolve((ctx, ct) =>
-                GetQuestions(ctx.Parent<RefTestDto>().QuestionIds, ctx.Service<IIhfRulesQuestionsService>(),
+                GetQuestions(ctx.Parent<RefTestDto>().QuestionIds, ctx.DataLoader<QuestionByKeyDataLoader>(),
                     ctx.ArgumentValue<bool>("includeNumber"), ctx.ArgumentValue<bool>("includeIsCorrect"),
                     ctx.ArgumentValue<bool>("randomAnswerOrder"), ct));
         descriptor.Field(x => x.Language)
@@ -135,16 +135,20 @@ public class RefTestType : ObjectType<RefTestDto>
     }
 
     /// <summary>
-    /// Get questions for this RefTest
+    /// Get questions for this RefTest, in the RefTest's own question order. Questions the
+    /// question bank no longer returns are skipped.
     /// </summary>
-    private static Task<List<Question>> GetQuestions(
+    internal static async Task<List<Question>> GetQuestions(
         IReadOnlyList<string> questionIds,
-        IIhfRulesQuestionsService ihfRulesQuestionsService,
+        QuestionByKeyDataLoader questions,
         bool includeNumber,
         bool includeIsCorrect,
         bool randomAnswerOrder,
         CancellationToken cancellationToken)
-        => ihfRulesQuestionsService.GetQuestionsByIdAsync(questionIds, includeNumber, includeIsCorrect,
-            randomAnswerOrder,
+    {
+        var loaded = await questions.LoadAsync(
+            [.. questionIds.Select(id => new QuestionKey(id, includeNumber, includeIsCorrect, randomAnswerOrder))],
             cancellationToken);
+        return [.. loaded.OfType<Question>()];
+    }
 }
