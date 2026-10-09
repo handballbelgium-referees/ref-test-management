@@ -41,7 +41,8 @@ public static partial class RefTestLifecycleMutations
         [Service] PrivacyConfiguration privacyConfiguration,
         [Service] IRefTestSessionTokenService sessionTokenService,
         [Service] IRefTestSubscriptionService subscriptionService,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         token = ParticipantInput.Token(token);
 
@@ -54,9 +55,9 @@ public static partial class RefTestLifecycleMutations
         if (refTest.Status == RefTestStatus.InProgress)
             return refTest.ToParticipantDto();
 
-        if (refTest.IsExpired(configuration.ExpirationIfNotStarted))
+        if (refTest.IsExpired(configuration.ExpirationIfNotStarted, timeProvider?.GetUtcNow().UtcDateTime))
         {
-            refTest.Expire();
+            refTest.Expire(timeProvider?.GetUtcNow().UtcDateTime);
             await context.SaveChangesWithRetryAsync(cancellationToken);
             
             // Publish subscription event
@@ -69,7 +70,7 @@ public static partial class RefTestLifecycleMutations
             throw new RefTestExpiredException();
         }
 
-        refTest.Start(privacyConfiguration.NoticeVersion);
+        refTest.Start(privacyConfiguration.NoticeVersion, timeProvider?.GetUtcNow().UtcDateTime);
         await context.SaveChangesWithRetryAsync(cancellationToken);
         
         // Publish subscription event
@@ -125,7 +126,8 @@ public static partial class RefTestLifecycleMutations
         RefTestManagementContext context,
         [Service] PrivacyConfiguration privacyConfiguration,
         [Service] IRefTestSessionTokenService sessionTokenService,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         if (noticeVersion != privacyConfiguration.NoticeVersion)
             throw new RefTestValidationException("The privacy notice has changed. Please review the current version.");
@@ -138,7 +140,7 @@ public static partial class RefTestLifecycleMutations
         if (refTest is null)
             throw new RefTestNotFoundException();
 
-        refTest.AcceptPrivacyNotice(noticeVersion);
+        refTest.AcceptPrivacyNotice(noticeVersion, timeProvider?.GetUtcNow().UtcDateTime);
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
         return refTest.ToParticipantDto();
@@ -180,7 +182,8 @@ public static partial class RefTestLifecycleMutations
         SaveRefTestProgressInput input,
         RefTestManagementContext context,
         [Service] IRefTestSessionTokenService sessionTokenService,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         var token = ParticipantInput.Token(input.Token);
         var selectedAnswerIds = ParticipantInput.AnswerIds(input.SelectedAnswerIds);
@@ -197,7 +200,7 @@ public static partial class RefTestLifecycleMutations
 
         var currentQuestionIndex = ParticipantInput.QuestionIndex(input.CurrentQuestionIndex, refTest);
 
-        refTest.SaveProgress(currentQuestionIndex, selectedAnswerIds, language);
+        refTest.SaveProgress(currentQuestionIndex, selectedAnswerIds, language, timeProvider?.GetUtcNow().UtcDateTime);
         await context.SaveChangesWithRetryAsync(cancellationToken);
 
         return refTest.ToParticipantDto();
@@ -228,7 +231,8 @@ public static partial class RefTestLifecycleMutations
         [Service] EmailConfiguration emailConfiguration,
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IRefTestSessionTokenService sessionTokenService,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         var refTest = await CompleteRefTestCoreAsync(
             input,
@@ -239,7 +243,8 @@ public static partial class RefTestLifecycleMutations
             subscriptionService,
             sessionTokenService,
             RefTestCompletionSource.Participant,
-            cancellationToken);
+            cancellationToken,
+            timeProvider?.GetUtcNow().UtcDateTime);
         return refTest.ToParticipantDto();
     }
 
@@ -257,7 +262,8 @@ public static partial class RefTestLifecycleMutations
         IRefTestSubscriptionService subscriptionService,
         IRefTestSessionTokenService sessionTokenService,
         RefTestCompletionSource source,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DateTime? now = null)
     {
         var token = ParticipantInput.Token(input.Token);
         var selectedAnswerIds = ParticipantInput.AnswerIds(input.SelectedAnswerIds);
@@ -279,7 +285,8 @@ public static partial class RefTestLifecycleMutations
             emailConfiguration,
             subscriptionService,
             source,
-            cancellationToken);
+            cancellationToken,
+            now);
     }
 
     /// <summary>
@@ -296,7 +303,8 @@ public static partial class RefTestLifecycleMutations
         EmailConfiguration emailConfiguration,
         IRefTestSubscriptionService subscriptionService,
         RefTestCompletionSource source,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DateTime? now = null)
     {
         if (refTest.Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
@@ -318,7 +326,8 @@ public static partial class RefTestLifecycleMutations
             scoreResult.WrongQuestionIds,
             scoreResult.WrongAnswerIds,
             language,
-            source
+            source,
+            now
         );
 
         // The completion and the result email it owes are committed together: a completed test

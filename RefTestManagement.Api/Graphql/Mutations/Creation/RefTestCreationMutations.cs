@@ -38,7 +38,8 @@ public static partial class RefTestCreationMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IHttpContextAccessor httpContextAccessor,
         [Service] ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         var logger = loggerFactory.CreateLogger(nameof(RefTestCreationMutations));
         var currentUser = httpContextAccessor.HttpContext?.User;
@@ -54,7 +55,8 @@ public static partial class RefTestCreationMutations
         var specifiedQuestionIds =
             await ResolveSharedQuestionIdsAsync(input, ihfRulesQuestionsService, cancellationToken);
         var createdRefTests = await BuildRefTestsAsync(input, titleId, specifiedQuestionIds, requiresApproval,
-            creatorName, creatorEmail, ihfRulesQuestionsService, result, logger, correlationId, cancellationToken);
+            creatorName, creatorEmail, ihfRulesQuestionsService, result, logger, correlationId, cancellationToken,
+            timeProvider?.GetUtcNow().UtcDateTime);
 
         if (createdRefTests.Count == 0)
             return result;
@@ -187,7 +189,8 @@ public static partial class RefTestCreationMutations
         CreateRefTestsResult result,
         ILogger logger,
         string correlationId,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        DateTime? now = null)
     {
         var created = new List<RefTest>();
 
@@ -209,7 +212,8 @@ public static partial class RefTestCreationMutations
                     requiresApproval: requiresApproval,
                     scheduledAt: input.ScheduledAt,
                     creatorName: creatorName,
-                    creatorEmail: creatorEmail));
+                    creatorEmail: creatorEmail,
+                    now: now));
             }
             catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {

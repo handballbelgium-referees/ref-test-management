@@ -34,7 +34,8 @@ public static partial class RefTestResetMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IHttpContextAccessor httpContextAccessor,
         [Service] ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         var logger = loggerFactory.CreateLogger(nameof(RefTestResetMutations));
         var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
@@ -98,7 +99,7 @@ public static partial class RefTestResetMutations
                 }
                 else
                 {
-                    refTest.HardReset();
+                    refTest.HardReset(timeProvider?.GetUtcNow().UtcDateTime);
                 }
 
                 // If an invitation was previously sent and the token was regenerated, send a new invitation
@@ -189,7 +190,8 @@ public static partial class RefTestResetMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IHttpContextAccessor httpContextAccessor,
         [Service] ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         var logger = loggerFactory.CreateLogger(nameof(RefTestResetMutations));
         var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
@@ -225,7 +227,7 @@ public static partial class RefTestResetMutations
                 // Check if the invitation was previously sent
                 var invitationWasSent = refTest.InvitationSentAt.HasValue;
 
-                refTest.Revive();
+                refTest.Revive(timeProvider?.GetUtcNow().UtcDateTime);
 
                 // If an invitation was previously sent, send a new one with the new token
                 // (Revive always regenerates the token)

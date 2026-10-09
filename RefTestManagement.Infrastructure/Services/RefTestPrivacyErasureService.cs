@@ -85,7 +85,8 @@ public interface IRefTestPrivacyErasureService
         CancellationToken cancellationToken = default);
 }
 
-public sealed class RefTestPrivacyErasureService(RefTestManagementContext context) : IRefTestPrivacyErasureService
+public sealed class RefTestPrivacyErasureService(RefTestManagementContext context, TimeProvider? timeProvider = null)
+    : IRefTestPrivacyErasureService
 {
     private static readonly JsonSerializerOptions JobPayloadOptions = new()
     {
@@ -143,7 +144,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         var cancellableJobs = await FindCancellableJobsAsync(refTest.Id, ct);
 
         foreach (var job in cancellableJobs)
-            job.Cancel("RefTest was deleted");
+            job.Cancel("RefTest was deleted", timeProvider?.GetUtcNow().UtcDateTime);
 
         refTest.MarkDeleted();
         context.RefTests.Remove(refTest);
@@ -231,10 +232,10 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
         var cancellableJobs = await FindCancellableJobsAsync(refTest.Id, ct);
 
         foreach (var job in cancellableJobs)
-            job.Cancel("RefTest personal data was erased");
+            job.Cancel("RefTest personal data was erased", timeProvider?.GetUtcNow().UtcDateTime);
 
         // Redact personal data in place, keep the record and its audit trail for accountability.
-        refTest.Anonymize();
+        refTest.Anonymize(timeProvider?.GetUtcNow().UtcDateTime);
         await context.SaveChangesAsync(ct);
 
         // An already-anonymized row no longer has the participant's real address with which to
@@ -312,7 +313,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
                     _ => null
                 };
                 if (requestId.HasValue && requestIds.Contains(requestId.Value))
-                    job.Cancel("Participant personal data was erased");
+                    job.Cancel("Participant personal data was erased", timeProvider?.GetUtcNow().UtcDateTime);
             }
             catch (JsonException)
             {
@@ -355,7 +356,7 @@ public sealed class RefTestPrivacyErasureService(RefTestManagementContext contex
                     .Deserialize<PrivacyWithdrawalChallengeEmailPayload>(job.Payload, JobPayloadOptions)
                     ?.ChallengeId;
                 if (challengeId.HasValue && challengeIds.Contains(challengeId.Value))
-                    job.Cancel("Participant personal data was erased");
+                    job.Cancel("Participant personal data was erased", timeProvider?.GetUtcNow().UtcDateTime);
             }
             catch (JsonException)
             {

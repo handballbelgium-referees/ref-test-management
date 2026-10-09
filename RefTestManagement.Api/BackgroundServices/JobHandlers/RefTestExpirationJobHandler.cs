@@ -29,7 +29,8 @@ public sealed class RefTestExpirationJobHandler(
     EmailConfiguration emailConfiguration,
     IRefTestInvitationTokenProtection tokenProtection,
     ILogger<RefTestExpirationJobHandler> logger,
-    ILogger<JobEnqueueService> jobEnqueueLogger) : IJobHandler
+    ILogger<JobEnqueueService> jobEnqueueLogger,
+    TimeProvider? timeProvider = null) : IJobHandler
 {
     public async Task HandleAsync(Job job, CancellationToken cancellationToken)
     {
@@ -65,7 +66,7 @@ public sealed class RefTestExpirationJobHandler(
             {
                 case RefTestExpirationAction.AutoComplete when refTest.Status == RefTestStatus.InProgress:
                 {
-                    var jobEnqueueService = new JobEnqueueService(context, tokenProtection, jobEnqueueLogger);
+                    var jobEnqueueService = new JobEnqueueService(context, tokenProtection, jobEnqueueLogger, timeProvider);
                     await RefTestLifecycleMutations.CompleteRefTestCoreAsync(
                         refTest,
                         refTest.SelectedAnswerIds,
@@ -76,7 +77,8 @@ public sealed class RefTestExpirationJobHandler(
                         emailConfiguration,
                         subscriptionService,
                         RefTestCompletionSource.ExpirationService,
-                        cancellationToken);
+                        cancellationToken,
+                        timeProvider?.GetUtcNow().UtcDateTime);
 
                     ServiceLoggerMessages.LogAutoCompleted(logger, refTest.Id);
                     break;
@@ -91,7 +93,7 @@ public sealed class RefTestExpirationJobHandler(
                         break;
                     }
 
-                    refTest.Expire();
+                    refTest.Expire(timeProvider?.GetUtcNow().UtcDateTime);
                     await context.SaveChangesWithRetryAsync(cancellationToken);
 
                     // Publish subscription event

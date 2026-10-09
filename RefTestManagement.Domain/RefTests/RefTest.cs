@@ -174,7 +174,8 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         bool requiresApproval = false,
         DateTime? scheduledAt = null,
         string creatorName = "",
-        string creatorEmail = "")
+        string creatorEmail = "",
+        DateTime? now = null)
     {
         if (string.IsNullOrWhiteSpace(firstName))
             throw new ArgumentException("First name is required", nameof(firstName));
@@ -197,7 +198,8 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             Status = requiresApproval ? RefTestStatus.PendingApproval : RefTestStatus.Pending,
             ScheduledAt = scheduledAt,
             CreatorName = creatorName,
-            CreatorEmail = creatorEmail
+            CreatorEmail = creatorEmail,
+            CreatedAt = Clock(now)
         };
 
         refTest.RaiseDomainEvent(new RefTestCreatedEvent(
@@ -210,7 +212,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         return refTest;
     }
 
-    public void Approve()
+    public void Approve(DateTime? now = null)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot approve a RefTest whose consent has been withdrawn");
@@ -220,7 +222,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
                 "Only RefTests in PendingApproval or Rejected status can be approved");
 
         Status = RefTestStatus.Pending;
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = Clock(now);
         RejectionReason = null;
         // ScheduledAt is preserved as set by the creator
         RaiseDomainEvent(new RefTestApprovedEvent());
@@ -243,9 +245,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         RaiseDomainEvent(new RefTestRejectedEvent(reason));
     }
 
-    public void SendInvitation()
+    public void SendInvitation(DateTime? now = null)
     {
-        InvitationSentAt = DateTime.UtcNow;
+        InvitationSentAt = Clock(now);
         ProtectedInvitationToken = null;
         RaiseDomainEvent(new RefTestInvitationSentEvent());
     }
@@ -258,26 +260,27 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         ProtectedInvitationToken = protectedToken;
     }
 
-    public void AcceptPrivacyNotice(string noticeVersion)
+    public void AcceptPrivacyNotice(string noticeVersion, DateTime? now = null)
     {
         if (string.IsNullOrWhiteSpace(noticeVersion))
             throw new RefTestValidationException("Privacy notice version is required");
 
         PrivacyNoticeVersion = noticeVersion;
-        PrivacyNoticeAcceptedAt = DateTime.UtcNow;
+        PrivacyNoticeAcceptedAt = Clock(now);
 
         RaiseDomainEvent(new RefTestPrivacyNoticeAcceptedEvent(noticeVersion, FirstName, LastName, Email));
     }
 
-    public void Start(string requiredPrivacyNoticeVersion)
+    public void Start(string requiredPrivacyNoticeVersion, DateTime? now = null)
     {
+        var at = Clock(now);
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot start a RefTest whose consent has been withdrawn");
 
         if (Status != RefTestStatus.Pending)
             throw new InvalidRefTestStatusException("RefTest can only be started from Pending status");
 
-        if (ScheduledAt.HasValue && ScheduledAt.Value > DateTime.UtcNow)
+        if (ScheduledAt.HasValue && ScheduledAt.Value > at)
             throw new RefTestValidationException(
                 $"This ref test is not yet available. It can be started from {ScheduledAt.Value:yyyy-MM-dd HH:mm} UTC");
 
@@ -285,13 +288,14 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new RefTestValidationException("The current privacy notice must be accepted before starting");
 
         Status = RefTestStatus.InProgress;
-        StartedAt = DateTime.UtcNow;
+        StartedAt = at;
         CurrentQuestionIndex = 0;
 
         RaiseDomainEvent(new RefTestStartedEvent(FirstName, LastName, Email));
     }
 
-    public void SaveProgress(int currentQuestionIndex, IEnumerable<string> selectedAnswerIds, string? language = null)
+    public void SaveProgress(int currentQuestionIndex, IEnumerable<string> selectedAnswerIds, string? language = null,
+        DateTime? now = null)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot save progress for a RefTest whose consent has been withdrawn");
@@ -299,7 +303,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only save progress for in-progress RefTests");
 
-        if (HasPassedDeadline())
+        if (HasPassedDeadline(now))
             throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
 
         CurrentQuestionIndex = currentQuestionIndex;
@@ -310,7 +314,8 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     public void Complete(int questionScore, int answerScore, int answerTotal, double percentage,
         IEnumerable<string> selectedAnswerIds, IEnumerable<string> wrongQuestionIds, IEnumerable<string> wrongAnswerIds,
         string? language = null,
-        RefTestCompletionSource source = RefTestCompletionSource.Participant)
+        RefTestCompletionSource source = RefTestCompletionSource.Participant,
+        DateTime? now = null)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot complete a RefTest whose consent has been withdrawn");
@@ -318,11 +323,11 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only complete in-progress RefTests");
 
-        if (source == RefTestCompletionSource.Participant && HasPassedDeadline())
+        if (source == RefTestCompletionSource.Participant && HasPassedDeadline(now))
             throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
 
         Status = RefTestStatus.Completed;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = Clock(now);
         QuestionScore = questionScore;
         AnswerScore = answerScore;
         AnswerTotal = answerTotal;
@@ -337,13 +342,13 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             FirstName, LastName, Email));
     }
 
-    public void SendResults()
+    public void SendResults(DateTime? now = null)
     {
-        ResultsSentAt = DateTime.UtcNow;
+        ResultsSentAt = Clock(now);
         RaiseDomainEvent(new RefTestResultsSentEvent());
     }
 
-    public void Expire()
+    public void Expire(DateTime? now = null)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot expire a RefTest whose consent has been withdrawn");
@@ -352,20 +357,20 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
             throw new InvalidRefTestStatusException("Only pending RefTests can be marked as expired");
 
         Status = RefTestStatus.Expired;
-        ExpiredAt = DateTime.UtcNow;
+        ExpiredAt = Clock(now);
         RaiseDomainEvent(new RefTestExpiredEvent());
     }
 
-    public bool IsExpired(TimeSpan expirationIfNotStarted)
+    public bool IsExpired(TimeSpan expirationIfNotStarted, DateTime? now = null)
     {
-        var now = DateTime.UtcNow;
+        var at = Clock(now);
 
         return Status switch
         {
             RefTestStatus.InProgress when StartedAt.HasValue =>
-                RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, now),
+                RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, at),
             RefTestStatus.Pending =>
-                RefTestExpirationRules.IsPendingDue(CreatedAt, expirationIfNotStarted, now),
+                RefTestExpirationRules.IsPendingDue(CreatedAt, expirationIfNotStarted, at),
             _ => false
         };
     }
@@ -551,7 +556,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         RaiseDomainEvent(new RefTestSoftResetEvent(TokenRegenerated: true));
     }
 
-    public void HardReset()
+    public void HardReset(DateTime? now = null)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot hard reset a RefTest whose consent has been withdrawn");
@@ -579,14 +584,14 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         Language = null;
 
         // Reset timestamps - IMPORTANT: This resets the expiration timer for the RefTestExpirationService
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = Clock(now);
 
         // Always regenerate token for security
         IssueToken();
         RaiseDomainEvent(new RefTestHardResetEvent());
     }
 
-    public void Revive()
+    public void Revive(DateTime? now = null)
     {
         if (IsAnonymized)
             throw new InvalidRefTestStatusException("Cannot revive a RefTest whose consent has been withdrawn");
@@ -599,7 +604,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         ExpiredAt = null;
 
         // Reset CreatedAt so the expiration timer starts fresh
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = Clock(now);
 
         // Clear invitation sent flag so a new invitation will be sent with the new token
         InvitationSentAt = null;
@@ -625,7 +630,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     /// record itself. Idempotent — calling it again also clears a legacy rejection reason from an
     /// already-anonymized record without changing its anonymization timestamp or token.
     /// </summary>
-    public void Anonymize()
+    public void Anonymize(DateTime? now = null)
     {
         RejectionReason = null;
 
@@ -650,7 +655,7 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         // neither field identifies the participant once name, email and token are erased, so
         // keeping them costs nothing in privacy terms and preserves the evidence.
         IsAnonymized = true;
-        AnonymizedAt = DateTime.UtcNow;
+        AnonymizedAt = Clock(now);
 
         RaiseDomainEvent(new RefTestAnonymizedEvent());
     }
@@ -697,9 +702,13 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
     /// overdue tests are only closed when the expiration service next runs, so without this check
     /// a participant can keep answering during the gap between the deadline and that sweep.
     /// </remarks>
-    public bool HasPassedDeadline() =>
+    public bool HasPassedDeadline(DateTime? now = null) =>
         StartedAt.HasValue &&
-        RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, DateTime.UtcNow);
+        RefTestExpirationRules.IsInProgressDue(StartedAt.Value, MaxTimeInMinutes, Clock(now));
+
+    // ponytail: falls back to the system clock when a caller passes no time; make `now` required
+    // once every caller (including tests) supplies TimeProvider time.
+    private static DateTime Clock(DateTime? now) => now ?? DateTime.UtcNow;
 
     /// <summary>
     /// Generates an invitation token. Tokens are the only credential guarding a participant's

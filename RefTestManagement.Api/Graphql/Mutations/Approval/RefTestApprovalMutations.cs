@@ -37,7 +37,8 @@ public static partial class RefTestApprovalMutations
         [Service] IRefTestSubscriptionService subscriptionService,
         [Service] IHttpContextAccessor httpContextAccessor,
         [Service] ILoggerFactory loggerFactory,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         var logger = loggerFactory.CreateLogger(nameof(RefTestApprovalMutations));
         var approverName = (httpContextAccessor.HttpContext?.User).GetDisplayName();
@@ -65,7 +66,7 @@ public static partial class RefTestApprovalMutations
                     throw new InvalidOperationException("A RefTest can only be approved once per request.");
 
                 var oldStatus = refTest.Status;
-                refTest.Approve();
+                refTest.Approve(timeProvider?.GetUtcNow().UtcDateTime);
 
                 if (refTest.SendInvitationsAutomatically)
                 {

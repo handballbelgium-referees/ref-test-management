@@ -94,9 +94,12 @@ public interface IJobEnqueueService
 public class JobEnqueueService(
     RefTestManagementContext context,
     IRefTestInvitationTokenProtection tokenProtection,
-    ILogger<JobEnqueueService> logger)
+    ILogger<JobEnqueueService> logger,
+    TimeProvider? timeProvider = null)
     : IJobEnqueueService
 {
+    private DateTime? Now() => timeProvider?.GetUtcNow().UtcDateTime;
+
     private readonly JsonSerializerOptions _jsonOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -122,7 +125,7 @@ public class JobEnqueueService(
             refTest.NumberOfQuestions,
             refTest.MaxTimeInMinutes);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.InvitationEmail, payloadJson, executeAfter);
+        var job = Job.Create(JobType.InvitationEmail, payloadJson, executeAfter, now: Now());
 
         // Prepare the job completely before mutating the RefTest, so a payload/protection failure
         // cannot leave a token update staged without the corresponding outbox row.
@@ -141,7 +144,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.ResultEmail, payloadJson, executeAfter);
+        var job = Job.Create(JobType.ResultEmail, payloadJson, executeAfter, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -157,7 +160,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.ReportEmail, payloadJson, executeAfter);
+        var job = Job.Create(JobType.ReportEmail, payloadJson, executeAfter, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -173,7 +176,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter);
+        var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -190,7 +193,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.ApprovalNotificationEmail, payloadJson);
+        var job = Job.Create(JobType.ApprovalNotificationEmail, payloadJson, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -207,7 +210,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.ApprovalDecisionEmail, payloadJson);
+        var job = Job.Create(JobType.ApprovalDecisionEmail, payloadJson, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -224,7 +227,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.PersonalDataExportChallengeEmail, payloadJson);
+        var job = Job.Create(JobType.PersonalDataExportChallengeEmail, payloadJson, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -241,7 +244,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.PersonalDataExportDeliveryEmail, payloadJson);
+        var job = Job.Create(JobType.PersonalDataExportDeliveryEmail, payloadJson, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -258,7 +261,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.PrivacyWithdrawalChallengeEmail, payloadJson);
+        var job = Job.Create(JobType.PrivacyWithdrawalChallengeEmail, payloadJson, now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -278,7 +281,8 @@ public class JobEnqueueService(
         var job = Job.Create(
             JobType.PrivacyWithdrawalBatch,
             payloadJson,
-            privacyWithdrawalBatchId: payload.BatchId);
+            privacyWithdrawalBatchId: payload.BatchId,
+            now: Now());
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -341,7 +345,7 @@ public class JobEnqueueService(
             if (!shouldCancel)
                 continue;
 
-            job.Cancel($"RefTest {refTestId} was reset/revived");
+            job.Cancel($"RefTest {refTestId} was reset/revived", Now());
             canceledCount++;
         }
 
@@ -371,7 +375,7 @@ public class JobEnqueueService(
                  where payload?.RefTestId == refTestId
                  select job)
         {
-            job.Cancel($"RefTest {refTestId} was soft reset (results cleared)");
+            job.Cancel($"RefTest {refTestId} was soft reset (results cleared)", Now());
             canceledCount++;
         }
 
