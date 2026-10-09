@@ -46,7 +46,7 @@ public class RefTestReportService(
         }
 
         // Download logo once for all PDFs
-        var logo = await logoService.GetLogoBytesAsync();
+        var logo = await logoService.GetLogoBytesAsync(cancellationToken);
 
         var excelReport = GenerateExcelReport(refTests, languageConfiguration.EnabledLanguages);
         var pdfReport = GeneratePdfReport(refTests, languageConfiguration.EnabledLanguages, logo);

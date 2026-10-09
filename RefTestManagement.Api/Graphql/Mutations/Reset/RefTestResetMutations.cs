@@ -125,7 +125,7 @@ public static partial class RefTestResetMutations
                     refTest.CreatedAt,
                     refTest.InvitationSentAt.HasValue));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 if (refTest is not null)
                 {
@@ -248,7 +248,7 @@ public static partial class RefTestResetMutations
                     refTest.CreatedAt,
                     refTest.InvitationSentAt.HasValue));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 if (refTest is not null)
                 {

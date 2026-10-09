@@ -10,7 +10,9 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
 using HotChocolate.Caching;
+using HotChocolate.Data.Sorting;
 using Microsoft.EntityFrameworkCore;
+using System.Linq.Expressions;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 
@@ -95,10 +97,13 @@ public static partial class RefTestQueries
     [UseProjection]
     [UseFiltering<RefTestTitleFilterType>]
     [UseSorting<RefTestTitleSortType>]
-    public static IQueryable<RefTestTitleDto> GetRefTestTitles(RefTestManagementContext context)
-        => context.RefTestTitles
+    public static IQueryable<RefTestTitleDto> GetRefTestTitles(RefTestManagementContext context, ISortingContext sorting)
+    {
+        OrderByIdAsDefaultOrTieBreaker(sorting, (RefTestTitleDto x) => x.Id);
+        return context.RefTestTitles
             .AsNoTracking()
             .Select(RefTestTitleMappings.ToDto);
+    }
 
     /// <summary>
     /// Get all RefTests
@@ -110,11 +115,25 @@ public static partial class RefTestQueries
     [UseProjection]
     [UseFiltering<RefTestFilterType>]
     [UseSorting<RefTestSortType>]
-    public static IQueryable<RefTestDto> GetRefTests(RefTestManagementContext context)
-        => context.RefTests
+    public static IQueryable<RefTestDto> GetRefTests(RefTestManagementContext context, ISortingContext sorting)
+    {
+        OrderByIdAsDefaultOrTieBreaker(sorting, (RefTestDto x) => x.Id);
+        return context.RefTests
             .AsNoTracking()
             .Include(x => x.Title)
             .Select(RefTestMappings.ToDto);
+    }
+
+    /// <summary>
+    /// Makes paging deterministic: orders by <paramref name="id"/> when the client sends no
+    /// order, and adds it as a unique tie-breaker after a client order. Without it, page
+    /// boundaries depend on the database's unspecified row order.
+    /// </summary>
+    private static void OrderByIdAsDefaultOrTieBreaker<T>(ISortingContext sorting, Expression<Func<T, Guid>> id)
+        => sorting.OnAfterSortingApplied<IQueryable<T>>((sortingApplied, query) =>
+            sortingApplied && query is IOrderedQueryable<T> ordered
+                ? ordered.ThenBy(id)
+                : query.OrderBy(id));
 
     /// <summary>
     /// Get a RefTest by id

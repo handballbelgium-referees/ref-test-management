@@ -121,13 +121,14 @@ public class EmailService(
 
         // Generate PDF attachments sequentially to reduce memory pressure
         // Only one PDF is held in memory at a time, reducing peak memory usage by 75%
-        var attachments = (from lang in languageConfiguration.EnabledLanguages
-            let langUpper = lang.ToUpperInvariant()
-            let pdfBytes =
-                pdfService.GenerateRefTestResultsPdf(name, lang, questionScore, answerScore, totalQuestions,
-                    answerTotal, percentage, selectedAnswerIds, wrongQuestionIds, wrongAnswerIds,
-                    questionsWithCorrectAnswers)
-            select new EmailAttachment($"RefTest_Results_{langUpper}.pdf", pdfBytes)).ToList();
+        var attachments = new List<EmailAttachment>();
+        foreach (var lang in languageConfiguration.EnabledLanguages)
+        {
+            var pdfBytes = await pdfService.GenerateRefTestResultsPdfAsync(name, lang, questionScore, answerScore,
+                totalQuestions, answerTotal, percentage, selectedAnswerIds, wrongQuestionIds, wrongAnswerIds,
+                questionsWithCorrectAnswers, cancellationToken);
+            attachments.Add(new EmailAttachment($"RefTest_Results_{lang.ToUpperInvariant()}.pdf", pdfBytes));
+        }
 
         ServiceLoggerMessages.LogSendingRefTestResults(logger, refTestId, LogRedaction.MaskEmail(email));
 

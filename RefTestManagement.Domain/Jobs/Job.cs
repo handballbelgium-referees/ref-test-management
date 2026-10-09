@@ -94,6 +94,9 @@ public class Job
     /// </remarks>
     public void MarkAsProcessing(TimeSpan lockDuration)
     {
+        if (Status is not (JobStatus.Pending or JobStatus.Processing))
+            throw new InvalidOperationException($"A job in '{Status}' status cannot be processed.");
+
         if (Status == JobStatus.Processing)
             Attempts++;
 
@@ -106,6 +109,12 @@ public class Job
     /// </summary>
     public void MarkAsCompleted()
     {
+        // Cancelled and Failed are terminal: a worker that finishes after the job was cancelled or
+        // failed elsewhere must not overwrite that outcome. Completed is allowed again so legacy
+        // rows without CompletedAt can be stamped.
+        if (Status is JobStatus.Cancelled or JobStatus.Failed)
+            return;
+
         Status = JobStatus.Completed;
         CompletedAt = DateTime.UtcNow;
         LockedUntil = null;

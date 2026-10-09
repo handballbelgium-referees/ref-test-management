@@ -83,7 +83,7 @@ public static partial class RefTestApprovalMutations
                 approved.Add(refTest);
                 approvedOldStatuses.Add(refTest.Id, oldStatus);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 if (refTest is not null && !approvedOldStatuses.ContainsKey(refTest.Id))
                 {
@@ -227,7 +227,7 @@ public static partial class RefTestApprovalMutations
                 refTest.Reject(input.Reason);
                 rejected.Add(refTest);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 errors.Add(new RejectRefTestsError
                 {

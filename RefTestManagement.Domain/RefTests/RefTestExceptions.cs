@@ -9,7 +9,8 @@ public class RefTestNotFoundException : Exception
     {
     }
 
-    public RefTestNotFoundException(string token) : base($"RefTest with token '{token}' not found")
+    // The token is a participant credential, so it must never end up in a message or log line.
+    public RefTestNotFoundException(string token) : base("RefTest not found")
     {
     }
 
@@ -24,10 +25,6 @@ public class RefTestNotFoundException : Exception
 public class RefTestExpiredException : Exception
 {
     public RefTestExpiredException() : base("RefTest has expired")
-    {
-    }
-
-    public RefTestExpiredException(string token) : base($"RefTest with token '{token}' has expired")
     {
     }
 }

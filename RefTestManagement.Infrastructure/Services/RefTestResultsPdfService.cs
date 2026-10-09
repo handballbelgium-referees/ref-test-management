@@ -7,7 +7,7 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
 public interface IRefTestResultsPdfService
 {
-    byte[] GenerateRefTestResultsPdf(
+    Task<byte[]> GenerateRefTestResultsPdfAsync(
         string name,
         string language,
         int questionScore,
@@ -18,13 +18,14 @@ public interface IRefTestResultsPdfService
         List<string> selectedAnswerIds,
         List<string> wrongQuestionIds,
         List<string> wrongAnswerIds,
-        List<Question> questionsWithCorrectAnswers);
+        List<Question> questionsWithCorrectAnswers,
+        CancellationToken cancellationToken);
 }
 
 public class RefTestResultsPdfService(ILogoService logoService, ITranslationService translationService) : IRefTestResultsPdfService
 {
 
-    public byte[] GenerateRefTestResultsPdf(
+    public async Task<byte[]> GenerateRefTestResultsPdfAsync(
         string name,
         string language,
         int questionScore,
@@ -35,10 +36,10 @@ public class RefTestResultsPdfService(ILogoService logoService, ITranslationServ
         List<string> selectedAnswerIds,
         List<string> wrongQuestionIds,
         List<string> wrongAnswerIds,
-        List<Question> questionsWithCorrectAnswers)
+        List<Question> questionsWithCorrectAnswers,
+        CancellationToken cancellationToken)
     {
-        // Download logo synchronously for PDF generation
-        var logo = logoService.GetLogoBytesAsync().GetAwaiter().GetResult();
+        var logo = await logoService.GetLogoBytesAsync(cancellationToken);
         
         var document = Document.Create(container =>
         {

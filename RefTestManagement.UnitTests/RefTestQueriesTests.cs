@@ -1,11 +1,14 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using GreenDonut.Data;
+using HotChocolate.Data.Sorting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -42,6 +45,45 @@ public sealed class RefTestQueriesTests
         context.RefTestTitles.Add(title);
         await context.SaveChangesAsync(TestContext.Current.CancellationToken);
         return title.Id;
+    }
+
+    [Fact]
+    public async Task GetRefTests_OrdersByIdByDefault_AndUsesIdAsTieBreakerAfterAClientSort()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        using var database = SqliteTestDatabase.Create();
+        var titleId = await SeedTitleAsync(database);
+        await using (var seedContext = database.CreateContext())
+        {
+            seedContext.RefTests.AddRange(NewRefTest(titleId), NewRefTest(titleId), NewRefTest(titleId));
+            await seedContext.SaveChangesAsync(ct);
+        }
+
+        await using var context = database.CreateContext();
+        var sorting = new CapturingSortingContext();
+        var query = RefTestQueries.GetRefTests(context, sorting);
+        var postSort = Assert.IsType<PostSortingAction<IQueryable<RefTestDto>>>(sorting.PostAction);
+
+        // No client order: the default order is applied.
+        var defaultIds = await postSort(false, query).Select(x => x.Id).ToListAsync(ct);
+        // A client order whose key ties on every row: Id must decide the order.
+        var tiedIds = await postSort(true, query.OrderBy(x => x.Email)).Select(x => x.Id).ToListAsync(ct);
+
+        var expected = await context.RefTests.OrderBy(x => x.Id).Select(x => x.Id).ToListAsync(ct);
+        Assert.Equal(3, expected.Count);
+        Assert.Equal(expected, defaultIds);
+        Assert.Equal(expected, tiedIds);
+    }
+
+    private sealed class CapturingSortingContext : ISortingContext
+    {
+        public object? PostAction { get; private set; }
+        public bool IsDefined => false;
+        public void OnAfterSortingApplied<T>(PostSortingAction<T> action) => PostAction = action;
+        public void Handled(bool isHandled) => throw new NotSupportedException();
+        public IReadOnlyList<IReadOnlyList<ISortingFieldInfo>> GetFields() => throw new NotSupportedException();
+        public IList<IDictionary<string, object?>> ToList() => throw new NotSupportedException();
+        public SortDefinition<T>? AsSortDefinition<T>() => throw new NotSupportedException();
     }
 
     [Fact]
