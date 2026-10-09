@@ -125,7 +125,7 @@ public class JobEnqueueService(
             refTest.NumberOfQuestions,
             refTest.MaxTimeInMinutes);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.InvitationEmail, payloadJson, executeAfter, now: Now());
+        var job = Job.Create(JobType.InvitationEmail, payloadJson, executeAfter, now: Now(), refTestId: refTest.Id);
 
         // Prepare the job completely before mutating the RefTest, so a payload/protection failure
         // cannot leave a token update staged without the corresponding outbox row.
@@ -144,7 +144,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.ResultEmail, payloadJson, executeAfter, now: Now());
+        var job = Job.Create(JobType.ResultEmail, payloadJson, executeAfter, now: Now(), refTestId: payload.RefTestId);
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -176,7 +176,7 @@ public class JobEnqueueService(
     {
         var dbContext = ResolveContext(unitOfWorkContext);
         var payloadJson = JsonSerializer.Serialize(payload, _jsonOptions);
-        var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter, now: Now());
+        var job = Job.Create(JobType.RefTestExpiration, payloadJson, executeAfter, now: Now(), refTestId: payload.RefTestId);
 
         dbContext.Jobs.Add(job);
         if (saveChanges)
@@ -297,52 +297,22 @@ public class JobEnqueueService(
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
-        // Find all pending or processing jobs that could reference this RefTest
-        // (InvitationEmail, ResultEmail, RefTestExpiration - but NOT ReportEmail as it's a batch operation)
+        // Per-RefTest jobs (InvitationEmail, ResultEmail, RefTestExpiration — not the batch
+        // ReportEmail) carry their RefTest in an indexed column. Jobs queued before that column
+        // existed have it null and are matched on their payload instead.
+        // ponytail: legacy-payload fallback; drop once no pending job with a null RefTestId remains.
         var pendingJobs = await dbContext.Jobs
             .Where(j => (j.JobType == JobType.InvitationEmail
                          || j.JobType == JobType.ResultEmail
                          || j.JobType == JobType.RefTestExpiration)
-                        && (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing))
+                        && (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing)
+                        && (j.RefTestId == refTestId || j.RefTestId == null))
             .ToListAsync(cancellationToken);
 
         var canceledCount = 0;
         foreach (var job in pendingJobs)
         {
-            // A job cancelled earlier keeps its row but not its payload. There is nothing to
-            // match on, and deserializing an empty string throws — which would break this
-            // mutation for every other RefTest in the table, not just this one.
-            if (string.IsNullOrEmpty(job.Payload))
-                continue;
-
-            bool shouldCancel;
-
-            // Check if this job is for the specific RefTest based on job type
-            switch (job.JobType)
-            {
-                case JobType.InvitationEmail:
-                    var invitationPayload =
-                        JsonSerializer.Deserialize<InvitationEmailPayload>(job.Payload, _jsonOptions);
-                    shouldCancel = invitationPayload?.RefTestId == refTestId;
-                    break;
-
-                case JobType.ResultEmail:
-                    var resultPayload = JsonSerializer.Deserialize<ResultEmailPayload>(job.Payload, _jsonOptions);
-                    shouldCancel = resultPayload?.RefTestId == refTestId;
-                    break;
-
-                case JobType.RefTestExpiration:
-                    var expirationPayload =
-                        JsonSerializer.Deserialize<RefTestExpirationPayload>(job.Payload, _jsonOptions);
-                    shouldCancel = expirationPayload?.RefTestId == refTestId;
-                    break;
-                case JobType.ReportEmail:
-                default:
-                    shouldCancel = false;
-                    break;
-            }
-
-            if (!shouldCancel)
+            if (job.RefTestId is null && !LegacyPayloadReferences(job, refTestId))
                 continue;
 
             job.Cancel($"RefTest {refTestId} was reset/revived", Now());
@@ -362,18 +332,14 @@ public class JobEnqueueService(
         CancellationToken cancellationToken = default)
     {
         var dbContext = ResolveContext(unitOfWorkContext);
-        // Find all pending or processing result email jobs for this RefTest
         var pendingResultJobs = await dbContext.Jobs
             .Where(j => j.JobType == JobType.ResultEmail
-                        && (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing))
+                        && (j.Status == JobStatus.Pending || j.Status == JobStatus.Processing)
+                        && (j.RefTestId == refTestId || j.RefTestId == null))
             .ToListAsync(cancellationToken);
 
         var canceledCount = 0;
-        foreach (var job in from job in pendingResultJobs
-                 where !string.IsNullOrEmpty(job.Payload)
-                 let payload = JsonSerializer.Deserialize<ResultEmailPayload>(job.Payload, _jsonOptions)
-                 where payload?.RefTestId == refTestId
-                 select job)
+        foreach (var job in pendingResultJobs.Where(job => job.RefTestId is not null || LegacyPayloadReferences(job, refTestId)))
         {
             job.Cancel($"RefTest {refTestId} was soft reset (results cleared)", Now());
             canceledCount++;
@@ -385,5 +351,26 @@ public class JobEnqueueService(
                 await dbContext.SaveChangesWithRetryAsync(cancellationToken);
             ServiceLoggerMessages.LogCanceledCountPendingResultEmailJobsForRefTestRefTestId(logger, canceledCount, refTestId);
         }
+    }
+
+    /// <summary>Matches a job queued before <see cref="Job.RefTestId"/> existed on its payload.</summary>
+    private bool LegacyPayloadReferences(Job job, Guid refTestId)
+    {
+        // A job cancelled earlier keeps its row but not its payload. There is nothing to match on,
+        // and deserializing an empty string throws — which would break this mutation for every
+        // other RefTest in the table, not just this one.
+        if (string.IsNullOrEmpty(job.Payload))
+            return false;
+
+        return job.JobType switch
+        {
+            JobType.InvitationEmail =>
+                JsonSerializer.Deserialize<InvitationEmailPayload>(job.Payload, _jsonOptions)?.RefTestId == refTestId,
+            JobType.ResultEmail =>
+                JsonSerializer.Deserialize<ResultEmailPayload>(job.Payload, _jsonOptions)?.RefTestId == refTestId,
+            JobType.RefTestExpiration =>
+                JsonSerializer.Deserialize<RefTestExpirationPayload>(job.Payload, _jsonOptions)?.RefTestId == refTestId,
+            _ => false
+        };
     }
 }

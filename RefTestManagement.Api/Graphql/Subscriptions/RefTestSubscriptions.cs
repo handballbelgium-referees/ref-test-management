@@ -198,14 +198,14 @@ public static partial class RefTestSubscriptions
 
         var lockKey = refTest.Id.ToString("N");
         var lockStatus = refTest.Status;
-        if (!sessionService.TryAcquireSession(lockKey, sessionId))
+        if (!await sessionService.TryAcquireSessionAsync(lockKey, sessionId, cancellationToken))
         {
             // Grace period: on browser refresh the old SSE connection drops within ~100ms.
             // Waiting here allows the existing session to release before we give up.
             // A genuine second tab will still hold its connection throughout the wait → BLOCKED.
             await Task.Delay(TimeSpan.FromSeconds(3), cancellationToken);
 
-            if (!sessionService.TryAcquireSession(lockKey, sessionId))
+            if (!await sessionService.TryAcquireSessionAsync(lockKey, sessionId, cancellationToken))
             {
                 yield return new RefTestSessionEvent(RefTestSessionStatus.Blocked);
                 yield break;
@@ -218,6 +218,10 @@ public static partial class RefTestSubscriptions
             yield return new RefTestSessionEvent(RefTestSessionStatus.Acquired);
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
+                // A lost lease means another tab took over after this one stopped renewing.
+                if (!await sessionService.RenewSessionAsync(lockKey, sessionId, cancellationToken))
+                    yield break;
+
                 var currentRefTest = await context.RefTests
                     .AsNoTracking()
                     .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
@@ -238,7 +242,7 @@ public static partial class RefTestSubscriptions
         }
         finally
         {
-            sessionService.ReleaseSession(lockKey, sessionId);
+            await sessionService.ReleaseSessionAsync(lockKey, sessionId);
         }
     }
 }

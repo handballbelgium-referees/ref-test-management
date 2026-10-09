@@ -3,6 +3,7 @@ using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -528,7 +529,10 @@ public sealed class PersonalDataExportEmailTests
         }
     }
 
-    private static EmailService CreateService(HttpClient client, ILogger<EmailService> logger)
+    private static EmailService CreateService(
+        HttpClient client,
+        ILogger<EmailService> logger,
+        JobExecutionContext? jobExecution = null)
     {
         var emailConfiguration = new EmailConfiguration
         {
@@ -549,7 +553,54 @@ public sealed class PersonalDataExportEmailTests
             new EmptyResultsPdfService(),
             templateService,
             new TranslationService(),
-            client);
+            client,
+            jobExecution);
+    }
+
+    [Fact]
+    public async Task AJobSendCarriesAKeyThatIsStableAcrossRetriesAndDistinctPerRecipient()
+    {
+        var jobExecution = new JobExecutionContext { CurrentJobId = Guid.NewGuid() };
+
+        async Task<string?> KeyFor(string recipient)
+        {
+            var handler = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+            using var client = new HttpClient(handler);
+            await CreateService(client, NullLogger<EmailService>.Instance, jobExecution)
+                .SendRefTestInvitationAsync(Guid.NewGuid(), "Ada", recipient, new string('t', 32), 10, 30,
+                    TestContext.Current.CancellationToken);
+            using var request = JsonDocument.Parse(handler.RequestBody!);
+            return request.RootElement.GetProperty("headers").GetProperty("idempotencyKey").GetString();
+        }
+
+        var first = await KeyFor(ParticipantEmail);
+        Assert.True(Guid.TryParse(first, out _));
+        Assert.Equal(first, await KeyFor(ParticipantEmail));
+        Assert.NotEqual(first, await KeyFor("someone.else@example.org"));
+
+        jobExecution.CurrentJobId = null;
+        var outsideJob = new RecordingHttpMessageHandler(HttpStatusCode.Accepted);
+        using var outsideClient = new HttpClient(outsideJob);
+        await CreateService(outsideClient, NullLogger<EmailService>.Instance, jobExecution)
+            .SendRefTestInvitationAsync(Guid.NewGuid(), "Ada", ParticipantEmail, new string('t', 32), 10, 30,
+                TestContext.Current.CancellationToken);
+        using var outsideRequest = JsonDocument.Parse(outsideJob.RequestBody!);
+        Assert.Equal(JsonValueKind.Null, outsideRequest.RootElement.GetProperty("headers").ValueKind);
+    }
+
+    [Fact]
+    public async Task ADuplicateKeyRejectionMeansAnEarlierAttemptAlreadySentTheEmail()
+    {
+        const string duplicate = """{"code":"duplicate_parameter","message":"idempotencyKey already used"}""";
+        using var client = new HttpClient(new RecordingHttpMessageHandler(HttpStatusCode.BadRequest, duplicate));
+        var inJob = CreateService(client, NullLogger<EmailService>.Instance,
+            new JobExecutionContext { CurrentJobId = Guid.NewGuid() });
+        var outsideJob = CreateService(client, NullLogger<EmailService>.Instance);
+
+        Assert.True(await inJob.SendRefTestInvitationAsync(Guid.NewGuid(), "Ada", ParticipantEmail,
+            new string('t', 32), 10, 30, TestContext.Current.CancellationToken));
+        Assert.False(await outsideJob.SendRefTestInvitationAsync(Guid.NewGuid(), "Ada", ParticipantEmail,
+            new string('t', 32), 10, 30, TestContext.Current.CancellationToken));
     }
 
     private static Task<bool> SendResultEmailAsync(IEmailService service) =>

@@ -1576,6 +1576,7 @@
           "HotChocolate.AspNetCore.CommandLine": "[16.6.8, )",
           "HotChocolate.Caching": "[16.6.8, )",
           "HotChocolate.Data.EntityFramework": "[16.6.8, )",
+          "HotChocolate.Subscriptions.Redis": "[16.6.8, )",
           "HotChocolate.Types.Analyzers": "[16.6.8, )",
           "Microsoft.AspNetCore.Authentication.JwtBearer": "[10.0.12, )",
           "Microsoft.AspNetCore.Authentication.OpenIdConnect": "[10.0.12, )",
@@ -1746,6 +1747,18 @@
           "HotChocolate": "16.6.8",
           "HotChocolate.Data": "16.6.8",
           "Microsoft.EntityFrameworkCore": "10.0.0"
+        }
+      },
+      "HotChocolate.Subscriptions.Redis": {
+        "type": "CentralTransitive",
+        "requested": "[16.6.8, )",
+        "resolved": "16.6.8",
+        "contentHash": "GXM0rBLMNJZRjaay1aqZ7ZW01ZvhHRckQODoLsLyfdRpdprCL+0e85UgDVPTgmXfwCtZdDmxyeCKa9cLmmZzAg==",
+        "dependencies": {
+          "HotChocolate.Execution.Configuration.Abstractions": "16.6.8",
+          "HotChocolate.Subscriptions": "16.6.8",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.0",
+          "StackExchange.Redis": "2.6.80"
         }
       },
       "HotChocolate.Types.Analyzers": {

@@ -206,4 +206,42 @@ public sealed class JobEnqueueUnitOfWorkTests
         await using (var observer = db.CreateContext())
             Assert.Equal(JobStatus.Cancelled, (await observer.Jobs.SingleAsync(ct)).Status);
     }
+
+    [Fact]
+    public async Task CancellationFindsIndexedAndLegacyJobsForTheRefTestOnly()
+    {
+        var ct = TestContext.Current.CancellationToken;
+        using var db = SqliteTestDatabase.Create();
+        var refTest = await NewRefTestAsync(db, ct);
+        var otherId = Guid.NewGuid();
+        static string PayloadFor(Guid id) => $$"""{"refTestId":"{{id}}"}""";
+
+        Guid invitationJobId, legacyJobId;
+        await using (var seeder = db.CreateContext())
+        {
+            seeder.RefTests.Add(refTest);
+            await Service(seeder).EnqueueInvitationEmailAsync(refTest, cancellationToken: ct);
+            invitationJobId = (await seeder.Jobs.SingleAsync(ct)).Id;
+
+            // Queued before Jobs.RefTestId existed: only the payload names the RefTest.
+            var legacy = Job.Create(JobType.ResultEmail, PayloadFor(refTest.Id));
+            legacyJobId = legacy.Id;
+            seeder.Jobs.AddRange(
+                legacy,
+                Job.Create(JobType.ResultEmail, PayloadFor(otherId), refTestId: otherId),
+                Job.Create(JobType.RefTestExpiration, PayloadFor(otherId)));
+            await seeder.SaveChangesAsync(ct);
+        }
+
+        await using (var context = db.CreateContext())
+            await Service(context).CancelPendingJobsForRefTestAsync(refTest.Id, cancellationToken: ct);
+
+        await using var observer = db.CreateContext();
+        var jobs = await observer.Jobs.ToListAsync(ct);
+        Assert.Equal(refTest.Id, jobs.Single(j => j.Id == invitationJobId).RefTestId);
+        Assert.Equal(
+            new[] { invitationJobId, legacyJobId }.Order(),
+            jobs.Where(j => j.Status == JobStatus.Cancelled).Select(j => j.Id).Order());
+        Assert.Equal(2, jobs.Count(j => j.Status == JobStatus.Pending));
+    }
 }

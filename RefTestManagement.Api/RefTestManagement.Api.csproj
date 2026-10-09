@@ -35,6 +35,7 @@
         <PackageReference Include="HotChocolate.AspNetCore" />
         <PackageReference Include="HotChocolate.Caching" />
         <PackageReference Include="HotChocolate.Data.EntityFramework" />
+        <PackageReference Include="HotChocolate.Subscriptions.Redis" />
         <PackageReference Include="HotChocolate.Types.Analyzers" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
         <PackageReference Include="Microsoft.AspNetCore.Authentication.OpenIdConnect" />

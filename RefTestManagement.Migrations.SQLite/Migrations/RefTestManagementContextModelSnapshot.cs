@@ -117,6 +117,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
                     b.Property<Guid?>("PrivacyWithdrawalBatchId")
                         .HasColumnType("TEXT");
 
+                    b.Property<Guid?>("RefTestId")
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("Status")
                         .IsRequired()
                         .HasColumnType("TEXT");
@@ -132,6 +135,9 @@ namespace Handball.Belgium.RefTestManagement.Migrations.SQLite.Migrations
 
                     b.HasIndex("PrivacyWithdrawalBatchId")
                         .HasDatabaseName("IX_Jobs_PrivacyWithdrawalBatchId");
+
+                    b.HasIndex("RefTestId", "Status")
+                        .HasDatabaseName("IX_Jobs_RefTestId_Status");
 
                     b.HasIndex("Status", "ExecuteAfter", "LockedUntil")
                         .HasDatabaseName("IX_Jobs_Status_ExecuteAfter_LockedUntil");

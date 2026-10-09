@@ -1,9 +1,11 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 
@@ -18,7 +20,8 @@ public class EmailService(
     IRefTestResultsPdfService pdfService,
     IEmailTemplateService templateService,
     ITranslationService translationService,
-    HttpClient httpClient)
+    HttpClient httpClient,
+    JobExecutionContext? jobExecution = null)
     : IEmailService
 {
     private const int MaxProviderRequestBytes = 20 * 1024 * 1024;
@@ -83,6 +86,21 @@ public class EmailService(
     }
 
 
+    /// <summary>
+    /// A UUID derived from the job, recipient and subject: stable across retries of one job, and
+    /// distinct per recipient when one job sends several messages.
+    /// </summary>
+    internal static Guid IdempotencyKey(Guid jobId, string toEmail, string subject)
+    {
+        var hash = SHA256.HashData(Encoding.UTF8.GetBytes(
+            $"{jobId:N}|{toEmail.Trim().ToUpperInvariant()}|{subject}"));
+        var bytes = hash.AsSpan(0, 16).ToArray();
+        // The provider expects a UUID; mark it as version 4, RFC 4122 variant.
+        bytes[7] = (byte)((bytes[7] & 0x0F) | 0x40);
+        bytes[8] = (byte)((bytes[8] & 0x3F) | 0x80);
+        return new Guid(bytes);
+    }
+
     private async Task<bool> SendEmailAsync(string toEmail, string subject, string body,
         List<EmailAttachment>? attachments = null, bool scheduleEmail = false,
         CancellationToken cancellationToken = default,
@@ -114,6 +132,13 @@ public class EmailService(
                     .ToString("yyyy-MM-ddTHH:mm:ss.fffZ")
                 : null;
 
+            // Inside a job, the same job sending to the same recipient gets the same key on every
+            // retry. The provider drops a repeat within its window, so a send whose response was
+            // lost is not delivered twice when the job retries.
+            var idempotencyKey = jobExecution?.CurrentJobId is { } jobId
+                ? IdempotencyKey(jobId, toEmail, subject)
+                : (Guid?)null;
+
             // Prepare JSON payload for Brevo API with attachments
             var emailData = new
             {
@@ -125,6 +150,10 @@ public class EmailService(
 
                 // 👇 Brevo scheduling (only used if not null)
                 scheduledAt,
+
+                headers = idempotencyKey is { } key
+                    ? new Dictionary<string, string> { ["idempotencyKey"] = key.ToString() }
+                    : null,
 
                 attachment = attachments?.Select(a => new
                 {
@@ -153,6 +182,17 @@ public class EmailService(
             if (response.IsSuccessStatusCode)
             {
                 ServiceLoggerMessages.LogEmailSentSuccessfully(logger, LogRedaction.MaskEmail(toEmail));
+                return true;
+            }
+
+            // The provider refuses a key it saw within its window: an earlier attempt of this job
+            // already handed the message over. The body is only inspected, never logged.
+            if (idempotencyKey is not null
+                && response.StatusCode == System.Net.HttpStatusCode.BadRequest
+                && (await response.Content.ReadAsStringAsync(cancellationToken))
+                    .Contains("duplicate_parameter", StringComparison.Ordinal))
+            {
+                ServiceLoggerMessages.LogEmailAlreadyDelivered(logger, LogRedaction.MaskEmail(toEmail));
                 return true;
             }
 

@@ -194,9 +194,9 @@ flowchart TB
 | Project                            | Role                                                                                            |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `RefTestManagement.Api`            | ASP.NET Core Web API — GraphQL schema, controllers, background services                         |
-| `RefTestManagement.Application`    | Job payloads, configuration models, IHF client; target home of use cases (see ADR 0001)         |
+| `RefTestManagement.Application`    | Use-case handlers, ports, configuration models and job payloads (see ADR 0001)                  |
 | `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
-| `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel generation, subscriptions, job enqueueing                     |
+| `RefTestManagement.Infrastructure` | EF Core, job handlers, email (Brevo), PDF/Excel generation, subscriptions, IHF client           |
 | `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
 | `RefTestManagement.AuditLog`       | Domain-event-driven audit trail — event store, EF Core interceptor, retention                   |
 | `RefTestManagement.Auth0`          | Auth0 Management API client — permission sync, approver resolution                              |
@@ -328,6 +328,7 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)                                   | Annotated directory tree                                   |
 | [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md)                             | Background job-queue flow in detail                        |
 | [docs/adr/0001-layered-architecture.md](docs/adr/0001-layered-architecture.md)           | Backend dependency rule, known violations                  |
+| [docs/adr/0002-multi-replica-state.md](docs/adr/0002-multi-replica-state.md)             | Redis-backed shared state, event delivery, email retries   |
 | [docs/AUDIT.md](docs/AUDIT.md)                                                           | Full-stack audit findings and GDPR compliance assessment   |
 | [docs/Audits/AUDIT-R2.md](docs/Audits/AUDIT-R2.md)                                       | Re-audit after Phase 1 remediation; current finding status |
 | [docs/Audits/AUDIT-R3.md](docs/Audits/AUDIT-R3.md)                                       | Third audit wave findings and evidence                     |

@@ -14,6 +14,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 - `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; timer-driven ones derive from `PollingBackgroundService`; `JobHandlers/` keeps only the Auth0-backed approval notification handler
 - `Controllers/` — Auth0 login/callback endpoints
 - `Graphql/` — Mutations, Queries, Subscriptions, Types, ReadModels
+- `Services/` — Host-side services, including the Redis-backed privacy rate limiter and participant session lease
 
 </details>
 
@@ -47,7 +48,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 ## Project dependencies
 
-Arrows are `ProjectReference`s. The rule and its known violations are recorded in [ADR 0001](adr/0001-layered-architecture.md) and enforced by `RefTestManagement.UnitTests/ArchitectureDependencyTests.cs`.
+Arrows are `ProjectReference`s. The rule and its known violations are recorded in [ADR 0001](adr/0001-layered-architecture.md) and enforced by `RefTestManagement.UnitTests/ArchitectureDependencyTests.cs`. Shared state across replicas is described in [ADR 0002](adr/0002-multi-replica-state.md).
 
 ```mermaid
 flowchart TB
@@ -77,6 +78,7 @@ flowchart TB
 | `RefTestManagement.Infrastructure/IhfRules`                      | IHF Rules question-bank GraphQL client (StrawberryShake schema, queries) and its service |
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
+| `RefTestManagement.Infrastructure/Services/Reports`              | Excel and PDF renderers for the RefTest report; `RefTestReportService` only orchestrates and emails them |
 | `RefTestManagement.Infrastructure/Privacy`                       | Consent-withdrawal and data-export challenges, participant session and invitation-token protection. Withdrawal stays an Infrastructure service behind its Application port: every step is a serializable transaction under EF's retry strategy |
 | `RefTestManagement.Infrastructure/Jobs`                          | Background job handlers keyed by job type, payload parsing; `AddJobHandlers()` registers them |
 | `RefTestManagement.UnitTests`                                    | Unit tests for audit/log redaction, job state machine, RefTest anonymization  |

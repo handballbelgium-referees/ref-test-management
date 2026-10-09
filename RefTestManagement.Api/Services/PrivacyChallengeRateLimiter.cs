@@ -60,7 +60,7 @@ public sealed class PrivacyChallengeRateLimiter : IPrivacyChallengeRateLimiter, 
         }
 
         if (!skipProductionValidationForTests)
-            ValidateRateLimitConfiguration(configuration, null);
+            ValidateRateLimitConfiguration(configuration, redis is not null, null);
         _hmacKey = Encoding.UTF8.GetBytes(configuration.HmacSecret!);
         _database = (redis ?? throw new InvalidOperationException("Redis limiter dependency is missing."))
             .GetDatabase();
@@ -80,6 +80,7 @@ public sealed class PrivacyChallengeRateLimiter : IPrivacyChallengeRateLimiter, 
 
     public static void ValidateRateLimitConfiguration(
         PrivacyChallengeConfiguration configuration,
+        bool redisConfigured,
         string? containerAppName)
     {
         if (!string.IsNullOrWhiteSpace(containerAppName)
@@ -88,21 +89,11 @@ public sealed class PrivacyChallengeRateLimiter : IPrivacyChallengeRateLimiter, 
                 "Azure Container Apps requires the shared Redis privacy challenge rate-limit backend.");
 
         if (configuration.RateLimitBackend == PrivacyChallengeRateLimitBackend.Redis
-            && (!HasAuthenticatedTlsEndpoint(configuration.RedisEndpoint)
+            && (!redisConfigured
                 || string.IsNullOrWhiteSpace(configuration.HmacSecret)
                 || Encoding.UTF8.GetByteCount(configuration.HmacSecret) < 32))
             throw new InvalidOperationException(
-                "The Redis privacy challenge rate-limit backend requires an authenticated TLS endpoint and an HMAC secret of at least 32 UTF-8 bytes.");
-    }
-
-    private static bool HasAuthenticatedTlsEndpoint(string? value)
-    {
-        if (!Uri.TryCreate(value, UriKind.Absolute, out var endpoint)
-            || endpoint.Scheme != "rediss"
-            || endpoint.Port is < 1 or > 65535)
-            return false;
-        var credentials = endpoint.UserInfo.Split(':', 2);
-        return credentials.Length == 2 && !string.IsNullOrWhiteSpace(credentials[1]);
+                "The Redis privacy challenge rate-limit backend requires RedisConfiguration:Endpoint and an HMAC secret of at least 32 UTF-8 bytes.");
     }
 
     private async Task<bool> TryAcquireAsync(

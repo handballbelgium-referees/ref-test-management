@@ -26,6 +26,17 @@ public class JobTests
     }
 
     [Fact]
+    public void Create_KeepsTheRefTestOnlyForPerRefTestJobs()
+    {
+        var refTestId = Guid.NewGuid();
+
+        Assert.Equal(refTestId, Job.Create(JobType.ResultEmail, "{}", refTestId: refTestId).RefTestId);
+        Assert.Null(NewJob().RefTestId);
+        Assert.Throws<ArgumentException>(() => Job.Create(JobType.ReportEmail, "{}", refTestId: refTestId));
+        Assert.Throws<ArgumentException>(() => Job.Create(JobType.InvitationEmail, "{}", refTestId: Guid.Empty));
+    }
+
+    [Fact]
     public void Cancel_MarksTheJobCancelledAndClearsThePayload()
     {
         var job = NewJob();

@@ -22,4 +22,14 @@ public sealed class InfrastructureRegistrationTests
 
         Assert.All(ports, port => Assert.Contains(port, registered));
     }
+
+    [Fact]
+    public void TheJobExecutionContextIsScopedSoEachWorkerPassSeesItsOwnJob()
+    {
+        var descriptor = Assert.Single(
+            new ServiceCollection().AddInfrastructureServices(),
+            d => d.ServiceType == typeof(Handball.Belgium.RefTestManagement.Infrastructure.Jobs.JobExecutionContext));
+
+        Assert.Equal(ServiceLifetime.Scoped, descriptor.Lifetime);
+    }
 }

@@ -1,12 +1,40 @@
 ﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using HotChocolate.Subscriptions;
+using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
-public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTestSubscriptionService
+/// <summary>
+/// Publishes live-refresh events after the change they describe has committed. Publishing is best
+/// effort: a failed publish is logged and swallowed, because surfacing it would fail a mutation that
+/// already committed (inviting a duplicate retry) or a job whose email already went out (sending it
+/// again). Clients that miss an event catch up on their next query.
+/// </summary>
+public class RefTestSubscriptionService(
+    ITopicEventSender eventSender,
+    ILogger<RefTestSubscriptionService> logger) : IRefTestSubscriptionService
 {
     public const string GlobalTopic = "RefTestEvents";
     public const string TimeExtendedTopic = "RefTestTimeExtended-{id}";
+
+    private async Task SendAsync<TMessage>(string topic, TMessage message, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await eventSender.SendAsync(topic, message, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            // Only type names: the event and the transport error can both carry participant data.
+            ServiceLoggerMessages.LogSubscriptionPublishFailed(
+                logger, message?.GetType().Name ?? typeof(TMessage).Name, exception.GetType().Name);
+        }
+    }
 
     public async Task PublishTimeExtendedAsync(
         Guid refTestId,
@@ -17,7 +45,7 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
     {
         var evt = new RefTestTimeExtendedEvent(refTestId, newMaxTimeInMinutes, additionalMinutes, extendedAt);
 
-        await eventSender.SendAsync(TimeExtendedTopic.Replace("{id}", refTestId.ToString()), evt, cancellationToken);
+        await SendAsync(TimeExtendedTopic.Replace("{id}", refTestId.ToString()), evt, cancellationToken);
     }
 
     public async Task PublishInvitationSentAsync(
@@ -28,8 +56,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestInvitationSentEvent(refTestId, sentAt);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -41,8 +69,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestResultSentEvent(refTestId, sentAt);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -55,8 +83,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestStartedEvent(refTestId, status, startedAt);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -78,8 +106,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var listEvent = evt with { SelectedAnswerIds = null };
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, listEvent, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, listEvent, cancellationToken)
         );
     }
 
@@ -92,8 +120,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestExpiredEvent(refTestId, status, expiredAt);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -125,7 +153,7 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
             firstName, lastName, createdAt, scheduledAt);
 
         // Only publish to the global topic — there is no per-ID subscription for a brand-new ID.
-        await eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken);
+        await SendAsync<object>(GlobalTopic, evt, cancellationToken);
     }
 
     public async Task PublishRefTestDeletedAsync(
@@ -136,8 +164,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestDeletedEvent(refTestId, status);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -151,8 +179,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestAnonymizedEvent(refTestId, status, fullName, email);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -169,8 +197,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
             refTestId, oldStatus, status, resetType, createdAt, invitationSent);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -184,8 +212,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestRevivedEvent(refTestId, status, createdAt, invitationSent);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -200,8 +228,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestApprovedEvent(refTestId, oldStatus, status, approvedAt, createdAt);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -215,8 +243,8 @@ public class RefTestSubscriptionService(ITopicEventSender eventSender) : IRefTes
         var evt = new RefTestRejectedEvent(refTestId, status, reason, rejectedAt);
 
         await Task.WhenAll(
-            eventSender.SendAsync<object>(refTestId.ToString(), evt, cancellationToken).AsTask(),
-            eventSender.SendAsync<object>(GlobalTopic, evt, cancellationToken).AsTask()
+            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
+            SendAsync<object>(GlobalTopic, evt, cancellationToken)
         );
     }
 }

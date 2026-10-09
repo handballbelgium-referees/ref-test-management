@@ -314,7 +314,19 @@ public class BackgroundJobService : PollingBackgroundService
             var handler = serviceProvider.GetKeyedService<IJobHandler>(job.JobType)
                           ?? throw new InvalidOperationException($"Unknown job type: {job.JobType}");
 
-            await handler.HandleAsync(job, cancellationToken);
+            // Jobs run one at a time on this scope, so the current job id is unambiguous.
+            var jobExecution = serviceProvider.GetService<JobExecutionContext>();
+            if (jobExecution is not null)
+                jobExecution.CurrentJobId = job.Id;
+            try
+            {
+                await handler.HandleAsync(job, cancellationToken);
+            }
+            finally
+            {
+                if (jobExecution is not null)
+                    jobExecution.CurrentJobId = null;
+            }
 
             // Mark as completed
             job.MarkAsCompleted(clock?.GetUtcNow().UtcDateTime);
