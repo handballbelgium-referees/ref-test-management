@@ -19,10 +19,10 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 - **`RefTestManagement.AuditLog/`** — 📋 Domain-event–driven audit log library (Marten-style event store)
 - **`RefTestManagement.Auth0/`** — 🔐 Auth0 Management API client (M2M token, role-based user discovery)
-- **`RefTestManagement.Application/`** — 🔷 Job payloads, configuration models, external GraphQL client (IHF Rules); target home of use cases and ports
+- **`RefTestManagement.Application/`** — 🔷 Job payloads, configuration models, IHF Rules questions port; target home of use cases and ports
 - **`RefTestManagement.Domain/`** — 🔷 Domain entities: RefTest, RefTestTitle, Job, and their domain events
 - **`RefTestManagement.Security/`** — 🔐 Permission constants, authorization handlers, dynamic policy provider
-- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, subscriptions, job enqueueing
+- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, IHF Rules GraphQL client, subscriptions, job enqueueing
 - **`RefTestManagement.Migrations.SqlServer/`, `.PostgreSQL/`, `.SQLite/`, `.MySQL/`** — 🗄️ Provider-specific EF Core migrations
 - **`RefTestManagement.UnitTests/`** — 🧪 xUnit tests, including the architecture dependency tests
 
@@ -72,7 +72,7 @@ flowchart TB
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |
-| `RefTestManagement.Application/GraphQL`                          | External GraphQL client schemas and queries (IHF Rules)                       |
+| `RefTestManagement.Infrastructure/Ihf`                           | IHF Rules GraphQL client: schema, queries and `IhfRulesQuestionsService`      |
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
 | `RefTestManagement.UnitTests`                                    | Unit tests for audit/log redaction, job state machine, RefTest anonymization  |

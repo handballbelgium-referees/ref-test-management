@@ -51,15 +51,18 @@ Rules:
 
 ## Known violations
 
-These are tolerated for now and tracked as remediation work. The architecture tests record the package-level ones in an allow-list that may only shrink: a test fails when an entry is no longer needed.
+These are tolerated for now and tracked as remediation work.
 
 | Violation                                                                                                      | Enforced                | Planned fix                                                       |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- |
-| Application references `StrawberryShake.Server` and `Microsoft.Extensions.Http` for the IHF client             | Allow-list in the tests | WP2: move the client to Infrastructure behind an Application port |
 | Ports (`IJobEnqueueService`, `IEmailService`, `IRefTestSubscriptionService`, …) are declared in Infrastructure | Not yet (type-level)    | WP2: move the interfaces to Application                           |
 | Use cases live in GraphQL mutations and `Api/Services`                                                         | Not yet (type-level)    | WP3: Application command handlers with a current-user abstraction |
 | Subscription events are published by hand from mutations, separately from domain events                        | Not yet                 | WP4: one event pipeline                                           |
 | Job handlers and background services live in Api                                                               | Not yet                 | WP5: separate the worker from the web host                        |
+
+Resolved:
+
+- WP2 (IHF client): the StrawberryShake client and `IhfRulesQuestionsService` live in `RefTestManagement.Infrastructure/Ihf`; Application keeps only the `IIhfRulesQuestionsService` port. Application has no forbidden package references, so the tests no longer carry an allow-list.
 
 ## Consequences
 

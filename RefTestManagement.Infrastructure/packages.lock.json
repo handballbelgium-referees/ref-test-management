@@ -50,11 +50,36 @@
           "Microsoft.Extensions.Logging": "10.0.12"
         }
       },
+      "Microsoft.Extensions.Http": {
+        "type": "Direct",
+        "requested": "[10.0.12, )",
+        "resolved": "10.0.12",
+        "contentHash": "x/fnoUGgmIUjSgLR1p6Mpi/vXc1Xe0xDPJnggPp23I6vwM/kY4nxyOjo8i6G5KPVw+esJM+rJsqnHbdjasvCBw==",
+        "dependencies": {
+          "Microsoft.Extensions.Configuration.Abstractions": "10.0.12",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Diagnostics": "10.0.12",
+          "Microsoft.Extensions.Logging": "10.0.12",
+          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
+          "Microsoft.Extensions.Options": "10.0.12"
+        }
+      },
       "QuestPDF": {
         "type": "Direct",
         "requested": "[2026.9.1, )",
         "resolved": "2026.9.1",
         "contentHash": "i2BT/v+Ui6Hg9+BZbOci/VfsyvmtY8nlQqAOmFt8iOZ4Hm9aKZZRgZZ+LfrKWYXAHRb3l1EjDcMVfjRaZTt+Cw=="
+      },
+      "StrawberryShake.Server": {
+        "type": "Direct",
+        "requested": "[16.6.8, )",
+        "resolved": "16.6.8",
+        "contentHash": "3O24c0f4m7dLXHDjQm+gvB8RcSRiU8lEtw445TGufHb7mUeD3IpPV0MIv+TiAuw9eO6fzqQPz/piRXiW+RA2uQ==",
+        "dependencies": {
+          "StrawberryShake.Core": "16.6.8",
+          "StrawberryShake.Transport.Http": "16.6.8",
+          "StrawberryShake.Transport.WebSockets": "16.6.8"
+        }
       },
       "ClosedXML.Parser": {
         "type": "Transitive",
@@ -417,9 +442,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.12, )",
-          "Microsoft.Extensions.Http": "[10.0.12, )",
-          "RefTestManagement.Domain": "[1.0.0, )",
-          "StrawberryShake.Server": "[16.6.8, )"
+          "RefTestManagement.Domain": "[1.0.0, )"
         }
       },
       "reftestmanagement.auditlog": {
@@ -449,20 +472,6 @@
         "resolved": "10.0.12",
         "contentHash": "9/qymSh7hVDMGTGwrLz8MRp5zRyXy9adGDOs4HwRdnLil3oZGYuWeZjbmHgCQ9BL1qBroVfgUK3U/nb61617Cw=="
       },
-      "Microsoft.Extensions.Http": {
-        "type": "CentralTransitive",
-        "requested": "[10.0.12, )",
-        "resolved": "10.0.12",
-        "contentHash": "x/fnoUGgmIUjSgLR1p6Mpi/vXc1Xe0xDPJnggPp23I6vwM/kY4nxyOjo8i6G5KPVw+esJM+rJsqnHbdjasvCBw==",
-        "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "10.0.12",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
-          "Microsoft.Extensions.Diagnostics": "10.0.12",
-          "Microsoft.Extensions.Logging": "10.0.12",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.12",
-          "Microsoft.Extensions.Options": "10.0.12"
-        }
-      },
       "Microsoft.Extensions.Options.ConfigurationExtensions": {
         "type": "CentralTransitive",
         "requested": "[10.0.12, )",
@@ -474,17 +483,6 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.12",
           "Microsoft.Extensions.Options": "10.0.12",
           "Microsoft.Extensions.Primitives": "10.0.12"
-        }
-      },
-      "StrawberryShake.Server": {
-        "type": "CentralTransitive",
-        "requested": "[16.6.8, )",
-        "resolved": "16.6.8",
-        "contentHash": "3O24c0f4m7dLXHDjQm+gvB8RcSRiU8lEtw445TGufHb7mUeD3IpPV0MIv+TiAuw9eO6fzqQPz/piRXiW+RA2uQ==",
-        "dependencies": {
-          "StrawberryShake.Core": "16.6.8",
-          "StrawberryShake.Transport.Http": "16.6.8",
-          "StrawberryShake.Transport.WebSockets": "16.6.8"
         }
       }
     }

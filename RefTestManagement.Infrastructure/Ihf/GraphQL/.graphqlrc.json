@@ -4,6 +4,7 @@
   "extensions": {
     "strawberryShake": {
       "name": "IHFRulesQuestionsClient",
+      "namespace": "Handball.Belgium.RefTestManagement.Infrastructure.Ihf",
       "url": "https://api-ihf-rules-questions.azurewebsites.net/graphql/",
       "records": {
         "inputs": false,

@@ -184,7 +184,7 @@ flowchart TB
     Application --> Domain
     AuditLog --> Domain
     Auth0Proj --> Security
-    Application -.->|"StrawberryShake client"| IHF
+    Infrastructure -.->|"StrawberryShake client"| IHF
     Infrastructure -.-> DB
     Infrastructure -.-> Brevo
     Infrastructure -.-> PDF
@@ -194,9 +194,9 @@ flowchart TB
 | Project                            | Role                                                                                            |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `RefTestManagement.Api`            | ASP.NET Core Web API — GraphQL schema, controllers, background services                         |
-| `RefTestManagement.Application`    | Job payloads, configuration models, IHF client; target home of use cases (see ADR 0001)         |
+| `RefTestManagement.Application`    | Job payloads, configuration models, IHF port; target home of use cases (see ADR 0001)           |
 | `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
-| `RefTestManagement.Infrastructure` | EF Core, email (Brevo), PDF/Excel generation, subscriptions, job enqueueing                     |
+| `RefTestManagement.Infrastructure` | EF Core, email (Brevo), IHF client, PDF/Excel generation, subscriptions, job enqueueing         |
 | `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
 | `RefTestManagement.AuditLog`       | Domain-event-driven audit trail — event store, EF Core interceptor, retention                   |
 | `RefTestManagement.Auth0`          | Auth0 Management API client — permission sync, approver resolution                              |

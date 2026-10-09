@@ -12,8 +12,6 @@
     </ItemGroup>
 
     <ItemGroup>
-    <PackageReference Include="StrawberryShake.Server" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
-    <PackageReference Include="Microsoft.Extensions.Http" />
     </ItemGroup>
 </Project>

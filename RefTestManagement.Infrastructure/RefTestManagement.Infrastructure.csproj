@@ -12,7 +12,9 @@
         <PackageReference Include="HotChocolate.Abstractions" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" />
+        <PackageReference Include="Microsoft.Extensions.Http" />
         <PackageReference Include="QuestPDF" />
+        <PackageReference Include="StrawberryShake.Server" />
     </ItemGroup>
 
     <ItemGroup>

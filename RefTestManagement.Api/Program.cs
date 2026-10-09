@@ -2,6 +2,7 @@ using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Ihf;
 using Handball.Belgium.RefTestManagement.Api;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
