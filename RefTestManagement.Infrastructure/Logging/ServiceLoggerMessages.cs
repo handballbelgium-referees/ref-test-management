@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
@@ -6,94 +5,20 @@ using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 
-/// <summary>
-/// Helpers for keeping personal data out of log output.
-/// </summary>
+/// <summary>Compatibility facade for the dependency-free Application masking implementation.</summary>
 public static partial class LogRedaction
 {
-    /// <summary>
-    /// Masks the local part of an email address so log lines stay useful for operational
-    /// diagnosis (which domain, which provider) without recording who the recipient was.
-    /// <c>john.doe@example.com</c> becomes <c>j***@example.com</c>. Use this wherever no
-    /// RefTest id is available to identify the record instead.
-    /// </summary>
-    public static string MaskEmail(string? email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            return "(none)";
+    /// <inheritdoc cref="Handball.Belgium.RefTestManagement.Application.Services.PiiRedaction.MaskEmail"/>
+    public static string MaskEmail(string? email) =>
+        Handball.Belgium.RefTestManagement.Application.Services.PiiRedaction.MaskEmail(email);
 
-        var separator = email.IndexOf('@');
-
-        return separator <= 0
-            ? "***"
-            : $"{email[0]}***{email[separator..]}";
-    }
-
-    /// <summary>
-    /// Masks every email address embedded anywhere in free-form text, using the same
-    /// <see cref="MaskEmail"/> shape.
-    /// <para>
-    /// Use this on text the application did not compose itself — exception messages and
-    /// third-party API responses — before it is logged or, more importantly, persisted.
-    /// Those strings are outside the privacy erasure path, so an address that reaches them
-    /// would survive a participant's erasure request.
-    /// </para>
-    /// </summary>
+    /// <inheritdoc cref="Handball.Belgium.RefTestManagement.Application.Services.PiiRedaction.MaskEmailsInText"/>
     public static string? MaskEmailsInText(string? text) =>
-        string.IsNullOrEmpty(text)
-            ? text
-            : EmailPattern().Replace(text, match => MaskEmail(match.Value));
+        Handball.Belgium.RefTestManagement.Application.Services.PiiRedaction.MaskEmailsInText(text);
 
-    /// <summary>
-    /// Wraps an exception so a logging provider cannot render an unmasked email address from it.
-    /// <para>
-    /// Masking an exception's <i>message string</i> is not enough: logging providers render the
-    /// exception object itself, and <see cref="Exception.ToString"/> re-exposes the raw message
-    /// along with every inner exception's. Pass the result of this method wherever an exception
-    /// is handed to <c>ILogger</c> on a path that can carry a participant's address — the email
-    /// provider's client and anything that deserializes a job payload.
-    /// </para>
-    /// <para>
-    /// The stack trace is preserved as text rather than dropped, so diagnosis is unaffected.
-    /// Never throws: it is only ever called from a catch block, where a secondary failure would
-    /// lose the original error entirely.
-    /// </para>
-    /// </summary>
-    public static Exception MaskEmails(Exception exception)
-    {
-        try
-        {
-            return new RedactedException(
-                MaskEmailsInText(exception.Message) ?? string.Empty,
-                MaskEmailsInText(exception.ToString()) ?? string.Empty,
-                MaskEmailsInText(exception.StackTrace));
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            // Masking is the whole point of this call; if it cannot be done, log a placeholder
-            // rather than the original text.
-            return new RedactedException(MaskingFailed, MaskingFailed, exception.StackTrace);
-        }
-    }
-
-    private const string MaskingFailed = "(exception text withheld: personal-data masking failed)";
-
-    // Deliberately broad rather than RFC-exact: the goal is to catch anything that looks like
-    // an address, and over-matching only costs a few masked characters in a diagnostic string.
-    [GeneratedRegex(@"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", RegexOptions.None, matchTimeoutMilliseconds: 250)]
-    private static partial Regex EmailPattern();
-}
-
-/// <summary>
-/// A masked stand-in for an exception on its way to a logging provider. Produced by
-/// <see cref="LogRedaction.MaskEmails"/>; it carries the original's text with every email
-/// address masked, and its stack trace verbatim.
-/// </summary>
-public sealed class RedactedException(string message, string text, string? stackTrace) : Exception(message)
-{
-    public override string? StackTrace { get; } = stackTrace;
-
-    public override string ToString() => text;
+    /// <inheritdoc cref="Handball.Belgium.RefTestManagement.Application.Services.PiiRedaction.MaskEmails"/>
+    public static Exception MaskEmails(Exception exception) =>
+        Handball.Belgium.RefTestManagement.Application.Services.PiiRedaction.MaskEmails(exception);
 }
 
 /// <summary>

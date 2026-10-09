@@ -1,11 +1,16 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
+using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Lifecycle;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -81,16 +86,12 @@ public sealed class RefTestQueriesTests
 
         Assert.Equal(RefTest.HashToken(token), storedToken);
 
-        var session = await RefTestLifecycleMutations.CreateRefTestSessionAsync(
-            token,
-            context,
-            sessionTokenService,
-            ct);
+        var session = await CreateSessionAsync(context, sessionTokenService, token, ct);
         var queryResult = await RefTestQueries.GetRefTestByTokenAsync(
             session.SessionToken,
             context,
             new RefTestExpirationConfiguration(),
-            sessionTokenService,
+            new RefTestRepository(context, sessionTokenService),
             NewJobEnqueueService(context),
             ct);
 
@@ -108,8 +109,28 @@ public sealed class RefTestQueriesTests
                 storedToken,
                 context,
                 new RefTestExpirationConfiguration(),
-                sessionTokenService,
+                new RefTestRepository(context, sessionTokenService),
                 NewJobEnqueueService(context),
                 ct));
+    }
+
+    private static async Task<ParticipantSessionDto> CreateSessionAsync(
+        RefTestManagementContext context,
+        RefTestSessionTokenService tokenService,
+        string token,
+        CancellationToken cancellationToken)
+    {
+        var handler = new RefTestLifecycleHandler(
+            new RefTestRepository(context, tokenService),
+            context,
+            tokenService,
+            new(),
+            new(),
+            null!,
+            null!,
+            new(),
+            null!);
+        return new ParticipantSessionDto(
+            await handler.CreateSessionAsync(token, cancellationToken));
     }
 }

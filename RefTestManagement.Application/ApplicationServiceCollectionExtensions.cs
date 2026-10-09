@@ -1,5 +1,6 @@
 using Handball.Belgium.RefTestManagement.Application.RefTests.Creation;
 using Handball.Belgium.RefTestManagement.Application.RefTests.Deletion;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Lifecycle;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Handball.Belgium.RefTestManagement.Application;
@@ -10,6 +11,7 @@ public static class ApplicationServiceCollectionExtensions
     {
         services.AddScoped<RefTestCreationHandler>();
         services.AddScoped<RefTestDeletionHandler>();
+        services.AddScoped<RefTestLifecycleHandler>();
         return services;
     }
 }

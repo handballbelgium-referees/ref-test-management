@@ -2,6 +2,7 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
@@ -53,16 +54,15 @@ public static partial class RefTestQueries
         string token,
         RefTestManagementContext context,
         [Service] RefTestExpirationConfiguration configuration,
-        [Service] IRefTestSessionTokenService sessionTokenService,
+        [Service] IRefTestRepository refTestRepository,
         [Service] IJobEnqueueService jobEnqueueService,
         CancellationToken cancellationToken)
     {
-        if (!RefTest.IsValidTokenFormat(token) && !RefTestSessionTokenService.HasSessionTokenFormat(token))
+        if (!RefTest.IsValidTokenFormat(token) && !RefTestSessionTokenFormat.HasSessionTokenFormat(token))
             throw new RefTestNotFoundException();
 
-        var refTest = await context.RefTests
-            .AsNoTracking()
-            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
+        var refTest = await refTestRepository.FindByParticipantCredentialAsync(
+            token, asNoTracking: true, cancellationToken);
 
         if (refTest is null)
             throw new RefTestNotFoundException();

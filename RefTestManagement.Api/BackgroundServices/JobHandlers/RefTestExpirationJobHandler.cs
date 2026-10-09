@@ -1,12 +1,15 @@
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Lifecycle;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +31,9 @@ public sealed class RefTestExpirationJobHandler(
     IRefTestSubscriptionService subscriptionService,
     IIhfRulesQuestionsService ihfRulesQuestionsService,
     EmailConfiguration emailConfiguration,
+    RefTestExpirationConfiguration expirationConfiguration,
+    PrivacyConfiguration privacyConfiguration,
+    IRefTestSessionTokenService sessionTokenService,
     IRefTestInvitationTokenProtection tokenProtection,
     ILogger<RefTestExpirationJobHandler> logger,
     ILogger<JobEnqueueService> jobEnqueueLogger) : IJobHandler
@@ -67,15 +73,20 @@ public sealed class RefTestExpirationJobHandler(
                 case RefTestExpirationAction.AutoComplete when refTest.Status == RefTestStatus.InProgress:
                 {
                     var jobEnqueueService = new JobEnqueueService(context, tokenProtection, jobEnqueueLogger);
-                    await RefTestLifecycleMutations.CompleteRefTestCoreAsync(
-                        refTest,
-                        refTest.SelectedAnswerIds,
-                        refTest.Language,
-                        context,
+                    var lifecycleHandler = new RefTestLifecycleHandler(
+                        new RefTestRepository(context, sessionTokenService),
+                        (IUnitOfWork)context,
+                        sessionTokenService,
+                        expirationConfiguration,
+                        privacyConfiguration,
                         ihfRulesQuestionsService,
                         jobEnqueueService,
                         emailConfiguration,
-                        subscriptionService,
+                        subscriptionService);
+                    await lifecycleHandler.CompleteLoadedAsync(
+                        refTest,
+                        refTest.SelectedAnswerIds,
+                        refTest.Language,
                         RefTestCompletionSource.ExpirationService,
                         cancellationToken);
 

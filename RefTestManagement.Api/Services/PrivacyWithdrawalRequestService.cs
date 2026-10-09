@@ -2,6 +2,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
@@ -30,7 +31,7 @@ public sealed class PrivacyWithdrawalRequestService(
     RefTestManagementContext context,
     IJobEnqueueService jobEnqueueService,
     IPersonalDataExportKeyProtection keyProtection,
-    IRefTestSessionTokenService sessionTokenService,
+    IRefTestRepository refTestRepository,
     PrivacyChallengeConfiguration configuration,
     BackgroundJobConfiguration backgroundJobConfiguration,
     ILogger<PrivacyWithdrawalRequestService> logger) : IPrivacyWithdrawalRequestService
@@ -77,8 +78,8 @@ public sealed class PrivacyWithdrawalRequestService(
                         IsolationLevel.Serializable,
                         retryToken);
 
-                    var refTest = await context.RefTests
-                        .FindByParticipantCredentialAsync(token, sessionTokenService, retryToken);
+                    var refTest = await refTestRepository.FindByParticipantCredentialAsync(
+                        token, cancellationToken: retryToken);
                     if (refTest is null)
                     {
                         await transaction.CommitAsync(retryToken);

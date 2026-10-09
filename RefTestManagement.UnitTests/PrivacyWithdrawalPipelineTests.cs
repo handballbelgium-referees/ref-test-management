@@ -6,6 +6,7 @@ using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.AuditLog;
@@ -15,7 +16,9 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
@@ -84,7 +87,7 @@ public sealed class PrivacyWithdrawalPipelineTests
             context,
             NewJobEnqueueService(context),
             keyProtection,
-            sessionTokenService ?? NewSessionTokenService(),
+            new RefTestRepository(context, sessionTokenService ?? NewSessionTokenService()),
             configuration ?? new PrivacyChallengeConfiguration(),
             backgroundJobConfiguration ?? new BackgroundJobConfiguration(),
             logger ?? NullLogger<PrivacyWithdrawalRequestService>.Instance);
@@ -771,7 +774,7 @@ public sealed class PrivacyWithdrawalPipelineTests
                 context,
                 failingEnqueuer,
                 new CapturingKeyProtection(),
-                NewSessionTokenService(),
+                new RefTestRepository(context, NewSessionTokenService()),
                 new PrivacyChallengeConfiguration(),
                 new BackgroundJobConfiguration(),
                 NullLogger<PrivacyWithdrawalRequestService>.Instance);
@@ -2193,7 +2196,7 @@ public sealed class PrivacyWithdrawalPipelineTests
             context,
             NewJobEnqueueService(context, loggerFactory.CreateLogger<JobEnqueueService>()),
             keyProtection,
-            NewSessionTokenService(),
+            new RefTestRepository(context, NewSessionTokenService()),
             new PrivacyChallengeConfiguration(),
             new BackgroundJobConfiguration(),
             loggerFactory.CreateLogger<PrivacyWithdrawalRequestService>());

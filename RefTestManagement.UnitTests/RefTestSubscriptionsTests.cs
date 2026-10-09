@@ -1,9 +1,12 @@
 using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate;
 using HotChocolate.Subscriptions;
@@ -167,7 +170,7 @@ public sealed class RefTestSubscriptionsTests
             "active-session",
             context,
             sessionService,
-            sessionTokenService,
+            new RefTestRepository(context, sessionTokenService),
             TimeProvider.System,
             subscriptionCancellation.Token).GetAsyncEnumerator(subscriptionCancellation.Token);
 

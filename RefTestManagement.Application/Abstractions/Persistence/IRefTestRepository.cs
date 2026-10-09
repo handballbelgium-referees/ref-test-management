@@ -4,6 +4,10 @@ namespace Handball.Belgium.RefTestManagement.Application.Abstractions.Persistenc
 
 public interface IRefTestRepository
 {
+    Task<RefTest?> FindByParticipantCredentialAsync(
+        string credential,
+        bool asNoTracking = false,
+        CancellationToken cancellationToken = default);
     Task<List<RefTest>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
     void AddRange(IEnumerable<RefTest> refTests);
 }

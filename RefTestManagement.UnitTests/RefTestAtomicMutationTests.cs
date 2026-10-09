@@ -17,6 +17,7 @@ using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
@@ -79,7 +80,8 @@ public sealed class RefTestAtomicMutationTests
         IHttpContextAccessor accessor,
         IJobEnqueueService jobService) =>
         new(
-            new RefTestRepository(context),
+            new RefTestRepository(context, new RefTestSessionTokenService(
+                new EphemeralDataProtectionProvider(), TimeProvider.System)),
             new RefTestTitleRepository(context),
             (IUnitOfWork)context,
             QuestionService(),

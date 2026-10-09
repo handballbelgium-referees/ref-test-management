@@ -3,6 +3,7 @@ using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -177,20 +178,19 @@ public static partial class RefTestSubscriptions
         string sessionId,
         RefTestManagementContext context,
         [Service] IRefTestSessionService sessionService,
-        [Service] IRefTestSessionTokenService sessionTokenService,
+        [Service] IRefTestRepository refTestRepository,
         [Service] TimeProvider timeProvider,
         [EnumeratorCancellation] CancellationToken cancellationToken)
     {
         if (!RefTest.IsValidTokenFormat(token)
-            && !RefTestSessionTokenService.HasSessionTokenFormat(token))
+            && !RefTestSessionTokenFormat.HasSessionTokenFormat(token))
         {
             yield return new RefTestSessionEvent(RefTestSessionStatus.Blocked);
             yield break;
         }
 
-        var refTest = await context.RefTests
-            .AsNoTracking()
-            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
+        var refTest = await refTestRepository.FindByParticipantCredentialAsync(
+            token, asNoTracking: true, cancellationToken);
         if (refTest is null || refTest.IsAnonymized)
         {
             yield return new RefTestSessionEvent(RefTestSessionStatus.Blocked);
@@ -219,9 +219,8 @@ public static partial class RefTestSubscriptions
             yield return new RefTestSessionEvent(RefTestSessionStatus.Acquired);
             while (await timer.WaitForNextTickAsync(cancellationToken))
             {
-                var currentRefTest = await context.RefTests
-                    .AsNoTracking()
-                    .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
+                var currentRefTest = await refTestRepository.FindByParticipantCredentialAsync(
+                    token, asNoTracking: true, cancellationToken);
                 if (currentRefTest is null || currentRefTest.IsAnonymized)
                     yield break;
 

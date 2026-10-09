@@ -1,12 +1,11 @@
-using System.Text.RegularExpressions;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using Handball.Belgium.RefTestManagement.Application.Services;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Application;
 
 public static partial class MutationFailureHandling
 {
-    private const string MaskingFailed = "(exception text withheld: personal-data masking failed)";
     public const string GenericFailure = "The request could not be completed. Please try again later.";
     public const string NotFoundFailure = "One or more requested RefTests could not be found.";
 
@@ -26,45 +25,8 @@ public static partial class MutationFailureHandling
         string correlationId,
         Guid? refTestId = null) =>
         MutationLoggerMessages.LogFailure(
-            logger, MaskEmails(exception), operationName, refTestId ?? Guid.Empty, correlationId);
-
-    private static Exception MaskEmails(Exception exception)
-    {
-        try
-        {
-            return new MaskedException(
-                MaskEmailsInText(exception.Message) ?? string.Empty,
-                MaskEmailsInText(exception.ToString()) ?? string.Empty,
-                MaskEmailsInText(exception.StackTrace));
-        }
-        catch (RegexMatchTimeoutException)
-        {
-            return new MaskedException(MaskingFailed, MaskingFailed, MaskingFailed);
-        }
-    }
-
-    private static string? MaskEmailsInText(string? text) =>
-        string.IsNullOrEmpty(text)
-            ? text
-            : EmailPattern().Replace(text, match => MaskEmail(match.Value));
-
-    private static string MaskEmail(string email)
-    {
-        if (string.IsNullOrWhiteSpace(email))
-            return "(none)";
-
-        var separator = email.IndexOf('@');
-        return separator <= 0 ? "***" : $"{email[0]}***{email[separator..]}";
-    }
-
-    [GeneratedRegex(@"[A-Za-z0-9._%+\-]+@[A-Za-z0-9.\-]+\.[A-Za-z]{2,}", RegexOptions.None, matchTimeoutMilliseconds: 250)]
-    private static partial Regex EmailPattern();
-
-    private sealed class MaskedException(string message, string text, string? stackTrace) : Exception(message)
-    {
-        public override string? StackTrace { get; } = stackTrace;
-        public override string ToString() => text;
-    }
+            logger, PiiRedaction.MaskEmails(exception, withholdStackTraceOnFailure: true),
+            operationName, refTestId ?? Guid.Empty, correlationId);
 }
 
 internal static partial class MutationLoggerMessages

@@ -1,12 +1,15 @@
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Queries;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Application.Abstractions.Persistence;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Lifecycle;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
@@ -36,6 +39,20 @@ public sealed class RefTestSessionTokenTests
             context,
             new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider()),
             NullLogger<JobEnqueueService>.Instance);
+
+    private static RefTestLifecycleHandler NewLifecycleHandler(
+        RefTestManagementContext context,
+        RefTestSessionTokenService sessionTokenService) =>
+        new(
+            new RefTestRepository(context, sessionTokenService),
+            context,
+            sessionTokenService,
+            new(),
+            new(),
+            null!,
+            null!,
+            new(),
+            null!);
 
     private static async Task<Guid> SeedTitleAsync(SqliteTestDatabase database)
     {
@@ -188,11 +205,7 @@ public sealed class RefTestSessionTokenTests
         await using var context = database.CreateContext();
 
         await Assert.ThrowsAsync<RefTestValidationException>(() =>
-            RefTestLifecycleMutations.CreateRefTestSessionAsync(
-                token,
-                context,
-                NewSessionTokenService(),
-                ct));
+            NewLifecycleHandler(context, NewSessionTokenService()).CreateSessionAsync(token, ct));
     }
 
     [Fact]
@@ -213,17 +226,14 @@ public sealed class RefTestSessionTokenTests
 
         var sessionTokenService = NewSessionTokenService();
         await using var context = database.CreateContext();
-        var session = await RefTestLifecycleMutations.CreateRefTestSessionAsync(
-            invitationToken,
-            context,
-            sessionTokenService,
-            ct);
+        var session = await NewLifecycleHandler(context, sessionTokenService)
+            .CreateSessionAsync(invitationToken, ct);
 
         var result = await RefTestQueries.GetRefTestByTokenAsync(
-            session.SessionToken,
+            session,
             context,
             new RefTestExpirationConfiguration(),
-            sessionTokenService,
+            new RefTestRepository(context, sessionTokenService),
             NewJobEnqueueService(context),
             ct);
 
@@ -236,10 +246,10 @@ public sealed class RefTestSessionTokenTests
 
         var notFound = await Assert.ThrowsAsync<RefTestNotFoundException>(() =>
             RefTestQueries.GetRefTestByTokenAsync(
-                session.SessionToken,
+                session,
                 context,
                 new RefTestExpirationConfiguration(),
-                sessionTokenService,
+                new RefTestRepository(context, sessionTokenService),
                 NewJobEnqueueService(context),
                 ct));
 
@@ -275,7 +285,7 @@ public sealed class RefTestSessionTokenTests
             sessionToken,
             context,
             new RefTestExpirationConfiguration(),
-            sessionTokenService,
+            new RefTestRepository(context, sessionTokenService),
             NewJobEnqueueService(context),
             ct);
 
@@ -311,7 +321,7 @@ public sealed class RefTestSessionTokenTests
                            "stale-session",
                            context,
                            new RefTestSessionService(),
-                           sessionTokenService,
+                           new RefTestRepository(context, sessionTokenService),
                            TimeProvider.System,
                            ct))
         {
@@ -345,7 +355,7 @@ public sealed class RefTestSessionTokenTests
             "active-session",
             context,
             new RefTestSessionService(),
-            sessionTokenService,
+            new RefTestRepository(context, sessionTokenService),
             TimeProvider.System,
             ct).GetAsyncEnumerator(ct);
 
@@ -378,7 +388,7 @@ public sealed class RefTestSessionTokenTests
             "stale-session",
             subscriptionContext,
             sessionService,
-            sessionTokenService,
+            new RefTestRepository(subscriptionContext, sessionTokenService),
             clock,
             ct).GetAsyncEnumerator(ct);
 
@@ -403,7 +413,7 @@ public sealed class RefTestSessionTokenTests
             "current-session",
             subscriptionContext,
             sessionService,
-            sessionTokenService,
+            new RefTestRepository(subscriptionContext, sessionTokenService),
             clock,
             ct).GetAsyncEnumerator(ct);
 
@@ -422,7 +432,7 @@ public sealed class RefTestSessionTokenTests
             "reset-session",
             subscriptionContext,
             sessionService,
-            sessionTokenService,
+            new RefTestRepository(subscriptionContext, sessionTokenService),
             clock,
             ct).GetAsyncEnumerator(ct);
 
@@ -439,7 +449,7 @@ public sealed class RefTestSessionTokenTests
             "replacement-session",
             subscriptionContext,
             sessionService,
-            sessionTokenService,
+            new RefTestRepository(subscriptionContext, sessionTokenService),
             clock,
             ct).GetAsyncEnumerator(ct);
 
@@ -474,7 +484,7 @@ public sealed class RefTestSessionTokenTests
                 session,
                 context,
                 new RefTestExpirationConfiguration(),
-                sessionTokenService,
+                new RefTestRepository(context, sessionTokenService),
                 NewJobEnqueueService(context),
                 ct));
     }

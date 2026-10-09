@@ -1,35 +1,10 @@
 using System.Security.Cryptography;
 using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Microsoft.AspNetCore.DataProtection;
 
-namespace Handball.Belgium.RefTestManagement.Api.Services;
-
-public interface IRefTestSessionTokenService
-{
-    /// <summary>Creates an expiring credential for the RefTest's current invitation digest.</summary>
-    /// <param name="refTest">The RefTest the credential will authorize.</param>
-    /// <returns>A protected participant session credential.</returns>
-    string Create(RefTest refTest);
-
-    /// <summary>Unprotects a credential and extracts its bound RefTest and digest.</summary>
-    /// <param name="sessionToken">The participant session credential.</param>
-    /// <param name="claims">The protected credential claims, if the credential is well formed.</param>
-    /// <returns><see langword="true"/> when the credential can be unprotected.</returns>
-    bool TryUnprotect(string? sessionToken, out RefTestSessionTokenClaims? claims);
-
-    /// <summary>Checks credential expiry against the RefTest's current state and deadline.</summary>
-    /// <param name="claims">The unprotected credential claims.</param>
-    /// <param name="refTest">The RefTest bound to the credential.</param>
-    /// <returns><see langword="true"/> when the credential is currently valid for the RefTest.</returns>
-    bool IsValidFor(RefTestSessionTokenClaims claims, RefTest refTest);
-}
-
-public sealed record RefTestSessionTokenClaims(
-    Guid RefTestId,
-    string InvitationTokenHash,
-    DateTimeOffset ExpiresAt,
-    DateTimeOffset? StartBy);
+namespace Handball.Belgium.RefTestManagement.Infrastructure.Security;
 
 /// <summary>
 /// Protects short-lived participant session credentials bound to a RefTest and its current
@@ -37,9 +12,7 @@ public sealed record RefTestSessionTokenClaims(
 /// </summary>
 public sealed class RefTestSessionTokenService : IRefTestSessionTokenService
 {
-    public const string TokenPrefix = "rts1.";
-
-    private const int MaxTokenLength = 2048;
+    public const string TokenPrefix = RefTestSessionTokenFormat.TokenPrefix;
     private static readonly TimeSpan DefaultLifetime = TimeSpan.FromHours(12);
     private readonly IDataProtector _protector;
     private readonly TimeProvider _timeProvider;
@@ -84,7 +57,7 @@ public sealed class RefTestSessionTokenService : IRefTestSessionTokenService
     {
         claims = null;
 
-        if (!HasSessionTokenFormat(sessionToken))
+        if (!RefTestSessionTokenFormat.HasSessionTokenFormat(sessionToken))
             return false;
 
         SessionTokenPayload? payload;
@@ -158,14 +131,6 @@ public sealed class RefTestSessionTokenService : IRefTestSessionTokenService
             .AddHours(1);
         return now < testDeadline;
     }
-
-    public static bool HasSessionTokenFormat(string? token) =>
-        token is not null
-        && token.Length > TokenPrefix.Length
-        && token.Length <= MaxTokenLength
-        && token.StartsWith(TokenPrefix, StringComparison.Ordinal)
-        && token[TokenPrefix.Length..].All(static character =>
-            char.IsAsciiLetterOrDigit(character) || character is '-' or '_');
 
     private sealed record SessionTokenPayload(
         Guid RefTestId,

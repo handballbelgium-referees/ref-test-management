@@ -55,7 +55,7 @@ These are tolerated for now and tracked as remediation work.
 
 | Violation                                                                                                      | Enforced                | Planned fix                                                       |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- |
-| Remaining use cases live in GraphQL mutations and `Api/Services` (creation and deletion handlers now live in Application) | Not yet (type-level)    | WP3: move the remaining use cases into Application handlers |
+| Remaining use cases live in GraphQL mutations and `Api/Services` (creation, deletion and lifecycle handlers now live in Application) | Not yet (type-level)    | WP3: move the remaining use cases into Application handlers |
 | Subscription events are published by hand from mutations, separately from domain events                        | Not yet                 | WP4: one event pipeline                                           |
 | Job handlers and background services live in Api                                                               | Not yet                 | WP5: separate the worker from the web host                        |
 
