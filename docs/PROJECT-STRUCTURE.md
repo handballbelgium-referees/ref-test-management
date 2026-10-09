@@ -77,6 +77,7 @@ flowchart TB
 | `RefTestManagement.Infrastructure/IhfRules`                      | IHF Rules question-bank GraphQL client (StrawberryShake schema, queries) and its service |
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
+| `RefTestManagement.Infrastructure/Privacy`                       | Consent-withdrawal and data-export challenges, participant session and invitation-token protection. Withdrawal stays an Infrastructure service behind its Application port: every step is a serializable transaction under EF's retry strategy |
 | `RefTestManagement.UnitTests`                                    | Unit tests for audit/log redaction, job state machine, RefTest anonymization  |
 | `RefTestManagement.Ui/src/app/ref-tests`                         | RefTest creation, detail view, and management UI                              |
 | `RefTestManagement.Ui/src/app/ref-tests/list`                    | List view with mobile/desktop layouts, filters and operations                 |
