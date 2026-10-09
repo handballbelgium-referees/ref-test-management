@@ -1202,8 +1202,7 @@
       "reftestmanagement.application": {
         "type": "Project",
         "dependencies": {
-          "RefTestManagement.Domain": "[1.0.0, )",
-          "StrawberryShake.Server": "[16.6.8, )"
+          "RefTestManagement.Domain": "[1.0.0, )"
         }
       },
       "reftestmanagement.auditlog": {
@@ -1233,7 +1232,8 @@
           "Microsoft.Extensions.Http.Resilience": "[10.10.0, )",
           "QuestPDF": "[2026.9.1, )",
           "RefTestManagement.Application": "[1.0.0, )",
-          "RefTestManagement.AuditLog": "[1.0.0, )"
+          "RefTestManagement.AuditLog": "[1.0.0, )",
+          "StrawberryShake.Server": "[16.6.8, )"
         }
       },
       "reftestmanagement.migrations.mysql": {

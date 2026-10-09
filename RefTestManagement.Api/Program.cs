@@ -18,7 +18,6 @@ using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Handball.Belgium.RefTestManagement.Api.Extensions;
 using QuestPDF.Infrastructure;
-using StrawberryShake;
 using Handball.Belgium.RefTestManagement.Api.Graphql;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
@@ -154,7 +153,6 @@ if (graphQlLimitsConfig.EnableRateLimiting)
 }
 
 services.AddInfrastructureServices();
-services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
 
 services.AddAuth0ManagementServices(configuration);
 services.AddMemoryCache();
@@ -189,22 +187,7 @@ if (auditLogOptions.EnableCleanup)
     services.AddHostedService<AuditLogCleanupService>();
 }
 
-// Add IHF Rules Questions GraphQL client
-// This one sits on the test-creation path, so an upstream hang without a timeout fails test
-// creation after a two-minute wait with nothing to show for it. The client only issues GraphQL
-// queries, never mutations, so retrying is safe.
-services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
-    .ConfigureHttpClient(
-        (sp, c) =>
-        {
-            c.BaseAddress = new Uri(configuration["RulesQuestions:Url"]!);
-            var langConfig = sp.GetRequiredService<LanguageConfiguration>();
-            c.DefaultRequestHeaders.Add("Accept-Language", langConfig.DefaultPhraseLanguage);
-            c.Timeout = TimeSpan.FromSeconds(30);
-        },
-        // StrawberryShake wraps the registration in its own builder, so the resilience handler has
-        // to be added through this hook rather than chained off the call.
-        clientBuilder => clientBuilder.AddStandardResilienceHandler());
+services.AddIhfRulesQuestionsHttpClient(configuration["RulesQuestions:Url"]);
 
 services.AddGraphQLServer()
     .AddQueryType()

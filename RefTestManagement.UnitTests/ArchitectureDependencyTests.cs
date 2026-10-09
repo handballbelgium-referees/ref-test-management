@@ -11,10 +11,6 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 /// drops references whose types are never used, so a wrong-direction project reference can sit in
 /// a project file unnoticed until the first <c>using</c> makes it real. Reading the declared graph
 /// catches it the moment it is added.
-///
-/// <see cref="KnownApplicationPackageViolations"/> records today's exceptions so the build stays
-/// green. It is a ratchet: when a later change removes one of those packages, the stale-entry test
-/// fails until the entry is deleted, so the list can only shrink.
 /// </remarks>
 public sealed class ArchitectureDependencyTests
 {
@@ -51,15 +47,6 @@ public sealed class ArchitectureDependencyTests
         "QuestPDF",
         "ClosedXML",
         "StackExchange.Redis",
-    ];
-
-    /// <summary>
-    /// Known violations, tolerated until the IHF client moves into Infrastructure (WP2).
-    /// </summary>
-    private static readonly string[] KnownApplicationPackageViolations =
-    [
-        "StrawberryShake.Server",
-        "Microsoft.Extensions.Http",
     ];
 
     public static TheoryData<string> LayeredProjects => [.. AllowedProjectReferences.Keys];
@@ -104,22 +91,11 @@ public sealed class ArchitectureDependencyTests
     {
         var violations = ReadIncludes("RefTestManagement.Application", "PackageReference")
             .Where(IsForbiddenInApplication)
-            .Except(KnownApplicationPackageViolations)
             .ToList();
 
         Assert.True(violations.Count == 0,
             $"RefTestManagement.Application references {string.Join(", ", violations)}. " +
             "Define a port in Application and implement it in Infrastructure instead.");
-    }
-
-    [Fact]
-    public void KnownApplicationPackageViolationsAreStillPresent()
-    {
-        var packages = ReadIncludes("RefTestManagement.Application", "PackageReference");
-        var stale = KnownApplicationPackageViolations.Except(packages).ToList();
-
-        Assert.True(stale.Count == 0,
-            $"{string.Join(", ", stale)} no longer violate the rule; remove them from {nameof(KnownApplicationPackageViolations)}.");
     }
 
     /// <summary>
@@ -136,7 +112,9 @@ public sealed class ArchitectureDependencyTests
     public void InfrastructureDeclaresNoNewPublicInterfaces()
     {
         var declared = typeof(Infrastructure.RefTestManagementContext).Assembly.GetExportedTypes()
-            .Where(type => type.IsInterface)
+            // The StrawberryShake client is generated from the IHF schema; its interfaces are
+            // transport details of that adapter, not ports.
+            .Where(type => type.IsInterface && !type.IsDefined(typeof(System.CodeDom.Compiler.GeneratedCodeAttribute), false))
             .Select(type => type.FullName!)
             .Order()
             .ToList();

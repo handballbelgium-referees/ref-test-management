@@ -1,6 +1,9 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.IhfRules;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.Extensions.DependencyInjection;
+using StrawberryShake;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
 
@@ -42,9 +45,36 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IJobEnqueueService, JobEnqueueService>();
         services.AddScoped<IRefTestPrivacyErasureService, RefTestPrivacyErasureService>();
         services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
+        services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
         // ponytail: process-local session lock; R1-ARCH WP9 replaces it with a shared one for
         // multi-replica deployments.
         services.AddSingleton<IRefTestSessionService, RefTestSessionService>();
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers the generated IHF Rules questions GraphQL client used by
+    /// <see cref="IhfRulesQuestionsService"/>. The address is parsed when the client is first
+    /// created, not at startup, so hosts that never call the question bank need not configure it.
+    /// </summary>
+    public static IServiceCollection AddIhfRulesQuestionsHttpClient(this IServiceCollection services, string? baseAddress)
+    {
+        // This client sits on the test-creation path, so an upstream hang without a timeout fails
+        // test creation after a two-minute wait with nothing to show for it. It only issues GraphQL
+        // queries, never mutations, so retrying is safe.
+        services.AddIHFRulesQuestionsClient(ExecutionStrategy.CacheFirst)
+            .ConfigureHttpClient(
+                (sp, c) =>
+                {
+                    c.BaseAddress = new Uri(baseAddress!);
+                    var langConfig = sp.GetRequiredService<LanguageConfiguration>();
+                    c.DefaultRequestHeaders.Add("Accept-Language", langConfig.DefaultPhraseLanguage);
+                    c.Timeout = TimeSpan.FromSeconds(30);
+                },
+                // StrawberryShake wraps the registration in its own builder, so the resilience handler has
+                // to be added through this hook rather than chained off the call.
+                clientBuilder => clientBuilder.AddStandardResilienceHandler());
 
         return services;
     }
