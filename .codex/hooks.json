@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write|Read",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .ai/hooks/guards.mjs pre --provider=codex",
+            "timeout": 10
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .ai/hooks/guards.mjs post --provider=codex",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
+  }
+}

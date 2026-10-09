@@ -5,8 +5,8 @@
       {
         "type": "command",
         "matcher": "view|read|edit|create|str_replace_editor|apply_patch|bash|powershell|create_pull_request|update_pull_request",
-        "bash": "node .github/hooks/guards.mjs pre || true",
-        "powershell": "node .github/hooks/guards.mjs pre; exit 0",
+        "bash": "node .ai/hooks/guards.mjs pre --provider=copilot",
+        "powershell": "node .ai/hooks/guards.mjs pre --provider=copilot",
         "cwd": ".",
         "timeoutSec": 10
       }
@@ -15,8 +15,8 @@
       {
         "type": "command",
         "matcher": "edit|apply_patch|str_replace_editor|bash|powershell",
-        "bash": "node .github/hooks/guards.mjs post || true",
-        "powershell": "node .github/hooks/guards.mjs post; exit 0",
+        "bash": "node .ai/hooks/guards.mjs post --provider=copilot",
+        "powershell": "node .ai/hooks/guards.mjs post --provider=copilot",
         "cwd": ".",
         "timeoutSec": 10
       }

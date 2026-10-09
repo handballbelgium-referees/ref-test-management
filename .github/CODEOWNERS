@@ -25,6 +25,13 @@
 
 # AI setup
 
+/AGENTS.md @KristofGilis
+/CLAUDE.md @KristofGilis
+/.ai/ @KristofGilis
+/.agents/ @KristofGilis
+/.claude/ @KristofGilis
+/.codex/ @KristofGilis
+/.cursor/ @KristofGilis
 /.github/hooks/ @KristofGilis
 /.github/agents/ @KristofGilis
 /.github/skills/ @KristofGilis
