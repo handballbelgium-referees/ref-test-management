@@ -67,7 +67,7 @@ public static partial class RefTestCreationMutations
                 await EnqueueApprovalNotificationAsync(createdRefTests, creatorName, creatorEmail, titleValue,
                     jobEnqueueService, context, cancellationToken);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 DetachNewJobs(context, trackedJobIds);
                 result.Failed += createdRefTests.Count;
@@ -211,7 +211,7 @@ public static partial class RefTestCreationMutations
                     creatorName: creatorName,
                     creatorEmail: creatorEmail));
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 result.Failed++;
                 result.Errors.Add(new CreateRefTestsError
@@ -316,7 +316,7 @@ public static partial class RefTestCreationMutations
 
                 result.CreatedRefTests.Add(refTest.ToDto());
             }
-            catch (Exception ex)
+            catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 DetachNewJobs(context, trackedJobIds);
                 refTests.Remove(refTest);

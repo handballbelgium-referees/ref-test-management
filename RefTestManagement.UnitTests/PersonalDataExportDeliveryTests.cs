@@ -2031,8 +2031,8 @@ public sealed class PersonalDataExportDeliveryTests
 
     private sealed class NullLogoService : ILogoService
     {
-        public Task<byte[]?> GetLogoBytesAsync() => Task.FromResult<byte[]?>(null);
-        public Task<string> GetLogoAsBase64Async() => Task.FromResult(string.Empty);
+        public Task<byte[]?> GetLogoBytesAsync(CancellationToken cancellationToken = default) => Task.FromResult<byte[]?>(null);
+        public Task<string> GetLogoAsBase64Async(CancellationToken cancellationToken = default) => Task.FromResult(string.Empty);
     }
 
     private sealed class RecordingEmailService : IEmailService

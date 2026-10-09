@@ -80,7 +80,7 @@ public static partial class RefTestEmailMutations
                 result.SentRefTests.Add(refTest.ToDto());
                 result.SuccessfullySent++;
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 MutationErrorHandling.LogMutationFailure(
                     logger,
@@ -176,7 +176,7 @@ public static partial class RefTestEmailMutations
                 result.SentRefTests.Add(refTest.ToDto());
                 result.SuccessfullySent++;
             }
-            catch (Exception e)
+            catch (Exception e) when (e is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
             {
                 MutationErrorHandling.LogMutationFailure(
                     logger,
@@ -287,7 +287,7 @@ public static partial class RefTestEmailMutations
                 RefTestCount = refTests.Count
             };
         }
-        catch (Exception ex)
+        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
         {
             MutationErrorHandling.LogMutationFailure(
                 logger,

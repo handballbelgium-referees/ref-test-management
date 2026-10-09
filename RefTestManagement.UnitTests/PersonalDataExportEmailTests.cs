@@ -601,7 +601,7 @@ public sealed class PersonalDataExportEmailTests
 
     private sealed class EmptyResultsPdfService : IRefTestResultsPdfService
     {
-        public byte[] GenerateRefTestResultsPdf(
+        public Task<byte[]> GenerateRefTestResultsPdfAsync(
             string name,
             string language,
             int questionScore,
@@ -612,14 +612,15 @@ public sealed class PersonalDataExportEmailTests
             List<string> selectedAnswerIds,
             List<string> wrongQuestionIds,
             List<string> wrongAnswerIds,
-            List<Question> questionsWithCorrectAnswers) => [];
+            List<Question> questionsWithCorrectAnswers,
+            CancellationToken cancellationToken) => Task.FromResult<byte[]>([]);
     }
 
     private sealed class EmptyLogoService : ILogoService
     {
-        public Task<byte[]?> GetLogoBytesAsync() => Task.FromResult<byte[]?>(null);
+        public Task<byte[]?> GetLogoBytesAsync(CancellationToken cancellationToken = default) => Task.FromResult<byte[]?>(null);
 
-        public Task<string> GetLogoAsBase64Async() => Task.FromResult(string.Empty);
+        public Task<string> GetLogoAsBase64Async(CancellationToken cancellationToken = default) => Task.FromResult(string.Empty);
     }
 
     private sealed class RecordingHttpMessageHandler(

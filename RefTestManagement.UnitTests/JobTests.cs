@@ -53,6 +53,48 @@ public class JobTests
     }
 
     [Fact]
+    public void MarkAsCompleted_AfterCancel_DoesNotOverwriteTheCancellation()
+    {
+        var job = NewJob();
+        job.MarkAsProcessing(TimeSpan.FromMinutes(5));
+        job.Cancel("RefTest was deleted");
+
+        job.MarkAsCompleted();
+
+        Assert.Equal(JobStatus.Cancelled, job.Status);
+        Assert.Equal("RefTest was deleted", job.ErrorMessage);
+    }
+
+    [Fact]
+    public void MarkAsCompleted_AfterPermanentFailure_DoesNotOverwriteTheFailure()
+    {
+        var job = NewJob();
+        job.MarkAsPermanentlyFailed("bad payload");
+
+        job.MarkAsCompleted();
+
+        Assert.Equal(JobStatus.Failed, job.Status);
+    }
+
+    [Theory]
+    [InlineData(JobStatus.Completed)]
+    [InlineData(JobStatus.Failed)]
+    [InlineData(JobStatus.Cancelled)]
+    public void MarkAsProcessing_OnATerminalJob_Throws(JobStatus terminal)
+    {
+        var job = NewJob();
+        switch (terminal)
+        {
+            case JobStatus.Completed: job.MarkAsCompleted(); break;
+            case JobStatus.Failed: job.MarkAsPermanentlyFailed("bad payload"); break;
+            case JobStatus.Cancelled: job.Cancel("RefTest was deleted"); break;
+        }
+
+        Assert.Throws<InvalidOperationException>(() => job.MarkAsProcessing(TimeSpan.FromMinutes(5)));
+        Assert.Equal(terminal, job.Status);
+    }
+
+    [Fact]
     public void ACancelledJobIsNeverReadyToProcess()
     {
         var job = NewJob();

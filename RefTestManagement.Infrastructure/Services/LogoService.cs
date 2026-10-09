@@ -6,15 +6,15 @@ namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
 public interface ILogoService
 {
-    Task<byte[]?> GetLogoBytesAsync();
-    Task<string> GetLogoAsBase64Async();
+    Task<byte[]?> GetLogoBytesAsync(CancellationToken cancellationToken = default);
+    Task<string> GetLogoAsBase64Async(CancellationToken cancellationToken = default);
 }
 
 public class LogoService(ILogger<LogoService> logger, EmailConfiguration configuration, HttpClient httpClient) : ILogoService
 {
     private byte[]? _cachedLogoBytes;
 
-    public async Task<byte[]?> GetLogoBytesAsync()
+    public async Task<byte[]?> GetLogoBytesAsync(CancellationToken cancellationToken = default)
     {
         if (_cachedLogoBytes != null)
             return _cachedLogoBytes;
@@ -22,19 +22,20 @@ public class LogoService(ILogger<LogoService> logger, EmailConfiguration configu
         var logoUrl = $"{configuration.BaseUrl}/RefTest-logo.png";
         try
         {
-            _cachedLogoBytes = await httpClient.GetByteArrayAsync(logoUrl);
+            _cachedLogoBytes = await httpClient.GetByteArrayAsync(logoUrl, cancellationToken);
             return _cachedLogoBytes;
         }
-        catch (Exception ex)
+        // A missing logo degrades the document; a cancelled caller must still stop.
+        catch (Exception ex) when (!cancellationToken.IsCancellationRequested)
         {
             ServiceLoggerMessages.LogLogoDownloadFailed(logger, ex, logoUrl);
             return null;
         }
     }
 
-    public async Task<string> GetLogoAsBase64Async()
+    public async Task<string> GetLogoAsBase64Async(CancellationToken cancellationToken = default)
     {
-        var logoBytes = await GetLogoBytesAsync();
+        var logoBytes = await GetLogoBytesAsync(cancellationToken);
         return logoBytes != null ? Convert.ToBase64String(logoBytes) : string.Empty;
     }
 }
