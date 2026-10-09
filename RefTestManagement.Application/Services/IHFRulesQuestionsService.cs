@@ -26,7 +26,7 @@ public interface IIhfRulesQuestionsService
 
     Task<List<Question>> GetQuestionsByNumberAsync(List<string> numbers, CancellationToken cancellationToken = default);
 
-    Task<ScoreCalculation> CalculateScoreAsync(List<string> questionIds, List<string> selectedAnswerIds,
+    Task<ScoreCalculation> CalculateScoreAsync(IReadOnlyList<string> questionIds, IReadOnlyList<string> selectedAnswerIds,
         CancellationToken cancellationToken = default);
 }
 
@@ -179,8 +179,8 @@ public class IhfRulesQuestionsService(
         }).ToList() ?? [];
     }
 
-    public async Task<ScoreCalculation> CalculateScoreAsync(List<string> questionIds,
-        List<string> selectedAnswerIds,
+    public async Task<ScoreCalculation> CalculateScoreAsync(IReadOnlyList<string> questionIds,
+        IReadOnlyList<string> selectedAnswerIds,
         CancellationToken cancellationToken = default)
     {
         var scoreConfigInput = new ScoreConfigurationInput
