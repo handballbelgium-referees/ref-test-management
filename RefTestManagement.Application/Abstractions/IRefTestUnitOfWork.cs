@@ -43,6 +43,15 @@ public interface IRefTestUnitOfWork
     /// <summary>Stages the approval decision email job; nothing is saved.</summary>
     Task StageApprovalDecisionEmailAsync(ApprovalDecisionEmailPayload payload, CancellationToken cancellationToken);
 
+    /// <summary>Stages the result email job; nothing is saved.</summary>
+    Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Clears the personal data of pending data-export requests made for <paramref name="email"/>,
+    /// so a request for an address the participant no longer uses cannot deliver to it; nothing is saved.
+    /// </summary>
+    Task ClearPersonalDataExportRequestsAsync(string email, CancellationToken cancellationToken);
+
     /// <summary>
     /// Starts tracking jobs staged from now on, so a staging attempt that fails part-way can drop
     /// exactly its own jobs and leave the rest of the unit of work intact.

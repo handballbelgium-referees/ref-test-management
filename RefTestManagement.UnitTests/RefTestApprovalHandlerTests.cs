@@ -129,6 +129,12 @@ public sealed class RefTestApprovalHandlerTests
             return Task.FromResult<RefTest?>(null);
         }
 
+        public Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
+        public Task ClearPersonalDataExportRequestsAsync(string email, CancellationToken cancellationToken) =>
+            throw new NotSupportedException();
+
         public Task<RefTest?> DiscardChangesAsync(RefTest refTest, CancellationToken cancellationToken) =>
             throw new NotSupportedException();
 

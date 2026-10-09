@@ -71,6 +71,23 @@ public sealed class EfRefTestUnitOfWork(RefTestManagementContext context, IJobEn
             unitOfWorkContext: context,
             cancellationToken: cancellationToken);
 
+    public Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken) =>
+        jobEnqueueService.EnqueueResultEmailAsync(
+            payload,
+            saveChanges: false,
+            unitOfWorkContext: context,
+            cancellationToken: cancellationToken);
+
+    public async Task ClearPersonalDataExportRequestsAsync(string email, CancellationToken cancellationToken)
+    {
+        var normalizedEmail = email.Trim().ToUpperInvariant();
+        var requests = await context.PersonalDataExportRequests
+            .Where(request => request.Email.Trim().ToUpper() == normalizedEmail)
+            .ToListAsync(cancellationToken);
+        foreach (var request in requests)
+            request.ClearForPrivacyErasure();
+    }
+
     public Task StageInvitationEmailAsync(RefTest refTest, DateTime? executeAfter, CancellationToken cancellationToken) =>
         jobEnqueueService.EnqueueInvitationEmailAsync(
             refTest,
