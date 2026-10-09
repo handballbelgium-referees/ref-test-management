@@ -11,6 +11,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -144,11 +145,12 @@ public sealed class RefTestEmailMutationPersistenceTests
         var competingUpdateProxy = (CompetingRefTestUpdateJobEnqueueProxy)(object)jobEnqueueService;
         competingUpdateProxy.Configure(innerJobEnqueueService, database, conflictedRefTestId);
 
+        var loggerFactory = new RecordingLoggerFactory();
         var result = await RefTestEmailMutations.SendInvitationsAsync(
             new SendInvitationsInput([conflictedRefTestId, laterRefTestId]),
             resolverContext,
             jobEnqueueService,
-            NullLoggerFactory.Instance,
+            loggerFactory,
             new HttpContextAccessor { HttpContext = new DefaultHttpContext() },
             cancellationToken);
 
@@ -157,7 +159,9 @@ public sealed class RefTestEmailMutationPersistenceTests
         Assert.Equal(1, result.Failed);
         Assert.Equal(conflictedRefTestId, Assert.Single(result.Errors).RefTestId);
         Assert.True(competingUpdateProxy.CompetingUpdateSaved);
-        Assert.IsType<DbUpdateConcurrencyException>(competingUpdateProxy.Failure);
+        // The invitation is staged and the unit of work saves it, so the conflict surfaces at that
+        // save; the logged (email-redacted) failure still names the concurrency exception.
+        Assert.Contains(nameof(DbUpdateConcurrencyException), Assert.Single(loggerFactory.Exceptions).ToString());
 
         await using var persistedContext = database.CreateContext();
         var conflictedRefTestAfterFailure = await persistedContext.RefTests
@@ -211,6 +215,24 @@ public sealed class RefTestEmailMutationPersistenceTests
             language: "en",
             source: RefTestCompletionSource.Participant);
         return refTest;
+    }
+
+    private sealed class RecordingLoggerFactory : ILoggerFactory, ILogger
+    {
+        public List<Exception> Exceptions { get; } = [];
+
+        public ILogger CreateLogger(string categoryName) => this;
+        public void AddProvider(ILoggerProvider provider) { }
+        public void Dispose() { }
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter)
+        {
+            if (exception is not null)
+                Exceptions.Add(exception);
+        }
     }
 
     public class CompetingRefTestUpdateJobEnqueueProxy : DispatchProxy
