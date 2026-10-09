@@ -157,6 +157,22 @@ public class JobTests
     }
 
     [Fact]
+    public void TheLockIsEvaluatedAtTheSuppliedTime()
+    {
+        var t0 = new DateTime(2026, 1, 1, 12, 0, 0, DateTimeKind.Utc);
+        var job = Job.Create(JobType.InvitationEmail, "{}", now: t0);
+        job.MarkAsProcessing(TimeSpan.FromMinutes(5), t0);
+
+        Assert.Equal(t0, job.CreatedAt);
+        Assert.Equal(t0.AddMinutes(5), job.LockedUntil);
+        Assert.False(job.IsReadyToProcess(t0.AddMinutes(5).AddTicks(-1)));
+        Assert.True(job.IsReadyToProcess(t0.AddMinutes(5)));
+
+        job.MarkAsCompleted(t0.AddMinutes(1));
+        Assert.Equal(t0.AddMinutes(1), job.CompletedAt);
+    }
+
+    [Fact]
     public void AProcessingJobWithAnExpiredLockIsReclaimed()
     {
         // Nothing else recovers a job whose worker never reported back: cleanup only deletes

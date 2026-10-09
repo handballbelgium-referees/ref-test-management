@@ -315,6 +315,8 @@ public class BackgroundJobService : BackgroundService
         int maxAttempts,
         CancellationToken cancellationToken)
     {
+        var clock = serviceProvider.GetService<TimeProvider>();
+
         try
         {
             // The job is already locked — ClaimJobAsync took ownership in a single statement
@@ -329,7 +331,7 @@ public class BackgroundJobService : BackgroundService
             await handler.HandleAsync(job, cancellationToken);
 
             // Mark as completed
-            job.MarkAsCompleted();
+            job.MarkAsCompleted(clock?.GetUtcNow().UtcDateTime);
             await context.SaveChangesWithRetryAsync(cancellationToken);
 
             ServiceLoggerMessages.LogJobCompleted(logger, job.Id, job.JobType);
@@ -358,17 +360,17 @@ public class BackgroundJobService : BackgroundService
             {
                 // Legacy report payloads cannot be safely associated with a participant.
                 // Quarantine them before they can send data, and clear the payload.
-                job.Cancel(errorMessage);
+                job.Cancel(errorMessage, clock?.GetUtcNow().UtcDateTime);
             }
             else if (ex is JobPayloadException)
             {
                 // The payload will not parse on a retry either, so stop here instead of holding a
                 // slot in the queue for two more passes.
-                job.MarkAsPermanentlyFailed(errorMessage);
+                job.MarkAsPermanentlyFailed(errorMessage, clock?.GetUtcNow().UtcDateTime);
             }
             else
             {
-                job.MarkAsFailed(errorMessage, maxAttempts);
+                job.MarkAsFailed(errorMessage, maxAttempts, clock?.GetUtcNow().UtcDateTime);
             }
 
             await context.SaveChangesWithRetryAsync(cancellationToken);

@@ -9,14 +9,15 @@ public class Job
         JobType jobType,
         string payload,
         DateTime executeAfter,
-        Guid? privacyWithdrawalBatchId)
+        Guid? privacyWithdrawalBatchId,
+        DateTime createdAt)
     {
         Id = Guid.NewGuid();
         JobType = jobType;
         Payload = payload;
         Status = JobStatus.Pending;
         Attempts = 0;
-        CreatedAt = DateTime.UtcNow;
+        CreatedAt = createdAt;
         ExecuteAfter = executeAfter;
         PrivacyWithdrawalBatchId = privacyWithdrawalBatchId;
     }
@@ -52,7 +53,8 @@ public class Job
         JobType jobType,
         string payload,
         DateTime? executeAfter = null,
-        Guid? privacyWithdrawalBatchId = null)
+        Guid? privacyWithdrawalBatchId = null,
+        DateTime? now = null)
     {
         if (privacyWithdrawalBatchId is not null && jobType != JobType.PrivacyWithdrawalBatch)
             throw new ArgumentException(
@@ -61,7 +63,8 @@ public class Job
         if (privacyWithdrawalBatchId == Guid.Empty)
             throw new ArgumentException("A privacy-withdrawal batch id cannot be empty.", nameof(privacyWithdrawalBatchId));
 
-        return new Job(jobType, payload, executeAfter ?? DateTime.UtcNow, privacyWithdrawalBatchId);
+        var createdAt = Clock(now);
+        return new Job(jobType, payload, executeAfter ?? createdAt, privacyWithdrawalBatchId, createdAt);
     }
 
     /// <summary>Links a legacy batch job to its batch after reading its ID-only payload.</summary>
@@ -92,7 +95,7 @@ public class Job
     /// the same transition in SQL. This method remains the readable definition of that transition
     /// and the one the unit tests pin; keep the two in step.
     /// </remarks>
-    public void MarkAsProcessing(TimeSpan lockDuration)
+    public void MarkAsProcessing(TimeSpan lockDuration, DateTime? now = null)
     {
         if (Status is not (JobStatus.Pending or JobStatus.Processing))
             throw new InvalidOperationException($"A job in '{Status}' status cannot be processed.");
@@ -101,13 +104,13 @@ public class Job
             Attempts++;
 
         Status = JobStatus.Processing;
-        LockedUntil = DateTime.UtcNow.Add(lockDuration);
+        LockedUntil = Clock(now).Add(lockDuration);
     }
 
     /// <summary>
     /// Marks the job as completed
     /// </summary>
-    public void MarkAsCompleted()
+    public void MarkAsCompleted(DateTime? now = null)
     {
         // Cancelled and Failed are terminal: a worker that finishes after the job was cancelled or
         // failed elsewhere must not overwrite that outcome. Completed is allowed again so legacy
@@ -116,7 +119,7 @@ public class Job
             return;
 
         Status = JobStatus.Completed;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = Clock(now);
         LockedUntil = null;
         ErrorMessage = null;
     }
@@ -124,7 +127,7 @@ public class Job
     /// <summary>
     /// Marks the job as failed and increments attempts
     /// </summary>
-    public void MarkAsFailed(string errorMessage, int maxAttempts)
+    public void MarkAsFailed(string errorMessage, int maxAttempts, DateTime? now = null)
     {
         // A cancelled job is terminal. Without this guard a worker that was already holding the
         // job when it was cancelled would return it to Pending on its next failure, and because
@@ -140,7 +143,7 @@ public class Job
         // Stamp the terminal transition: cleanup keys its retention window off CompletedAt, so a
         // failed job that never sets it is retained forever.
         if (Status == JobStatus.Failed)
-            CompletedAt = DateTime.UtcNow;
+            CompletedAt = Clock(now);
 
         LockedUntil = null;
     }
@@ -149,7 +152,7 @@ public class Job
     /// Fails the job immediately, without leaving retries on the table. For errors that cannot
     /// possibly succeed on a retry — a payload that does not parse is the same payload next time.
     /// </summary>
-    public void MarkAsPermanentlyFailed(string errorMessage)
+    public void MarkAsPermanentlyFailed(string errorMessage, DateTime? now = null)
     {
         if (Status == JobStatus.Cancelled)
             return;
@@ -157,7 +160,7 @@ public class Job
         Attempts++;
         ErrorMessage = errorMessage;
         Status = JobStatus.Failed;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = Clock(now);
         LockedUntil = null;
     }
 
@@ -185,12 +188,12 @@ public class Job
     /// email, invitation token, scores, answers) that must not survive an erasure request.
     /// Callers that need the payload must read it before cancelling.
     /// </summary>
-    public void Cancel(string reason)
+    public void Cancel(string reason, DateTime? now = null)
     {
         Status = JobStatus.Cancelled;
         ErrorMessage = reason;
         LockedUntil = null;
-        CompletedAt = DateTime.UtcNow;
+        CompletedAt = Clock(now);
         Payload = string.Empty;
     }
 
@@ -198,12 +201,17 @@ public class Job
     /// Checks if the job is ready to be processed. A <see cref="JobStatus.Processing"/> job whose
     /// lock has expired is included: its worker never reported back, and nothing else recovers it.
     /// </summary>
-    public bool IsReadyToProcess()
+    public bool IsReadyToProcess(DateTime? now = null)
     {
+        var at = Clock(now);
         if (Status != JobStatus.Pending && Status != JobStatus.Processing)
             return false;
 
-        return ExecuteAfter <= DateTime.UtcNow
-               && (LockedUntil == null || LockedUntil <= DateTime.UtcNow);
+        return ExecuteAfter <= at
+               && (LockedUntil == null || LockedUntil <= at);
     }
+
+    // ponytail: falls back to the system clock when a caller passes no time; make `now` required
+    // once every caller (including tests) supplies TimeProvider time.
+    private static DateTime Clock(DateTime? now) => now ?? DateTime.UtcNow;
 }

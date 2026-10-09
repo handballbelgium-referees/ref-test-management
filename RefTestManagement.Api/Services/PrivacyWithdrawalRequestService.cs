@@ -33,7 +33,8 @@ public sealed class PrivacyWithdrawalRequestService(
     IRefTestSessionTokenService sessionTokenService,
     PrivacyChallengeConfiguration configuration,
     BackgroundJobConfiguration backgroundJobConfiguration,
-    ILogger<PrivacyWithdrawalRequestService> logger) : IPrivacyWithdrawalRequestService
+    ILogger<PrivacyWithdrawalRequestService> logger,
+    TimeProvider? timeProvider = null) : IPrivacyWithdrawalRequestService
 {
     private const int ReconciliationBatchSize = 500;
     private const int EmailLookupBackfillBatchSize = 250;
@@ -550,16 +551,16 @@ public sealed class PrivacyWithdrawalRequestService(
             cancellationToken: cancellationToken);
     }
 
-    private static void MarkNonProcessableJobForCleanup(Job job)
+    private void MarkNonProcessableJobForCleanup(Job job)
     {
         if (job.Status is JobStatus.Pending or JobStatus.Processing
             || job.Status == JobStatus.Failed && job.CompletedAt is null)
         {
-            job.MarkAsPermanentlyFailed(NonProcessableBatchJobError);
+            job.MarkAsPermanentlyFailed(NonProcessableBatchJobError, timeProvider?.GetUtcNow().UtcDateTime);
         }
         else if (job.Status == JobStatus.Completed && job.CompletedAt is null)
         {
-            job.MarkAsCompleted();
+            job.MarkAsCompleted(timeProvider?.GetUtcNow().UtcDateTime);
         }
     }
 
