@@ -25,18 +25,9 @@
 
 # AI setup
 
-/AGENTS.md @KristofGilis
-/CLAUDE.md @KristofGilis
+/.github/ @KristofGilis
 /.ai/ @KristofGilis
-/.agents/ @KristofGilis
 /.claude/ @KristofGilis
-/.codex/ @KristofGilis
-/.cursor/ @KristofGilis
-/.github/hooks/ @KristofGilis
-/.github/agents/ @KristofGilis
-/.github/skills/ @KristofGilis
-/.github/instructions/ @KristofGilis
-/.github/copilot/ @KristofGilis
-/.github/copilot-instructions.md @KristofGilis
-/.github/workflows/ @KristofGilis
-/.github/CODEOWNERS @KristofGilis
+/.agents/ @KristofGilis
+AGENTS.md @KristofGilis
+CLAUDE.md @KristofGilis

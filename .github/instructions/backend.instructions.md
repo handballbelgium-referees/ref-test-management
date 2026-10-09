@@ -6,8 +6,12 @@ applyTo: "**/*.cs"
 
 # Backend conventions
 
-The invariants in `AGENTS.md` (permissions and `[Authorize]`, migrations in all four providers, logging, audit log, test command) apply to every `.cs` change. This file adds only the details below.
+Read `AGENTS.md` first. These conventions add backend detail; they do not change approval or side-effect rules.
 
-- Put GraphQL queries and mutations under `RefTestManagement.Api/Graphql/Queries` and `RefTestManagement.Api/Graphql/Mutations/<Area>`, following the nearest feature.
-- For every GraphQL field or mutation, verify all three parts together: the permission constant, the `[Authorize(Policy = ...)]` requirement, and the `docs/SECURITY.md` entry.
-- Follow existing .NET and HotChocolate patterns. Use the `hotchocolate-best-practices` skill, if your host has it installed, for general HotChocolate guidance.
+- Follow the nearest .NET 10 / HotChocolate 16 feature. Queries live under `RefTestManagement.Api/Graphql/Queries`, mutations under `RefTestManagement.Api/Graphql/Mutations/<Area>`, and subscriptions under `RefTestManagement.Api/Graphql/Subscriptions`.
+- Verify permission constants in `RefTestManagement.Security/Permissions.cs`, operation `[Authorize(Policy = ...)]` attributes, field-level authorization, and `docs/SECURITY.md` together. Preserve task-policy semantics and subscription authorization; authentication alone is not permission.
+- Record security-relevant state transitions in the audit log. Preserve privacy/consent boundaries and avoid participant data or secret-bearing exceptions in logs. Keep `[LoggerMessage]` methods in static partial classes.
+- Keep domain/application behavior and infrastructure concerns in their existing layers. Preserve XML documentation and rationale comments. Use installed HotChocolate guidance when applicable, but match the repository's actual version and patterns.
+- An EF model change needs same-named migrations in SQL Server, PostgreSQL, SQLite, and MySQL projects. Follow the provider-specific configuration and commands in `docs/CONFIGURATION.md`; review generated migrations and snapshots, not just compilation.
+- Add focused regression tests in `RefTestManagement.UnitTests`. Use the xUnit v3 Microsoft.Testing.Platform commands in `AGENTS.md`: `dotnet test --solution ...` with `--filter-class` or `--filter-method`, not legacy runner filters.
+- Update related security/configuration documentation and verify the affected build/tests before reporting completion. Do not run database migrations against shared or production data without explicit authorization.
