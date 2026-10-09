@@ -1,4 +1,6 @@
-namespace Handball.Belgium.RefTestManagement.Application.Configurations;
+using System.ComponentModel.DataAnnotations;
+
+namespace Handball.Belgium.RefTestManagement.Api.Configurations;
 
 /// <summary>
 /// Limits protecting the GraphQL endpoint from abuse. Both the participant test-taking flow and
@@ -25,6 +27,7 @@ public class GraphQlLimitsConfiguration
     /// legitimate query while still rejecting amplification, which HotChocolate's default of
     /// 1,000,000 would not.
     /// </remarks>
+    [Range(1d, double.MaxValue)]
     public double MaxFieldCost { get; init; } = 20_000;
 
     /// <summary>
@@ -37,21 +40,25 @@ public class GraphQlLimitsConfiguration
     /// legitimate traffic than is comfortable. This leaves roughly sixteen times headroom for
     /// future list queries without allowing pathological nesting.
     /// </remarks>
+    [Range(1d, double.MaxValue)]
     public double MaxTypeCost { get; init; } = 5_000;
 
     /// <summary>
     /// Requests allowed per client address within <see cref="RateLimitWindowSeconds"/>. Sized for
     /// the test-taking UI, which saves progress on a 500ms debounce and polls nothing else.
     /// </summary>
+    [Range(1, int.MaxValue)]
     public int RateLimitPermitLimit { get; init; } = 300;
 
     /// <summary>Length of the rate limit window, in seconds.</summary>
+    [Range(1, int.MaxValue)]
     public int RateLimitWindowSeconds { get; init; } = 60;
 
     /// <summary>
     /// Requests queued once the limit is reached, instead of being rejected outright. A small
     /// queue absorbs the bursts a single participant's UI produces without masking real abuse.
     /// </summary>
+    [Range(0, int.MaxValue)]
     public int RateLimitQueueLimit { get; init; } = 20;
 
     /// <summary>

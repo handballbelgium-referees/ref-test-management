@@ -1,5 +1,5 @@
 using System.Net;
-using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Handball.Belgium.RefTestManagement.Api.Configurations;
 using Microsoft.Extensions.Options;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;

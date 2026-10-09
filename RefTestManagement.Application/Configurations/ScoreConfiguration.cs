@@ -1,3 +1,5 @@
+using System.ComponentModel.DataAnnotations;
+
 namespace Handball.Belgium.RefTestManagement.Application.Configurations;
 
 public class ScoreConfiguration
@@ -6,6 +8,7 @@ public class ScoreConfiguration
     /// The percentage score required to pass the test.
     /// </summary>
     /// <example>80</example>
+    [Range(0, 100)]
     public int PassingPercentage { get; init; } = 80;
     
     /// <summary>

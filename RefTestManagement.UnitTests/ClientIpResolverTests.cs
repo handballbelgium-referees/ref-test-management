@@ -1,6 +1,6 @@
 using System.Net;
 using Handball.Belgium.RefTestManagement.Api.Services;
-using Handball.Belgium.RefTestManagement.Application.Configurations;
+using Handball.Belgium.RefTestManagement.Api.Configurations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Primitives;

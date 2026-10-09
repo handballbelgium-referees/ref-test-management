@@ -9,6 +9,7 @@ using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Api.Configurations;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -73,9 +74,7 @@ auditLogOptions.Validate();
 services.AddDatabaseProvider(configuration);
 
 // Add services
-var emailConfig = configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>()
-                  ?? new EmailConfiguration();
-services.AddSingleton(emailConfig);
+services.AddValidatedConfiguration<EmailConfiguration>(configuration, "EmailConfiguration");
 var languageConfig = configuration.GetSection("LanguageConfiguration").Get<LanguageConfiguration>() ??
                      LanguageConfiguration.CreateDefault();
 if (languageConfig.EnabledLanguages.Length == 0)
@@ -88,32 +87,12 @@ if (string.IsNullOrEmpty(languageConfig.DefaultPhraseLanguage) ||
 
 services.AddSingleton(languageConfig);
 
-var scoreConfig = configuration.GetSection("ScoreConfiguration").Get<ScoreConfiguration>()
-                  ?? new ScoreConfiguration();
-services.AddSingleton(scoreConfig);
+services.AddValidatedConfiguration<ScoreConfiguration>(configuration, "ScoreConfiguration");
+services.AddValidatedConfiguration<ReportConfiguration>(configuration, "ReportConfiguration");
+services.AddValidatedConfiguration<PrivacyConfiguration>(configuration, "PrivacyConfiguration", c => c.Validate());
 
-var reportConfig = configuration.GetSection("ReportConfiguration").Get<ReportConfiguration>()
-                   ?? new ReportConfiguration();
-services.AddSingleton(reportConfig);
-
-var privacyConfig = configuration.GetSection("PrivacyConfiguration").Get<PrivacyConfiguration>()
-                    ?? new PrivacyConfiguration();
-privacyConfig.Validate();
-services.AddSingleton(privacyConfig);
-
-var privacyChallengeConfig = configuration.GetSection("PrivacyChallengeConfiguration")
-                                 .Get<PrivacyChallengeConfiguration>()
-                             ?? new PrivacyChallengeConfiguration();
-if (privacyChallengeConfig.PrivacyChallengeKeyLifetimeHours is < 1 or > 168
-    || privacyChallengeConfig.RateLimitWindowSeconds <= 0
-    || privacyChallengeConfig.RequestRateLimitPermitLimit <= 0
-    || privacyChallengeConfig.ConfirmationRateLimitPermitLimit <= 0
-    || privacyChallengeConfig.CleanupIntervalMinutes <= 0)
-{
-    throw new InvalidOperationException("PrivacyChallengeConfiguration contains an invalid value.");
-}
-
-services.AddSingleton(privacyChallengeConfig);
+var privacyChallengeConfig = services.AddValidatedConfiguration<PrivacyChallengeConfiguration>(
+    configuration, "PrivacyChallengeConfiguration");
 PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(
     privacyChallengeConfig,
     configuration["CONTAINER_APP_NAME"]);
@@ -141,25 +120,12 @@ services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>
 services.AddScoped<IPersonalDataExportRequestService, PersonalDataExportRequestService>();
 services.AddScoped<IPrivacyWithdrawalRequestService, PrivacyWithdrawalRequestService>();
 
-var refTestExpirationConfig = configuration.GetSection("RefTestExpirationConfiguration")
-                                  .Get<RefTestExpirationConfiguration>()
-                              ?? new RefTestExpirationConfiguration();
-services.AddSingleton(refTestExpirationConfig);
-
-var backgroundJobConfig = configuration.GetSection("BackgroundJobConfiguration")
-                              .Get<BackgroundJobConfiguration>()
-                          ?? new BackgroundJobConfiguration();
-services.AddSingleton(backgroundJobConfig);
-
-var graphQlLimitsConfig = configuration.GetSection("GraphQlLimitsConfiguration")
-                              .Get<GraphQlLimitsConfiguration>()
-                          ?? new GraphQlLimitsConfiguration();
-services.AddSingleton(graphQlLimitsConfig);
-
-var forwardedHeadersConfig = configuration.GetSection("ForwardedHeadersConfiguration")
-                                  .Get<ForwardedHeadersConfiguration>()
-                              ?? new ForwardedHeadersConfiguration();
-ConfigurableHeaderClientIpResolver.ValidateConfiguration(forwardedHeadersConfig);
+services.AddValidatedConfiguration<RefTestExpirationConfiguration>(configuration, "RefTestExpirationConfiguration");
+services.AddValidatedConfiguration<BackgroundJobConfiguration>(configuration, "BackgroundJobConfiguration");
+var graphQlLimitsConfig = services.AddValidatedConfiguration<GraphQlLimitsConfiguration>(
+    configuration, "GraphQlLimitsConfiguration");
+var forwardedHeadersConfig = services.AddValidatedConfiguration<ForwardedHeadersConfiguration>(
+    configuration, "ForwardedHeadersConfiguration", ConfigurableHeaderClientIpResolver.ValidateConfiguration);
 services.Configure<ForwardedHeadersConfiguration>(configuration.GetSection("ForwardedHeadersConfiguration"));
 services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
 
@@ -342,9 +308,6 @@ var forwardedHeadersOptions = new ForwardedHeadersOptions
     ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto,
     ForwardLimit = forwardedHeadersConfig.ForwardLimit
 };
-if (forwardedHeadersConfig.ForwardLimit < 1)
-    throw new InvalidOperationException("ForwardedHeadersConfiguration:ForwardLimit must be at least 1.");
-
 forwardedHeadersOptions.KnownProxies.Clear();
 forwardedHeadersOptions.KnownIPNetworks.Clear();
 
