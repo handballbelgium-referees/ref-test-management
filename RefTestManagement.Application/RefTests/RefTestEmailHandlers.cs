@@ -43,20 +43,7 @@ public static class RefTestEmailHandler
             if (refTest.Status != RefTestStatus.Completed)
                 throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.Completed);
 
-            return unitOfWork.StageResultEmailAsync(
-                new ResultEmailPayload(
-                    refTest.Id,
-                    refTest.FullName,
-                    refTest.Email,
-                    refTest.QuestionScore ?? 0,
-                    refTest.AnswerScore ?? 0,
-                    refTest.QuestionTotal,
-                    refTest.AnswerTotal ?? 0,
-                    refTest.Percentage ?? 0,
-                    [.. refTest.SelectedAnswerIds],
-                    [.. refTest.WrongQuestionIds],
-                    [.. refTest.WrongAnswerIds]),
-                cancellationToken);
+            return unitOfWork.StageResultEmailAsync(ResultEmailPayloadFactory.For(refTest), executeAfter: null, cancellationToken);
         }, cancellationToken);
 
     private static async Task<SendRefTestEmailsOutcome> SendAsync(

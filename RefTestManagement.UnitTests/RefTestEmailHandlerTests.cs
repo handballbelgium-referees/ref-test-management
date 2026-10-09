@@ -106,7 +106,7 @@ public sealed class RefTestEmailHandlerTests
             return Task.CompletedTask;
         }
 
-        public Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken)
+        public Task StageResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter, CancellationToken cancellationToken)
         {
             Log.Add($"result:{payload.RefTestId}:{payload.QuestionScore}:{payload.TotalQuestions}");
             return Task.CompletedTask;

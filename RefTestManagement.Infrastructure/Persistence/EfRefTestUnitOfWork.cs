@@ -71,9 +71,10 @@ public sealed class EfRefTestUnitOfWork(RefTestManagementContext context, IJobEn
             unitOfWorkContext: context,
             cancellationToken: cancellationToken);
 
-    public Task StageResultEmailAsync(ResultEmailPayload payload, CancellationToken cancellationToken) =>
+    public Task StageResultEmailAsync(ResultEmailPayload payload, DateTime? executeAfter, CancellationToken cancellationToken) =>
         jobEnqueueService.EnqueueResultEmailAsync(
             payload,
+            executeAfter,
             saveChanges: false,
             unitOfWorkContext: context,
             cancellationToken: cancellationToken);

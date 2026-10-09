@@ -1,10 +1,12 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
+using Handball.Belgium.RefTestManagement.Application.RefTests;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
@@ -306,73 +308,16 @@ public static partial class RefTestLifecycleMutations
         CancellationToken cancellationToken,
         DateTime? now = null)
     {
-        if (refTest.Status != RefTestStatus.InProgress)
-            throw new InvalidRefTestStatusException(refTest.Status, RefTestStatus.InProgress);
-
-        // Use existing score calculation logic
-        var scoreResult = await ihfRulesQuestionsService.CalculateScoreAsync(
-            refTest.QuestionIds,
-            selectedAnswerIds,
-            cancellationToken
-        );
-
-        // Complete RefTest with calculated results
-        refTest.Complete(
-            scoreResult.QuestionScore,
-            scoreResult.AnswerScore,
-            scoreResult.AnswerTotal,
-            scoreResult.Percentage,
-            selectedAnswerIds,
-            scoreResult.WrongQuestionIds,
-            scoreResult.WrongAnswerIds,
-            language,
-            source,
-            now
-        );
-
-        // The completion and the result email it owes are committed together: a completed test
-        // whose result job was lost never reports back to the participant.
-        if (refTest.SendResultsAutomatically)
-        {
-            var payload = new ResultEmailPayload(
-                refTest.Id,
-                refTest.FullName,
-                refTest.Email,
-                refTest.QuestionScore ?? 0,
-                refTest.AnswerScore ?? 0,
-                refTest.QuestionTotal,
-                refTest.AnswerTotal ?? 0,
-                refTest.Percentage ?? 0,
-                [.. refTest.SelectedAnswerIds],
-                [.. refTest.WrongQuestionIds],
-                [.. refTest.WrongAnswerIds]
-            );
-
-            DateTime? scheduledAt = emailConfiguration.ScheduledDelayMinutes > 0
-                ? DateTime.UtcNow.AddMinutes(emailConfiguration.ScheduledDelayMinutes)
-                : null;
-            await jobEnqueueService.EnqueueResultEmailAsync(payload, scheduledAt,
-                saveChanges: false,
-                unitOfWorkContext: context,
-                cancellationToken: cancellationToken);
-        }
-
-        await context.SaveChangesWithRetryAsync(cancellationToken);
-
-        // Publish subscription event
-        await subscriptionService.PublishRefTestCompletedAsync(
-            refTest.Id,
-            refTest.Status,
-            refTest.CompletedAt!.Value,
-            refTest.QuestionScore ?? 0,
-            refTest.QuestionTotal,
-            refTest.AnswerScore ?? 0,
-            refTest.AnswerTotal ?? 0,
-            refTest.Percentage ?? 0,
-            language ?? "",
-            refTest.SelectedAnswerIds,
-            cancellationToken);
-
-        return refTest;
+        // The expiration job handler calls this directly, so the signature stays while the logic
+        // lives in the Application use case.
+        var timeProvider = now is { } fixedNow ? new FixedTimeProvider(fixedNow) : TimeProvider.System;
+        return await new CompleteRefTestHandler(ihfRulesQuestionsService, subscriptionService, emailConfiguration, timeProvider)
+            .HandleAsync(refTest, selectedAnswerIds, language, source,
+                new EfRefTestUnitOfWork(context, jobEnqueueService), cancellationToken);
     }
-}
+
+    /// <summary>Hands a caller-supplied instant to the use case, which reads the time from a TimeProvider.</summary>
+    private sealed class FixedTimeProvider(DateTime utcNow) : TimeProvider
+    {
+        public override DateTimeOffset GetUtcNow() => new(DateTime.SpecifyKind(utcNow, DateTimeKind.Utc));
+    }}
