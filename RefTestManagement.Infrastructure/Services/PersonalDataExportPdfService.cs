@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.AuditLog;
@@ -11,12 +12,6 @@ using QuestPDF.Infrastructure;
 [assembly: InternalsVisibleTo("RefTestManagement.UnitTests")]
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
-
-/// <summary>Builds localized, in-memory PDF attachments for a verified data export.</summary>
-public interface IPersonalDataExportPdfService
-{
-    Task<IReadOnlyList<EmailAttachment>> GenerateAttachmentsAsync(PersonalDataExportDocumentData document);
-}
 
 /// <summary>
 /// Renders participant-associated RefTest fields and retained audit events. Oversized documents

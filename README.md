@@ -194,7 +194,7 @@ flowchart TB
 | Project                            | Role                                                                                            |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `RefTestManagement.Api`            | ASP.NET Core Web API — GraphQL schema, controllers, background services                         |
-| `RefTestManagement.Application`    | Job payloads, configuration models, IHF port; target home of use cases (see ADR 0001)           |
+| `RefTestManagement.Application`    | Ports, job payloads, configuration models; target home of use cases (see ADR 0001)              |
 | `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
 | `RefTestManagement.Infrastructure` | EF Core, email (Brevo), IHF client, PDF/Excel generation, subscriptions, job enqueueing         |
 | `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |

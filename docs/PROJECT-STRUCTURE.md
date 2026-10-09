@@ -19,7 +19,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 - **`RefTestManagement.AuditLog/`** — 📋 Domain-event–driven audit log library (Marten-style event store)
 - **`RefTestManagement.Auth0/`** — 🔐 Auth0 Management API client (M2M token, role-based user discovery)
-- **`RefTestManagement.Application/`** — 🔷 Job payloads, configuration models, IHF Rules questions port; target home of use cases and ports
+- **`RefTestManagement.Application/`** — 🔷 Job payloads, configuration models and ports (`Abstractions/`: job enqueueing, email, subscriptions, reports, PDF, privacy erasure, IHF Rules questions); target home of use cases
 - **`RefTestManagement.Domain/`** — 🔷 Domain entities: RefTest, RefTestTitle, Job, and their domain events
 - **`RefTestManagement.Security/`** — 🔐 Permission constants, authorization handlers, dynamic policy provider
 - **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, IHF Rules GraphQL client, subscriptions, job enqueueing

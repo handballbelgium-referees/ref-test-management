@@ -1,25 +1,10 @@
-﻿using Handball.Belgium.RefTestManagement.Application.Models;
+﻿using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Models;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
-
-public interface IRefTestResultsPdfService
-{
-    byte[] GenerateRefTestResultsPdf(
-        string name,
-        string language,
-        int questionScore,
-        int answerScore,
-        int totalQuestions,
-        int answerTotal,
-        double percentage,
-        List<string> selectedAnswerIds,
-        List<string> wrongQuestionIds,
-        List<string> wrongAnswerIds,
-        List<Question> questionsWithCorrectAnswers);
-}
 
 public class RefTestResultsPdfService(ILogoService logoService, ITranslationService translationService) : IRefTestResultsPdfService
 {

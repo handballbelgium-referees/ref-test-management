@@ -1,4 +1,5 @@
-﻿using Handball.Belgium.RefTestManagement.AuditLog;
+﻿using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
@@ -46,6 +47,10 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
 
         base.OnModelCreating(modelBuilder);
     }
+
+    IQueryable<Job> IJobPersistenceContext.Jobs => Jobs;
+
+    void IJobPersistenceContext.AddJob(Job job) => Jobs.Add(job);
 
     public Task<int> SaveChangesWithRetryAsync(CancellationToken cancellationToken = default)
     {

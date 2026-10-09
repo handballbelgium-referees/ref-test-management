@@ -1,4 +1,5 @@
 using ClosedXML.Excel;
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
@@ -6,26 +7,6 @@ using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
-
-public interface IRefTestReportService
-{
-    Task SendReportAsync(List<RefTestReportData> refTests, string[] recipientEmails, CancellationToken cancellationToken = default);
-}
-
-public record RefTestReportData(
-    string TitleName,
-    string FirstName,
-    string LastName,
-    DateTime? StartedAt,
-    DateTime? CompletedAt,
-    int? QuestionScore,
-    int QuestionTotal,
-    int? AnswerScore,
-    int? AnswerTotal,
-    double? Percentage,
-    bool Passed,
-    string? Language,
-    TimeSpan? Duration);
 
 
 public class RefTestReportService(

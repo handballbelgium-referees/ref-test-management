@@ -55,7 +55,6 @@ These are tolerated for now and tracked as remediation work.
 
 | Violation                                                                                                      | Enforced                | Planned fix                                                       |
 | -------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------------------------- |
-| Ports (`IJobEnqueueService`, `IEmailService`, `IRefTestSubscriptionService`, …) are declared in Infrastructure | Not yet (type-level)    | WP2: move the interfaces to Application                           |
 | Use cases live in GraphQL mutations and `Api/Services`                                                         | Not yet (type-level)    | WP3: Application command handlers with a current-user abstraction |
 | Subscription events are published by hand from mutations, separately from domain events                        | Not yet                 | WP4: one event pipeline                                           |
 | Job handlers and background services live in Api                                                               | Not yet                 | WP5: separate the worker from the web host                        |
@@ -63,9 +62,10 @@ These are tolerated for now and tracked as remediation work.
 Resolved:
 
 - WP2 (IHF client): the StrawberryShake client and `IhfRulesQuestionsService` live in `RefTestManagement.Infrastructure/Ihf`; Application keeps only the `IIhfRulesQuestionsService` port. Application has no forbidden package references, so the tests no longer carry an allow-list.
+- WP2 (ports): the service interfaces (`IJobEnqueueService`, `IEmailService`, `IRefTestSubscriptionService`, …) and the records in their signatures live in `RefTestManagement.Application/Abstractions`. `IJobPersistenceContext` exposes `IQueryable<Job>` and `AddJob` instead of an EF Core `DbSet`, so a job still commits in the caller's unit of work. `ArchitectureDependencyTests.InfrastructureDeclaresNoPorts` fails if Infrastructure declares an interface again.
 
 ## Consequences
 
 - The declared project graph is checked on every test run, so a wrong-direction `ProjectReference` fails CI immediately.
-- Type-level rules (where interfaces live, what mutations may call) are not enforced yet. Extend the tests to cover them when WP2 and WP3 land.
+- Where interfaces live is enforced by a type-level test. What mutations may call is not enforced yet; extend the tests when WP3 lands.
 - The README and `docs/PROJECT-STRUCTURE.md` describe the actual graph. Update them together with this ADR when the graph changes.

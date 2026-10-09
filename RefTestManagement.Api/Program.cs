@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Infrastructure;

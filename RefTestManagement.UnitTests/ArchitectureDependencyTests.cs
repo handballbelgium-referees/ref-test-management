@@ -1,4 +1,6 @@
+using System.CodeDom.Compiler;
 using System.Xml.Linq;
+using Handball.Belgium.RefTestManagement.Infrastructure;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -96,6 +98,25 @@ public sealed class ArchitectureDependencyTests
         Assert.True(violations.Count == 0,
             $"RefTestManagement.Application references {string.Join(", ", violations)}. " +
             "Define a port in Application and implement it in Infrastructure instead.");
+    }
+
+    /// <summary>
+    /// Application declares the ports and Infrastructure implements them (ADR 0001, rule 1). An
+    /// interface declared in Infrastructure would make Api depend on an adapter project for a
+    /// contract, so Infrastructure may declare none, apart from code generated for the IHF client.
+    /// </summary>
+    [Fact]
+    public void InfrastructureDeclaresNoPorts()
+    {
+        var interfaces = typeof(RefTestManagementContext).Assembly.GetExportedTypes()
+            .Where(type => type.IsInterface)
+            .Where(type => !type.IsDefined(typeof(GeneratedCodeAttribute), inherit: false))
+            .Select(type => type.FullName)
+            .ToList();
+
+        Assert.True(interfaces.Count == 0,
+            $"RefTestManagement.Infrastructure declares {string.Join(", ", interfaces)}. " +
+            "Declare the interface in RefTestManagement.Application.Abstractions and implement it in Infrastructure.");
     }
 
     private static bool IsForbiddenInApplication(string package) =>

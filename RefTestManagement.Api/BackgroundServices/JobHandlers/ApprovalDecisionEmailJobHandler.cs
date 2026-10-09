@@ -1,7 +1,7 @@
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
-using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
 namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 

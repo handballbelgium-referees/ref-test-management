@@ -1,3 +1,5 @@
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
+
 namespace Handball.Belgium.RefTestManagement.Infrastructure;
 
 public static class RefTestManagementContextExtensions

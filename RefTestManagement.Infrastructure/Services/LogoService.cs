@@ -1,14 +1,9 @@
-﻿using Handball.Belgium.RefTestManagement.Application.Configurations;
+﻿using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.Extensions.Logging;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
-
-public interface ILogoService
-{
-    Task<byte[]?> GetLogoBytesAsync();
-    Task<string> GetLogoAsBase64Async();
-}
 
 public class LogoService(ILogger<LogoService> logger, EmailConfiguration configuration, HttpClient httpClient) : ILogoService
 {
