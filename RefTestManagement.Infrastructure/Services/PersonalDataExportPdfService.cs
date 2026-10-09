@@ -12,12 +12,6 @@ using QuestPDF.Infrastructure;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services;
 
-/// <summary>Builds localized, in-memory PDF attachments for a verified data export.</summary>
-public interface IPersonalDataExportPdfService
-{
-    Task<IReadOnlyList<EmailAttachment>> GenerateAttachmentsAsync(PersonalDataExportDocumentData document);
-}
-
 /// <summary>
 /// Renders participant-associated RefTest fields and retained audit events. Oversized documents
 /// are divided at RefTest/event boundaries into numbered, valid PDFs; no content is truncated.

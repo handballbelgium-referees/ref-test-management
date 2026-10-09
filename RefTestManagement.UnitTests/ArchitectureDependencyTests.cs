@@ -122,6 +122,28 @@ public sealed class ArchitectureDependencyTests
             $"{string.Join(", ", stale)} no longer violate the rule; remove them from {nameof(KnownApplicationPackageViolations)}.");
     }
 
+    /// <summary>
+    /// Ports belong in <c>Application.Abstractions</c>. These two stay in Infrastructure until a
+    /// unit-of-work port replaces their EF Core <c>DbSet</c> exposure; the list may only shrink.
+    /// </summary>
+    private static readonly string[] KnownInfrastructureInterfaces =
+    [
+        "Handball.Belgium.RefTestManagement.Infrastructure.IJobPersistenceContext",
+        "Handball.Belgium.RefTestManagement.Infrastructure.Services.IJobEnqueueService"
+    ];
+
+    [Fact]
+    public void InfrastructureDeclaresNoNewPublicInterfaces()
+    {
+        var declared = typeof(Infrastructure.RefTestManagementContext).Assembly.GetExportedTypes()
+            .Where(type => type.IsInterface)
+            .Select(type => type.FullName!)
+            .Order()
+            .ToList();
+
+        Assert.Equal(KnownInfrastructureInterfaces.Order(), declared);
+    }
+
     private static bool IsForbiddenInApplication(string package) =>
         ForbiddenApplicationPackagePrefixes.Any(prefix =>
             package.Equals(prefix, StringComparison.Ordinal)

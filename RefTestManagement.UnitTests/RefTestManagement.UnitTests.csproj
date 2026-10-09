@@ -37,4 +37,8 @@
         <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
     </ItemGroup>
 
+    <ItemGroup>
+        <!-- Application ports, moved out of Infrastructure.Services, without a using in every consumer. -->
+        <Using Include="Handball.Belgium.RefTestManagement.Application.Abstractions" />
+    </ItemGroup>
 </Project>
