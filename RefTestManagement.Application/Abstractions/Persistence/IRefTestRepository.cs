@@ -10,6 +10,9 @@ public interface IRefTestRepository
         CancellationToken cancellationToken = default);
     Task<RefTest?> FindByIdAsync(Guid id, CancellationToken cancellationToken = default);
     Task<List<RefTest>> GetByIdsAsync(IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
+    Task<List<RefTest>> GetOrderedForReportAsync(
+        IReadOnlyCollection<Guid> ids, CancellationToken cancellationToken = default);
+    Task<RefTest?> ReloadIfDetachedAsync(RefTest refTest, CancellationToken cancellationToken = default);
     Task LoadTitleAsync(RefTest refTest, CancellationToken cancellationToken = default);
     void AddRange(IEnumerable<RefTest> refTests);
 }

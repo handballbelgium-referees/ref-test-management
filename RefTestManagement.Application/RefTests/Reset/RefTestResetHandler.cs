@@ -76,8 +76,6 @@ public sealed class RefTestResetHandler(
             }
             catch (Exception exception)
             {
-                if (unitOfWork.IsConcurrencyException(exception))
-                    throw;
                 if (refTest is not null)
                 {
                     var restoredRefTest = await unitOfWork.RestoreChangesAsync(refTest, cancellationToken);
@@ -142,8 +140,6 @@ public sealed class RefTestResetHandler(
             }
             catch (Exception exception)
             {
-                if (unitOfWork.IsConcurrencyException(exception))
-                    throw;
                 if (refTest is not null)
                 {
                     var restoredRefTest = await unitOfWork.RestoreChangesAsync(refTest, cancellationToken);

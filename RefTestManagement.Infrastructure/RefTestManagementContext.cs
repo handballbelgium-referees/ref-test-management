@@ -62,6 +62,8 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
             Entry(job).State = EntityState.Detached;
     }
 
+    void IUnitOfWork.DiscardTrackedChanges() => ChangeTracker.Clear();
+
     async Task<RefTest?> IUnitOfWork.RestoreRefTestAsync(
         RefTest refTest, CancellationToken cancellationToken)
     {
@@ -100,9 +102,6 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
         Entry(refTest).State = EntityState.Detached;
         return await RefTests.FirstOrDefaultAsync(candidate => candidate.Id == refTestId, cancellationToken);
     }
-
-    bool IUnitOfWork.IsConcurrencyException(Exception exception) =>
-        exception is DbUpdateConcurrencyException;
 
     public Task<int> SaveChangesWithRetryAsync(CancellationToken cancellationToken = default)
     {

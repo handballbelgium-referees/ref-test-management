@@ -8,7 +8,7 @@ public interface IUnitOfWork : IJobPersistenceContext
 {
     IReadOnlySet<Guid> CaptureStagedJobIds();
     void DiscardJobsStagedSince(IReadOnlySet<Guid> checkpoint);
+    void DiscardTrackedChanges();
     Task<RefTest?> RestoreRefTestAsync(RefTest refTest, CancellationToken cancellationToken = default);
     Task<RefTest?> RestoreChangesAsync(RefTest refTest, CancellationToken cancellationToken = default);
-    bool IsConcurrencyException(Exception exception);
 }

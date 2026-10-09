@@ -1,17 +1,21 @@
 using System.Reflection;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Email;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Email;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
+using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -48,12 +52,12 @@ public sealed class RefTestEmailMutationPersistenceTests
             tokenProtection,
             NullLogger<JobEnqueueService>.Instance);
 
-        var result = await RefTestEmailMutations.SendInvitationsAsync(
-            new SendInvitationsInput([invalidRefTestId, pendingRefTestId]),
+        var emailHandler = CreateHandler(
             resolverContext,
             jobEnqueueService,
-            NullLoggerFactory.Instance,
-            new HttpContextAccessor { HttpContext = new DefaultHttpContext() },
+            NullLogger<RefTestEmailHandler>.Instance);
+        var result = await emailHandler.SendInvitationsAsync(
+            new SendInvitationsCommand([invalidRefTestId, pendingRefTestId]),
             cancellationToken);
 
         Assert.Equal(2, result.TotalRequested);
@@ -145,12 +149,12 @@ public sealed class RefTestEmailMutationPersistenceTests
         var competingUpdateProxy = (CompetingRefTestUpdateJobEnqueueProxy)(object)jobEnqueueService;
         competingUpdateProxy.Configure(innerJobEnqueueService, database, conflictedRefTestId);
 
-        var result = await RefTestEmailMutations.SendInvitationsAsync(
-            new SendInvitationsInput([conflictedRefTestId, laterRefTestId]),
+        var handler = CreateHandler(
             resolverContext,
             jobEnqueueService,
-            NullLoggerFactory.Instance,
-            new HttpContextAccessor { HttpContext = new DefaultHttpContext() },
+            NullLogger<RefTestEmailHandler>.Instance);
+        var result = await handler.SendInvitationsAsync(
+            new SendInvitationsCommand([conflictedRefTestId, laterRefTestId]),
             cancellationToken);
 
         Assert.Equal(2, result.TotalRequested);
@@ -195,6 +199,29 @@ public sealed class RefTestEmailMutationPersistenceTests
             sendInvitationAutomatically: false,
             sendResultsAutomatically: false,
             requiresApproval: false);
+
+    private static RefTestEmailHandler CreateHandler(
+        RefTestManagementContext context,
+        IJobEnqueueService jobEnqueueService,
+        ILogger<RefTestEmailHandler> logger) =>
+        new(
+            new RefTestRepository(
+                context,
+                new RefTestSessionTokenService(new EphemeralDataProtectionProvider(), TimeProvider.System)),
+            context,
+            jobEnqueueService,
+            new ReportConfiguration(),
+            new ScoreConfiguration(),
+            new TestCurrentUser(),
+            logger);
+
+    private sealed class TestCurrentUser : ICurrentUser
+    {
+        public string DisplayName => "Test";
+        public string Email => "test@example.org";
+        public string CorrelationId => "(none)";
+        public IReadOnlySet<string> Permissions => new HashSet<string>();
+    }
 
     private static RefTest NewCompletedRefTest(Guid titleId)
     {

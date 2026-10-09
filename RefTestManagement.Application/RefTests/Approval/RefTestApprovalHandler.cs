@@ -51,8 +51,6 @@ public sealed class RefTestApprovalHandler(
             }
             catch (Exception exception)
             {
-                if (unitOfWork.IsConcurrencyException(exception))
-                    throw;
                 if (refTest is not null && !oldStatuses.ContainsKey(refTest.Id))
                 {
                     unitOfWork.DiscardJobsStagedSince(checkpoint);
@@ -120,8 +118,6 @@ public sealed class RefTestApprovalHandler(
             }
             catch (Exception exception)
             {
-                if (unitOfWork.IsConcurrencyException(exception))
-                    throw;
                 errors.Add(new RejectRefTestsError(id, MutationFailureHandling.GetUserSafeMessage(exception)));
                 MutationFailureHandling.LogMutationFailure(
                     logger, exception, "RejectRefTestsAsync", currentUser.CorrelationId, id);

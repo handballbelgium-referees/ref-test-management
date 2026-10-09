@@ -1,11 +1,13 @@
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Email;
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
+using Handball.Belgium.RefTestManagement.Application.RefTests.Email;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
-using Microsoft.AspNetCore.Http;
+using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
+using Handball.Belgium.RefTestManagement.Infrastructure.Security;
+using Microsoft.AspNetCore.DataProtection;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 
@@ -24,12 +26,12 @@ public class RefTestEmailMutationLoggingTests
         using var loggerFactory = CreateLoggerFactory(loggerProvider);
 
         await using var context = database.CreateContext();
-        var result = await RefTestEmailMutations.SendInvitationsAsync(
-            new SendInvitationsInput([refTestId]),
+        var result = await CreateHandler(
             context,
             ThrowingJobEnqueueService.ForInvitation(new InvalidOperationException("SMTP rejected john.doe@example.com")),
             loggerFactory,
-            HttpContextAccessorWith("trace-invite"),
+            "trace-invite").SendInvitationsAsync(
+            new SendInvitationsCommand([refTestId]),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(1, result.Failed);
@@ -48,12 +50,12 @@ public class RefTestEmailMutationLoggingTests
         using var loggerFactory = CreateLoggerFactory(loggerProvider);
 
         await using var context = database.CreateContext();
-        var result = await RefTestEmailMutations.SendResultsAsync(
-            new SendResultsInput([refTestId]),
+        var result = await CreateHandler(
             context,
             ThrowingJobEnqueueService.ForResult(new InvalidOperationException("SMTP rejected john.doe@example.com")),
             loggerFactory,
-            HttpContextAccessorWith("trace-result"),
+            "trace-result").SendResultsAsync(
+            new SendResultsCommand([refTestId]),
             TestContext.Current.CancellationToken);
 
         Assert.Equal(1, result.Failed);
@@ -72,14 +74,12 @@ public class RefTestEmailMutationLoggingTests
         using var loggerFactory = CreateLoggerFactory(loggerProvider);
 
         await using var context = database.CreateContext();
-        var result = await RefTestEmailMutations.SendReportAsync(
-            new SendReportInput([refTestId]),
+        var result = await CreateHandler(
             context,
             ThrowingJobEnqueueService.ForReport(new InvalidOperationException("SMTP rejected john.doe@example.com")),
-            new ReportConfiguration { RecipientEmails = ["staff@example.org"] },
-            new ScoreConfiguration(),
             loggerFactory,
-            HttpContextAccessorWith("trace-report"),
+            "trace-report").SendReportAsync(
+            new SendReportCommand([refTestId]),
             TestContext.Current.CancellationToken);
 
         Assert.False(result.Success);
@@ -87,14 +87,29 @@ public class RefTestEmailMutationLoggingTests
         AssertLoggedFailure(loggerProvider, "trace-report", "SendReportAsync");
     }
 
-    private static IHttpContextAccessor HttpContextAccessorWith(string traceIdentifier) =>
-        new HttpContextAccessor
-        {
-            HttpContext = new DefaultHttpContext
-            {
-                TraceIdentifier = traceIdentifier
-            }
-        };
+    private static RefTestEmailHandler CreateHandler(
+        RefTestManagementContext context,
+        IJobEnqueueService jobEnqueueService,
+        ILoggerFactory loggerFactory,
+        string correlationId) =>
+        new(
+            new RefTestRepository(
+                context,
+                new RefTestSessionTokenService(new EphemeralDataProtectionProvider(), TimeProvider.System)),
+            context,
+            jobEnqueueService,
+            new ReportConfiguration { RecipientEmails = ["staff@example.org"] },
+            new ScoreConfiguration(),
+            new TestCurrentUser(correlationId),
+            loggerFactory.CreateLogger<RefTestEmailHandler>());
+
+    private sealed class TestCurrentUser(string correlationId) : ICurrentUser
+    {
+        public string DisplayName => "Test";
+        public string Email => "test@example.org";
+        public string CorrelationId => correlationId;
+        public IReadOnlySet<string> Permissions => new HashSet<string>();
+    }
 
     private static ILoggerFactory CreateLoggerFactory(CapturingLoggerProvider provider) =>
         LoggerFactory.Create(builder =>
