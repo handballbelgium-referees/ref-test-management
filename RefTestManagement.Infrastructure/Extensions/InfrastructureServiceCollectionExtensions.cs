@@ -31,6 +31,7 @@ public static class InfrastructureServiceCollectionExtensions
             })
             .AddStandardResilienceHandler();
         services.AddSingleton<ITranslationService, TranslationService>();
+        services.AddScoped<JobExecutionContext>();
         services.AddHttpClient<IEmailService, EmailService>((sp, client) =>
         {
             var emailCfg = sp.GetRequiredService<EmailConfiguration>();

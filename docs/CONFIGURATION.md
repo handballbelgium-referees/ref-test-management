@@ -240,6 +240,12 @@ tenant's own rate-limit signals and verify its operational limits before rollout
 | `FromName`              | Sender display name                          | Yes      | –       |
 | `ScheduledDelayMinutes` | Delay in minutes applied to scheduled emails | No       | `0`     |
 
+Emails sent by background jobs carry a Brevo `idempotencyKey` derived from the job, recipient and
+subject. If a send's response is lost and the job retries, Brevo recognises the key (it remembers
+keys for 30 minutes) and answers `duplicate_parameter`, which the API treats as already delivered.
+Job retries run within seconds, well inside that window. Emails sent directly by a request, outside
+a job, carry no key.
+
 ### RulesQuestions
 
 | Key   | Description                                 | Required |

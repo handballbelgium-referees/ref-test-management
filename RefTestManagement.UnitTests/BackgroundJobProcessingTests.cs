@@ -86,6 +86,28 @@ public class BackgroundJobProcessingTests
     }
 
     [Fact]
+    public async Task TheRunningJobIsVisibleToItsSideEffectsOnlyWhileItsHandlerRuns()
+    {
+        using var database = SqliteTestDatabase.Create();
+        var jobId = await SeedClaimedJobAsync(database);
+        var jobExecution = new JobExecutionContext();
+        Guid? seenByHandler = null;
+        var services = new ServiceCollection();
+        services.AddKeyedSingleton<IJobHandler>(JobType.InvitationEmail,
+            new StubHandler(_ =>
+            {
+                seenByHandler = jobExecution.CurrentJobId;
+                throw new InvalidOperationException("SMTP timed out");
+            }));
+        services.AddSingleton(jobExecution);
+
+        await RunAsync(database, jobId, services.BuildServiceProvider());
+
+        Assert.Equal(jobId, seenByHandler);
+        Assert.Null(jobExecution.CurrentJobId);
+    }
+
+    [Fact]
     public async Task AHandlerThatReturnsMarksTheJobCompleted()
     {
         using var database = SqliteTestDatabase.Create();

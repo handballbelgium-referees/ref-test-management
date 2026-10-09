@@ -350,4 +350,11 @@ public static partial class ServiceLoggerMessages
 
     [LoggerMessage(LogLevel.Warning, "Publishing subscription event {eventType} failed ({errorType}); subscribers catch up on their next query")]
     public static partial void LogSubscriptionPublishFailed(ILogger logger, string eventType, string errorType);
+
+    // ========================================
+    // Email idempotency
+    // ========================================
+
+    [LoggerMessage(LogLevel.Information, "Email to {Recipient} was already handed to the provider by an earlier attempt of this job")]
+    public static partial void LogEmailAlreadyDelivered(ILogger logger, string recipient);
 }
