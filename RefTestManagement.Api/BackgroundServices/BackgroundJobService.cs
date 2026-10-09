@@ -10,7 +10,7 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 /// <summary>
 /// Background service that processes jobs from a database queue
 /// </summary>
-public class BackgroundJobService : BackgroundService
+public class BackgroundJobService : PollingBackgroundService
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<BackgroundJobService> _logger;
@@ -50,46 +50,32 @@ public class BackgroundJobService : BackgroundService
         _lastCleanupTime = DateTime.MinValue;
     }
 
+    protected override TimeSpan StartupDelay => _startupDelay;
+
+    protected override TimeSpan Interval => _pollingInterval;
+
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         ServiceLoggerMessages.LogServiceStarting(_logger, nameof(BackgroundJobService));
-
-        // Wait a bit before the first execution to let the app fully start
-        await Task.Delay(_startupDelay, stoppingToken);
-
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await ProcessJobsAsync(stoppingToken);
-
-                // Run cleanup if enabled and due
-                if (_enableCleanup && ShouldRunCleanup())
-                {
-                    await CleanupOldJobsAsync(stoppingToken);
-                    _lastCleanupTime = DateTime.UtcNow;
-                }
-            }
-            catch (Exception ex)
-            {
-                // Anything raised while processing jobs can have travelled through a payload or
-                // an email provider response, so mask before the exception reaches a log sink.
-                ServiceLoggerMessages.LogServiceError(_logger, LogRedaction.MaskEmails(ex), nameof(BackgroundJobService));
-            }
-
-            try
-            {
-                await Task.Delay(_pollingInterval, stoppingToken);
-            }
-            catch (OperationCanceledException)
-            {
-                // Normal shutdown, no need to log
-                break;
-            }
-        }
-
+        await base.ExecuteAsync(stoppingToken);
         ServiceLoggerMessages.LogServiceStopping(_logger, nameof(BackgroundJobService));
     }
+
+    protected override async Task RunOnceAsync(CancellationToken cancellationToken)
+    {
+        await ProcessJobsAsync(cancellationToken);
+
+        if (_enableCleanup && ShouldRunCleanup())
+        {
+            await CleanupOldJobsAsync(cancellationToken);
+            _lastCleanupTime = DateTime.UtcNow;
+        }
+    }
+
+    // Anything raised while processing jobs can have travelled through a payload or an email
+    // provider response, so mask before the exception reaches a log sink.
+    protected override void LogFailure(Exception exception) =>
+        ServiceLoggerMessages.LogServiceError(_logger, LogRedaction.MaskEmails(exception), nameof(BackgroundJobService));
 
     private async Task ProcessJobsAsync(CancellationToken cancellationToken)
     {

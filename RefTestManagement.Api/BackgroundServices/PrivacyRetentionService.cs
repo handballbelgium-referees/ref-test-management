@@ -10,38 +10,21 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 public sealed class PrivacyRetentionService(
     IServiceScopeFactory scopeFactory,
     ILogger<PrivacyRetentionService> logger,
-    PrivacyConfiguration privacyConfiguration) : BackgroundService
+    PrivacyConfiguration privacyConfiguration) : PollingBackgroundService
 {
-    private static readonly TimeSpan CleanupInterval = TimeSpan.FromDays(1);
     private const int AnonymizedRejectionRepairBatchSize = 500;
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
+    protected override TimeSpan StartupDelay => TimeSpan.FromMinutes(1);
 
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                await EraseExpiredDataAsync(stoppingToken);
-            }
-            catch (Exception exception)
-            {
-                // This loop reads and rewrites participant names and addresses, so an exception
-                // raised inside it can quote them back.
-                logger.LogError(LogRedaction.MaskEmails(exception), "Privacy retention cleanup failed");
-            }
+    protected override TimeSpan Interval => TimeSpan.FromDays(1);
 
-            try
-            {
-                await Task.Delay(CleanupInterval, stoppingToken);
-            }
-            catch (TaskCanceledException)
-            {
-                break;
-            }
-        }
-    }
+    protected override Task RunOnceAsync(CancellationToken cancellationToken) =>
+        EraseExpiredDataAsync(cancellationToken);
+
+    // This pass reads and rewrites participant names and addresses, so an exception raised inside
+    // it can quote them back.
+    protected override void LogFailure(Exception exception) =>
+        logger.LogError(LogRedaction.MaskEmails(exception), "Privacy retention cleanup failed");
 
     private async Task EraseExpiredDataAsync(CancellationToken cancellationToken)
     {

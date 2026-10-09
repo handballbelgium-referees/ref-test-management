@@ -456,4 +456,38 @@ public class BackgroundJobProcessingTests
         Assert.Equal(JobStatus.Cancelled, job.Status);
         Assert.Equal(0, job.Attempts);
     }
+
+    [Fact]
+    public async Task APollingServiceLogsAFailedPassKeepsPollingAndStopsQuietly()
+    {
+        var service = new FlakyPollingService();
+
+        await service.StartAsync(TestContext.Current.CancellationToken);
+        await service.SecondPass.Task.WaitAsync(TimeSpan.FromSeconds(10), TestContext.Current.CancellationToken);
+        await service.StopAsync(TestContext.Current.CancellationToken);
+
+        Assert.Single(service.Failures);
+        Assert.True(service.ExecuteTask!.IsCompletedSuccessfully);
+    }
+
+    private sealed class FlakyPollingService : PollingBackgroundService
+    {
+        private int _passes;
+
+        public List<Exception> Failures { get; } = [];
+        public TaskCompletionSource SecondPass { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        protected override TimeSpan Interval => TimeSpan.FromMilliseconds(1);
+
+        protected override Task RunOnceAsync(CancellationToken cancellationToken)
+        {
+            if (Interlocked.Increment(ref _passes) == 1)
+                throw new InvalidOperationException("first pass fails");
+
+            SecondPass.TrySetResult();
+            return Task.Delay(Timeout.Infinite, cancellationToken);
+        }
+
+        protected override void LogFailure(Exception exception) => Failures.Add(exception);
+    }
 }

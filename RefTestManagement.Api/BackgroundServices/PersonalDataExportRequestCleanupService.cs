@@ -16,7 +16,7 @@ namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 public sealed class PersonalDataExportRequestCleanupService(
     IServiceProvider serviceProvider,
     PrivacyChallengeConfiguration configuration,
-    ILogger<PersonalDataExportRequestCleanupService> logger) : BackgroundService
+    ILogger<PersonalDataExportRequestCleanupService> logger) : PollingBackgroundService
 {
     private const int BatchSize = 500;
     private static readonly JsonSerializerOptions JobPayloadOptions = new()
@@ -24,41 +24,23 @@ public sealed class PersonalDataExportRequestCleanupService(
         PropertyNameCaseInsensitive = true
     };
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
-    {
-        while (!stoppingToken.IsCancellationRequested)
-        {
-            try
-            {
-                using var scope = serviceProvider.CreateScope();
-                var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
-                var count = await ClearExpiredChallengesAsync(context, DateTime.UtcNow, stoppingToken);
-                if (count > 0)
-                    logger.LogInformation(
-                        "Cleared {Count} expired or terminal personal-data export requests",
-                        count);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-            catch (Exception)
-            {
-                // Do not attach database exception details: expired challenge rows contain
-                // participant addresses and protected key material.
-                logger.LogError("Personal-data export request cleanup failed.");
-            }
+    protected override TimeSpan Interval => TimeSpan.FromMinutes(configuration.CleanupIntervalMinutes);
 
-            try
-            {
-                await Task.Delay(TimeSpan.FromMinutes(configuration.CleanupIntervalMinutes), stoppingToken);
-            }
-            catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
-            {
-                break;
-            }
-        }
+    protected override async Task RunOnceAsync(CancellationToken cancellationToken)
+    {
+        using var scope = serviceProvider.CreateScope();
+        var context = scope.ServiceProvider.GetRequiredService<RefTestManagementContext>();
+        var count = await ClearExpiredChallengesAsync(context, DateTime.UtcNow, cancellationToken);
+        if (count > 0)
+            logger.LogInformation(
+                "Cleared {Count} expired or terminal personal-data export requests",
+                count);
     }
+
+    // Do not attach database exception details: expired challenge rows contain participant
+    // addresses and protected key material.
+    protected override void LogFailure(Exception exception) =>
+        logger.LogError("Personal-data export request cleanup failed.");
 
     internal static async Task<int> ClearExpiredChallengesAsync(
         RefTestManagementContext context,

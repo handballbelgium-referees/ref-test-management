@@ -11,7 +11,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 <details open>
 <summary><strong><code>RefTestManagement.Api/</code></strong> — 🔷 .NET Web API (.NET 10) — entry point, GraphQL, background services</summary>
 
-- `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; `JobHandlers/` keeps only the Auth0-backed approval notification handler
+- `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; timer-driven ones derive from `PollingBackgroundService`; `JobHandlers/` keeps only the Auth0-backed approval notification handler
 - `Controllers/` — Auth0 login/callback endpoints
 - `Graphql/` — Mutations, Queries, Subscriptions, Types, ReadModels
 
