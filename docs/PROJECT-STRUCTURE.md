@@ -22,7 +22,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 - **`RefTestManagement.Application/`** — 🔷 Ports (`Abstractions/`: email, PDF, report, translation, session, subscription and privacy-erasure services), job payloads, configuration models, external GraphQL client (IHF Rules); target home of use cases
 - **`RefTestManagement.Domain/`** — 🔷 Domain entities: RefTest, RefTestTitle, Job, and their domain events
 - **`RefTestManagement.Security/`** — 🔐 Permission constants, authorization handlers, dynamic policy provider
-- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, subscriptions, job enqueueing
+- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, subscriptions, job enqueueing; `AddInfrastructureServices()` registers them
 - **`RefTestManagement.Migrations.SqlServer/`, `.PostgreSQL/`, `.SQLite/`, `.MySQL/`** — 🗄️ Provider-specific EF Core migrations
 - **`RefTestManagement.UnitTests/`** — 🧪 xUnit tests, including the architecture dependency tests
 
