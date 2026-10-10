@@ -123,7 +123,7 @@ public class ConcurrencyTokenTests
 
         await using var context = database.CreateContext();
 
-        // The same shape as BackgroundJobService.ClaimJobAsync: a bulk update, which bypasses the
+        // The same shape as EfJobQueueStore.ClaimJobAsync: a bulk update, which bypasses the
         // change tracker and therefore the interceptor.
         var claimed = await context.Jobs
             .Where(j => j.Id == job.Id)

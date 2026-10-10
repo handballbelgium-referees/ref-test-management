@@ -1,7 +1,6 @@
 ﻿using System.Data.Common;
 using System.Security.Claims;
 using System.Text.Json;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Update;
@@ -334,8 +333,8 @@ public sealed class PersonalDataExportRequestTests
                 .ToListAsync(TestContext.Current.CancellationToken);
             Assert.Equal([expired.Id], dueIds);
 
-            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
-                context, Now, TestContext.Current.CancellationToken);
+            var cleared = await new EfPersonalDataExportRequestCleanup(context)
+                .ClearExpiredChallengesAsync(Now, TestContext.Current.CancellationToken);
             Assert.Equal(1, cleared);
         }
 
@@ -386,10 +385,10 @@ public sealed class PersonalDataExportRequestTests
             var trackedRequest = await context.PersonalDataExportRequests.SingleAsync(
                 candidate => candidate.Id == request.Id, TestContext.Current.CancellationToken);
 
-            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
-                context,
-                Now,
-                TestContext.Current.CancellationToken);
+            var cleared = await new EfPersonalDataExportRequestCleanup(context)
+                .ClearExpiredChallengesAsync(
+                    Now,
+                    TestContext.Current.CancellationToken);
             Assert.Equal(1, cleared);
             var failure = Assert.Single(
                 trackedRequest.DomainEvents.OfType<PersonalDataExportDeliveryFailedEvent>());
@@ -430,14 +429,12 @@ public sealed class PersonalDataExportRequestTests
 
         await using (var context = database.CreateContext())
         {
-            var terminalRequestIds = await PersonalDataExportRequestCleanupService
-                .GetTerminalDeliveryRequestIdsAsync(context, TestContext.Current.CancellationToken);
+            var terminalRequestIds = await new EfPersonalDataExportRequestCleanup(context)
+                .GetTerminalDeliveryRequestIdsAsync(TestContext.Current.CancellationToken);
             Assert.DoesNotContain(request.Id, terminalRequestIds);
 
-            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
-                context,
-                Now,
-                TestContext.Current.CancellationToken);
+            var cleared = await new EfPersonalDataExportRequestCleanup(context)
+                .ClearExpiredChallengesAsync(Now, TestContext.Current.CancellationToken);
             Assert.Equal(0, cleared);
         }
 
@@ -468,10 +465,8 @@ public sealed class PersonalDataExportRequestTests
         await using (var context = database.CreateContext(
                          new AddActiveDeliveryJobBeforeCleanupSelectionInterceptor(database, request.Id)))
         {
-            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
-                context,
-                Now,
-                TestContext.Current.CancellationToken);
+            var cleared = await new EfPersonalDataExportRequestCleanup(context)
+                .ClearExpiredChallengesAsync(Now, TestContext.Current.CancellationToken);
             Assert.Equal(0, cleared);
         }
 
@@ -507,8 +502,8 @@ public sealed class PersonalDataExportRequestTests
         Guid[] terminalRequestIds;
         await using (var cleanupSnapshot = database.CreateContext())
         {
-            terminalRequestIds = await PersonalDataExportRequestCleanupService
-                .GetTerminalDeliveryRequestIdsAsync(cleanupSnapshot, TestContext.Current.CancellationToken);
+            terminalRequestIds = await new EfPersonalDataExportRequestCleanup(cleanupSnapshot)
+                .GetTerminalDeliveryRequestIdsAsync(TestContext.Current.CancellationToken);
         }
 
         Assert.Empty(terminalRequestIds);

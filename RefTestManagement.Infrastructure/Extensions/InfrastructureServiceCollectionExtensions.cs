@@ -48,11 +48,16 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IRefTestResultsPdfService, RefTestResultsPdfService>();
         services.AddScoped<IPersonalDataExportPdfService, PersonalDataExportPdfService>();
         services.AddScoped<IRefTestReportService, RefTestReportService>();
+        services.AddScoped<IRefTestReportDataSource, RefTestReportDataSource>();
+        services.AddScoped<IReportEmailJobQueue, ReportEmailJobQueue>();
         services.AddScoped<IJobEnqueueService, JobEnqueueService>();
         services.AddScoped<IRefTestPrivacyErasureService, RefTestPrivacyErasureService>();
         services.AddScoped<IRefTestSubscriptionService, RefTestSubscriptionService>();
         services.AddScoped<IIhfRulesQuestionsService, IhfRulesQuestionsService>();
         services.AddScoped<IRefTestUnitOfWork, EfRefTestUnitOfWork>();
+        services.AddScoped<IPrivacyNoticeAcceptanceUnitOfWork, EfPrivacyNoticeAcceptanceUnitOfWork>();
+        services.AddScoped<IJobQueueStore, EfJobQueueStore>();
+        services.AddScoped<IPersonalDataExportRequestCleanup, EfPersonalDataExportRequestCleanup>();
 
         // Privacy challenges and participant credentials. Token protection is a singleton because
         // Data Protection keys are process-wide; the request services are scoped to the DbContext.

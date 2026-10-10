@@ -21,7 +21,7 @@ public class RefTestDeadlineTests
             email: "john.doe@example.com",
             numberOfQuestions: 20,
             maxTimeInMinutes: maxTimeInMinutes,
-            questionIds: ["q1", "q2"],
+            questionIds: ["q1", "q2", "q3", "q4"],
             sendInvitationAutomatically: false,
             sendResultsAutomatically: false);
 
@@ -82,6 +82,33 @@ public class RefTestDeadlineTests
 
         Assert.Throws<InvalidRefTestStatusException>(() => refTest.SaveProgress(3, ["a1"]));
         Assert.NotEqual(3, refTest.CurrentQuestionIndex);
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(5)]
+    public void SaveProgress_RejectsAnIndexOutsideTheQuestionRangeWithoutChangingState(int index)
+    {
+        var refTest = StartedRefTest();
+
+        Assert.Throws<RefTestValidationException>(() => refTest.SaveProgress(index, ["a1"]));
+        Assert.Equal(0, refTest.CurrentQuestionIndex);
+        Assert.Empty(refTest.SelectedAnswerIds);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public void SaveProgress_AcceptsEveryQuestionAndTheReviewStep(int index)
+    {
+        var refTest = StartedRefTest();
+
+        refTest.SaveProgress(index, ["a1"]);
+
+        Assert.Equal(index, refTest.CurrentQuestionIndex);
     }
 
     [Fact]

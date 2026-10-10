@@ -2,7 +2,7 @@ using System.Reflection;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Email;
-using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
@@ -107,6 +107,61 @@ public sealed class RefTestEmailMutationPersistenceTests
     }
 
     [Fact]
+    public async Task SendReportAsync_QueuesOrderedReportSnapshotThroughApplicationPorts()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        using var database = SqliteTestDatabase.Create();
+
+        Guid lateRefTestId;
+        Guid earlyRefTestId;
+        await using (var seedContext = database.CreateContext())
+        {
+            var title = RefTestTitle.Create("Season 2026");
+            seedContext.RefTestTitles.Add(title);
+            await seedContext.SaveChangesAsync(cancellationToken);
+
+            var late = NewCompletedRefTest(title.Id, "Zoe", "Zebra", "zoe@example.org");
+            var early = NewCompletedRefTest(title.Id, "Ada", "Apple", "ada@example.org");
+            lateRefTestId = late.Id;
+            earlyRefTestId = early.Id;
+            seedContext.RefTests.AddRange(late, early);
+            await seedContext.SaveChangesAsync(cancellationToken);
+        }
+
+        await using var context = database.CreateContext();
+        var tokenProtection = new RefTestInvitationTokenProtection(new EphemeralDataProtectionProvider());
+        var jobEnqueueService = new JobEnqueueService(
+            context,
+            tokenProtection,
+            NullLogger<JobEnqueueService>.Instance);
+
+        var result = await RefTestEmailMutations.SendReportAsync(
+            new SendReportInput([lateRefTestId, earlyRefTestId]),
+            new RefTestReportDataSource(context),
+            new ReportEmailJobQueue(jobEnqueueService),
+            new ReportConfiguration { RecipientEmails = ["staff@example.org"] },
+            new ScoreConfiguration { PassingPercentage = 80 },
+            NullLoggerFactory.Instance,
+            new HttpContextAccessor { HttpContext = new DefaultHttpContext() },
+            cancellationToken);
+
+        Assert.True(result.Success);
+        Assert.Equal(2, result.RefTestCount);
+        Assert.Equal("Report job successfully enqueued for 1 recipient(s)", result.Message);
+
+        var job = await context.Jobs.SingleAsync(cancellationToken);
+        Assert.Equal(JobType.ReportEmail, job.JobType);
+        using var payload = JsonDocument.Parse(job.Payload);
+        var refTests = payload.RootElement.GetProperty("refTests");
+        Assert.Equal(earlyRefTestId, refTests[0].GetProperty("refTestId").GetGuid());
+        Assert.Equal("Apple", refTests[0].GetProperty("lastName").GetString());
+        Assert.True(refTests[0].GetProperty("passed").GetBoolean());
+        Assert.Equal(lateRefTestId, refTests[1].GetProperty("refTestId").GetGuid());
+        Assert.Equal("Zebra", refTests[1].GetProperty("lastName").GetString());
+        Assert.True(refTests[1].GetProperty("passed").GetBoolean());
+    }
+
+    [Fact]
     public async Task SendInvitationsAsync_ContinuesAfterSaveTimeConcurrencyFailure()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -199,9 +254,13 @@ public sealed class RefTestEmailMutationPersistenceTests
             sendResultsAutomatically: false,
             requiresApproval: false);
 
-    private static RefTest NewCompletedRefTest(Guid titleId)
+    private static RefTest NewCompletedRefTest(
+        Guid titleId,
+        string firstName = "Grace",
+        string lastName = "Hopper",
+        string email = "grace@example.org")
     {
-        var refTest = NewRefTest(titleId, "Grace", "Hopper", "grace@example.org");
+        var refTest = NewRefTest(titleId, firstName, lastName, email);
         refTest.AcceptPrivacyNotice("v1.0");
         refTest.Start("v1.0");
         refTest.Complete(

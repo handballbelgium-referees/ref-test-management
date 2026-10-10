@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Application.Services;
+namespace Handball.Belgium.RefTestManagement.Application.Abstractions;
 
 /// <summary>Protects invitation tokens persisted for retryable email delivery.</summary>
 public interface IRefTestInvitationTokenProtection

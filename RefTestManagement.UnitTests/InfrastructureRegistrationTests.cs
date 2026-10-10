@@ -1,3 +1,4 @@
+using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -18,8 +19,10 @@ public sealed class InfrastructureRegistrationTests
             .ToHashSet();
 
         var ports = typeof(IEmailService).Assembly.GetExportedTypes()
-            .Where(type => type.IsInterface && type.Namespace == typeof(IEmailService).Namespace);
+            .Where(type => type.IsInterface && type != typeof(IJobPayload))
+            .ToArray();
 
+        Assert.All(ports, port => Assert.Equal(typeof(IEmailService).Namespace, port.Namespace));
         Assert.All(ports, port => Assert.Contains(port, registered));
     }
 

@@ -303,6 +303,9 @@ public class RefTest : IHasDomainEvents, IHasParticipantIdentity
         if (Status != RefTestStatus.InProgress)
             throw new InvalidRefTestStatusException("Can only save progress for in-progress RefTests");
 
+        if (currentQuestionIndex < 0 || currentQuestionIndex > QuestionIds.Count)
+            throw new RefTestValidationException("The question index is outside this RefTest.");
+
         if (HasPassedDeadline(now))
             throw new InvalidRefTestStatusException("The time limit for this RefTest has passed");
 

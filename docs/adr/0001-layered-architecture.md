@@ -1,7 +1,7 @@
 # ADR 0001: Layered backend architecture
 
 - **Status:** Accepted
-- **Date:** 2026-10-08, updated 2026-10-09 after the R1 architecture remediation (WP1–WP12)
+- **Date:** 2026-10-08, updated 2026-10-10 after the R1 architecture remediation (WP1–WP12) and review remediations
 - **Enforced by:** `RefTestManagement.UnitTests/ArchitectureDependencyTests.cs`, `DomainDependencyTests.cs`,
   `InfrastructureRegistrationTests.cs` and `TranslationParityTests.cs`
 
@@ -15,8 +15,9 @@ result, what is still out of line, and the trade-offs accepted on the way.
 
 ## Decision
 
-Dependencies point inward: Domain ← Application ← Infrastructure / Api, with Api as the composition root and
-GraphQL transport only.
+Dependencies point inward: Domain ← Application ← Infrastructure / Api, with Api as the composition root. GraphQL
+resolvers are transport adapters; hosted workers own scheduling and dispatch, while Infrastructure owns job-queue
+and cleanup persistence.
 
 ```mermaid
 flowchart TB
@@ -38,18 +39,18 @@ flowchart TB
 | `Domain`         | none; no NuGet packages             | Entities, invariants, domain events                                                                                                  |
 | `Application`    | `Domain`                            | Use-case handlers (`Application/RefTests`), ports (`Application/Abstractions`), configuration models, job payloads; no EF Core, ASP.NET Core, HotChocolate, HTTP clients, Redis or document libraries |
 | `AuditLog`       | `Domain`                            | Domain-event audit trail (EF Core interceptor)                                                                                       |
-| `Infrastructure` | `Domain`, `Application`, `AuditLog` | Adapters: EF Core and the unit of work, job handlers, email, PDF/Excel renderers, subscriptions, IHF client, privacy services        |
+| `Infrastructure` | `Domain`, `Application`, `AuditLog` | Adapters: EF Core and unit of work, job-queue selection/claims/persistence/retention, job handlers, email, PDF/Excel renderers, subscriptions, IHF client, privacy services and export-request cleanup |
 | `Migrations.*`   | `Infrastructure`                    | Provider-specific EF Core migrations                                                                                                 |
 | `Security`       | none                                | Permission constants, authorization handlers and policy provider                                                                     |
 | `Auth0`          | `Security`                          | Auth0 Management API client                                                                                                          |
-| `Api`            | anything                            | Composition root: hosting, DI wiring, validated configuration, GraphQL transport, controllers, hosted services                      |
+| `Api`            | anything                            | Composition root: hosting, DI wiring, validated configuration, GraphQL transport, controllers, hosted-service scheduling and job-handler dispatch |
 
 Rules:
 
 1. Application declares the ports it needs in `Application/Abstractions`. Infrastructure implements them and
    registers them in `AddInfrastructureServices()` / `AddJobHandlers()`. Api wires them together.
-2. GraphQL mutations and queries are transport adapters: authorize, map input, call an Application use case through
-   `IRefTestUnitOfWork`, map the result. Queries may read through EF Core directly.
+2. GraphQL mutations are transport adapters: authorize, validate/map input, call an Application use case through its
+   port, and map the result. Queries may read through EF Core directly.
 3. A new project must be added to `ArchitectureDependencyTests` with the references its layer may use. The test
    fails until that happens.
 4. Infrastructure may not declare new public interfaces; a port belongs in Application. The test's allow-list may
@@ -64,6 +65,8 @@ Rules:
 | Every port needs a registration                                                   | WP3c            | `EveryApplicationPortHasAnInfrastructureRegistration`            |
 | Use cases lived in GraphQL mutations and `Api/Services`                           | WP5b–WP8a       | Handler tests against fakes of `IRefTestUnitOfWork`              |
 | Job handlers lived in Api                                                         | WP8b            | Interface allow-list (`IJobHandler` is the only addition)        |
+| Report-request and privacy-notice acceptance orchestration lived in GraphQL       | Review remediation | Application handlers and focused use-case/persistence tests  |
+| API job worker owned EF queue and export-cleanup persistence                       | Review remediation | Application ports with Infrastructure adapters and SQLite worker/cleanup tests |
 
 ## Known violations
 
@@ -86,8 +89,11 @@ Rules:
 
 ## Consequences
 
-- The declared project graph, Application's packages and Infrastructure's public interfaces are checked on every
-  test run, so a wrong-direction reference fails CI immediately.
+- The declared project graph, Application's package/framework references, Application-port registrations and
+  Infrastructure's public interfaces are checked on every test run, so a wrong-direction reference or missing
+  registration fails CI immediately.
+- `IJobQueueStore` and `IPersonalDataExportRequestCleanup` keep database query/update details inside Infrastructure;
+  the API hosted services retain scheduling, handler dispatch, and orchestration.
 - The README and `docs/PROJECT-STRUCTURE.md` describe the actual graph. Update them together with this ADR when the
   graph changes.
 - Multi-replica concerns (shared state, event delivery, email retries) are recorded in
