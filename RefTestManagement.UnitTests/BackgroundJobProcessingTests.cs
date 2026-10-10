@@ -5,7 +5,6 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.Privacy.Events;
-using Handball.Belgium.RefTestManagement.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -72,11 +71,12 @@ public class BackgroundJobProcessingTests
     {
         await using var context = database.CreateContext();
         var job = await context.Jobs.FindAsync([jobId], TestContext.Current.CancellationToken);
+        var queueStore = new EfJobQueueStore(context, NullLogger<EfJobQueueStore>.Instance);
 
         await BackgroundJobService.ProcessJobAsync(
             job!,
             serviceProvider,
-            context,
+            queueStore,
             NullLogger.Instance,
             MaxAttempts,
             TestContext.Current.CancellationToken);
@@ -217,8 +217,9 @@ public class BackgroundJobProcessingTests
         PersonalDataExportRequest finalizedRequest;
         await using (var context = database.CreateContext())
         {
-            var reclaimed = await BackgroundJobService.ClaimJobAsync(
-                context,
+            var jobQueueStore = new EfJobQueueStore(context, NullLogger<EfJobQueueStore>.Instance);
+            var exportRequestCleanup = new EfPersonalDataExportRequestCleanup(context);
+            var reclaimed = await jobQueueStore.ClaimJobAsync(
                 job.Id,
                 maxAttempts: 1,
                 TimeSpan.FromMinutes(5),
@@ -226,7 +227,8 @@ public class BackgroundJobProcessingTests
             Assert.Null(reclaimed);
 
             var failed = await BackgroundJobService.FailExpiredFinalAttemptJobsAsync(
-                context,
+                jobQueueStore,
+                exportRequestCleanup,
                 NullLogger.Instance,
                 maxAttempts: 1,
                 batchSize: 10,
@@ -290,8 +292,10 @@ public class BackgroundJobProcessingTests
 
         await using (var context = database.CreateContext())
         {
+            var jobQueueStore = new EfJobQueueStore(context, NullLogger<EfJobQueueStore>.Instance);
             var failed = await BackgroundJobService.FailExpiredFinalAttemptJobsAsync(
-                context,
+                jobQueueStore,
+                new EfPersonalDataExportRequestCleanup(context),
                 NullLogger.Instance,
                 maxAttempts: 1,
                 batchSize: 10,
@@ -326,8 +330,8 @@ public class BackgroundJobProcessingTests
             var trackedRequest = await context.PersonalDataExportRequests.SingleAsync(
                 candidate => candidate.Id == request.Id,
                 TestContext.Current.CancellationToken);
-            var cleared = await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
-                context,
+            var cleanup = new EfPersonalDataExportRequestCleanup(context);
+            var cleared = await cleanup.ClearExpiredChallengesAsync(
                 DateTime.UtcNow,
                 TestContext.Current.CancellationToken);
             Assert.Equal(1, cleared);
@@ -341,8 +345,7 @@ public class BackgroundJobProcessingTests
 
             Assert.Equal(
                 0,
-                await PersonalDataExportRequestCleanupService.ClearExpiredChallengesAsync(
-                    context,
+                await cleanup.ClearExpiredChallengesAsync(
                     DateTime.UtcNow,
                     TestContext.Current.CancellationToken));
             Assert.Single(trackedRequest.DomainEvents.OfType<PersonalDataExportDeliveryFailedEvent>());
@@ -363,16 +366,17 @@ public class BackgroundJobProcessingTests
         }
 
         await using var context = database.CreateContext();
+        var jobQueueStore = new EfJobQueueStore(context, NullLogger<EfJobQueueStore>.Instance);
         var failed = await BackgroundJobService.FailExpiredFinalAttemptJobsAsync(
-            context,
+            jobQueueStore,
+            new EfPersonalDataExportRequestCleanup(context),
             NullLogger.Instance,
             maxAttempts: 2,
             batchSize: 10,
             TestContext.Current.CancellationToken);
         Assert.Equal(0, failed);
 
-        var reclaimed = await BackgroundJobService.ClaimJobAsync(
-            context,
+        var reclaimed = await jobQueueStore.ClaimJobAsync(
             job.Id,
             maxAttempts: 2,
             TimeSpan.FromMinutes(5),

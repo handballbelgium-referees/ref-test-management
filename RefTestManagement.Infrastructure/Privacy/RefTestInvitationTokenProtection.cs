@@ -1,4 +1,4 @@
-using Handball.Belgium.RefTestManagement.Application.Services;
+using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Microsoft.AspNetCore.DataProtection;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Privacy;

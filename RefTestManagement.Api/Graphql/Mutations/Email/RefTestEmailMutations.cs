@@ -1,7 +1,6 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -9,7 +8,6 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
-using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Email;
 
@@ -136,93 +134,64 @@ public static partial class RefTestEmailMutations
     [Authorize(Policy = Permissions.RefTests.SendReport)]
     public static async Task<SendReportResult> SendReportAsync(
         SendReportInput input,
-        RefTestManagementContext context,
-        [Service] IJobEnqueueService jobEnqueueService,
+        [Service] IRefTestReportDataSource reportDataSource,
+        [Service] IReportEmailJobQueue reportEmailJobQueue,
         [Service] ReportConfiguration reportConfig,
         [Service] ScoreConfiguration scoreConfig,
         [Service] ILoggerFactory loggerFactory,
         [Service] IHttpContextAccessor httpContextAccessor,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        [Service] TimeProvider? timeProvider = null)
     {
         var logger = loggerFactory.CreateLogger("RefTestEmailMutations");
         var correlationId = MutationErrorHandling.GetCorrelationId(httpContextAccessor);
-        var refTests = await context.RefTests
-            .Include(s => s.Title)
-            .Where(s => input.Ids.Contains(s.Id))
-            .OrderBy(s => s.LastName)
-            .ToListAsync(cancellationToken);
+        var outcome = await new SendRefTestReportHandler(
+                reportDataSource,
+                reportEmailJobQueue,
+                reportConfig,
+                scoreConfig,
+                timeProvider ?? TimeProvider.System)
+            .HandleAsync(input.Ids, cancellationToken);
 
-        if (refTests.Count == 0)
+        if (outcome.Failure == SendRefTestReportFailure.EnqueueFailed)
         {
-            return new SendReportResult
+            var exception = outcome.Exception
+                ?? throw new InvalidOperationException("Report enqueue failure did not include its exception.");
+            MutationErrorHandling.LogMutationFailure(
+                logger,
+                exception,
+                nameof(SendReportAsync),
+                correlationId);
+        }
+
+        return outcome.Failure switch
+        {
+            SendRefTestReportFailure.NoRefTests => new SendReportResult
             {
                 Success = false,
                 Message = "No RefTests found with the provided IDs",
                 RefTestCount = 0
-            };
-        }
-
-        var reportData = refTests.Select(s => new RefTestReportPayloadData(
-            s.Id,
-            s.Title?.Value ?? "Unknown",
-            s.FirstName,
-            s.LastName,
-            s.StartedAt,
-            s.CompletedAt,
-            s.QuestionScore,
-            s.QuestionTotal,
-            s.AnswerScore,
-            s.AnswerTotal,
-            s.Percentage,
-            s.Percentage >= scoreConfig.PassingPercentage,
-            s.Language,
-            s.Duration
-        )).ToList();
-
-        var recipients = reportConfig.RecipientEmails;
-
-        if (recipients.Length == 0)
-        {
-            return new SendReportResult
+            },
+            SendRefTestReportFailure.NoRecipients => new SendReportResult
             {
                 Success = false,
                 Message = "No recipient emails configured",
-                RefTestCount = refTests.Count
-            };
-        }
-
-        try
-        {
-            var reportPayload = new ReportEmailPayload(
-                recipients,
-                reportData,
-                DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss")
-            );
-
-            await jobEnqueueService.EnqueueReportEmailAsync(reportPayload, cancellationToken: cancellationToken);
-
-            return new SendReportResult
-            {
-                Success = true,
-                Message = $"Report job successfully enqueued for {recipients.Length} recipient(s)",
-                RefTestCount = refTests.Count
-            };
-        }
-        catch (Exception ex) when (ex is not OperationCanceledException || !cancellationToken.IsCancellationRequested)
-        {
-            MutationErrorHandling.LogMutationFailure(
-                logger,
-                ex,
-                nameof(SendReportAsync),
-                correlationId);
-
-            return new SendReportResult
+                RefTestCount = outcome.RefTestCount
+            },
+            SendRefTestReportFailure.EnqueueFailed => new SendReportResult
             {
                 Success = false,
                 Message = "Failed to enqueue report job. Please try again later.",
-                RefTestCount = refTests.Count
-            };
-        }
+                RefTestCount = outcome.RefTestCount
+            },
+            SendRefTestReportFailure.None => new SendReportResult
+            {
+                Success = true,
+                Message = $"Report job successfully enqueued for {outcome.RecipientCount} recipient(s)",
+                RefTestCount = outcome.RefTestCount
+            },
+            _ => throw new InvalidOperationException($"Unhandled report request outcome '{outcome.Failure}'.")
+        };
     }
 
     private static User? ToUser(RefTestParticipant? participant) =>

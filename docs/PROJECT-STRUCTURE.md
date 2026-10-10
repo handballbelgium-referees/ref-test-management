@@ -11,7 +11,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 <details open>
 <summary><strong><code>RefTestManagement.Api/</code></strong> — 🔷 .NET Web API (.NET 10) — entry point, GraphQL, background services</summary>
 
-- `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; timer-driven ones derive from `PollingBackgroundService`; `JobHandlers/` keeps only the Auth0-backed approval notification handler
+- `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; timer-driven ones derive from `PollingBackgroundService`. The job worker dispatches handlers through `IJobHandler`; queue queries, claims, persistence and retention deletion are implemented in Infrastructure behind an Application port. Export-request cleanup scheduling is hosted here; its database operations are in Infrastructure.
 - `Controllers/` — Auth0 login/callback endpoints
 - `Graphql/` — Mutations, Queries, Subscriptions, Types, ReadModels
 - `Services/` — Host-side services, including the Redis-backed privacy rate limiter and participant session lease
@@ -20,10 +20,10 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 - **`RefTestManagement.AuditLog/`** — 📋 Domain-event–driven audit log library (Marten-style event store)
 - **`RefTestManagement.Auth0/`** — 🔐 Auth0 Management API client (M2M token, role-based user discovery)
-- **`RefTestManagement.Application/`** — 🔷 Ports (`Abstractions/`: email, PDF, report, translation, session, subscription, privacy-erasure and IHF question-bank services), job payloads, configuration models; target home of use cases
+- **`RefTestManagement.Application/`** — 🔷 Ports (`Abstractions/`: email, PDF, report, translation, session, subscription, privacy-erasure, IHF question-bank, job-queue and export-request cleanup services), job payloads, configuration models and use cases
 - **`RefTestManagement.Domain/`** — 🔷 Domain entities: RefTest, RefTestTitle, Job, and their domain events
 - **`RefTestManagement.Security/`** — 🔐 Permission constants, authorization handlers, dynamic policy provider
-- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, PDF/Excel/email service implementations, subscriptions, job enqueueing; `AddInfrastructureServices()` registers them
+- **`RefTestManagement.Infrastructure/`** — 🔷 EF Core DbContext, job-queue persistence/claims/retention, export-request cleanup, PDF/Excel/email service implementations and subscriptions; `AddInfrastructureServices()` registers the adapters
 - **`RefTestManagement.Migrations.SqlServer/`, `.PostgreSQL/`, `.SQLite/`, `.MySQL/`** — 🗄️ Provider-specific EF Core migrations
 - **`RefTestManagement.UnitTests/`** — 🧪 xUnit tests, including the architecture dependency tests
 
@@ -73,14 +73,14 @@ flowchart TB
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |
-| `RefTestManagement.Application/Abstractions`                     | Ports implemented by Infrastructure, including `IRefTestUnitOfWork` (one write use case's transaction) |
-| `RefTestManagement.Application/RefTests`                         | Use-case handlers called by the GraphQL resolvers and job handlers: creation, completion, approval, rejection, reset, revive, single-RefTest updates, on-request emails and deletion |
+| `RefTestManagement.Application/Abstractions`                     | Ports implemented by Infrastructure, including `IRefTestUnitOfWork`, `IJobQueueStore` and `IPersonalDataExportRequestCleanup` |
+| `RefTestManagement.Application/RefTests`                         | Use-case handlers called by GraphQL resolvers and job handlers, including creation, report requests, privacy-notice acceptance, completion, approval, rejection, reset, revive, updates, on-request emails and deletion |
 | `RefTestManagement.Infrastructure/IhfRules`                      | IHF Rules question-bank GraphQL client (StrawberryShake schema, queries) and its service |
 | `RefTestManagement.Security`                                     | Permission constants, authorization handlers and policy provider              |
 | `RefTestManagement.Infrastructure/Services`                      | PDF/Excel generation, email delivery (Brevo), approval notifications          |
 | `RefTestManagement.Infrastructure/Services/Reports`              | Excel and PDF renderers for the RefTest report; `RefTestReportService` only orchestrates and emails them |
-| `RefTestManagement.Infrastructure/Privacy`                       | Consent-withdrawal and data-export challenges, participant session and invitation-token protection. Withdrawal stays an Infrastructure service behind its Application port: every step is a serializable transaction under EF's retry strategy |
-| `RefTestManagement.Infrastructure/Jobs`                          | Background job handlers keyed by job type, payload parsing; `AddJobHandlers()` registers them |
+| `RefTestManagement.Infrastructure/Privacy`                       | Consent-withdrawal and data-export challenges, participant token adapters, and EF-backed export-request cleanup. Withdrawal stays behind its Application port: every step is a serializable transaction under EF's retry strategy |
+| `RefTestManagement.Infrastructure/Jobs`                          | EF-backed job queue store and background job handlers keyed by job type; `AddJobHandlers()` registers the handlers |
 | `RefTestManagement.UnitTests`                                    | Unit tests for audit/log redaction, job state machine, RefTest anonymization  |
 | `RefTestManagement.Ui/src/app/ref-tests`                         | RefTest creation, detail view, and management UI                              |
 | `RefTestManagement.Ui/src/app/ref-tests/list`                    | List view with mobile/desktop layouts, filters and operations                 |

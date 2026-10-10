@@ -87,14 +87,15 @@ public sealed class ArchitectureDependencyTests
     }
 
     [Fact]
-    public void ApplicationDoesNotReferenceInfrastructurePackages()
+    public void ApplicationDoesNotReferenceInfrastructurePackagesOrFrameworks()
     {
         var violations = ReadIncludes("RefTestManagement.Application", "PackageReference")
+            .Concat(ReadIncludes("RefTestManagement.Application", "FrameworkReference"))
             .Where(IsForbiddenInApplication)
             .ToList();
 
         Assert.True(violations.Count == 0,
-            $"RefTestManagement.Application references {string.Join(", ", violations)}. " +
+            $"RefTestManagement.Application references forbidden packages/frameworks: {string.Join(", ", violations)}. " +
             "Define a port in Application and implement it in Infrastructure instead.");
     }
 

@@ -1,14 +1,11 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.RefTests;
-using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
-using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 
@@ -125,9 +122,8 @@ public static partial class RefTestLifecycleMutations
     public static async Task<ParticipantRefTestDto> AcceptPrivacyNoticeAsync(
         string token,
         string noticeVersion,
-        RefTestManagementContext context,
         [Service] PrivacyConfiguration privacyConfiguration,
-        [Service] IRefTestSessionTokenService sessionTokenService,
+        [Service] IPrivacyNoticeAcceptanceUnitOfWork unitOfWork,
         CancellationToken cancellationToken,
         [Service] TimeProvider? timeProvider = null)
     {
@@ -136,14 +132,10 @@ public static partial class RefTestLifecycleMutations
 
         token = ParticipantInput.Token(token);
 
-        var refTest = await context.RefTests
-            .FindByParticipantCredentialAsync(token, sessionTokenService, cancellationToken);
-
-        if (refTest is null)
-            throw new RefTestNotFoundException();
-
-        refTest.AcceptPrivacyNotice(noticeVersion, timeProvider?.GetUtcNow().UtcDateTime);
-        await context.SaveChangesWithRetryAsync(cancellationToken);
+        var refTest = await new AcceptPrivacyNoticeHandler(
+                unitOfWork,
+                timeProvider ?? TimeProvider.System)
+            .HandleAsync(token, noticeVersion, cancellationToken);
 
         return refTest.ToParticipantDto();
     }

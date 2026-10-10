@@ -4,7 +4,6 @@ using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -87,7 +86,7 @@ public sealed class ApprovalNotificationEmailJobHandlerTests
         await BackgroundJobService.ProcessJobAsync(
             job,
             serviceProvider,
-            context,
+            new EfJobQueueStore(context, NullLogger<EfJobQueueStore>.Instance),
             NullLogger.Instance,
             maxAttempts: 3,
             cancellationToken);

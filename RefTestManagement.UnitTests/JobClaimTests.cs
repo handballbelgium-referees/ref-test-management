@@ -1,11 +1,13 @@
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
+using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 /// <summary>
-/// Covers <c>BackgroundJobService.ClaimJobAsync</c> against a real database.
+/// Covers <see cref="EfJobQueueStore.ClaimJobAsync"/> against a real database.
 /// </summary>
 /// <remarks>
 /// These run against SQLite rather than a fake because the whole point of the claim is that the
@@ -16,6 +18,9 @@ public class JobClaimTests
 {
     private static readonly TimeSpan LockDuration = TimeSpan.FromMinutes(5);
     private const int MaxAttempts = 3;
+
+    private static EfJobQueueStore Store(RefTestManagementContext context) =>
+        new(context, NullLogger<EfJobQueueStore>.Instance);
 
     private static async Task<Guid> SeedPendingJobAsync(SqliteTestDatabase database)
     {
@@ -33,8 +38,8 @@ public class JobClaimTests
         var jobId = await SeedPendingJobAsync(database);
 
         await using var context = database.CreateContext();
-        var claimed = await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var claimed = await Store(context).ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         Assert.NotNull(claimed);
         Assert.Equal(JobStatus.Processing, claimed.Status);
@@ -55,10 +60,10 @@ public class JobClaimTests
         await using var firstWorker = database.CreateContext();
         await using var secondWorker = database.CreateContext();
 
-        var firstClaim = await BackgroundJobService.ClaimJobAsync(
-            firstWorker, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
-        var secondClaim = await BackgroundJobService.ClaimJobAsync(
-            secondWorker, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var firstClaim = await Store(firstWorker).ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var secondClaim = await Store(secondWorker).ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         Assert.NotNull(firstClaim);
         Assert.Null(secondClaim);
@@ -71,8 +76,8 @@ public class JobClaimTests
         var jobId = await SeedPendingJobAsync(database);
 
         await using var context = database.CreateContext();
-        await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var store = Store(context);
+        await store.ClaimJobAsync(jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         // Stand in for a worker that died holding the lock.
         await context.Jobs
@@ -81,8 +86,8 @@ public class JobClaimTests
                 s => s.SetProperty(j => j.LockedUntil, DateTime.UtcNow.AddMinutes(-1)),
                 TestContext.Current.CancellationToken);
 
-        var reclaimed = await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var reclaimed = await store.ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         Assert.NotNull(reclaimed);
     }
@@ -98,9 +103,10 @@ public class JobClaimTests
         var jobId = await SeedPendingJobAsync(database);
 
         await using var context = database.CreateContext();
+        var store = Store(context);
 
-        var firstClaim = await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var firstClaim = await store.ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
         Assert.Equal(0, firstClaim!.Attempts);
 
         await context.Jobs
@@ -109,8 +115,8 @@ public class JobClaimTests
                 s => s.SetProperty(j => j.LockedUntil, DateTime.UtcNow.AddMinutes(-1)),
                 TestContext.Current.CancellationToken);
 
-        var reclaim = await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var reclaim = await store.ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         Assert.Equal(1, reclaim!.Attempts);
     }
@@ -131,8 +137,8 @@ public class JobClaimTests
                 s => s.SetProperty(j => j.Attempts, MaxAttempts),
                 TestContext.Current.CancellationToken);
 
-        var claimed = await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var claimed = await Store(context).ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         Assert.Null(claimed);
     }
@@ -152,8 +158,8 @@ public class JobClaimTests
         }
 
         await using var context = database.CreateContext();
-        var claimed = await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var claimed = await Store(context).ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         Assert.Null(claimed);
     }
@@ -173,8 +179,8 @@ public class JobClaimTests
         }
 
         await using var context = database.CreateContext();
-        var claimed = await BackgroundJobService.ClaimJobAsync(
-            context, jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
+        var claimed = await Store(context).ClaimJobAsync(
+            jobId, MaxAttempts, LockDuration, TestContext.Current.CancellationToken);
 
         Assert.Null(claimed);
     }

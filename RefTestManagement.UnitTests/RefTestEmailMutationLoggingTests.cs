@@ -74,8 +74,9 @@ public class RefTestEmailMutationLoggingTests
         await using var context = database.CreateContext();
         var result = await RefTestEmailMutations.SendReportAsync(
             new SendReportInput([refTestId]),
-            context,
-            ThrowingJobEnqueueService.ForReport(new InvalidOperationException("SMTP rejected john.doe@example.com")),
+            new RefTestReportDataSource(context),
+            new ThrowingReportEmailJobQueue(
+                new InvalidOperationException("SMTP rejected john.doe@example.com")),
             new ReportConfiguration { RecipientEmails = ["staff@example.org"] },
             new ScoreConfiguration(),
             loggerFactory,
@@ -85,6 +86,12 @@ public class RefTestEmailMutationLoggingTests
         Assert.False(result.Success);
         Assert.Equal("Failed to enqueue report job. Please try again later.", result.Message);
         AssertLoggedFailure(loggerProvider, "trace-report", "SendReportAsync");
+    }
+
+    private sealed class ThrowingReportEmailJobQueue(Exception exception) : IReportEmailJobQueue
+    {
+        public Task EnqueueAsync(ReportEmailPayload payload, CancellationToken cancellationToken) =>
+            Task.FromException(exception);
     }
 
     private static IHttpContextAccessor HttpContextAccessorWith(string traceIdentifier) =>
