@@ -6,6 +6,13 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
 
 ```json
 {
+  "Hosting": {
+    "Mode": "All",
+    "Provider": "Local"
+  },
+  "State": {
+    "Mode": "Local"
+  },
   "DatabaseProvider": "SqlServer",
   "ConnectionStrings": {
     "RefTestManagement": "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
@@ -92,20 +99,42 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
 }
 ```
 
-### Shared Redis (multi-replica)
+### Hosting mode and shared state
 
-`RedisConfiguration:Endpoint` is optional. Leave it empty for development and single-instance
-hosting: subscriptions and the participant single-tab session lock then stay in-process. Set it
-before running more than one API instance; the API then opens one shared connection and uses it
-for GraphQL subscription events (so a mutation on one replica reaches subscribers on another) and
-for the session lock, held as a 90-second lease that the open session renews every 30 seconds, so
-a crashed replica cannot keep a RefTest locked. Azure Container Apps refuses to start without it.
-The endpoint must be an authenticated TLS URI (`rediss://:password@host:port`); provide it through
-the hosting environment or Azure Key Vault references, never source control. Use Redis 7.0 or later
-and a dedicated deployment/ACL namespace for this application; besides the limiter commands below,
-grant `SET`, `EVAL`/`EVALSHA`, `PUBLISH` and `SUBSCRIBE`. This replaces
-`PrivacyChallengeConfiguration:RedisEndpoint`, which is no longer read: move its value to
-`RedisConfiguration:Endpoint`.
+`Hosting:Mode` controls which processes run the background services:
+
+| Value | API executable | Worker executable |
+| ----- | ------------- | ----------------- |
+| `All` | HTTP API and background services (default) | Rejected |
+| `Api` | HTTP API only | Rejected |
+| `Worker` | Rejected | Background services only; no HTTP listener |
+
+`State:Mode` is provider-neutral. `Local` keeps subscriptions, session locks, and the privacy
+challenge limiter in-process; use it only with one API instance and no separate Worker.
+`Shared` requires an authenticated TLS Redis endpoint and Redis-backed privacy challenge limiting.
+Use `Shared` for API/Worker split deployments or any API scale-out: Worker-published events must
+reach API subscribers, and a participant's session lock and privacy limiter must be shared too.
+The Worker executable rejects `Local`.
+
+Set `RedisConfiguration:Endpoint` to an authenticated TLS URI (`rediss://:password@host:port`).
+The API and Worker use one shared connection for Hot Chocolate pub/sub, the 90-second participant
+session-lock lease, and the Redis privacy limiter. The endpoint is required when `State:Mode=Shared`
+or the privacy limiter backend is `Redis`; it is otherwise optional. Provide it through the hosting
+environment or a secret reference, never source control. Use Redis 7.0 or later and a dedicated
+deployment/ACL namespace for this application; grant the limiter and session-lock commands plus
+`PUBLISH` and `SUBSCRIBE` for pub/sub. This replaces the former
+`PrivacyChallengeConfiguration:RedisEndpoint`, which is no longer read.
+
+`Hosting:Provider` selects the host's Data Protection key-encryption adapter. It defaults to
+`Local` for development. The database-backed key ring is always used; API and Worker must point to
+the same database and retain the `RefTestManagement` application name. Set `Azure` for Azure
+deployments to wrap key-ring entries with Azure Key Vault. Configure
+`Azure:KeyVault:DataProtectionKeyIdentifier` as an HTTPS, versionless key URI (for example
+`https://<vault>.vault.azure.net/keys/<name>`). An optional
+`Azure:KeyVault:ManagedIdentityClientId` selects a user-assigned identity; otherwise the adapter
+uses the system-assigned managed identity. Grant that identity the Key Vault Crypto User role, and
+retain old Key Vault key versions while any data-protection key references them. Other cloud
+providers should supply their own host adapter rather than changing `Hosting:Mode` or `State:Mode`.
 
 Subscription events are live-refresh hints published after the change commits. Publishing is best
 effort: during a Redis outage the change still succeeds, a warning is logged, and open screens
@@ -116,20 +145,21 @@ transaction as the change.
 
 `PrivacyChallengeConfiguration:RateLimitBackend` defaults to `Local`, which uses process-local
 state and is safe only when exactly one API instance is running. Select `Redis` and configure
-`RedisConfiguration:Endpoint` and `PrivacyChallengeConfiguration:HmacSecret` before scaling to
-multiple instances; Azure Container Apps rejects `Local` at startup, and `Redis` without an endpoint
-fails at startup everywhere. The limiter uses an atomic `MULTI`/`EXEC` transaction with `INCR`,
+`RedisConfiguration:Endpoint` and `PrivacyChallengeConfiguration:HmacSecret` before selecting
+`State:Mode=Shared`; `Shared` requires the Redis limiter, and `Redis` without an endpoint fails at
+startup. The limiter uses an atomic `MULTI`/`EXEC` transaction with `INCR`,
 conditional `EXPIRE`/`PEXPIRE NX` (`ExpireWhen.HasNoExpiry`), and `PTTL` verification; grant the
 configured identity permission for those commands. Operations have a one-second deadline, do not
 retry in application code, and deny only the privacy challenge operation during an outage. Provide
 the HMAC secret like the endpoint; rotating it changes all active bucket keys and effectively
 resets quotas.
 
-Configure a reachable shared Redis service in the App Service environment and future Container
-Apps environment before deployment; this application does not provision infrastructure. Before
-rollout, verify ingress proxy addresses/networks in `ForwardedHeadersConfiguration` and verify
-that the existing trusted client-IP resolver returns the actual client address. Do not trust
-forwarded headers from untrusted peers.
+Configure a reachable shared Redis service in both API and Worker environments before selecting
+`State:Mode=Shared`; this application does not provision infrastructure. Before rollout, verify
+ingress proxy addresses/networks in `ForwardedHeadersConfiguration` and verify that the trusted
+client-IP resolver returns the actual client address. Do not trust forwarded headers from untrusted
+peers. GraphQL rate limits remain per API instance; the initial ACA deployment therefore caps API
+replicas at one until a shared/global GraphQL limiter is implemented.
 
 ## Sections
 
@@ -145,6 +175,27 @@ apply:
 | `ScoreConfiguration`             | `PassingPercentage` from `0` through `100`                                                                                                 |
 | `RefTestExpirationConfiguration` | `ExpirationCheckIntervalMinutes` ≥ 1; `StartupDelaySeconds` ≥ 0; `ExpirationIfNotStarted` at least one second                              |
 | `ForwardedHeadersConfiguration`  | `ForwardLimit` ≥ 1                                                                                                                         |
+
+### Hosting
+
+| Key | Description | Default |
+| --- | --- | --- |
+| `Mode` | API executable role: `All` (HTTP and workers) or `Api` (HTTP only); the Worker executable requires `Worker` | `All` for API, `Worker` for Worker |
+| `Provider` | Data Protection key-encryption adapter selected by the host | `Local` |
+
+Set `Hosting:Provider=Azure` in Azure deployments. The Azure adapter requires
+`Azure:KeyVault:DataProtectionKeyIdentifier`; see [Data Protection key ring](SECURITY.md#data-protection-key-ring).
+Other providers must add their own adapter.
+
+### State
+
+| Key | Description | Default |
+| --- | --- | --- |
+| `Mode` | `Local` for a single API with no separate Worker; `Shared` for API/Worker split or API scale-out | `Local` |
+
+`Shared` requires Redis and `PrivacyChallengeConfiguration:RateLimitBackend=Redis`. The Worker
+executable requires `Shared`. These settings are independent of the cloud provider and container
+platform; do not use platform environment variables to infer the state topology.
 
 ### DatabaseProvider
 
@@ -467,9 +518,18 @@ dotnet ef migrations add Initial \
 
 ### Applying migrations
 
-Migrations are applied automatically on startup via `MigrateAsync()`. No manual `dotnet ef database update` is needed in production.
+Normal API startup does not apply migrations. In production, run the Worker executable's one-shot
+migration mode as a separate deployment job before starting or updating the API and Worker apps:
 
-For local development you can still run it manually:
+```bash
+dotnet RefTestManagement.Worker.dll --migrate
+```
+
+The command registers only the database and audit dependencies needed for migrations; it does not
+start background pollers or require Redis. Give this migration job database schema-change
+permissions separately from the runtime API/Worker identities.
+
+For local development, run it manually with the matching provider and connection string:
 
 ```bash
 DatabaseProvider=PostgreSQL \

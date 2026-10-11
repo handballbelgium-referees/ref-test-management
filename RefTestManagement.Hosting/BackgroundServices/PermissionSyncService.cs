@@ -6,7 +6,7 @@ using Microsoft.Extensions.Options;
 using Polly.CircuitBreaker;
 using Polly.Timeout;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 /// <summary>
 /// Runs once on startup to ensure all application permissions are registered

@@ -14,13 +14,9 @@
         <ProjectReference
             Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
         <ProjectReference
-            Include="..\RefTestManagement.Migrations.MySQL\RefTestManagement.Migrations.MySQL.csproj" />
+            Include="..\RefTestManagement.Hosting\RefTestManagement.Hosting.csproj" />
         <ProjectReference
-            Include="..\RefTestManagement.Migrations.PostgreSQL\RefTestManagement.Migrations.PostgreSQL.csproj" />
-        <ProjectReference
-            Include="..\RefTestManagement.Migrations.SQLite\RefTestManagement.Migrations.SQLite.csproj" />
-        <ProjectReference
-            Include="..\RefTestManagement.Migrations.SqlServer\RefTestManagement.Migrations.SqlServer.csproj" />
+            Include="..\RefTestManagement.Hosting.Azure\RefTestManagement.Hosting.Azure.csproj" />
         <ProjectReference Include="..\RefTestManagement.Security\RefTestManagement.Security.csproj" />
     </ItemGroup>
 

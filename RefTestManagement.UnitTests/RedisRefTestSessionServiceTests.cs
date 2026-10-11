@@ -1,4 +1,4 @@
-using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Hosting.Services;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;

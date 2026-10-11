@@ -1,6 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
-namespace Handball.Belgium.RefTestManagement.Api.Configurations;
+namespace Handball.Belgium.RefTestManagement.Hosting.Configurations;
 
 public static class ConfigurationServiceCollectionExtensions
 {
@@ -27,7 +28,7 @@ public static class ConfigurationServiceCollectionExtensions
 
         validate?.Invoke(value);
 
-        services.AddSingleton(value);
+        services.TryAddSingleton(value);
         return value;
     }
 }

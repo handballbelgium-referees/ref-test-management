@@ -1,4 +1,4 @@
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;

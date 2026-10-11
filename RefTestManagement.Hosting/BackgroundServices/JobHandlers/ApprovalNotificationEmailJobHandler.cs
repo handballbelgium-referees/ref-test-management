@@ -7,7 +7,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices.JobHandlers;
 
 /// <summary>
 /// Notifies users with the approve permission on the configured Auth0 API audience when RefTests

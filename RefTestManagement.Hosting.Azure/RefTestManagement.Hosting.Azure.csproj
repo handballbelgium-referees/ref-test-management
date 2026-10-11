@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Handball.Belgium.RefTestManagement.Hosting.Azure</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Azure.Extensions.AspNetCore.DataProtection.Keys" />
+        <PackageReference Include="Azure.Identity" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RefTestManagement.Hosting\RefTestManagement.Hosting.csproj" />
+    </ItemGroup>
+</Project>

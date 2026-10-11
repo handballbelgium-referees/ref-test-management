@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+        <RootNamespace>Handball.Belgium.RefTestManagement.Hosting</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Microsoft.Extensions.Hosting" />
+        <PackageReference Include="StackExchange.Redis" />
+        <PackageReference Include="HotChocolate.AspNetCore" />
+        <PackageReference Include="HotChocolate.Subscriptions.Redis" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\RefTestManagement.Application\RefTestManagement.Application.csproj" />
+        <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Auth0\RefTestManagement.Auth0.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Migrations.MySQL\RefTestManagement.Migrations.MySQL.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Migrations.PostgreSQL\RefTestManagement.Migrations.PostgreSQL.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Migrations.SQLite\RefTestManagement.Migrations.SQLite.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Migrations.SqlServer\RefTestManagement.Migrations.SqlServer.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Security\RefTestManagement.Security.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <InternalsVisibleTo Include="RefTestManagement.UnitTests" />
+        <Using Include="Handball.Belgium.RefTestManagement.Application.Abstractions" />
+        <Using Include="Handball.Belgium.RefTestManagement.Infrastructure.Privacy" />
+    </ItemGroup>
+</Project>

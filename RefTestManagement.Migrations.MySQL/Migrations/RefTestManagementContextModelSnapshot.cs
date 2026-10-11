@@ -536,6 +536,23 @@ namespace Handball.Belgium.RefTestManagement.Migrations.MySQL.Migrations
                     b.ToTable("RefTests");
                 });
 
+            modelBuilder.Entity("Microsoft.AspNetCore.DataProtection.EntityFrameworkCore.DataProtectionKey", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("FriendlyName")
+                        .HasColumnType("longtext");
+
+                    b.Property<string>("Xml")
+                        .HasColumnType("longtext");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("DataProtectionKeys");
+                });
+
             modelBuilder.Entity("Handball.Belgium.RefTestManagement.Domain.Privacy.PrivacyWithdrawalBatchTarget", b =>
                 {
                     b.HasOne("Handball.Belgium.RefTestManagement.Domain.Privacy.PrivacyWithdrawalBatch", null)

@@ -1,6 +1,6 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 /// <summary>
 /// Clears expired, unverified export challenges and verified requests with terminal, inactive

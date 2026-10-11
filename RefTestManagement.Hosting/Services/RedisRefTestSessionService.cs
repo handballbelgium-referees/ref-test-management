@@ -1,6 +1,6 @@
 using StackExchange.Redis;
 
-namespace Handball.Belgium.RefTestManagement.Api.Services;
+namespace Handball.Belgium.RefTestManagement.Hosting.Services;
 
 /// <summary>
 /// Single-tab session lock shared by every replica. The lock is a Redis key holding the session id

@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.AuditLog;

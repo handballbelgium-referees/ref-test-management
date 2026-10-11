@@ -6,7 +6,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.EntityFrameworkCore;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 /// <summary>
 /// Background service that checks for expired RefTests and enqueues specific jobs to handle them.
