@@ -2,14 +2,15 @@
 
 A high-level map of the repo — expand a project to see its top-level folders. For the exact, current layout, use your editor's file explorer or GitHub's file browser; this doc only tracks stable, top-level organization so it doesn't drift as components are added.
 
-- **`.github/workflows/`** — CI/CD pipelines (PR checks, releases, cleanup)
+- **`.github/workflows/`** — CI/CD pipelines (PR checks, releases, Azure infrastructure)
 - **`.husky/`** — Git hooks (commit-msg, pre-commit)
 - **`badges/`** — Auto-generated release badge images
 - **`docs/`** — Architecture, security, privacy, configuration docs
+- **`infra/`** — Azure and Cloudflare Terraform, plus the Wrangler Worker/container runtime
 - **`scripts/`** — Repo automation (badges, README version sync)
 
 <details open>
-<summary><strong><code>RefTestManagement.Api/</code></strong> — 🔷 .NET Web API (.NET 10) — entry point, GraphQL, background services</summary>
+<summary><strong><code>RefTestManagement.Api/</code></strong> — 🔷 .NET Web API (.NET 10) — GraphQL endpoint and composition root</summary>
 
 - `BackgroundServices/` — Hosted services: job worker, expiration, privacy retention, audit cleanup, permission sync; timer-driven ones derive from `PollingBackgroundService`. The job worker dispatches handlers through `IJobHandler`; queue queries, claims, persistence and retention deletion are implemented in Infrastructure behind an Application port. Export-request cleanup scheduling is hosted here; its database operations are in Infrastructure.
 - `Controllers/` — Auth0 login/callback endpoints
@@ -18,6 +19,10 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 </details>
 
+- **`RefTestManagement.Worker/`** — 🔷 .NET Worker entry point for split background processing and one-shot migrations
+- **`RefTestManagement.Hosting/`** — Shared process composition, hosting modes, database and state registration
+- **`RefTestManagement.Hosting.Azure/`** — Azure Key Vault Data Protection and managed-identity Redis adapters
+- **`RefTestManagement.Hosting.Cloudflare/`** — Certificate-based Data Protection adapter for Cloudflare Containers
 - **`RefTestManagement.AuditLog/`** — 📋 Domain-event–driven audit log library (Marten-style event store)
 - **`RefTestManagement.Auth0/`** — 🔐 Auth0 Management API client (M2M token, role-based user discovery)
 - **`RefTestManagement.Application/`** — 🔷 Ports (`Abstractions/`: email, PDF, report, translation, session, subscription, privacy-erasure, IHF question-bank, job-queue and export-request cleanup services), job payloads, configuration models and use cases
@@ -48,12 +53,24 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 
 ## Project dependencies
 
-Arrows are `ProjectReference`s. The rule and its known violations are recorded in [ADR 0001](adr/0001-layered-architecture.md) and enforced by `RefTestManagement.UnitTests/ArchitectureDependencyTests.cs`. Shared state across replicas is described in [ADR 0002](adr/0002-multi-replica-state.md).
+Arrows are `ProjectReference`s. The rule and its known violations are recorded in [ADR 0001](adr/0001-layered-architecture.md) and enforced by `RefTestManagement.UnitTests/ArchitectureDependencyTests.cs`. Shared state across replicas is described in [ADR 0002](adr/0002-multi-replica-state.md); combined and split container hosting is described in [ADR 0003](adr/0003-container-hosting.md).
 
 ```mermaid
 flowchart TB
     Api["Api (composition root)"] --> Infrastructure
-    Api --> Migrations["Migrations.* (4 providers)"]
+    Api --> Hosting["Hosting (shared composition)"]
+    Worker["Worker (background entry point)"] --> Hosting
+    Api --> AzureHosting["Hosting.Azure"]
+    Worker --> AzureHosting
+    Api --> CloudflareHosting["Hosting.Cloudflare"]
+    Worker --> CloudflareHosting
+    AzureHosting --> Hosting
+    Hosting --> Migrations["Migrations.* (4 providers)"]
+    Hosting --> Infrastructure
+    Hosting --> Application
+    Hosting --> AuditLog
+    Hosting --> Auth0
+    Hosting --> Security
     Api --> Security
     Api --> Auth0
     Api --> AuditLog
@@ -72,6 +89,12 @@ flowchart TB
 | `RefTestManagement.AuditLog`                                     | Audit log library — interceptor, entity, options, DI extension. Depends on `Domain` for the event abstractions, never the reverse |
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
+| `RefTestManagement.Worker`                                        | Background-service process entry point and `--migrate` one-shot command        |
+| `RefTestManagement.Hosting`                                        | Shared API/Worker hosting composition and provider-neutral mode selection     |
+| `RefTestManagement.Hosting.Azure`                                  | Azure Key Vault Data Protection and managed-identity Redis authentication      |
+| `RefTestManagement.Hosting.Cloudflare`                             | Cloudflare certificate-based Data Protection                                  |
+| `infra/terraform`                                                   | Separate Azure and Cloudflare Terraform roots, modules, and state setup         |
+| `infra/cloudflare/worker`                                          | Wrangler Worker, Container routing, scheduling, and edge request assertion     |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |
 | `RefTestManagement.Application/Abstractions`                     | Ports implemented by Infrastructure, including `IRefTestUnitOfWork`, `IJobQueueStore` and `IPersonalDataExportRequestCleanup` |
 | `RefTestManagement.Application/RefTests`                         | Use-case handlers called by GraphQL resolvers and job handlers, including creation, report requests, privacy-notice acceptance, completion, approval, rejection, reset, revive, updates, on-request emails and deletion |

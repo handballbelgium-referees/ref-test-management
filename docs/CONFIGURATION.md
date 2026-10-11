@@ -1,6 +1,6 @@
 # Configuration Reference
 
-Full reference for `RefTestManagement.Api/appsettings.json`. For local development, prefer [.NET User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) over editing `appsettings.json` directly — see [Using User Secrets](#using-user-secrets) below.
+Full reference for `RefTestManagement.Api/appsettings.json`. For local development, prefer [.NET User Secrets](https://learn.microsoft.com/aspnet/core/security/app-secrets) over editing `appsettings.json` directly — see [Using User Secrets](#using-user-secrets) below. Deployment-specific setup is in [docs/DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Full Example
 
@@ -101,7 +101,9 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
 
 ### Hosting mode and shared state
 
-`Hosting:Mode` controls which processes run the background services:
+`Hosting:Mode` controls which processes run the background services. The API accepts `All` or
+`Api`; the Worker executable requires `Worker`. Run the API in `All` mode for one combined process,
+or run the API in `Api` mode with a separate Worker in `Worker` mode:
 
 | Value | API executable | Worker executable |
 | ----- | ------------- | ----------------- |
@@ -117,6 +119,9 @@ reach API subscribers, and a participant's session lock and privacy limiter must
 The Worker executable rejects `Local`.
 
 Set `RedisConfiguration:Endpoint` to an authenticated TLS URI (`rediss://:password@host:port`).
+`RedisConfiguration:AuthenticationMode` defaults to `Password`. Azure split mode uses `Token` and
+an attached user-assigned identity; Cloudflare split mode uses `Password` and a secret-provided
+TLS endpoint.
 The API and Worker use one shared connection for Hot Chocolate pub/sub, the 90-second participant
 session-lock lease, and the Redis privacy limiter. The endpoint is required when `State:Mode=Shared`
 or the privacy limiter backend is `Redis`; it is otherwise optional. Provide it through the hosting
@@ -126,15 +131,28 @@ deployment/ACL namespace for this application; grant the limiter and session-loc
 `PrivacyChallengeConfiguration:RedisEndpoint`, which is no longer read.
 
 `Hosting:Provider` selects the host's Data Protection key-encryption adapter. It defaults to
-`Local` for development. The database-backed key ring is always used; API and Worker must point to
-the same database and retain the `RefTestManagement` application name. Set `Azure` for Azure
-deployments to wrap key-ring entries with Azure Key Vault. Configure
+`Local` for development. The current values are `Local`, `Azure`, and `Cloudflare`; this setting
+selects the host adapter, not the database or combined/split topology. The database-backed key ring
+is always used; API and Worker must point to the same database and retain the `RefTestManagement`
+application name. Set `Azure` for Azure deployments to wrap key-ring entries with Azure Key Vault. Configure
 `Azure:KeyVault:DataProtectionKeyIdentifier` as an HTTPS, versionless key URI (for example
 `https://<vault>.vault.azure.net/keys/<name>`). An optional
 `Azure:KeyVault:ManagedIdentityClientId` selects a user-assigned identity; otherwise the adapter
 uses the system-assigned managed identity. Grant that identity the Key Vault Crypto User role, and
-retain old Key Vault key versions while any data-protection key references them. Other cloud
-providers should supply their own host adapter rather than changing `Hosting:Mode` or `State:Mode`.
+retain old Key Vault key versions while any data-protection key references them.
+
+Set `Cloudflare` when running through the Wrangler Worker. That adapter requires
+`Cloudflare:DataProtection:PfxBase64` and `Cloudflare:DataProtection:PfxPassword`; the API request
+assertion additionally requires `Cloudflare:ProxyAssertionSecret`. The Worker maps these from
+Wrangler Secrets named `CLOUDFLARE_DATA_PROTECTION_PFX_BASE64`,
+`CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD`, and `CLOUDFLARE_PROXY_ASSERTION_SECRET`. The
+certificate must contain an RSA private key of at least 2048 bits. Keep certificate bytes,
+passwords, and the assertion secret out of Terraform variables/state and source control; see
+[Data Protection](SECURITY.md#data-protection-key-ring) and
+[Cloudflare request trust](SECURITY.md#cloudflare-request-trust).
+
+Other cloud providers should supply their own host adapter rather than changing `Hosting:Mode` or
+`State:Mode`.
 
 Subscription events are live-refresh hints published after the change commits. Publishing is best
 effort: during a Redis outage the change still succeeds, a warning is logged, and open screens
@@ -185,7 +203,9 @@ apply:
 
 Set `Hosting:Provider=Azure` in Azure deployments. The Azure adapter requires
 `Azure:KeyVault:DataProtectionKeyIdentifier`; see [Data Protection key ring](SECURITY.md#data-protection-key-ring).
-Other providers must add their own adapter.
+For Cloudflare, configure the certificate and proxy assertion settings described above and in
+[Cloudflare request trust](SECURITY.md#cloudflare-request-trust). Future providers must add their
+own host adapter.
 
 ### State
 
@@ -202,6 +222,12 @@ platform; do not use platform environment variables to infer the state topology.
 | Key                | Description                           | Required | Default       |
 | ------------------ | ------------------------------------- | -------- | ------------- |
 | `DatabaseProvider` | Selects the EF Core database provider | No       | `"SqlServer"` |
+
+Azure Container Apps use SQL Server/Azure SQL with Entra-only authentication and per-process
+user-assigned managed identities. The Cloudflare runtime uses PostgreSQL supplied by the operator;
+the Wrangler Worker maps `POSTGRES_CONNECTION_STRING` to
+`ConnectionStrings:RefTestManagement`. Require TLS and server-certificate validation for external
+PostgreSQL. Shared-state/split mode still requires a TLS Redis endpoint.
 
 Valid values:
 
@@ -468,6 +494,12 @@ address after trusted `X-Forwarded-For` processing. The unsafe-rate-limiting ove
 header-only configuration valid. Verify ingress addresses with the deployment operator before
 rollout; this repository does not assume production ingress or CIDRs.
 
+Cloudflare does not use this forwarded-header path. Its Worker removes client-supplied forwarding
+and assertion headers, adds a shared-secret request assertion from Cloudflare's edge-provided
+client address, and the API validates that assertion before applying the address, scheme, or host.
+Do not trust raw client-IP headers as a substitute; see
+[Cloudflare request trust](SECURITY.md#cloudflare-request-trust).
+
 ## Managing Migrations
 
 Each provider has its own migrations project. Migrations must be generated separately per provider because the DDL (identity columns, data types, etc.) differs between databases.
@@ -528,6 +560,13 @@ dotnet RefTestManagement.Worker.dll --migrate
 The command registers only the database and audit dependencies needed for migrations; it does not
 start background pollers or require Redis. Give this migration job database schema-change
 permissions separately from the runtime API/Worker identities.
+
+Azure's release workflow runs this command in the manual Container Apps migration job before
+updating app revisions. Cloudflare has no Terraform-managed migration job: run the Worker image with
+`--migrate` from an authorized operator environment against the external PostgreSQL database before
+deploying the new Wrangler image. Use the same `DatabaseProvider=PostgreSQL` and connection string
+that the application will use; keep the connection string out of command text, logs, and source
+control.
 
 For local development, run it manually with the matching provider and connection string:
 

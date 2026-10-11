@@ -1,0 +1,12 @@
+provider "azurerm" {
+  subscription_id     = var.subscription_id
+  storage_use_azuread = true
+
+  features {}
+}
+
+provider "azapi" {
+  subscription_id = var.subscription_id
+}
+
+data "azurerm_client_config" "current" {}

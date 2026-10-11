@@ -795,6 +795,22 @@
           "Microsoft.Extensions.Options.ConfigurationExtensions": "10.0.12"
         }
       },
+      "Microsoft.Extensions.Azure": {
+        "type": "Transitive",
+        "resolved": "1.13.1",
+        "contentHash": "AIP7ud1rcQTRfzgne5Jw0P+zjx8ojGawwRuBVrYWgA/a+TKW3CaoQK/sYUcrbxYSVv6FT8rSwTlMecC0MwEbOQ==",
+        "dependencies": {
+          "Azure.Core": "1.50.0",
+          "Azure.Identity": "1.17.1",
+          "Microsoft.Extensions.Configuration": "8.0.0",
+          "Microsoft.Extensions.Configuration.Abstractions": "8.0.0",
+          "Microsoft.Extensions.Configuration.Binder": "8.0.2",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "8.0.2",
+          "Microsoft.Extensions.Logging": "8.0.1",
+          "Microsoft.Extensions.Logging.Abstractions": "8.0.3",
+          "Microsoft.Extensions.Options": "8.0.2"
+        }
+      },
       "Microsoft.Extensions.Caching.Abstractions": {
         "type": "Transitive",
         "resolved": "10.0.12",
@@ -1592,6 +1608,7 @@
           "RefTestManagement.Auth0": "[1.0.0, )",
           "RefTestManagement.Hosting": "[1.0.0, )",
           "RefTestManagement.Hosting.Azure": "[1.0.0, )",
+          "RefTestManagement.Hosting.Cloudflare": "[1.0.0, )",
           "RefTestManagement.Infrastructure": "[1.0.0, )",
           "RefTestManagement.Security": "[1.0.0, )",
           "StackExchange.Redis": "[3.3.1, )"
@@ -1647,8 +1664,13 @@
         "dependencies": {
           "Azure.Extensions.AspNetCore.DataProtection.Keys": "[1.6.4, )",
           "Azure.Identity": "[1.21.0, )",
-          "RefTestManagement.Hosting": "[1.0.0, )"
+          "Microsoft.Azure.StackExchangeRedis": "[3.3.1, )",
+          "RefTestManagement.Hosting": "[1.0.0, )",
+          "StackExchange.Redis": "[3.3.1, )"
         }
+      },
+      "reftestmanagement.hosting.cloudflare": {
+        "type": "Project"
       },
       "reftestmanagement.infrastructure": {
         "type": "Project",
@@ -1854,6 +1876,17 @@
         "contentHash": "V40/i3RzwjOpC7aUXkWYac45lD5o/HH/BF6KDgWpto/YWGHW9oHd4OSYg+WkaZxZYXxF4t2fRUWA4KyyABxw8g==",
         "dependencies": {
           "Microsoft.AspNetCore.Http.Features": "2.3.12"
+        }
+      },
+      "Microsoft.Azure.StackExchangeRedis": {
+        "type": "CentralTransitive",
+        "requested": "[3.3.1, )",
+        "resolved": "3.3.1",
+        "contentHash": "2knqrO3yCDX3oerrBfLOYJjgqPTK1BAwBC4oUB2OIJU4R9xFAeIO4SW3SfXsCuD9M+wjtn229wOFpV9A+H0nbg==",
+        "dependencies": {
+          "Microsoft.Extensions.Azure": "1.13.1",
+          "Microsoft.IdentityModel.JsonWebTokens": "8.15.0",
+          "StackExchange.Redis": "2.10.1"
         }
       },
       "Microsoft.EntityFrameworkCore": {

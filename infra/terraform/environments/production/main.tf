@@ -1,0 +1,35 @@
+module "aca_platform" {
+  source = "../../modules/aca-platform"
+
+  environment                    = "production"
+  resource_group_name            = var.resource_group_name
+  location                       = var.location
+  name_prefix                    = var.name_prefix
+  unique_suffix                  = var.unique_suffix
+  acr_name                       = var.acr_name
+  acr_resource_group_name        = var.acr_resource_group_name
+  sql_server_name                = var.sql_server_name
+  key_vault_name                 = var.key_vault_name
+  sql_entra_admin_login_username = var.sql_entra_admin_login_username
+  sql_entra_admin_object_id      = var.sql_entra_admin_object_id
+  api_image_digest               = var.api_image_digest
+  worker_image_digest            = var.worker_image_digest
+  deployment_mode                = var.deployment_mode
+  allow_split_mode               = var.allow_split_mode
+  create_applications            = var.create_applications
+  api_max_replicas               = var.api_max_replicas
+  api_trusted_proxy_networks     = var.api_trusted_proxy_networks
+  sql_firewall_ip_addresses      = var.sql_firewall_ip_addresses
+  key_vault_firewall_enabled     = var.key_vault_firewall_enabled
+  key_vault_allowed_ip_addresses = var.key_vault_allowed_ip_addresses
+  auth0_domain                   = var.auth0_domain
+  auth0_client_id                = var.auth0_client_id
+  auth0_audience                 = var.auth0_audience
+  auth0_management_client_id     = var.auth0_management_client_id
+  email_base_url                 = var.email_base_url
+  email_from_email               = var.email_from_email
+  email_from_name                = var.email_from_name
+  rules_questions_url            = var.rules_questions_url
+  log_analytics_daily_quota_gb   = var.log_analytics_daily_quota_gb
+  tags                           = var.tags
+}

@@ -5,6 +5,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Handball.Belgium.RefTestManagement.Worker</RootNamespace>
+        <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+        <ContainerImageFormat>OCI</ContainerImageFormat>
+        <ContainerRepository>ref-test-management-worker</ContainerRepository>
+        <ContainerUser>app</ContainerUser>
     </PropertyGroup>
 
     <ItemGroup>
@@ -12,7 +16,12 @@
     </ItemGroup>
 
     <ItemGroup>
+        <ContainerEnvironmentVariable Include="ASPNETCORE_HTTP_PORTS" Value="" />
+    </ItemGroup>
+
+    <ItemGroup>
         <ProjectReference Include="..\RefTestManagement.Hosting\RefTestManagement.Hosting.csproj" />
         <ProjectReference Include="..\RefTestManagement.Hosting.Azure\RefTestManagement.Hosting.Azure.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Hosting.Cloudflare\RefTestManagement.Hosting.Cloudflare.csproj" />
     </ItemGroup>
 </Project>

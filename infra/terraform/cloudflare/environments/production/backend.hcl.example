@@ -1,0 +1,15 @@
+# Replace the bucket and endpoint placeholders with bootstrap output and your account ID.
+bucket = "replace-with-bootstrapped-state-bucket"
+key    = "cloudflare/production.tfstate"
+region = "auto"
+
+endpoints = {
+  s3 = "https://00000000000000000000000000000000.r2.cloudflarestorage.com"
+}
+
+skip_credentials_validation = true
+skip_requesting_account_id   = true
+skip_metadata_api_check      = true
+skip_region_validation       = true
+use_path_style               = true
+use_lockfile                 = true

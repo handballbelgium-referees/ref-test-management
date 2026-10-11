@@ -42,8 +42,19 @@ bld/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
-# Uncomment if you have tasks that create the project's static files in wwwroot
-#wwwroot/
+# Angular assets copied into the API for container publishing
+/RefTestManagement.Api/wwwroot/
+
+# Terraform local state, provider caches, generated plans, and unencrypted variables
+**/.terraform/
+**/terraform.tfstate*
+**/crash.log
+**/crash.*.log
+**/*.tfplan
+**/*.tfplan.*
+**/terraform.tfvars
+**/*.auto.tfvars
+!**/*.tfvars.example
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/
@@ -423,6 +434,11 @@ FodyWeavers.xsd
 .idea/
 # Root dependencies
 /node_modules
+
+# Cloudflare Worker local secrets and generated runtime state
+/infra/cloudflare/worker/.dev.vars
+/infra/cloudflare/worker/.dev.vars.*
+/infra/cloudflare/worker/.wrangler/
 
 # Local Copilot settings
 .github/copilot/settings.local.json

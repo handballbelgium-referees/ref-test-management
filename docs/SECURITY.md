@@ -31,6 +31,35 @@ them. Use the local adapter only for development; another provider must supply a
 encryption adapter before deployment. Never commit Data Protection key material or identity
 credentials.
 
+Cloudflare deployments use `Hosting:Provider=Cloudflare` and a PKCS#12 certificate supplied as
+Wrangler Secrets (`CLOUDFLARE_DATA_PROTECTION_PFX_BASE64` and
+`CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD`). The certificate must contain an RSA private key of at
+least 2048 bits. The API and Worker must use the same certificate and database-backed key ring.
+Rotate certificates only after ensuring all persisted keys that depend on the old certificate
+remain readable.
+
+## Azure workload identities and SQL
+
+Azure Container Apps use separate user-assigned managed identities for the API, optional Worker,
+and migration job. Azure SQL remains Entra-only: each database connection string identifies the
+corresponding attached identity by its client ID, and the operator provisions the contained
+database users with `infra/terraform/bootstrap/sql-identities.sql`. The API and Worker receive
+their required data roles; only the one-shot migration identity receives `db_owner`. The API,
+Worker, and migration identity read only their explicitly referenced Key Vault secrets; do not
+replace these scopes with vault-wide access. The release pipeline starts the migration job before
+updating application revisions in Azure. Cloudflare migrations are an explicit operator-run step.
+
+## Cloudflare request trust
+
+The Cloudflare Worker is the public HTTP front door (`workers_dev` is disabled). It validates the
+configured API hostname and the single edge-provided `CF-Connecting-IP` value, removes incoming
+`Forwarded`, `X-Forwarded-*`, `X-Real-IP`, Cloudflare client-IP, and `X-RefTest-*` assertion
+headers, then writes its own client address, scheme, host, and proxy assertion. The API middleware
+compares the assertion in constant time, validates the IP and origin values, and only then applies
+them to request context. The shared `CLOUDFLARE_PROXY_ASSERTION_SECRET` must contain at least 32
+UTF-8 bytes and must be configured as a Wrangler Secret; never place it in Terraform state or
+trust these headers from another source.
+
 ## npm Dependency Audit Gate
 
 The pull-request, beta-release, and stable-release validation workflows run

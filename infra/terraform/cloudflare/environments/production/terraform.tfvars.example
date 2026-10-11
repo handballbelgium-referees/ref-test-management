@@ -1,0 +1,5 @@
+account_id          = "00000000000000000000000000000000"
+zone_id             = "00000000000000000000000000000000"
+api_hostname        = "api.example.com"
+worker_service_name = "ref-test-management-production"
+worker_environment  = null

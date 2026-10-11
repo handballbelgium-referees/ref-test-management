@@ -8,6 +8,14 @@ internal static class RedisServiceCollectionExtensions
         this IServiceCollection services,
         RedisConfiguration configuration)
     {
+        if (configuration.AuthenticationMode == RedisAuthenticationMode.Token)
+        {
+            services.AddSingleton<IConnectionMultiplexer>(_ =>
+                throw new InvalidOperationException(
+                    "Redis token authentication requires a host-specific Redis authentication adapter."));
+            return;
+        }
+
         services.AddSingleton<IConnectionMultiplexer>(_ =>
         {
             var endpoint = new Uri(configuration.Endpoint!);

@@ -1,0 +1,15 @@
+{
+  "name": "ref-test-management-cloudflare-worker",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "types": "wrangler types",
+    "typecheck": "tsc --noEmit",
+    "deploy:dry-run": "wrangler deploy --dry-run",
+    "dev": "wrangler dev"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "wrangler": "4.149.0"
+  }
+}
