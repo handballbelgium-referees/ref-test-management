@@ -12,13 +12,18 @@ if (args.Contains("--migrate", StringComparer.Ordinal))
 }
 
 var hostingMode = HostingModeConfiguration.GetWorkerMode(builder.Configuration);
-var dataProtectionKeyProtection =
-    CloudflareDataProtectionConfiguration.CreateKeyProtection(builder.Configuration) ??
-    AzureDataProtectionConfiguration.CreateKeyProtection(builder.Configuration, builder.Environment);
+var hostingProvider = HostingProviderConfiguration.Create(
+    builder.Configuration,
+    builder.Environment,
+    [
+        new AzureHostingProviderAdapter(),
+        new CloudflareHostingProviderAdapter()
+    ]);
+var dataProtectionKeyProtection = hostingProvider.CreateDataProtectionKeyProtection();
 builder.Services.AddRefTestManagementHosting(
     builder.Configuration,
     hostingMode,
     dataProtectionKeyProtection);
-await AzureRedisConfiguration.ConfigureRedisConnectionAsync(builder.Services, builder.Configuration);
+await hostingProvider.ConfigureRedisConnectionAsync(builder.Services);
 
 await builder.Build().RunAsync();

@@ -1646,7 +1646,6 @@
         "dependencies": {
           "HotChocolate.AspNetCore": "[16.6.8, )",
           "HotChocolate.Subscriptions.Redis": "[16.6.8, )",
-          "Microsoft.Extensions.Hosting": "[10.0.12, )",
           "RefTestManagement.Application": "[1.0.0, )",
           "RefTestManagement.AuditLog": "[1.0.0, )",
           "RefTestManagement.Auth0": "[1.0.0, )",
@@ -1670,7 +1669,10 @@
         }
       },
       "reftestmanagement.hosting.cloudflare": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "RefTestManagement.Hosting": "[1.0.0, )"
+        }
       },
       "reftestmanagement.infrastructure": {
         "type": "Project",

@@ -20,7 +20,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 </details>
 
 - **`RefTestManagement.Worker/`** — 🔷 .NET Worker entry point for split background processing and one-shot migrations
-- **`RefTestManagement.Hosting/`** — Shared process composition, hosting modes, database and state registration
+- **`RefTestManagement.Hosting/`** — Shared process composition and provider-adapter contract, hosting modes, database and state registration
 - **`RefTestManagement.Hosting.Azure/`** — Azure Key Vault Data Protection and managed-identity Redis adapters
 - **`RefTestManagement.Hosting.Cloudflare/`** — Certificate-based Data Protection adapter for Cloudflare Containers
 - **`RefTestManagement.AuditLog/`** — 📋 Domain-event–driven audit log library (Marten-style event store)
@@ -65,6 +65,7 @@ flowchart TB
     Api --> CloudflareHosting["Hosting.Cloudflare"]
     Worker --> CloudflareHosting
     AzureHosting --> Hosting
+    CloudflareHosting --> Hosting
     Hosting --> Migrations["Migrations.* (4 providers)"]
     Hosting --> Infrastructure
     Hosting --> Application
@@ -90,9 +91,9 @@ flowchart TB
 | `RefTestManagement.Api/Graphql`                                  | GraphQL schema, queries, mutations, and type definitions                      |
 | `RefTestManagement.Api/Graphql/Mutations/Approval`               | Approve/reject mutations (requires `ref-tests:approve`)                       |
 | `RefTestManagement.Worker`                                        | Background-service process entry point and `--migrate` one-shot command        |
-| `RefTestManagement.Hosting`                                        | Shared API/Worker hosting composition and provider-neutral mode selection     |
-| `RefTestManagement.Hosting.Azure`                                  | Azure Key Vault Data Protection and managed-identity Redis authentication      |
-| `RefTestManagement.Hosting.Cloudflare`                             | Cloudflare certificate-based Data Protection                                  |
+| `RefTestManagement.Hosting`                                        | Shared API/Worker hosting composition, `IHostingProviderAdapter` contract, and mode selection |
+| `RefTestManagement.Hosting.Azure`                                  | Azure Key Vault Data Protection and managed-identity Redis adapter implementation |
+| `RefTestManagement.Hosting.Cloudflare`                             | Cloudflare certificate-based Data Protection adapter implementation            |
 | `infra/terraform`                                                   | Separate Azure and Cloudflare Terraform roots, modules, and state setup         |
 | `infra/cloudflare/worker`                                          | Wrangler Worker, Container routing, scheduling, and edge request assertion     |
 | `RefTestManagement.Auth0`                                        | Auth0 Management API client — resolves approvers by permission at runtime     |

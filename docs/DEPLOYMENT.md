@@ -72,10 +72,29 @@ remain disabled until the actual ACA ingress peer CIDRs are verified. Split mode
 requires `AZURE_ALLOW_SPLIT_MODE=true`; keep API replicas at one while GraphQL rate limiting is
 process-local.
 
-The release workflows also read `AZURE_ACR_NAME`, `AZURE_RESOURCE_GROUP_NAME`, `AZURE_NAME_PREFIX`,
-`AZURE_UNIQUE_SUFFIX`, and `AZURE_DEPLOYMENT_MODE` from their target GitHub Environment. Keep these
-values aligned with Terraform. The complete resource and secret setup is in the
+`azure-container-release.yml` also reads `AZURE_ACR_NAME`, `AZURE_RESOURCE_GROUP_NAME`,
+`AZURE_NAME_PREFIX`, `AZURE_UNIQUE_SUFFIX`, and `AZURE_DEPLOYMENT_MODE` from its target GitHub
+Environment. Keep these values aligned with Terraform. The complete resource and secret setup is in the
 [Azure rollout runbook](../infra/terraform/README.md#environment-rollout).
+
+Container deployment is opt-in through the repository Actions variable
+`CONTAINER_DEPLOYMENT_TARGET`:
+
+| Value | Release target |
+| --- | --- |
+| Unset or `app-service` | Existing App Service workflows remain the default |
+| `azure-container-apps` | Alpha releases deploy to ACA testing; stable releases deploy to ACA production |
+| `cloudflare-containers` | Alpha releases deploy to Cloudflare testing; stable releases deploy to Cloudflare production |
+
+Set the variable in repository Settings → Secrets and variables → Actions → Variables. The
+beta/stable release workflows validate it before publishing. The selected reusable provider
+workflow builds and verifies the exact release tag before provider authentication; production still
+requires the configured protected Environment approval. Returning to `app-service` (or unsetting
+the variable) switches future releases back to the Web App without changing workflow files.
+The stable workflow is dispatched from the `release` branch, so ensure that branch contains the
+updated selector before changing the variable for a production release. The first promotion after
+this workflow change may fast-forward `release` while the current `app-service` target remains in
+effect; subsequent stable runs use the selector.
 
 ### First environment rollout
 
@@ -120,13 +139,22 @@ understood.
 - PR checks build/test the application, validate SDK OCI archive publishing, and validate all six
   Azure/Cloudflare Terraform roots with the backend disabled. PR jobs do not authenticate to Azure,
   push images, or apply infrastructure.
-- `beta-release.yml` builds the validated commit's OCI archives and deploys to testing when
-  semantic-release creates a release. `stable-release.yml` deploys the validated stable candidate to
-  production after its existing promotion and `main` synchronization gates.
-- Before Azure login, each deploy job verifies the artifact provenance and archive hashes. It then
-  pushes the API and Worker images to ACR, resolves immutable digests, updates and starts the
-  one-shot migration job with the Worker image, and waits for success before updating the API and
-  optional split-mode Worker revisions by digest.
+- `beta-release.yml` and `stable-release.yml` retain their existing validation and release order.
+  The repository variable `CONTAINER_DEPLOYMENT_TARGET` selects the default Web App path or calls
+  the corresponding reusable container workflow on a release.
+- `container-build.yml` builds the exact alpha/stable tag, runs the required validation, publishes
+  OCI archives, and records their provenance. `azure-container-release.yml` and
+  `cloudflare-container-release.yml` are reusable provider-specific deployment workflows.
+- With `CONTAINER_DEPLOYMENT_TARGET=app-service` or unset, beta/stable releases deploy only to the
+  testing/production Web Apps. With a container target selected, the corresponding provider
+  workflow deploys alpha to testing or stable to production; unsupported tag/target combinations
+  fail before provider credentials are used.
+- Azure deployment verifies the artifact and archive hashes before OIDC login, pushes immutable ACR
+  digests, updates and starts the one-shot migration job, and waits for success before updating the
+  API and optional split-mode Worker revisions by digest.
+- Cloudflare deployment runs the selected Worker image's migration command before pushing the images
+  and deploying the Worker with digest-pinned Container images. The GitHub runner must be allowed
+  to reach the selected PostgreSQL server for this migration step.
 - Terraform does not run database migrations. Keep migration changes backward-compatible with the
   currently deployed app while the job runs. The release identity's job-start permission is
   sensitive because the job has a database identity and Key Vault references.
@@ -195,6 +223,41 @@ Cloudflare is deployed separately from the Azure workflows. Wrangler owns Worker
 rollout, Durable Object bindings, the one-minute Cron trigger, and runtime secrets. Terraform owns
 the local-state R2 bucket bootstrap, separate testing/production R2 state keys, and custom-domain
 binding only. No Cloudflare PostgreSQL or Redis service is provisioned by this repository.
+
+Set `CONTAINER_DEPLOYMENT_TARGET=cloudflare-containers` in repository Actions variables to opt into
+the Cloudflare flow for future alpha/stable releases. The release workflows call
+`cloudflare-container-release.yml` with the exact generated tag and testing/production target. It
+deploys the matching Worker service and does not apply the Terraform custom-domain binding.
+
+Create protected GitHub Environments named `cloudflare-testing` and `cloudflare-production`;
+configure required reviewers for production. Set the following **variables** in each environment.
+`CLOUDFLARE_WORKER_SERVICE_NAME` must exactly match the Cloudflare Terraform
+`worker_service_name` for that environment.
+
+| Variable | Purpose |
+| --- | --- |
+| `CLOUDFLARE_ACCOUNT_ID` | Cloudflare account ID for image registry and Wrangler |
+| `CLOUDFLARE_WORKER_SERVICE_NAME` | Deployed service name, for example `ref-test-management-testing` |
+| `APP_MODE`, `API_HOSTNAME` | Runtime topology and exact public API hostname |
+| `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_AUDIENCE`, `AUTH0_MANAGEMENT_CLIENT_ID` | Auth0 application/API settings |
+| `EMAIL_BASE_URL`, `EMAIL_FROM_EMAIL`, `EMAIL_FROM_NAME`, `BREVO_API_URL` | Email sender settings |
+| `RULES_QUESTIONS_URL` | IHF rules/questions API endpoint |
+
+Set these **secrets** in each Cloudflare Environment. Use a dedicated API token with only the
+Workers/Containers permissions needed by Wrangler; do not reuse Terraform's R2 backend credentials.
+
+| Secret | Use |
+| --- | --- |
+| `CLOUDFLARE_API_TOKEN` | Wrangler image push and Worker deployment |
+| `POSTGRES_CONNECTION_STRING` | Worker runtime and tagged Worker migration command |
+| `CLOUDFLARE_DATA_PROTECTION_PFX_BASE64`, `CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD` | Persistent Data Protection key encryption |
+| `AUTH0_MANAGEMENT_CLIENT_SECRET`, `BREVO_API_KEY` | Worker runtime |
+| `AUTH0_CLIENT_SECRET`, `CLOUDFLARE_PROXY_ASSERTION_SECRET` | API-serving modes (`All` or `Split`) |
+| `REDIS_ENDPOINT`, `PRIVACY_CHALLENGE_HMAC_SECRET` | `Split` mode only |
+
+The migration runs from the GitHub-hosted runner before Worker deployment, so the selected
+PostgreSQL service must accept that runner's egress. If it cannot, do not dispatch the workflow;
+use the authorized migration procedure in the runbook instead.
 
 ### Configuration and secrets
 

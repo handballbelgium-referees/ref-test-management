@@ -19,7 +19,16 @@ const ACA_TERRAFORM_SOURCE = readFileSync(
   'utf8',
 );
 const WORKFLOWS = Object.fromEntries(
-  ['beta-release', 'stable-release', 'pr', 'codeql', 'infra-deploy'].map((name) => {
+  [
+    'beta-release',
+    'stable-release',
+    'container-build',
+    'azure-container-release',
+    'cloudflare-container-release',
+    'pr',
+    'codeql',
+    'infra-deploy',
+  ].map((name) => {
     const path = join(ROOT, `.github/workflows/${name}.yml`);
     const source = readFileSync(path, 'utf8');
     return [name, { source, workflow: yaml.load(source) }];
@@ -110,6 +119,65 @@ test('workflow YAML preserves triggers, read-only fork README sync, and stable d
   });
   assert.equal(stable.jobs['deploy-production'].environment.name, 'production');
   assert.equal(beta.jobs['deploy-testing'].environment.name, 'testing');
+  for (const [workflow, appServiceJob, azureContainerJob, cloudflareContainerJob] of [
+    [beta, 'deploy-testing', 'deploy-testing-azure-container', 'deploy-testing-cloudflare-container'],
+    [
+      stable,
+      'deploy-production',
+      'deploy-production-azure-container',
+      'deploy-production-cloudflare-container',
+    ],
+  ]) {
+    const targetValidation = workflow.jobs.validate.steps.find(
+      (step) => step.name === '🔎 Validate container deployment target',
+    );
+    assert.equal(
+      targetValidation.env.CONFIGURED_TARGET,
+      '${{ vars.CONTAINER_DEPLOYMENT_TARGET }}',
+    );
+    assert.equal(
+      workflow.jobs.validate.outputs['container-deployment-target'],
+      '${{ steps.deployment-target.outputs.target }}',
+    );
+    assert.match(targetValidation.run, /CONFIGURED_TARGET:-app-service/);
+    assert.match(targetValidation.run, /app-service\|azure-container-apps\|cloudflare-containers/);
+    assert.equal(workflow.jobs[appServiceJob].if.includes("container-deployment-target == 'app-service'"), true);
+    assert.equal(
+      workflow.jobs[azureContainerJob].uses,
+      './.github/workflows/azure-container-release.yml',
+    );
+    assert.equal(
+      workflow.jobs[cloudflareContainerJob].uses,
+      './.github/workflows/cloudflare-container-release.yml',
+    );
+    assert.match(workflow.jobs[azureContainerJob].if, /azure-container-apps/);
+    assert.match(workflow.jobs[cloudflareContainerJob].if, /cloudflare-containers/);
+    assert.equal(
+      workflow.jobs[azureContainerJob].with.release_tag,
+      '${{ needs.release.outputs.new-release-tag }}',
+    );
+    assert.equal(
+      workflow.jobs[cloudflareContainerJob].with.release_tag,
+      '${{ needs.release.outputs.new-release-tag }}',
+    );
+    assert.equal(workflow.jobs[azureContainerJob].with.target_environment, workflow === beta ? 'testing' : 'production');
+    assert.equal(
+      workflow.jobs[cloudflareContainerJob].with.target_environment,
+      workflow === beta ? 'testing' : 'production',
+    );
+  }
+  assert.equal(
+    beta.jobs['deploy-testing'].steps.find((step) => step.name === '🚀 Deploy to Azure Web App (Testing)').uses,
+    'azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383',
+  );
+  assert.equal(
+    stable.jobs['deploy-production'].steps.find((step) => step.name === '🚀 Deploy to Azure Web App (Production)').uses,
+    'azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383',
+  );
+  assert.doesNotMatch(
+    `${WORKFLOWS['beta-release'].source}\n${WORKFLOWS['stable-release'].source}`,
+    /az containerapp|wrangler deploy/,
+  );
 
   const readmeSync = pr.jobs['sync-readme-versions'];
   assert.match(readmeSync.if, /head\.repo\s*!=\s*null/);
@@ -119,115 +187,148 @@ test('workflow YAML preserves triggers, read-only fork README sync, and stable d
   assert.equal(readmeSync.steps[0].with['persist-credentials'], false);
 });
 
-test('release workflows pin tool versions and record and verify complete container archive provenance', () => {
-  for (const name of ['beta-release', 'stable-release']) {
-    const { source, workflow } = WORKFLOWS[name];
-    assert.equal(workflow.env.NODE_VERSION, '24.20.0');
-    assert.equal(workflow.env.DOTNET_VERSION, '10.0.303');
+test('container build workflow validates an exact tag and records OCI archive provenance', () => {
+  const { source, workflow } = WORKFLOWS['container-build'];
+  const build = workflow.jobs.build;
+  const verify = build.steps.find((step) => step.id === 'verify-source');
+  const publish = build.steps.find((step) => step.id === 'publish');
+  const upload = build.steps.find((step) => step.name === '⬆️ Upload container build artifact');
 
-    const build = workflow.jobs.build;
-    const publish = build.steps.find((step) => step.id === 'publish');
-    const deployJob = Object.values(workflow.jobs).find((job) =>
-      job.steps?.some((step) => step.name === '🔒 Verify deployment artifact provenance'),
-    );
-    const deploy = deployJob?.steps.find((step) => step.name === '🔒 Verify deployment artifact provenance');
-    assert.ok(publish);
-    assert.ok(deploy);
-    for (const field of PROVENANCE_FIELDS.slice(0, 3)) {
-      assert.equal(build.outputs[field], `\${{ steps.publish.outputs.${field} }}`);
-      assert.ok(publish.run.includes(`${field}=%s`), `${name} must write ${field} to the artifact`);
-      const envName = `BUILD_${field.replaceAll('-', '_').toUpperCase()}`;
-      assert.equal(deploy.env[envName], `\${{ needs.build.outputs.${field} }}`);
-      assert.ok(deploy.run.includes(`"$${envName}"`), `${name} must compare ${field} during deployment`);
-    }
-    assert.match(publish.run, /\/t:PublishContainer/);
-    assert.match(publish.run, /ContainerArchiveOutputPath=.*ref-test-management-api\.tar\.gz/);
-    assert.match(publish.run, /ContainerArchiveOutputPath=.*ref-test-management-worker\.tar\.gz/);
-    assert.match(publish.run, /API_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
-    assert.match(publish.run, /WORKER_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
-    assert.match(publish.run, /CONTAINER_ARCHIVES_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
-    assert.doesNotMatch(publish.run, /docker (?:build|push)/);
-    assert.match(deploy.run, /ACTUAL_API_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
-    assert.match(deploy.run, /ACTUAL_WORKER_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
-    assert.match(deploy.run, /ACTUAL_CONTAINER_ARCHIVES_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
-    assert.match(deploy.run, /BUILD_API_IMAGE_ARCHIVE_SHA256.*ACTUAL_API_IMAGE_ARCHIVE_SHA256/);
-    assert.match(deploy.run, /BUILD_WORKER_IMAGE_ARCHIVE_SHA256.*ACTUAL_WORKER_IMAGE_ARCHIVE_SHA256/);
-    assert.ok(
-      deployJob.steps.findIndex((step) => step.name === '🔒 Verify deployment artifact provenance') <
-        deployJob.steps.findIndex((step) => step.name === '🔑 Azure Login'),
-      `${name} must verify the artifact before cloud authentication`,
-    );
+  assert.deepEqual(Object.keys(workflow.on), ['workflow_call']);
+  assert.equal(workflow.on.workflow_call.inputs.release_tag.required, true);
+  assert.equal(workflow.on.workflow_call.inputs.target_environment.required, true);
+  assert.equal(workflow.env.NODE_VERSION, '24.20.0');
+  assert.equal(workflow.env.DOTNET_VERSION, '10.0.303');
+  assert.ok(verify.run.includes('refs/tags/$RELEASE_TAG'));
+  assert.ok(verify.run.includes('testing:alpha|production:stable'));
+  assert.ok(verify.run.includes('refs/remotes/origin/main'));
+  assert.ok(verify.run.includes('refs/remotes/origin/release'));
+  assert.ok(publish);
+  assert.ok(upload);
 
-    const uiInstallJobs = Object.values(workflow.jobs).filter((job) =>
-      job.steps?.some(
-        (step) => step['working-directory'] === './RefTestManagement.Ui' && step.run === 'npm ci',
-      ),
-    );
-    assert.ok(uiInstallJobs.length > 0);
-    for (const job of uiInstallJobs) {
-      const npmSetupIndex = job.steps.findIndex((step) => step.name === '📦 Install and verify npm 12.2.0');
-      const uiInstallIndex = job.steps.findIndex(
-        (step) => step['working-directory'] === './RefTestManagement.Ui' && step.run === 'npm ci',
-      );
-      assert.ok(npmSetupIndex >= 0 && npmSetupIndex < uiInstallIndex);
-      assert.match(job.steps[npmSetupIndex].run, /npm install --global npm@12\.2\.0/);
-      assert.match(job.steps[npmSetupIndex].run, /ACTUAL_NPM_VERSION="\$\(npm --version\)"/);
-      assert.match(
-        job.steps[npmSetupIndex].run,
-        /if \[ "\$ACTUAL_NPM_VERSION" != "12\.2\.0" \]; then[\s\S]*?exit 1/,
-      );
-    }
-
-    for (const field of PROVENANCE_FIELDS) {
-      assert.equal(build.outputs[field], `\${{ steps.publish.outputs.${field} }}`);
-      assert.ok(publish.run.includes(`${field}=%s`), `${name} must write ${field} to the artifact`);
-      const envName = `BUILD_${field.replaceAll('-', '_').toUpperCase()}`;
-      assert.equal(deploy.env[envName], `\${{ needs.build.outputs.${field} }}`);
-      assert.ok(deploy.run.includes(`"$${envName}"`), `${name} must compare ${field} during deployment`);
-    }
-    assert.match(publish.run, /dotnet --list-sdks/);
-    assert.match(publish.run, /dotnet --list-runtimes/);
-    assert.match(publish.run, /ImageVersion/);
-    assert.match(source, /node-version: \$\{\{ env\.NODE_VERSION \}\}/);
+  for (const field of PROVENANCE_FIELDS) {
+    assert.equal(build.outputs[field], `\${{ steps.publish.outputs.${field} }}`);
+    assert.equal(workflow.on.workflow_call.outputs[field].value, `\${{ jobs.build.outputs.${field} }}`);
+    assert.ok(publish.run.includes(`${field}=%s`), `container build must record ${field}`);
   }
+  assert.match(publish.run, /\/t:PublishContainer/);
+  assert.match(publish.run, /ContainerArchiveOutputPath=.*ref-test-management-api\.tar\.gz/);
+  assert.match(publish.run, /ContainerArchiveOutputPath=.*ref-test-management-worker\.tar\.gz/);
+  assert.match(publish.run, /API_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
+  assert.match(publish.run, /WORKER_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
+  assert.match(publish.run, /CONTAINER_ARCHIVES_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
+  assert.doesNotMatch(publish.run, /docker (?:build|push)/);
+  assert.equal(upload.with['retention-days'], 1);
+  assert.match(source, /node-version: \$\{\{ env\.NODE_VERSION \}\}/);
+});
+
+test('provider container releases are opt-in and verify artifacts before deployment', () => {
+  for (const name of ['azure-container-release', 'cloudflare-container-release']) {
+    const { workflow } = WORKFLOWS[name];
+    const deploy = workflow.jobs.deploy;
+    const verify = deploy.steps.find((step) => step.name === '🔒 Verify tagged build provenance and archives');
+
+    assert.deepEqual(Object.keys(workflow.on), ['workflow_call']);
+    assert.equal(workflow.on.workflow_call.inputs.release_tag.required, true);
+    assert.equal(workflow.on.workflow_call.inputs.target_environment.required, true);
+    assert.equal(workflow.on.workflow_call.inputs.release_tag.type, 'string');
+    assert.equal(workflow.jobs.build.uses, './.github/workflows/container-build.yml');
+    assert.ok(verify);
+    assert.equal(verify.env.VALIDATED_SHA, '${{ needs.build.outputs.validated-sha }}');
+    assert.equal(verify.env.API_IMAGE_ARCHIVE_SHA256, '${{ needs.build.outputs.api-image-archive-sha256 }}');
+    assert.equal(verify.env.WORKER_IMAGE_ARCHIVE_SHA256, '${{ needs.build.outputs.worker-image-archive-sha256 }}');
+    assert.equal(verify.env.CONTAINER_ARCHIVES_SHA256, '${{ needs.build.outputs.container-archives-sha256 }}');
+    assert.match(verify.run, /ACTUAL_API_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
+    assert.match(verify.run, /ACTUAL_WORKER_IMAGE_ARCHIVE_SHA256=.*sha256sum/);
+    assert.match(verify.run, /ACTUAL_CONTAINER_ARCHIVES_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
+  }
+
+  const azure = WORKFLOWS['azure-container-release'].workflow.jobs.deploy;
+  const cloudflare = WORKFLOWS['cloudflare-container-release'].workflow.jobs.deploy;
+  assert.equal(azure.environment.name, '${{ inputs.target_environment }}');
+  assert.equal(cloudflare.environment.name, 'cloudflare-${{ inputs.target_environment }}');
+  assert.deepEqual(azure.permissions, {
+    'id-token': 'write',
+    contents: 'read',
+    actions: 'read',
+  });
+  assert.deepEqual(cloudflare.permissions, { contents: 'read', actions: 'read' });
+  assert.ok(
+    azure.steps.findIndex((step) => step.name === '🔒 Verify tagged build provenance and archives') <
+      azure.steps.findIndex((step) => step.name === '🔑 Azure Login'),
+  );
+  const cloudflareVerifyIndex = cloudflare.steps.findIndex(
+    (step) => step.name === '🔒 Verify tagged build provenance and archives',
+  );
+  const cloudflareValidationIndex = cloudflare.steps.findIndex(
+    (step) => step.name === '🔎 Validate Cloudflare Environment',
+  );
+  const cloudflareCredentialIndex = cloudflare.steps.findIndex(
+    (step) => step.name === '🔑 Validate Wrangler credentials',
+  );
+  const migrationIndex = cloudflare.steps.findIndex(
+    (step) => step.name === '🐳 Load tagged Worker image and run migration',
+  );
+  const imagePushIndex = cloudflare.steps.findIndex(
+    (step) => step.name === '🐳 Push tagged images and resolve immutable digests',
+  );
+  const cloudflareDeployIndex = cloudflare.steps.findIndex(
+    (step) => step.name === '🚀 Deploy Worker and immutable Containers',
+  );
+  assert.ok(
+    cloudflareVerifyIndex < cloudflareValidationIndex &&
+      cloudflareValidationIndex < cloudflareCredentialIndex &&
+      cloudflareCredentialIndex < migrationIndex &&
+      migrationIndex < imagePushIndex &&
+      imagePushIndex < cloudflareDeployIndex,
+  );
+  assert.equal(cloudflare.env.CLOUDFLARE_API_TOKEN, undefined);
+  assert.equal(
+    cloudflare.steps[cloudflareCredentialIndex].env.CLOUDFLARE_API_TOKEN,
+    '${{ secrets.CLOUDFLARE_API_TOKEN }}',
+  );
+  assert.equal(
+    cloudflare.steps[imagePushIndex].env.CLOUDFLARE_API_TOKEN,
+    '${{ secrets.CLOUDFLARE_API_TOKEN }}',
+  );
+  assert.equal(
+    cloudflare.steps[cloudflareDeployIndex].env.CLOUDFLARE_API_TOKEN,
+    '${{ secrets.CLOUDFLARE_API_TOKEN }}',
+  );
+  assert.match(cloudflare.steps[imagePushIndex].run, /docker manifest inspect -v/);
+  assert.match(cloudflare.steps[cloudflareDeployIndex].run, /--secrets-file/);
+  assert.match(cloudflare.steps[cloudflareDeployIndex].run, /--containers-rollout gradual/);
 });
 
 test('release deployments push immutable images and finish migrations before Container Apps updates', () => {
-  for (const name of ['beta-release', 'stable-release']) {
-    const workflow = WORKFLOWS[name].workflow;
-    const deployJob = Object.values(workflow.jobs).find((job) =>
-      job.steps?.some((step) => step.name === '🐳 Push immutable images and run migration'),
-    );
-    assert.ok(deployJob, `${name} must have a Container Apps deployment job`);
+  const deployJob = WORKFLOWS['azure-container-release'].workflow.jobs.deploy;
+  const steps = deployJob.steps;
+  const provenanceIndex = steps.findIndex((step) => step.name === '🔒 Verify tagged build provenance and archives');
+  const loginIndex = steps.findIndex((step) => step.name === '🔑 Azure Login');
+  const prepareIndex = steps.findIndex((step) => step.name === '🐳 Push immutable images and run migration');
+  const deployIndex = steps.findIndex((step) => step.name === '🚀 Deploy immutable Container Apps revisions');
+  const prepare = steps[prepareIndex];
+  const deploy = steps[deployIndex];
+  assert.ok(provenanceIndex < loginIndex && loginIndex < prepareIndex && prepareIndex < deployIndex);
+  assert.match(prepare.run, /docker load --input .*ref-test-management-api\.tar\.gz/);
+  assert.match(prepare.run, /docker push "\$API_TAGGED_IMAGE"/);
+  assert.match(prepare.run, /docker push "\$WORKER_TAGGED_IMAGE"/);
+  assert.match(prepare.run, /API_IMAGE="\$\{ACR_LOGIN_SERVER\}\/ref-test-management-api@\$\{API_DIGEST\}"/);
+  assert.match(prepare.run, /WORKER_IMAGE="\$\{ACR_LOGIN_SERVER\}\/ref-test-management-worker@\$\{WORKER_DIGEST\}"/);
 
-    const steps = deployJob.steps;
-    const provenanceIndex = steps.findIndex((step) => step.name === '🔒 Verify deployment artifact provenance');
-    const loginIndex = steps.findIndex((step) => step.name === '🔑 Azure Login');
-    const prepareIndex = steps.findIndex((step) => step.name === '🐳 Push immutable images and run migration');
-    const deployIndex = steps.findIndex((step) => step.name === '🚀 Deploy immutable Container Apps revisions');
-    const prepare = steps[prepareIndex];
-    const deploy = steps[deployIndex];
-    assert.ok(provenanceIndex < loginIndex && loginIndex < prepareIndex && prepareIndex < deployIndex);
-    assert.match(prepare.run, /docker load --input .*ref-test-management-api\.tar\.gz/);
-    assert.match(prepare.run, /docker push "\$API_TAGGED_IMAGE"/);
-    assert.match(prepare.run, /docker push "\$WORKER_TAGGED_IMAGE"/);
-    assert.match(prepare.run, /API_IMAGE="\$\{ACR_LOGIN_SERVER\}\/ref-test-management-api@\$\{API_DIGEST\}"/);
-    assert.match(prepare.run, /WORKER_IMAGE="\$\{ACR_LOGIN_SERVER\}\/ref-test-management-worker@\$\{WORKER_DIGEST\}"/);
-
-    const migrationUpdateIndex = prepare.run.indexOf('az containerapp job update');
-    const migrationStartIndex = prepare.run.indexOf('az containerapp job start');
-    const migrationStatusIndex = prepare.run.indexOf('az containerapp job execution show');
-    assert.ok(migrationUpdateIndex >= 0 && migrationUpdateIndex < migrationStartIndex);
-    assert.ok(migrationStartIndex < migrationStatusIndex);
-    assert.match(prepare.run, /Succeeded/);
-    assert.match(prepare.run, /Failed\|Stopped/);
-    assert.match(prepare.run, /Migration execution did not complete/);
-    assert.match(deploy.run, /--image "\$API_IMAGE"/);
-    assert.match(deploy.run, /--image "\$WORKER_IMAGE"/);
-    assert.match(deploy.run, /AZURE_DEPLOYMENT_MODE" = "split"/);
-    assert.equal(deployJob.environment.url, '${{ steps.deploy.outputs.api-url }}');
-    assert.match(deploy.run, /api-url=https:\/\/\$API_FQDN/);
-  }
+  const migrationUpdateIndex = prepare.run.indexOf('az containerapp job update');
+  const migrationStartIndex = prepare.run.indexOf('az containerapp job start');
+  const migrationStatusIndex = prepare.run.indexOf('az containerapp job execution show');
+  assert.ok(migrationUpdateIndex >= 0 && migrationUpdateIndex < migrationStartIndex);
+  assert.ok(migrationStartIndex < migrationStatusIndex);
+  assert.match(prepare.run, /Succeeded/);
+  assert.match(prepare.run, /Failed\|Stopped/);
+  assert.match(prepare.run, /Migration execution did not complete/);
+  assert.match(deploy.run, /--image "\$API_IMAGE"/);
+  assert.match(deploy.run, /--image "\$WORKER_IMAGE"/);
+  assert.match(deploy.run, /AZURE_DEPLOYMENT_MODE" = "split"/);
+  assert.equal(deployJob.environment.url, '${{ steps.deploy.outputs.api-url }}');
+  assert.match(deploy.run, /api-url=https:\/\/\$API_FQDN/);
 });
 
 test('PR validates SDK container archives and all Terraform roots without cloud credentials', () => {
@@ -378,7 +479,9 @@ test('CodeQL uses the release validation .NET SDK', () => {
 
 test('all workflow actions stay pinned to full commit SHAs with version comments', () => {
   for (const { source } of Object.values(WORKFLOWS)) {
-    const actionLines = source.split('\n').filter((line) => /^\s+uses:/.test(line));
+    const actionLines = source
+      .split('\n')
+      .filter((line) => /^\s+uses:/.test(line) && !line.includes('./.github/workflows/'));
     assert.ok(actionLines.length > 0);
     for (const line of actionLines.map((line) => line.trimEnd())) {
       assert.match(line, /@[0-9a-f]{40}\s+#\s+v[\w.-]+$/);

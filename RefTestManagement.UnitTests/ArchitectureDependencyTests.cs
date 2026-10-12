@@ -50,7 +50,7 @@ public sealed class ArchitectureDependencyTests
                 "RefTestManagement.Hosting.Cloudflare",
             ],
         ["RefTestManagement.Hosting.Azure"] = ["RefTestManagement.Hosting"],
-        ["RefTestManagement.Hosting.Cloudflare"] = [],
+        ["RefTestManagement.Hosting.Cloudflare"] = ["RefTestManagement.Hosting"],
     };
 
     /// <summary>

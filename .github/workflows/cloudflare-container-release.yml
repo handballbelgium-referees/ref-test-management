@@ -1,0 +1,333 @@
+name: 🚀 Opt-in Cloudflare Container Release
+
+on:
+  workflow_call:
+    inputs:
+      release_tag:
+        required: true
+        type: string
+      target_environment:
+        required: true
+        type: string
+
+concurrency:
+  group: cloudflare-container-${{ inputs.target_environment }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    uses: ./.github/workflows/container-build.yml
+    with:
+      release_tag: ${{ inputs.release_tag }}
+      target_environment: ${{ inputs.target_environment }}
+    permissions:
+      contents: read
+
+  deploy:
+    name: Deploy to Cloudflare Containers (${{ inputs.target_environment }})
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 90
+    environment:
+      name: cloudflare-${{ inputs.target_environment }}
+    permissions:
+      contents: read
+      actions: read
+    env:
+      CLOUDFLARE_ACCOUNT_ID: ${{ vars.CLOUDFLARE_ACCOUNT_ID }}
+      CLOUDFLARE_WORKER_SERVICE_NAME: ${{ vars.CLOUDFLARE_WORKER_SERVICE_NAME }}
+      APP_MODE: ${{ vars.APP_MODE }}
+      API_HOSTNAME: ${{ vars.API_HOSTNAME }}
+      AUTH0_DOMAIN: ${{ vars.AUTH0_DOMAIN }}
+      AUTH0_CLIENT_ID: ${{ vars.AUTH0_CLIENT_ID }}
+      AUTH0_AUDIENCE: ${{ vars.AUTH0_AUDIENCE }}
+      AUTH0_MANAGEMENT_CLIENT_ID: ${{ vars.AUTH0_MANAGEMENT_CLIENT_ID }}
+      EMAIL_BASE_URL: ${{ vars.EMAIL_BASE_URL }}
+      EMAIL_FROM_EMAIL: ${{ vars.EMAIL_FROM_EMAIL }}
+      EMAIL_FROM_NAME: ${{ vars.EMAIL_FROM_NAME }}
+      BREVO_API_URL: ${{ vars.BREVO_API_URL }}
+      RULES_QUESTIONS_URL: ${{ vars.RULES_QUESTIONS_URL }}
+
+    steps:
+      - name: 📥 Checkout selected release tag
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.release_tag }}
+          persist-credentials: false
+
+      - name: ⬇️ Download tagged container archives
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: ${{ needs.build.outputs.artifact-name }}
+          path: ${{ github.workspace }}/release-artifact
+
+      - name: 🔒 Verify tagged build provenance and archives
+        env:
+          VALIDATED_SHA: ${{ needs.build.outputs.validated-sha }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+          API_IMAGE_ARCHIVE_SHA256: ${{ needs.build.outputs.api-image-archive-sha256 }}
+          WORKER_IMAGE_ARCHIVE_SHA256: ${{ needs.build.outputs.worker-image-archive-sha256 }}
+          CONTAINER_ARCHIVES_SHA256: ${{ needs.build.outputs.container-archives-sha256 }}
+          NODE_VERSION: ${{ needs.build.outputs.node-version }}
+          NPM_VERSION: ${{ needs.build.outputs.npm-version }}
+          DOTNET_SDK_VERSION: ${{ needs.build.outputs.dotnet-sdk-version }}
+          DOTNET_SDKS: ${{ needs.build.outputs.dotnet-sdks }}
+          DOTNET_RUNTIMES: ${{ needs.build.outputs.dotnet-runtimes }}
+          RUNNER_OS_NAME: ${{ needs.build.outputs.runner-os }}
+          RUNNER_ARCH: ${{ needs.build.outputs.runner-arch }}
+          RUNNER_IMAGE_OS: ${{ needs.build.outputs.runner-image-os }}
+          RUNNER_IMAGE_VERSION: ${{ needs.build.outputs.runner-image-version }}
+        run: |
+          set -euo pipefail
+          EXPECTED_PROVENANCE="$(printf 'validated-sha=%s\nrelease-tag=%s\ntarget-environment=%s\nimage-tag=%s\nnode-version=%s\nnpm-version=%s\ndotnet-sdk-version=%s\ndotnet-sdks=%s\ndotnet-runtimes=%s\nrunner-os=%s\nrunner-arch=%s\nrunner-image-os=%s\nrunner-image-version=%s' \
+            "$VALIDATED_SHA" "$RELEASE_TAG" "$TARGET_ENVIRONMENT" "$IMAGE_TAG" \
+            "$NODE_VERSION" "$NPM_VERSION" "$DOTNET_SDK_VERSION" "$DOTNET_SDKS" "$DOTNET_RUNTIMES" \
+            "$RUNNER_OS_NAME" "$RUNNER_ARCH" "$RUNNER_IMAGE_OS" "$RUNNER_IMAGE_VERSION")"
+          EXPECTED_PROVENANCE="${EXPECTED_PROVENANCE}"$'\n'"api-image-archive-sha256=${API_IMAGE_ARCHIVE_SHA256}"
+          EXPECTED_PROVENANCE="${EXPECTED_PROVENANCE}"$'\n'"worker-image-archive-sha256=${WORKER_IMAGE_ARCHIVE_SHA256}"
+          EXPECTED_PROVENANCE="${EXPECTED_PROVENANCE}"$'\n'"container-archives-sha256=${CONTAINER_ARCHIVES_SHA256}"
+          ACTUAL_PROVENANCE="$(cat "$GITHUB_WORKSPACE/release-artifact/provenance.txt")"
+          if [ "$ACTUAL_PROVENANCE" != "$EXPECTED_PROVENANCE" ]; then
+            echo "::error::Container artifact provenance does not match the selected release."
+            exit 1
+          fi
+
+          IMAGE_DIRECTORY="$GITHUB_WORKSPACE/release-artifact/images"
+          ACTUAL_API_IMAGE_ARCHIVE_SHA256="$(sha256sum "$IMAGE_DIRECTORY/ref-test-management-api.tar.gz" | cut -d ' ' -f 1)"
+          ACTUAL_WORKER_IMAGE_ARCHIVE_SHA256="$(sha256sum "$IMAGE_DIRECTORY/ref-test-management-worker.tar.gz" | cut -d ' ' -f 1)"
+          ACTUAL_CONTAINER_ARCHIVES_SHA256="$(cd "$IMAGE_DIRECTORY" && find . -type f -print0 | LC_ALL=C sort -z | xargs -0 sha256sum | sha256sum | cut -d ' ' -f 1)"
+          if [ "$API_IMAGE_ARCHIVE_SHA256" != "$ACTUAL_API_IMAGE_ARCHIVE_SHA256" ] || \
+             [ "$WORKER_IMAGE_ARCHIVE_SHA256" != "$ACTUAL_WORKER_IMAGE_ARCHIVE_SHA256" ] || \
+             [ "$CONTAINER_ARCHIVES_SHA256" != "$ACTUAL_CONTAINER_ARCHIVES_SHA256" ]; then
+            echo "::error::Container archive digests do not match the selected tagged build."
+            exit 1
+          fi
+
+      - name: ⚡ Setup Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
+        with:
+          node-version: 24.20.0
+
+      - name: 📦 Install Wrangler
+        working-directory: ./infra/cloudflare/worker
+        run: npm ci
+
+      - name: 🔎 Validate Cloudflare Environment
+        env:
+          TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          POSTGRES_CONNECTION_STRING: ${{ secrets.POSTGRES_CONNECTION_STRING }}
+          CLOUDFLARE_DATA_PROTECTION_PFX_BASE64: ${{ secrets.CLOUDFLARE_DATA_PROTECTION_PFX_BASE64 }}
+          CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD: ${{ secrets.CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD }}
+          AUTH0_MANAGEMENT_CLIENT_SECRET: ${{ secrets.AUTH0_MANAGEMENT_CLIENT_SECRET }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+          CLOUDFLARE_PROXY_ASSERTION_SECRET: ${{ secrets.CLOUDFLARE_PROXY_ASSERTION_SECRET }}
+          REDIS_ENDPOINT: ${{ secrets.REDIS_ENDPOINT }}
+          PRIVACY_CHALLENGE_HMAC_SECRET: ${{ secrets.PRIVACY_CHALLENGE_HMAC_SECRET }}
+        run: |
+          set -euo pipefail
+          : "${CLOUDFLARE_ACCOUNT_ID:?Set CLOUDFLARE_ACCOUNT_ID in the selected Cloudflare Environment.}"
+          : "${CLOUDFLARE_WORKER_SERVICE_NAME:?Set CLOUDFLARE_WORKER_SERVICE_NAME in the selected Cloudflare Environment.}"
+          : "${APP_MODE:?Set APP_MODE in the selected Cloudflare Environment.}"
+          : "${API_HOSTNAME:?Set API_HOSTNAME in the selected Cloudflare Environment.}"
+          : "${AUTH0_DOMAIN:?Set AUTH0_DOMAIN in the selected Cloudflare Environment.}"
+          : "${AUTH0_CLIENT_ID:?Set AUTH0_CLIENT_ID in the selected Cloudflare Environment.}"
+          : "${AUTH0_AUDIENCE:?Set AUTH0_AUDIENCE in the selected Cloudflare Environment.}"
+          : "${AUTH0_MANAGEMENT_CLIENT_ID:?Set AUTH0_MANAGEMENT_CLIENT_ID in the selected Cloudflare Environment.}"
+          : "${EMAIL_BASE_URL:?Set EMAIL_BASE_URL in the selected Cloudflare Environment.}"
+          : "${EMAIL_FROM_EMAIL:?Set EMAIL_FROM_EMAIL in the selected Cloudflare Environment.}"
+          : "${EMAIL_FROM_NAME:?Set EMAIL_FROM_NAME in the selected Cloudflare Environment.}"
+          : "${RULES_QUESTIONS_URL:?Set RULES_QUESTIONS_URL in the selected Cloudflare Environment.}"
+          : "${POSTGRES_CONNECTION_STRING:?Set POSTGRES_CONNECTION_STRING in the selected Cloudflare Environment.}"
+          : "${CLOUDFLARE_DATA_PROTECTION_PFX_BASE64:?Set the Data Protection certificate secret in the selected Cloudflare Environment.}"
+          : "${CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD:?Set the Data Protection certificate password in the selected Cloudflare Environment.}"
+          : "${AUTH0_MANAGEMENT_CLIENT_SECRET:?Set AUTH0_MANAGEMENT_CLIENT_SECRET in the selected Cloudflare Environment.}"
+          : "${BREVO_API_KEY:?Set BREVO_API_KEY in the selected Cloudflare Environment.}"
+          : "${AUTH0_CLIENT_SECRET:?Set AUTH0_CLIENT_SECRET in the selected Cloudflare Environment.}"
+          : "${CLOUDFLARE_PROXY_ASSERTION_SECRET:?Set CLOUDFLARE_PROXY_ASSERTION_SECRET in the selected Cloudflare Environment.}"
+
+          if [[ ! "$CLOUDFLARE_ACCOUNT_ID" =~ ^[a-f0-9]{32}$ ]]; then
+            echo "::error::CLOUDFLARE_ACCOUNT_ID must be a 32-character lowercase hexadecimal ID."
+            exit 1
+          fi
+          if [[ ! "$CLOUDFLARE_WORKER_SERVICE_NAME" =~ ^[a-z0-9-]+$ ]]; then
+            echo "::error::CLOUDFLARE_WORKER_SERVICE_NAME contains invalid characters."
+            exit 1
+          fi
+          if [ "$APP_MODE" != "All" ] && [ "$APP_MODE" != "Split" ]; then
+            echo "::error::APP_MODE must be All or Split."
+            exit 1
+          fi
+          if [ "$APP_MODE" = "Split" ]; then
+            : "${REDIS_ENDPOINT:?Set REDIS_ENDPOINT for Split mode.}"
+            : "${PRIVACY_CHALLENGE_HMAC_SECRET:?Set PRIVACY_CHALLENGE_HMAC_SECRET for Split mode.}"
+          fi
+          PROXY_ASSERTION_BYTES="$(printf '%s' "$CLOUDFLARE_PROXY_ASSERTION_SECRET" | wc -c | tr -d '[:space:]')"
+          if [ "$PROXY_ASSERTION_BYTES" -lt 32 ]; then
+            echo "::error::CLOUDFLARE_PROXY_ASSERTION_SECRET must contain at least 32 UTF-8 bytes."
+            exit 1
+          fi
+          if [ "$TARGET_ENVIRONMENT" = "production" ] && [[ "$RELEASE_TAG" == *-alpha.* ]]; then
+            echo "::error::Alpha releases cannot be deployed to Cloudflare production."
+            exit 1
+          fi
+
+      - name: 🔑 Validate Wrangler credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Set CLOUDFLARE_API_TOKEN in the selected Cloudflare Environment."
+            exit 1
+          fi
+
+      - name: 🐳 Load tagged Worker image and run migration
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+          ConnectionStrings__RefTestManagement: ${{ secrets.POSTGRES_CONNECTION_STRING }}
+        run: |
+          set -euo pipefail
+          WORKER_LOCAL_IMAGE="ref-test-management-worker:${IMAGE_TAG}"
+          docker load --input "$GITHUB_WORKSPACE/release-artifact/images/ref-test-management-worker.tar.gz"
+          docker image inspect "$WORKER_LOCAL_IMAGE" >/dev/null
+          docker run --rm \
+            --env DatabaseProvider=PostgreSQL \
+            --env ConnectionStrings__RefTestManagement \
+            "$WORKER_LOCAL_IMAGE" \
+            --migrate
+
+      - name: 🐳 Push tagged images and resolve immutable digests
+        id: images
+        env:
+          IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+        working-directory: ./infra/cloudflare/worker
+        run: |
+          set -euo pipefail
+          : "${CLOUDFLARE_API_TOKEN:?Set CLOUDFLARE_API_TOKEN in the selected Cloudflare Environment.}"
+          API_LOCAL_IMAGE="ref-test-management-api:${IMAGE_TAG}"
+          WORKER_LOCAL_IMAGE="ref-test-management-worker:${IMAGE_TAG}"
+          docker load --input "$GITHUB_WORKSPACE/release-artifact/images/ref-test-management-api.tar.gz"
+          docker load --input "$GITHUB_WORKSPACE/release-artifact/images/ref-test-management-worker.tar.gz"
+          docker image inspect "$API_LOCAL_IMAGE" >/dev/null
+          docker image inspect "$WORKER_LOCAL_IMAGE" >/dev/null
+
+          npx wrangler containers push "$API_LOCAL_IMAGE"
+          npx wrangler containers push "$WORKER_LOCAL_IMAGE"
+          API_REMOTE_TAG="registry.cloudflare.com/${CLOUDFLARE_ACCOUNT_ID}/ref-test-management-api:${IMAGE_TAG}"
+          WORKER_REMOTE_TAG="registry.cloudflare.com/${CLOUDFLARE_ACCOUNT_ID}/ref-test-management-worker:${IMAGE_TAG}"
+          API_DIGEST="$(docker manifest inspect -v "$API_REMOTE_TAG" | jq -r '.Descriptor.digest')"
+          WORKER_DIGEST="$(docker manifest inspect -v "$WORKER_REMOTE_TAG" | jq -r '.Descriptor.digest')"
+          if [[ ! "$API_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]] || \
+             [[ ! "$WORKER_DIGEST" =~ ^sha256:[0-9a-f]{64}$ ]]; then
+            echo "::error::Cloudflare registry did not return valid immutable image digests."
+            exit 1
+          fi
+
+          API_IMAGE="registry.cloudflare.com/${CLOUDFLARE_ACCOUNT_ID}/ref-test-management-api@${API_DIGEST}"
+          WORKER_IMAGE="registry.cloudflare.com/${CLOUDFLARE_ACCOUNT_ID}/ref-test-management-worker@${WORKER_DIGEST}"
+          {
+            printf 'api-image=%s\n' "$API_IMAGE"
+            printf 'worker-image=%s\n' "$WORKER_IMAGE"
+          } >> "$GITHUB_OUTPUT"
+          {
+            printf '### %s Cloudflare image digests\n\n' "$TARGET_ENVIRONMENT"
+            printf '* API: `%s`\n' "$API_IMAGE"
+            printf '* Worker: `%s`\n' "$WORKER_IMAGE"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: 🚀 Deploy Worker and immutable Containers
+        env:
+          API_IMAGE: ${{ steps.images.outputs.api-image }}
+          WORKER_IMAGE: ${{ steps.images.outputs.worker-image }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          POSTGRES_CONNECTION_STRING: ${{ secrets.POSTGRES_CONNECTION_STRING }}
+          CLOUDFLARE_DATA_PROTECTION_PFX_BASE64: ${{ secrets.CLOUDFLARE_DATA_PROTECTION_PFX_BASE64 }}
+          CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD: ${{ secrets.CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD }}
+          AUTH0_MANAGEMENT_CLIENT_SECRET: ${{ secrets.AUTH0_MANAGEMENT_CLIENT_SECRET }}
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          AUTH0_CLIENT_SECRET: ${{ secrets.AUTH0_CLIENT_SECRET }}
+          CLOUDFLARE_PROXY_ASSERTION_SECRET: ${{ secrets.CLOUDFLARE_PROXY_ASSERTION_SECRET }}
+          REDIS_ENDPOINT: ${{ secrets.REDIS_ENDPOINT }}
+          PRIVACY_CHALLENGE_HMAC_SECRET: ${{ secrets.PRIVACY_CHALLENGE_HMAC_SECRET }}
+        working-directory: ./infra/cloudflare/worker
+        run: |
+          set -euo pipefail
+          CONFIG_FILE="$GITHUB_WORKSPACE/infra/cloudflare/worker/wrangler.generated.jsonc"
+          SECRETS_FILE="$RUNNER_TEMP/wrangler-secrets.json"
+          trap 'rm -f "$CONFIG_FILE" "$SECRETS_FILE"' EXIT
+
+          node --input-type=module - "$CONFIG_FILE" <<'NODE'
+          import { readFileSync, writeFileSync } from "node:fs";
+          import { argv, env } from "node:process";
+
+          const configPath = argv[2];
+          let config = readFileSync("wrangler.jsonc", "utf8");
+          const replacements = [
+            [
+              /"image": "registry\.cloudflare\.com\/0{32}\/ref-test-management-api@sha256:0{64}"/,
+              `"image": ${JSON.stringify(env.API_IMAGE)}`,
+            ],
+            [
+              /"image": "registry\.cloudflare\.com\/0{32}\/ref-test-management-worker@sha256:0{64}"/,
+              `"image": ${JSON.stringify(env.WORKER_IMAGE)}`,
+            ],
+          ];
+          for (const [pattern, replacement] of replacements) {
+            const updated = config.replace(pattern, replacement);
+            if (updated === config) throw new Error(`Expected image placeholder was not found: ${pattern}`);
+            config = updated;
+          }
+          writeFileSync(configPath, config, { mode: 0o600 });
+          NODE
+
+          umask 077
+          node --input-type=module - "$SECRETS_FILE" <<'NODE'
+          import { writeFileSync } from "node:fs";
+          import { argv, env } from "node:process";
+
+          const names = [
+            "POSTGRES_CONNECTION_STRING",
+            "CLOUDFLARE_DATA_PROTECTION_PFX_BASE64",
+            "CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD",
+            "AUTH0_MANAGEMENT_CLIENT_SECRET",
+            "BREVO_API_KEY",
+            "AUTH0_CLIENT_SECRET",
+            "CLOUDFLARE_PROXY_ASSERTION_SECRET",
+            "REDIS_ENDPOINT",
+            "PRIVACY_CHALLENGE_HMAC_SECRET",
+          ];
+          const secrets = Object.fromEntries(names
+            .filter((name) => env[name])
+            .map((name) => [name, env[name]]));
+          writeFileSync(argv[2], JSON.stringify(secrets), { mode: 0o600 });
+          NODE
+
+          npx wrangler deploy \
+            --config "$CONFIG_FILE" \
+            --name "$CLOUDFLARE_WORKER_SERVICE_NAME" \
+            --var "APP_MODE:${APP_MODE}" \
+            --var "API_HOSTNAME:${API_HOSTNAME}" \
+            --var "AUTH0_DOMAIN:${AUTH0_DOMAIN}" \
+            --var "AUTH0_CLIENT_ID:${AUTH0_CLIENT_ID}" \
+            --var "AUTH0_AUDIENCE:${AUTH0_AUDIENCE}" \
+            --var "AUTH0_MANAGEMENT_CLIENT_ID:${AUTH0_MANAGEMENT_CLIENT_ID}" \
+            --var "EMAIL_BASE_URL:${EMAIL_BASE_URL}" \
+            --var "EMAIL_FROM_EMAIL:${EMAIL_FROM_EMAIL}" \
+            --var "EMAIL_FROM_NAME:${EMAIL_FROM_NAME}" \
+            --var "BREVO_API_URL:${BREVO_API_URL:-https://api.brevo.com/v3}" \
+            --var "RULES_QUESTIONS_URL:${RULES_QUESTIONS_URL}" \
+            --secrets-file "$SECRETS_FILE" \
+            --containers-rollout gradual
+
+          echo "✅ Successfully deployed $RELEASE_TAG to Cloudflare Worker $CLOUDFLARE_WORKER_SERVICE_NAME."

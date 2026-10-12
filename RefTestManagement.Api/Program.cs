@@ -24,7 +24,15 @@ var builder = WebApplication.CreateBuilder(args);
 var services = builder.Services;
 var configuration = builder.Configuration;
 var hostingMode = HostingModeConfiguration.GetApiMode(configuration);
-var isCloudflareProvider = CloudflareRequestAssertionMiddleware.IsCloudflareProvider(configuration);
+var hostingProvider = HostingProviderConfiguration.Create(
+    configuration,
+    builder.Environment,
+    [
+        new AzureHostingProviderAdapter(),
+        new CloudflareHostingProviderAdapter()
+    ]);
+var isCloudflareProvider =
+    string.Equals(hostingProvider.Provider, "Cloudflare", StringComparison.OrdinalIgnoreCase);
 CloudflareRequestAssertionMiddleware.ValidateConfiguration(configuration);
 
 services.AddSecurityConfiguration(configuration);
@@ -44,14 +52,12 @@ services.AddCors(options =>
     });
 });
 
-var dataProtectionKeyProtection =
-    CloudflareDataProtectionConfiguration.CreateKeyProtection(configuration) ??
-    AzureDataProtectionConfiguration.CreateKeyProtection(configuration, builder.Environment);
+var dataProtectionKeyProtection = hostingProvider.CreateDataProtectionKeyProtection();
 var stateConfiguration = services.AddRefTestManagementHosting(
     configuration,
     hostingMode,
     dataProtectionKeyProtection);
-await AzureRedisConfiguration.ConfigureRedisConnectionAsync(services, configuration);
+await hostingProvider.ConfigureRedisConnectionAsync(services);
 services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>();
 
 var graphQlLimitsConfig = services.AddValidatedConfiguration<GraphQlLimitsConfiguration>(

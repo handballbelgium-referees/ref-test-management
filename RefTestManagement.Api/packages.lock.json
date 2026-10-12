@@ -1270,7 +1270,10 @@
         }
       },
       "reftestmanagement.hosting.cloudflare": {
-        "type": "Project"
+        "type": "Project",
+        "dependencies": {
+          "RefTestManagement.Hosting": "[1.0.0, )"
+        }
       },
       "reftestmanagement.infrastructure": {
         "type": "Project",

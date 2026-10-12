@@ -188,6 +188,7 @@ flowchart TB
     Api --> CloudflareHosting
     Worker --> CloudflareHosting
     AzureHosting --> Hosting
+    CloudflareHosting --> Hosting
     Hosting --> Migrations
     Hosting --> Infrastructure
     Hosting --> Application
@@ -214,9 +215,9 @@ flowchart TB
 | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
 | `RefTestManagement.Api`            | ASP.NET Core GraphQL API and composition root; hosts background services in combined (`All`) mode |
 | `RefTestManagement.Worker`         | Background-service entry point for split API/Worker deployments and one-shot migrations          |
-| `RefTestManagement.Hosting`        | Shared process composition, provider-neutral hosting modes, database and state registration     |
-| `RefTestManagement.Hosting.Azure`  | Azure Key Vault Data Protection and managed-identity Redis authentication adapters                |
-| `RefTestManagement.Hosting.Cloudflare` | Cloudflare certificate-based Data Protection adapter                                         |
+| `RefTestManagement.Hosting`        | Shared process composition, `IHostingProviderAdapter` contract, hosting modes, database and state registration |
+| `RefTestManagement.Hosting.Azure`  | Azure Key Vault Data Protection and managed-identity Redis adapter implementation                  |
+| `RefTestManagement.Hosting.Cloudflare` | Cloudflare certificate-based Data Protection adapter implementation                         |
 | `RefTestManagement.Application`    | Use-case handlers, ports, configuration models and job payloads (see ADR 0001)                  |
 | `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
 | `RefTestManagement.Infrastructure` | EF Core, job handlers, email (Brevo), PDF/Excel generation, subscriptions, IHF client           |
@@ -343,17 +344,22 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 
 ## Deployment
 
-| Workflow             | Trigger                | Purpose                                                                                                         |
-| -------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `pr.yml`             | PR → `main`            | Build/test validation, i18n parity, SDK container-archive checks, offline Terraform validation, and AI consistency |
-| `beta-release.yml`   | push → `main`          | Publishes a pre-release and deploys immutable image digests to testing after the migration job succeeds          |
-| `stable-release.yml` | manual, from `release` | Promote; sync the validated candidate to `main`, then deploy immutable image digests to production              |
-| `infra-deploy.yml`   | manual, from `main`    | Environment-gated Azure Terraform plan/apply using GitHub OIDC                                                   |
+| Workflow                           | Trigger                    | Purpose                                                                                                            |
+| ---------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `pr.yml`                           | PR → `main`                | Build/test validation, i18n parity, SDK container-archive checks, offline Terraform validation, and AI consistency |
+| `beta-release.yml`                 | push → `main`              | Publishes an alpha pre-release and deploys to the selected testing target                                          |
+| `stable-release.yml`               | manual, from `release`     | Promotes the candidate and deploys to the selected production target                                               |
+| `container-build.yml`              | reusable (`workflow_call`) | Validates a selected release tag and builds provenance-tracked OCI archives                                         |
+| `azure-container-release.yml`      | reusable (`workflow_call`) | Opt-in Azure Container Apps deployment                                                                             |
+| `cloudflare-container-release.yml` | reusable (`workflow_call`) | Opt-in Cloudflare Worker/Containers deployment                                                                     |
+| `infra-deploy.yml`                 | manual, from `main`        | Environment-gated Azure Terraform plan/apply using GitHub OIDC                                                     |
 
-The Azure workflows require environment-scoped variables, OIDC federation, RBAC, and production
-review settings. Cloudflare Worker/container releases remain Wrangler-managed; Terraform only
-bootstraps its R2 state bucket and attaches a custom domain to an already deployed Worker. See
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) before configuring either provider.
+The repository variable `CONTAINER_DEPLOYMENT_TARGET` selects `app-service` (the default when
+unset), `azure-container-apps`, or `cloudflare-containers`. Changing it switches the target of
+future beta/stable releases without changing application code or workflow files. Container targets
+use protected GitHub Environments. Azure uses OIDC and Container Apps; Cloudflare uses Wrangler for
+its Worker and Containers, while Terraform only bootstraps R2 state and attaches the custom domain.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) before configuring either provider.
 
 ## Versioning
 

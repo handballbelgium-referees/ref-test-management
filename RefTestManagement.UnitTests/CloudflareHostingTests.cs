@@ -2,11 +2,14 @@ using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Hosting;
+using Handball.Belgium.RefTestManagement.Hosting.Azure;
 using Handball.Belgium.RefTestManagement.Hosting.Cloudflare;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -21,7 +24,14 @@ public sealed class CloudflareHostingTests
             ("Hosting:Provider", "Cloudflare"),
             ("Cloudflare:DataProtection:PfxBase64", Convert.ToBase64String(certificateBytes)),
             ("Cloudflare:DataProtection:PfxPassword", password));
-        var configureKeyProtection = CloudflareDataProtectionConfiguration.CreateKeyProtection(configuration);
+        var hostingProvider = HostingProviderConfiguration.Create(
+            configuration,
+            Host.CreateApplicationBuilder().Environment,
+            [
+                new AzureHostingProviderAdapter(),
+                new CloudflareHostingProviderAdapter()
+            ]);
+        var configureKeyProtection = hostingProvider.CreateDataProtectionKeyProtection();
         Assert.NotNull(configureKeyProtection);
 
         var keyDirectory = Path.Combine(Path.GetTempPath(), $"cloudflare-dp-{Guid.NewGuid():N}");
