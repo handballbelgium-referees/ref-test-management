@@ -229,6 +229,9 @@ export class RefTestFacade {
       {
         onStart: () => {
           this._submissionInProgress = true;
+          // Close the confirm dialog as soon as the participant confirms; the results page
+          // only replaces the spinner once the server has accepted the submission.
+          this._store.showSubmitDialog.set(false);
           this._store.error.set(null);
           this._store.loading.set(true);
         },

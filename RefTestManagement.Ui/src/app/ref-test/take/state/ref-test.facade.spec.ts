@@ -162,6 +162,25 @@ describe('RefTestFacade', () => {
     });
   });
 
+  it('closes the confirm dialog on submit but shows results only after the server accepts', () => {
+    const response = new Subject<unknown>();
+    completeMutation.mockReturnValue(response);
+    store.token.set(sessionToken);
+    store.showSubmitDialog.set(true);
+
+    facade.submit();
+
+    expect(store.showSubmitDialog()).toBe(false);
+    expect(store.loading()).toBe(true);
+    expect(store.completed()).toBe(false);
+
+    response.next({ data: { completeRefTest: { participantRefTest: null } } });
+    response.complete();
+
+    expect(store.completed()).toBe(false);
+    expect(store.error()).toBe('submit_failed');
+  });
+
   it('restores a committed submission after its response is lost', () => {
     const firstResponse = new Subject<unknown>();
     completeMutation.mockReturnValue(firstResponse);

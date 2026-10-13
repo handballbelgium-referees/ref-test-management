@@ -1,5 +1,5 @@
 <!-- Hero Section -->
-@if (!error() && refTest() && !loading() && !withdrawalQueued()) {
+@if (!error() && refTest() && !loading() && !resumingResults() && !withdrawalQueued()) {
   <app-ref-test-hero />
 }
 
@@ -26,7 +26,7 @@
       </h1>
       <p class="text-neutral-600">{{ 'ref_test.withdrawal_queued_message' | translate }}</p>
     </div>
-  } @else if (loading()) {
+  } @else if (loading() || resumingResults()) {
     <div class="flex flex-col items-center justify-center py-20" role="status" aria-live="polite">
       <div class="animate-spin rounded-full h-12 w-12 border-b-4 border-primary-600"></div>
       <p class="mt-4 text-lg font-semibold text-neutral-700">

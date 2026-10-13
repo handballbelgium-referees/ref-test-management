@@ -139,6 +139,13 @@ export class RefTestWelcome {
 
   readonly loading = computed(() => this.refTestResult()?.loading ?? true);
 
+  // True while a completed or in-progress token is being exchanged for a session, so the start content never flashes before navigation to the take page.
+  readonly resumingResults = computed(() => {
+    const refTest = this.refTest();
+    if (!refTest || this.sessionCreationError()) return false;
+    return refTest.status === 'COMPLETED' || refTest.currentQuestionIndex != null;
+  });
+
   readonly canStart = computed(() => {
     const refTest = this.refTest();
     return refTest !== null && !this.loading();

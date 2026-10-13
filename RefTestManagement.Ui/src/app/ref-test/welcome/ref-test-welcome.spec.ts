@@ -160,6 +160,53 @@ describe('RefTestWelcome', () => {
     });
   });
 
+  it('keeps the start content hidden while a completed invitation is being exchanged', () => {
+    const pendingSession = new Subject();
+    createRefTestSessionMutation.mockReturnValueOnce(pendingSession);
+
+    refTestByTokenSubject.next({
+      data: {
+        refTestByToken: {
+          __typename: 'ParticipantRefTest',
+          status: 'COMPLETED',
+          currentQuestionIndex: null,
+        },
+      },
+      loading: false,
+    });
+
+    expect(welcome.refTest()).not.toBeNull();
+    expect(welcome.resumingResults()).toBe(true);
+    expect(createRefTestSessionMutation).toHaveBeenCalledOnce();
+  });
+
+  it('stops gating the welcome content once session creation has failed', () => {
+    createRefTestSessionMutation.mockReturnValueOnce(
+      of({
+        data: {
+          createRefTestSession: {
+            participantSessionDto: null,
+            errors: [{ __typename: 'RefTestNotFoundError', message: 'Not found' }],
+          },
+        },
+      }),
+    );
+
+    refTestByTokenSubject.next({
+      data: {
+        refTestByToken: {
+          __typename: 'ParticipantRefTest',
+          status: 'COMPLETED',
+          currentQuestionIndex: null,
+        },
+      },
+      loading: false,
+    });
+
+    expect(welcome.sessionCreationError()).toBe(true);
+    expect(welcome.resumingResults()).toBe(false);
+  });
+
   it('shows an error and stays on the welcome route if session creation fails', () => {
     createRefTestSessionMutation.mockReturnValue(
       of({
