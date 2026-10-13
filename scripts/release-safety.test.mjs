@@ -263,6 +263,7 @@ test('semantic-release runs badge publication before GitHub release publishing',
   const badgeScript = readFileSync(SCRIPT, 'utf8');
   assert.match(badgeScript, /if \(option === '--publish'\) \{\s+publishBadgeCommit\(\{/);
   assert.match(badgeScript, /checkout', '--detach', '--force'/);
+  assert.match(badgeScript, /BADGE_BRANCH is required for --publish\./);
   for (const name of ['beta-release', 'stable-release']) {
     const workflow = WORKFLOWS[name].workflow;
     const releaseStep = workflow.jobs.release.steps.find((step) => step.id === 'semantic-release');

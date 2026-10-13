@@ -166,6 +166,10 @@ async function main() {
   if (!version || extra.length || (option && option !== '--publish')) {
     throw new Error('Usage: node generate-badges.mjs <version> [--publish]');
   }
+  // Fail before writing badge files when a publish run lacks its target branch (e.g. a stale workflow revision).
+  if (option === '--publish' && !process.env.BADGE_BRANCH) {
+    throw new Error('BADGE_BRANCH is required for --publish.');
+  }
   const repoDir = process.cwd();
   const root = resolve(git(repoDir, ['rev-parse', '--show-toplevel']).trim());
   const badgesDir = join(root, 'badges');
