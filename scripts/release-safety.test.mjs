@@ -18,6 +18,10 @@ const ACA_TERRAFORM_SOURCE = readFileSync(
   join(ROOT, 'infra/terraform/modules/aca-platform/main.tf'),
   'utf8',
 );
+const ACA_TERRAFORM_VARIABLES_SOURCE = readFileSync(
+  join(ROOT, 'infra/terraform/modules/aca-platform/variables.tf'),
+  'utf8',
+);
 const WORKFLOWS = Object.fromEntries(
   [
     'beta-release',
@@ -246,6 +250,7 @@ test('provider container releases are opt-in and verify artifacts before deploym
   const azure = WORKFLOWS['azure-container-release'].workflow.jobs.deploy;
   const cloudflare = WORKFLOWS['cloudflare-container-release'].workflow.jobs.deploy;
   assert.equal(azure.environment.name, '${{ inputs.target_environment }}');
+  assert.equal(azure.env.AZURE_DATABASE_PROVIDER, "${{ vars.AZURE_DATABASE_PROVIDER || 'SqlServer' }}");
   assert.equal(cloudflare.environment.name, 'cloudflare-${{ inputs.target_environment }}');
   assert.deepEqual(azure.permissions, {
     'id-token': 'write',
@@ -300,16 +305,49 @@ test('provider container releases are opt-in and verify artifacts before deploym
   assert.match(cloudflare.steps[cloudflareDeployIndex].run, /--containers-rollout gradual/);
 });
 
+test('Azure Terraform selects providers safely and keeps SQLite single-mode only', () => {
+  assert.match(ACA_TERRAFORM_VARIABLES_SOURCE, /variable "database_provider"[\s\S]*default\s+=\s+"SqlServer"/);
+  assert.match(ACA_TERRAFORM_VARIABLES_SOURCE, /contains\(\["SqlServer", "PostgreSQL", "MySQL", "SQLite"\]/);
+  assert.match(ACA_TERRAFORM_VARIABLES_SOURCE, /PostgreSQL and MySQL require allow_managed_database_providers=true/);
+  assert.match(ACA_TERRAFORM_VARIABLES_SOURCE, /SQLite requires deployment_mode=single/);
+  assert.match(ACA_TERRAFORM_SOURCE, /resource "azurerm_postgresql_flexible_server" "environment"/);
+  assert.match(ACA_TERRAFORM_SOURCE, /resource "azurerm_mysql_flexible_server" "environment"/);
+  assert.match(ACA_TERRAFORM_SOURCE, /resource "azurerm_storage_share" "sqlite"/);
+  assert.match(ACA_TERRAFORM_SOURCE, /app_database_connection_secret_name\s+=\s+local\.sql_server_mode \? "sql-connection"/);
+  assert.match(ACA_TERRAFORM_SOURCE, /moved\s+\{\s*from\s+=\s+azurerm_mssql_server\.environment\s+to\s+=\s+azurerm_mssql_server\.environment\[0\]/s);
+  assert.match(ACA_TERRAFORM_SOURCE, /Data Source=\/mnt\/ref-test-data\/RefTestManagement\.db/);
+  assert.match(ACA_TERRAFORM_SOURCE, /administrator_password_wo\s+=\s+var\.database_admin_password_wo/);
+  assert.doesNotMatch(ACA_TERRAFORM_SOURCE, /value\s+=\s+"SqlServer"/);
+});
+
 test('release deployments push immutable images and finish migrations before Container Apps updates', () => {
   const deployJob = WORKFLOWS['azure-container-release'].workflow.jobs.deploy;
   const steps = deployJob.steps;
+  const providerValidationIndex = steps.findIndex((step) => step.name === '🔎 Validate Azure database and hosting mode');
   const provenanceIndex = steps.findIndex((step) => step.name === '🔒 Verify tagged build provenance and archives');
   const loginIndex = steps.findIndex((step) => step.name === '🔑 Azure Login');
+  const providerCheckIndex = steps.findIndex((step) => step.name === '🔎 Verify deployed database provider');
   const prepareIndex = steps.findIndex((step) => step.name === '🐳 Push immutable images and run migration');
   const deployIndex = steps.findIndex((step) => step.name === '🚀 Deploy immutable Container Apps revisions');
+  const sqliteStartIndex = steps.findIndex((step) => step.name === '▶️ Start SQLite API after migration or failure');
+  const providerValidation = steps[providerValidationIndex];
+  const providerCheck = steps[providerCheckIndex];
   const prepare = steps[prepareIndex];
   const deploy = steps[deployIndex];
-  assert.ok(provenanceIndex < loginIndex && loginIndex < prepareIndex && prepareIndex < deployIndex);
+  const sqliteStart = steps[sqliteStartIndex];
+  assert.ok(providerValidationIndex < provenanceIndex && provenanceIndex < loginIndex);
+  assert.ok(loginIndex < providerCheckIndex && providerCheckIndex < prepareIndex && prepareIndex < deployIndex);
+  assert.ok(deployIndex < sqliteStartIndex);
+  assert.match(providerCheck.run, /az containerapp show/);
+  assert.match(providerCheck.run, /az containerapp job show/);
+  assert.match(providerCheck.run, /GitHub Environment, API, and migration job database providers do not match/);
+  assert.equal(prepare.env.DATABASE_PROVIDER, '${{ steps.database-provider-check.outputs.database-provider }}');
+  assert.equal(sqliteStart.if, "${{ always() && steps.prepare-deployment.outputs.sqlite-api-stop-attempted == 'true' }}");
+  assert.match(providerValidation.run, /SQLite.*single/s);
+  assert.match(prepare.run, /if \[ "\$DATABASE_PROVIDER" = "SQLite" \]/);
+  assert.match(prepare.run, /az containerapp stop/);
+  assert.match(prepare.run, /sqlite-api-stop-attempted=true/);
+  assert.match(sqliteStart.run, /az containerapp start/);
   assert.match(prepare.run, /docker load --input .*ref-test-management-api\.tar\.gz/);
   assert.match(prepare.run, /docker push "\$API_TAGGED_IMAGE"/);
   assert.match(prepare.run, /docker push "\$WORKER_TAGGED_IMAGE"/);
@@ -317,9 +355,11 @@ test('release deployments push immutable images and finish migrations before Con
   assert.match(prepare.run, /WORKER_IMAGE="\$\{ACR_LOGIN_SERVER\}\/ref-test-management-worker@\$\{WORKER_DIGEST\}"/);
 
   const migrationUpdateIndex = prepare.run.indexOf('az containerapp job update');
+  const sqliteStopIndex = prepare.run.indexOf('az containerapp stop');
   const migrationStartIndex = prepare.run.indexOf('az containerapp job start');
   const migrationStatusIndex = prepare.run.indexOf('az containerapp job execution show');
   assert.ok(migrationUpdateIndex >= 0 && migrationUpdateIndex < migrationStartIndex);
+  assert.ok(migrationUpdateIndex < sqliteStopIndex && sqliteStopIndex < migrationStartIndex);
   assert.ok(migrationStartIndex < migrationStatusIndex);
   assert.match(prepare.run, /Succeeded/);
   assert.match(prepare.run, /Failed\|Stopped/);
@@ -376,6 +416,8 @@ test('Azure infrastructure workflow gates a saved plan with a second environment
   const format = planSteps.find((step) => step.name === '🧹 Format Terraform (offline)');
   const createPlan = planSteps.find((step) => step.name === '📋 Create and display Terraform plan');
   const uploadPlan = planSteps.find((step) => step.name === '📤 Upload saved plan for the protected apply job');
+  const createPlanStep = planSteps.find((step) => step.name === '📋 Create and display Terraform plan');
+  const applyConfigurationCheck = applySteps.find((step) => step.name === '🔎 Validate apply configuration');
   const applyOidc = applySteps.find((step) => step.name === '🔑 Request Azure OIDC token');
   const downloadPlan = applySteps.find((step) => step.name === '📦 Download the reviewed plan');
   const applyPlan = applySteps.find((step) => step.name === '🔒 Verify and apply the exact reviewed plan');
@@ -393,7 +435,17 @@ test('Azure infrastructure workflow gates a saved plan with a second environment
   assert.equal(terraformSetup.uses, 'hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e');
   assert.equal(planJob.env.TF_VAR_create_applications, '${{ inputs.create_applications }}');
   assert.equal(planJob.env.TF_VAR_allow_split_mode, "${{ vars.AZURE_ALLOW_SPLIT_MODE || 'false' }}");
+  assert.equal(planJob.env.TF_VAR_database_provider, "${{ vars.AZURE_DATABASE_PROVIDER || 'SqlServer' }}");
+  assert.equal(planJob.env.TF_VAR_allow_managed_database_providers, "${{ vars.AZURE_ALLOW_MANAGED_DATABASE_PROVIDERS || 'false' }}");
+  assert.equal(planJob.env.TF_VAR_database_admin_password_wo_version, "${{ vars.AZURE_DATABASE_ADMIN_PASSWORD_VERSION || '1' }}");
+  assert.equal(planJob.env.TF_VAR_database_admin_password_wo, undefined);
+  assert.equal(createPlanStep.env.TF_VAR_database_admin_password_wo, '${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD }}');
+  assert.equal(configurationCheck.env.DATABASE_ADMIN_PASSWORD_PRESENT, "${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD != '' }}");
+  assert.match(configurationCheck.run, /PostgreSQL\|MySQL/);
+  assert.match(configurationCheck.run, /SQLite/);
+  assert.match(configurationCheck.run, /AZURE_DATABASE_ADMIN_PASSWORD/);
   assert.equal(planJob.env.TF_VAR_api_trusted_proxy_networks, "${{ vars.AZURE_API_TRUSTED_PROXY_NETWORKS_JSON || '[]' }}");
+  assert.equal(planJob.outputs['database-provider'], '${{ steps.configuration.outputs.database-provider }}');
   assert.ok(configurationCheck.run.includes('AZURE_STATE_STORAGE_ACCOUNT_NAME'));
   assert.ok(format.run.includes('terraform fmt -check -recursive infra/terraform'));
   assert.ok(planSteps.indexOf(format) < planSteps.indexOf(oidc));
@@ -415,10 +467,16 @@ test('Azure infrastructure workflow gates a saved plan with a second environment
   assert.equal(applyJob.needs, 'plan');
   assert.equal(applyJob.environment.name, '${{ inputs.target_environment }}');
   assert.deepEqual(applyJob.permissions, { contents: 'read', 'id-token': 'write' });
+  assert.equal(applyJob.env.AZURE_DATABASE_PROVIDER, "${{ vars.AZURE_DATABASE_PROVIDER || 'SqlServer' }}");
+  assert.equal(applyJob.env.PLANNED_DATABASE_PROVIDER, '${{ needs.plan.outputs.database-provider }}');
+  assert.equal(applyJob.env.DATABASE_ADMIN_PASSWORD_PRESENT, "${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD != '' }}");
+  assert.match(applyConfigurationCheck.run, /changed after the reviewed Terraform plan/);
+  assert.match(applyConfigurationCheck.run, /AZURE_DATABASE_ADMIN_PASSWORD/);
   assert.equal(applyCheckout.with.ref, '${{ github.sha }}');
   assert.equal(applyCheckout.with['persist-credentials'], false);
   assert.ok(applySteps.indexOf(applyOidc) < applySteps.indexOf(downloadPlan));
   assert.equal(downloadPlan.with.name, '${{ needs.plan.outputs.artifact-name }}');
+  assert.equal(applyPlan.env.TF_VAR_database_admin_password_wo, '${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD }}');
   assert.match(applyPlan.run, /sha256sum "\$PLAN_PATH"/);
   assert.match(applyPlan.run, /"\$ACTUAL_PLAN_SHA256" != "\$EXPECTED_PLAN_SHA256"/);
   assert.match(applyPlan.run, /terraform .*init -input=false/);

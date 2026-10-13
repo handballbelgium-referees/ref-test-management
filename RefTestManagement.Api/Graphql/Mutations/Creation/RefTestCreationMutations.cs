@@ -2,7 +2,6 @@ using Handball.Belgium.RefTestManagement.Api.Extensions;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Shared;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Application.RefTests;
-using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Persistence;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;

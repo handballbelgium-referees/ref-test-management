@@ -1,4 +1,3 @@
-using Handball.Belgium.RefTestManagement.Auth0;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure;
@@ -154,6 +153,9 @@ graphQlBuilder
     });
 
 var app = builder.Build();
+
+if (hostingMode == HostingMode.All)
+    await app.Services.MigrateRefTestManagementDatabase();
 
 var hasUnsafeForwardedHeadersRateLimitConfig =
     graphQlLimitsConfig.EnableRateLimiting &&

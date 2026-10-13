@@ -1,5 +1,4 @@
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
-using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;

@@ -1,4 +1,5 @@
-﻿using Handball.Belgium.RefTestManagement.Domain.RefTests;
+using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using HotChocolate.Subscriptions;
 using Microsoft.Extensions.Logging;
@@ -18,6 +19,9 @@ public class RefTestSubscriptionService(
     public const string GlobalTopic = "RefTestEvents";
     public const string TimeExtendedTopic = "RefTestTimeExtended-{id}";
 
+    private Task SendRefTestEventAsync(string topic, object message, CancellationToken cancellationToken) =>
+        SendAsync(topic, RefTestSubscriptionMessage.Create(message), cancellationToken);
+
     private async Task SendAsync<TMessage>(string topic, TMessage message, CancellationToken cancellationToken)
     {
         try
@@ -31,8 +35,11 @@ public class RefTestSubscriptionService(
         catch (Exception exception)
         {
             // Only type names: the event and the transport error can both carry participant data.
+            var eventType = message is RefTestSubscriptionMessage envelope
+                ? envelope.EventType
+                : message?.GetType().Name ?? typeof(TMessage).Name;
             ServiceLoggerMessages.LogSubscriptionPublishFailed(
-                logger, message?.GetType().Name ?? typeof(TMessage).Name, exception.GetType().Name);
+                logger, eventType, exception.GetType().Name);
         }
     }
 
@@ -56,8 +63,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestInvitationSentEvent(refTestId, sentAt);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -69,8 +76,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestResultSentEvent(refTestId, sentAt);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -83,8 +90,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestStartedEvent(refTestId, status, startedAt);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -106,8 +113,8 @@ public class RefTestSubscriptionService(
         var listEvent = evt with { SelectedAnswerIds = null };
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, listEvent, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, listEvent, cancellationToken)
         );
     }
 
@@ -120,8 +127,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestExpiredEvent(refTestId, status, expiredAt);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -153,7 +160,7 @@ public class RefTestSubscriptionService(
             firstName, lastName, createdAt, scheduledAt);
 
         // Only publish to the global topic — there is no per-ID subscription for a brand-new ID.
-        await SendAsync<object>(GlobalTopic, evt, cancellationToken);
+        await SendRefTestEventAsync(GlobalTopic, evt, cancellationToken);
     }
 
     public async Task PublishRefTestDeletedAsync(
@@ -164,8 +171,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestDeletedEvent(refTestId, status);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -179,8 +186,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestAnonymizedEvent(refTestId, status, fullName, email);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -197,8 +204,8 @@ public class RefTestSubscriptionService(
             refTestId, oldStatus, status, resetType, createdAt, invitationSent);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -212,8 +219,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestRevivedEvent(refTestId, status, createdAt, invitationSent);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -228,8 +235,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestApprovedEvent(refTestId, oldStatus, status, approvedAt, createdAt);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 
@@ -243,8 +250,8 @@ public class RefTestSubscriptionService(
         var evt = new RefTestRejectedEvent(refTestId, status, reason, rejectedAt);
 
         await Task.WhenAll(
-            SendAsync<object>(refTestId.ToString(), evt, cancellationToken),
-            SendAsync<object>(GlobalTopic, evt, cancellationToken)
+            SendRefTestEventAsync(refTestId.ToString(), evt, cancellationToken),
+            SendRefTestEventAsync(GlobalTopic, evt, cancellationToken)
         );
     }
 }
@@ -316,6 +323,40 @@ public record RefTestApprovedEvent(
     DateTime CreatedAt);
 
 public record RefTestRejectedEvent(Guid Id, RefTestStatus Status, string Reason, DateTime RejectedAt);
+
+public sealed record RefTestSubscriptionMessage(string EventType, JsonElement Payload)
+{
+    public static RefTestSubscriptionMessage Create(object eventMessage)
+    {
+        ArgumentNullException.ThrowIfNull(eventMessage);
+        var eventType = eventMessage.GetType();
+        return new RefTestSubscriptionMessage(
+            eventType.Name,
+            JsonSerializer.SerializeToElement(eventMessage, eventType));
+    }
+
+    public object DeserializeEvent() => EventType switch
+    {
+        nameof(RefTestTimeExtendedEvent) => Deserialize<RefTestTimeExtendedEvent>(),
+        nameof(RefTestInvitationSentEvent) => Deserialize<RefTestInvitationSentEvent>(),
+        nameof(RefTestResultSentEvent) => Deserialize<RefTestResultSentEvent>(),
+        nameof(RefTestStartedEvent) => Deserialize<RefTestStartedEvent>(),
+        nameof(RefTestCompletedEvent) => Deserialize<RefTestCompletedEvent>(),
+        nameof(RefTestExpiredEvent) => Deserialize<RefTestExpiredEvent>(),
+        nameof(RefTestDeletedEvent) => Deserialize<RefTestDeletedEvent>(),
+        nameof(RefTestAnonymizedEvent) => Deserialize<RefTestAnonymizedEvent>(),
+        nameof(RefTestCreatedEvent) => Deserialize<RefTestCreatedEvent>(),
+        nameof(RefTestResetEvent) => Deserialize<RefTestResetEvent>(),
+        nameof(RefTestRevivedEvent) => Deserialize<RefTestRevivedEvent>(),
+        nameof(RefTestApprovedEvent) => Deserialize<RefTestApprovedEvent>(),
+        nameof(RefTestRejectedEvent) => Deserialize<RefTestRejectedEvent>(),
+        _ => throw new InvalidOperationException($"Unknown subscription event type: {EventType}")
+    };
+
+    private TMessage Deserialize<TMessage>() where TMessage : class =>
+        Payload.Deserialize<TMessage>()
+        ?? throw new JsonException($"Subscription event payload was empty for {EventType}.");
+}
 
 public enum RefTestSessionStatus { Acquired, Blocked }
 

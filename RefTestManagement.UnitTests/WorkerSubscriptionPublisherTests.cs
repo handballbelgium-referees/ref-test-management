@@ -5,7 +5,6 @@ using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using HotChocolate.Subscriptions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
 using StackExchange.Redis;
 using Testcontainers.Redis;
 
@@ -14,7 +13,7 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 public sealed class WorkerSubscriptionPublisherTests
 {
     [Fact]
-    public async Task WorkerPublishesEventsToApiSubscribersThroughSharedRedis()
+    public async Task WorkerPublishesTypedEventsToApiSubscribersThroughSharedRedis()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         await using var redis = await StartRedisAsync(cancellationToken);
@@ -32,19 +31,22 @@ public sealed class WorkerSubscriptionPublisherTests
         using var apiProvider = apiServices.BuildServiceProvider();
         using var workerProvider = workerServices.BuildServiceProvider();
         var receiver = apiProvider.GetRequiredService<ITopicEventReceiver>();
-        await using var source = await receiver.SubscribeAsync<RefTestDeletedEvent>(
+        await using var source = await receiver.SubscribeAsync<RefTestSubscriptionMessage>(
             RefTestSubscriptionService.GlobalTopic,
             cancellationToken);
         var messageTask = ReadFirstAsync(source.ReadEventsAsync(), cancellationToken);
 
         var id = Guid.NewGuid();
+        var sentAt = DateTime.UtcNow;
         using var workerScope = workerProvider.CreateScope();
         var publisher = workerScope.ServiceProvider.GetRequiredService<IRefTestSubscriptionService>();
-        await publisher.PublishRefTestDeletedAsync(id, RefTestStatus.Expired, cancellationToken);
+        await publisher.PublishInvitationSentAsync(id, sentAt, cancellationToken);
 
         var message = await messageTask.WaitAsync(TimeSpan.FromSeconds(5), cancellationToken);
-        Assert.Equal(id, message.Id);
-        Assert.Equal(RefTestStatus.Expired, message.Status);
+        Assert.Equal(nameof(RefTestInvitationSentEvent), message.EventType);
+        var invitationSent = Assert.IsType<RefTestInvitationSentEvent>(message.DeserializeEvent());
+        Assert.Equal(id, invitationSent.Id);
+        Assert.Equal(sentAt, invitationSent.SentAt);
     }
 
     private static async Task<RedisContainer> StartRedisAsync(CancellationToken cancellationToken)

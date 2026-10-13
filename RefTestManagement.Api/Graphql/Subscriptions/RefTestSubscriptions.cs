@@ -6,7 +6,6 @@ using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
-using HotChocolate;
 using HotChocolate.Authorization;
 using Microsoft.EntityFrameworkCore;
 using MicrosoftAuthorizationService = Microsoft.AspNetCore.Authorization.IAuthorizationService;
@@ -48,7 +47,7 @@ public static partial class RefTestSubscriptions
     [Topic("{id}")]
     public static async Task<IRefTestEvent> RefTestUpdated(
         [ID<RefTestDto>] Guid id,
-        [EventMessage] object message,
+        [EventMessage] RefTestSubscriptionMessage message,
         ClaimsPrincipal user,
         [Service] IPermissionSnapshotService permissionSnapshotService,
         [Service] MicrosoftAuthorizationService authorizationService,
@@ -61,7 +60,7 @@ public static partial class RefTestSubscriptions
             authorizationService,
             cancellationToken);
 
-        return message switch
+        return message.DeserializeEvent() switch
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
             RefTestCompletedEvent e => new RefTestCompleted(e.Id, e.Status, e.CompletedAt, e.QuestionScore,
@@ -98,7 +97,7 @@ public static partial class RefTestSubscriptions
     [Authorize(Policy = Permissions.RefTests.ViewList)]
     [Topic(RefTestSubscriptionService.GlobalTopic)]
     public static async Task<IRefTestEvent> RefTestsUpdated(
-        [EventMessage] object message,
+        [EventMessage] RefTestSubscriptionMessage message,
         ClaimsPrincipal user,
         [Service] IPermissionSnapshotService permissionSnapshotService,
         [Service] MicrosoftAuthorizationService authorizationService,
@@ -111,7 +110,7 @@ public static partial class RefTestSubscriptions
             authorizationService,
             cancellationToken);
 
-        return message switch
+        return message.DeserializeEvent() switch
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
             RefTestCompletedEvent e => new RefTestCompleted(e.Id, e.Status, e.CompletedAt, e.QuestionScore,

@@ -6,11 +6,26 @@ data "azurerm_container_registry" "shared" {
 }
 
 locals {
-  base_name  = "${var.name_prefix}-${var.unique_suffix}"
-  split_mode = var.deployment_mode == "split"
-  database   = "RefTestManagement-${var.environment}"
-  redis_acl  = "+@read +@write +@pubsub +@scripting +@transaction +@connection +cluster|slots +cluster|nodes ~*"
-  tags       = merge(var.tags, { Application = "RefTestManagement", Environment = var.environment, ManagedBy = "Terraform" })
+  base_name                           = "${var.name_prefix}-${var.unique_suffix}"
+  split_mode                          = var.deployment_mode == "split"
+  sqlite_mode                         = var.database_provider == "SQLite"
+  sql_server_mode                     = var.database_provider == "SqlServer"
+  postgresql_mode                     = var.database_provider == "PostgreSQL"
+  mysql_mode                          = var.database_provider == "MySQL"
+  database                            = "RefTestManagement-${var.environment}"
+  managed_database                    = "reftestmanagement_${var.environment}"
+  app_database_connection_secret_name = local.sql_server_mode ? "sql-connection" : "database-connection"
+  postgresql_server_name              = "${local.base_name}-postgresql"
+  mysql_server_name                   = "${local.base_name}-mysql"
+  sqlite_storage_account_name         = "${replace(local.base_name, "-", "")}data"
+  sqlite_connection_string            = "Data Source=/mnt/ref-test-data/RefTestManagement.db"
+  redis_acl                           = "+@read +@write +@pubsub +@scripting +@transaction +@connection +cluster|slots +cluster|nodes ~*"
+  tags                                = merge(var.tags, { Application = "RefTestManagement", Environment = var.environment, ManagedBy = "Terraform" })
+  database_connection_secret_names = {
+    api       = local.sql_server_mode ? "sql-api-connection" : "database-api-connection"
+    worker    = local.sql_server_mode ? "sql-worker-connection" : "database-worker-connection"
+    migration = local.sql_server_mode ? "sql-migration-connection" : "database-migration-connection"
+  }
   acr_and_secret_principal_ids = merge(
     {
       api       = azurerm_user_assigned_identity.api.principal_id
@@ -25,12 +40,14 @@ locals {
   # Create secret-scoped data-plane grants only after the out-of-band secrets are seeded.
   key_vault_secret_grants = var.create_applications ? merge(
     {
-      for secret_name in [
-        "sql-api-connection",
-        "auth0-client-secret",
-        "auth0-management-client-secret",
-        "brevo-api-key"
-        ] : "api-${secret_name}" => {
+      for secret_name in concat(
+        local.sqlite_mode ? [] : [local.database_connection_secret_names.api],
+        [
+          "auth0-client-secret",
+          "auth0-management-client-secret",
+          "brevo-api-key"
+        ]
+        ) : "api-${secret_name}" => {
         identity     = "api"
         principal_id = azurerm_user_assigned_identity.api.principal_id
         secret_name  = secret_name
@@ -45,23 +62,25 @@ locals {
         }
       },
       {
-        for secret_name in [
-          "sql-worker-connection",
-          "auth0-management-client-secret",
-          "brevo-api-key",
-          "privacy-challenge-hmac"
-          ] : "worker-${secret_name}" => {
+        for secret_name in concat(
+          [local.database_connection_secret_names.worker],
+          [
+            "auth0-management-client-secret",
+            "brevo-api-key",
+            "privacy-challenge-hmac"
+          ]
+          ) : "worker-${secret_name}" => {
           identity     = "worker"
           principal_id = azurerm_user_assigned_identity.worker.principal_id
           secret_name  = secret_name
         }
       }
     ) : {},
-    {
-      "migration-sql-migration-connection" = {
+    local.sqlite_mode ? {} : {
+      "migration-${local.database_connection_secret_names.migration}" = {
         identity     = "migration"
         principal_id = azurerm_user_assigned_identity.migration.principal_id
-        secret_name  = "sql-migration-connection"
+        secret_name  = local.database_connection_secret_names.migration
       }
     }
   ) : {}
@@ -70,13 +89,13 @@ locals {
     azurerm_managed_redis.shared[0].hostname,
     azurerm_managed_redis.shared[0].default_database[0].port
   ) : ""
-  api_sql_secret_id          = "${azurerm_key_vault.main.vault_uri}secrets/sql-api-connection"
-  worker_sql_secret_id       = "${azurerm_key_vault.main.vault_uri}secrets/sql-worker-connection"
-  migration_sql_secret_id    = "${azurerm_key_vault.main.vault_uri}secrets/sql-migration-connection"
-  auth0_client_secret_id     = "${azurerm_key_vault.main.vault_uri}secrets/auth0-client-secret"
-  auth0_management_secret_id = "${azurerm_key_vault.main.vault_uri}secrets/auth0-management-client-secret"
-  brevo_secret_id            = "${azurerm_key_vault.main.vault_uri}secrets/brevo-api-key"
-  privacy_hmac_secret_id     = "${azurerm_key_vault.main.vault_uri}secrets/privacy-challenge-hmac"
+  api_database_secret_id       = "${azurerm_key_vault.main.vault_uri}secrets/${local.database_connection_secret_names.api}"
+  worker_database_secret_id    = "${azurerm_key_vault.main.vault_uri}secrets/${local.database_connection_secret_names.worker}"
+  migration_database_secret_id = "${azurerm_key_vault.main.vault_uri}secrets/${local.database_connection_secret_names.migration}"
+  auth0_client_secret_id       = "${azurerm_key_vault.main.vault_uri}secrets/auth0-client-secret"
+  auth0_management_secret_id   = "${azurerm_key_vault.main.vault_uri}secrets/auth0-management-client-secret"
+  brevo_secret_id              = "${azurerm_key_vault.main.vault_uri}secrets/brevo-api-key"
+  privacy_hmac_secret_id       = "${azurerm_key_vault.main.vault_uri}secrets/privacy-challenge-hmac"
 }
 
 resource "azurerm_resource_group" "environment" {
@@ -159,7 +178,19 @@ resource "azurerm_user_assigned_identity" "migration" {
   tags                = local.tags
 }
 
+# Preserve existing SQL Server state addresses when making the resource conditional.
+moved {
+  from = azurerm_mssql_server.environment
+  to   = azurerm_mssql_server.environment[0]
+}
+
+moved {
+  from = azurerm_mssql_database.environment
+  to   = azurerm_mssql_database.environment[0]
+}
+
 resource "azurerm_mssql_server" "environment" {
+  count                         = local.sql_server_mode ? 1 : 0
   name                          = var.sql_server_name
   resource_group_name           = azurerm_resource_group.environment.name
   location                      = azurerm_resource_group.environment.location
@@ -177,8 +208,9 @@ resource "azurerm_mssql_server" "environment" {
 }
 
 resource "azurerm_mssql_database" "environment" {
+  count       = local.sql_server_mode ? 1 : 0
   name        = local.database
-  server_id   = azurerm_mssql_server.environment.id
+  server_id   = azurerm_mssql_server.environment[0].id
   sku_name    = "Basic"
   max_size_gb = 2
   collation   = "SQL_Latin1_General_CP1_CI_AS"
@@ -190,13 +222,155 @@ resource "azurerm_mssql_database" "environment" {
   }
 }
 
+resource "azurerm_postgresql_flexible_server" "environment" {
+  count = local.postgresql_mode ? 1 : 0
+
+  name                              = local.postgresql_server_name
+  resource_group_name               = azurerm_resource_group.environment.name
+  location                          = azurerm_resource_group.environment.location
+  version                           = "16"
+  administrator_login               = var.database_admin_login
+  administrator_password_wo         = var.database_admin_password_wo
+  administrator_password_wo_version = var.database_admin_password_wo_version
+  sku_name                          = "B_Standard_B1ms"
+  storage_mb                        = 32768
+  storage_tier                      = "P4"
+  auto_grow_enabled                 = false
+  backup_retention_days             = 7
+  geo_redundant_backup_enabled      = false
+  public_network_access_enabled     = true
+  authentication {
+    active_directory_auth_enabled = false
+    password_auth_enabled         = true
+  }
+  tags = local.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_postgresql_flexible_server_database" "environment" {
+  count = local.postgresql_mode ? 1 : 0
+
+  name      = local.managed_database
+  server_id = azurerm_postgresql_flexible_server.environment[0].id
+  charset   = "UTF8"
+  collation = "en_US.utf8"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_mysql_flexible_server" "environment" {
+  count = local.mysql_mode ? 1 : 0
+
+  name                              = local.mysql_server_name
+  resource_group_name               = azurerm_resource_group.environment.name
+  location                          = azurerm_resource_group.environment.location
+  version                           = "8.4"
+  administrator_login               = var.database_admin_login
+  administrator_password_wo         = var.database_admin_password_wo
+  administrator_password_wo_version = var.database_admin_password_wo_version
+  sku_name                          = "B_Standard_B1ms"
+  backup_retention_days             = 7
+  geo_redundant_backup_enabled      = false
+  public_network_access             = "Enabled"
+  storage {
+    size_gb           = 20
+    auto_grow_enabled = false
+  }
+  tags = local.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_mysql_flexible_database" "environment" {
+  count = local.mysql_mode ? 1 : 0
+
+  name                = local.managed_database
+  resource_group_name = azurerm_resource_group.environment.name
+  server_name         = azurerm_mysql_flexible_server.environment[0].name
+  charset             = "utf8mb4"
+  collation           = "utf8mb4_unicode_ci"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
 resource "azurerm_mssql_firewall_rule" "aca_egress" {
-  for_each = var.sql_firewall_ip_addresses
+  for_each = local.sql_server_mode ? var.sql_firewall_ip_addresses : toset([])
 
   name             = "aca-egress-${replace(each.value, ".", "-")}"
-  server_id        = azurerm_mssql_server.environment.id
+  server_id        = azurerm_mssql_server.environment[0].id
   start_ip_address = each.value
   end_ip_address   = each.value
+}
+
+resource "azurerm_postgresql_flexible_server_firewall_rule" "aca_egress" {
+  for_each = local.postgresql_mode ? var.sql_firewall_ip_addresses : toset([])
+
+  name             = "aca-egress-${replace(each.value, ".", "-")}"
+  server_id        = azurerm_postgresql_flexible_server.environment[0].id
+  start_ip_address = each.value
+  end_ip_address   = each.value
+}
+
+resource "azurerm_mysql_flexible_server_firewall_rule" "aca_egress" {
+  for_each = local.mysql_mode ? var.sql_firewall_ip_addresses : toset([])
+
+  name                = "aca-egress-${replace(each.value, ".", "-")}"
+  resource_group_name = azurerm_resource_group.environment.name
+  server_name         = azurerm_mysql_flexible_server.environment[0].name
+  start_ip_address    = each.value
+  end_ip_address      = each.value
+}
+
+resource "azurerm_storage_account" "sqlite" {
+  count = local.sqlite_mode ? 1 : 0
+
+  name                            = local.sqlite_storage_account_name
+  resource_group_name             = azurerm_resource_group.environment.name
+  location                        = azurerm_resource_group.environment.location
+  account_tier                    = "Standard"
+  account_replication_type        = "ZRS"
+  account_kind                    = "StorageV2"
+  https_traffic_only_enabled      = true
+  min_tls_version                 = "TLS1_2"
+  allow_nested_items_to_be_public = false
+  shared_access_key_enabled       = true
+  tags                            = local.tags
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_storage_share" "sqlite" {
+  count = local.sqlite_mode ? 1 : 0
+
+  name               = "sqlite-data"
+  storage_account_id = azurerm_storage_account.sqlite[0].id
+  quota              = 5
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+
+resource "azurerm_container_app_environment_storage" "sqlite" {
+  count = local.sqlite_mode ? 1 : 0
+
+  name                         = "sqlite-data"
+  container_app_environment_id = azurerm_container_app_environment.environment.id
+  account_name                 = azurerm_storage_account.sqlite[0].name
+  access_key                   = azurerm_storage_account.sqlite[0].primary_access_key
+  share_name                   = azurerm_storage_share.sqlite[0].name
+  access_mode                  = "ReadWrite"
 }
 
 resource "azurerm_key_vault" "main" {
@@ -337,10 +511,14 @@ resource "azurerm_container_app" "api" {
     identity = azurerm_user_assigned_identity.api.id
   }
 
-  secret {
-    name                = "sql-connection"
-    identity            = azurerm_user_assigned_identity.api.id
-    key_vault_secret_id = local.api_sql_secret_id
+  dynamic "secret" {
+    for_each = local.sqlite_mode ? [] : [1]
+
+    content {
+      name                = local.app_database_connection_secret_name
+      identity            = azurerm_user_assigned_identity.api.id
+      key_vault_secret_id = local.api_database_secret_id
+    }
   }
 
   secret {
@@ -381,13 +559,22 @@ resource "azurerm_container_app" "api" {
       cpu    = 0.25
       memory = "0.5Gi"
 
+      dynamic "volume_mounts" {
+        for_each = local.sqlite_mode ? [1] : []
+
+        content {
+          name = "sqlite-data"
+          path = "/mnt/ref-test-data"
+        }
+      }
+
       env {
         name  = "ASPNETCORE_URLS"
         value = "http://+:8080"
       }
       env {
         name  = "DatabaseProvider"
-        value = "SqlServer"
+        value = var.database_provider
       }
       env {
         name  = "Hosting__Mode"
@@ -417,9 +604,21 @@ resource "azurerm_container_app" "api" {
         name  = "State__Mode"
         value = local.split_mode ? "Shared" : "Local"
       }
-      env {
-        name        = "ConnectionStrings__RefTestManagement"
-        secret_name = "sql-connection"
+      dynamic "env" {
+        for_each = local.sqlite_mode ? [1] : []
+
+        content {
+          name  = "ConnectionStrings__RefTestManagement"
+          value = local.sqlite_connection_string
+        }
+      }
+      dynamic "env" {
+        for_each = local.sqlite_mode ? [] : [1]
+
+        content {
+          name        = "ConnectionStrings__RefTestManagement"
+          secret_name = local.app_database_connection_secret_name
+        }
       }
       env {
         name  = "Auth0__Domain"
@@ -498,6 +697,16 @@ resource "azurerm_container_app" "api" {
         value = local.split_mode ? azurerm_user_assigned_identity.api.client_id : ""
       }
     }
+
+    dynamic "volume" {
+      for_each = local.sqlite_mode ? [1] : []
+
+      content {
+        name         = "sqlite-data"
+        storage_name = azurerm_container_app_environment_storage.sqlite[0].name
+        storage_type = "AzureFile"
+      }
+    }
   }
 
   ingress {
@@ -545,9 +754,9 @@ resource "azurerm_container_app" "worker" {
   }
 
   secret {
-    name                = "sql-connection"
+    name                = local.app_database_connection_secret_name
     identity            = azurerm_user_assigned_identity.worker.id
-    key_vault_secret_id = local.worker_sql_secret_id
+    key_vault_secret_id = local.worker_database_secret_id
   }
 
   secret {
@@ -580,7 +789,7 @@ resource "azurerm_container_app" "worker" {
 
       env {
         name  = "DatabaseProvider"
-        value = "SqlServer"
+        value = var.database_provider
       }
       env {
         name  = "Hosting__Mode"
@@ -596,7 +805,7 @@ resource "azurerm_container_app" "worker" {
       }
       env {
         name        = "ConnectionStrings__RefTestManagement"
-        secret_name = "sql-connection"
+        secret_name = local.app_database_connection_secret_name
       }
       env {
         name  = "Auth0__Domain"
@@ -695,10 +904,14 @@ resource "azurerm_container_app_job" "migration" {
     identity = azurerm_user_assigned_identity.migration.id
   }
 
-  secret {
-    name                = "sql-connection"
-    identity            = azurerm_user_assigned_identity.migration.id
-    key_vault_secret_id = local.migration_sql_secret_id
+  dynamic "secret" {
+    for_each = local.sqlite_mode ? [] : [1]
+
+    content {
+      name                = local.app_database_connection_secret_name
+      identity            = azurerm_user_assigned_identity.migration.id
+      key_vault_secret_id = local.migration_database_secret_id
+    }
   }
 
   manual_trigger_config {
@@ -714,17 +927,48 @@ resource "azurerm_container_app_job" "migration" {
       memory = "0.5Gi"
       args   = ["--migrate"]
 
+      dynamic "volume_mounts" {
+        for_each = local.sqlite_mode ? [1] : []
+
+        content {
+          name = "sqlite-data"
+          path = "/mnt/ref-test-data"
+        }
+      }
+
       env {
         name  = "DatabaseProvider"
-        value = "SqlServer"
+        value = var.database_provider
       }
       env {
         name  = "Hosting__Provider"
         value = "Azure"
       }
-      env {
-        name        = "ConnectionStrings__RefTestManagement"
-        secret_name = "sql-connection"
+      dynamic "env" {
+        for_each = local.sqlite_mode ? [1] : []
+
+        content {
+          name  = "ConnectionStrings__RefTestManagement"
+          value = local.sqlite_connection_string
+        }
+      }
+      dynamic "env" {
+        for_each = local.sqlite_mode ? [] : [1]
+
+        content {
+          name        = "ConnectionStrings__RefTestManagement"
+          secret_name = local.app_database_connection_secret_name
+        }
+      }
+    }
+
+    dynamic "volume" {
+      for_each = local.sqlite_mode ? [1] : []
+
+      content {
+        name         = "sqlite-data"
+        storage_name = azurerm_container_app_environment_storage.sqlite[0].name
+        storage_type = "AzureFile"
       }
     }
   }

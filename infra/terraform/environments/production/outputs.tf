@@ -4,8 +4,33 @@ output "api_fqdn" {
 }
 
 output "container_app_egress_ip_addresses" {
-  description = "Current public egress IPs to add as exact SQL firewall rules."
+  description = "Current public egress IPs to add as exact server-database firewall rules."
   value       = module.aca_platform.container_app_egress_ip_addresses
+}
+
+output "database_provider" {
+  description = "Selected database provider for production."
+  value       = module.aca_platform.database_provider
+}
+
+output "database_server_fqdn" {
+  description = "Managed database server endpoint, or null for SQLite."
+  value       = module.aca_platform.database_server_fqdn
+}
+
+output "database_name" {
+  description = "Logical database name for production."
+  value       = module.aca_platform.database_name
+}
+
+output "sqlite_storage_account_name" {
+  description = "Dedicated Azure Files storage account name when SQLite is selected."
+  value       = module.aca_platform.sqlite_storage_account_name
+}
+
+output "sqlite_file_share_name" {
+  description = "Persistent SQLite file share name when SQLite is selected."
+  value       = module.aca_platform.sqlite_file_share_name
 }
 
 output "sql_server_fqdn" {
@@ -29,7 +54,7 @@ output "api_identity_name" {
 }
 
 output "api_identity_client_id" {
-  description = "API managed identity client ID for passwordless SQL connection configuration."
+  description = "API managed identity client ID for Key Vault and Azure SQL access."
   value       = module.aca_platform.api_identity_client_id
 }
 
@@ -44,7 +69,7 @@ output "worker_identity_name" {
 }
 
 output "worker_identity_client_id" {
-  description = "Worker managed identity client ID for passwordless SQL connection configuration."
+  description = "Worker managed identity client ID for Key Vault, Redis, and Azure SQL access."
   value       = module.aca_platform.worker_identity_client_id
 }
 
@@ -59,7 +84,7 @@ output "migration_identity_name" {
 }
 
 output "migration_identity_client_id" {
-  description = "Migration managed identity client ID for passwordless SQL connection configuration."
+  description = "Migration managed identity client ID for Key Vault and Azure SQL access."
   value       = module.aca_platform.migration_identity_client_id
 }
 

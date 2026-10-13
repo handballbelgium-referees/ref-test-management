@@ -12,6 +12,10 @@ The application has provider-neutral process settings and provider-specific infr
 See [the configuration reference](CONFIGURATION.md), [the hosting ADR](adr/0003-container-hosting.md),
 and [the Terraform runbook](../infra/terraform/README.md).
 
+Azure Terraform selects the database independently for testing and production. `SqlServer` remains
+the default; PostgreSQL and MySQL use managed Azure Database Flexible Servers, while SQLite is
+restricted to the single API mode with a persistent Azure Files share.
+
 ## Azure Container Apps
 
 ### Prerequisites and identity
@@ -29,11 +33,16 @@ and [the Terraform runbook](../infra/terraform/README.md).
   Do not store a client secret. The Terraform principal needs the state-storage blob role,
   appropriately scoped resource-group write access, and conditional role-assignment permissions.
   The release principal needs `AcrPush` and the least Azure permissions required to update Container
-  Apps and start/read the migration job. See the RBAC guidance in the
+  Apps and start/read the migration job. SQLite releases also require
+  `Microsoft.App/containerapps/stop/action` and `Microsoft.App/containerapps/start/action` on the API
+  app for the migration maintenance window. See the RBAC guidance in the
   [Terraform runbook](../infra/terraform/README.md#bootstrap).
-- Give each app environment a separate SQL database, Key Vault, UAMIs, and state key. SQL uses
-  Entra-only authentication. The API, optional Worker, and migration job each use their own
-  user-assigned managed identity; the migration identity alone receives `db_owner`.
+- Give each app environment its own selected database, Key Vault, UAMIs, and Terraform state key.
+  `SqlServer` uses Entra-only Azure SQL. PostgreSQL/MySQL use managed Flexible Servers with
+  provider-specific Key Vault connection strings and seven-day service-managed backups. SQLite uses
+  a dedicated persistent Azure Files share, single mode only, with no automated backup. The API,
+  optional Worker, and migration job retain separate user-assigned managed identities for Key Vault
+  access.
 
 ### GitHub Environment configuration
 
@@ -46,6 +55,7 @@ for that arrangement.
 | `AZURE_CLIENT_ID` | Client ID with GitHub OIDC federation |
 | `AZURE_TENANT_ID` | Microsoft Entra tenant |
 | `AZURE_SUBSCRIPTION_ID` | Azure subscription |
+| `AZURE_DATABASE_ADMIN_PASSWORD` | Managed PostgreSQL/MySQL server administrator password; required only when either provider is selected |
 
 Configure the following **variables** per environment. The Terraform workflow validates required
 values before requesting an OIDC token. `AZURE_API_IMAGE_DIGEST` and
@@ -58,11 +68,13 @@ image revisions and Terraform ignores changes to those image fields.
 | Group | Variables |
 | --- | --- |
 | Terraform state | `AZURE_STATE_RESOURCE_GROUP_NAME`, `AZURE_STATE_STORAGE_ACCOUNT_NAME`, `AZURE_STATE_CONTAINER_NAME` |
-| Azure resource names | `AZURE_RESOURCE_GROUP_NAME`, optional `AZURE_LOCATION`, `AZURE_NAME_PREFIX`, `AZURE_UNIQUE_SUFFIX`, `AZURE_ACR_NAME`, `AZURE_ACR_RESOURCE_GROUP_NAME`, `AZURE_SQL_SERVER_NAME`, `AZURE_KEY_VAULT_NAME` |
-| SQL Entra administrator | `AZURE_SQL_ENTRA_ADMIN_LOGIN_USERNAME`, `AZURE_SQL_ENTRA_ADMIN_OBJECT_ID` |
+| Azure resource names | `AZURE_RESOURCE_GROUP_NAME`, optional `AZURE_LOCATION`, `AZURE_NAME_PREFIX`, `AZURE_UNIQUE_SUFFIX`, `AZURE_ACR_NAME`, `AZURE_ACR_RESOURCE_GROUP_NAME`, `AZURE_KEY_VAULT_NAME` |
+| Database choice | `AZURE_DATABASE_PROVIDER` (`SqlServer`, `PostgreSQL`, `MySQL`, or `SQLite`); `SqlServer` is the default |
+| Managed database cost/password | `AZURE_ALLOW_MANAGED_DATABASE_PROVIDERS`, `AZURE_DATABASE_ADMIN_LOGIN`, `AZURE_DATABASE_ADMIN_PASSWORD_VERSION` (PostgreSQL/MySQL only) |
+| Azure SQL administrator | `AZURE_SQL_SERVER_NAME`, `AZURE_SQL_ENTRA_ADMIN_LOGIN_USERNAME`, `AZURE_SQL_ENTRA_ADMIN_OBJECT_ID` (`SqlServer` only) |
 | Initial container images | `AZURE_API_IMAGE_DIGEST`, `AZURE_WORKER_IMAGE_DIGEST` |
 | Topology and trust | `AZURE_DEPLOYMENT_MODE` (`single` or `split`), `AZURE_ALLOW_SPLIT_MODE`, `AZURE_API_MAX_REPLICAS`, `AZURE_API_TRUSTED_PROXY_NETWORKS_JSON` |
-| Network rules | `AZURE_SQL_FIREWALL_IP_ADDRESSES_JSON`, `AZURE_KEY_VAULT_FIREWALL_ENABLED`, `AZURE_KEY_VAULT_ALLOWED_IP_ADDRESSES_JSON` |
+| Network rules | `AZURE_SQL_FIREWALL_IP_ADDRESSES_JSON` (server database egress allowlist), `AZURE_KEY_VAULT_FIREWALL_ENABLED`, `AZURE_KEY_VAULT_ALLOWED_IP_ADDRESSES_JSON` |
 | Application settings | `AUTH0_DOMAIN`, `AUTH0_CLIENT_ID`, `AUTH0_AUDIENCE`, `AUTH0_MANAGEMENT_CLIENT_ID`, `EMAIL_BASE_URL`, `EMAIL_FROM_EMAIL`, `EMAIL_FROM_NAME`, `RULES_QUESTIONS_URL` |
 | Logging | `AZURE_LOG_ANALYTICS_DAILY_QUOTA_GB` |
 
@@ -70,11 +82,14 @@ List variables must be JSON arrays, for example `["203.0.113.10"]`. Do not popul
 `AZURE_API_TRUSTED_PROXY_NETWORKS_JSON` with guessed, broad, or catch-all networks. Applications
 remain disabled until the actual ACA ingress peer CIDRs are verified. Split mode additionally
 requires `AZURE_ALLOW_SPLIT_MODE=true`; keep API replicas at one while GraphQL rate limiting is
-process-local.
+process-local. PostgreSQL/MySQL require `AZURE_ALLOW_MANAGED_DATABASE_PROVIDERS=true`; this is an
+opt-in, not a spend cap. SQLite requires `AZURE_DEPLOYMENT_MODE=single`.
 
 `azure-container-release.yml` also reads `AZURE_ACR_NAME`, `AZURE_RESOURCE_GROUP_NAME`,
 `AZURE_NAME_PREFIX`, `AZURE_UNIQUE_SUFFIX`, and `AZURE_DEPLOYMENT_MODE` from its target GitHub
-Environment. Keep these values aligned with Terraform. The complete resource and secret setup is in the
+Environment, plus `AZURE_DATABASE_PROVIDER` (default `SqlServer`). Keep these values aligned with
+Terraform; before migration the release workflow verifies the setting against the deployed API and
+migration job and fails closed on a mismatch. The complete resource and secret setup is in the
 [Azure rollout runbook](../infra/terraform/README.md#environment-rollout).
 
 Container deployment is opt-in through the repository Actions variable
@@ -105,16 +120,20 @@ effect; subsequent stable runs use the selector.
 2. Set the two image-digest variables above. Run `infra-deploy.yml` from `main` with the target
    environment and `operation=plan`; inspect the result. The default `operation` is `plan`, and the
    `create_applications` checkbox defaults to false.
-3. Apply the foundation with `create_applications=false`. The Terraform root provisions SQL, Key
-   Vault, UAMIs, the ACA environment, and foundational role assignments without creating app
-   resources.
-4. As the configured Entra SQL administrator, run
+3. Apply the foundation with `create_applications=false`. Terraform provisions the selected database,
+   Key Vault, UAMIs, the ACA environment, and foundational role assignments without creating app
+   resources. PostgreSQL/MySQL require the protected `AZURE_DATABASE_ADMIN_PASSWORD` secret and the
+   explicit managed-database cost opt-in.
+4. For `SqlServer`, as the configured Entra SQL administrator, run
    `infra/terraform/bootstrap/sql-identities.sql` with the API, Worker, and migration identity
-   outputs. Create the Key Vault secret values out-of-band. Required secret names and identity
-   scopes are listed in the [Terraform runbook](../infra/terraform/README.md#environment-rollout).
+   outputs. For PostgreSQL/MySQL, provision separate runtime and migration database users with the
+   managed server administrator, then store their TLS connection strings in Key Vault. SQLite needs
+   no database-user secret; Terraform creates its dedicated file share. Required Key Vault names and
+   identity scopes are listed in the [Terraform runbook](../infra/terraform/README.md#environment-rollout).
 5. Before creating public applications, provide the verified ACA ingress peer CIDRs and confirm
-   the Azure SQL/Key Vault egress rules. The Terraform validation deliberately blocks app creation
-   with an empty or unsafe trusted-proxy list. If the peer addresses cannot be verified, stop here.
+   the selected server database and Key Vault egress rules. SQLite does not use a database firewall.
+   The Terraform validation deliberately blocks app creation with an empty or unsafe trusted-proxy
+   list. If the peer addresses cannot be verified, stop here.
 6. Run `infra-deploy.yml` with `operation=apply` and `create_applications=true`. The plan job first
    waits for the target GitHub Environment gate, creates the Terraform plan, and publishes it in the
    run summary. Review that plan, then approve the separate apply job through the same protected
@@ -124,8 +143,14 @@ effect; subsequent stable runs use the selector.
    app is present in Terraform state, so routine workflow use cannot destroy the apps. Direct
    Terraform runs must keep `create_applications=true`; setting it false directly destroys app and
    migration-job resources. The workflow does not expose app deletion.
-7. Add the exact ACA egress addresses to the SQL firewall after first creation and apply again.
-   Verify API readiness and database connectivity before releasing application changes.
+7. For SQL Server/PostgreSQL/MySQL, add the exact ACA egress addresses to
+   `sql_firewall_ip_addresses` after first creation and apply again. Verify API readiness and
+   database connectivity before releasing application changes.
+
+Provider selection is a provisioning-time choice. Database resources are protected from routine
+destroy; changing a provider does not migrate data and requires a separate migration plan. Azure
+managed PostgreSQL/MySQL backups retain seven days of data. SQLite's Azure Files key is stored in
+protected Terraform state, and its persistent share has no automated backup.
 
 For a non-mutating preview, dispatch with `operation=plan`; it has one environment gate and produces
 no apply job. For a change, dispatch with `operation=apply`: the same target Environment requires
@@ -151,7 +176,8 @@ understood.
   fail before provider credentials are used.
 - Azure deployment verifies the artifact and archive hashes before OIDC login, pushes immutable ACR
   digests, updates and starts the one-shot migration job, and waits for success before updating the
-  API and optional split-mode Worker revisions by digest.
+  API and optional split-mode Worker revisions by digest. SQLite releases stop the single-mode API
+  for the migration window, then restart it after the update or through the workflow cleanup path.
 - Cloudflare deployment runs the selected Worker image's migration command before pushing the images
   and deploying the Worker with digest-pinned Container images. The GitHub runner must be allowed
   to reach the selected PostgreSQL server for this migration step.
@@ -372,21 +398,106 @@ was performed for this change.
 
 ## Local containers and Terraform
 
-For local application work, a SQL Server Linux container is suitable. Set a strong local-only
-`MSSQL_SA_PASSWORD` in the shell, then run:
+### Azure split topology in Podman Compose
 
-```powershell
-if ([string]::IsNullOrWhiteSpace($env:MSSQL_SA_PASSWORD)) { throw "Set a local-only MSSQL_SA_PASSWORD first." }
-podman run --rm --name ref-test-sql --publish 1433:1433 `
-  --env ACCEPT_EULA=Y --env MSSQL_SA_PASSWORD `
-  mcr.microsoft.com/mssql/server:2022-latest
+Run the Azure split shape as one isolated local project from Git Bash with `uv`, Podman, .NET,
+Node/npm, and OpenSSL available on `PATH`:
+
+```bash
+uv run --script scripts/start-azure-local.py
 ```
 
-Configure `DatabaseProvider=SqlServer` and a local SQL-authenticated
-`ConnectionStrings:RefTestManagement` through .NET User Secrets or environment variables. Use
-`TrustServerCertificate=True` only for local development. The container is not a production
-database and is not created by the Azure or Cloudflare Terraform roots. See Microsoft's
-[SQL Server Linux container quickstart](https://learn.microsoft.com/sql/linux/quickstart-install-connect-docker).
+The launcher creates a separate rootless Podman WSL machine named `rtm-azure-local` (4 CPUs,
+6 GiB memory, user-mode networking) if it does not exist, builds the Angular assets, publishes the
+API and Worker OCI images with the .NET SDK, and starts `compose.azure-local.yaml` as project
+`rtm-azure-local`. It uses a dedicated DNS-disabled bridge with static SQL/Redis addresses and
+explicit host mappings, avoiding the user-systemd-bus requirement of rootless bridge DNS on this WSL
+machine. It does not change the default Podman connection or touch containers, networks, or volumes
+in other machines. The separate machine avoids changing/restarting an existing 2-GiB Podman machine.
+
+On every run, the uv-launched Python script uses InquirerPy to display a styled checkbox list for
+`SqlServer`, `PostgreSQL`, `SQLite`, and `MySQL`. Use Up/Down to move, Space to select, and Enter to
+confirm exactly one provider; Ctrl+C cancels. No provider is preselected. The uv script metadata
+resolves the pinned TUI dependency in uv's managed environment. Canceling closes the launcher before
+Podman operations, and the launcher does not reuse the previous choice. The selected server-backed
+provider starts only its matching database service. SQL Server remains bound to `127.0.0.1:11433`,
+PostgreSQL to
+`127.0.0.1:15432`, and MySQL to `127.0.0.1:13306`. SQLite starts no database server and stores its
+database file in a persistent named volume shared by the migration, API, and Worker containers.
+Each provider uses a separate persistent data volume; switching providers does not migrate or share
+database contents.
+
+The compose stack also runs authenticated TLS Redis, a one-shot Worker migration, separate API/Worker
+containers, and a Caddy TLS edge. API and Worker use `Hosting:Provider=Local` and `State:Mode=Shared`;
+local configuration comes from the image settings, API User Secrets, and Compose environment
+overrides. The Worker sets `DOTNET_ENVIRONMENT=Development` because it uses the Generic Host. The API
+is at `https://localhost:7039`; Caddy terminates TLS with the trusted .NET localhost development
+certificate and proxies to the API over the isolated Compose network. No HTTP API port is published
+to the host; API/Worker internal traffic remains HTTP. The selected provider's named data volume
+persists after `down`.
+
+If the launcher reports that the HTTPS development certificate is missing or untrusted, run
+`dotnet dev-certs https --trust` once and rerun the launcher. The launcher checks certificate trust
+and exports the certificate/key to ignored local files; it does not change the host certificate
+trust store.
+
+Configuration follows the .NET provider order: `appsettings.json`,
+`appsettings.Development.json` when present, the API project's User Secrets, then environment
+variables. The launcher does not generate or mount a local `appsettings.Development.json`; values
+not overridden by User Secrets or Compose therefore come from the image's appsettings files. In
+particular, base `PrivacyConfiguration` values remain in effect unless you provide local overrides.
+The launcher copies the full API User Secrets file to an ignored path mounted read-only at the
+standard .NET User Secrets location in both containers. The Worker image is published with the API
+project's `UserSecretsId`, without changing the Worker project's host-development settings.
+Optional `Auth0__<Key>` environment variables are passed through by Compose and override User
+Secrets. Compose keeps the HTTPS email base URL at `https://localhost:7039` and sets
+`EmailConfiguration__LogoBaseUrl` to the API's internal `http://10.250.241.12:8080` address for
+logo downloads only. The selected local database provider and connection string, plus these email
+URLs, override any matching User Secrets values. The launcher generates a provider-neutral local
+database password; existing ignored `.env` files with `MSSQL_SA_PASSWORD` remain supported. Generated
+local credentials, the copied User Secrets file, and TLS certificates are ignored.
+
+The Auth0 Management M2M credentials allow permission refresh and approver lookup. The Worker also
+runs additive permission sync at startup: it may add missing application permissions to the
+resource server selected by `Auth0:Domain` and `Auth0:Audience`. Keep those settings pointed at the
+intended Auth0 tenant/API; the required Management API scopes are listed in
+[CONFIGURATION.md](CONFIGURATION.md#management-api-access-and-permission-freshness). The sync does
+not assign user roles or modify user metadata. If the M2M client lacks the required read scopes,
+login permission refresh fails closed. If resource-server read or update scopes are missing,
+startup sync logs a sanitized failure and the app continues without syncing. Before building the
+stack, the launcher requires non-empty `Auth0:Domain`, `ClientId`, `ClientSecret`, `Audience`,
+`ManagementClientId`, and `ManagementClientSecret` values from the API project's User Secrets or
+environment overrides. Its error names missing keys without showing values.
+
+Because the full API User Secrets store is loaded, the Worker may send pending email jobs through
+the configured Brevo account to the configured recipients, and the application may call the
+configured IHF endpoint. These local external calls are enabled intentionally; keep the User
+Secrets store pointed at the intended services and test recipients.
+
+This reproduces split application behavior and shared TLS state, not Azure Container Apps,
+managed identity, Key Vault, Entra-only SQL authentication, ingress, scaling, or revisions. The
+server-backed providers use local-only database credentials, and SQLite uses a local file; never
+reuse this configuration or its generated secrets outside local development.
+
+To inspect or stop only this project:
+
+```bash
+podman --connection rtm-azure-local compose --project-name rtm-azure-local \
+  --file compose.azure-local.yaml --env-file infra/local/azure/.env \
+  --profile SqlServer --profile PostgreSQL --profile SQLite --profile MySQL ps
+podman --connection rtm-azure-local compose --project-name rtm-azure-local \
+  --file compose.azure-local.yaml --env-file infra/local/azure/.env \
+  --profile SqlServer --profile PostgreSQL --profile SQLite --profile MySQL down
+```
+
+Do not add `--volumes`/`-v` when stopping; that deletes this project's provider data volumes. The
+named Podman machine, its images, the external project network, and database volumes remain available
+for the next run. Rerunning the launcher rebuilds/recreates this project's containers while
+preserving provider data.
+
+For a single SQL-only container without the API/Worker compose, the SQL Server Linux image is also
+available. Use a strong local-only password and `TrustServerCertificate=True` only for development.
+See Microsoft's [SQL Server Linux container quickstart](https://learn.microsoft.com/sql/linux/quickstart-install-connect-docker).
 
 Podman can run the pinned Terraform CLI for offline `fmt`, backend-disabled `init`, and `validate`
 across all six roots without cloud credentials. An authenticated Azure plan is also possible from a

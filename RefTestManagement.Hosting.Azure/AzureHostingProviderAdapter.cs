@@ -1,4 +1,3 @@
-using Handball.Belgium.RefTestManagement.Hosting;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;

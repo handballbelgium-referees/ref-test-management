@@ -3,7 +3,6 @@ using System.Text;
 using System.Diagnostics;
 using System.Threading.RateLimiting;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using StackExchange.Redis;
 

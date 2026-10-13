@@ -30,14 +30,24 @@ Cloudflare is a second option with different identity, state, ingress, and data-
    required. Azure release workflows publish images to ACR by digest and run the one-shot migration
    job before updating API/Worker revisions. Cloudflare Wrangler owns Worker/container rollout,
    Durable Object bindings, Cron, and runtime secrets.
-5. Keep infrastructure ownership provider-specific. Azure Terraform provisions ACA, SQL, Key
-   Vault, identities, and optional managed Redis. Cloudflare Terraform provisions R2 state and
-   attaches a hostname to an already deployed Worker; PostgreSQL and Redis remain external inputs.
+5. Keep infrastructure ownership provider-specific. Azure Terraform provisions ACA, the selected
+   database provider, Key Vault, identities, and optional managed Redis. Cloudflare Terraform
+   provisions R2 state and attaches a hostname to an already deployed Worker; PostgreSQL and Redis
+   remain external inputs.
 
 | Provider | Combined mode | Split mode | Persistent/shared services |
 | --- | --- | --- | --- |
-| Azure Container Apps | One API app in `All` mode | API app plus Worker app and manual migration job | Entra-only Azure SQL; optional Azure Managed Redis |
+| Azure Container Apps | One API app in `All` mode | API app plus Worker app and manual migration job | Azure SQL, managed PostgreSQL/MySQL, or single-mode SQLite on Azure Files; optional Azure Managed Redis |
 | Cloudflare Workers/Containers | One `AppContainer` runs API and background services | `AppContainer` API plus `WorkerContainer` | External PostgreSQL; external TLS Redis in split mode |
+
+### Database-provider selection amendment (2026-10-12)
+
+Azure Terraform selects `SqlServer`, `PostgreSQL`, `MySQL`, or `SQLite` independently per
+environment. `SqlServer` remains the default. Managed PostgreSQL/MySQL require an explicit cost
+opt-in and use seven-day backups without zone-redundant HA or geo-redundant backups. SQLite is
+restricted to the single API mode, uses a persistent Azure Files share, has no automated backup,
+and requires an API maintenance window during migrations. Changing a provisioned provider is not a
+data migration and is blocked by database deletion protection.
 
 ## Consequences
 

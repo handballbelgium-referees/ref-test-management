@@ -223,11 +223,18 @@ platform; do not use platform environment variables to infer the state topology.
 | ------------------ | ------------------------------------- | -------- | ------------- |
 | `DatabaseProvider` | Selects the EF Core database provider | No       | `"SqlServer"` |
 
-Azure Container Apps use SQL Server/Azure SQL with Entra-only authentication and per-process
-user-assigned managed identities. The Cloudflare runtime uses PostgreSQL supplied by the operator;
-the Wrangler Worker maps `POSTGRES_CONNECTION_STRING` to
-`ConnectionStrings:RefTestManagement`. Require TLS and server-certificate validation for external
-PostgreSQL. Shared-state/split mode still requires a TLS Redis endpoint.
+Azure Container Apps Terraform selects a provider independently for testing and production.
+`SqlServer` remains the default and uses Entra-only Azure SQL with per-process user-assigned managed
+identities. `PostgreSQL` and `MySQL` use managed Azure Database Flexible Servers; their application
+connection strings are supplied through Key Vault, must use TLS with certificate validation, and
+require an explicit Terraform cost opt-in. Those managed services retain automated backups for
+seven days. Azure SQLite uses a persistent Azure Files share and is restricted to single
+(`Hosting:Mode=All`, `State:Mode=Local`) mode with one API replica; split API/Worker mode requires a
+server database. The SQLite share has no
+automated backup, and releases pause the API while the migration job accesses its file. Cloudflare
+continues to use operator-managed external PostgreSQL; the Wrangler Worker maps
+`POSTGRES_CONNECTION_STRING` to `ConnectionStrings:RefTestManagement`. Shared-state/split mode still
+requires a TLS Redis endpoint.
 
 Valid values:
 
@@ -237,6 +244,11 @@ Valid values:
 | `PostgreSQL` | PostgreSQL (via Npgsql)                         | `Host=...;Database=...;Username=...;Password=...`                              |
 | `SQLite`     | SQLite                                          | `Data Source=RefTestManagement.db`                                             |
 | `MySQL`      | MySQL / MariaDB (via MySql.EntityFrameworkCore) | `Server=...;Database=...;User=...;Password=...;`                               |
+
+For Azure-managed PostgreSQL and MySQL, use a provider connection string with TLS and full
+server-certificate validation; keep the password in the provider-specific Key Vault secret. Azure
+SQLite uses `Data Source=/mnt/ref-test-data/RefTestManagement.db` from the mounted Azure Files share.
+It is supported only in single mode and has no automated backup.
 
 ### ConnectionStrings
 
@@ -310,7 +322,8 @@ tenant's own rate-limit signals and verify its operational limits before rollout
 
 | Key                     | Description                                  | Required | Default |
 | ----------------------- | -------------------------------------------- | -------- | ------- |
-| `BaseUrl`               | Base URL used to build links in emails       | Yes      | –       |
+| `BaseUrl`               | Base URL used to build email links and the default logo fetch URL | Yes | – |
+| `LogoBaseUrl`           | Optional base URL used only to fetch the logo; defaults to `BaseUrl` | No | `BaseUrl` |
 | `BrevoApiKey`           | Brevo API key                                | Yes      | –       |
 | `BrevoApiUrl`           | Brevo API endpoint                           | Yes      | –       |
 | `FromEmail`             | Sender email address                         | Yes      | –       |
@@ -550,8 +563,10 @@ dotnet ef migrations add Initial \
 
 ### Applying migrations
 
-Normal API startup does not apply migrations. In production, run the Worker executable's one-shot
-migration mode as a separate deployment job before starting or updating the API and Worker apps:
+When the API runs with `Hosting:Mode=All` (the default), it applies pending migrations before
+serving requests. Its database identity therefore needs schema-change permissions. For split
+deployments, keep the API in `Hosting:Mode=Api` and run the Worker executable's one-shot migration
+mode as a separate deployment job before starting or updating the API and Worker apps:
 
 ```bash
 dotnet RefTestManagement.Worker.dll --migrate
@@ -559,10 +574,14 @@ dotnet RefTestManagement.Worker.dll --migrate
 
 The command registers only the database and audit dependencies needed for migrations; it does not
 start background pollers or require Redis. Give this migration job database schema-change
-permissions separately from the runtime API/Worker identities.
+permissions separately from the runtime API/Worker identities. `Hosting:Mode=Api` does not apply
+migrations automatically.
 
 Azure's release workflow runs this command in the manual Container Apps migration job before
-updating app revisions. Cloudflare has no Terraform-managed migration job: run the Worker image with
+updating app revisions. For SQLite, the job mounts the same persistent Azure Files share as the API;
+the workflow stops the single-mode API for the migration window and restarts it after the revision
+update. Azure-managed PostgreSQL/MySQL retain service-managed backups for seven days; SQLite has no
+automated backup. Cloudflare has no Terraform-managed migration job: run the Worker image with
 `--migrate` from an authorized operator environment against the external PostgreSQL database before
 deploying the new Wrangler image. Use the same `DatabaseProvider=PostgreSQL` and connection string
 that the application will use; keep the connection string out of command text, logs, and source

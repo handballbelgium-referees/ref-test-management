@@ -1,5 +1,4 @@
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
-using Handball.Belgium.RefTestManagement.Api.Services;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
 

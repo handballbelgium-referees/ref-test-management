@@ -5,12 +5,43 @@ output "resource_group_name" {
 
 output "sql_server_fqdn" {
   description = "Azure SQL logical server endpoint."
-  value       = azurerm_mssql_server.environment.fully_qualified_domain_name
+  value       = local.sql_server_mode ? azurerm_mssql_server.environment[0].fully_qualified_domain_name : null
 }
 
 output "sql_database_name" {
-  description = "Fresh database dedicated to this environment."
-  value       = azurerm_mssql_database.environment.name
+  description = "Azure SQL database name, or null when another provider is selected."
+  value       = local.sql_server_mode ? azurerm_mssql_database.environment[0].name : null
+}
+
+output "database_provider" {
+  description = "Selected database provider for this environment."
+  value       = var.database_provider
+}
+
+output "database_server_fqdn" {
+  description = "Managed database server endpoint, or null for SQLite."
+  value = local.sql_server_mode ? azurerm_mssql_server.environment[0].fully_qualified_domain_name : (
+    local.postgresql_mode ? azurerm_postgresql_flexible_server.environment[0].fqdn : (
+      local.mysql_mode ? azurerm_mysql_flexible_server.environment[0].fqdn : null
+    )
+  )
+}
+
+output "database_name" {
+  description = "Logical database name for the selected environment."
+  value = local.sqlite_mode ? null : (
+    local.sql_server_mode ? local.database : local.managed_database
+  )
+}
+
+output "sqlite_storage_account_name" {
+  description = "Dedicated Azure Files storage account name, or null when SQLite is not selected."
+  value       = local.sqlite_mode ? azurerm_storage_account.sqlite[0].name : null
+}
+
+output "sqlite_file_share_name" {
+  description = "Persistent SQLite file share name, or null when SQLite is not selected."
+  value       = local.sqlite_mode ? azurerm_storage_share.sqlite[0].name : null
 }
 
 output "key_vault_name" {
@@ -39,7 +70,7 @@ output "api_identity_client_id" {
 }
 
 output "api_identity_object_id" {
-  description = "API user-assigned managed identity service-principal object ID for the SQL contained user."
+  description = "API user-assigned managed identity service-principal object ID."
   value       = azurerm_user_assigned_identity.api.principal_id
 }
 
@@ -54,7 +85,7 @@ output "worker_identity_client_id" {
 }
 
 output "worker_identity_object_id" {
-  description = "Worker user-assigned managed identity service-principal object ID for the SQL contained user."
+  description = "Worker user-assigned managed identity service-principal object ID."
   value       = azurerm_user_assigned_identity.worker.principal_id
 }
 
@@ -69,7 +100,7 @@ output "migration_identity_client_id" {
 }
 
 output "migration_identity_object_id" {
-  description = "Migration job user-assigned managed identity service-principal object ID for the SQL contained user."
+  description = "Migration job user-assigned managed identity service-principal object ID."
   value       = azurerm_user_assigned_identity.migration.principal_id
 }
 
@@ -79,7 +110,7 @@ output "api_fqdn" {
 }
 
 output "container_app_egress_ip_addresses" {
-  description = "Current public egress IPs for the ACA app/job resources; use these as exact SQL firewall entries."
+  description = "Current public egress IPs for ACA app/job resources; use these as exact server-database firewall entries."
   value = var.create_applications ? toset(concat(
     tolist(azurerm_container_app.api[0].outbound_ip_addresses),
     local.split_mode ? tolist(azurerm_container_app.worker[0].outbound_ip_addresses) : [],

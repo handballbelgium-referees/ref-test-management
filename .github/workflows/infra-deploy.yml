@@ -45,6 +45,7 @@ jobs:
     outputs:
       plan-sha256: ${{ steps.plan.outputs.sha256 }}
       artifact-name: ${{ steps.plan.outputs.artifact-name }}
+      database-provider: ${{ steps.configuration.outputs.database-provider }}
     env:
       TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
       OPERATION: ${{ inputs.operation }}
@@ -62,6 +63,10 @@ jobs:
       TF_VAR_acr_name: ${{ vars.AZURE_ACR_NAME }}
       TF_VAR_acr_resource_group_name: ${{ vars.AZURE_ACR_RESOURCE_GROUP_NAME }}
       TF_VAR_sql_server_name: ${{ vars.AZURE_SQL_SERVER_NAME }}
+      TF_VAR_database_provider: ${{ vars.AZURE_DATABASE_PROVIDER || 'SqlServer' }}
+      TF_VAR_allow_managed_database_providers: ${{ vars.AZURE_ALLOW_MANAGED_DATABASE_PROVIDERS || 'false' }}
+      TF_VAR_database_admin_login: ${{ vars.AZURE_DATABASE_ADMIN_LOGIN || 'rtm_dbadmin' }}
+      TF_VAR_database_admin_password_wo_version: ${{ vars.AZURE_DATABASE_ADMIN_PASSWORD_VERSION || '1' }}
       TF_VAR_key_vault_name: ${{ vars.AZURE_KEY_VAULT_NAME }}
       TF_VAR_sql_entra_admin_login_username: ${{ vars.AZURE_SQL_ENTRA_ADMIN_LOGIN_USERNAME }}
       TF_VAR_sql_entra_admin_object_id: ${{ vars.AZURE_SQL_ENTRA_ADMIN_OBJECT_ID }}
@@ -102,7 +107,10 @@ jobs:
           terraform_wrapper: false
 
       - name: 🔎 Validate dispatch configuration
+        id: configuration
         shell: bash
+        env:
+          DATABASE_ADMIN_PASSWORD_PRESENT: ${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD != '' }}
         run: |
           set -euo pipefail
           case "$TARGET_ENVIRONMENT" in
@@ -130,10 +138,7 @@ jobs:
           : "${TF_VAR_unique_suffix:?Configure the environment's AZURE_UNIQUE_SUFFIX variable.}"
           : "${TF_VAR_acr_name:?Configure the environment's AZURE_ACR_NAME variable.}"
           : "${TF_VAR_acr_resource_group_name:?Configure the environment's AZURE_ACR_RESOURCE_GROUP_NAME variable.}"
-          : "${TF_VAR_sql_server_name:?Configure the environment's AZURE_SQL_SERVER_NAME variable.}"
           : "${TF_VAR_key_vault_name:?Configure the environment's AZURE_KEY_VAULT_NAME variable.}"
-          : "${TF_VAR_sql_entra_admin_login_username:?Configure the SQL Entra administrator login variable.}"
-          : "${TF_VAR_sql_entra_admin_object_id:?Configure the SQL Entra administrator object ID variable.}"
           : "${TF_VAR_api_image_digest:?Configure the current immutable API image digest variable.}"
           : "${TF_VAR_worker_image_digest:?Configure the current immutable Worker image digest variable.}"
           : "${TF_VAR_auth0_domain:?Configure the environment's AUTH0_DOMAIN variable.}"
@@ -144,6 +149,35 @@ jobs:
           : "${TF_VAR_email_from_email:?Configure the environment's EMAIL_FROM_EMAIL variable.}"
           : "${TF_VAR_email_from_name:?Configure the environment's EMAIL_FROM_NAME variable.}"
           : "${TF_VAR_rules_questions_url:?Configure the environment's RULES_QUESTIONS_URL variable.}"
+          case "$TF_VAR_database_provider" in
+            SqlServer)
+              : "${TF_VAR_sql_server_name:?Configure the environment's AZURE_SQL_SERVER_NAME variable.}"
+              : "${TF_VAR_sql_entra_admin_login_username:?Configure the SQL Entra administrator login variable.}"
+              : "${TF_VAR_sql_entra_admin_object_id:?Configure the SQL Entra administrator object ID variable.}"
+              ;;
+            PostgreSQL|MySQL)
+              if [ "$TF_VAR_allow_managed_database_providers" != "true" ]; then
+                echo "::error::Set AZURE_ALLOW_MANAGED_DATABASE_PROVIDERS=true to opt into managed PostgreSQL/MySQL costs."
+                exit 1
+              fi
+              : "${TF_VAR_database_admin_login:?Configure the AZURE_DATABASE_ADMIN_LOGIN variable.}"
+              if [ "$DATABASE_ADMIN_PASSWORD_PRESENT" != "true" ]; then
+                echo "::error::Configure the AZURE_DATABASE_ADMIN_PASSWORD secret in the selected GitHub Environment."
+                exit 1
+              fi
+              ;;
+            SQLite)
+              if [ "$TF_VAR_deployment_mode" != "single" ]; then
+                echo "::error::SQLite requires AZURE_DEPLOYMENT_MODE=single."
+                exit 1
+              fi
+              ;;
+            *)
+              echo "::error::AZURE_DATABASE_PROVIDER must be SqlServer, PostgreSQL, MySQL, or SQLite."
+              exit 1
+              ;;
+          esac
+          printf 'database-provider=%s\n' "$TF_VAR_database_provider" >> "$GITHUB_OUTPUT"
 
       - name: 🧹 Format Terraform (offline)
         shell: bash
@@ -169,6 +203,8 @@ jobs:
       - name: 📋 Create and display Terraform plan
         id: plan
         shell: bash
+        env:
+          TF_VAR_database_admin_password_wo: ${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           case "$TARGET_ENVIRONMENT" in
@@ -251,6 +287,10 @@ jobs:
       id-token: write
     env:
       TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+      AZURE_DATABASE_PROVIDER: ${{ vars.AZURE_DATABASE_PROVIDER || 'SqlServer' }}
+      ALLOW_MANAGED_DATABASE_PROVIDERS: ${{ vars.AZURE_ALLOW_MANAGED_DATABASE_PROVIDERS || 'false' }}
+      DATABASE_ADMIN_PASSWORD_PRESENT: ${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD != '' }}
+      PLANNED_DATABASE_PROVIDER: ${{ needs.plan.outputs.database-provider }}
       ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
       ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
       ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -293,6 +333,28 @@ jobs:
           : "${AZURE_STATE_STORAGE_ACCOUNT_NAME:?Configure the Azure state storage account variable.}"
           : "${AZURE_STATE_CONTAINER_NAME:?Configure the Azure state container variable.}"
           : "${EXPECTED_PLAN_SHA256:?The plan job did not produce a digest.}"
+          if [ "$AZURE_DATABASE_PROVIDER" != "$PLANNED_DATABASE_PROVIDER" ]; then
+            echo "::error::AZURE_DATABASE_PROVIDER changed after the reviewed Terraform plan was created."
+            exit 1
+          fi
+          case "$AZURE_DATABASE_PROVIDER" in
+            SqlServer) ;;
+            PostgreSQL|MySQL)
+              if [ "$ALLOW_MANAGED_DATABASE_PROVIDERS" != "true" ]; then
+                echo "::error::Set AZURE_ALLOW_MANAGED_DATABASE_PROVIDERS=true to keep the managed-provider cost opt-in enabled."
+                exit 1
+              fi
+              if [ "$DATABASE_ADMIN_PASSWORD_PRESENT" != "true" ]; then
+                echo "::error::Configure the AZURE_DATABASE_ADMIN_PASSWORD secret in the selected GitHub Environment."
+                exit 1
+              fi
+              ;;
+            SQLite) ;;
+            *)
+              echo "::error::Unsupported AZURE_DATABASE_PROVIDER."
+              exit 1
+              ;;
+          esac
 
       - name: 🔑 Request Azure OIDC token
         shell: bash
@@ -317,6 +379,8 @@ jobs:
 
       - name: 🔒 Verify and apply the exact reviewed plan
         shell: bash
+        env:
+          TF_VAR_database_admin_password_wo: ${{ secrets.AZURE_DATABASE_ADMIN_PASSWORD }}
         run: |
           set -euo pipefail
           case "$TARGET_ENVIRONMENT" in

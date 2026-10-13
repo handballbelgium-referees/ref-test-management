@@ -45,6 +45,11 @@ bld/
 # Angular assets copied into the API for container publishing
 /RefTestManagement.Api/wwwroot/
 
+# Generated local Azure-style Podman settings, secrets, and TLS material
+/infra/local/azure/appsettings.Development.json
+/infra/local/azure/user-secrets/
+/infra/local/azure/certs/
+
 # Terraform local state, provider caches, generated plans, and unencrypted variables
 **/.terraform/
 **/terraform.tfstate*

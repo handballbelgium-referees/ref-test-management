@@ -38,6 +38,39 @@ variable "acr_resource_group_name" {
 variable "sql_server_name" {
   description = "Globally unique Azure SQL logical server name."
   type        = string
+  default     = null
+}
+
+variable "database_provider" {
+  description = "Database provider for this environment: SqlServer, PostgreSQL, MySQL, or SQLite."
+  type        = string
+  default     = "SqlServer"
+}
+
+variable "allow_managed_database_providers" {
+  description = "Explicit cost opt-in for managed PostgreSQL or MySQL."
+  type        = bool
+  default     = false
+}
+
+variable "database_admin_login" {
+  description = "Administrator login for a managed PostgreSQL or MySQL server."
+  type        = string
+  default     = "rtm_dbadmin"
+}
+
+variable "database_admin_password_wo" {
+  description = "Write-only administrator password for managed PostgreSQL or MySQL."
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+  default     = null
+}
+
+variable "database_admin_password_wo_version" {
+  description = "Increment this when rotating the managed database administrator password."
+  type        = number
+  default     = 1
 }
 
 variable "key_vault_name" {
@@ -48,11 +81,13 @@ variable "key_vault_name" {
 variable "sql_entra_admin_login_username" {
   description = "Display name of the Entra user or group configured as the SQL administrator."
   type        = string
+  default     = null
 }
 
 variable "sql_entra_admin_object_id" {
   description = "Object ID of the Entra user or group configured as the SQL administrator."
   type        = string
+  default     = null
 }
 
 variable "api_image_digest" {

@@ -44,6 +44,7 @@ jobs:
       AZURE_NAME_PREFIX: ${{ vars.AZURE_NAME_PREFIX }}
       AZURE_UNIQUE_SUFFIX: ${{ vars.AZURE_UNIQUE_SUFFIX }}
       AZURE_DEPLOYMENT_MODE: ${{ vars.AZURE_DEPLOYMENT_MODE }}
+      AZURE_DATABASE_PROVIDER: ${{ vars.AZURE_DATABASE_PROVIDER || 'SqlServer' }}
 
     steps:
       - name: ⬇️ Download tagged container archives
@@ -51,6 +52,29 @@ jobs:
         with:
           name: ${{ needs.build.outputs.artifact-name }}
           path: ${{ github.workspace }}/release-artifact
+
+      - name: 🔎 Validate Azure database and hosting mode
+        shell: bash
+        run: |
+          set -euo pipefail
+          case "$AZURE_DATABASE_PROVIDER" in
+            SqlServer|PostgreSQL|MySQL|SQLite) ;;
+            *)
+              echo "::error::AZURE_DATABASE_PROVIDER must be SqlServer, PostgreSQL, MySQL, or SQLite."
+              exit 1
+              ;;
+          esac
+          case "$AZURE_DEPLOYMENT_MODE" in
+            single|split) ;;
+            *)
+              echo "::error::AZURE_DEPLOYMENT_MODE must be single or split."
+              exit 1
+              ;;
+          esac
+          if [ "$AZURE_DATABASE_PROVIDER" = "SQLite" ] && [ "$AZURE_DEPLOYMENT_MODE" != "single" ]; then
+            echo "::error::SQLite requires AZURE_DEPLOYMENT_MODE=single."
+            exit 1
+          fi
 
       - name: 🔒 Verify tagged build provenance and archives
         env:
@@ -103,11 +127,42 @@ jobs:
           tenant-id: ${{ secrets.AZURE_TENANT_ID }}
           subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
 
+      - name: 🔎 Verify deployed database provider
+        id: database-provider-check
+        shell: bash
+        run: |
+          set -euo pipefail
+          BASE_NAME="${AZURE_NAME_PREFIX}-${AZURE_UNIQUE_SUFFIX}"
+          API_APP_NAME="${BASE_NAME}-api"
+          MIGRATION_JOB_NAME="${BASE_NAME}-migration"
+          API_DATABASE_PROVIDER="$(az containerapp show \
+            --name "$API_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+            --query "properties.template.containers[0].env[?name=='DatabaseProvider'].value | [0]" \
+            --output tsv)"
+          MIGRATION_DATABASE_PROVIDER="$(az containerapp job show \
+            --name "$MIGRATION_JOB_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+            --query "properties.template.containers[0].env[?name=='DatabaseProvider'].value | [0]" \
+            --output tsv)"
+          if [ -z "$API_DATABASE_PROVIDER" ] || [ "$API_DATABASE_PROVIDER" = "None" ] || \
+             [ -z "$MIGRATION_DATABASE_PROVIDER" ] || [ "$MIGRATION_DATABASE_PROVIDER" = "None" ]; then
+            echo "::error::Could not verify DatabaseProvider on the deployed API and migration job."
+            exit 1
+          fi
+          if [ "$API_DATABASE_PROVIDER" != "$MIGRATION_DATABASE_PROVIDER" ] || \
+             [ "$API_DATABASE_PROVIDER" != "$AZURE_DATABASE_PROVIDER" ]; then
+            echo "::error::GitHub Environment, API, and migration job database providers do not match."
+            exit 1
+          fi
+          printf 'database-provider=%s\n' "$API_DATABASE_PROVIDER" >> "$GITHUB_OUTPUT"
+
       - name: 🐳 Push immutable images and run migration
         id: prepare-deployment
         env:
           IMAGE_TAG: ${{ needs.build.outputs.image-tag }}
           TARGET_ENVIRONMENT: ${{ inputs.target_environment }}
+          DATABASE_PROVIDER: ${{ steps.database-provider-check.outputs.database-provider }}
         run: |
           set -euo pipefail
           : "${AZURE_ACR_NAME:?Set AZURE_ACR_NAME in the selected Azure Environment.}"
@@ -164,6 +219,15 @@ jobs:
             --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
             --image "$WORKER_IMAGE" \
             --output none
+
+          if [ "$DATABASE_PROVIDER" = "SQLite" ]; then
+            API_APP_NAME="${BASE_NAME}-api"
+            printf 'sqlite-api-stop-attempted=true\n' >> "$GITHUB_OUTPUT"
+            az containerapp stop \
+              --name "$API_APP_NAME" \
+              --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+              --output none
+          fi
 
           PREVIOUS_EXECUTION="$(az containerapp job execution list \
             --name "$MIGRATION_JOB_NAME" \
@@ -267,6 +331,17 @@ jobs:
             exit 1
           fi
           echo "api-url=https://$API_FQDN" >> "$GITHUB_OUTPUT"
+
+      - name: ▶️ Start SQLite API after migration or failure
+        if: ${{ always() && steps.prepare-deployment.outputs.sqlite-api-stop-attempted == 'true' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          API_APP_NAME="${AZURE_NAME_PREFIX}-${AZURE_UNIQUE_SUFFIX}-api"
+          az containerapp start \
+            --name "$API_APP_NAME" \
+            --resource-group "$AZURE_RESOURCE_GROUP_NAME" \
+            --output none
 
       - name: 🎉 Container deployment complete
         env:

@@ -1,5 +1,3 @@
-using StackExchange.Redis;
-
 namespace Handball.Belgium.RefTestManagement.Hosting.Services;
 
 /// <summary>

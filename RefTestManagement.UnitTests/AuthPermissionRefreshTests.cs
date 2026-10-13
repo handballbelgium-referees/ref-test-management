@@ -3,6 +3,7 @@ using Handball.Belgium.RefTestManagement.Api;
 using Handball.Belgium.RefTestManagement.Api.Controllers;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate;
 using Microsoft.AspNetCore.Authentication;
@@ -125,7 +126,7 @@ public sealed class AuthPermissionRefreshTests
         using var provider = CreateAuthorizationProvider();
         var authorizationService = provider.GetRequiredService<IAuthorizationService>();
         var user = AuthenticatedUser();
-        var unsupportedMessage = new object();
+        var unsupportedMessage = RefTestSubscriptionMessage.Create(new object());
 
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             RefTestSubscriptions.RefTestsUpdated(

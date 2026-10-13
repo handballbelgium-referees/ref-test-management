@@ -1,24 +1,19 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
-using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Auth0;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
 using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
-using Handball.Belgium.RefTestManagement.Security;
 using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Hosting.Configurations;
 using Handball.Belgium.RefTestManagement.Hosting.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using QuestPDF.Infrastructure;
-using StackExchange.Redis;
 
 namespace Handball.Belgium.RefTestManagement.Hosting;
 
@@ -106,6 +101,7 @@ public static class HostingServiceCollectionExtensions
         if (mode == HostingMode.Worker)
         {
             services.AddGraphQLServer()
+                .AddQueryType<WorkerQuery>()
                 .AddRedisSubscriptions(sp => sp.GetRequiredService<IConnectionMultiplexer>());
         }
 
@@ -144,4 +140,9 @@ public static class HostingServiceCollectionExtensions
         auditLogOptions.Validate();
         return auditLogOptions;
     }
+}
+
+public sealed class WorkerQuery
+{
+    public string Role => "worker";
 }

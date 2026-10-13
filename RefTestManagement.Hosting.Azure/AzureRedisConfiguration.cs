@@ -1,7 +1,6 @@
 using Azure.Core;
 using Azure.Identity;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Microsoft.Azure.StackExchangeRedis;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;

@@ -1,8 +1,6 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
-using Microsoft.AspNetCore.Http;
-using Microsoft.Extensions.Configuration;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;
 

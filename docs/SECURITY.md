@@ -38,16 +38,22 @@ least 2048 bits. The API and Worker must use the same certificate and database-b
 Rotate certificates only after ensuring all persisted keys that depend on the old certificate
 remain readable.
 
-## Azure workload identities and SQL
+## Azure workload identities and database access
 
 Azure Container Apps use separate user-assigned managed identities for the API, optional Worker,
 and migration job. Azure SQL remains Entra-only: each database connection string identifies the
 corresponding attached identity by its client ID, and the operator provisions the contained
 database users with `infra/terraform/bootstrap/sql-identities.sql`. The API and Worker receive
-their required data roles; only the one-shot migration identity receives `db_owner`. The API,
-Worker, and migration identity read only their explicitly referenced Key Vault secrets; do not
-replace these scopes with vault-wide access. The release pipeline starts the migration job before
-updating application revisions in Azure. Cloudflare migrations are an explicit operator-run step.
+their required data roles; only the one-shot migration identity receives `db_owner`. Managed
+PostgreSQL/MySQL use distinct database credentials referenced from Key Vault and exact ACA/operator
+egress firewall rules; client connection strings must enforce TLS certificate validation. The server
+administrator password is a protected, ephemeral Terraform input and must not be reused by the
+application. The API, Worker, and migration identity read only their explicitly referenced Key
+Vault secrets; do not replace these scopes with vault-wide access. Azure SQLite stores its file in
+a dedicated Azure Files account whose access key is held in protected environment Terraform state.
+The release pipeline starts the migration job before updating application revisions in Azure;
+SQLite releases stop the API for that migration window. Cloudflare migrations are an explicit
+operator-run step.
 
 ## Cloudflare request trust
 

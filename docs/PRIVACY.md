@@ -68,7 +68,14 @@ These are bounded, deliberate limits rather than gaps, and are disclosed here so
 - **Audit events lose personal data on the audit retention schedule, not on request.** Erasing or deleting a specific RefTest redacts *that* RefTest's audit trail immediately. For other events, the daily audit cleanup redacts the payload and actor identity once the event passes `AuditLogConfiguration.RetentionDays` (90 days by default), keeping only what happened and when. It also repairs residual rejection reasons on aged `RefTestRejected` events in bounded batches, even if `RedactedAt` was already stamped or the related RefTest was deleted; it changes the event payload without resetting existing archive or redaction metadata.
 - **Application logs.** Logs no longer record participant names, email addresses, invitation tokens, test URLs, or scores; records are identified by their RefTest id, and recipient addresses are masked. Logs written before this change may still contain personal data and are subject to the hosting provider's own retention, not the application's.
 
-Backups, email-provider retention, and third-party logs are outside the application's database cleanup. This also applies to export PDFs after email delivery: application cleanup cannot recall a message or remove copies held by Brevo or the recipient's mailbox. The controller must agree retention and deletion procedures with the relevant providers and document them.
+Backups, email-provider retention, and third-party logs are outside the application's database cleanup.
+This also applies to export PDFs after email delivery: application cleanup cannot recall a message or
+remove copies held by Brevo or the recipient's mailbox. The controller must agree retention and
+deletion procedures with the relevant providers and document them. Azure-managed PostgreSQL/MySQL
+selected by the Terraform environments retain service-managed backups for seven days, so deleted
+participant data may remain recoverable until those backups expire. The Azure SQLite file share has
+no automated backup in this configuration; the controller remains responsible for any separate
+backup/restore process and for preventing restoration from reintroducing erased data.
 
 ## Handling Requests
 

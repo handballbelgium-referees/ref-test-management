@@ -57,15 +57,83 @@ variable "acr_resource_group_name" {
 variable "sql_server_name" {
   description = "Globally unique Azure SQL logical server name."
   type        = string
+  default     = null
 
   validation {
-    condition = (
+    condition = var.database_provider != "SqlServer" || try(
       length(var.sql_server_name) >= 3 && length(var.sql_server_name) <= 63 &&
       can(regex("^[a-z0-9-]+$", var.sql_server_name)) &&
       !startswith(var.sql_server_name, "-") &&
-      !endswith(var.sql_server_name, "-")
+      !endswith(var.sql_server_name, "-"),
+      false
     )
-    error_message = "sql_server_name must be 3-63 lowercase letters, digits, or hyphens and cannot start or end with a hyphen."
+    error_message = "sql_server_name must be set to 3-63 lowercase letters, digits, or hyphens when database_provider is SqlServer."
+  }
+}
+
+variable "database_provider" {
+  description = "Database provider to provision and configure for this environment."
+  type        = string
+  default     = "SqlServer"
+
+  validation {
+    condition     = contains(["SqlServer", "PostgreSQL", "MySQL", "SQLite"], var.database_provider)
+    error_message = "database_provider must be SqlServer, PostgreSQL, MySQL, or SQLite."
+  }
+
+  validation {
+    condition = (
+      !contains(["PostgreSQL", "MySQL"], var.database_provider) ||
+      var.allow_managed_database_providers
+    )
+    error_message = "PostgreSQL and MySQL require allow_managed_database_providers=true because of their ongoing Azure service cost."
+  }
+
+  validation {
+    condition = (
+      var.database_provider != "SQLite" ||
+      (var.deployment_mode == "single" && var.api_max_replicas == 1)
+    )
+    error_message = "SQLite requires deployment_mode=single and api_max_replicas=1 because the database is a single shared file."
+  }
+}
+
+variable "allow_managed_database_providers" {
+  description = "Explicit cost opt-in required before provisioning managed PostgreSQL or MySQL."
+  type        = bool
+  default     = false
+}
+
+variable "database_admin_login" {
+  description = "Administrator login for a managed PostgreSQL or MySQL server."
+  type        = string
+  default     = "rtm_dbadmin"
+}
+
+variable "database_admin_password_wo" {
+  description = "Write-only administrator password for a managed PostgreSQL or MySQL server; pass through an ephemeral secret input."
+  type        = string
+  sensitive   = true
+  ephemeral   = true
+  default     = null
+
+  validation {
+    condition = (
+      !contains(["PostgreSQL", "MySQL"], var.database_provider) ||
+      try(trimspace(var.database_admin_password_wo) != "", false)
+    )
+    error_message = "database_admin_password_wo must be provided through a protected secret input for PostgreSQL or MySQL."
+  }
+}
+
+variable "database_admin_password_wo_version" {
+  description = "Increment this when rotating the write-only managed database administrator password."
+  type        = number
+  default     = 1
+
+  validation {
+    condition     = var.database_admin_password_wo_version >= 1
+    error_message = "database_admin_password_wo_version must be at least 1."
   }
 }
 
@@ -85,18 +153,31 @@ variable "key_vault_name" {
 variable "sql_entra_admin_login_username" {
   description = "Display name of the Entra user or group configured as the Azure SQL administrator."
   type        = string
+  default     = null
+
+  validation {
+    condition = (
+      var.database_provider != "SqlServer" ||
+      try(trimspace(var.sql_entra_admin_login_username) != "", false)
+    )
+    error_message = "sql_entra_admin_login_username must be set when database_provider is SqlServer."
+  }
 }
 
 variable "sql_entra_admin_object_id" {
   description = "Object ID of the Entra user or group configured as the Azure SQL administrator."
   type        = string
+  default     = null
 
   validation {
-    condition = can(regex(
-      "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
-      var.sql_entra_admin_object_id
-    ))
-    error_message = "sql_entra_admin_object_id must be an Entra object ID GUID."
+    condition = (
+      var.database_provider != "SqlServer" ||
+      can(regex(
+        "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+        var.sql_entra_admin_object_id
+      ))
+    )
+    error_message = "sql_entra_admin_object_id must be an Entra object ID GUID when database_provider is SqlServer."
   }
 }
 
@@ -178,7 +259,7 @@ variable "api_max_replicas" {
 }
 
 variable "sql_firewall_ip_addresses" {
-  description = "Exact public IPv4 addresses allowed by the SQL firewall. Include current ACA egress and the operator during SQL user bootstrap."
+  description = "Exact public IPv4 addresses allowed by the selected server-database firewall. Include current ACA egress and the operator during database-user bootstrap."
   type        = set(string)
   default     = []
 

@@ -1,8 +1,8 @@
 using Handball.Belgium.RefTestManagement.Hosting;
 using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Hosting.Services;
-using Handball.Belgium.RefTestManagement.Application.Abstractions;
 using Handball.Belgium.RefTestManagement.Auth0.Services;
+using HotChocolate.Execution;
 using Microsoft.Extensions.Caching.Memory;
 using HotChocolate.Subscriptions;
 using Microsoft.Extensions.Configuration;
@@ -137,6 +137,25 @@ public sealed class HostingModeTests
             HostingMode.Worker);
 
         Assert.DoesNotContain(services, descriptor => descriptor.ServiceType == typeof(IServer));
+    }
+
+    [Fact]
+    public async Task WorkerGraphQlSchemaHasAQueryRoot()
+    {
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddRefTestManagementHosting(
+            CreateHostingConfiguration(sharedState: true),
+            HostingMode.Worker);
+
+        await using var provider = services.BuildServiceProvider();
+        var executorProvider = provider.GetRequiredService<IRequestExecutorProvider>();
+        var executor = await executorProvider.GetExecutorAsync(
+            Assert.Single(executorProvider.SchemaNames),
+            TestContext.Current.CancellationToken);
+
+        Assert.Equal("WorkerQuery", executor.Schema.QueryType.Name);
+        Assert.Contains(executor.Schema.QueryType.Fields, field => field.Name == "role");
     }
 
     private static IConfiguration CreateHostingConfiguration(bool sharedState = false)
