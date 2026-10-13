@@ -418,11 +418,29 @@ describe('TitleAutocomplete', () => {
     await fixture.whenStable();
     fixture.detectChanges();
 
+    results[0].next({
+      loading: false,
+      data: {
+        refTestTitles: {
+          edges: [],
+          pageInfo: { hasNextPage: false, endCursor: null },
+        },
+      },
+    });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+
     await vi.waitFor(() => expect(component.searchError()).toBe(true), { timeout: 2000 });
     expect(component.suggestions()).toEqual([]);
     expect(selected).toEqual([]);
     expect(fixture.nativeElement.textContent).toContain('Could not search titles.');
     expect(fixture.nativeElement.textContent).not.toContain('No existing titles found');
+
+    component.onFocus();
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    expect(watch).toHaveBeenCalledOnce();
+    expect(component.searchError()).toBe(true);
   });
 
   it('resolves a blurred title after a delayed successful search', async () => {

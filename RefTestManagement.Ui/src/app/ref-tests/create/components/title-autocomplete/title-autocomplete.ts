@@ -56,6 +56,7 @@ export class TitleAutocomplete {
   private readonly _verifiedNoExactMatch = signal<string | null>(null);
   private _exactTitleLookupInProgress = false;
   private _exactTitleLookupId = 0;
+  private _exactTitleLookupErrorTerm: string | null = null;
   protected readonly searching = signal(false);
   protected readonly searchError = signal(false);
   protected readonly searchSucceeded = signal(false);
@@ -145,7 +146,12 @@ export class TitleAutocomplete {
       const result = this._searchResult();
       if (!result) return;
       const currentTerm = this.searchTerm().trim();
-      if (result.searchTerm !== currentTerm) return;
+      if (
+        result.searchTerm !== currentTerm ||
+        this._exactTitleLookupErrorTerm === currentTerm
+      ) {
+        return;
+      }
       if (this._exactTitleLookupInProgress) return;
 
       if (result.error) {
@@ -198,6 +204,7 @@ export class TitleAutocomplete {
     this.loadingMoreError.set(false);
     this._pendingBlur.set(false);
     this._verifiedNoExactMatch.set(null);
+    this._exactTitleLookupErrorTerm = null;
     this.cancelExactTitleLookup();
 
     // Clear selection when user types - they're either searching or creating new
@@ -217,6 +224,10 @@ export class TitleAutocomplete {
       }
     }
     this.isFocused.set(true);
+    if (this._exactTitleLookupErrorTerm === this.searchTerm().trim()) {
+      this.showDropdown.set(true);
+      return;
+    }
     // Show dropdown immediately if we have suggestions
     if (this.suggestions().length > 0) {
       this.showDropdown.set(true);
@@ -349,6 +360,7 @@ export class TitleAutocomplete {
   protected onRetrySearch(): void {
     this.cancelExactTitleLookup();
     this._verifiedNoExactMatch.set(null);
+    this._exactTitleLookupErrorTerm = null;
     this.searching.set(true);
     this.searchError.set(false);
     this.searchSucceeded.set(false);
@@ -365,6 +377,7 @@ export class TitleAutocomplete {
   protected onClear(): void {
     this._pendingBlur.set(false);
     this._verifiedNoExactMatch.set(null);
+    this._exactTitleLookupErrorTerm = null;
     this.cancelExactTitleLookup();
     this.searchTerm.set('');
     this.searching.set(false);
@@ -482,6 +495,7 @@ export class TitleAutocomplete {
   }
 
   private showExactTitleLookupError(): void {
+    this._exactTitleLookupErrorTerm = this.searchTerm().trim();
     this._exactTitleLookupInProgress = false;
     this.searching.set(false);
     this.searchError.set(true);

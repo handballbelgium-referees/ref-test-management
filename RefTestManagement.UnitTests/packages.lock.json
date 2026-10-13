@@ -1608,7 +1608,6 @@
           "RefTestManagement.Auth0": "[1.0.0, )",
           "RefTestManagement.Hosting": "[1.0.0, )",
           "RefTestManagement.Hosting.Azure": "[1.0.0, )",
-          "RefTestManagement.Hosting.Cloudflare": "[1.0.0, )",
           "RefTestManagement.Infrastructure": "[1.0.0, )",
           "RefTestManagement.Security": "[1.0.0, )",
           "StackExchange.Redis": "[3.3.1, )"
@@ -1666,12 +1665,6 @@
           "Microsoft.Azure.StackExchangeRedis": "[3.3.1, )",
           "RefTestManagement.Hosting": "[1.0.0, )",
           "StackExchange.Redis": "[3.3.1, )"
-        }
-      },
-      "reftestmanagement.hosting.cloudflare": {
-        "type": "Project",
-        "dependencies": {
-          "RefTestManagement.Hosting": "[1.0.0, )"
         }
       },
       "reftestmanagement.infrastructure": {
