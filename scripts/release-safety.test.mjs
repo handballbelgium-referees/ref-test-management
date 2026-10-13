@@ -159,10 +159,18 @@ test('PR does not publish SDK container archives or require cloud credentials', 
 });
 
 test('CodeQL uses the release validation .NET SDK', () => {
+  const releaseSdkVersion = WORKFLOWS['stable-release'].workflow.env.DOTNET_VERSION;
   const setupDotnet = WORKFLOWS.codeql.workflow.jobs.analyze.steps.find(
     (step) => step.uses?.startsWith('actions/setup-dotnet@'),
   );
-  assert.equal(setupDotnet.with['dotnet-version'], '10.0.303');
+  for (const workflowName of ['beta-release', 'pr']) {
+    assert.equal(
+      WORKFLOWS[workflowName].workflow.env.DOTNET_VERSION,
+      releaseSdkVersion,
+      `${workflowName} must use the stable release .NET SDK`,
+    );
+  }
+  assert.equal(setupDotnet.with['dotnet-version'], releaseSdkVersion);
 });
 
 test('all workflow actions stay pinned to full commit SHAs with version comments', () => {
