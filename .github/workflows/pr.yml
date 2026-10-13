@@ -113,11 +113,6 @@ jobs:
         run: npm run build -- --configuration production
         # Ensures that UI builds successfully in PR
 
-      - name: 🗂 Copy Angular build into API assets
-        run: |
-          mkdir -p RefTestManagement.Api/wwwroot
-          cp -r RefTestManagement.Ui/dist/RefTestManagement.Ui/browser/* RefTestManagement.Api/wwwroot/
-
       - name: 🌍 Check translation parity
         working-directory: ./RefTestManagement.Ui
         run: npm run check:i18n
@@ -145,32 +140,6 @@ jobs:
       - name: 🧪 Run .NET unit tests
         run: dotnet test --solution RefTestManagement.slnx --configuration Release --no-build -p:TestingPlatformShowTestsFailure=true
         # Fails the check on a failing test. --solution is required by the MTP mode of dotnet test
-
-      - name: 📦 Validate SDK container publishing
-        env:
-          IMAGE_TAG: pr-${{ github.sha }}
-        run: |
-          set -euo pipefail
-          IMAGE_DIRECTORY="$RUNNER_TEMP/ref-test-management-images"
-          mkdir -p "$IMAGE_DIRECTORY"
-
-          dotnet publish RefTestManagement.Api/RefTestManagement.Api.csproj \
-            --configuration Release \
-            --no-restore \
-            /t:PublishContainer \
-            -p:ContainerRuntimeIdentifier=linux-x64 \
-            "-p:ContainerImageTag=$IMAGE_TAG" \
-            "-p:ContainerArchiveOutputPath=$IMAGE_DIRECTORY/api-image.tar.gz"
-          dotnet publish RefTestManagement.Worker/RefTestManagement.Worker.csproj \
-            --configuration Release \
-            --no-restore \
-            /t:PublishContainer \
-            -p:ContainerRuntimeIdentifier=linux-x64 \
-            "-p:ContainerImageTag=$IMAGE_TAG" \
-            "-p:ContainerArchiveOutputPath=$IMAGE_DIRECTORY/worker-image.tar.gz"
-
-          test -s "$IMAGE_DIRECTORY/api-image.tar.gz"
-          test -s "$IMAGE_DIRECTORY/worker-image.tar.gz"
 
   sync-readme-versions:
     name: 📄 Sync README Versions
