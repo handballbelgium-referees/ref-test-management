@@ -144,16 +144,14 @@ test('Cloudflare hosting and Terraform configuration are removed', () => {
     assert.equal(existsSync(join(ROOT, path)), false, `${path} must not be present`);
   }
 });
-test('PR validates SDK container archives without cloud credentials', () => {
+test('PR does not publish SDK container archives or require cloud credentials', () => {
   const { source, workflow } = WORKFLOWS.pr;
   const publishJob = workflow.jobs.validate;
   const publish = publishJob.steps.find((step) => step.name === '📦 Validate SDK container publishing');
 
-  assert.ok(publish);
+  assert.equal(publish, undefined);
   assert.deepEqual(workflow.permissions, { contents: 'read' });
-  assert.match(publish.run, /dotnet publish RefTestManagement\.Api\/.*\/t:PublishContainer/s);
-  assert.match(publish.run, /ContainerArchiveOutputPath=.*api-image\.tar\.gz/);
-  assert.match(publish.run, /ContainerArchiveOutputPath=.*worker-image\.tar\.gz/);
+  assert.doesNotMatch(source, /PublishContainer|ContainerArchiveOutputPath/);
   assert.doesNotMatch(publishJob.steps.map((step) => step.uses ?? '').join('\n'), /azure\/login/i);
   assert.doesNotMatch(source, /id-token:\s*write/);
   assert.equal(workflow.jobs['validate-infrastructure'], undefined);
