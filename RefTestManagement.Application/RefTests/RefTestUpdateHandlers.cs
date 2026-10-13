@@ -1,5 +1,4 @@
 using Handball.Belgium.RefTestManagement.Application.Abstractions;
-using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 
 namespace Handball.Belgium.RefTestManagement.Application.RefTests;

@@ -3,7 +3,7 @@ using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 /// <summary>
 /// Background service that processes jobs from a database queue

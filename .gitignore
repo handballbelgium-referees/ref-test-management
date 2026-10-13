@@ -42,8 +42,24 @@ bld/
 
 # Visual Studio 2015/2017 cache/options directory
 .vs/
-# Uncomment if you have tasks that create the project's static files in wwwroot
-#wwwroot/
+# Angular assets copied into the API for container publishing
+/RefTestManagement.Api/wwwroot/
+
+# Generated local container settings, secrets, and TLS material
+/infra/local/appsettings.Development.json
+/infra/local/user-secrets/
+/infra/local/certs/
+
+# Terraform local state, provider caches, generated plans, and unencrypted variables
+**/.terraform/
+**/terraform.tfstate*
+**/crash.log
+**/crash.*.log
+**/*.tfplan
+**/*.tfplan.*
+**/terraform.tfvars
+**/*.auto.tfvars
+!**/*.tfvars.example
 
 # Visual Studio 2017 auto generated files
 Generated\ Files/

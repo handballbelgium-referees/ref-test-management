@@ -3,7 +3,6 @@ using System.Text;
 using System.Diagnostics;
 using System.Threading.RateLimiting;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging.Abstractions;
 using StackExchange.Redis;
 
@@ -60,7 +59,7 @@ public sealed class PrivacyChallengeRateLimiter : IPrivacyChallengeRateLimiter, 
         }
 
         if (!skipProductionValidationForTests)
-            ValidateRateLimitConfiguration(configuration, redis is not null, null);
+            configuration.Validate(redis is not null);
         _hmacKey = Encoding.UTF8.GetBytes(configuration.HmacSecret!);
         _database = (redis ?? throw new InvalidOperationException("Redis limiter dependency is missing."))
             .GetDatabase();
@@ -76,24 +75,6 @@ public sealed class PrivacyChallengeRateLimiter : IPrivacyChallengeRateLimiter, 
     {
         _requestLocal?.Dispose();
         _confirmationLocal?.Dispose();
-    }
-
-    public static void ValidateRateLimitConfiguration(
-        PrivacyChallengeConfiguration configuration,
-        bool redisConfigured,
-        string? containerAppName)
-    {
-        if (!string.IsNullOrWhiteSpace(containerAppName)
-            && configuration.RateLimitBackend != PrivacyChallengeRateLimitBackend.Redis)
-            throw new InvalidOperationException(
-                "Azure Container Apps requires the shared Redis privacy challenge rate-limit backend.");
-
-        if (configuration.RateLimitBackend == PrivacyChallengeRateLimitBackend.Redis
-            && (!redisConfigured
-                || string.IsNullOrWhiteSpace(configuration.HmacSecret)
-                || Encoding.UTF8.GetByteCount(configuration.HmacSecret) < 32))
-            throw new InvalidOperationException(
-                "The Redis privacy challenge rate-limit backend requires RedisConfiguration:Endpoint and an HMAC secret of at least 32 UTF-8 bytes.");
     }
 
     private async Task<bool> TryAcquireAsync(

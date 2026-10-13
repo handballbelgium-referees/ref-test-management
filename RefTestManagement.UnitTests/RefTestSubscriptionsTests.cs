@@ -9,7 +9,6 @@ using HotChocolate;
 using HotChocolate.Subscriptions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging.Abstractions;
 
@@ -56,26 +55,28 @@ public sealed class RefTestSubscriptionsTests
 
         var detailStarted = Assert.IsType<RefTestStarted>(await RefTestSubscriptions.RefTestUpdated(
             refTestId,
-            new RefTestStartedEvent(refTestId, RefTestStatus.Pending, firstAt),
+            RefTestSubscriptionMessage.Create(
+                new RefTestStartedEvent(refTestId, RefTestStatus.Pending, firstAt)),
             user,
             permissionSnapshotService,
             authorizationService,
             cancellationToken));
         var detailInvitation = Assert.IsType<RefTestInvitationSent>(await RefTestSubscriptions.RefTestUpdated(
             refTestId,
-            new RefTestInvitationSentEvent(refTestId, secondAt),
+            RefTestSubscriptionMessage.Create(new RefTestInvitationSentEvent(refTestId, secondAt)),
             user,
             permissionSnapshotService,
             authorizationService,
             cancellationToken));
         var listExpired = Assert.IsType<RefTestExpired>(await RefTestSubscriptions.RefTestsUpdated(
-            new RefTestExpiredEvent(refTestId, RefTestStatus.Expired, firstAt),
+            RefTestSubscriptionMessage.Create(
+                new RefTestExpiredEvent(refTestId, RefTestStatus.Expired, firstAt)),
             user,
             permissionSnapshotService,
             authorizationService,
             cancellationToken));
         var listResultSent = Assert.IsType<RefTestResultSent>(await RefTestSubscriptions.RefTestsUpdated(
-            new RefTestResultSentEvent(refTestId, secondAt),
+            RefTestSubscriptionMessage.Create(new RefTestResultSentEvent(refTestId, secondAt)),
             user,
             permissionSnapshotService,
             authorizationService,
@@ -99,10 +100,10 @@ public sealed class RefTestSubscriptionsTests
         var user = AuthenticatedUser();
         var refTestId = Guid.NewGuid();
         var cancellationToken = TestContext.Current.CancellationToken;
-        var message = new RefTestStartedEvent(
+        var message = RefTestSubscriptionMessage.Create(new RefTestStartedEvent(
             refTestId,
             RefTestStatus.Pending,
-            new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc));
+            new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc)));
 
         Assert.IsType<RefTestStarted>(await RefTestSubscriptions.RefTestUpdated(
             refTestId,
@@ -216,7 +217,10 @@ public sealed class RefTestSubscriptionsTests
         Assert.Equal(2, eventSender.Messages.Count(message =>
             message.Message is RefTestTimeExtendedEvent));
         Assert.Equal(4, eventSender.Messages.Count(message =>
-            message.Message is RefTestStartedEvent));
+            message.Message is RefTestSubscriptionMessage));
+        Assert.Equal(4, eventSender.Messages.Count(message =>
+            message.Message is RefTestSubscriptionMessage envelope &&
+            envelope.EventType == nameof(RefTestStartedEvent)));
     }
 
     [Fact]
@@ -277,40 +281,32 @@ public sealed class RefTestSubscriptionsTests
             selectedAnswerIds: selectedAnswerIds,
             cancellationToken: cancellationToken);
 
-        var created = Assert.IsType<RefTestCreatedEvent>(eventSender.Messages.Single(message =>
-            message.Topic == RefTestSubscriptionService.GlobalTopic &&
-            message.Message is RefTestCreatedEvent).Message);
+        var created = GetPublishedEvent<RefTestCreatedEvent>(eventSender, RefTestSubscriptionService.GlobalTopic);
         Assert.Equal("Ada", created.FirstName);
         Assert.Equal("Lovelace", created.LastName);
         Assert.Equal(createdAt, created.CreatedAt);
         Assert.Equal(scheduledAt, created.ScheduledAt);
 
-        var approved = Assert.IsType<RefTestApprovedEvent>(eventSender.Messages.Single(message =>
-            message.Topic == RefTestSubscriptionService.GlobalTopic &&
-            message.Message is RefTestApprovedEvent).Message);
+        var approved = GetPublishedEvent<RefTestApprovedEvent>(
+            eventSender, RefTestSubscriptionService.GlobalTopic);
         Assert.Equal(RefTestStatus.Rejected, approved.OldStatus);
         Assert.Equal(createdAt, approved.CreatedAt);
 
-        var reset = Assert.IsType<RefTestResetEvent>(eventSender.Messages.Single(message =>
-            message.Topic == RefTestSubscriptionService.GlobalTopic &&
-            message.Message is RefTestResetEvent).Message);
+        var reset = GetPublishedEvent<RefTestResetEvent>(eventSender, RefTestSubscriptionService.GlobalTopic);
         Assert.Equal(RefTestResetType.Hard, reset.ResetType);
         Assert.Equal(RefTestStatus.Pending, reset.Status);
         Assert.Equal(createdAt, reset.CreatedAt);
         Assert.False(reset.InvitationSent);
 
-        var revived = Assert.IsType<RefTestRevivedEvent>(eventSender.Messages.Single(message =>
-            message.Topic == RefTestSubscriptionService.GlobalTopic &&
-            message.Message is RefTestRevivedEvent).Message);
+        var revived = GetPublishedEvent<RefTestRevivedEvent>(
+            eventSender, RefTestSubscriptionService.GlobalTopic);
         Assert.Equal(createdAt, revived.CreatedAt);
         Assert.False(revived.InvitationSent);
 
-        var detailCompletion = Assert.IsType<RefTestCompletedEvent>(eventSender.Messages.Single(message =>
-            message.Topic == refTestId.ToString() &&
-            message.Message is RefTestCompletedEvent).Message);
-        var listCompletion = Assert.IsType<RefTestCompletedEvent>(eventSender.Messages.Single(message =>
-            message.Topic == RefTestSubscriptionService.GlobalTopic &&
-            message.Message is RefTestCompletedEvent).Message);
+        var detailCompletion = GetPublishedEvent<RefTestCompletedEvent>(
+            eventSender, refTestId.ToString());
+        var listCompletion = GetPublishedEvent<RefTestCompletedEvent>(
+            eventSender, RefTestSubscriptionService.GlobalTopic);
         Assert.Equal(selectedAnswerIds, detailCompletion.SelectedAnswerIds);
         Assert.Null(listCompletion.SelectedAnswerIds);
 
@@ -322,13 +318,13 @@ public sealed class RefTestSubscriptionsTests
         var user = AuthenticatedUser();
         var detailEvent = Assert.IsType<RefTestCompleted>(await RefTestSubscriptions.RefTestUpdated(
             refTestId,
-            detailCompletion,
+            RefTestSubscriptionMessage.Create(detailCompletion),
             user,
             permissionSnapshotService,
             authorizationService,
             cancellationToken));
         var listEvent = Assert.IsType<RefTestCompleted>(await RefTestSubscriptions.RefTestsUpdated(
-            listCompletion,
+            RefTestSubscriptionMessage.Create(listCompletion),
             user,
             permissionSnapshotService,
             authorizationService,
@@ -338,13 +334,13 @@ public sealed class RefTestSubscriptionsTests
 
         var approvedDetailEvent = Assert.IsType<RefTestApproved>(await RefTestSubscriptions.RefTestUpdated(
             refTestId,
-            approved,
+            RefTestSubscriptionMessage.Create(approved),
             user,
             new FakePermissionSnapshotService(PermissionSet(Permissions.RefTests.ViewDetail)),
             authorizationService,
             cancellationToken));
         var approvedListEvent = Assert.IsType<RefTestApproved>(await RefTestSubscriptions.RefTestsUpdated(
-            approved,
+            RefTestSubscriptionMessage.Create(approved),
             user,
             new FakePermissionSnapshotService(PermissionSet(Permissions.RefTests.ViewList)),
             authorizationService,
@@ -364,6 +360,18 @@ public sealed class RefTestSubscriptionsTests
             questionIds: ["q1", "q2"],
             sendInvitationAutomatically: false,
             sendResultsAutomatically: true);
+
+    private static TEvent GetPublishedEvent<TEvent>(
+        RecordingTopicEventSender eventSender,
+        string topic)
+        where TEvent : class
+    {
+        var envelope = Assert.IsType<RefTestSubscriptionMessage>(eventSender.Messages.Single(message =>
+            message.Topic == topic &&
+            message.Message is RefTestSubscriptionMessage candidate &&
+            candidate.EventType == typeof(TEvent).Name).Message);
+        return Assert.IsType<TEvent>(envelope.DeserializeEvent());
+    }
 
     private static async Task<Guid> SeedTitleAsync(
         SqliteTestDatabase database,

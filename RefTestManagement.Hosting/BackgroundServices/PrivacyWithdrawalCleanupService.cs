@@ -1,11 +1,10 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Microsoft.EntityFrameworkCore;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 /// <summary>Reconciles incomplete withdrawal batches and clears expired or completed data.</summary>
 public sealed class PrivacyWithdrawalCleanupService(

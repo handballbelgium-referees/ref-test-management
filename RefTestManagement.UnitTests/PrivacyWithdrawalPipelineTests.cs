@@ -1,26 +1,17 @@
 using System.Collections.Concurrent;
 using System.Reflection;
 using System.Text.Json;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
-using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
-using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Lifecycle;
-using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
-using Handball.Belgium.RefTestManagement.Domain.Security;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure;
-using Handball.Belgium.RefTestManagement.Infrastructure.Queries;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Microsoft.AspNetCore.DataProtection;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 

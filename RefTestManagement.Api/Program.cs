@@ -1,45 +1,36 @@
-using Handball.Belgium.RefTestManagement.AuditLog;
-using Handball.Belgium.RefTestManagement.Auth0;
-using Handball.Belgium.RefTestManagement.Infrastructure;
-using Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
-using Handball.Belgium.RefTestManagement.Infrastructure.Services;
-using Handball.Belgium.RefTestManagement.Api;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices.JobHandlers;
-using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
-using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Api.Services;
+using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Api.Configurations;
+using Handball.Belgium.RefTestManagement.Api;
 using Handball.Belgium.RefTestManagement.Security;
+using Handball.Belgium.RefTestManagement.Hosting;
+using Handball.Belgium.RefTestManagement.Hosting.Azure;
+using Handball.Belgium.RefTestManagement.Hosting.Configurations;
+using Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.HttpsPolicy;
-using Handball.Belgium.RefTestManagement.Api.Extensions;
-using QuestPDF.Infrastructure;
 using Handball.Belgium.RefTestManagement.Api.Graphql;
-using Handball.Belgium.RefTestManagement.Domain.Jobs;
-using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using System.Threading.RateLimiting;
 using System.Net;
-using Microsoft.AspNetCore.DataProtection;
 using StackExchange.Redis;
-
-// Configure QuestPDF license
-QuestPDF.Settings.License = LicenseType.Community;
 
 var builder = WebApplication.CreateBuilder(args);
 
 var services = builder.Services;
 var configuration = builder.Configuration;
+var hostingMode = HostingModeConfiguration.GetApiMode(configuration);
+var hostingProvider = HostingProviderConfiguration.Create(
+    configuration,
+    builder.Environment,
+    [
+        new AzureHostingProviderAdapter()
+    ]);
 
 services.AddSecurityConfiguration(configuration);
 services.AddTaskBasedAuthorization();
-services.AddHttpContextAccessor();
-services.AddDataProtection().SetApplicationName("RefTestManagement");
-services.AddSingleton<TimeProvider>(TimeProvider.System);
 services.AddControllersWithViews();
 services.Configure<HstsOptions>(options => options.MaxAge = TimeSpan.FromDays(365));
 
@@ -55,78 +46,20 @@ services.AddCors(options =>
     });
 });
 
-var auditLogOptions = services.AddAuditLogging(opts =>
-{
-    var section = configuration.GetSection("AuditLogConfiguration");
-    opts.EnableCleanup = section.GetValue("EnableCleanup", true);
-    opts.CleanupIntervalHours = section.GetValue("CleanupIntervalHours", 24);
-    opts.RetentionDays = section.GetValue("RetentionDays", 90);
-
-    opts.ExcludeEntity<Job>();
-    opts.ExcludeProperty("Token");
-    opts.ExcludeProperty("KeyHash");
-    opts.ExcludeProperty("ProtectedDeliveryKey");
-    opts.ExcludeProperty("ProtectedInvitationToken");
-    opts.RegisterEntityResolver("RefTestTitle", (id, ctx) =>
-        ctx.Set<RefTestTitle>().Find(id)?.Value);
-});
-auditLogOptions.Validate();
-
-services.AddDatabaseProvider(configuration);
-
-// Add services
-services.AddValidatedConfiguration<EmailConfiguration>(configuration, "EmailConfiguration");
-var languageConfig = configuration.GetSection("LanguageConfiguration").Get<LanguageConfiguration>() ??
-                     LanguageConfiguration.CreateDefault();
-if (languageConfig.EnabledLanguages.Length == 0)
-    languageConfig = LanguageConfiguration.CreateDefault();
-languageConfig.Validate();
-
-if (string.IsNullOrEmpty(languageConfig.DefaultPhraseLanguage) ||
-    !languageConfig.EnabledLanguages.Contains(languageConfig.DefaultPhraseLanguage))
-    languageConfig.SetDefaultPhraseLanguage(languageConfig.EnabledLanguages[0]);
-
-services.AddSingleton(languageConfig);
-
-services.AddValidatedConfiguration<ScoreConfiguration>(configuration, "ScoreConfiguration");
-services.AddValidatedConfiguration<ReportConfiguration>(configuration, "ReportConfiguration");
-services.AddValidatedConfiguration<PrivacyConfiguration>(configuration, "PrivacyConfiguration", c => c.Validate());
-
-var containerAppName = configuration["CONTAINER_APP_NAME"];
-var redisConfig = services.AddValidatedConfiguration<RedisConfiguration>(
-    configuration, "RedisConfiguration", c => c.Validate(containerAppName));
-var useRedis = redisConfig.IsConfigured;
-
-var privacyChallengeConfig = services.AddValidatedConfiguration<PrivacyChallengeConfiguration>(
-    configuration, "PrivacyChallengeConfiguration");
-PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(privacyChallengeConfig, useRedis, containerAppName);
-if (useRedis)
-{
-    var endpoint = new Uri(redisConfig.Endpoint!);
-    var credentials = endpoint.UserInfo.Split(':', 2);
-    var redisOptions = new ConfigurationOptions
-    {
-        AbortOnConnectFail = false,
-        Ssl = true,
-        User = Uri.UnescapeDataString(credentials[0]),
-        Password = Uri.UnescapeDataString(credentials.Length > 1 ? credentials[1] : string.Empty),
-        ConnectTimeout = 1000,
-        AsyncTimeout = 1000,
-        SyncTimeout = 1000
-    };
-    redisOptions.EndPoints.Add(endpoint.Host, endpoint.Port);
-    services.AddSingleton<IConnectionMultiplexer>(_ => ConnectionMultiplexer.Connect(redisOptions));
-    // Registered before AddInfrastructureServices, whose in-memory lock only fills the gap.
-    services.AddSingleton<IRefTestSessionService, RedisRefTestSessionService>();
-}
+var dataProtectionKeyProtection = hostingProvider.CreateDataProtectionKeyProtection();
+var stateConfiguration = services.AddRefTestManagementHosting(
+    configuration,
+    hostingMode,
+    dataProtectionKeyProtection);
+await hostingProvider.ConfigureRedisConnectionAsync(services);
 services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>();
 
-services.AddValidatedConfiguration<RefTestExpirationConfiguration>(configuration, "RefTestExpirationConfiguration");
-services.AddValidatedConfiguration<BackgroundJobConfiguration>(configuration, "BackgroundJobConfiguration");
 var graphQlLimitsConfig = services.AddValidatedConfiguration<GraphQlLimitsConfiguration>(
     configuration, "GraphQlLimitsConfiguration");
 var forwardedHeadersConfig = services.AddValidatedConfiguration<ForwardedHeadersConfiguration>(
-    configuration, "ForwardedHeadersConfiguration", ConfigurableHeaderClientIpResolver.ValidateConfiguration);
+    configuration,
+    "ForwardedHeadersConfiguration",
+    ConfigurableHeaderClientIpResolver.ValidateConfiguration);
 services.Configure<ForwardedHeadersConfiguration>(configuration.GetSection("ForwardedHeadersConfiguration"));
 services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
 
@@ -153,33 +86,14 @@ if (graphQlLimitsConfig.EnableRateLimiting)
     });
 }
 
-services.AddInfrastructureServices();
-
-services.AddAuth0ManagementServices(configuration);
-services.AddMemoryCache();
 services.AddSingleton<IPermissionSnapshotService, PermissionSnapshotService>();
-
-// Add background services
-services.AddHostedService<PermissionSyncService>();
-services.AddHostedService<RefTestExpirationService>();
-services.AddHostedService<PrivacyRetentionService>();
-services.AddHostedService<PersonalDataExportRequestCleanupService>();
-services.AddHostedService<PrivacyWithdrawalCleanupService>();
-services.AddHostedService<BackgroundJobService>();
-
-services.AddJobHandlers();
-services.AddKeyedScoped<IJobHandler, ApprovalNotificationEmailJobHandler>(JobType.ApprovalNotificationEmail);
-if (auditLogOptions.EnableCleanup)
-{
-    services.AddHostedService<AuditLogCleanupService>();
-}
 
 services.AddIhfRulesQuestionsHttpClient(configuration["RulesQuestions:Url"]);
 
 // With Redis configured the API may run as several replicas, so subscription events must reach
 // subscribers connected to any of them; without it, in-process delivery is enough.
 var graphQlBuilder = services.AddGraphQLServer();
-if (useRedis)
+if (stateConfiguration.Mode == StateMode.Shared)
     graphQlBuilder.AddRedisSubscriptions(sp => sp.GetRequiredService<IConnectionMultiplexer>());
 else
     graphQlBuilder.AddInMemorySubscriptions();
@@ -231,6 +145,9 @@ graphQlBuilder
 
 var app = builder.Build();
 
+if (hostingMode == HostingMode.All)
+    await app.Services.MigrateRefTestManagementDatabase();
+
 var hasUnsafeForwardedHeadersRateLimitConfig =
     graphQlLimitsConfig.EnableRateLimiting &&
     forwardedHeadersConfig.KnownProxies.Length == 0 &&
@@ -279,8 +196,6 @@ foreach (var value in forwardedHeadersConfig.KnownNetworks)
 
     forwardedHeadersOptions.KnownIPNetworks.Add(new System.Net.IPNetwork(address, prefixLength));
 }
-
-await app.MigrateRefTestManagementDatabase();
 
 // Preserve the transport peer; forwarded-header middleware replaces RemoteIpAddress.
 app.Use((context, next) =>

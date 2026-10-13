@@ -35,6 +35,8 @@
         <ProjectReference Include="..\RefTestManagement.AuditLog\RefTestManagement.AuditLog.csproj" />
         <ProjectReference Include="..\RefTestManagement.Domain\RefTestManagement.Domain.csproj" />
         <ProjectReference Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Hosting\RefTestManagement.Hosting.csproj" />
+        <ProjectReference Include="..\RefTestManagement.Hosting.Azure\RefTestManagement.Hosting.Azure.csproj" />
     </ItemGroup>
 
     <ItemGroup>

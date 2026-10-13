@@ -16,6 +16,28 @@ event payloads with `***`. Erasure also replaces the actor name/email on partici
 events; retention cleanup redacts actor name/email on expired rows and archives them instead of
 deleting them. Event type, time, and other non-sensitive accountability details remain.
 
+## Data Protection key ring
+
+The API and Worker share ASP.NET Core Data Protection keys through the `DataProtectionKeys` table
+in their common application database and use the same `RefTestManagement` application name. This
+key ring protects cookie and participant credential material across process restarts and host
+boundaries. Testing and production must use separate databases/key rings.
+
+Azure App Service deployments set `Hosting:Provider=Azure`, which wraps persisted key XML with an Azure Key
+Vault key using the host's managed identity. Grant the system-assigned identity (or configured
+user-assigned identity) the **Key Vault Crypto User** role, configure an HTTPS versionless key
+identifier, and retain old Key Vault key versions while stored Data Protection keys still refer to
+them. Use the local adapter only for development; another provider must supply an equivalent key
+encryption adapter before deployment. Never commit Data Protection key material or identity
+credentials.
+
+## Azure identity and database access
+
+Azure App Service can use its managed identity with the Azure Data Protection adapter and Key
+Vault. Configure identity permissions and database access in the Azure environment; this repository
+does not provision Azure resources. Keep application database credentials separate from
+administrator credentials and require TLS certificate validation for remote database connections.
+
 ## npm Dependency Audit Gate
 
 The pull-request, beta-release, and stable-release validation workflows run
@@ -142,15 +164,16 @@ verification email. The request and confirmation operations have separate per-cl
 limits; their permit counts, window, and cleanup interval are configured under
 `PrivacyChallengeConfiguration`. Export and withdrawal verification keys expire after 24 hours by
 default; deployments may set `PrivacyChallengeKeyLifetimeHours` from 1 through 168.
-The process-local backend is safe only for a single API instance and remains the default so the
-current single-instance production deployment can operate without Redis. Before running multiple
-instances, configure shared authenticated TLS Redis and an HMAC secret; Azure Container Apps rejects
-the local backend at startup. Redis keys contain only a service/environment/operation namespace and
-an HMAC of the normalized trusted client address. Missing/unknown addresses and Redis failures deny
-the operation. A request still returns its generic acknowledgement without processing when the
-limiter is unavailable. Confirmations are denied without processing. These failures do not affect
-unrelated API operations. Proxy trust and actual client-IP resolution must be validated before
-rollout; forwarded headers are not trusted from arbitrary peers.
+The process-local backend is safe only for a single API instance. For a split API/Worker deployment
+or API scale-out, set provider-neutral `State:Mode=Shared`, configure authenticated TLS Redis, select
+the Redis rate-limit backend, and provide an HMAC secret. Worker-published Hot Chocolate events,
+participant session locks, and privacy challenge limits then use the same shared Redis connection.
+Redis keys contain only a service/environment/operation namespace and an HMAC of the normalized
+trusted client address. Missing/unknown addresses and Redis failures deny the operation. A request
+still returns its generic acknowledgement without processing when the limiter is unavailable.
+Confirmations are denied without processing. These failures do not affect unrelated API operations.
+Proxy trust and actual client-IP resolution must be validated before rollout; forwarded headers are
+not trusted from arbitrary peers.
 
 The email link is `/privacy/export-confirmation?lang=<locale>#<key>`. The initial page load must
 only display the confirmation page: the client reads the key from the fragment, removes it from

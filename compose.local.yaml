@@ -1,0 +1,194 @@
+name: rtm-local
+
+services:
+  sqlserver:
+    profiles: ['SqlServer']
+    container_name: sqlserver
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    environment:
+      ACCEPT_EULA: 'Y'
+      MSSQL_PID: Developer
+      MSSQL_SA_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}}
+    ports:
+      - '127.0.0.1:11433:1433'
+    networks:
+      default:
+        ipv4_address: 10.250.241.10
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+
+  postgresql:
+    profiles: ['PostgreSQL']
+    container_name: postgresql
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_DB: RefTestManagement
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}}
+    ports:
+      - '127.0.0.1:15432:5432'
+    networks:
+      default:
+        ipv4_address: 10.250.241.10
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+
+  mysql:
+    profiles: ['MySQL']
+    container_name: mysql
+    image: mysql:9.7.2
+    environment:
+      MYSQL_DATABASE: RefTestManagement
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}}
+    ports:
+      - '127.0.0.1:13306:3306'
+    networks:
+      default:
+        ipv4_address: 10.250.241.10
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+  redis:
+    container_name: redis
+    image: redis:8.10.2-alpine
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}
+    command:
+      - redis-server
+      - --port
+      - '0'
+      - --tls-port
+      - '6380'
+      - --tls-cert-file
+      - /run/redis-certs/redis.crt
+      - --tls-key-file
+      - /run/redis-certs/redis.key
+      - --tls-ca-cert-file
+      - /run/redis-certs/redis-ca.crt
+      - --tls-auth-clients
+      - 'no'
+      - --requirepass
+      - ${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}
+    volumes:
+      - ./infra/local/certs:/run/redis-certs:ro
+    networks:
+      default:
+        ipv4_address: 10.250.241.11
+
+  migrate:
+    container_name: migration-container
+    image: localhost/ref-test-management-worker:local
+    command: ['--migrate']
+    restart: 'no'
+    extra_hosts:
+      - 'database:10.250.241.10'
+    volumes:
+      - sqlite-data:/var/lib/ref-test-management
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      DatabaseProvider: ${DATABASE_PROVIDER:-SqlServer}
+      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
+
+  sqlite-init:
+    profiles: ['SQLite']
+    container_name: sqlite-volume-init
+    image: localhost/ref-test-management-worker:local
+    user: '0:0'
+    entrypoint: ['chown']
+    command: ['-R', 'app', '/var/lib/ref-test-management']
+    restart: 'no'
+    volumes:
+      - sqlite-data:/var/lib/ref-test-management
+
+  api:
+    container_name: application
+    image: localhost/ref-test-management-api:local
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    extra_hosts:
+      - 'redis:10.250.241.11'
+      - 'database:10.250.241.10'
+    networks:
+      default:
+        ipv4_address: 10.250.241.12
+    volumes:
+      - ./infra/local/user-secrets:/home/app/.microsoft/usersecrets:ro
+      - ./infra/local/certs/redis-ca-bundle.crt:/etc/ssl/certs/ca-certificates.crt:ro
+      - sqlite-data:/var/lib/ref-test-management
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Hosting__Provider: Local
+      Hosting__Mode: ${API_HOSTING_MODE:-Api}
+      State__Mode: Shared
+      DatabaseProvider: ${DATABASE_PROVIDER:-SqlServer}
+      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
+      RedisConfiguration__AuthenticationMode: Password
+      RedisConfiguration__Endpoint: 'rediss://:${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}@redis:6380'
+      PrivacyChallengeConfiguration__RateLimitBackend: Redis
+      PrivacyChallengeConfiguration__HmacSecret: ${PRIVACY_CHALLENGE_HMAC_SECRET:?Run uv run --script infra/local/start.py to generate local settings}
+      EmailConfiguration__BaseUrl: https://localhost:7039
+      EmailConfiguration__LogoBaseUrl: http://10.250.241.12:8080
+      ASPNETCORE_URLS: http://+:8080
+
+  https-proxy:
+    container_name: https-proxy
+    image: caddy:2-alpine
+    pull_policy: missing
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_started
+    ports:
+      - '127.0.0.1:7039:443'
+    volumes:
+      - ./infra/local/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./infra/local/certs/localhost.crt:/certs/localhost.crt:ro
+      - ./infra/local/certs/localhost.key:/certs/localhost.key:ro
+
+  worker:
+    container_name: worker
+    image: localhost/ref-test-management-worker:local
+    pull_policy: never
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      redis:
+        condition: service_started
+    extra_hosts:
+      - 'redis:10.250.241.11'
+      - 'database:10.250.241.10'
+    volumes:
+      - ./infra/local/user-secrets:/home/app/.microsoft/usersecrets:ro
+      - ./infra/local/certs/redis-ca-bundle.crt:/etc/ssl/certs/ca-certificates.crt:ro
+      - sqlite-data:/var/lib/ref-test-management
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      Hosting__Provider: Local
+      Hosting__Mode: Worker
+      DOTNET_ENVIRONMENT: Development
+      State__Mode: Shared
+      DatabaseProvider: ${DATABASE_PROVIDER:-SqlServer}
+      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
+      RedisConfiguration__AuthenticationMode: Password
+      RedisConfiguration__Endpoint: 'rediss://:${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}@redis:6380'
+      PrivacyChallengeConfiguration__RateLimitBackend: Redis
+      PrivacyChallengeConfiguration__HmacSecret: ${PRIVACY_CHALLENGE_HMAC_SECRET:?Run uv run --script infra/local/start.py to generate local settings}
+      EmailConfiguration__BaseUrl: https://localhost:7039
+      EmailConfiguration__LogoBaseUrl: http://10.250.241.12:8080
+
+volumes:
+  sqlserver-data:
+  postgresql-data:
+  mysql-data:
+  sqlite-data:
+
+networks:
+  default:
+    external: true
+    name: rtm-local-nodns

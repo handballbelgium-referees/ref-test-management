@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 /// <summary>
 /// Runs <see cref="RunOnceAsync"/> on a fixed interval until the host stops. A failed pass is

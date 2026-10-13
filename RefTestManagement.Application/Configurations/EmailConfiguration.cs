@@ -5,6 +5,7 @@ namespace Handball.Belgium.RefTestManagement.Application.Configurations;
 public class EmailConfiguration
 {
     public string BaseUrl { get; init; } = "http://localhost:5000";
+    public string LogoBaseUrl { get; init; } = string.Empty;
     public string BrevoApiKey { get; init; } = string.Empty;
     public string BrevoApiUrl { get; init; } = "https://api.brevo.com/v3";
     public string FromEmail { get; init; } = string.Empty;
@@ -12,4 +13,3 @@ public class EmailConfiguration
     [Range(0, int.MaxValue)]
     public int ScheduledDelayMinutes { get; init; } = 0;
 }
-

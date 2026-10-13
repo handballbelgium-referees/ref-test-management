@@ -3,7 +3,7 @@ using Handball.Belgium.RefTestManagement.Migrations.PostgreSQL;
 using Handball.Belgium.RefTestManagement.Migrations.SqlServer;
 using Handball.Belgium.RefTestManagement.Migrations.SQLite;
 
-namespace Handball.Belgium.RefTestManagement.Api.Extensions;
+namespace Handball.Belgium.RefTestManagement.Hosting;
 
 public static class DatabaseServiceExtensions
 {
@@ -17,8 +17,8 @@ public static class DatabaseServiceExtensions
             "PostgreSQL"        => services.AddPostgreSqlDatabase(configuration),
             "SQLite"            => services.AddSqliteDatabase(configuration),
             "MySQL"             => services.AddMySqlDatabase(configuration),
-            var p               => throw new InvalidOperationException(
-                $"Unknown DatabaseProvider '{p}'. Valid values: SqlServer, PostgreSQL, SQLite, MySQL.")
+            var provider        => throw new InvalidOperationException(
+                $"Unknown DatabaseProvider '{provider}'. Valid values: SqlServer, PostgreSQL, SQLite, MySQL.")
         };
     }
 }

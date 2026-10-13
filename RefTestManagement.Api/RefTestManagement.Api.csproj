@@ -6,6 +6,10 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>8d0886dd-8107-4fe0-9f5a-9526b2cb0681</UserSecretsId>
         <RootNamespace>Handball.Belgium.RefTestManagement.Api</RootNamespace>
+        <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+        <ContainerImageFormat>OCI</ContainerImageFormat>
+        <ContainerRepository>ref-test-management-api</ContainerRepository>
+        <ContainerUser>app</ContainerUser>
     </PropertyGroup>
 
     <ItemGroup>
@@ -14,13 +18,9 @@
         <ProjectReference
             Include="..\RefTestManagement.Infrastructure\RefTestManagement.Infrastructure.csproj" />
         <ProjectReference
-            Include="..\RefTestManagement.Migrations.MySQL\RefTestManagement.Migrations.MySQL.csproj" />
+            Include="..\RefTestManagement.Hosting\RefTestManagement.Hosting.csproj" />
         <ProjectReference
-            Include="..\RefTestManagement.Migrations.PostgreSQL\RefTestManagement.Migrations.PostgreSQL.csproj" />
-        <ProjectReference
-            Include="..\RefTestManagement.Migrations.SQLite\RefTestManagement.Migrations.SQLite.csproj" />
-        <ProjectReference
-            Include="..\RefTestManagement.Migrations.SqlServer\RefTestManagement.Migrations.SqlServer.csproj" />
+            Include="..\RefTestManagement.Hosting.Azure\RefTestManagement.Hosting.Azure.csproj" />
         <ProjectReference Include="..\RefTestManagement.Security\RefTestManagement.Security.csproj" />
     </ItemGroup>
 
@@ -51,5 +51,10 @@
         <!-- Application ports, moved out of Infrastructure.Services, without a using in every consumer. -->
         <Using Include="Handball.Belgium.RefTestManagement.Application.Abstractions" />
         <Using Include="Handball.Belgium.RefTestManagement.Infrastructure.Privacy" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ContainerPort Include="8080" Type="tcp" />
+        <ContainerEnvironmentVariable Include="ASPNETCORE_URLS" Value="http://+:8080" />
     </ItemGroup>
 </Project>

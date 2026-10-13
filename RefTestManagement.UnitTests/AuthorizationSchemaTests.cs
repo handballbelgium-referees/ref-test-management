@@ -6,16 +6,12 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.Mutations.Privacy;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Security;
-using HotChocolate.AspNetCore;
 using HotChocolate.Authorization;
 using HotChocolate.Execution;
 using HotChocolate.Types;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 

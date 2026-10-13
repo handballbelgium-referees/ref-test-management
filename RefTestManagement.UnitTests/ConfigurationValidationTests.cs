@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Configurations;
+using Handball.Belgium.RefTestManagement.Hosting.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
 using Microsoft.Extensions.Configuration;
@@ -27,7 +28,9 @@ public sealed class ConfigurationValidationTests
         services.AddValidatedConfiguration<EmailConfiguration>(empty, "EmailConfiguration");
         services.AddValidatedConfiguration<GraphQlLimitsConfiguration>(empty, "GraphQlLimitsConfiguration");
         services.AddValidatedConfiguration<PrivacyChallengeConfiguration>(empty, "PrivacyChallengeConfiguration");
-        services.AddValidatedConfiguration<RedisConfiguration>(empty, "RedisConfiguration", c => c.Validate(null));
+        services.AddValidatedConfiguration<StateConfiguration>(
+            empty, "State", c => c.Validate(new RedisConfiguration(), new PrivacyChallengeConfiguration()));
+        services.AddValidatedConfiguration<RedisConfiguration>(empty, "RedisConfiguration", c => c.Validate());
         services.AddValidatedConfiguration<PrivacyConfiguration>(empty, "PrivacyConfiguration", c => c.Validate());
         services.AddValidatedConfiguration<ReportConfiguration>(empty, "ReportConfiguration");
         services.AddValidatedConfiguration<ScoreConfiguration>(empty, "ScoreConfiguration");

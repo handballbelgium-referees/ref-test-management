@@ -4,7 +4,7 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 /// <summary>
 /// Enforces the layered dependency rule recorded in <c>docs/adr/0001-layered-architecture.md</c>:
-/// Domain ← Application ← Infrastructure / Api, with Api as the composition root.
+/// Domain ← Application ← Infrastructure, with Hosting, Api, and Worker as composition projects.
 /// </summary>
 /// <remarks>
 /// The checks read the <c>.csproj</c> files rather than compiled assembly metadata. The compiler
@@ -15,8 +15,8 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 public sealed class ArchitectureDependencyTests
 {
     /// <summary>
-    /// The project references each layer may declare. Api (composition root) and the test project
-    /// are deliberately absent: they may reference anything.
+    /// The project references each layer may declare. Hosting and Worker are composition projects
+    /// with explicit boundaries; Api and the test project are deliberately absent.
     /// </summary>
     private static readonly Dictionary<string, string[]> AllowedProjectReferences = new()
     {
@@ -31,6 +31,24 @@ public sealed class ArchitectureDependencyTests
         ["RefTestManagement.Migrations.PostgreSQL"] = ["RefTestManagement.Infrastructure"],
         ["RefTestManagement.Migrations.SQLite"] = ["RefTestManagement.Infrastructure"],
         ["RefTestManagement.Migrations.MySQL"] = ["RefTestManagement.Infrastructure"],
+        ["RefTestManagement.Hosting"] =
+        [
+            "RefTestManagement.Application",
+            "RefTestManagement.AuditLog",
+            "RefTestManagement.Auth0",
+            "RefTestManagement.Infrastructure",
+            "RefTestManagement.Migrations.MySQL",
+            "RefTestManagement.Migrations.PostgreSQL",
+            "RefTestManagement.Migrations.SQLite",
+            "RefTestManagement.Migrations.SqlServer",
+            "RefTestManagement.Security",
+        ],
+        ["RefTestManagement.Worker"] =
+            [
+                "RefTestManagement.Hosting",
+                "RefTestManagement.Hosting.Azure",
+            ],
+        ["RefTestManagement.Hosting.Azure"] = ["RefTestManagement.Hosting"],
     };
 
     /// <summary>

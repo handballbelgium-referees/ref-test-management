@@ -1,5 +1,4 @@
 using ClosedXML.Excel;
-using Handball.Belgium.RefTestManagement.Application.Services;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure.Services.Reports;
 

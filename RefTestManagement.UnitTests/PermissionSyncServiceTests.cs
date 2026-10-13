@@ -1,5 +1,5 @@
 using System.Net;
-using Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 using Handball.Belgium.RefTestManagement.Auth0.Configurations;
 using Handball.Belgium.RefTestManagement.Auth0.Models;
 using Handball.Belgium.RefTestManagement.Auth0.Services;

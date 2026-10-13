@@ -2,8 +2,6 @@ using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
-using Microsoft.AspNetCore.TestHost;
-using Microsoft.Extensions.Hosting;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -90,19 +88,13 @@ public sealed class PrivacyWithdrawalGetRequestTests
         {
             builder.UseEnvironment("Testing");
             builder.UseWebRoot(webRootPath);
-            builder.ConfigureTestServices(services =>
-            {
-                // Do not start the production background workers against the throwaway test database.
-                foreach (var descriptor in services
-                             .Where(descriptor =>
-                                 descriptor.ServiceType == typeof(IHostedService) &&
-                                 descriptor.ImplementationType?.Assembly ==
-                                 typeof(global::Program).Assembly)
-                             .ToArray())
-                {
-                    services.Remove(descriptor);
-                }
-            });
+            builder.UseSetting("Hosting:Mode", "Api");
+            builder.UseSetting("Hosting:Provider", "Azure");
+            builder.UseSetting(
+                "Azure:KeyVault:DataProtectionKeyIdentifier",
+                "https://vault.example/keys/test-key");
+            builder.UseSetting("DatabaseProvider", "SQLite");
+            builder.UseSetting("ConnectionStrings:RefTestManagement", "Data Source=:memory:");
         }
     }
 

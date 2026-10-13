@@ -151,11 +151,17 @@ flowchart TB
 
     subgraph Api["RefTestManagement.Api (.NET 10)"]
         GQL["Hot Chocolate GraphQL server"]
-        BG["Background services"]
+        BG["Background services in All mode"]
+    end
+
+    subgraph Worker["RefTestManagement.Worker (.NET 10)"]
+        WorkerBG["Background services in Worker mode"]
     end
 
     subgraph Layers["Backend layers (arrows = project references)"]
         Infrastructure["Infrastructure"]
+        Hosting["Hosting"]
+        AzureHosting["Hosting.Azure"]
         Application["Application"]
         Domain["Domain"]
         AuditLog["AuditLog"]
@@ -174,7 +180,17 @@ flowchart TB
     UI -->|"GraphQL over HTTP/SSE"| GQL
     UI -->|"OIDC login / cookie session"| A0
     Api --> Infrastructure
-    Api --> Migrations
+    Api --> Hosting
+    Worker --> Hosting
+    Api --> AzureHosting
+    Worker --> AzureHosting
+    AzureHosting --> Hosting
+    Hosting --> Migrations
+    Hosting --> Infrastructure
+    Hosting --> Application
+    Hosting --> AuditLog
+    Hosting --> Auth0Proj
+    Hosting --> Security
     Api --> Security
     Api --> Auth0Proj
     Api --> AuditLog
@@ -193,7 +209,10 @@ flowchart TB
 
 | Project                            | Role                                                                                            |
 | ---------------------------------- | ----------------------------------------------------------------------------------------------- |
-| `RefTestManagement.Api`            | ASP.NET Core Web API — GraphQL schema, controllers, background services                         |
+| `RefTestManagement.Api`            | ASP.NET Core GraphQL API and composition root; hosts background services in combined (`All`) mode |
+| `RefTestManagement.Worker`         | Background-service entry point for split API/Worker deployments and one-shot migrations          |
+| `RefTestManagement.Hosting`        | Shared process composition, `IHostingProviderAdapter` contract, hosting modes, database and state registration |
+| `RefTestManagement.Hosting.Azure`  | Azure Key Vault Data Protection and managed-identity Redis adapter implementation                  |
 | `RefTestManagement.Application`    | Use-case handlers, ports, configuration models and job payloads (see ADR 0001)                  |
 | `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
 | `RefTestManagement.Infrastructure` | EF Core, job handlers, email (Brevo), PDF/Excel generation, subscriptions, IHF client           |
@@ -203,6 +222,12 @@ flowchart TB
 | `RefTestManagement.Ui`             | Angular 22 SPA — Apollo Client, GraphQL Codegen, Tailwind CSS, PWA                              |
 
 The allowed dependency direction is recorded in [ADR 0001](docs/adr/0001-layered-architecture.md) and enforced by `ArchitectureDependencyTests`.
+
+`Hosting:Mode` selects `All` (one API process with background services), `Api` (HTTP only), or
+`Worker` (background services only). A deployment can run `All` or split `Api` and `Worker`
+processes without changing domain/application settings. `Hosting:Provider` selects host-specific
+adapters; `State:Mode` remains provider-neutral. See [ADR 0003](docs/adr/0003-container-hosting.md)
+and the [deployment guide](docs/DEPLOYMENT.md).
 
 ## Getting Started
 
@@ -287,7 +312,9 @@ cd RefTestManagement.Ui && npm test             # frontend
 
 ## Background Services
 
-Five hosted services run in-process — no extra infrastructure or cost on Azure.
+Five hosted services run in the API process in `All` mode, or in the separate Worker process in
+split mode. The SQL job queue remains durable in either topology; split mode additionally requires
+shared Redis for subscriptions, participant session locks, and privacy challenge rate limits.
 
 | Service                    | Runs          | Purpose                                                                  |
 | -------------------------- | ------------- | ------------------------------------------------------------------------ |
@@ -310,11 +337,15 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 
 ## Deployment
 
-| Workflow             | Trigger                | Purpose                                                                                                         |
-| -------------------- | ---------------------- | --------------------------------------------------------------------------------------------------------------- |
-| `pr.yml`             | PR → `main`            | Build/test validation + i18n parity + AI workflow consistency                                                    |
-| `beta-release.yml`   | push → `main`          | Publishes a pre-release and deploys to testing when commit rules select a release                               |
-| `stable-release.yml` | manual, from `release` | Promote; update badges before tagging the validated candidate; fast-forward `main` before production deployment |
+| Workflow                           | Trigger                    | Purpose                                                                                                            |
+| ---------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| `pr.yml`                           | PR → `main`                | Build/test validation, i18n parity, SDK container-archive checks, and AI consistency             |
+| `beta-release.yml`                 | push → `main`              | Publishes an alpha pre-release and deploys to Azure App Service testing                           |
+| `stable-release.yml`               | manual, from `release`     | Promotes the candidate and deploys to Azure App Service production                               |
+
+Azure App Service infrastructure is managed outside this repository. Local Podman Compose assets
+support development and do not provision cloud resources. See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) before configuring a deployment.
 
 ## Versioning
 
@@ -328,10 +359,12 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 | [docs/SECURITY.md](docs/SECURITY.md)                                           | Auth0 setup, full permission reference, suggested roles    |
 | [docs/PRIVACY.md](docs/PRIVACY.md)                                             | GDPR data flows, retention, erasure, data-subject requests |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md)                                 | Full `appsettings.json` reference                          |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                                       | App Service and local deployment procedures               |
 | [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)                         | Annotated directory tree                                   |
 | [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md)                   | Background job-queue flow in detail                        |
 | [docs/adr/0001-layered-architecture.md](docs/adr/0001-layered-architecture.md) | Backend dependency rule, known violations                  |
 | [docs/adr/0002-multi-replica-state.md](docs/adr/0002-multi-replica-state.md)   | Redis-backed shared state, event delivery, email retries   |
+| [docs/adr/0003-container-hosting.md](docs/adr/0003-container-hosting.md)       | Provider-neutral combined/split container hosting          |
 
 ## License
 

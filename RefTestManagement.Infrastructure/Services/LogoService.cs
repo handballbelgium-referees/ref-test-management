@@ -13,7 +13,10 @@ public class LogoService(ILogger<LogoService> logger, EmailConfiguration configu
         if (_cachedLogoBytes != null)
             return _cachedLogoBytes;
 
-        var logoUrl = $"{configuration.BaseUrl}/RefTest-logo.png";
+        var logoBaseUrl = string.IsNullOrWhiteSpace(configuration.LogoBaseUrl)
+            ? configuration.BaseUrl
+            : configuration.LogoBaseUrl;
+        var logoUrl = $"{logoBaseUrl.TrimEnd('/')}/RefTest-logo.png";
         try
         {
             _cachedLogoBytes = await httpClient.GetByteArrayAsync(logoUrl, cancellationToken);

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text;
 
 namespace Handball.Belgium.RefTestManagement.Application.Configurations;
 
@@ -34,6 +35,20 @@ public sealed class PrivacyChallengeConfiguration
     /// <summary>How often withdrawal batches are reconciled and expired or completed data is cleared, in minutes.</summary>
     [Range(1, int.MaxValue)]
     public int CleanupIntervalMinutes { get; init; } = 15;
+
+    public void Validate(bool redisConfigured)
+    {
+        if (!Enum.IsDefined(RateLimitBackend))
+            throw new InvalidOperationException(
+                "PrivacyChallengeConfiguration:RateLimitBackend must be Local or Redis.");
+
+        if (RateLimitBackend == PrivacyChallengeRateLimitBackend.Redis &&
+            (!redisConfigured ||
+             string.IsNullOrWhiteSpace(HmacSecret) ||
+             Encoding.UTF8.GetByteCount(HmacSecret) < 32))
+            throw new InvalidOperationException(
+                "The Redis privacy challenge rate-limit backend requires RedisConfiguration:Endpoint and an HMAC secret of at least 32 UTF-8 bytes.");
+    }
 }
 
 public enum PrivacyChallengeRateLimitBackend

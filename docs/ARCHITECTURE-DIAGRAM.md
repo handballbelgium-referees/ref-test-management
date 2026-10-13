@@ -4,7 +4,10 @@ Detailed flow diagrams for the background services and authorization system refe
 
 ## Background Services Overview
 
-All five hosted services run in-process alongside the API — no extra Azure resources or cost.
+In `Hosting:Mode=All`, the five hosted services run in the API process. In split mode the API
+serves HTTP while the Worker process runs them. The SQL-backed job queue is durable in both
+topologies; split mode also requires shared Redis for subscriptions, participant session locks, and
+privacy challenge limits.
 
 ```mermaid
 flowchart LR
@@ -27,6 +30,28 @@ flowchart LR
     ALCS -->|soft-archives| AuditEvents
     PSS -->|syncs permission list to| Auth0API
 ```
+
+## Hosting targets
+
+`Hosting:Mode` and `State:Mode` are provider-neutral. Azure App Service runs the API and can use
+`All` or split API/Worker processes; split mode requires shared state. Local Podman Compose
+supports development.
+
+```mermaid
+flowchart LR
+    Client["Browser / SPA"]
+    subgraph AppService["Azure App Service"]
+        AppServiceApi["API\nAll or Api"]
+        AppServiceWorker["Worker\nsplit mode"]
+        AppServiceData[("Configured database and shared services")]
+        AppServiceApi --> AppServiceData
+        AppServiceWorker --> AppServiceData
+    end
+    Client --> AppServiceApi
+```
+
+Azure App Service infrastructure is managed outside this repository. See
+[the deployment guide](DEPLOYMENT.md).
 
 ## Job Queue Flow (`BackgroundJobService`)
 

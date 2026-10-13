@@ -1,0 +1,4 @@
+https://localhost {
+	tls /certs/localhost.crt /certs/localhost.key
+	reverse_proxy 10.250.241.12:8080
+}

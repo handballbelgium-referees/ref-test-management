@@ -4,7 +4,7 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
 using Microsoft.EntityFrameworkCore;
 
-namespace Handball.Belgium.RefTestManagement.Api.BackgroundServices;
+namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 public class AuditLogCleanupService(
     IServiceProvider serviceProvider,

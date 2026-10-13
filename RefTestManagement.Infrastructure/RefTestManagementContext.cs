@@ -4,12 +4,13 @@ using Handball.Belgium.RefTestManagement.Domain.Privacy;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure.Configurations;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace Handball.Belgium.RefTestManagement.Infrastructure;
 
 public class RefTestManagementContext(DbContextOptions<RefTestManagementContext> options)
-    : DbContext(options), IJobPersistenceContext
+    : DbContext(options), IJobPersistenceContext, IDataProtectionKeyContext
 {
     public DbSet<RefTest> RefTests { get; set; } = null!;
     public DbSet<RefTestTitle> RefTestTitles { get; set; } = null!;
@@ -19,6 +20,7 @@ public class RefTestManagementContext(DbContextOptions<RefTestManagementContext>
     public DbSet<PrivacyWithdrawalBatch> PrivacyWithdrawalBatches { get; set; } = null!;
     public DbSet<PrivacyWithdrawalBatchTarget> PrivacyWithdrawalBatchTargets { get; set; } = null!;
     public DbSet<AuditEvent> AuditEvents { get; set; } = null!;
+    public DbSet<DataProtectionKey> DataProtectionKeys { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

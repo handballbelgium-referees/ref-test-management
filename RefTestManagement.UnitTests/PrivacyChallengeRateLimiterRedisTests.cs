@@ -96,22 +96,22 @@ public sealed class PrivacyChallengeRateLimiterRedisTests
     public void RedisBackendRequiresTheSharedEndpointAndStrongHmacSecret()
     {
         Assert.Throws<InvalidOperationException>(() =>
-            PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(new PrivacyChallengeConfiguration
+            new PrivacyChallengeConfiguration
             {
                 RateLimitBackend = PrivacyChallengeRateLimitBackend.Redis,
                 HmacSecret = new string('x', 32)
-            }, redisConfigured: false, null));
+            }.Validate(redisConfigured: false));
         Assert.Throws<InvalidOperationException>(() =>
-            PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(new PrivacyChallengeConfiguration
+            new PrivacyChallengeConfiguration
             {
                 RateLimitBackend = PrivacyChallengeRateLimitBackend.Redis,
                 HmacSecret = "short"
-            }, redisConfigured: true, null));
-        PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(new PrivacyChallengeConfiguration
+            }.Validate(redisConfigured: true));
+        new PrivacyChallengeConfiguration
         {
             RateLimitBackend = PrivacyChallengeRateLimitBackend.Redis,
             HmacSecret = new string('x', 32)
-        }, redisConfigured: true, null);
+        }.Validate(redisConfigured: true);
     }
 
     [Theory]
@@ -122,15 +122,33 @@ public sealed class PrivacyChallengeRateLimiterRedisTests
     public void RedisEndpointMustBeAuthenticatedTls(string endpoint)
     {
         Assert.Throws<InvalidOperationException>(() =>
-            new RedisConfiguration { Endpoint = endpoint }.Validate(null));
+            new RedisConfiguration { Endpoint = endpoint }.Validate());
     }
 
     [Fact]
-    public void RedisEndpointIsOptionalExceptOnContainerApps()
+    public void RedisEndpointIsOptionalUntilSharedStateOrRedisRateLimitingIsSelected()
     {
-        new RedisConfiguration().Validate(null);
-        new RedisConfiguration { Endpoint = "rediss://:password@localhost:6379" }.Validate("ref-test-api");
-        Assert.Throws<InvalidOperationException>(() => new RedisConfiguration().Validate("ref-test-api"));
+        var localState = new StateConfiguration();
+        var localPrivacyChallenge = new PrivacyChallengeConfiguration();
+        var noRedis = new RedisConfiguration();
+        noRedis.Validate();
+        localState.Validate(noRedis, localPrivacyChallenge);
+
+        var sharedState = new StateConfiguration { Mode = StateMode.Shared };
+        Assert.Throws<InvalidOperationException>(() => sharedState.Validate(noRedis, localPrivacyChallenge));
+
+        var redis = new RedisConfiguration { Endpoint = "rediss://:password@localhost:6379" };
+        redis.Validate();
+        Assert.Throws<InvalidOperationException>(() => sharedState.Validate(
+            redis,
+            new PrivacyChallengeConfiguration()));
+        sharedState.Validate(
+            redis,
+            new PrivacyChallengeConfiguration
+            {
+                RateLimitBackend = PrivacyChallengeRateLimitBackend.Redis,
+                HmacSecret = new string('x', 32)
+            });
     }
 
     [Fact]
@@ -146,21 +164,19 @@ public sealed class PrivacyChallengeRateLimiterRedisTests
     }
 
     [Fact]
-    public void ContainerAppsRequiresSharedRedisBackend()
+    public void SharedStateRequiresRedisBackedPrivacyRateLimiting()
     {
         Assert.Throws<InvalidOperationException>(() =>
-            PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(
-                new PrivacyChallengeConfiguration(),
-                redisConfigured: true,
-                "ref-test-api"));
-        PrivacyChallengeRateLimiter.ValidateRateLimitConfiguration(
+            new StateConfiguration { Mode = StateMode.Shared }.Validate(
+                new RedisConfiguration { Endpoint = "rediss://:password@localhost:6379" },
+                new PrivacyChallengeConfiguration()));
+        new StateConfiguration { Mode = StateMode.Shared }.Validate(
+            new RedisConfiguration { Endpoint = "rediss://:password@localhost:6379" },
             new PrivacyChallengeConfiguration
             {
                 RateLimitBackend = PrivacyChallengeRateLimitBackend.Redis,
                 HmacSecret = new string('x', 32)
-            },
-            redisConfigured: true,
-            "ref-test-api");
+            });
     }
 
     [Fact]

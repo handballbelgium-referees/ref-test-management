@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
-import { chmodSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
@@ -11,23 +11,17 @@ import releaseConfig from '../.releaserc.mjs';
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const SCRIPT = join(ROOT, 'scripts/generate-badges.mjs');
 const WORKFLOWS = Object.fromEntries(
-  ['beta-release', 'stable-release', 'pr', 'codeql'].map((name) => {
+  [
+    'beta-release',
+    'stable-release',
+    'pr',
+    'codeql',
+  ].map((name) => {
     const path = join(ROOT, `.github/workflows/${name}.yml`);
     const source = readFileSync(path, 'utf8');
     return [name, { source, workflow: yaml.load(source) }];
   }),
 );
-const PROVENANCE_FIELDS = [
-  'node-version',
-  'npm-version',
-  'dotnet-sdk-version',
-  'dotnet-sdks',
-  'dotnet-runtimes',
-  'runner-os',
-  'runner-arch',
-  'runner-image-os',
-  'runner-image-version',
-];
 
 function git(cwd, args) {
   return execFileSync('git', args, { cwd, encoding: 'utf8' }).trim();
@@ -97,6 +91,29 @@ test('workflow YAML preserves triggers, read-only fork README sync, and stable d
     contents: 'read',
     actions: 'read',
   });
+  assert.equal(stable.jobs['deploy-production'].environment.name, 'production');
+  assert.equal(beta.jobs['deploy-testing'].environment.name, 'testing');
+  for (const [workflowEntry, appServiceJob] of [
+    [WORKFLOWS['beta-release'], 'deploy-testing'],
+    [WORKFLOWS['stable-release'], 'deploy-production'],
+  ]) {
+    const { source, workflow } = workflowEntry;
+    assert.equal(workflow.jobs[appServiceJob].if, "needs.release.outputs.new-release-published == 'true'");
+    assert.equal(workflow.jobs.validate.outputs['validated-sha'], '${{ steps.candidate.outputs.sha }}');
+    assert.doesNotMatch(source, /cloudflare|CONTAINER_DEPLOYMENT_TARGET|terraform/i);
+  }
+  assert.equal(
+    beta.jobs['deploy-testing'].steps.find((step) => step.name === '🚀 Deploy to Azure Web App (Testing)').uses,
+    'azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383',
+  );
+  assert.equal(
+    stable.jobs['deploy-production'].steps.find((step) => step.name === '🚀 Deploy to Azure Web App (Production)').uses,
+    'azure/webapps-deploy@02a81bead70021f5284939794bcec79c271ab383',
+  );
+  assert.doesNotMatch(
+    `${WORKFLOWS['beta-release'].source}\n${WORKFLOWS['stable-release'].source}`,
+    /az containerapp|wrangler deploy/,
+  );
 
   const readmeSync = pr.jobs['sync-readme-versions'];
   assert.match(readmeSync.if, /head\.repo\s*!=\s*null/);
@@ -106,68 +123,39 @@ test('workflow YAML preserves triggers, read-only fork README sync, and stable d
   assert.equal(readmeSync.steps[0].with['persist-credentials'], false);
 });
 
-test('release workflows pin tool versions and record and verify complete build provenance', () => {
-  for (const name of ['beta-release', 'stable-release']) {
-    const { source, workflow } = WORKFLOWS[name];
-    assert.equal(workflow.env.NODE_VERSION, '24.20.0');
-    assert.equal(workflow.env.DOTNET_VERSION, '10.0.303');
-
-    const build = workflow.jobs.build;
-    const publish = build.steps.find((step) => step.id === 'publish');
-    const deployJob = Object.values(workflow.jobs).find((job) =>
-      job.steps?.some((step) => step.name === '🔒 Verify deployment artifact provenance'),
-    );
-    const deploy = deployJob?.steps.find((step) => step.name === '🔒 Verify deployment artifact provenance');
-    assert.ok(publish);
-    assert.ok(deploy);
-    assert.equal(build.outputs['application-sha256'], '${{ steps.publish.outputs.application-sha256 }}');
-    assert.match(publish.run, /APPLICATION_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
-    assert.equal((publish.run.match(/application-sha256=%s/g) ?? []).length, 2);
-    assert.match(
-      publish.run,
-      /\{\n\s+printf 'application-sha256=%s\\n' "\$APPLICATION_SHA256"[\s\S]*?\} >> "\$GITHUB_OUTPUT"/,
-    );
-    assert.equal(deploy.env.BUILD_APPLICATION_SHA256, '${{ needs.build.outputs.application-sha256 }}');
-    assert.match(deploy.run, /ACTUAL_APPLICATION_SHA256=.*find \. -type f -print0 \| LC_ALL=C sort -z/);
-    assert.match(deploy.run, /"\$BUILD_APPLICATION_SHA256" != "\$ACTUAL_APPLICATION_SHA256"/);
-    assert.ok(
-      deployJob.steps.findIndex((step) => step.name === '🔒 Verify deployment artifact provenance') <
-        deployJob.steps.findIndex((step) => step.name === '🔑 Azure Login'),
-      `${name} must verify the artifact before cloud authentication`,
-    );
-
-    const uiInstallJobs = Object.values(workflow.jobs).filter((job) =>
-      job.steps?.some(
-        (step) => step['working-directory'] === './RefTestManagement.Ui' && step.run === 'npm ci',
-      ),
-    );
-    assert.ok(uiInstallJobs.length > 0);
-    for (const job of uiInstallJobs) {
-      const npmSetupIndex = job.steps.findIndex((step) => step.name === '📦 Install and verify npm 12.2.0');
-      const uiInstallIndex = job.steps.findIndex(
-        (step) => step['working-directory'] === './RefTestManagement.Ui' && step.run === 'npm ci',
-      );
-      assert.ok(npmSetupIndex >= 0 && npmSetupIndex < uiInstallIndex);
-      assert.match(job.steps[npmSetupIndex].run, /npm install --global npm@12\.2\.0/);
-      assert.match(job.steps[npmSetupIndex].run, /ACTUAL_NPM_VERSION="\$\(npm --version\)"/);
-      assert.match(
-        job.steps[npmSetupIndex].run,
-        /if \[ "\$ACTUAL_NPM_VERSION" != "12\.2\.0" \]; then[\s\S]*?exit 1/,
-      );
-    }
-
-    for (const field of PROVENANCE_FIELDS) {
-      assert.equal(build.outputs[field], `\${{ steps.publish.outputs.${field} }}`);
-      assert.ok(publish.run.includes(`${field}=%s`), `${name} must write ${field} to the artifact`);
-      const envName = `BUILD_${field.replaceAll('-', '_').toUpperCase()}`;
-      assert.equal(deploy.env[envName], `\${{ needs.build.outputs.${field} }}`);
-      assert.ok(deploy.run.includes(`"$${envName}"`), `${name} must compare ${field} during deployment`);
-    }
-    assert.match(publish.run, /dotnet --list-sdks/);
-    assert.match(publish.run, /dotnet --list-runtimes/);
-    assert.match(publish.run, /ImageVersion/);
-    assert.match(source, /node-version: \$\{\{ env\.NODE_VERSION \}\}/);
+test('Cloudflare hosting and Terraform configuration are removed', () => {
+  for (const path of [
+    '.github/workflows/azure-container-release.yml',
+    '.github/workflows/infra-deploy.yml',
+    '.github/workflows/cloudflare-container-release.yml',
+    '.github/workflows/container-build.yml',
+    'infra/terraform/README.md',
+    'infra/terraform/bootstrap/main.tf',
+    'infra/terraform/environments/testing/main.tf',
+    'infra/terraform/environments/production/main.tf',
+    'infra/terraform/modules/aca-platform/main.tf',
+    'infra/terraform/cloudflare/bootstrap/main.tf',
+    'infra/terraform/cloudflare/environments/testing/main.tf',
+    'infra/terraform/cloudflare/environments/production/main.tf',
+    'infra/terraform/modules/cloudflare-platform/main.tf',
+    'infra/cloudflare/worker/wrangler.jsonc',
+    'RefTestManagement.Hosting.Cloudflare/RefTestManagement.Hosting.Cloudflare.csproj',
+  ]) {
+    assert.equal(existsSync(join(ROOT, path)), false, `${path} must not be present`);
   }
+});
+test('PR does not publish SDK container archives or require cloud credentials', () => {
+  const { source, workflow } = WORKFLOWS.pr;
+  const publishJob = workflow.jobs.validate;
+  const publish = publishJob.steps.find((step) => step.name === '📦 Validate SDK container publishing');
+
+  assert.equal(publish, undefined);
+  assert.deepEqual(workflow.permissions, { contents: 'read' });
+  assert.doesNotMatch(source, /PublishContainer|ContainerArchiveOutputPath/);
+  assert.doesNotMatch(publishJob.steps.map((step) => step.uses ?? '').join('\n'), /azure\/login/i);
+  assert.doesNotMatch(source, /id-token:\s*write/);
+  assert.equal(workflow.jobs['validate-infrastructure'], undefined);
+  assert.doesNotMatch(source, /infra\/terraform|terraform .*apply/i);
 });
 
 test('CodeQL uses the release validation .NET SDK', () => {
@@ -179,7 +167,9 @@ test('CodeQL uses the release validation .NET SDK', () => {
 
 test('all workflow actions stay pinned to full commit SHAs with version comments', () => {
   for (const { source } of Object.values(WORKFLOWS)) {
-    const actionLines = source.split('\n').filter((line) => /^\s+uses:/.test(line));
+    const actionLines = source
+      .split('\n')
+      .filter((line) => /^\s+uses:/.test(line) && !line.includes('./.github/workflows/'));
     assert.ok(actionLines.length > 0);
     for (const line of actionLines.map((line) => line.trimEnd())) {
       assert.match(line, /@[0-9a-f]{40}\s+#\s+v[\w.-]+$/);
