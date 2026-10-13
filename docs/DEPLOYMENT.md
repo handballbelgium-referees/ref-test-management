@@ -51,7 +51,8 @@ no database server and stores its
 database file in a persistent named volume shared by the migration and selected application
 containers.
 Each provider uses a separate persistent data volume; switching providers does not migrate or share
-database contents.
+database contents. The PostgreSQL service stores data in the `postgresql-data-18` volume mounted at
+`/var/lib/postgresql`, as required by PostgreSQL 18+ images.
 
 The compose stack also runs authenticated TLS Redis, a one-shot Worker migration, the selected
 application topology, and a Caddy TLS edge. Application processes use `Hosting:Provider=Local` and

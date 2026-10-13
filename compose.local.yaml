@@ -31,7 +31,7 @@ services:
       default:
         ipv4_address: 10.250.241.10
     volumes:
-      - postgresql-data:/var/lib/postgresql/data
+      - postgresql-data-18:/var/lib/postgresql
 
   mysql:
     profiles: ['MySQL']
@@ -184,7 +184,7 @@ services:
 
 volumes:
   sqlserver-data:
-  postgresql-data:
+  postgresql-data-18:
   mysql-data:
   sqlite-data:
 

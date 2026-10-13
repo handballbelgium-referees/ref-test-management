@@ -5,7 +5,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <Nullable>enable</Nullable>
         <RootNamespace>Handball.Belgium.RefTestManagement.Worker</RootNamespace>
-        <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:11.0</ContainerBaseImage>
+        <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
         <ContainerImageFormat>OCI</ContainerImageFormat>
         <ContainerRepository>ref-test-management-worker</ContainerRepository>
         <ContainerUser>app</ContainerUser>
@@ -21,6 +21,7 @@
 
     <ItemGroup>
         <ProjectReference Include="..\RefTestManagement.Hosting\RefTestManagement.Hosting.csproj" />
-        <ProjectReference Include="..\RefTestManagement.Hosting.Azure\RefTestManagement.Hosting.Azure.csproj" />
+        <ProjectReference
+            Include="..\RefTestManagement.Hosting.Azure\RefTestManagement.Hosting.Azure.csproj" />
     </ItemGroup>
 </Project>

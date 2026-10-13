@@ -896,13 +896,24 @@ class LocalStackLauncher:
         except ValueError as error:
             raise LauncherError(f"Container '{container_name}' returned invalid state.") from error
 
-    def _compose_container_id(self, service: str) -> str:
+    def _compose_container_id(self, service: str, include_stopped: bool = False) -> str:
         profiles = (self.database_provider,) if self.database_provider else ()
-        output = self.compose("ps", "--quiet", service, profiles=profiles, capture=True).stdout or ""
+        # One-shot services (migrate) have already exited by the time they are looked up.
+        ps_args = ("ps", "--all", "--quiet", service) if include_stopped else ("ps", "--quiet", service)
+        output = self.compose(*ps_args, profiles=profiles, capture=True).stdout or ""
         identifiers = [line.strip() for line in output.splitlines() if line.strip()]
         if len(identifiers) != 1:
             raise LauncherError(f"Expected exactly one container for Compose service '{service}'.")
         return identifiers[0]
+
+    def _remove_migration_container(self, env: dict[str, str]) -> None:
+        # Called only after the application services are running: api and worker
+        # depend on migrate completing, so removing it earlier would break a later `up`.
+        profiles = (self.database_provider,) if self.database_provider else ()
+        try:
+            self.compose("rm", "--force", "migrate", profiles=profiles, env=env, quiet=True)
+        except LauncherError as error:
+            print(f"Warning: could not remove the completed migration container: {error}")
 
     def _wait_container_completion(
         self,
@@ -1187,7 +1198,7 @@ class LocalStackLauncher:
             "Authenticated TLS Redis",
         )
         self.compose("up", "--detach", "migrate", env=compose_env)
-        migration_container = self._compose_container_id("migrate")
+        migration_container = self._compose_container_id("migrate", include_stopped=True)
         self._wait_container_completion(migration_container, "Database migration")
         application_services = self._application_services()
         self.compose("up", "--detach", *application_services, "https-proxy", env=compose_env)
@@ -1198,6 +1209,7 @@ class LocalStackLauncher:
             worker_container = self._compose_container_id("worker")
             self._wait_container_running(worker_container, "Worker")
         self._wait_container_running(proxy_container, "HTTPS proxy")
+        self._remove_migration_container(compose_env)
         self.compose("ps", "--all", profiles=selected_profile, env=compose_env)
 
     @staticmethod
@@ -1237,7 +1249,7 @@ class LocalStackLauncher:
         self._refresh_images(changed_paths)
         compose_env = self._configure_database()
         self.compose("up", "--detach", "--force-recreate", "migrate", env=compose_env)
-        migration_container = self._compose_container_id("migrate")
+        migration_container = self._compose_container_id("migrate", include_stopped=True)
         self._wait_container_completion(migration_container, "Database migration after source change")
 
         application_services = self._application_services()
@@ -1256,6 +1268,7 @@ class LocalStackLauncher:
                 "Worker after source change",
             )
         self._wait_for_api()
+        self._remove_migration_container(compose_env)
         print("Local application containers are up to date.")
 
     def _watch_source(self) -> None:
