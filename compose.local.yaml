@@ -1,4 +1,4 @@
-name: rtm-azure-local
+name: rtm-local
 
 services:
   sqlserver:
@@ -8,7 +8,7 @@ services:
     environment:
       ACCEPT_EULA: 'Y'
       MSSQL_PID: Developer
-      MSSQL_SA_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}}
+      MSSQL_SA_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}}
     ports:
       - '127.0.0.1:11433:1433'
     networks:
@@ -24,7 +24,7 @@ services:
     environment:
       POSTGRES_DB: RefTestManagement
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}}
     ports:
       - '127.0.0.1:15432:5432'
     networks:
@@ -39,7 +39,7 @@ services:
     image: mysql:9.7.2
     environment:
       MYSQL_DATABASE: RefTestManagement
-      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}}
+      MYSQL_ROOT_PASSWORD: ${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}}
     ports:
       - '127.0.0.1:13306:3306'
     networks:
@@ -52,7 +52,7 @@ services:
     container_name: redis
     image: redis:8.10.2-alpine
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}
     command:
       - redis-server
       - --port
@@ -68,16 +68,16 @@ services:
       - --tls-auth-clients
       - 'no'
       - --requirepass
-      - ${REDIS_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}
+      - ${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}
     volumes:
-      - ./infra/local/azure/certs:/run/redis-certs:ro
+      - ./infra/local/certs:/run/redis-certs:ro
     networks:
       default:
         ipv4_address: 10.250.241.11
 
   migrate:
     container_name: migration-container
-    image: localhost/ref-test-management-worker:azure-local
+    image: localhost/ref-test-management-worker:local
     command: ['--migrate']
     restart: 'no'
     extra_hosts:
@@ -87,12 +87,12 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       DatabaseProvider: ${DATABASE_PROVIDER:-SqlServer}
-      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
+      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
 
   sqlite-init:
     profiles: ['SQLite']
     container_name: sqlite-volume-init
-    image: localhost/ref-test-management-worker:azure-local
+    image: localhost/ref-test-management-worker:local
     user: '0:0'
     entrypoint: ['chown']
     command: ['-R', 'app', '/var/lib/ref-test-management']
@@ -102,7 +102,7 @@ services:
 
   api:
     container_name: application
-    image: localhost/ref-test-management-api:azure-local
+    image: localhost/ref-test-management-api:local
     pull_policy: never
     restart: unless-stopped
     depends_on:
@@ -117,20 +117,20 @@ services:
       default:
         ipv4_address: 10.250.241.12
     volumes:
-      - ./infra/local/azure/user-secrets:/home/app/.microsoft/usersecrets:ro
-      - ./infra/local/azure/certs/redis-ca-bundle.crt:/etc/ssl/certs/ca-certificates.crt:ro
+      - ./infra/local/user-secrets:/home/app/.microsoft/usersecrets:ro
+      - ./infra/local/certs/redis-ca-bundle.crt:/etc/ssl/certs/ca-certificates.crt:ro
       - sqlite-data:/var/lib/ref-test-management
     environment:
       ASPNETCORE_ENVIRONMENT: Development
       Hosting__Provider: Local
-      Hosting__Mode: Api
+      Hosting__Mode: ${API_HOSTING_MODE:-Api}
       State__Mode: Shared
       DatabaseProvider: ${DATABASE_PROVIDER:-SqlServer}
-      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
+      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
       RedisConfiguration__AuthenticationMode: Password
-      RedisConfiguration__Endpoint: 'rediss://:${REDIS_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}@redis:6380'
+      RedisConfiguration__Endpoint: 'rediss://:${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}@redis:6380'
       PrivacyChallengeConfiguration__RateLimitBackend: Redis
-      PrivacyChallengeConfiguration__HmacSecret: ${PRIVACY_CHALLENGE_HMAC_SECRET:?Run uv run --script scripts/start-azure-local.py to generate local settings}
+      PrivacyChallengeConfiguration__HmacSecret: ${PRIVACY_CHALLENGE_HMAC_SECRET:?Run uv run --script infra/local/start.py to generate local settings}
       EmailConfiguration__BaseUrl: https://localhost:7039
       EmailConfiguration__LogoBaseUrl: http://10.250.241.12:8080
       ASPNETCORE_URLS: http://+:8080
@@ -146,13 +146,13 @@ services:
     ports:
       - '127.0.0.1:7039:443'
     volumes:
-      - ./infra/local/azure/Caddyfile:/etc/caddy/Caddyfile:ro
-      - ./infra/local/azure/certs/localhost.crt:/certs/localhost.crt:ro
-      - ./infra/local/azure/certs/localhost.key:/certs/localhost.key:ro
+      - ./infra/local/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./infra/local/certs/localhost.crt:/certs/localhost.crt:ro
+      - ./infra/local/certs/localhost.key:/certs/localhost.key:ro
 
   worker:
     container_name: worker
-    image: localhost/ref-test-management-worker:azure-local
+    image: localhost/ref-test-management-worker:local
     pull_policy: never
     restart: unless-stopped
     depends_on:
@@ -164,8 +164,8 @@ services:
       - 'redis:10.250.241.11'
       - 'database:10.250.241.10'
     volumes:
-      - ./infra/local/azure/user-secrets:/home/app/.microsoft/usersecrets:ro
-      - ./infra/local/azure/certs/redis-ca-bundle.crt:/etc/ssl/certs/ca-certificates.crt:ro
+      - ./infra/local/user-secrets:/home/app/.microsoft/usersecrets:ro
+      - ./infra/local/certs/redis-ca-bundle.crt:/etc/ssl/certs/ca-certificates.crt:ro
       - sqlite-data:/var/lib/ref-test-management
     environment:
       ASPNETCORE_ENVIRONMENT: Development
@@ -174,11 +174,11 @@ services:
       DOTNET_ENVIRONMENT: Development
       State__Mode: Shared
       DatabaseProvider: ${DATABASE_PROVIDER:-SqlServer}
-      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
+      ConnectionStrings__RefTestManagement: '${DATABASE_CONNECTION_STRING:-Server=database,1433;Database=RefTestManagement;User ID=sa;Password=${DATABASE_PASSWORD:-${MSSQL_SA_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}};Encrypt=True;TrustServerCertificate=True;}'
       RedisConfiguration__AuthenticationMode: Password
-      RedisConfiguration__Endpoint: 'rediss://:${REDIS_PASSWORD:?Run uv run --script scripts/start-azure-local.py to generate local settings}@redis:6380'
+      RedisConfiguration__Endpoint: 'rediss://:${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}@redis:6380'
       PrivacyChallengeConfiguration__RateLimitBackend: Redis
-      PrivacyChallengeConfiguration__HmacSecret: ${PRIVACY_CHALLENGE_HMAC_SECRET:?Run uv run --script scripts/start-azure-local.py to generate local settings}
+      PrivacyChallengeConfiguration__HmacSecret: ${PRIVACY_CHALLENGE_HMAC_SECRET:?Run uv run --script infra/local/start.py to generate local settings}
       EmailConfiguration__BaseUrl: https://localhost:7039
       EmailConfiguration__LogoBaseUrl: http://10.250.241.12:8080
 
@@ -191,4 +191,4 @@ volumes:
 networks:
   default:
     external: true
-    name: rtm-azure-local-nodns
+    name: rtm-local-nodns

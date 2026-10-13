@@ -20,15 +20,16 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Any, Sequence
 
-from InquirerPy import inquirer
-from InquirerPy.base.control import Choice
-from InquirerPy.utils import get_style
-
 
 class LauncherError(Exception):
     pass
 
 
+HOSTING_MODES = ("Combined", "Split")
+HOSTING_MODE_LABELS = {
+    "Combined": "Combined (API and background processing in one container)",
+    "Split": "Split (separate API and Worker containers)",
+}
 PROVIDERS = ("SqlServer", "PostgreSQL", "SQLite", "MySQL")
 PROVIDER_LABELS = {
     "SqlServer": "SQL Server",
@@ -45,15 +46,69 @@ AUTH0_KEYS = (
     "ManagementClientSecret",
 )
 ALL_COMPOSE_PROFILES = ("SqlServer", "PostgreSQL", "SQLite", "MySQL")
-ROOT = Path(__file__).resolve().parents[1]
+WATCH_PROJECTS = (
+    "RefTestManagement.Api",
+    "RefTestManagement.Application",
+    "RefTestManagement.Domain",
+    "RefTestManagement.Hosting",
+    "RefTestManagement.Hosting.Azure",
+    "RefTestManagement.Infrastructure",
+    "RefTestManagement.Migrations.MySQL",
+    "RefTestManagement.Migrations.PostgreSQL",
+    "RefTestManagement.Migrations.SQLite",
+    "RefTestManagement.Migrations.SqlServer",
+    "RefTestManagement.Worker",
+    "RefTestManagement.Ui",
+)
+IGNORED_WATCH_DIRECTORIES = {
+    ".angular",
+    ".git",
+    "bin",
+    "coverage",
+    "dist",
+    "node_modules",
+    "obj",
+    "TestResults",
+    "wwwroot",
+}
+ROOT = Path(__file__).resolve().parents[2]
 
 
-def is_valid_database_selection(values: object) -> bool:
-    return isinstance(values, list) and len(values) == 1 and values[0] in PROVIDERS
+def is_valid_hosting_mode(value: object) -> bool:
+    return value in HOSTING_MODES
 
 
-def select_database_provider() -> str:
-    style = get_style(
+def is_valid_database_provider(value: object) -> bool:
+    return isinstance(value, str) and value in PROVIDERS
+
+
+def source_snapshot(root: Path) -> dict[str, tuple[int, int]]:
+    snapshot: dict[str, tuple[int, int]] = {}
+    for project in WATCH_PROJECTS:
+        project_root = root / project
+        if not project_root.is_dir():
+            continue
+        for directory, subdirectories, filenames in os.walk(project_root):
+            subdirectories[:] = [
+                name for name in subdirectories if name not in IGNORED_WATCH_DIRECTORIES
+            ]
+            for filename in filenames:
+                path = Path(directory) / filename
+                try:
+                    metadata = path.stat()
+                except FileNotFoundError:
+                    continue
+                snapshot[str(path.relative_to(root))] = (
+                    metadata.st_mtime_ns,
+                    metadata.st_size,
+                )
+    return snapshot
+
+
+def _prompt_style() -> Any:
+    from InquirerPy.utils import get_style
+
+    return get_style(
         {
             "questionmark": "#e5c07b bold",
             "question": "bold",
@@ -65,51 +120,74 @@ def select_database_provider() -> str:
         },
         style_override=False,
     )
+
+
+def select_hosting_mode() -> str:
+    from InquirerPy import inquirer
+    from InquirerPy.base.control import Choice
+
+    choices = [
+        Choice(value=mode, name=HOSTING_MODE_LABELS[mode])
+        for mode in HOSTING_MODES
+    ]
+    try:
+        selected = inquirer.select(
+            message="Choose the local hosting mode:",
+            choices=choices,
+            qmark="?",
+            amark="✓",
+            pointer="❯",
+            style=_prompt_style(),
+        ).execute()
+    except (EOFError, KeyboardInterrupt) as error:
+        raise LauncherError("Hosting mode selection was cancelled.") from error
+
+    if not is_valid_hosting_mode(selected):
+        raise LauncherError("Select a supported local hosting mode.")
+    return selected
+
+
+def select_database_provider() -> str:
+    from InquirerPy import inquirer
+    from InquirerPy.base.control import Choice
+
     choices = [
         Choice(value=provider, name=PROVIDER_LABELS[provider], enabled=False)
         for provider in PROVIDERS
     ]
 
     try:
-        selected = inquirer.checkbox(
-            message="Choose the database provider for the local Compose stack:",
+        selected = inquirer.select(
+            message="Choose the database provider:",
             choices=choices,
-            default=None,
-            validate=is_valid_database_selection,
-            invalid_message="Select exactly one database provider.",
-            instruction="(Space selects; Enter confirms one)",
             qmark="?",
             amark="✓",
             pointer="❯",
-            enabled_symbol="◉",
-            disabled_symbol="○",
-            height=len(PROVIDERS),
-            cycle=False,
-            style=style,
+            style=_prompt_style(),
         ).execute()
     except (EOFError, KeyboardInterrupt) as error:
         raise LauncherError("Database provider selection was cancelled.") from error
 
-    if not is_valid_database_selection(selected):
-        raise LauncherError("Select exactly one supported database provider.")
-    return selected[0]
+    if not is_valid_database_provider(selected):
+        raise LauncherError("Select a supported database provider.")
+    return selected
 
 
 class LocalStackLauncher:
     def __init__(self) -> None:
         self.root = ROOT
-        self.machine_name = "rtm-azure-local"
-        self.project_name = "rtm-azure-local"
+        self.machine_name = "rtm-local"
+        self.project_name = "rtm-local"
         self.network_name = f"{self.project_name}-nodns"
         self.network_subnet = "10.250.241.0/24"
-        self.compose_file = self.root / "compose.azure-local.yaml"
-        self.local_directory = self.root / "infra" / "local" / "azure"
+        self.compose_file = self.root / "compose.local.yaml"
+        self.local_directory = self.root / "infra" / "local"
         self.env_file = self.local_directory / ".env"
         self.certificate_directory = self.local_directory / "certs"
-        self.image_directory = self.root / "artifacts" / "azure-local"
+        self.image_directory = self.root / "artifacts" / "local"
         self.api_project = self.root / "RefTestManagement.Api" / "RefTestManagement.Api.csproj"
-        self.api_image = "localhost/ref-test-management-api:azure-local"
-        self.worker_image = "localhost/ref-test-management-worker:azure-local"
+        self.api_image = "localhost/ref-test-management-api:local"
+        self.worker_image = "localhost/ref-test-management-worker:local"
         self.api_archive = self.image_directory / "ref-test-management-api.tar.gz"
         self.worker_archive = self.image_directory / "ref-test-management-worker.tar.gz"
         self.user_secrets_id = self._read_user_secrets_id()
@@ -119,6 +197,7 @@ class LocalStackLauncher:
             / self.user_secrets_id
             / "secrets.json"
         )
+        self.hosting_mode: str | None = None
         self.database_provider: str | None = None
         self.database_password: str | None = None
         self.database_connection_string: str | None = None
@@ -651,7 +730,7 @@ class LocalStackLauncher:
             )
 
         if existing_count == 0:
-            with tempfile.TemporaryDirectory(prefix="rtm-azure-local-certs-") as temporary:
+            with tempfile.TemporaryDirectory(prefix="rtm-local-certs-") as temporary:
                 temporary_path = Path(temporary)
                 self._run(
                     (
@@ -877,8 +956,12 @@ class LocalStackLauncher:
         raise LauncherError("Unsupported database provider selection.")
 
     def _configure_database(self) -> dict[str, str]:
-        if not self.database_provider or not self.database_password:
-            raise LauncherError("Database provider configuration is incomplete.")
+        if (
+            not self.database_provider
+            or not self.database_password
+            or not is_valid_hosting_mode(self.hosting_mode)
+        ):
+            raise LauncherError("Hosting mode or database provider configuration is incomplete.")
         self.database_connection_string = self._database_connection_string()
         environment = os.environ.copy()
         environment.update(
@@ -886,6 +969,7 @@ class LocalStackLauncher:
                 "DATABASE_PROVIDER": self.database_provider,
                 "DATABASE_CONNECTION_STRING": self.database_connection_string,
                 "DATABASE_PASSWORD": self.database_password,
+                "API_HOSTING_MODE": "All" if self.hosting_mode == "Combined" else "Api",
             }
         )
         self.compose_env = environment
@@ -929,7 +1013,11 @@ class LocalStackLauncher:
         self._write_local_environment()
         self._copy_api_user_secrets()
         self._ensure_required_auth0_settings()
+        self._build_angular_assets()
+        self._run(("dotnet", "restore", "RefTestManagement.slnx", "--locked-mode", "--nologo"))
+        self._publish_images()
 
+    def _build_angular_assets(self) -> None:
         self._run(
             "npm run build -- --configuration production",
             cwd=self.root / "RefTestManagement.Ui",
@@ -947,8 +1035,7 @@ class LocalStackLauncher:
         except OSError as error:
             raise LauncherError("Could not copy the Angular production assets into the API project.") from error
 
-        self._run(("dotnet", "restore", "RefTestManagement.slnx", "--locked-mode", "--nologo"))
-
+    def _publish_images(self) -> None:
         self._run(
             (
                 "dotnet",
@@ -960,7 +1047,7 @@ class LocalStackLauncher:
                 "-t:PublishContainer",
                 "-p:ContainerRuntimeIdentifier=linux-x64",
                 "-p:ContainerRegistry=localhost",
-                "-p:ContainerImageTag=azure-local",
+                "-p:ContainerImageTag=local",
                 f"-p:ContainerArchiveOutputPath={self.api_archive}",
             ),
             error_message="Could not publish the API container image.",
@@ -977,7 +1064,7 @@ class LocalStackLauncher:
                 f"-p:UserSecretsId={self.user_secrets_id}",
                 "-p:ContainerRuntimeIdentifier=linux-x64",
                 "-p:ContainerRegistry=localhost",
-                "-p:ContainerImageTag=azure-local",
+                "-p:ContainerImageTag=local",
                 f"-p:ContainerArchiveOutputPath={self.worker_archive}",
             ),
             error_message="Could not publish the Worker container image.",
@@ -992,7 +1079,7 @@ class LocalStackLauncher:
             self.connection_name,
             "image",
             "tag",
-            "docker.io/library/ref-test-management-api:azure-local",
+            "docker.io/library/ref-test-management-api:local",
             self.api_image,
         )
         self.podman(
@@ -1000,7 +1087,7 @@ class LocalStackLauncher:
             self.connection_name,
             "image",
             "tag",
-            "docker.io/library/ref-test-management-worker:azure-local",
+            "docker.io/library/ref-test-management-worker:local",
             self.worker_image,
         )
         self.podman(
@@ -1024,9 +1111,25 @@ class LocalStackLauncher:
             quiet=True,
         )
 
+    def _refresh_images(self, changed_paths: set[str]) -> None:
+        if any(Path(path).parts[0] == "RefTestManagement.Ui" for path in changed_paths):
+            self._build_angular_assets()
+        self._publish_images()
+
+    def _application_services(self) -> tuple[str, ...]:
+        if self.hosting_mode == "Combined":
+            return ("api",)
+        if self.hosting_mode == "Split":
+            return ("api", "worker")
+        raise LauncherError("Select a supported local hosting mode.")
+
     def _start_compose_stack(self) -> None:
-        if not self.connection_name or not self.database_provider:
-            raise LauncherError("The selected provider or Podman connection is unavailable.")
+        if (
+            not self.connection_name
+            or not self.database_provider
+            or not is_valid_hosting_mode(self.hosting_mode)
+        ):
+            raise LauncherError("The selected hosting mode, provider, or Podman connection is unavailable.")
         compose_env = self._configure_database()
         selected_profile = (self.database_provider,)
 
@@ -1086,14 +1189,87 @@ class LocalStackLauncher:
         self.compose("up", "--detach", "migrate", env=compose_env)
         migration_container = self._compose_container_id("migrate")
         self._wait_container_completion(migration_container, "Database migration")
-        self.compose("up", "--detach", "api", "worker", "https-proxy", env=compose_env)
+        application_services = self._application_services()
+        self.compose("up", "--detach", *application_services, "https-proxy", env=compose_env)
         api_container = self._compose_container_id("api")
-        worker_container = self._compose_container_id("worker")
         proxy_container = self._compose_container_id("https-proxy")
         self._wait_container_running(api_container, "API")
-        self._wait_container_running(worker_container, "Worker")
+        if "worker" in application_services:
+            worker_container = self._compose_container_id("worker")
+            self._wait_container_running(worker_container, "Worker")
         self._wait_container_running(proxy_container, "HTTPS proxy")
         self.compose("ps", "--all", profiles=selected_profile, env=compose_env)
+
+    @staticmethod
+    def _changed_paths(
+        previous: dict[str, tuple[int, int]],
+        current: dict[str, tuple[int, int]],
+    ) -> set[str]:
+        return {
+            path
+            for path in previous.keys() | current.keys()
+            if previous.get(path) != current.get(path)
+        }
+
+    def _wait_for_source_changes(
+        self,
+        previous: dict[str, tuple[int, int]],
+    ) -> tuple[set[str], dict[str, tuple[int, int]]]:
+        candidate = previous
+        candidate_since: float | None = None
+        while True:
+            time.sleep(0.75)
+            current = source_snapshot(self.root)
+            if current != candidate:
+                candidate = current
+                candidate_since = time.monotonic() if current != previous else None
+            elif candidate_since is not None and time.monotonic() - candidate_since >= 1.5:
+                return self._changed_paths(previous, current), current
+
+    def _refresh_stack(self, changed_paths: set[str]) -> None:
+        if (
+            not self.connection_name
+            or not self.database_provider
+            or not is_valid_hosting_mode(self.hosting_mode)
+        ):
+            raise LauncherError("The selected hosting mode, provider, or Podman connection is unavailable.")
+        print(f"Source changes detected ({len(changed_paths)} file(s)); rebuilding local images...")
+        self._refresh_images(changed_paths)
+        compose_env = self._configure_database()
+        self.compose("up", "--detach", "--force-recreate", "migrate", env=compose_env)
+        migration_container = self._compose_container_id("migrate")
+        self._wait_container_completion(migration_container, "Database migration after source change")
+
+        application_services = self._application_services()
+        self.compose(
+            "up",
+            "--detach",
+            "--force-recreate",
+            "--no-deps",
+            *application_services,
+            env=compose_env,
+        )
+        self._wait_container_running(self._compose_container_id("api"), "API after source change")
+        if "worker" in application_services:
+            self._wait_container_running(
+                self._compose_container_id("worker"),
+                "Worker after source change",
+            )
+        self._wait_for_api()
+        print("Local application containers are up to date.")
+
+    def _watch_source(self) -> None:
+        snapshot = source_snapshot(self.root)
+        print("Watching application and UI source files for changes. Press Ctrl+C to stop watching.")
+        try:
+            while True:
+                changed_paths, snapshot = self._wait_for_source_changes(snapshot)
+                self._refresh_stack(changed_paths)
+        except KeyboardInterrupt:
+            print("\nStopping local Compose containers...")
+            self.compose("down", "--remove-orphans", profiles=ALL_COMPOSE_PROFILES)
+            print("Local Compose containers removed; persistent data volumes were preserved.")
+            raise
 
     def _wait_for_api(self) -> None:
         endpoint = "https://localhost:7039/graphql?query=%7B__typename%7D"
@@ -1136,6 +1312,7 @@ class LocalStackLauncher:
 
     def run(self) -> None:
         self.require_tools()
+        self.hosting_mode = select_hosting_mode()
         self.database_provider = select_database_provider()
         self._select_database_services()
         default_connection_before = self._get_default_connection()
@@ -1157,11 +1334,12 @@ class LocalStackLauncher:
         self._start_compose_stack()
         self._wait_for_api()
         api_container = self._compose_container_id("api")
-        worker_container = self._compose_container_id("worker")
         self._wait_container_running(api_container, "API")
-        self._wait_container_running(worker_container, "Worker")
+        if "worker" in self._application_services():
+            worker_container = self._compose_container_id("worker")
+            self._wait_container_running(worker_container, "Worker")
 
-        print("Azure split-mode local stack is running at https://localhost:7039.")
+        print(f"{self.hosting_mode} local stack is running at https://localhost:7039.")
         print(f"{self.database_provider} database provider is active; Compose project: {self.project_name}.")
         if self.database_provider == "SqlServer":
             print("SQL Server is available on 127.0.0.1:11433.")
@@ -1170,13 +1348,14 @@ class LocalStackLauncher:
         elif self.database_provider == "MySQL":
             print("MySQL is available on 127.0.0.1:13306.")
         else:
-            print("SQLite uses a persistent Compose volume shared by the migration, API, and Worker containers.")
+            print("SQLite uses a persistent Compose volume shared by the migration and application containers.")
         print("Local credentials/certificates are ignored files; values were not displayed.")
+        self._watch_source()
 
 
 def main(argv: Sequence[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
-        description="Build and start the isolated Azure split-mode local Podman Compose stack."
+        description="Build and start the isolated local Podman Compose stack."
     )
     parser.parse_args(argv)
     try:
@@ -1187,7 +1366,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"ERROR: {error}", file=sys.stderr)
         return 1
     except KeyboardInterrupt:
-        print("ERROR: Local stack startup was interrupted.", file=sys.stderr)
+        print("ERROR: Local launcher was interrupted.", file=sys.stderr)
         return 130
     return 0
 

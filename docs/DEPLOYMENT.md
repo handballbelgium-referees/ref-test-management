@@ -5,9 +5,9 @@ Azure App Service is the supported hosted release target. `Hosting:Mode`, `Hosti
 [configuration reference](CONFIGURATION.md). Azure infrastructure is managed outside this
 repository.
 
-| Target | Release path | Infrastructure/code ownership |
-| --- | --- | --- |
-| Local | Podman Compose for development | Local-only services and data; no cloud resources |
+| Target            | Release path                         | Infrastructure/code ownership                                                                             |
+| ----------------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| Local             | Podman Compose for development       | Local-only services and data; no cloud resources                                                          |
 | Azure App Service | Beta/stable GitHub Actions workflows | GitHub Actions deploys to the configured Web App; Azure infrastructure is managed outside this repository |
 
 Configure the App Service names through the existing `AZURE_WEBAPP_TESTING_NAME` and
@@ -16,43 +16,60 @@ provisioned by this repository.
 
 ## Local containers
 
-### Azure split topology in Podman Compose
+### Isolated Podman Compose stack
 
-Run the Azure split shape as one isolated local project from Git Bash with `uv`, Podman, .NET,
+Run the isolated local project from Git Bash with `uv`, Podman, .NET,
 Node/npm, and OpenSSL available on `PATH`:
 
 ```bash
-uv run --script scripts/start-azure-local.py
+uv run --script infra/local/start.py
 ```
 
-The launcher creates a separate rootless Podman WSL machine named `rtm-azure-local` (4 CPUs,
+Before preparing the stack, the launcher asks for a hosting mode and database provider. Choose
+**Combined** to run the API and background processing in one API container, or **Split** to run
+separate API and Worker containers. These set `Hosting:Mode=All` or `Hosting:Mode=Api` on the API;
+the Worker runs with `Hosting:Mode=Worker` in Split mode. The database choices are SQL Server,
+PostgreSQL, SQLite, and MySQL.
+
+The uv script metadata supplies the pinned InquirerPy terminal prompts.
+The launcher creates a separate rootless Podman WSL machine named `rtm-local` (4 CPUs,
 6 GiB memory, user-mode networking) if it does not exist, builds the Angular assets, publishes the
-API and Worker OCI images with the .NET SDK, and starts `compose.azure-local.yaml` as project
-`rtm-azure-local`. It uses a dedicated DNS-disabled bridge with static SQL/Redis addresses and
+API and Worker OCI images with the .NET SDK, and starts `compose.local.yaml` as project `rtm-local`.
+It uses a dedicated DNS-disabled bridge with static SQL/Redis addresses and
 explicit host mappings, avoiding the user-systemd-bus requirement of rootless bridge DNS on this WSL
 machine. It does not change the default Podman connection or touch containers, networks, or volumes
 in other machines. The separate machine avoids changing/restarting an existing 2-GiB Podman machine.
+If you have a previous local stack, run `podman machine stop rtm-azure-local` before starting this
+renamed stack so the published ports are released. That old machine, its database volumes, and its
+ignored settings are left untouched and are not migrated.
 
-On every run, the uv-launched Python script uses InquirerPy to display a styled checkbox list for
-`SqlServer`, `PostgreSQL`, `SQLite`, and `MySQL`. Use Up/Down to move, Space to select, and Enter to
-confirm exactly one provider; Ctrl+C cancels. No provider is preselected. The uv script metadata
-resolves the pinned TUI dependency in uv's managed environment. Canceling closes the launcher before
-Podman operations, and the launcher does not reuse the previous choice. The selected server-backed
-provider starts only its matching database service. SQL Server remains bound to `127.0.0.1:11433`,
-PostgreSQL to
-`127.0.0.1:15432`, and MySQL to `127.0.0.1:13306`. SQLite starts no database server and stores its
-database file in a persistent named volume shared by the migration, API, and Worker containers.
+Use Up/Down and Enter to select the hosting mode and database provider; Ctrl+C cancels either prompt.
+The launcher does not save selections between runs. The selected server-backed provider starts only
+its matching database service. SQL Server remains bound to
+`127.0.0.1:11433`, PostgreSQL to `127.0.0.1:15432`, and MySQL to `127.0.0.1:13306`. SQLite starts
+no database server and stores its
+database file in a persistent named volume shared by the migration and selected application
+containers.
 Each provider uses a separate persistent data volume; switching providers does not migrate or share
 database contents.
 
-The compose stack also runs authenticated TLS Redis, a one-shot Worker migration, separate API/Worker
-containers, and a Caddy TLS edge. API and Worker use `Hosting:Provider=Local` and `State:Mode=Shared`;
-local configuration comes from the image settings, API User Secrets, and Compose environment
-overrides. The Worker sets `DOTNET_ENVIRONMENT=Development` because it uses the Generic Host. The API
-is at `https://localhost:7039`; Caddy terminates TLS with the trusted .NET localhost development
-certificate and proxies to the API over the isolated Compose network. No HTTP API port is published
-to the host; API/Worker internal traffic remains HTTP. The selected provider's named data volume
-persists after `down`.
+The compose stack also runs authenticated TLS Redis, a one-shot Worker migration, the selected
+application topology, and a Caddy TLS edge. Application processes use `Hosting:Provider=Local` and
+`State:Mode=Shared`; local configuration comes from the image settings, API User Secrets, and Compose
+environment overrides. The Worker sets `DOTNET_ENVIRONMENT=Development` because it uses the Generic
+Host. The API is at `https://localhost:7039`; Caddy terminates TLS with the trusted .NET localhost
+development certificate and proxies to the API over the isolated Compose network. No HTTP API port
+is published to the host; split API/Worker internal traffic remains HTTP. The selected provider's
+named data volume persists after `down`.
+
+After startup, the launcher watches application and UI source files and automatically rebuilds the
+container images when they change. Changes are debounced briefly; UI changes also rebuild and copy
+the Angular assets. The launcher reruns database migrations and recreates only the selected API
+and/or Worker containers; the database, Redis, and HTTPS proxy remain running. Build errors are
+reported in the launcher. Generated outputs, dependency folders, and build directories are excluded
+from watching. This is rebuild-and-restart, not .NET Hot Reload; the browser may need a manual
+refresh after a UI update. Press Ctrl+C to stop watching and remove the project's containers.
+Persistent database volumes, the isolated Podman machine, and its external network remain.
 
 If the launcher reports that the HTTPS development certificate is missing or untrusted, run
 `dotnet dev-certs https --trust` once and rerun the launcher. The launcher checks certificate trust
@@ -92,19 +109,19 @@ the configured Brevo account to the configured recipients, and the application m
 configured IHF endpoint. These local external calls are enabled intentionally; keep the User
 Secrets store pointed at the intended services and test recipients.
 
-This reproduces split application behavior and shared TLS state, not a cloud provider's managed
-identity, Key Vault, database authentication, ingress, scaling, or rollout. The
-server-backed providers use local-only database credentials, and SQLite uses a local file; never
-reuse this configuration or its generated secrets outside local development.
+This reproduces the selected local application topology and shared TLS state, not a cloud provider's
+managed identity, Key Vault, database authentication, ingress, scaling, or rollout. The server-backed
+providers use local-only database credentials, and SQLite uses a local file; never reuse this
+configuration or its generated secrets outside local development.
 
 To inspect or stop only this project:
 
 ```bash
-podman --connection rtm-azure-local compose --project-name rtm-azure-local \
-  --file compose.azure-local.yaml --env-file infra/local/azure/.env \
+podman --connection rtm-local compose --project-name rtm-local \
+  --file compose.local.yaml --env-file infra/local/.env \
   --profile SqlServer --profile PostgreSQL --profile SQLite --profile MySQL ps
-podman --connection rtm-azure-local compose --project-name rtm-azure-local \
-  --file compose.azure-local.yaml --env-file infra/local/azure/.env \
+podman --connection rtm-local compose --project-name rtm-local \
+  --file compose.local.yaml --env-file infra/local/.env \
   --profile SqlServer --profile PostgreSQL --profile SQLite --profile MySQL down
 ```
 
