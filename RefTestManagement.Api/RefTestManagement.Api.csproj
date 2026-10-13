@@ -6,7 +6,7 @@
         <ImplicitUsings>enable</ImplicitUsings>
         <UserSecretsId>8d0886dd-8107-4fe0-9f5a-9526b2cb0681</UserSecretsId>
         <RootNamespace>Handball.Belgium.RefTestManagement.Api</RootNamespace>
-        <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:10.0</ContainerBaseImage>
+        <ContainerBaseImage>mcr.microsoft.com/dotnet/aspnet:11.0</ContainerBaseImage>
         <ContainerImageFormat>OCI</ContainerImageFormat>
         <ContainerRepository>ref-test-management-api</ContainerRepository>
         <ContainerUser>app</ContainerUser>
