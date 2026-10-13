@@ -172,37 +172,6 @@ jobs:
           test -s "$IMAGE_DIRECTORY/api-image.tar.gz"
           test -s "$IMAGE_DIRECTORY/worker-image.tar.gz"
 
-  validate-infrastructure:
-    name: 🧱 Validate Terraform (offline)
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-
-    steps:
-      - name: 📥 Checkout code
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-
-      - name: 🧱 Format and validate Terraform roots
-        run: |
-          set -euo pipefail
-          TF_IMAGE=docker.io/hashicorp/terraform:1.16.5
-          docker run --rm --volume "$GITHUB_WORKSPACE:/workspace" --workdir /workspace \
-            "$TF_IMAGE" fmt -check -recursive infra/terraform
-          for root in \
-            infra/terraform/bootstrap \
-            infra/terraform/environments/testing \
-            infra/terraform/environments/production \
-            infra/terraform/cloudflare/bootstrap \
-            infra/terraform/cloudflare/environments/testing \
-            infra/terraform/cloudflare/environments/production; do
-            docker run --rm --volume "$GITHUB_WORKSPACE:/workspace" --workdir /workspace \
-              "$TF_IMAGE" "-chdir=$root" init -backend=false
-            docker run --rm --volume "$GITHUB_WORKSPACE:/workspace" --workdir /workspace \
-              "$TF_IMAGE" "-chdir=$root" validate
-          done
-
   sync-readme-versions:
     name: 📄 Sync README Versions
     runs-on: ubuntu-latest

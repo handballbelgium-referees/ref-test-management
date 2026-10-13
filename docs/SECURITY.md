@@ -23,7 +23,7 @@ in their common application database and use the same `RefTestManagement` applic
 key ring protects cookie and participant credential material across process restarts and host
 boundaries. Testing and production must use separate databases/key rings.
 
-Azure deployments set `Hosting:Provider=Azure`, which wraps persisted key XML with an Azure Key
+Azure App Service deployments set `Hosting:Provider=Azure`, which wraps persisted key XML with an Azure Key
 Vault key using the host's managed identity. Grant the system-assigned identity (or configured
 user-assigned identity) the **Key Vault Crypto User** role, configure an HTTPS versionless key
 identifier, and retain old Key Vault key versions while stored Data Protection keys still refer to
@@ -31,40 +31,12 @@ them. Use the local adapter only for development; another provider must supply a
 encryption adapter before deployment. Never commit Data Protection key material or identity
 credentials.
 
-Cloudflare deployments use `Hosting:Provider=Cloudflare` and a PKCS#12 certificate supplied as
-Wrangler Secrets (`CLOUDFLARE_DATA_PROTECTION_PFX_BASE64` and
-`CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD`). The certificate must contain an RSA private key of at
-least 2048 bits. The API and Worker must use the same certificate and database-backed key ring.
-Rotate certificates only after ensuring all persisted keys that depend on the old certificate
-remain readable.
+## Azure identity and database access
 
-## Azure workload identities and database access
-
-Azure Container Apps use separate user-assigned managed identities for the API, optional Worker,
-and migration job. Azure SQL remains Entra-only: each database connection string identifies the
-corresponding attached identity by its client ID, and the operator provisions the contained
-database users with `infra/terraform/bootstrap/sql-identities.sql`. The API and Worker receive
-their required data roles; only the one-shot migration identity receives `db_owner`. Managed
-PostgreSQL/MySQL use distinct database credentials referenced from Key Vault and exact ACA/operator
-egress firewall rules; client connection strings must enforce TLS certificate validation. The server
-administrator password is a protected, ephemeral Terraform input and must not be reused by the
-application. The API, Worker, and migration identity read only their explicitly referenced Key
-Vault secrets; do not replace these scopes with vault-wide access. Azure SQLite stores its file in
-a dedicated Azure Files account whose access key is held in protected environment Terraform state.
-The release pipeline starts the migration job before updating application revisions in Azure;
-SQLite releases stop the API for that migration window. Cloudflare migrations are an explicit
-operator-run step.
-
-## Cloudflare request trust
-
-The Cloudflare Worker is the public HTTP front door (`workers_dev` is disabled). It validates the
-configured API hostname and the single edge-provided `CF-Connecting-IP` value, removes incoming
-`Forwarded`, `X-Forwarded-*`, `X-Real-IP`, Cloudflare client-IP, and `X-RefTest-*` assertion
-headers, then writes its own client address, scheme, host, and proxy assertion. The API middleware
-compares the assertion in constant time, validates the IP and origin values, and only then applies
-them to request context. The shared `CLOUDFLARE_PROXY_ASSERTION_SECRET` must contain at least 32
-UTF-8 bytes and must be configured as a Wrangler Secret; never place it in Terraform state or
-trust these headers from another source.
+Azure App Service can use its managed identity with the Azure Data Protection adapter and Key
+Vault. Configure identity permissions and database access in the Azure environment; this repository
+does not provision Azure resources. Keep application database credentials separate from
+administrator credentials and require TLS certificate validation for remote database connections.
 
 ## npm Dependency Audit Gate
 

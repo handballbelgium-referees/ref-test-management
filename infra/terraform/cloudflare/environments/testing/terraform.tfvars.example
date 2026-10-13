@@ -1,5 +1,0 @@
-account_id          = "00000000000000000000000000000000"
-zone_id             = "00000000000000000000000000000000"
-api_hostname        = "testing.example.com"
-worker_service_name = "ref-test-management-testing"
-worker_environment  = null

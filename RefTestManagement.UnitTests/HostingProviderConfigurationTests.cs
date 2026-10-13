@@ -1,6 +1,5 @@
 using Handball.Belgium.RefTestManagement.Hosting;
 using Handball.Belgium.RefTestManagement.Hosting.Azure;
-using Handball.Belgium.RefTestManagement.Hosting.Cloudflare;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -14,7 +13,6 @@ public sealed class HostingProviderConfigurationTests
     [InlineData("", "Local")]
     [InlineData("Local", "Local")]
     [InlineData("aZure", "aZure")]
-    [InlineData("Cloudflare", "Cloudflare")]
     public void GetProviderReturnsConfiguredProviderName(string? value, string expected)
     {
         var configuration = CreateConfiguration(("Hosting:Provider", value));
@@ -35,7 +33,7 @@ public sealed class HostingProviderConfigurationTests
     public async Task PasswordRedisUsesTheSharedHostingRegistration()
     {
         var configuration = CreateConfiguration(
-            ("Hosting:Provider", "Cloudflare"),
+            ("Hosting:Provider", "Local"),
             ("RedisConfiguration:AuthenticationMode", "Password"),
             ("RedisConfiguration:Endpoint", "rediss://:password@redis.example:10000"),
             ("State:Mode", "Shared"));
@@ -51,7 +49,7 @@ public sealed class HostingProviderConfigurationTests
     public async Task TokenRedisRequiresTheAzureProvider()
     {
         var configuration = CreateConfiguration(
-            ("Hosting:Provider", "Cloudflare"),
+            ("Hosting:Provider", "Local"),
             ("State:Mode", "Shared"),
             ("RedisConfiguration:AuthenticationMode", "Token"),
             ("RedisConfiguration:Endpoint", "rediss://redis.example:10000"));
@@ -60,7 +58,7 @@ public sealed class HostingProviderConfigurationTests
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => hostingProvider.ConfigureRedisConnectionAsync(new ServiceCollection()));
 
-        Assert.Contains("Hosting:Provider=Cloudflare", exception.Message);
+        Assert.Contains("Hosting:Provider=Local", exception.Message);
     }
 
     [Fact]
@@ -95,8 +93,7 @@ public sealed class HostingProviderConfigurationTests
             configuration,
             Host.CreateApplicationBuilder().Environment,
             [
-                new AzureHostingProviderAdapter(),
-                new CloudflareHostingProviderAdapter()
+                new AzureHostingProviderAdapter()
             ]);
 
     private static IConfiguration CreateConfiguration(params (string Key, string? Value)[] values) =>

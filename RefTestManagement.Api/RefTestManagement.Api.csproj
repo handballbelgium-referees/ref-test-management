@@ -21,8 +21,6 @@
             Include="..\RefTestManagement.Hosting\RefTestManagement.Hosting.csproj" />
         <ProjectReference
             Include="..\RefTestManagement.Hosting.Azure\RefTestManagement.Hosting.Azure.csproj" />
-        <ProjectReference
-            Include="..\RefTestManagement.Hosting.Cloudflare\RefTestManagement.Hosting.Cloudflare.csproj" />
         <ProjectReference Include="..\RefTestManagement.Security\RefTestManagement.Security.csproj" />
     </ItemGroup>
 

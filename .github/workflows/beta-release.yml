@@ -18,7 +18,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       validated-sha: ${{ steps.candidate.outputs.sha }}
-      container-deployment-target: ${{ steps.deployment-target.outputs.target }}
     permissions:
       contents: read
 
@@ -41,22 +40,6 @@ jobs:
             exit 1
           fi
           echo "sha=$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
-
-      - name: 🔎 Validate container deployment target
-        id: deployment-target
-        env:
-          CONFIGURED_TARGET: ${{ vars.CONTAINER_DEPLOYMENT_TARGET }}
-        run: |
-          set -euo pipefail
-          TARGET="${CONFIGURED_TARGET:-app-service}"
-          case "$TARGET" in
-            app-service|azure-container-apps|cloudflare-containers) ;;
-            *)
-              echo "::error::CONTAINER_DEPLOYMENT_TARGET must be app-service, azure-container-apps, or cloudflare-containers."
-              exit 1
-              ;;
-          esac
-          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -358,7 +341,7 @@ jobs:
     name: 🧪 Deploy to Testing v${{needs.release.outputs.new-release-version}}
     runs-on: ubuntu-latest
     needs: [release, build, validate]
-    if: needs.release.outputs.new-release-published == 'true' && needs.validate.outputs.container-deployment-target == 'app-service'
+    if: needs.release.outputs.new-release-published == 'true'
     environment:
       name: testing
       url: ${{ steps.deploy.outputs.webapp-url }}
@@ -426,28 +409,3 @@ jobs:
           app-name: ${{ secrets.AZURE_WEBAPP_TESTING_NAME }}
           package: ${{ github.workspace }}/release-artifact/application
           clean: true
-
-  deploy-testing-azure-container:
-    name: Deploy to Azure Container Apps (Testing)
-    needs: [release, build, validate]
-    if: needs.release.outputs.new-release-published == 'true' && needs.validate.outputs.container-deployment-target == 'azure-container-apps'
-    uses: ./.github/workflows/azure-container-release.yml
-    with:
-      release_tag: ${{ needs.release.outputs.new-release-tag }}
-      target_environment: testing
-    permissions:
-      id-token: write
-      contents: read
-      actions: read
-
-  deploy-testing-cloudflare-container:
-    name: Deploy to Cloudflare Containers (Testing)
-    needs: [release, build, validate]
-    if: needs.release.outputs.new-release-published == 'true' && needs.validate.outputs.container-deployment-target == 'cloudflare-containers'
-    uses: ./.github/workflows/cloudflare-container-release.yml
-    with:
-      release_tag: ${{ needs.release.outputs.new-release-tag }}
-      target_environment: testing
-    permissions:
-      contents: read
-      actions: read

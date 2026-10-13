@@ -1,9 +1,0 @@
-resource_group_name  = "rtm-platform-bootstrap"
-storage_account_name = "rtmstateexample123"
-container_name       = "terraform-state"
-key                  = "testing.tfstate"
-subscription_id      = "00000000-0000-0000-0000-000000000000"
-use_azuread_auth     = true
-
-# Enable only in the GitHub Actions environment configured for OIDC:
-# use_oidc = true

@@ -31,53 +31,27 @@ flowchart LR
     PSS -->|syncs permission list to| Auth0API
 ```
 
-## Container hosting topologies
+## Hosting targets
 
-`Hosting:Mode` and `State:Mode` are provider-neutral. Azure maps them to Container Apps; Cloudflare
-maps them to a Worker and Durable Object Containers. `All` keeps API and background services
-together. Split mode runs the API and Worker separately and requires shared state.
+`Hosting:Mode` and `State:Mode` are provider-neutral. Azure App Service runs the API and can use
+`All` or split API/Worker processes; split mode requires shared state. Local Podman Compose
+supports development.
 
 ```mermaid
 flowchart LR
     Client["Browser / SPA"]
-    subgraph Azure["Azure Container Apps"]
-        AzureIngress["HTTPS ingress"]
-        AzureApi["API container\nAll or Api"]
-        AzureWorker["Worker container\nsplit only"]
-        AzureMigration["Manual migration job"]
-        AzureSql[("Azure SQL\nEntra-only")]
-        AzureRedis[("Managed Redis\nsplit only")]
-        AzureIngress --> AzureApi
-        AzureApi --> AzureSql
-        AzureWorker --> AzureSql
-        AzureMigration --> AzureSql
-        AzureApi --> AzureRedis
-        AzureWorker --> AzureRedis
+    subgraph AppService["Azure App Service"]
+        AppServiceApi["API\nAll or Api"]
+        AppServiceWorker["Worker\nsplit mode"]
+        AppServiceData[("Configured database and shared services")]
+        AppServiceApi --> AppServiceData
+        AppServiceWorker --> AppServiceData
     end
-    subgraph Cloudflare["Cloudflare Workers and Containers"]
-        Domain["Existing active-zone hostname"]
-        FrontDoor["Worker front door\none-minute scheduled wake"]
-        ApiContainer["AppContainer\nAPI All or Api"]
-        WorkerContainer["WorkerContainer\nsplit only"]
-        Postgres[("External PostgreSQL")]
-        Redis[("External TLS Redis\nsplit only")]
-        Domain --> FrontDoor
-        FrontDoor --> ApiContainer
-        FrontDoor -.->|Cron wakes All| ApiContainer
-        FrontDoor -.->|Cron wakes Split| WorkerContainer
-        ApiContainer --> Postgres
-        WorkerContainer --> Postgres
-        ApiContainer --> Redis
-        WorkerContainer --> Redis
-    end
-    Client --> AzureIngress
-    Client --> Domain
+    Client --> AppServiceApi
 ```
 
-Azure and Cloudflare are alternative hosting targets, not a single shared deployment. Azure
-Terraform owns Azure infrastructure while GitHub release workflows own image rollout. Cloudflare
-Terraform owns R2 state and the custom-domain binding; Wrangler owns Worker code, Container images,
-Cron, and runtime secrets. See [the deployment guide](DEPLOYMENT.md).
+Azure App Service infrastructure is managed outside this repository. See
+[the deployment guide](DEPLOYMENT.md).
 
 ## Job Queue Flow (`BackgroundJobService`)
 

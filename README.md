@@ -135,7 +135,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### DevOps & Tooling
 
-GitHub Actions (CI/CD) · semantic-release (automated versioning) · Renovate (dependency updates) · Husky + commitlint (git hooks & conventional commits) · Azure Container Apps or Cloudflare Workers/Containers (hosting) · Terraform (infrastructure)
+GitHub Actions (CI/CD) · semantic-release (automated versioning) · Renovate (dependency updates) · Husky + commitlint (git hooks & conventional commits) · Azure App Service (hosting)
 
 ## Architecture
 
@@ -162,7 +162,6 @@ flowchart TB
         Infrastructure["Infrastructure"]
         Hosting["Hosting"]
         AzureHosting["Hosting.Azure"]
-        CloudflareHosting["Hosting.Cloudflare"]
         Application["Application"]
         Domain["Domain"]
         AuditLog["AuditLog"]
@@ -185,10 +184,7 @@ flowchart TB
     Worker --> Hosting
     Api --> AzureHosting
     Worker --> AzureHosting
-    Api --> CloudflareHosting
-    Worker --> CloudflareHosting
     AzureHosting --> Hosting
-    CloudflareHosting --> Hosting
     Hosting --> Migrations
     Hosting --> Infrastructure
     Hosting --> Application
@@ -217,7 +213,6 @@ flowchart TB
 | `RefTestManagement.Worker`         | Background-service entry point for split API/Worker deployments and one-shot migrations          |
 | `RefTestManagement.Hosting`        | Shared process composition, `IHostingProviderAdapter` contract, hosting modes, database and state registration |
 | `RefTestManagement.Hosting.Azure`  | Azure Key Vault Data Protection and managed-identity Redis adapter implementation                  |
-| `RefTestManagement.Hosting.Cloudflare` | Cloudflare certificate-based Data Protection adapter implementation                         |
 | `RefTestManagement.Application`    | Use-case handlers, ports, configuration models and job payloads (see ADR 0001)                  |
 | `RefTestManagement.Domain`         | Core entities (`RefTest`, `RefTestTitle`, `Job`) and domain events                              |
 | `RefTestManagement.Infrastructure` | EF Core, job handlers, email (Brevo), PDF/Excel generation, subscriptions, IHF client           |
@@ -320,8 +315,6 @@ cd RefTestManagement.Ui && npm test             # frontend
 Five hosted services run in the API process in `All` mode, or in the separate Worker process in
 split mode. The SQL job queue remains durable in either topology; split mode additionally requires
 shared Redis for subscriptions, participant session locks, and privacy challenge rate limits.
-Cloudflare schedules a one-minute wake for its selected container, so execution may be delayed by
-container startup or platform restarts.
 
 | Service                    | Runs          | Purpose                                                                  |
 | -------------------------- | ------------- | ------------------------------------------------------------------------ |
@@ -346,20 +339,13 @@ For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md]
 
 | Workflow                           | Trigger                    | Purpose                                                                                                            |
 | ---------------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| `pr.yml`                           | PR → `main`                | Build/test validation, i18n parity, SDK container-archive checks, offline Terraform validation, and AI consistency |
-| `beta-release.yml`                 | push → `main`              | Publishes an alpha pre-release and deploys to the selected testing target                                          |
-| `stable-release.yml`               | manual, from `release`     | Promotes the candidate and deploys to the selected production target                                               |
-| `container-build.yml`              | reusable (`workflow_call`) | Validates a selected release tag and builds provenance-tracked OCI archives                                         |
-| `azure-container-release.yml`      | reusable (`workflow_call`) | Opt-in Azure Container Apps deployment                                                                             |
-| `cloudflare-container-release.yml` | reusable (`workflow_call`) | Opt-in Cloudflare Worker/Containers deployment                                                                     |
-| `infra-deploy.yml`                 | manual, from `main`        | Environment-gated Azure Terraform plan/apply using GitHub OIDC                                                     |
+| `pr.yml`                           | PR → `main`                | Build/test validation, i18n parity, SDK container-archive checks, and AI consistency             |
+| `beta-release.yml`                 | push → `main`              | Publishes an alpha pre-release and deploys to Azure App Service testing                           |
+| `stable-release.yml`               | manual, from `release`     | Promotes the candidate and deploys to Azure App Service production                               |
 
-The repository variable `CONTAINER_DEPLOYMENT_TARGET` selects `app-service` (the default when
-unset), `azure-container-apps`, or `cloudflare-containers`. Changing it switches the target of
-future beta/stable releases without changing application code or workflow files. Container targets
-use protected GitHub Environments. Azure uses OIDC and Container Apps; Cloudflare uses Wrangler for
-its Worker and Containers, while Terraform only bootstraps R2 state and attaches the custom domain.
-See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) before configuring either provider.
+Azure App Service infrastructure is managed outside this repository. Local Podman Compose assets
+support development and do not provision cloud resources. See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) before configuring a deployment.
 
 ## Versioning
 
@@ -373,7 +359,7 @@ See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) before configuring either provider.
 | [docs/SECURITY.md](docs/SECURITY.md)                                           | Auth0 setup, full permission reference, suggested roles    |
 | [docs/PRIVACY.md](docs/PRIVACY.md)                                             | GDPR data flows, retention, erasure, data-subject requests |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md)                                 | Full `appsettings.json` reference                          |
-| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                                       | Azure Container Apps and Cloudflare deployment procedures |
+| [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                                       | App Service and local deployment procedures               |
 | [docs/PROJECT-STRUCTURE.md](docs/PROJECT-STRUCTURE.md)                         | Annotated directory tree                                   |
 | [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md)                   | Background job-queue flow in detail                        |
 | [docs/adr/0001-layered-architecture.md](docs/adr/0001-layered-architecture.md) | Backend dependency rule, known violations                  |

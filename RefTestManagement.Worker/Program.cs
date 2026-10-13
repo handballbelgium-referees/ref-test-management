@@ -1,6 +1,5 @@
 using Handball.Belgium.RefTestManagement.Hosting;
 using Handball.Belgium.RefTestManagement.Hosting.Azure;
-using Handball.Belgium.RefTestManagement.Hosting.Cloudflare;
 using Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
 
 var builder = Host.CreateApplicationBuilder(args);
@@ -17,8 +16,7 @@ var hostingProvider = HostingProviderConfiguration.Create(
     builder.Configuration,
     builder.Environment,
     [
-        new AzureHostingProviderAdapter(),
-        new CloudflareHostingProviderAdapter()
+        new AzureHostingProviderAdapter()
     ]);
 var dataProtectionKeyProtection = hostingProvider.CreateDataProtectionKeyProtection();
 builder.Services.AddRefTestManagementHosting(

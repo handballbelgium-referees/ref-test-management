@@ -360,7 +360,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       validated-sha: ${{ steps.candidate.outputs.sha }}
-      container-deployment-target: ${{ steps.deployment-target.outputs.target }}
     permissions:
       contents: read
 
@@ -377,22 +376,6 @@ jobs:
         run: |
           ACTUAL_SHA="$(git rev-parse HEAD)"
           echo "sha=$ACTUAL_SHA" >> "$GITHUB_OUTPUT"
-
-      - name: 🔎 Validate container deployment target
-        id: deployment-target
-        env:
-          CONFIGURED_TARGET: ${{ vars.CONTAINER_DEPLOYMENT_TARGET }}
-        run: |
-          set -euo pipefail
-          TARGET="${CONFIGURED_TARGET:-app-service}"
-          case "$TARGET" in
-            app-service|azure-container-apps|cloudflare-containers) ;;
-            *)
-              echo "::error::CONTAINER_DEPLOYMENT_TARGET must be app-service, azure-container-apps, or cloudflare-containers."
-              exit 1
-              ;;
-          esac
-          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
 
       - name: ⚡ Setup Node.js
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
@@ -534,7 +517,7 @@ jobs:
     name: 🚀 Deploy to Production ${{needs.release.outputs.new-release-version}}
     runs-on: ubuntu-latest
     needs: [release, build, validate, sync-to-main]
-    if: needs.release.outputs.new-release-published == 'true' && needs.validate.outputs.container-deployment-target == 'app-service'
+    if: needs.release.outputs.new-release-published == 'true'
     environment:
       name: production
       url: ${{ steps.deploy.outputs.webapp-url }}
@@ -607,28 +590,3 @@ jobs:
         run: |
           echo "✅ Successfully deployed version ${{ needs.release.outputs.new-release-version }} to production"
           echo "🌐 URL: ${{ steps.deploy.outputs.webapp-url }}"
-
-  deploy-production-azure-container:
-    name: Deploy to Azure Container Apps (Production)
-    needs: [release, build, validate, sync-to-main]
-    if: needs.release.outputs.new-release-published == 'true' && needs.validate.outputs.container-deployment-target == 'azure-container-apps'
-    uses: ./.github/workflows/azure-container-release.yml
-    with:
-      release_tag: ${{ needs.release.outputs.new-release-tag }}
-      target_environment: production
-    permissions:
-      id-token: write
-      contents: read
-      actions: read
-
-  deploy-production-cloudflare-container:
-    name: Deploy to Cloudflare Containers (Production)
-    needs: [release, build, validate, sync-to-main]
-    if: needs.release.outputs.new-release-published == 'true' && needs.validate.outputs.container-deployment-target == 'cloudflare-containers'
-    uses: ./.github/workflows/cloudflare-container-release.yml
-    with:
-      release_tag: ${{ needs.release.outputs.new-release-tag }}
-      target_environment: production
-    permissions:
-      contents: read
-      actions: read

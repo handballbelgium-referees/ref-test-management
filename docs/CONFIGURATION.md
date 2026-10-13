@@ -119,9 +119,8 @@ reach API subscribers, and a participant's session lock and privacy limiter must
 The Worker executable rejects `Local`.
 
 Set `RedisConfiguration:Endpoint` to an authenticated TLS URI (`rediss://:password@host:port`).
-`RedisConfiguration:AuthenticationMode` defaults to `Password`. Azure split mode uses `Token` and
-an attached user-assigned identity; Cloudflare split mode uses `Password` and a secret-provided
-TLS endpoint.
+`RedisConfiguration:AuthenticationMode` defaults to `Password`. Azure split mode can use `Token`
+and an attached user-assigned identity.
 The API and Worker use one shared connection for Hot Chocolate pub/sub, the 90-second participant
 session-lock lease, and the Redis privacy limiter. The endpoint is required when `State:Mode=Shared`
 or the privacy limiter backend is `Redis`; it is otherwise optional. Provide it through the hosting
@@ -131,25 +130,15 @@ deployment/ACL namespace for this application; grant the limiter and session-loc
 `PrivacyChallengeConfiguration:RedisEndpoint`, which is no longer read.
 
 `Hosting:Provider` selects the host's Data Protection key-encryption adapter. It defaults to
-`Local` for development. The current values are `Local`, `Azure`, and `Cloudflare`; this setting
+`Local` for development. The current values are `Local` and `Azure`; this setting
 selects the host adapter, not the database or combined/split topology. The database-backed key ring
 is always used; API and Worker must point to the same database and retain the `RefTestManagement`
-application name. Set `Azure` for Azure deployments to wrap key-ring entries with Azure Key Vault. Configure
+application name. Set `Azure` for Azure App Service deployments to wrap key-ring entries with Azure Key Vault. Configure
 `Azure:KeyVault:DataProtectionKeyIdentifier` as an HTTPS, versionless key URI (for example
 `https://<vault>.vault.azure.net/keys/<name>`). An optional
 `Azure:KeyVault:ManagedIdentityClientId` selects a user-assigned identity; otherwise the adapter
 uses the system-assigned managed identity. Grant that identity the Key Vault Crypto User role, and
 retain old Key Vault key versions while any data-protection key references them.
-
-Set `Cloudflare` when running through the Wrangler Worker. That adapter requires
-`Cloudflare:DataProtection:PfxBase64` and `Cloudflare:DataProtection:PfxPassword`; the API request
-assertion additionally requires `Cloudflare:ProxyAssertionSecret`. The Worker maps these from
-Wrangler Secrets named `CLOUDFLARE_DATA_PROTECTION_PFX_BASE64`,
-`CLOUDFLARE_DATA_PROTECTION_PFX_PASSWORD`, and `CLOUDFLARE_PROXY_ASSERTION_SECRET`. The
-certificate must contain an RSA private key of at least 2048 bits. Keep certificate bytes,
-passwords, and the assertion secret out of Terraform variables/state and source control; see
-[Data Protection](SECURITY.md#data-protection-key-ring) and
-[Cloudflare request trust](SECURITY.md#cloudflare-request-trust).
 
 Other cloud providers should supply their own host adapter rather than changing `Hosting:Mode` or
 `State:Mode`.
@@ -176,8 +165,8 @@ Configure a reachable shared Redis service in both API and Worker environments b
 `State:Mode=Shared`; this application does not provision infrastructure. Before rollout, verify
 ingress proxy addresses/networks in `ForwardedHeadersConfiguration` and verify that the trusted
 client-IP resolver returns the actual client address. Do not trust forwarded headers from untrusted
-peers. GraphQL rate limits remain per API instance; the initial ACA deployment therefore caps API
-replicas at one until a shared/global GraphQL limiter is implemented.
+peers. GraphQL rate limits remain per API instance, so deployments that scale the API horizontally
+need a shared/global GraphQL limiter.
 
 ## Sections
 
@@ -203,9 +192,7 @@ apply:
 
 Set `Hosting:Provider=Azure` in Azure deployments. The Azure adapter requires
 `Azure:KeyVault:DataProtectionKeyIdentifier`; see [Data Protection key ring](SECURITY.md#data-protection-key-ring).
-For Cloudflare, configure the certificate and proxy assertion settings described above and in
-[Cloudflare request trust](SECURITY.md#cloudflare-request-trust). Future providers must add their
-own host adapter.
+Future providers must add their own host adapter.
 
 ### State
 
@@ -223,18 +210,9 @@ platform; do not use platform environment variables to infer the state topology.
 | ------------------ | ------------------------------------- | -------- | ------------- |
 | `DatabaseProvider` | Selects the EF Core database provider | No       | `"SqlServer"` |
 
-Azure Container Apps Terraform selects a provider independently for testing and production.
-`SqlServer` remains the default and uses Entra-only Azure SQL with per-process user-assigned managed
-identities. `PostgreSQL` and `MySQL` use managed Azure Database Flexible Servers; their application
-connection strings are supplied through Key Vault, must use TLS with certificate validation, and
-require an explicit Terraform cost opt-in. Those managed services retain automated backups for
-seven days. Azure SQLite uses a persistent Azure Files share and is restricted to single
-(`Hosting:Mode=All`, `State:Mode=Local`) mode with one API replica; split API/Worker mode requires a
-server database. The SQLite share has no
-automated backup, and releases pause the API while the migration job accesses its file. Cloudflare
-continues to use operator-managed external PostgreSQL; the Wrangler Worker maps
-`POSTGRES_CONNECTION_STRING` to `ConnectionStrings:RefTestManagement`. Shared-state/split mode still
-requires a TLS Redis endpoint.
+The application supports the database providers below; this repository does not provision Azure
+database resources. Configure database services and backups through the hosting provider or
+operator. Shared-state/split mode requires a TLS Redis endpoint.
 
 Valid values:
 
@@ -245,10 +223,8 @@ Valid values:
 | `SQLite`     | SQLite                                          | `Data Source=RefTestManagement.db`                                             |
 | `MySQL`      | MySQL / MariaDB (via MySql.EntityFrameworkCore) | `Server=...;Database=...;User=...;Password=...;`                               |
 
-For Azure-managed PostgreSQL and MySQL, use a provider connection string with TLS and full
-server-certificate validation; keep the password in the provider-specific Key Vault secret. Azure
-SQLite uses `Data Source=/mnt/ref-test-data/RefTestManagement.db` from the mounted Azure Files share.
-It is supported only in single mode and has no automated backup.
+For managed database services, use a provider connection string with TLS and full
+server-certificate validation.
 
 ### ConnectionStrings
 
@@ -507,12 +483,6 @@ address after trusted `X-Forwarded-For` processing. The unsafe-rate-limiting ove
 header-only configuration valid. Verify ingress addresses with the deployment operator before
 rollout; this repository does not assume production ingress or CIDRs.
 
-Cloudflare does not use this forwarded-header path. Its Worker removes client-supplied forwarding
-and assertion headers, adds a shared-secret request assertion from Cloudflare's edge-provided
-client address, and the API validates that assertion before applying the address, scheme, or host.
-Do not trust raw client-IP headers as a substitute; see
-[Cloudflare request trust](SECURITY.md#cloudflare-request-trust).
-
 ## Managing Migrations
 
 Each provider has its own migrations project. Migrations must be generated separately per provider because the DDL (identity columns, data types, etc.) differs between databases.
@@ -577,15 +547,11 @@ start background pollers or require Redis. Give this migration job database sche
 permissions separately from the runtime API/Worker identities. `Hosting:Mode=Api` does not apply
 migrations automatically.
 
-Azure's release workflow runs this command in the manual Container Apps migration job before
-updating app revisions. For SQLite, the job mounts the same persistent Azure Files share as the API;
-the workflow stops the single-mode API for the migration window and restarts it after the revision
-update. Azure-managed PostgreSQL/MySQL retain service-managed backups for seven days; SQLite has no
-automated backup. Cloudflare has no Terraform-managed migration job: run the Worker image with
-`--migrate` from an authorized operator environment against the external PostgreSQL database before
-deploying the new Wrangler image. Use the same `DatabaseProvider=PostgreSQL` and connection string
-that the application will use; keep the connection string out of command text, logs, and source
-control.
+The Azure App Service release workflow deploys the application but does not run a separate
+migration job. With `Hosting:Mode=All`, the API applies migrations at startup; split deployments
+must run the Worker command from an authorized deployment/operator environment before updating the
+API and Worker. Use the same database provider and connection string that the application will use;
+keep the connection string out of command text, logs, and source control.
 
 For local development, run it manually with the matching provider and connection string:
 

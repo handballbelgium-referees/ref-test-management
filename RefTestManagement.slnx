@@ -22,7 +22,6 @@
   <Project Path="RefTestManagement.Infrastructure/RefTestManagement.Infrastructure.csproj" />
   <Project Path="RefTestManagement.Hosting/RefTestManagement.Hosting.csproj" />
   <Project Path="RefTestManagement.Hosting.Azure/RefTestManagement.Hosting.Azure.csproj" />
-  <Project Path="RefTestManagement.Hosting.Cloudflare/RefTestManagement.Hosting.Cloudflare.csproj" />
   <Project Path="RefTestManagement.Migrations.MySQL/RefTestManagement.Migrations.MySQL.csproj" />
   <Project Path="RefTestManagement.Migrations.PostgreSQL/RefTestManagement.Migrations.PostgreSQL.csproj" />
   <Project Path="RefTestManagement.Migrations.SQLite/RefTestManagement.Migrations.SQLite.csproj" />

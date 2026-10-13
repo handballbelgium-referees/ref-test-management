@@ -64,7 +64,7 @@ public sealed class AzureDataProtectionConfigurationTests
     [Fact]
     public void UnsupportedProviderFailsInsteadOfSkippingKeyProtection()
     {
-        var configuration = CreateConfiguration(("Hosting:Provider", "Cloudflare"));
+        var configuration = CreateConfiguration(("Hosting:Provider", "Unsupported"));
 
         Assert.Throws<InvalidOperationException>(() =>
             AzureDataProtectionConfiguration.CreateKeyProtection(

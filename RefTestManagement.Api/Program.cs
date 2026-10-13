@@ -6,7 +6,6 @@ using Handball.Belgium.RefTestManagement.Api;
 using Handball.Belgium.RefTestManagement.Security;
 using Handball.Belgium.RefTestManagement.Hosting;
 using Handball.Belgium.RefTestManagement.Hosting.Azure;
-using Handball.Belgium.RefTestManagement.Hosting.Cloudflare;
 using Handball.Belgium.RefTestManagement.Hosting.Configurations;
 using Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
 using Microsoft.AspNetCore.Authentication;
@@ -27,12 +26,8 @@ var hostingProvider = HostingProviderConfiguration.Create(
     configuration,
     builder.Environment,
     [
-        new AzureHostingProviderAdapter(),
-        new CloudflareHostingProviderAdapter()
+        new AzureHostingProviderAdapter()
     ]);
-var isCloudflareProvider =
-    string.Equals(hostingProvider.Provider, "Cloudflare", StringComparison.OrdinalIgnoreCase);
-CloudflareRequestAssertionMiddleware.ValidateConfiguration(configuration);
 
 services.AddSecurityConfiguration(configuration);
 services.AddTaskBasedAuthorization();
@@ -61,16 +56,12 @@ services.AddSingleton<IPrivacyChallengeRateLimiter, PrivacyChallengeRateLimiter>
 
 var graphQlLimitsConfig = services.AddValidatedConfiguration<GraphQlLimitsConfiguration>(
     configuration, "GraphQlLimitsConfiguration");
-Action<ForwardedHeadersConfiguration>? forwardedHeadersValidator = isCloudflareProvider
-    ? null
-    : ConfigurableHeaderClientIpResolver.ValidateConfiguration;
 var forwardedHeadersConfig = services.AddValidatedConfiguration<ForwardedHeadersConfiguration>(
-    configuration, "ForwardedHeadersConfiguration", forwardedHeadersValidator);
+    configuration,
+    "ForwardedHeadersConfiguration",
+    ConfigurableHeaderClientIpResolver.ValidateConfiguration);
 services.Configure<ForwardedHeadersConfiguration>(configuration.GetSection("ForwardedHeadersConfiguration"));
-if (isCloudflareProvider)
-    services.AddSingleton<IClientIpResolver, CloudflareClientIpResolver>();
-else
-    services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
+services.AddSingleton<IClientIpResolver, ConfigurableHeaderClientIpResolver>();
 
 const string graphQlRateLimiterPolicy = "graphql";
 
@@ -159,7 +150,6 @@ if (hostingMode == HostingMode.All)
 
 var hasUnsafeForwardedHeadersRateLimitConfig =
     graphQlLimitsConfig.EnableRateLimiting &&
-    !isCloudflareProvider &&
     forwardedHeadersConfig.KnownProxies.Length == 0 &&
     forwardedHeadersConfig.KnownNetworks.Length == 0;
 
@@ -215,10 +205,7 @@ app.Use((context, next) =>
     return next(context);
 });
 
-if (isCloudflareProvider)
-    app.UseMiddleware<CloudflareRequestAssertionMiddleware>();
-else
-    app.UseForwardedHeaders(forwardedHeadersOptions);
+app.UseForwardedHeaders(forwardedHeadersOptions);
 
 // Security headers are enforced through response headers rather than meta tags. CSP stays
 // response-only to avoid a second policy; browsers ignore X-Content-Type-Options in markup, and

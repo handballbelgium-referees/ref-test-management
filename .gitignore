@@ -440,11 +440,6 @@ FodyWeavers.xsd
 # Root dependencies
 /node_modules
 
-# Cloudflare Worker local secrets and generated runtime state
-/infra/cloudflare/worker/.dev.vars
-/infra/cloudflare/worker/.dev.vars.*
-/infra/cloudflare/worker/.wrangler/
-
 # Local Copilot settings
 .github/copilot/settings.local.json
 
