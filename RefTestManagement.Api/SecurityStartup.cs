@@ -153,14 +153,8 @@ public static class SecurityStartup
 
             OnRedirectToIdentityProviderForSignOut = context =>
             {
-                // Auth0 uses /v2/logout with returnTo; Keycloak uses the realm's OIDC logout endpoint with
-                // post_logout_redirect_uri. Both endpoints are built from the provider authority.
-                var logoutUri = provider == IdentityProvider.Keycloak
-                    ? $"{authority}/protocol/openid-connect/logout?client_id={clientId}"
-                    : $"{authority}/v2/logout?client_id={clientId}";
-                var returnParameter = provider == IdentityProvider.Keycloak
-                    ? "post_logout_redirect_uri"
-                    : "returnTo";
+                var logoutUri = IdentityProviderSelector.LogoutUri(authority, clientId ?? string.Empty, provider);
+                var returnParameter = IdentityProviderSelector.LogoutReturnParameter(provider);
 
                 var postLogoutUri = context.Properties.RedirectUri;
                 if (!string.IsNullOrEmpty(postLogoutUri))
@@ -183,9 +177,7 @@ public static class SecurityStartup
 
             OnRedirectToIdentityProvider = context =>
             {
-                // Keycloak adds the API audience through a client mapper on the login client, so only Auth0
-                // needs the audience parameter on the authorize request.
-                if (provider == IdentityProvider.Auth0)
+                if (IdentityProviderSelector.SendsAudienceOnAuthorize(provider))
                     context.ProtocolMessage.SetParameter("audience", configuration["Identity:Auth0:Audience"]);
                 return Task.CompletedTask;
             }

@@ -62,6 +62,43 @@ public sealed class IdentityProviderSelectorTests
         Assert.Contains($"Identity:Keycloak:{key}", exception.Message, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(IdentityProvider.Auth0, true)]
+    [InlineData(IdentityProvider.Keycloak, false)]
+    public void SendsAudienceOnAuthorizeOnlyForAuth0(IdentityProvider provider, bool expected)
+    {
+        Assert.Equal(expected, IdentityProviderSelector.SendsAudienceOnAuthorize(provider));
+    }
+
+    [Theory]
+    [InlineData(IdentityProvider.Auth0, "returnTo")]
+    [InlineData(IdentityProvider.Keycloak, "post_logout_redirect_uri")]
+    public void LogoutReturnParameterMatchesProvider(IdentityProvider provider, string expected)
+    {
+        Assert.Equal(expected, IdentityProviderSelector.LogoutReturnParameter(provider));
+    }
+
+    [Fact]
+    public void LogoutUriUsesAuth0EndpointForAuth0()
+    {
+        var uri = IdentityProviderSelector.LogoutUri("https://tenant.eu.auth0.com", "client", IdentityProvider.Auth0);
+
+        Assert.Equal("https://tenant.eu.auth0.com/v2/logout?client_id=client", uri);
+    }
+
+    [Fact]
+    public void LogoutUriUsesRealmEndpointForKeycloak()
+    {
+        var uri = IdentityProviderSelector.LogoutUri(
+            "https://login.referees-handballbelgium.be/realms/referees-handballbelgium-beta",
+            "reftest-beta",
+            IdentityProvider.Keycloak);
+
+        Assert.Equal(
+            "https://login.referees-handballbelgium.be/realms/referees-handballbelgium-beta/protocol/openid-connect/logout?client_id=reftest-beta",
+            uri);
+    }
+
     private static Dictionary<string, string?> CompleteKeycloakSettings() => new()
     {
         ["Identity:Provider"] = "Keycloak",

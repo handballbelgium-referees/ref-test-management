@@ -58,6 +58,25 @@ public static class IdentityProviderSelector
     public static string SettingsPath(IdentityProvider provider) => $"Identity:{SchemeName(provider)}";
 
     /// <summary>
+    /// Whether the authorize request must carry the API audience. Keycloak adds it through a client mapper on the
+    /// login client instead.
+    /// </summary>
+    public static bool SendsAudienceOnAuthorize(IdentityProvider provider) => provider != IdentityProvider.Keycloak;
+
+    /// <summary>The query parameter that carries the post-logout redirect target.</summary>
+    public static string LogoutReturnParameter(IdentityProvider provider) => provider == IdentityProvider.Keycloak
+        ? "post_logout_redirect_uri"
+        : "returnTo";
+
+    /// <summary>
+    /// The provider logout endpoint. Keycloak uses the realm OIDC logout endpoint; Auth0 uses <c>/v2/logout</c>.
+    /// </summary>
+    public static string LogoutUri(string authority, string clientId, IdentityProvider provider) =>
+        provider == IdentityProvider.Keycloak
+            ? $"{authority}/protocol/openid-connect/logout?client_id={clientId}"
+            : $"{authority}/v2/logout?client_id={clientId}";
+
+    /// <summary>
     /// Fails fast when a Keycloak deployment lacks settings needed for the confidential OpenID Connect login
     /// and the API audience check. Auth0 validation is unchanged.
     /// </summary>
