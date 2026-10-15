@@ -1,3 +1,5 @@
+using Handball.Belgium.RefTestManagement.Security;
+
 namespace Handball.Belgium.RefTestManagement.Api.Identity;
 
 /// <summary>
@@ -20,18 +22,8 @@ public static class IdentityProviderSelector
     /// </summary>
     public static IdentityProvider Resolve(IConfiguration configuration)
     {
-        var value = configuration[ConfigurationKey];
-        if (string.IsNullOrWhiteSpace(value))
-            return IdentityProvider.Auth0;
-
-        if (Enum.TryParse<IdentityProvider>(value.Trim(), ignoreCase: true, out var provider)
-            && Enum.IsDefined(provider))
-        {
-            return provider;
-        }
-
-        throw new InvalidOperationException(
-            $"Unsupported {ConfigurationKey} '{value}'. Expected 'Auth0' or 'Keycloak'.");
+        var name = IdentityProviderName.Parse(configuration[ConfigurationKey]);
+        return Enum.Parse<IdentityProvider>(name);
     }
 
     /// <summary>The authentication scheme name used for the OpenID Connect challenge and sign-out.</summary>

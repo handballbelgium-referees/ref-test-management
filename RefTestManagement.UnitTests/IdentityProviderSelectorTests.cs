@@ -1,4 +1,5 @@
 using Handball.Belgium.RefTestManagement.Api.Identity;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Configuration;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
@@ -26,6 +27,39 @@ public sealed class IdentityProviderSelectorTests
     {
         var configuration = Build(new Dictionary<string, string?> { ["Identity:Provider"] = "Okta" });
 
+        Assert.Throws<InvalidOperationException>(() => IdentityProviderSelector.Resolve(configuration));
+    }
+
+    [Theory]
+    [InlineData(" Keycloak ")]
+    [InlineData("KEYCLOAK")]
+    public void ResolveTrimsWhitespaceAndMatchesFactoryRule(string value)
+    {
+        var configuration = Build(new Dictionary<string, string?> { ["Identity:Provider"] = value });
+
+        Assert.Equal(IdentityProvider.Keycloak, IdentityProviderSelector.Resolve(configuration));
+        Assert.Equal("Keycloak", IdentityProviderName.Parse(value));
+    }
+
+    [Theory]
+    [InlineData("   ")]
+    [InlineData("")]
+    public void ResolveTreatsBlankAsAuth0(string value)
+    {
+        var configuration = Build(new Dictionary<string, string?> { ["Identity:Provider"] = value });
+
+        Assert.Equal(IdentityProvider.Auth0, IdentityProviderSelector.Resolve(configuration));
+        Assert.Equal("Auth0", IdentityProviderName.Parse(value));
+    }
+
+    [Theory]
+    [InlineData("Keycloak2")]
+    [InlineData("Key cloak")]
+    public void SharedParserRejectsUnknownValuesLikeTheSelector(string value)
+    {
+        var configuration = Build(new Dictionary<string, string?> { ["Identity:Provider"] = value });
+
+        Assert.Throws<InvalidOperationException>(() => IdentityProviderName.Parse(value));
         Assert.Throws<InvalidOperationException>(() => IdentityProviderSelector.Resolve(configuration));
     }
 
