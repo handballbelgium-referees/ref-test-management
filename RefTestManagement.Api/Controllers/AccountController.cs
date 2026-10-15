@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Api.Extensions;
+using Handball.Belgium.RefTestManagement.Api.Identity;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -11,14 +12,19 @@ namespace Handball.Belgium.RefTestManagement.Api.Controllers;
 [Route("[controller]")]
 public class AccountController(
     IPermissionSnapshotService permissionSnapshotService,
-    IHostEnvironment hostEnvironment) : Controller
+    IHostEnvironment hostEnvironment,
+    IConfiguration configuration) : Controller
 {
+    /// <summary>The authentication scheme configured for the active identity provider.</summary>
+    private string AuthenticationScheme =>
+        IdentityProviderSelector.SchemeName(IdentityProviderSelector.Resolve(configuration));
+
     [HttpGet("Login")]
     public Task Login(string returnUrl = "/")
     {
         if (!Url.IsLocalUrl(returnUrl) && !IsLocalDevelopmentUiUrl(returnUrl)) returnUrl = "/";
 
-        return HttpContext.ChallengeAsync("Auth0", new AuthenticationProperties { RedirectUri = returnUrl });
+        return HttpContext.ChallengeAsync(AuthenticationScheme, new AuthenticationProperties { RedirectUri = returnUrl });
     }
 
     private bool IsLocalDevelopmentUiUrl(string returnUrl)
@@ -49,7 +55,7 @@ public class AccountController(
     {
         if (!Url.IsLocalUrl(returnUrl)) returnUrl = "/";
 
-        await HttpContext.SignOutAsync("Auth0", new AuthenticationProperties { RedirectUri = returnUrl });
+        await HttpContext.SignOutAsync(AuthenticationScheme, new AuthenticationProperties { RedirectUri = returnUrl });
         await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
     }
 

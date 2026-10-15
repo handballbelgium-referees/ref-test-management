@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Controllers;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Microsoft.AspNetCore.Routing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
@@ -19,7 +20,8 @@ public sealed class AccountControllerTests
     {
         var controller = new AccountController(
             new NullPermissionSnapshotService(),
-            CreateEnvironment("Production"))
+            CreateEnvironment("Production"),
+            new ConfigurationBuilder().Build())
         {
             ControllerContext = new ControllerContext
             {
@@ -55,7 +57,8 @@ public sealed class AccountControllerTests
         var httpContext = new DefaultHttpContext { RequestServices = serviceProvider };
         var controller = new AccountController(
             new NullPermissionSnapshotService(),
-            CreateEnvironment(environmentName))
+            CreateEnvironment(environmentName),
+            new ConfigurationBuilder().Build())
         {
             ControllerContext = new ControllerContext
             {
