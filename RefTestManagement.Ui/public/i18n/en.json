@@ -701,7 +701,8 @@
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handball RefTest Management System. All rights reserved.",
+    "copyright": "© {{year}} Handball RefTest Management System.",
+    "rightsReserved": "All rights reserved.",
     "creator": "Owned by Kristof Gilis",
     "privacy": "Privacy notice",
     "cookies": "Cookie policy"

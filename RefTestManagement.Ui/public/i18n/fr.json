@@ -702,7 +702,8 @@
     }
   },
   "footer": {
-    "copyright": "© {{year}} Gestion des RefTest Handball. Tous droits réservés.",
+    "copyright": "© {{year}} Gestion des RefTest Handball.",
+    "rightsReserved": "Tous droits réservés.",
     "creator": "Propriété de Kristof Gilis",
     "privacy": "Avis de confidentialité",
     "cookies": "Politique en matière de cookies"

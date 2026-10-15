@@ -701,7 +701,8 @@
     }
   },
   "footer": {
-    "copyright": "© {{year}} Handbal RefTest Beheer. Alle rechten voorbehouden.",
+    "copyright": "© {{year}} Handbal RefTest Beheer.",
+    "rightsReserved": "Alle rechten voorbehouden.",
     "creator": "Eigendom van Kristof Gilis",
     "privacy": "Privacyverklaring",
     "cookies": "Cookiebeleid"

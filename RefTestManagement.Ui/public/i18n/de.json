@@ -701,7 +701,8 @@
     }
   },
   "footer": {
-    "copyright": "\u00a9 {{year}} Handball-RefTest-Verwaltung. Alle Rechte vorbehalten.",
+    "copyright": "\u00a9 {{year}} Handball-RefTest-Verwaltung.",
+    "rightsReserved": "Alle Rechte vorbehalten.",
     "creator": "Eigentum von Kristof Gilis",
     "privacy": "Datenschutzhinweis",
     "cookies": "Cookie-Richtlinie"
