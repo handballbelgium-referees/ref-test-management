@@ -54,8 +54,8 @@ public sealed partial class KeycloakPermissionSyncService(
 
     /// <inheritdoc />
     /// <remarks>
-    /// Fails closed: a missing or disabled user has no permissions. Other HTTP failures throw
-    /// so the caller never treats an outage as "no permissions" and caches it.
+    /// Fails closed: a missing or disabled user throws, so the caller rejects the session instead
+    /// of caching an empty grant. HTTP failures also throw so an outage is never treated as "no permissions".
     /// </remarks>
     public async Task<IReadOnlySet<string>> GetUserPermissionsAsync(
         string userId,
@@ -76,7 +76,7 @@ public sealed partial class KeycloakPermissionSyncService(
         {
             if (userResponse.StatusCode == HttpStatusCode.NotFound)
             {
-                return new HashSet<string>(StringComparer.Ordinal);
+                throw new InvalidOperationException("Keycloak account could not be found; authorization will fail closed.");
             }
 
             userResponse.EnsureSuccessStatusCode();
@@ -90,7 +90,7 @@ public sealed partial class KeycloakPermissionSyncService(
 
             if (!enabled)
             {
-                return new HashSet<string>(StringComparer.Ordinal);
+                throw new InvalidOperationException("Keycloak account is disabled; authorization will fail closed.");
             }
         }
 

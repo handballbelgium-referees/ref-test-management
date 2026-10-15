@@ -107,30 +107,28 @@ public sealed class KeycloakPermissionSyncServiceTests
     }
 
     [Fact]
-    public async Task ReadFailsClosedForDisabledUser()
+    public async Task ReadRejectsDisabledUserWithoutReadingRoles()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new ScriptedHandler(new KeycloakResponses { UserJson = """{"id":"user-1","enabled":false}""" });
         await using var provider = BuildProvider(handler);
         var sync = provider.GetRequiredService<IIdentityPermissionSync>();
 
-        var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
-
-        Assert.Empty(permissions);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sync.GetUserPermissionsAsync("user-1", cancellationToken));
         Assert.DoesNotContain(handler.Requests, r => r.Url.Contains("/role-mappings/", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task ReadFailsClosedForMissingUser()
+    public async Task ReadRejectsMissingUser()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new ScriptedHandler(new KeycloakResponses { UserStatus = HttpStatusCode.NotFound });
         await using var provider = BuildProvider(handler);
         var sync = provider.GetRequiredService<IIdentityPermissionSync>();
 
-        var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
-
-        Assert.Empty(permissions);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sync.GetUserPermissionsAsync("user-1", cancellationToken));
     }
 
     [Fact]
