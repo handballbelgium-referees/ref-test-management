@@ -16,7 +16,7 @@ public static class SecurityStartup
         var schemeName = IdentityProviderSelector.SchemeName(provider);
         var issuer = IdentityProviderSelector.ClaimsIssuer(provider);
         var authority = IdentityProviderSelector.Authority(configuration, provider);
-        var audience = configuration[$"{IdentityProviderSelector.SettingsSection(provider)}:Audience"];
+        var audience = configuration[$"{IdentityProviderSelector.SettingsPath(provider)}:Audience"];
 
         services.AddAuthentication(options =>
             {
@@ -116,7 +116,7 @@ public static class SecurityStartup
         IConfiguration configuration,
         IdentityProvider provider)
     {
-        var section = IdentityProviderSelector.SettingsSection(provider);
+        var section = IdentityProviderSelector.SettingsPath(provider);
         var authority = IdentityProviderSelector.Authority(configuration, provider);
         var clientId = configuration[$"{section}:ClientId"];
         var issuer = IdentityProviderSelector.ClaimsIssuer(provider);
@@ -185,7 +185,7 @@ public static class SecurityStartup
                 // Keycloak adds the API audience through a client mapper on the login client, so only Auth0
                 // needs the audience parameter on the authorize request.
                 if (provider == IdentityProvider.Auth0)
-                    context.ProtocolMessage.SetParameter("audience", configuration["Auth0:Audience"]);
+                    context.ProtocolMessage.SetParameter("audience", configuration["Identity:Auth0:Audience"]);
                 return Task.CompletedTask;
             }
         };

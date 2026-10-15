@@ -262,12 +262,12 @@ Replace `RefTestManagement.Migrations.SqlServer` with the project matching your 
 ```bash
 dotnet user-secrets set "DatabaseProvider" "SqlServer"
 dotnet user-secrets set "ConnectionStrings:RefTestManagement" "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
-dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
-dotnet user-secrets set "Auth0:ClientId" "your-client-id"
-dotnet user-secrets set "Auth0:ClientSecret" "your-client-secret"
-dotnet user-secrets set "Auth0:Audience" "your-api-identifier"
-dotnet user-secrets set "Auth0:ManagementClientId" "your-m2m-client-id"
-dotnet user-secrets set "Auth0:ManagementClientSecret" "your-m2m-client-secret"
+dotnet user-secrets set "Identity:Auth0:Domain" "your-tenant.auth0.com"
+dotnet user-secrets set "Identity:Auth0:ClientId" "your-client-id"
+dotnet user-secrets set "Identity:Auth0:ClientSecret" "your-client-secret"
+dotnet user-secrets set "Identity:Auth0:Audience" "your-api-identifier"
+dotnet user-secrets set "Identity:Auth0:ManagementClientId" "your-m2m-client-id"
+dotnet user-secrets set "Identity:Auth0:ManagementClientSecret" "your-m2m-client-secret"
 ```
 
 Use a separate Machine-to-Machine application for the Management API credentials and grant only

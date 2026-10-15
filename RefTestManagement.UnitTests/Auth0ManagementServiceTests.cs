@@ -278,10 +278,10 @@ public sealed class Auth0ManagementServiceTests
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Auth0:Domain"] = "tenant.example.test",
-                ["Auth0:Audience"] = Auth0ManagementTestServices.ApiAudience,
-                ["Auth0:ManagementClientId"] = "unit-test-client",
-                ["Auth0:ManagementClientSecret"] = clientSecret
+                ["Identity:Auth0:Domain"] = "tenant.example.test",
+                ["Identity:Auth0:Audience"] = Auth0ManagementTestServices.ApiAudience,
+                ["Identity:Auth0:ManagementClientId"] = "unit-test-client",
+                ["Identity:Auth0:ManagementClientSecret"] = clientSecret
             })
             .Build();
 
@@ -594,10 +594,10 @@ internal static class Auth0ManagementTestServices
         var configuration = new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?>
             {
-                ["Auth0:Domain"] = domain,
-                ["Auth0:Audience"] = ApiAudience,
-                ["Auth0:ManagementClientId"] = "unit-test-client",
-                ["Auth0:ManagementClientSecret"] = "unit-test-secret"
+                ["Identity:Auth0:Domain"] = domain,
+                ["Identity:Auth0:Audience"] = ApiAudience,
+                ["Identity:Auth0:ManagementClientId"] = "unit-test-client",
+                ["Identity:Auth0:ManagementClientSecret"] = "unit-test-secret"
             })
             .Build();
 

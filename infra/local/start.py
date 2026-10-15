@@ -671,19 +671,19 @@ class LocalStackLauncher:
 
         missing: list[str] = []
         for key in AUTH0_KEYS:
-            environment_name = f"Auth0__{key}"
+            environment_name = f"Identity__Auth0__{key}"
             if environment_name in os.environ:
                 value = os.environ[environment_name]
             elif environment_name in self.local_env:
                 value = self.local_env[environment_name]
             else:
-                value = user_secrets.get(f"Auth0:{key}", "")
+                value = user_secrets.get(f"Identity:Auth0:{key}", "")
             if not value.strip():
-                missing.append(f"Auth0:{key}")
+                missing.append(f"Identity:Auth0:{key}")
         if missing:
             names = ", ".join(missing)
             raise LauncherError(
-                f"Required Auth0 settings are missing or empty: {names}. Set them in the API project's User Secrets or non-empty Auth0__<Key> environment overrides; values were not displayed."
+                f"Required Auth0 settings are missing or empty: {names}. Set them in the API project's User Secrets or non-empty Identity__Auth0__<Key> environment overrides; values were not displayed."
             )
 
     def _ensure_local_https_certificate(self) -> None:

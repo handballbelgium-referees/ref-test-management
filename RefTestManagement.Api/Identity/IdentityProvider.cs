@@ -46,14 +46,14 @@ public static class IdentityProviderSelector
 
     /// <summary>
     /// The OpenID Connect authority. Auth0 derives it from its tenant domain; Keycloak uses the realm URL
-    /// configured in <c>Keycloak:Authority</c>.
+    /// configured in <c>Identity:Keycloak:Authority</c>.
     /// </summary>
     public static string Authority(IConfiguration configuration, IdentityProvider provider) => provider switch
     {
-        IdentityProvider.Keycloak => configuration["Keycloak:Authority"] ?? string.Empty,
-        _ => $"https://{configuration["Auth0:Domain"]}"
+        IdentityProvider.Keycloak => configuration[$"{SettingsPath(provider)}:Authority"] ?? string.Empty,
+        _ => $"https://{configuration[$"{SettingsPath(provider)}:Domain"]}"
     };
 
-    /// <summary>The configuration section that holds the provider's client settings.</summary>
-    public static string SettingsSection(IdentityProvider provider) => SchemeName(provider);
+    /// <summary>The configuration path, under <c>Identity</c>, that holds the provider's client settings.</summary>
+    public static string SettingsPath(IdentityProvider provider) => $"Identity:{SchemeName(provider)}";
 }

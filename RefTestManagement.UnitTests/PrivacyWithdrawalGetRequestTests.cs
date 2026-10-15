@@ -110,10 +110,10 @@ public sealed class PrivacyWithdrawalGetRequestTests
                 Environment.GetEnvironmentVariable("ConnectionStrings__RefTestManagement"),
             ["ForwardedHeadersConfiguration__KnownNetworks__0"] =
                 Environment.GetEnvironmentVariable("ForwardedHeadersConfiguration__KnownNetworks__0"),
-            ["Auth0__Domain"] = Environment.GetEnvironmentVariable("Auth0__Domain"),
-            ["Auth0__Audience"] = Environment.GetEnvironmentVariable("Auth0__Audience"),
-            ["Auth0__ClientId"] = Environment.GetEnvironmentVariable("Auth0__ClientId"),
-            ["Auth0__ClientSecret"] = Environment.GetEnvironmentVariable("Auth0__ClientSecret")
+            ["Identity__Auth0__Domain"] = Environment.GetEnvironmentVariable("Identity__Auth0__Domain"),
+            ["Identity__Auth0__Audience"] = Environment.GetEnvironmentVariable("Identity__Auth0__Audience"),
+            ["Identity__Auth0__ClientId"] = Environment.GetEnvironmentVariable("Identity__Auth0__ClientId"),
+            ["Identity__Auth0__ClientSecret"] = Environment.GetEnvironmentVariable("Identity__Auth0__ClientSecret")
         };
 
         public TestApiEnvironment()
@@ -130,10 +130,10 @@ public sealed class PrivacyWithdrawalGetRequestTests
             Environment.SetEnvironmentVariable(
                 "ForwardedHeadersConfiguration__KnownNetworks__0",
                 "127.0.0.1/32");
-            Environment.SetEnvironmentVariable("Auth0__Domain", "test.example");
-            Environment.SetEnvironmentVariable("Auth0__Audience", "test-api");
-            Environment.SetEnvironmentVariable("Auth0__ClientId", "test-client");
-            Environment.SetEnvironmentVariable("Auth0__ClientSecret", "unused-test-placeholder");
+            Environment.SetEnvironmentVariable("Identity__Auth0__Domain", "test.example");
+            Environment.SetEnvironmentVariable("Identity__Auth0__Audience", "test-api");
+            Environment.SetEnvironmentVariable("Identity__Auth0__ClientId", "test-client");
+            Environment.SetEnvironmentVariable("Identity__Auth0__ClientSecret", "unused-test-placeholder");
         }
 
         public void Dispose()
