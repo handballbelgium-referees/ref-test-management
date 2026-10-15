@@ -32,6 +32,11 @@ internal sealed partial class KeycloakPermissionSyncService(
     {
         ArgumentNullException.ThrowIfNull(permissions);
 
+        if (!IsConfigured)
+        {
+            throw new InvalidOperationException("Keycloak permission sync is not configured.");
+        }
+
         var authority = _config.Authority.TrimEnd('/');
         var accessToken = await GetAdminAccessTokenAsync(authority, cancellationToken).ConfigureAwait(false);
         var adminBase = authority.Replace("/realms/", "/admin/realms/", StringComparison.Ordinal);

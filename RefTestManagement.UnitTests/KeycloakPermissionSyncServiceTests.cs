@@ -79,13 +79,17 @@ public sealed class KeycloakPermissionSyncServiceTests
     }
 
     [Fact]
-    public void MissingAdminSecretReportsUnconfigured()
+    public async Task MissingAdminSecretRefusesToSyncWithoutCallingKeycloak()
     {
+        var cancellationToken = TestContext.Current.CancellationToken;
         var handler = new ScriptedHandler(new KeycloakResponses());
-        using var provider = BuildProvider(handler, adminSecret: string.Empty);
+        await using var provider = BuildProvider(handler, adminSecret: string.Empty);
         var sync = provider.GetRequiredService<IIdentityPermissionSync>();
 
         Assert.False(sync.IsConfigured);
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sync.SyncPermissionsAsync(["ref-tests:create"], cancellationToken));
+        Assert.Empty(handler.Requests);
     }
 
     private static ServiceProvider BuildProvider(ScriptedHandler handler, string adminSecret = "test-secret")
