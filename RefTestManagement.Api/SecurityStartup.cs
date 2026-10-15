@@ -178,7 +178,9 @@ public static class SecurityStartup
             OnRedirectToIdentityProvider = context =>
             {
                 if (IdentityProviderSelector.SendsAudienceOnAuthorize(provider))
-                    context.ProtocolMessage.SetParameter("audience", configuration["Identity:Auth0:Audience"]);
+                    context.ProtocolMessage.SetParameter(
+                        "audience",
+                        configuration[$"{IdentityProviderSelector.SettingsPath(provider)}:Audience"]);
                 return Task.CompletedTask;
             }
         };

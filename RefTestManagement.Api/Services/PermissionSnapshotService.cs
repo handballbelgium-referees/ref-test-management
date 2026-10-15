@@ -6,7 +6,7 @@ using Microsoft.Extensions.Caching.Memory;
 namespace Handball.Belgium.RefTestManagement.Api.Services;
 
 /// <summary>
-/// Resolves a user's current effective permissions from Auth0.
+/// Resolves a user's current effective permissions from the configured identity provider.
 /// </summary>
 public interface IPermissionSnapshotService
 {
@@ -20,7 +20,7 @@ public interface IPermissionSnapshotService
 }
 
 /// <summary>
-/// Caches effective Auth0 permissions briefly and shares concurrent refreshes per user.
+/// Caches effective identity-provider permissions briefly and shares concurrent refreshes per user.
 /// </summary>
 public sealed class PermissionSnapshotService(
     IServiceScopeFactory scopeFactory,
@@ -36,9 +36,9 @@ public sealed class PermissionSnapshotService(
 
     private static readonly TimeSpan SnapshotLifetime = TimeSpan.FromMinutes(4);
     private static readonly TimeSpan FailureBackoff = TimeSpan.FromSeconds(30);
-    // Includes semaphore queue time and the complete multi-request Auth0 lookup.
+    // Includes semaphore queue time and the complete multi-request provider lookup.
     private static readonly TimeSpan RefreshTimeout = TimeSpan.FromSeconds(30);
-    private const string CacheKeyPrefix = "Auth0PermissionSnapshot:";
+    private const string CacheKeyPrefix = "PermissionSnapshot:";
 
     private readonly MemoryCache _cache = new(new MemoryCacheOptions
     {
@@ -129,7 +129,7 @@ public sealed class PermissionSnapshotService(
         using var timeout = new CancellationTokenSource(RefreshTimeout);
         try
         {
-            // This application-side cap does not assume or represent an Auth0 tenant quota.
+            // This application-side cap does not assume or represent a provider quota.
             await _refreshLimit.WaitAsync(timeout.Token);
             hasRefreshPermit = true;
 
