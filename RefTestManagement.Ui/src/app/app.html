@@ -171,6 +171,10 @@
             {{ 'footer.privacy' | translate }}
           </a>
           <span class="text-neutral-600 hidden sm:inline">•</span>
+          <a href="/privacy#cookies" class="text-neutral-300 hover:text-white underline underline-offset-2">
+            {{ 'footer.cookies' | translate }}
+          </a>
+          <span class="text-neutral-600 hidden sm:inline">•</span>
           <span
             class="font-mono text-neutral-400 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]"
           >
@@ -180,4 +184,6 @@
       </div>
     </div>
   </footer>
+
+  <app-cookie-banner />
 </div>

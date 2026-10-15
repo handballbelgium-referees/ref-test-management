@@ -141,6 +141,20 @@ describe('PrivacyNotice', () => {
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
 
+  it('renders the cookie policy section that the footer and banner link to', async () => {
+    const fixture = await renderPrivacyNotice();
+    const section = fixture.nativeElement.querySelector('#cookies') as HTMLElement | null;
+
+    if (!section) throw new Error('The cookie policy section was not rendered.');
+
+    const text = section.textContent.replace(/\s+/g, ' ').trim();
+    expect(text).toContain(en.privacy.cookies.title);
+    expect(text).toContain(en.privacy.cookies.intro);
+    expect(text).toContain(en.privacy.cookies.authBody);
+    expect(text).toContain(en.privacy.cookies.storageBody);
+    expect(text).toContain(en.privacy.cookies.thirdPartyBody);
+  });
+
   it('shows a successful missing-notice state instead of the loading state', async () => {
     privacyNoticeWatch.mockReturnValueOnce({
       valueChanges: of({ data: { privacyNotice: null }, loading: false }),

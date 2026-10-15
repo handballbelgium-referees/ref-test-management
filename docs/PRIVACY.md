@@ -48,6 +48,18 @@ The notice identifies the following service providers:
 
 Before production use, the controller must confirm each provider's data-processing agreement, hosting location, and any required safeguards for international transfers.
 
+### Cookies
+
+The public privacy notice (`/privacy#cookies`) includes a cookie policy, and a footer link and a notice-only cookie banner point to it. The banner stores its acknowledgement in `localStorage` under `cookie-notice-acknowledged`; it is not a cookie.
+
+| Cookie | Purpose | Set by | Attributes | Lifetime |
+|---|---|---|---|---|
+| `.AspNetCore.Cookies` | Authentication session | Management API (`SecurityStartup.cs`) | `HttpOnly`, `Secure`, `SameSite=Strict` | ASP.NET Core defaults (14-day sliding expiry); removed on sign-out |
+| `.AspNetCore.Correlation.*` | OIDC sign-in correlation | Management API (OIDC handler) | ASP.NET Core defaults | Short-lived; sign-in only |
+| `.AspNetCore.OpenIdConnect.Nonce.*` | OIDC nonce replay protection | Management API (OIDC handler) | ASP.NET Core defaults | Short-lived; sign-in only |
+
+Strictly necessary cookies do not require consent under GDPR/ePrivacy, so there is no optional-cookie setting. The language preference (`app-language`) is stored in `localStorage`, not a cookie. Auth0 may set its own cookies on its domain during login. The policy text requires legal review before publication.
+
 ## Retention and Erasure
 
 The configured retention period defaults to three years and accepts only 1–3 years; invalid values stop application startup. The application records both completion and expiry timestamps. A daily `PrivacyRetentionService` erases RefTests that have reached a terminal state after the retention period: `Completed` and `Expired` (measured from their completion/expiry timestamp), and `PendingApproval` and `Rejected` (measured from creation, since neither records a completion timestamp). Before erasure, the service rechecks the record's current eligibility inside the erasure transaction, so a rejected RefTest approved after candidate selection is not anonymized. Failures are isolated per record so later candidates still run. It also repairs a bounded page of already-anonymized RefTests that still contain legacy rejection text, using the same erasure path; each successful repair clears its residual data so later runs can advance without a durable cursor.
