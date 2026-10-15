@@ -25,6 +25,7 @@ public sealed class ArchitectureDependencyTests
         ["RefTestManagement.Application"] = ["RefTestManagement.Domain"],
         ["RefTestManagement.AuditLog"] = ["RefTestManagement.Domain"],
         ["RefTestManagement.Auth0"] = ["RefTestManagement.Security"],
+        ["RefTestManagement.Keycloak"] = ["RefTestManagement.Security"],
         ["RefTestManagement.Infrastructure"] =
             ["RefTestManagement.Domain", "RefTestManagement.Application", "RefTestManagement.AuditLog"],
         ["RefTestManagement.Migrations.SqlServer"] = ["RefTestManagement.Infrastructure"],
@@ -37,6 +38,7 @@ public sealed class ArchitectureDependencyTests
             "RefTestManagement.AuditLog",
             "RefTestManagement.Auth0",
             "RefTestManagement.Infrastructure",
+            "RefTestManagement.Keycloak",
             "RefTestManagement.Migrations.MySQL",
             "RefTestManagement.Migrations.PostgreSQL",
             "RefTestManagement.Migrations.SQLite",

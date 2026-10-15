@@ -1,4 +1,4 @@
-namespace Handball.Belgium.RefTestManagement.Auth0.Keycloak;
+namespace Handball.Belgium.RefTestManagement.Keycloak;
 
 /// <summary>
 /// Settings for the Keycloak Admin REST API used to synchronise permissions.

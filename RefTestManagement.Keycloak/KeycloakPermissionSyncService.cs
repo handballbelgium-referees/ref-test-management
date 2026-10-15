@@ -5,13 +5,13 @@ using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
-namespace Handball.Belgium.RefTestManagement.Auth0.Keycloak;
+namespace Handball.Belgium.RefTestManagement.Keycloak;
 
 /// <summary>
 /// Synchronises application permissions to Keycloak as client roles on the API client.
 /// The sync is additive: missing roles are created, existing roles and user assignments are untouched.
 /// </summary>
-internal sealed partial class KeycloakPermissionSyncService(
+public sealed partial class KeycloakPermissionSyncService(
     HttpClient httpClient,
     IOptions<KeycloakAdminConfiguration> options,
     ILogger<KeycloakPermissionSyncService> logger) : IIdentityPermissionSync

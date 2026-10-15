@@ -1246,6 +1246,7 @@
           "RefTestManagement.AuditLog": "[1.0.0, )",
           "RefTestManagement.Auth0": "[1.0.0, )",
           "RefTestManagement.Infrastructure": "[1.0.0, )",
+          "RefTestManagement.Keycloak": "[1.0.0, )",
           "RefTestManagement.Migrations.MySQL": "[1.0.0, )",
           "RefTestManagement.Migrations.PostgreSQL": "[1.0.0, )",
           "RefTestManagement.Migrations.SQLite": "[1.0.0, )",
@@ -1277,6 +1278,13 @@
           "RefTestManagement.Application": "[1.0.0, )",
           "RefTestManagement.AuditLog": "[1.0.0, )",
           "StrawberryShake.Server": "[16.6.8, )"
+        }
+      },
+      "reftestmanagement.keycloak": {
+        "type": "Project",
+        "dependencies": {
+          "Microsoft.Extensions.Http.Resilience": "[10.10.0, )",
+          "RefTestManagement.Security": "[1.0.0, )"
         }
       },
       "reftestmanagement.migrations.mysql": {

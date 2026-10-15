@@ -1,7 +1,5 @@
 using Handball.Belgium.RefTestManagement.Auth0.Configurations;
-using Handball.Belgium.RefTestManagement.Auth0.Keycloak;
 using Handball.Belgium.RefTestManagement.Auth0.Services;
-using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -39,30 +37,6 @@ public static class Auth0ServiceExtensions
             // rather than a delta, so a retry writes the same thing.
             .AddStandardResilienceHandler();
 
-        AddKeycloakPermissionSync(services, configuration);
-
         return services;
-    }
-
-    private static void AddKeycloakPermissionSync(IServiceCollection services, IConfiguration configuration)
-    {
-        services.Configure<KeycloakAdminConfiguration>(configuration.GetSection("Identity:Keycloak"));
-
-        services.AddHttpClient<KeycloakPermissionSyncService>(client =>
-            {
-                client.Timeout = TimeSpan.FromSeconds(30);
-            })
-            .RemoveAllLoggers()
-            .AddStandardResilienceHandler();
-
-        // Permission sync follows the configured provider. The Auth0 registration above stays
-        // unconditional because the API's permission snapshot service also depends on it.
-        services.AddTransient<IIdentityPermissionSync>(serviceProvider =>
-            string.Equals(
-                configuration["Identity:Provider"],
-                "Keycloak",
-                StringComparison.OrdinalIgnoreCase)
-                ? serviceProvider.GetRequiredService<KeycloakPermissionSyncService>()
-                : serviceProvider.GetRequiredService<IAuth0ManagementService>());
     }
 }

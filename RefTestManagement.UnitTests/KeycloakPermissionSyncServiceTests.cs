@@ -1,6 +1,6 @@
 using System.Net;
 using System.Text;
-using Handball.Belgium.RefTestManagement.Auth0;
+using Handball.Belgium.RefTestManagement.Keycloak;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -108,7 +108,9 @@ public sealed class KeycloakPermissionSyncServiceTests
         var services = new ServiceCollection();
         services.AddLogging();
         services.AddSingleton<IConfiguration>(configuration);
-        services.AddAuth0ManagementServices(configuration);
+        services.AddKeycloakPermissionSync(configuration);
+        services.AddTransient<IIdentityPermissionSync>(serviceProvider =>
+            serviceProvider.GetRequiredService<KeycloakPermissionSyncService>());
         services.ConfigureHttpClientDefaults(builder =>
             builder.ConfigurePrimaryHttpMessageHandler(() => handler));
 
