@@ -45,9 +45,11 @@
 }
 
 <article class="max-w-7xl mx-auto px-4 py-10 sm:px-6 lg:px-8 space-y-9 text-neutral-700 leading-7">
-  <section>
-    <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.controller.title' | translate }}</h2>
-    @if (privacyNotice(); as notice) {
+  @if (privacyNotice(); as notice) {
+    <section>
+      <h2 class="text-xl font-bold text-neutral-900">
+        {{ 'privacy.controller.title' | translate }}
+      </h2>
       <p>
         {{
           'privacy.controller.body'
@@ -59,8 +61,8 @@
                 }
         }}
       </p>
-    }
-  </section>
+    </section>
+  }
 
   <section>
     <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.data.title' | translate }}</h2>
@@ -82,63 +84,53 @@
     <p>{{ 'privacy.recipients.body' | translate }}</p>
   </section>
 
-  <section>
-    <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.retention.title' | translate }}</h2>
-    @if (privacyNotice(); as notice) {
+  @if (privacyNotice(); as notice) {
+    <section>
+      <h2 class="text-xl font-bold text-neutral-900">
+        {{ 'privacy.retention.title' | translate }}
+      </h2>
       <p>{{ 'privacy.retention.body' | translate: { retentionYears: notice.retentionYears } }}</p>
-    }
-  </section>
+    </section>
 
-  <section>
-    <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.rights.title' | translate }}</h2>
-    @if (privacyNotice(); as notice) {
+    <section>
+      <h2 class="text-xl font-bold text-neutral-900">{{ 'privacy.rights.title' | translate }}</h2>
       <p>{{ 'privacy.rights.body' | translate: { contactEmail: notice.contactEmail } }}</p>
-    }
-  </section>
+    </section>
+  }
 
-  <section
-    aria-labelledby="privacy-data-export-title"
-    class="space-y-4"
-  >
+  <section aria-labelledby="privacy-data-export-title" class="space-y-4">
     <h2 id="privacy-data-export-title" class="text-xl font-bold text-neutral-900">
       {{ 'privacy.dataExport.title' | translate }}
     </h2>
+    <p>{{ 'privacy.dataExport.description' | translate }}</p>
     <p>
-      {{ 'privacy.dataExport.description' | translate }}
       <a
         routerLink="/privacy/export-request"
         queryParamsHandling="preserve"
         class="rounded-sm text-primary-700 underline decoration-2 underline-offset-2 hover:text-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
       >
-        {{ 'privacy.dataExport.requestLink' | translate }}
-      </a>.
+        {{ 'privacy.dataExport.requestLink' | translate }} </a
+      >.
     </p>
   </section>
 
-  <section
-    aria-labelledby="privacy-withdrawal-title"
-    class="space-y-4"
-  >
+  <section aria-labelledby="privacy-withdrawal-title" class="space-y-4">
     <h2 id="privacy-withdrawal-title" class="text-xl font-bold text-neutral-900">
       {{ 'privacy.consentWithdrawal.title' | translate }}
     </h2>
+    <p>{{ 'privacy.consentWithdrawal.description' | translate }}</p>
     <p>
-      {{ 'privacy.consentWithdrawal.description' | translate }}
       <a
         routerLink="/privacy/withdrawal-request"
         queryParamsHandling="preserve"
         class="rounded-sm text-primary-700 underline decoration-2 underline-offset-2 hover:text-primary-800 focus:outline-none focus:ring-2 focus:ring-primary-600 focus:ring-offset-2"
       >
-        {{ 'privacy.consentWithdrawal.requestLink' | translate }}
-      </a>.
+        {{ 'privacy.consentWithdrawal.requestLink' | translate }} </a
+      >.
     </p>
   </section>
 
-  <section
-    id="cookies"
-    aria-labelledby="privacy-cookies-title"
-    class="scroll-mt-24 space-y-4"
-  >
+  <section id="cookies" aria-labelledby="privacy-cookies-title" class="scroll-mt-24 space-y-4">
     <h2 id="privacy-cookies-title" class="text-xl font-bold text-neutral-900">
       {{ 'cookies.title' | translate }}
     </h2>
