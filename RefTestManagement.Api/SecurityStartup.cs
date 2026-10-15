@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Handball.Belgium.RefTestManagement.Api.Identity;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,6 +12,12 @@ public static class SecurityStartup
 {
     internal static void AddSecurityConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
+        var provider = IdentityProviderSelector.Resolve(configuration);
+        var schemeName = IdentityProviderSelector.SchemeName(provider);
+        var issuer = IdentityProviderSelector.ClaimsIssuer(provider);
+        var authority = IdentityProviderSelector.Authority(configuration, provider);
+        var audience = configuration[$"{IdentityProviderSelector.SettingsSection(provider)}:Audience"];
+
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -27,6 +34,7 @@ public static class SecurityStartup
                     var refresh = await RefreshPermissionClaimsAsync(
                         context.HttpContext,
                         context.Principal,
+                        issuer,
                         context.HttpContext.RequestAborted);
                     if (!refresh.Succeeded)
                     {
@@ -38,11 +46,11 @@ public static class SecurityStartup
                         context.ShouldRenew = true;
                 };
             })
-            .AddOpenIdConnect("Auth0", options => ConfigureOpenIdConnect(options, configuration))
+            .AddOpenIdConnect(schemeName, options => ConfigureOpenIdConnect(options, configuration, provider))
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
-                options.Authority = $"https://{configuration["Auth0:Domain"]}";
-                options.Audience = configuration["Auth0:Audience"];
+                options.Authority = authority;
+                options.Audience = audience;
                 options.Events = new JwtBearerEvents
                 {
                     OnTokenValidated = async context =>
@@ -50,6 +58,7 @@ public static class SecurityStartup
                         var refresh = await RefreshPermissionClaimsAsync(
                             context.HttpContext,
                             context.Principal,
+                            issuer,
                             context.HttpContext.RequestAborted);
                         if (!refresh.Succeeded)
                             context.Fail("The current permissions could not be verified.");
@@ -61,6 +70,7 @@ public static class SecurityStartup
     private static async Task<PermissionRefreshResult> RefreshPermissionClaimsAsync(
         HttpContext httpContext,
         ClaimsPrincipal? principal,
+        string issuer,
         CancellationToken cancellationToken)
     {
         if (principal is null)
@@ -91,7 +101,7 @@ public static class SecurityStartup
             }
 
             foreach (var permission in permissions)
-                identity.AddClaim(new Claim("permissions", permission, ClaimValueTypes.String, "Auth0"));
+                identity.AddClaim(new Claim("permissions", permission, ClaimValueTypes.String, issuer));
 
             return new PermissionRefreshResult(true, true);
         }
@@ -101,11 +111,19 @@ public static class SecurityStartup
         }
     }
 
-    private static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration configuration)
+    private static void ConfigureOpenIdConnect(
+        OpenIdConnectOptions options,
+        IConfiguration configuration,
+        IdentityProvider provider)
     {
-        options.Authority = $"https://{configuration["Auth0:Domain"]}";
-        options.ClientId = configuration["Auth0:ClientId"];
-        options.ClientSecret = configuration["Auth0:ClientSecret"];
+        var section = IdentityProviderSelector.SettingsSection(provider);
+        var authority = IdentityProviderSelector.Authority(configuration, provider);
+        var clientId = configuration[$"{section}:ClientId"];
+        var issuer = IdentityProviderSelector.ClaimsIssuer(provider);
+
+        options.Authority = authority;
+        options.ClientId = clientId;
+        options.ClientSecret = configuration[$"{section}:ClientSecret"];
 
         options.ResponseType = OpenIdConnectResponseType.Code;
         options.ResponseMode = OpenIdConnectResponseMode.FormPost;
@@ -117,7 +135,7 @@ public static class SecurityStartup
 
         options.CallbackPath = new PathString("/callback");
 
-        options.ClaimsIssuer = "Auth0";
+        options.ClaimsIssuer = issuer;
 
         options.Events = new OpenIdConnectEvents
         {
@@ -126,6 +144,7 @@ public static class SecurityStartup
                 var refresh = await RefreshPermissionClaimsAsync(
                     context.HttpContext,
                     context.Principal,
+                    issuer,
                     context.HttpContext.RequestAborted);
                 if (!refresh.Succeeded)
                     context.Fail("The current permissions could not be verified.");
@@ -133,8 +152,14 @@ public static class SecurityStartup
 
             OnRedirectToIdentityProviderForSignOut = context =>
             {
-                var logoutUri =
-                    $"https://{configuration["Auth0:Domain"]}/v2/logout?client_id={configuration["Auth0:ClientId"]}";
+                // Auth0 uses /v2/logout with returnTo; Keycloak uses the realm's OIDC logout endpoint with
+                // post_logout_redirect_uri. Both endpoints are built from the provider authority.
+                var logoutUri = provider == IdentityProvider.Keycloak
+                    ? $"{authority}/protocol/openid-connect/logout?client_id={clientId}"
+                    : $"{authority}/v2/logout?client_id={clientId}";
+                var returnParameter = provider == IdentityProvider.Keycloak
+                    ? "post_logout_redirect_uri"
+                    : "returnTo";
 
                 var postLogoutUri = context.Properties.RedirectUri;
                 if (!string.IsNullOrEmpty(postLogoutUri))
@@ -146,7 +171,7 @@ public static class SecurityStartup
                         postLogoutUri = request.Scheme + "://" + request.Host + request.PathBase + postLogoutUri;
                     }
 
-                    logoutUri += $"&returnTo={Uri.EscapeDataString(postLogoutUri)}";
+                    logoutUri += $"&{returnParameter}={Uri.EscapeDataString(postLogoutUri)}";
                 }
 
                 context.Response.Redirect(logoutUri);
@@ -157,7 +182,10 @@ public static class SecurityStartup
 
             OnRedirectToIdentityProvider = context =>
             {
-                context.ProtocolMessage.SetParameter("audience", configuration["Auth0:Audience"]);
+                // Keycloak adds the API audience through a client mapper on the login client, so only Auth0
+                // needs the audience parameter on the authorize request.
+                if (provider == IdentityProvider.Auth0)
+                    context.ProtocolMessage.SetParameter("audience", configuration["Auth0:Audience"]);
                 return Task.CompletedTask;
             }
         };

@@ -33,4 +33,27 @@ public static class IdentityProviderSelector
         throw new InvalidOperationException(
             $"Unsupported {ConfigurationKey} '{value}'. Expected 'Auth0' or 'Keycloak'.");
     }
+
+    /// <summary>The authentication scheme name used for the OpenID Connect challenge and sign-out.</summary>
+    public static string SchemeName(IdentityProvider provider) => provider switch
+    {
+        IdentityProvider.Keycloak => "Keycloak",
+        _ => "Auth0"
+    };
+
+    /// <summary>The claims issuer stamped on permission claims, matching the scheme name.</summary>
+    public static string ClaimsIssuer(IdentityProvider provider) => SchemeName(provider);
+
+    /// <summary>
+    /// The OpenID Connect authority. Auth0 derives it from its tenant domain; Keycloak uses the realm URL
+    /// configured in <c>Keycloak:Authority</c>.
+    /// </summary>
+    public static string Authority(IConfiguration configuration, IdentityProvider provider) => provider switch
+    {
+        IdentityProvider.Keycloak => configuration["Keycloak:Authority"] ?? string.Empty,
+        _ => $"https://{configuration["Auth0:Domain"]}"
+    };
+
+    /// <summary>The configuration section that holds the provider's client settings.</summary>
+    public static string SettingsSection(IdentityProvider provider) => SchemeName(provider);
 }
