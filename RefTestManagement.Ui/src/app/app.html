@@ -107,7 +107,7 @@
                   [class.text-primary-600]="currentLocale === lang.code"
                   [attr.aria-label]="'nav.select_language' | translate: { language: lang.name }"
                   [attr.aria-current]="currentLocale === lang.code ? 'true' : null"
-                  class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-neutral-50 first:rounded-t-lg last:rounded-b-lg focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:outline-offset-[-2px]"
+                  class="flex w-full items-center gap-3 px-4 py-2 text-left text-sm transition-colors hover:bg-neutral-50 first:rounded-t-lg last:rounded-b-lg focus-visible:outline-2 focus-visible:outline-primary-600 focus-visible:-outline-offset-2"
                 >
                   <span
                     class="flex h-6 w-6 items-center justify-center rounded bg-neutral-100 text-xs font-bold uppercase"
@@ -160,24 +160,41 @@
     <!-- Copyright Section -->
     <div class="bg-neutral-800 text-neutral-300">
       <div class="max-w-7xl mx-auto px-4 py-3">
-        <div class="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-xs text-center">
-          <span class="text-neutral-300">
-            {{ 'footer.copyright' | translate: { year: currentYear() } }}
+        <!-- Mobile: two fixed lines (copyright + version, credits + links). Desktop: one line. -->
+        <p class="text-[10px] sm:text-xs text-center text-balance leading-relaxed">
+          <span class="block sm:inline whitespace-nowrap max-[359px]:whitespace-normal">
+            <span class="text-neutral-300">{{
+              'footer.copyright' | translate: { year: currentYear() }
+            }}</span>
+            <span class="hidden sm:inline sm:ml-1 text-neutral-300">{{
+              'footer.rightsReserved' | translate
+            }}</span>
+            <span aria-hidden="true" class="hidden sm:inline text-neutral-600 mx-1.5">•</span>
+            <span
+              class="ml-1.5 sm:ml-0 font-mono text-neutral-300 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]"
+              >v{{ version }}</span
+            >
           </span>
-          <span class="text-neutral-600 hidden sm:inline">•</span>
-          <span class="text-neutral-400">{{ 'footer.creator' | translate }}</span>
-          <span class="text-neutral-600 hidden sm:inline">•</span>
-          <a href="/privacy" class="text-neutral-300 hover:text-white underline underline-offset-2">
-            {{ 'footer.privacy' | translate }}
-          </a>
-          <span class="text-neutral-600 hidden sm:inline">•</span>
-          <span
-            class="font-mono text-neutral-400 bg-neutral-700/50 px-1.5 py-0.5 rounded text-[10px]"
-          >
-            v{{ version }}
+          <span aria-hidden="true" class="hidden sm:inline text-neutral-600 mx-1.5">•</span>
+          <span class="block sm:inline whitespace-nowrap max-[359px]:whitespace-normal">
+            <span class="text-neutral-400 sm:text-xs">{{ 'footer.creator' | translate }}</span>
+            <span aria-hidden="true" class="text-neutral-600 mx-1 sm:mx-1.5">•</span>
+            <a
+              href="/privacy"
+              class="inline-block py-4 -my-4 sm:py-0 sm:my-0 text-neutral-300 hover:text-white underline underline-offset-2"
+              >{{ 'footer.privacy' | translate }}</a
+            >
+            <span aria-hidden="true" class="text-neutral-600 mx-1 sm:mx-1.5">•</span>
+            <a
+              href="/cookies"
+              class="inline-block py-4 -my-4 sm:py-0 sm:my-0 text-neutral-300 hover:text-white underline underline-offset-2"
+              >{{ 'footer.cookies' | translate }}</a
+            >
           </span>
-        </div>
+        </p>
       </div>
     </div>
   </footer>
+
+  <app-cookie-banner />
 </div>

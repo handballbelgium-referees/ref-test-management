@@ -702,9 +702,17 @@
     }
   },
   "footer": {
-    "copyright": "© {{year}} Gestion des RefTest Handball. Tous droits réservés.",
+    "copyright": "© {{year}} Gestion des RefTest Handball.",
+    "rightsReserved": "Tous droits réservés.",
     "creator": "Propriété de Kristof Gilis",
-    "privacy": "Avis de confidentialité"
+    "privacy": "Avis de confidentialité",
+    "cookies": "Politique en matière de cookies"
+  },
+  "cookieBanner": {
+    "message": "Ce site n’utilise que des cookies strictement nécessaires pour vous maintenir connecté et protéger le service. Nous n’utilisons aucun cookie publicitaire ou de suivi.",
+    "learnMore": "Politique en matière de cookies",
+    "accept": "OK",
+    "label": "Avis sur les cookies"
   },
   "privacy": {
     "eyebrow": "Confidentialité",
@@ -780,6 +788,18 @@
       "confirmationError": "Nous n’avons pas pu confirmer cette demande. Le lien est peut-être invalide, expiré ou déjà utilisé. Vous pouvez demander un nouveau lien ; cette page ne révèle aucune information sur les dossiers des participants.",
       "confirmationKeyMissing": "Ce lien ne contient pas les informations de confirmation. Demandez un nouveau lien depuis l’avis de confidentialité."
     }
+  },
+  "cookies": {
+    "title": "Politique en matière de cookies",
+    "intro": "Les cookies sont de petits fichiers texte enregistrés par votre navigateur. Ce service n’utilise que des cookies strictement nécessaires, indispensables à la connexion et à la sécurité. Nous n’utilisons aucun cookie d’analyse, publicitaire ou de suivi ; aucun consentement n’est donc requis pour ceux-ci.",
+    "authTitle": "Cookie de session de connexion",
+    "authBody": "Un cookie nommé .AspNetCore.Cookies contient votre session connectée. Il est HttpOnly, Secure et SameSite=Strict : les scripts ne peuvent pas le lire et il n’est pas envoyé lors des requêtes inter-sites. Il expire après 14 jours d’inactivité ou lorsque vous vous déconnectez.",
+    "loginTitle": "Cookies de sécurité de connexion",
+    "loginBody": "Pendant la connexion, des cookies de courte durée nommés .AspNetCore.Correlation.* et .AspNetCore.OpenIdConnect.Nonce.* protègent contre les réponses de connexion falsifiées ou rejouées. Ils sont supprimés une fois la connexion terminée ; si la connexion est abandonnée, ils expirent peu après.",
+    "storageTitle": "Stockage du navigateur",
+    "storageBody": "Nous enregistrons votre choix de langue (app-language) et si vous avez fermé cet avis sur les cookies (cookie-notice-acknowledged) dans le stockage local. Ces valeurs ne quittent jamais votre navigateur.",
+    "thirdPartyTitle": "Fournisseur d’identité",
+    "thirdPartyBody": "La connexion est gérée par Auth0. Lorsque vous vous connectez, Auth0 peut définir ses propres cookies sur son domaine, selon sa propre politique. Nous ne contrôlons pas ces cookies."
   },
   "audit-logs": {
     "title": "Journal d'audit",

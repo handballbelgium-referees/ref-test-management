@@ -15,12 +15,13 @@ import { TranslatePipe, TranslateService } from '@ngx-translate/core';
 import { filter, map } from 'rxjs';
 import { APP_VERSION } from '../version';
 import { Auth } from './auth/services/auth';
+import { CookieBanner } from './cookie-banner/cookie-banner';
 import { Language, LanguageConfig } from './services/language-config';
 import { PwaUpdate } from './services/pwa-update';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, TranslatePipe],
+  imports: [RouterOutlet, TranslatePipe, CookieBanner],
   templateUrl: './app.html',
   host: {
     class: 'block',
