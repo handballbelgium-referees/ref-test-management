@@ -13,6 +13,7 @@ public static class SecurityStartup
     internal static void AddSecurityConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
         var provider = IdentityProviderSelector.Resolve(configuration);
+        IdentityProviderSelector.ValidateSettings(configuration, provider);
         var schemeName = IdentityProviderSelector.SchemeName(provider);
         var issuer = IdentityProviderSelector.ClaimsIssuer(provider);
         var authority = IdentityProviderSelector.Authority(configuration, provider);

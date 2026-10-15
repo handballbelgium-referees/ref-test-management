@@ -56,4 +56,26 @@ public static class IdentityProviderSelector
 
     /// <summary>The configuration path, under <c>Identity</c>, that holds the provider's client settings.</summary>
     public static string SettingsPath(IdentityProvider provider) => $"Identity:{SchemeName(provider)}";
+
+    /// <summary>
+    /// Fails fast when a Keycloak deployment lacks settings needed for the confidential OpenID Connect login
+    /// and the API audience check. Auth0 validation is unchanged.
+    /// </summary>
+    public static void ValidateSettings(IConfiguration configuration, IdentityProvider provider)
+    {
+        if (provider != IdentityProvider.Keycloak)
+            return;
+
+        var section = SettingsPath(provider);
+        var missing = new[] { "Authority", "ClientId", "ClientSecret", "Audience" }
+            .Where(key => string.IsNullOrWhiteSpace(configuration[$"{section}:{key}"]))
+            .Select(key => $"{section}:{key}")
+            .ToArray();
+
+        if (missing.Length > 0)
+        {
+            throw new InvalidOperationException(
+                $"Identity provider 'Keycloak' is selected but these settings are missing: {string.Join(", ", missing)}.");
+        }
+    }
 }
