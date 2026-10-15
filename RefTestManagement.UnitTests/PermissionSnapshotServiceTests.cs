@@ -436,6 +436,8 @@ public sealed class PermissionSnapshotServiceTests
 
         public int PermissionCalls => Volatile.Read(ref _permissionCalls);
 
+        public bool IsConfigured => true;
+
         public Task<IReadOnlySet<string>> GetUserPermissionsAsync(
             string userId,
             CancellationToken cancellationToken = default)

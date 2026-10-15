@@ -1,8 +1,5 @@
 using System.Net;
-using Handball.Belgium.RefTestManagement.Auth0.Configurations;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Security;
-using Microsoft.Extensions.Options;
 using Polly.CircuitBreaker;
 using Polly.Timeout;
 
@@ -10,17 +7,16 @@ namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
 
 /// <summary>
 /// Runs once on startup to ensure all application permissions are registered
-/// on the Auth0 API resource server. Missing permissions are added; existing
-/// ones are left untouched (additive-only, non-destructive).
+/// on the configured identity provider (Auth0 or Keycloak). Missing permissions are added;
+/// existing ones are left untouched (additive-only, non-destructive).
 /// </summary>
 /// <remarks>
-/// This is necessary to ensure that permissions are available for assignment to users and roles in Auth0,
+/// This is necessary to ensure that permissions are available for assignment to users and roles in the identity provider,
 /// and that the application can enforce them. Sync failures do not prevent the application from starting.
 /// Transient failures receive at most four retries with 2, 4, 8, and 16 second delays.
 /// </remarks>
 public sealed class PermissionSyncService(
-    IAuth0ManagementService auth0ManagementService,
-    IOptions<Auth0ManagementConfiguration> options,
+    IIdentityPermissionSync identityPermissionSync,
     TimeProvider timeProvider,
     ILogger<PermissionSyncService> logger)
     : BackgroundService
@@ -34,14 +30,10 @@ public sealed class PermissionSyncService(
 
         stoppingToken.ThrowIfCancellationRequested();
 
-        var configuration = options.Value;
-        if (string.IsNullOrWhiteSpace(configuration.Domain) ||
-            string.IsNullOrWhiteSpace(configuration.Audience) ||
-            string.IsNullOrWhiteSpace(configuration.ManagementClientId) ||
-            string.IsNullOrWhiteSpace(configuration.ManagementClientSecret))
+        if (!identityPermissionSync.IsConfigured)
         {
             logger.LogWarning(
-                "Auth0 permission sync skipped because required configuration is missing");
+                "Identity permission sync skipped because required configuration is missing");
             return;
         }
 
@@ -51,10 +43,10 @@ public sealed class PermissionSyncService(
 
             try
             {
-                await auth0ManagementService.SyncPermissionsAsync(
+                await identityPermissionSync.SyncPermissionsAsync(
                     [..Permissions.All, Permissions.Superadmin],
                     stoppingToken);
-                logger.LogInformation("Auth0 permission sync completed successfully");
+                logger.LogInformation("Identity permission sync completed successfully");
                 return;
             }
             catch (OperationCanceledException) when (stoppingToken.IsCancellationRequested)
@@ -66,16 +58,16 @@ public sealed class PermissionSyncService(
             {
                 var delay = GetRetryDelay(attempt);
                 logger.LogWarning(
-                    "Auth0 permission sync attempt {Attempt} failed; retrying in {DelaySeconds} seconds",
+                    "Identity permission sync attempt {Attempt} failed; retrying in {DelaySeconds} seconds",
                     attempt,
                     delay.TotalSeconds);
                 await Task.Delay(delay, timeProvider, stoppingToken);
             }
             catch (Exception)
             {
-                // Avoid exception details: Auth0 failures may contain sensitive data.
+                // Avoid exception details: provider failures may contain sensitive data.
                 logger.LogWarning(
-                    "Auth0 permission sync failed after {AttemptCount} attempt(s); application will continue without syncing permissions",
+                    "Identity permission sync failed after {AttemptCount} attempt(s); application will continue without syncing permissions",
                     attempt);
                 return;
             }
