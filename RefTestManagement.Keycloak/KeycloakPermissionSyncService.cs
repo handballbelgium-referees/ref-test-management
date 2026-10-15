@@ -37,16 +37,12 @@ public sealed partial class KeycloakPermissionSyncService(
             throw new InvalidOperationException("Keycloak permission sync is not configured.");
         }
 
-        var authority = _config.Authority.TrimEnd('/');
-        var accessToken = await GetAdminAccessTokenAsync(authority, cancellationToken).ConfigureAwait(false);
-        var adminBase = authority.Replace("/realms/", "/admin/realms/", StringComparison.Ordinal);
-
-        var clientInternalId = await GetClientInternalIdAsync(adminBase, accessToken, cancellationToken)
-            .ConfigureAwait(false);
+        var context = await GetAdminContextAsync(cancellationToken).ConfigureAwait(false);
 
         foreach (var permission in permissions.Distinct(StringComparer.Ordinal))
         {
-            var created = await EnsureRoleAsync(adminBase, clientInternalId, permission, accessToken, cancellationToken)
+            var created = await EnsureRoleAsync(
+                context.AdminBase, context.ClientInternalId, permission, context.AccessToken, cancellationToken)
                 .ConfigureAwait(false);
 
             if (created)
@@ -55,6 +51,84 @@ public sealed partial class KeycloakPermissionSyncService(
             }
         }
     }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Fails closed: a missing or disabled user has no permissions. Other HTTP failures throw
+    /// so the caller never treats an outage as "no permissions" and caches it.
+    /// </remarks>
+    public async Task<IReadOnlySet<string>> GetUserPermissionsAsync(
+        string userId,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(userId);
+
+        if (!IsConfigured)
+        {
+            throw new InvalidOperationException("Keycloak permission sync is not configured.");
+        }
+
+        var context = await GetAdminContextAsync(cancellationToken).ConfigureAwait(false);
+        var userUrl = $"{context.AdminBase}/users/{Uri.EscapeDataString(userId)}";
+
+        using (var userResponse = await SendAdminRequestAsync(HttpMethod.Get, userUrl, context.AccessToken, null, cancellationToken)
+            .ConfigureAwait(false))
+        {
+            if (userResponse.StatusCode == HttpStatusCode.NotFound)
+            {
+                return new HashSet<string>(StringComparer.Ordinal);
+            }
+
+            userResponse.EnsureSuccessStatusCode();
+
+            using var userDocument = await JsonDocument.ParseAsync(
+                await userResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
+                cancellationToken: cancellationToken).ConfigureAwait(false);
+
+            var enabled = userDocument.RootElement.TryGetProperty("enabled", out var enabledElement)
+                && enabledElement.ValueKind == JsonValueKind.True;
+
+            if (!enabled)
+            {
+                return new HashSet<string>(StringComparer.Ordinal);
+            }
+        }
+
+        var mappingsUrl =
+            $"{context.AdminBase}/users/{Uri.EscapeDataString(userId)}/role-mappings/clients/{Uri.EscapeDataString(context.ClientInternalId)}";
+
+        using var mappingsResponse = await SendAdminRequestAsync(HttpMethod.Get, mappingsUrl, context.AccessToken, null, cancellationToken)
+            .ConfigureAwait(false);
+        mappingsResponse.EnsureSuccessStatusCode();
+
+        using var mappingsDocument = await JsonDocument.ParseAsync(
+            await mappingsResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+
+        var permissions = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var role in mappingsDocument.RootElement.EnumerateArray())
+        {
+            if (role.TryGetProperty("name", out var name) && name.GetString() is { Length: > 0 } roleName)
+            {
+                permissions.Add(roleName);
+            }
+        }
+
+        return permissions;
+    }
+
+    private async Task<AdminContext> GetAdminContextAsync(CancellationToken cancellationToken)
+    {
+        var authority = _config.Authority.TrimEnd('/');
+        var accessToken = await GetAdminAccessTokenAsync(authority, cancellationToken).ConfigureAwait(false);
+        var adminBase = authority.Replace("/realms/", "/admin/realms/", StringComparison.Ordinal);
+        var clientInternalId = await GetClientInternalIdAsync(adminBase, accessToken, cancellationToken)
+            .ConfigureAwait(false);
+
+        return new AdminContext(adminBase, accessToken, clientInternalId);
+    }
+
+    private sealed record AdminContext(string AdminBase, string AccessToken, string ClientInternalId);
 
     private async Task<string> GetAdminAccessTokenAsync(string authority, CancellationToken cancellationToken)
     {

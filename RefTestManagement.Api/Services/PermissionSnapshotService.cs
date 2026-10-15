@@ -1,6 +1,6 @@
 using System.Collections.Frozen;
 using System.Security.Claims;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;
@@ -134,7 +134,7 @@ public sealed class PermissionSnapshotService(
             hasRefreshPermit = true;
 
             using var scope = scopeFactory.CreateScope();
-            var managementService = scope.ServiceProvider.GetService<IAuth0ManagementService>();
+            var managementService = scope.ServiceProvider.GetService<IIdentityPermissionSync>();
             if (managementService is null)
             {
                 PermissionSnapshotLogger.RefreshFailed(

@@ -16,4 +16,11 @@ public interface IIdentityPermissionSync
     Task SyncPermissionsAsync(
         IReadOnlyList<string> permissions,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets the application permissions currently granted to a user. Disabled or unknown users have none.
+    /// </summary>
+    Task<IReadOnlySet<string>> GetUserPermissionsAsync(
+        string userId,
+        CancellationToken cancellationToken = default);
 }

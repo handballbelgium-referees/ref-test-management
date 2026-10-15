@@ -194,6 +194,11 @@ public sealed class PermissionSyncServiceTests
             changed.TrySetResult(true);
             return syncPermissions(attempt, cancellationToken);
         }
+
+        public Task<IReadOnlySet<string>> GetUserPermissionsAsync(
+            string userId,
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException("Permission reads are not used by sync tests.");
     }
 
     private sealed class ManualTimeProvider(DateTimeOffset utcNow) : TimeProvider

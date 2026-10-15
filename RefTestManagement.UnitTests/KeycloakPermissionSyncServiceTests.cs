@@ -92,6 +92,72 @@ public sealed class KeycloakPermissionSyncServiceTests
         Assert.Empty(handler.Requests);
     }
 
+    [Fact]
+    public async Task ReadReturnsClientRolesOfEnabledUser()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses());
+        await using var provider = BuildProvider(handler);
+        var sync = provider.GetRequiredService<IIdentityPermissionSync>();
+
+        var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
+
+        Assert.Equal(["ref-tests:view-list", "superadmin"], permissions.Order());
+        Assert.Equal($"{AdminBase}/users/user-1/role-mappings/clients/internal-id", handler.Requests[^1].Url);
+    }
+
+    [Fact]
+    public async Task ReadFailsClosedForDisabledUser()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses { UserJson = """{"id":"user-1","enabled":false}""" });
+        await using var provider = BuildProvider(handler);
+        var sync = provider.GetRequiredService<IIdentityPermissionSync>();
+
+        var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
+
+        Assert.Empty(permissions);
+        Assert.DoesNotContain(handler.Requests, r => r.Url.Contains("/role-mappings/", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task ReadFailsClosedForMissingUser()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses { UserStatus = HttpStatusCode.NotFound });
+        await using var provider = BuildProvider(handler);
+        var sync = provider.GetRequiredService<IIdentityPermissionSync>();
+
+        var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
+
+        Assert.Empty(permissions);
+    }
+
+    [Fact]
+    public async Task ReadThrowsOnKeycloakOutageInsteadOfReturningEmpty()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses { MappingsStatus = HttpStatusCode.InternalServerError });
+        await using var provider = BuildProvider(handler);
+        var sync = provider.GetRequiredService<IIdentityPermissionSync>();
+
+        await Assert.ThrowsAnyAsync<HttpRequestException>(() =>
+            sync.GetUserPermissionsAsync("user-1", cancellationToken));
+    }
+
+    [Fact]
+    public async Task ReadRefusesWithoutCallingKeycloakWhenUnconfigured()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses());
+        await using var provider = BuildProvider(handler, adminSecret: string.Empty);
+        var sync = provider.GetRequiredService<IIdentityPermissionSync>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sync.GetUserPermissionsAsync("user-1", cancellationToken));
+        Assert.Empty(handler.Requests);
+    }
+
     private static ServiceProvider BuildProvider(ScriptedHandler handler, string adminSecret = "test-secret")
     {
         var configuration = new ConfigurationBuilder()
@@ -126,6 +192,15 @@ public sealed class KeycloakPermissionSyncServiceTests
         public string ClientsJson { get; init; } =
             """[{"id":"internal-id","clientId":"reftest-api"}]""";
 
+        public HttpStatusCode UserStatus { get; init; } = HttpStatusCode.OK;
+
+        public string UserJson { get; init; } = """{"id":"user-1","enabled":true}""";
+
+        public HttpStatusCode MappingsStatus { get; init; } = HttpStatusCode.OK;
+
+        public string MappingsJson { get; init; } =
+            """[{"name":"ref-tests:view-list"},{"name":"superadmin"}]""";
+
         public HttpResponseMessage Respond(HttpRequestMessage request)
         {
             var url = request.RequestUri!.ToString();
@@ -138,6 +213,20 @@ public sealed class KeycloakPermissionSyncServiceTests
             if (url.StartsWith($"{AdminBase}/clients?clientId=", StringComparison.Ordinal))
             {
                 return Json(HttpStatusCode.OK, ClientsJson);
+            }
+
+            if (url.Contains("/role-mappings/clients/", StringComparison.Ordinal))
+            {
+                return MappingsStatus == HttpStatusCode.OK
+                    ? Json(HttpStatusCode.OK, MappingsJson)
+                    : new HttpResponseMessage(MappingsStatus);
+            }
+
+            if (url.StartsWith($"{AdminBase}/users/", StringComparison.Ordinal))
+            {
+                return UserStatus == HttpStatusCode.OK
+                    ? Json(HttpStatusCode.OK, UserJson)
+                    : new HttpResponseMessage(UserStatus);
             }
 
             if (request.Method == HttpMethod.Get)
