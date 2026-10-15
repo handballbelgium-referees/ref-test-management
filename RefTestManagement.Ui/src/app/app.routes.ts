@@ -54,6 +54,10 @@ export const routes: Routes = [
     loadComponent: () => import('./privacy/privacy-notice').then((m) => m.PrivacyNotice),
   },
   {
+    path: 'cookies',
+    loadComponent: () => import('./cookie-policy/cookie-policy').then((m) => m.CookiePolicy),
+  },
+  {
     path: 'ref-tests',
     loadComponent: () => import('./ref-tests/list/list-ref-tests').then((m) => m.ListRefTests),
     canActivate: [authGuard, permissionGuard(Permissions.RefTests.ViewList)],

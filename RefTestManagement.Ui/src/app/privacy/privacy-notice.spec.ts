@@ -141,18 +141,15 @@ describe('PrivacyNotice', () => {
     expect(fixture.nativeElement.querySelector('form')).toBeNull();
   });
 
-  it('renders the cookie policy section that the footer and banner link to', async () => {
+  it('links to the cookie policy page from the privacy notice', async () => {
     const fixture = await renderPrivacyNotice();
     const section = fixture.nativeElement.querySelector('#cookies') as HTMLElement | null;
 
-    if (!section) throw new Error('The cookie policy section was not rendered.');
+    if (!section) throw new Error('The cookie policy summary was not rendered.');
 
-    const text = section.textContent.replace(/\s+/g, ' ').trim();
-    expect(text).toContain(en.privacy.cookies.title);
-    expect(text).toContain(en.privacy.cookies.intro);
-    expect(text).toContain(en.privacy.cookies.authBody);
-    expect(text).toContain(en.privacy.cookies.storageBody);
-    expect(text).toContain(en.privacy.cookies.thirdPartyBody);
+    const link = section.querySelector('a[href="/cookies"]');
+    expect(link).not.toBeNull();
+    expect(section.textContent.replace(/\s+/g, ' ')).toContain(en.cookies.intro);
   });
 
   it('shows a successful missing-notice state instead of the loading state', async () => {

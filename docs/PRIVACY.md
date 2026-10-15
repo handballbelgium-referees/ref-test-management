@@ -50,7 +50,7 @@ Before production use, the controller must confirm each provider's data-processi
 
 ### Cookies
 
-The public privacy notice (`/privacy#cookies`) includes a cookie policy, and a footer link and a notice-only cookie banner point to it. The banner stores its acknowledgement in `localStorage` under `cookie-notice-acknowledged`; it is not a cookie.
+The public cookie policy lives on its own page (`/cookies`), with a summary and link in the privacy notice (`/privacy#cookies`). A footer link and a notice-only cookie banner point to `/cookies`. The banner stores its acknowledgement in `localStorage` under `cookie-notice-acknowledged`; it is not a cookie.
 
 | Cookie | Purpose | Set by | Attributes | Lifetime |
 |---|---|---|---|---|

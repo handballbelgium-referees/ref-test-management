@@ -786,19 +786,19 @@
       "confirmed": "Your consent withdrawal has been confirmed. Background processing will redact (anonymize) identifying details once it succeeds; this is not immediate. A redacted RefTest record and audit trail may remain; removing the RefTest row entirely is a separate step.",
       "confirmationError": "We could not confirm this request. The link may be invalid, expired, or already used. Request a new link if needed; no participant information is shown here.",
       "confirmationKeyMissing": "This link does not contain confirmation information. Request a new link from the privacy notice."
-    },
-    "cookies": {
-      "title": "Cookie policy",
-      "intro": "Cookies are small text files stored by your browser. This service uses only strictly necessary cookies, which are required for sign-in and security. We do not use analytics, advertising, or tracking cookies, so no consent is needed for them.",
-      "authTitle": "Sign-in session cookie",
-      "authBody": "A cookie named .AspNetCore.Cookies holds your signed-in session. It is HttpOnly, Secure, and SameSite=Strict, so scripts cannot read it and it is sent only to this site. It expires after 14 days of inactivity or when you sign out.",
-      "loginTitle": "Sign-in security cookies",
-      "loginBody": "During sign-in, short-lived cookies named .AspNetCore.Correlation.* and .AspNetCore.OpenIdConnect.Nonce.* protect against forged or replayed login responses. They are deleted once the sign-in callback is processed.",
-      "storageTitle": "Browser storage",
-      "storageBody": "We store your language choice (app-language) and whether you have dismissed this cookie notice (cookie-notice-acknowledged) in local storage. These values never leave your browser.",
-      "thirdPartyTitle": "Identity provider",
-      "thirdPartyBody": "Sign-in is handled by Auth0. When you sign in, Auth0 may set its own cookies on its domain under its own policy. We do not control those cookies."
     }
+  },
+  "cookies": {
+    "title": "Cookie policy",
+    "intro": "Cookies are small text files stored by your browser. This service uses only strictly necessary cookies, which are required for sign-in and security. We do not use analytics, advertising, or tracking cookies, so no consent is needed for them.",
+    "authTitle": "Sign-in session cookie",
+    "authBody": "A cookie named .AspNetCore.Cookies holds your signed-in session. It is HttpOnly, Secure, and SameSite=Strict, so scripts cannot read it and it is not sent on cross-site requests. It expires after 14 days of inactivity or when you sign out.",
+    "loginTitle": "Sign-in security cookies",
+    "loginBody": "During sign-in, short-lived cookies named .AspNetCore.Correlation.* and .AspNetCore.OpenIdConnect.Nonce.* protect against forged or replayed login responses. They are deleted after sign-in completes; if sign-in is abandoned, they expire shortly afterwards.",
+    "storageTitle": "Browser storage",
+    "storageBody": "We store your language choice (app-language) and whether you have dismissed this cookie notice (cookie-notice-acknowledged) in local storage. These values never leave your browser.",
+    "thirdPartyTitle": "Identity provider",
+    "thirdPartyBody": "Sign-in is handled by Auth0. When you sign in, Auth0 may set its own cookies on its domain under its own policy. We do not control those cookies."
   },
   "audit-logs": {
     "title": "Audit Log",

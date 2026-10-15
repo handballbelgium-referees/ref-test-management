@@ -37,7 +37,7 @@ describe('CookieBanner', () => {
     expect(region).not.toBeNull();
     expect(region?.textContent).toContain(en.cookieBanner.message);
     const link = region?.querySelector('a');
-    expect(link?.getAttribute('href')).toBe('/privacy#cookies');
+    expect(link?.getAttribute('href')).toBe('/cookies');
   });
 
   it('hides the banner and stores the acknowledgement when accepted', () => {

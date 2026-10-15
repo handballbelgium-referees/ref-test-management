@@ -333,7 +333,7 @@ Protected routes use `permissionGuard` after `authGuard`. The guard waits for pe
 
 ### Cookie notice
 
-The app's only cookies are the ASP.NET Core authentication cookie and short-lived OIDC correlation and nonce cookies, all set by the API (see [PRIVACY.md](PRIVACY.md#cookies)). The Angular `CookieBanner` is notice-only: it links to `/privacy#cookies` and records acknowledgement in `localStorage` under `cookie-notice-acknowledged`. It does not gate any security-relevant behavior.
+The app's only cookies are the ASP.NET Core authentication cookie and short-lived OIDC correlation and nonce cookies, all set by the API (see [PRIVACY.md](PRIVACY.md#cookies)). The Angular `CookieBanner` is notice-only: it links to `/cookies` and records acknowledgement in `localStorage` under `cookie-notice-acknowledged`. It does not gate any security-relevant behavior.
 
 ## The Participant Invitation Token
 

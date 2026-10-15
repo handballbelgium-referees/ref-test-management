@@ -786,19 +786,19 @@
       "confirmed": "Uw intrekking van toestemming is bevestigd. Achtergrondverwerking schermt identificerende gegevens af (anonimiseert ze) zodra de verwerking slaagt; dit gebeurt niet onmiddellijk. Een geanonimiseerd RefTest-record en de auditgeschiedenis kunnen blijven bestaan; de RefTest-rij blijft staan en kan alleen via een aparte stap definitief uit de administratie worden gehaald.",
       "confirmationError": "We konden deze aanvraag niet bevestigen. De link is mogelijk ongeldig, verlopen of al gebruikt. Vraag zo nodig een nieuwe link aan; deze pagina toont geen informatie over deelnemers.",
       "confirmationKeyMissing": "Deze link bevat geen bevestigingsgegevens. Vraag via de privacyverklaring een nieuwe link aan."
-    },
-    "cookies": {
-      "title": "Cookiebeleid",
-      "intro": "Cookies zijn kleine tekstbestanden die uw browser opslaat. Deze dienst gebruikt alleen strikt noodzakelijke cookies, die nodig zijn voor inloggen en beveiliging. Wij gebruiken geen analyse-, advertentie- of trackingcookies, dus daarvoor is geen toestemming nodig.",
-      "authTitle": "Sessiecookie voor inloggen",
-      "authBody": "Een cookie met de naam .AspNetCore.Cookies bevat uw ingelogde sessie. Die is HttpOnly, Secure en SameSite=Strict, dus scripts kunnen hem niet lezen en hij wordt alleen naar deze site gestuurd. Hij verloopt na 14 dagen inactiviteit of wanneer u uitlogt.",
-      "loginTitle": "Beveiligingscookies bij inloggen",
-      "loginBody": "Tijdens het inloggen beschermen kortstondige cookies met de namen .AspNetCore.Correlation.* en .AspNetCore.OpenIdConnect.Nonce.* tegen vervalste of herhaalde loginreacties. Ze worden verwijderd zodra de inlogcallback is verwerkt.",
-      "storageTitle": "Browseropslag",
-      "storageBody": "Wij slaan uw taalkeuze (app-language) en of u deze cookiemelding heeft gesloten (cookie-notice-acknowledged) op in de lokale opslag. Deze waarden verlaten uw browser nooit.",
-      "thirdPartyTitle": "Identity provider",
-      "thirdPartyBody": "Inloggen verloopt via Auth0. Bij het inloggen kan Auth0 eigen cookies op zijn domein plaatsen volgens eigen beleid. Die cookies vallen buiten onze controle."
     }
+  },
+  "cookies": {
+    "title": "Cookiebeleid",
+    "intro": "Cookies zijn kleine tekstbestanden die uw browser opslaat. Deze dienst gebruikt alleen strikt noodzakelijke cookies, die nodig zijn voor inloggen en beveiliging. Wij gebruiken geen analyse-, advertentie- of trackingcookies, dus daarvoor is geen toestemming nodig.",
+    "authTitle": "Sessiecookie voor inloggen",
+    "authBody": "Een cookie met de naam .AspNetCore.Cookies bevat uw ingelogde sessie. Die is HttpOnly, Secure en SameSite=Strict, dus scripts kunnen hem niet lezen en hij wordt niet meegestuurd bij cross-site verzoeken. Hij verloopt na 14 dagen inactiviteit of wanneer u uitlogt.",
+    "loginTitle": "Beveiligingscookies bij inloggen",
+    "loginBody": "Tijdens het inloggen beschermen kortstondige cookies met de namen .AspNetCore.Correlation.* en .AspNetCore.OpenIdConnect.Nonce.* tegen vervalste of herhaalde loginreacties. Ze worden verwijderd zodra het inloggen is voltooid; wordt het inloggen afgebroken, dan verlopen ze kort daarna.",
+    "storageTitle": "Browseropslag",
+    "storageBody": "Wij slaan uw taalkeuze (app-language) en of u deze cookiemelding heeft gesloten (cookie-notice-acknowledged) op in de lokale opslag. Deze waarden verlaten uw browser nooit.",
+    "thirdPartyTitle": "Identity provider",
+    "thirdPartyBody": "Inloggen verloopt via Auth0. Bij het inloggen kan Auth0 eigen cookies op zijn domein plaatsen volgens eigen beleid. Die cookies vallen buiten onze controle."
   },
   "audit-logs": {
     "title": "Auditlogboek",

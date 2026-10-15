@@ -786,19 +786,19 @@
       "confirmed": "Ihr Widerruf der Einwilligung wurde best\u00e4tigt. Die Hintergrundverarbeitung anonymisiert identifizierende Angaben, sobald sie erfolgreich abgeschlossen ist; dies geschieht nicht sofort. Ein geschw\u00e4rzter RefTest-Datensatz und das Pr\u00fcfprotokoll k\u00f6nnen zu Pr\u00fcfzwecken erhalten bleiben. Der RefTest-Datensatz bleibt bestehen; seine vollst\u00e4ndige Beseitigung ist ein separater Schritt.",
       "confirmationError": "Dieser Antrag konnte nicht best\u00e4tigt werden. Der Link ist m\u00f6glicherweise ung\u00fcltig, abgelaufen oder bereits verwendet. Fordern Sie bei Bedarf einen neuen Link an; diese Seite zeigt keine Teilnehmendeninformationen.",
       "confirmationKeyMissing": "Dieser Link enth\u00e4lt keine Best\u00e4tigungsinformationen. Fordern Sie \u00fcber den Datenschutzhinweis einen neuen Link an."
-    },
-    "cookies": {
-      "title": "Cookie-Richtlinie",
-      "intro": "Cookies sind kleine Textdateien, die Ihr Browser speichert. Dieser Dienst verwendet nur unbedingt erforderliche Cookies, die für Anmeldung und Sicherheit notwendig sind. Wir verwenden keine Analyse-, Werbe- oder Tracking-Cookies; daher ist dafür keine Einwilligung erforderlich.",
-      "authTitle": "Anmelde-Sitzungscookie",
-      "authBody": "Ein Cookie namens .AspNetCore.Cookies enthält Ihre angemeldete Sitzung. Es ist HttpOnly, Secure und SameSite=Strict: Skripte können es nicht lesen, und es wird nur an diese Website gesendet. Es läuft nach 14 Tagen Inaktivität oder bei Abmeldung ab.",
-      "loginTitle": "Sicherheits-Cookies bei der Anmeldung",
-      "loginBody": "Während der Anmeldung schützen kurzlebige Cookies namens .AspNetCore.Correlation.* und .AspNetCore.OpenIdConnect.Nonce.* vor gefälschten oder wiederverwendeten Anmeldeantworten. Sie werden gelöscht, sobald die Rückkehr von der Anmeldung verarbeitet wurde.",
-      "storageTitle": "Browser-Speicher",
-      "storageBody": "Wir speichern Ihre Sprachauswahl (app-language) und ob Sie diesen Cookie-Hinweis geschlossen haben (cookie-notice-acknowledged) im lokalen Speicher. Diese Werte verlassen Ihren Browser nie.",
-      "thirdPartyTitle": "Identitätsanbieter",
-      "thirdPartyBody": "Die Anmeldung wird von Auth0 bereitgestellt. Bei der Anmeldung kann Auth0 eigene Cookies auf seiner Domain setzen, gemäß seiner eigenen Richtlinie. Diese Cookies liegen nicht in unserer Kontrolle."
     }
+  },
+  "cookies": {
+    "title": "Cookie-Richtlinie",
+    "intro": "Cookies sind kleine Textdateien, die Ihr Browser speichert. Dieser Dienst verwendet nur unbedingt erforderliche Cookies, die für Anmeldung und Sicherheit notwendig sind. Wir verwenden keine Analyse-, Werbe- oder Tracking-Cookies; daher ist dafür keine Einwilligung erforderlich.",
+    "authTitle": "Anmelde-Sitzungscookie",
+    "authBody": "Ein Cookie namens .AspNetCore.Cookies enthält Ihre angemeldete Sitzung. Es ist HttpOnly, Secure und SameSite=Strict: Skripte können es nicht lesen, und es wird bei websiteübergreifenden Anfragen nicht gesendet. Es läuft nach 14 Tagen Inaktivität oder bei Abmeldung ab.",
+    "loginTitle": "Sicherheits-Cookies bei der Anmeldung",
+    "loginBody": "Während der Anmeldung schützen kurzlebige Cookies namens .AspNetCore.Correlation.* und .AspNetCore.OpenIdConnect.Nonce.* vor gefälschten oder wiederverwendeten Anmeldeantworten. Sie werden nach Abschluss der Anmeldung gelöscht; wird die Anmeldung abgebrochen, laufen sie kurz danach ab.",
+    "storageTitle": "Browser-Speicher",
+    "storageBody": "Wir speichern Ihre Sprachauswahl (app-language) und ob Sie diesen Cookie-Hinweis geschlossen haben (cookie-notice-acknowledged) im lokalen Speicher. Diese Werte verlassen Ihren Browser nie.",
+    "thirdPartyTitle": "Identitätsanbieter",
+    "thirdPartyBody": "Die Anmeldung wird von Auth0 bereitgestellt. Bei der Anmeldung kann Auth0 eigene Cookies auf seiner Domain setzen, gemäß seiner eigenen Richtlinie. Diese Cookies liegen nicht in unserer Kontrolle."
   },
   "audit-logs": {
     "title": "Auditprotokoll",
