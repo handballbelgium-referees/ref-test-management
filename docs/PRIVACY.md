@@ -42,15 +42,11 @@ No participant data is disclosed to any other recipient, and none is sold or use
 
 The notice identifies the following service providers:
 
-- Brevo for email delivery
+- **Brevo**: email delivery. Brevo's DPA is entered into by the organization on subscription and applies to all accounts; it is listed under My Profile > Legal Documents in the Brevo account and is Appendix 3 of Brevo's Terms of Use. Brevo's sub-processors include US-based providers, so transfers rely on the Standard Contractual Clauses and the EU-US Data Privacy Framework (Annex 2 of the Terms).
+- **Auth0 / Keycloak**: authentication. Auth0 is the current identity provider. The application plans to move to Keycloak; this notice will be updated when that switch takes effect, including the new provider's data-processing terms.
+- **IHF Rules Questions**: operated by the controller; not a third-party service provider.
 
-The application plans to move its authentication from Auth0 to Keycloak. This notice will be updated when that switch takes effect, including the new provider's data-processing terms.
-
-IHF Rules Questions is operated by the controller and is not a third-party service provider.
-
-Before production use, the controller must confirm each third-party provider's data-processing agreement, hosting location, and any required safeguards for international transfers:
-
-- Brevo's DPA is entered into by the organization on subscription and applies to all accounts; it is listed under My Profile > Legal Documents in the Brevo account. It is Appendix 3 of Brevo's Terms of Use. Brevo's sub-processors include US-based providers, so transfers rely on the Standard Contractual Clauses and the EU-US Data Privacy Framework (Annex 2 of the Terms).
+Before production use, the controller must confirm each third-party provider's data-processing agreement, hosting location, and any required safeguards for international transfers.
 
 ### Cookies
 
