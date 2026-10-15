@@ -4,7 +4,7 @@ This document describes the task-based permission system used by the RefTest Man
 
 ## Overview
 
-The application uses **Auth0** for authentication and a **task-based permission system** for authorization. Every protected GraphQL operation maps 1:1 to a named permission. Effective permissions are refreshed from the Auth0 Management API and supplied to authorization as `permissions` claims.
+The application uses **Auth0** or **Keycloak** for authentication (selected by `Identity:Provider`) and a **task-based permission system** for authorization. Every protected GraphQL operation maps 1:1 to a named permission. Effective permissions are refreshed from the active provider (Auth0 Management API, or Keycloak client roles on `reftest-api`; see [KEYCLOAK.md](KEYCLOAK.md)) and supplied to authorization as `permissions` claims.
 
 The backend enforcement lives in the `RefTestManagement.Security` class library. The Angular frontend uses a `PermissionsService` and a `HasPermission` structural directive for reactive, signal-based UI control.
 
@@ -57,6 +57,8 @@ possible.
 ---
 
 ## Auth0 Setup
+
+This section applies when `Identity:Provider` is `Auth0`. For Keycloak, see [KEYCLOAK.md](KEYCLOAK.md).
 
 ### 1. Enable RBAC on your API
 

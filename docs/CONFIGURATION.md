@@ -596,6 +596,19 @@ Auth0 settings moved from the top-level `Auth0` section to `Identity:Auth0` when
 provider became selectable (`Identity:Provider`). Existing `Auth0:*` user secrets are no longer read
 and must be set again under `Identity:Auth0:*`.
 
+To use Keycloak instead, set `Identity:Provider` to `Keycloak` and configure `Identity:Keycloak:*`
+(see [KEYCLOAK.md](KEYCLOAK.md) for clients, roles, and the clean-slate switch):
+
+```bash
+dotnet user-secrets set "Identity:Provider" "Keycloak"
+dotnet user-secrets set "Identity:Keycloak:Authority" "https://login.referees-handballbelgium.be/realms/referees-handballbelgium-beta"
+dotnet user-secrets set "Identity:Keycloak:ClientId" "reftest-beta"
+dotnet user-secrets set "Identity:Keycloak:ClientSecret" "your-client-secret"
+dotnet user-secrets set "Identity:Keycloak:Audience" "reftest-api"
+dotnet user-secrets set "Identity:Keycloak:AdminClientId" "ref-test-management-admin"
+dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "your-admin-client-secret"
+```
+
 Any key from the sections above can be set the same way, using `:` to nest sections and array indices (e.g. `LanguageConfiguration:EnabledLanguages:0`).
 
 ## Release Credentials
