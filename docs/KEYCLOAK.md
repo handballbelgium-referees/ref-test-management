@@ -10,7 +10,7 @@ provider, and permissions are synchronised from the new provider's client roles.
 | Environment | Realm | Authority | UI client | API audience |
 |---|---|---|---|---|
 | Beta | `referees-handballbelgium-beta` | `https://login.referees-handballbelgium.be/realms/referees-handballbelgium-beta` | `reftest-beta` | `reftest-api` |
-| Production | `referees-handballbelgium` | `https://login.referees-handballbelgium.be/realms/referees-handballbelgium` | `reftest` (to confirm) | `reftest-api` |
+| Production | `referees-handballbelgium` | `https://login.referees-handballbelgium.be/realms/referees-handballbelgium` | `reftest` | `reftest-api` |
 
 ## Clients
 
@@ -21,9 +21,12 @@ application, but the API performs the token exchange with the client secret.
 
 - Client authentication: **On** (confidential). The API keeps the secret server-side.
 - Standard flow: **On**. Direct access grants: **Off**.
-- Valid redirect URIs: `https://reftest-beta.referees-handballbelgium.be/callback`
-- Valid post-logout redirect URIs: `https://reftest-beta.referees-handballbelgium.be/*`
-- Web origins: `https://reftest-beta.referees-handballbelgium.be`
+- Valid redirect URIs: `https://reftest-beta.referees-handballbelgium.be/callback` (beta),
+  `https://reftest.referees-handballbelgium.be/callback` (production)
+- Valid post-logout redirect URIs: `https://reftest-beta.referees-handballbelgium.be/*` (beta),
+  `https://reftest.referees-handballbelgium.be/*` (production)
+- Web origins: `https://reftest-beta.referees-handballbelgium.be` (beta),
+  `https://reftest.referees-handballbelgium.be` (production)
 - Audience: add an **Audience** protocol mapper (included custom audience `reftest-api`) so that
   access tokens carry `aud: reftest-api`.
 
