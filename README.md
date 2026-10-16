@@ -37,7 +37,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 ### Approval Workflow
 
 - Optional pre-activation review: tests created by users without `ref-tests:approve` land in **Pending Approval**
-- Approvers are resolved dynamically via the Auth0 Management API and notified by email
+- Approvers are resolved dynamically from the active provider (Auth0 Management API or Keycloak Admin API) and notified by email
 - Bulk approve/reject (rejection requires a reason) from the list view; rejected tests can be re-approved later
 
 ### Update, Reset & Revive
@@ -62,7 +62,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 - Auth0 OIDC (browser) + JWT Bearer (API), with a task-based permission model — one named permission per GraphQL operation
 - `superadmin` bypass and `namespace:*` wildcards; OR-semantics via a dynamic `anyof:` policy provider
-- Permissions are auto-synced to the Auth0 API resource on startup, so nothing needs manual registration
+- Permissions are auto-synced on startup, so nothing needs manual registration: to the Auth0 API resource (Auth0) or as client roles on the API client (Keycloak)
 - Full reference: [docs/SECURITY.md](docs/SECURITY.md)
 
 ### Privacy & GDPR
@@ -145,8 +145,9 @@ flowchart TB
         UI["Standalone components + signals + i18n"]
     end
 
-    subgraph Auth["Auth0"]
-        A0["OIDC login + RBAC + Management API"]
+    subgraph Auth["Identity provider (Auth0 or Keycloak)"]
+        A0["Auth0: OIDC login + RBAC + Management API"]
+        KC["Keycloak: OIDC login + client roles"]
     end
 
     subgraph Api["RefTestManagement.Api (.NET 10)"]
@@ -179,6 +180,7 @@ flowchart TB
 
     UI -->|"GraphQL over HTTP/SSE"| GQL
     UI -->|"OIDC login / cookie session"| A0
+    UI -.->|"OIDC login (when Keycloak selected)"| KC
     Api --> Infrastructure
     Api --> Hosting
     Worker --> Hosting
@@ -219,6 +221,7 @@ flowchart TB
 | `RefTestManagement.Security`       | Permission constants, authorization handlers, dynamic policy provider (no project dependencies) |
 | `RefTestManagement.AuditLog`       | Domain-event-driven audit trail — event store, EF Core interceptor, retention                   |
 | `RefTestManagement.Auth0`          | Auth0 Management API client — permission sync, approver resolution                              |
+| `RefTestManagement.Keycloak`       | Keycloak Admin API client — permission sync as API-client roles (selected via `Identity:Provider`) |
 | `RefTestManagement.Ui`             | Angular 22 SPA — Apollo Client, GraphQL Codegen, Tailwind CSS, PWA                              |
 
 The allowed dependency direction is recorded in [ADR 0001](docs/adr/0001-layered-architecture.md) and enforced by `ArchitectureDependencyTests`.
@@ -238,7 +241,7 @@ and the [deployment guide](docs/DEPLOYMENT.md).
 | .NET SDK      | 10.0+                                                           |
 | Node.js       | 22.x+                                                           |
 | Database      | SQL Server 2019+ / Azure SQL, PostgreSQL, SQLite, or MySQL 8.0+ |
-| Auth0 tenant  | OIDC application and Management API M2M application             |
+| Identity provider | Auth0 tenant (OIDC application and Management API M2M application), or Keycloak realm (see [docs/KEYCLOAK.md](docs/KEYCLOAK.md)) |
 | Brevo account | – (optional, for email)                                         |
 
 ### Quick Start
@@ -257,7 +260,7 @@ dotnet ef database update --project ../RefTestManagement.Migrations.SqlServer
 
 Replace `RefTestManagement.Migrations.SqlServer` with the project matching your chosen `DatabaseProvider` (`RefTestManagement.Migrations.PostgreSQL`, `RefTestManagement.Migrations.SQLite`, `RefTestManagement.Migrations.MySQL`). See [docs/CONFIGURATION.md#databaseprovider](docs/CONFIGURATION.md#databaseprovider) for connection string formats.
 
-**2. Secrets** (development) — configure the minimum required settings via user secrets:
+**2. Secrets** (development) — configure the minimum required settings via user secrets. The examples use Auth0, the default provider:
 
 ```bash
 dotnet user-secrets set "DatabaseProvider" "SqlServer"
@@ -324,7 +327,7 @@ shared Redis for subscriptions, participant session locks, and privacy challenge
 | `RefTestExpirationService` | every 5 min   | Auto-expires pending tests, auto-completes overdue in-progress tests     |
 | `PrivacyRetentionService`  | daily         | Anonymizes completed/expired RefTests past the retention period          |
 | `AuditLogCleanupService`   | every 24h     | Redacts personal data from audit events past the retention period        |
-| `PermissionSyncService`    | after startup | Syncs all permissions to the Auth0 API resource (additive, non-blocking) |
+| `PermissionSyncService`    | after startup | Syncs all permissions to the configured identity provider: Auth0 API resource or Keycloak API-client roles (additive, non-blocking) |
 
 For a detailed diagram of the job-queue flow, see [docs/ARCHITECTURE-DIAGRAM.md](docs/ARCHITECTURE-DIAGRAM.md).
 
@@ -359,6 +362,7 @@ support development and do not provision cloud resources. See
 | ------------------------------------------------------------------------------ | ---------------------------------------------------------- |
 | [.ai/README.md](.ai/README.md)                                                | AI lifecycle, providers, templates, checks, and limits     |
 | [docs/SECURITY.md](docs/SECURITY.md)                                           | Auth0 setup, full permission reference, suggested roles    |
+| [docs/KEYCLOAK.md](docs/KEYCLOAK.md)                                           | Keycloak identity provider setup and configuration         |
 | [docs/PRIVACY.md](docs/PRIVACY.md)                                             | GDPR data flows, retention, erasure, data-subject requests |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md)                                 | Full `appsettings.json` reference                          |
 | [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)                                       | App Service and local deployment procedures               |

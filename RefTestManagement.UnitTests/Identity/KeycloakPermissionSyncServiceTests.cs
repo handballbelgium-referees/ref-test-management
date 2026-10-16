@@ -11,6 +11,7 @@ public sealed class KeycloakPermissionSyncServiceTests
 {
     private const string Authority = "https://login.example.test/realms/test-realm";
     private const string AdminBase = "https://login.example.test/admin/realms/test-realm";
+    private const string AdminPath = "/admin/realms/test-realm";
 
     [Fact]
     public async Task CreatesEveryMissingDistinctRoleOnApiClient()
@@ -208,6 +209,202 @@ public sealed class KeycloakPermissionSyncServiceTests
         Assert.Empty(handler.Requests);
     }
 
+    [Fact]
+    public async Task ApproverDiscoveryMatchesExactPermissionSuperadminAndWildcard()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            ClientRolesJson = """
+                [{"id":"r1","name":"ref-tests:view-list","composite":false},
+                 {"id":"r2","name":"superadmin","composite":false},
+                 {"id":"r3","name":"ref-tests:*","composite":false},
+                 {"id":"r4","name":"ref-tests:other","composite":false}]
+                """,
+            RoleUsers = new Dictionary<string, string>
+            {
+                ["ref-tests:view-list"] = """[{"id":"u1","enabled":true,"email":"ann@example.test","firstName":"Ann","lastName":"Lee"}]""",
+                ["superadmin"] = """[{"id":"u2","enabled":true,"email":"bob@example.test","username":"bob"}]""",
+                ["ref-tests:*"] = """[{"id":"u3","enabled":true,"email":"cat@example.test","firstName":"Cat"}]""",
+                ["ref-tests:other"] = """[{"id":"u4","enabled":true,"email":"dan@example.test"}]""",
+            },
+        });
+        await using var provider = BuildProvider(handler);
+                        var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        var users = await directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken);
+
+        Assert.Equal(
+            [
+                new IdentityUser("Ann Lee", "ann@example.test"),
+                new IdentityUser("bob", "bob@example.test"),
+                new IdentityUser("Cat", "cat@example.test"),
+            ],
+            users);
+    }
+
+    [Fact]
+    public async Task ApproverDiscoveryIncludesGroupMembersAndSubgroupMembers()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            ClientRolesJson = """[{"id":"r1","name":"ref-tests:view-list","composite":false}]""",
+            RoleGroups = new Dictionary<string, string>
+            {
+                ["ref-tests:view-list"] = """[{"id":"g1","name":"referees"}]""",
+            },
+            GroupMembers = new Dictionary<string, string>
+            {
+                ["g1"] = """[{"id":"u1","enabled":true,"email":"ann@example.test","firstName":"Ann","lastName":"Lee"}]""",
+                ["g2"] = """[{"id":"u2","enabled":true,"email":"bob@example.test","username":"bob"}]""",
+            },
+            GroupChildren = new Dictionary<string, string>
+            {
+                ["g1"] = """[{"id":"g2","name":"senior"}]""",
+            },
+        });
+        await using var provider = BuildProvider(handler);
+                        var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        var users = await directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken);
+
+        Assert.Equal(
+            [new IdentityUser("Ann Lee", "ann@example.test"), new IdentityUser("bob", "bob@example.test")],
+            users);
+    }
+
+    [Fact]
+    public async Task ApproverDiscoveryGrantsUsersOfCompositeParentRoles()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            ClientRolesJson = """
+                [{"id":"r1","name":"ref-tests:view-list","composite":false},
+                 {"id":"r2","name":"ref-tests:coach","composite":true}]
+                """,
+            CompositeRoles = new Dictionary<string, string>
+            {
+                ["r2"] = """[{"id":"r1","name":"ref-tests:view-list","composite":false}]""",
+            },
+            RoleUsers = new Dictionary<string, string>
+            {
+                ["ref-tests:coach"] = """[{"id":"u1","enabled":true,"email":"coach@example.test","username":"coach"}]""",
+            },
+        });
+        await using var provider = BuildProvider(handler);
+                        var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        var users = await directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken);
+
+        Assert.Equal([new IdentityUser("coach", "coach@example.test")], users);
+    }
+
+    [Fact]
+    public async Task ApproverDiscoveryExcludesDisabledUsersAndUsersWithoutEmail()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            ClientRolesJson = """[{"id":"r1","name":"ref-tests:view-list","composite":false}]""",
+            RoleUsers = new Dictionary<string, string>
+            {
+                ["ref-tests:view-list"] = """
+                    [{"id":"u1","enabled":false,"email":"off@example.test"},
+                     {"id":"u2","enabled":true},
+                     {"id":"u3","enabled":true,"email":"on@example.test"}]
+                    """,
+            },
+        });
+        await using var provider = BuildProvider(handler);
+                             var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        var users = await directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken);
+
+        Assert.Equal([new IdentityUser("on@example.test", "on@example.test")], users);
+    }
+
+    [Fact]
+    public async Task ApproverDiscoveryCachesResultsPerPermission()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            ClientRolesJson = """[{"id":"r1","name":"ref-tests:view-list","composite":false}]""",
+            RoleUsers = new Dictionary<string, string>
+            {
+                ["ref-tests:view-list"] = """[{"id":"u1","enabled":true,"email":"ann@example.test"}]""",
+            },
+        });
+        await using var provider = BuildProvider(handler);
+        var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        var first = await directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken);
+        var requestsAfterFirstCall = handler.Requests.Count;
+        var second = await directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken);
+
+        Assert.Equal(first, second);
+        Assert.Equal(requestsAfterFirstCall, handler.Requests.Count);
+    }
+
+    [Fact]
+    public async Task ApproverDiscoveryFailsWhenRequestBudgetIsExhausted()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+
+        // A subgroup chain longer than the 128-request budget allows must fail rather than return a partial list.
+        var groupChildren = new Dictionary<string, string>();
+
+        for (var i = 0; i < 130; i++)
+        {
+            groupChildren[$"g{i}"] = $$"""[{"id":"g{{i + 1}}","name":"level"}]""";
+        }
+
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            ClientRolesJson = """[{"id":"r1","name":"superadmin","composite":false}]""",
+            RoleGroups = new Dictionary<string, string>
+            {
+                ["superadmin"] = """[{"id":"g0","name":"root"}]""",
+            },
+            GroupChildren = groupChildren,
+        });
+        await using var provider = BuildProvider(handler);
+        var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        await Assert.ThrowsAsync<KeycloakDiscoveryBudgetExceededException>(() =>
+            directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken));
+    }
+
+    [Fact]
+    public async Task ApproverDiscoveryPropagatesKeycloakFailures()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            ClientRolesStatus = HttpStatusCode.InternalServerError,
+        });
+        await using var provider = BuildProvider(handler);
+        var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        await Assert.ThrowsAsync<HttpRequestException>(() =>
+            directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken));
+    }
+
+    [Fact]
+    public async Task ApproverDiscoveryRefusesWithoutCallingKeycloakWhenUnconfigured()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses());
+        await using var provider = BuildProvider(handler, adminSecret: string.Empty);
+        var directory = provider.GetRequiredService<IIdentityUserDirectory>();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken));
+        Assert.Empty(handler.Requests);
+    }
+
     private static ServiceProvider BuildProvider(ScriptedHandler handler, string adminSecret = "test-secret")
     {
         var configuration = new ConfigurationBuilder()
@@ -223,9 +420,12 @@ public sealed class KeycloakPermissionSyncServiceTests
 
         var services = new ServiceCollection();
         services.AddLogging();
+        services.AddMemoryCache();
         services.AddSingleton<IConfiguration>(configuration);
         services.AddKeycloakPermissionSync(configuration);
         services.AddTransient<IIdentityPermissionSync>(serviceProvider =>
+            serviceProvider.GetRequiredService<KeycloakPermissionSyncService>());
+        services.AddTransient<IIdentityUserDirectory>(serviceProvider =>
             serviceProvider.GetRequiredService<KeycloakPermissionSyncService>());
         services.ConfigureHttpClientDefaults(builder =>
             builder.ConfigurePrimaryHttpMessageHandler(() => handler));
@@ -252,6 +452,22 @@ public sealed class KeycloakPermissionSyncServiceTests
             """[{"id":"role-view","name":"ref-tests:view-list"},{"id":"role-super","name":"superadmin","composite":true}]""";
 
         public string GroupsJson { get; init; } = "[]";
+
+        public string ClientRolesJson { get; init; } = "[]";
+
+        public HttpStatusCode ClientRolesStatus { get; init; } = HttpStatusCode.OK;
+
+        /// <summary>Users holding a client role, keyed by unescaped role name.</summary>
+        public IReadOnlyDictionary<string, string> RoleUsers { get; init; } = new Dictionary<string, string>();
+
+        /// <summary>Groups holding a client role, keyed by unescaped role name.</summary>
+        public IReadOnlyDictionary<string, string> RoleGroups { get; init; } = new Dictionary<string, string>();
+
+        /// <summary>Direct members of a group, keyed by group id.</summary>
+        public IReadOnlyDictionary<string, string> GroupMembers { get; init; } = new Dictionary<string, string>();
+
+        /// <summary>Subgroups of a group, keyed by group id.</summary>
+        public IReadOnlyDictionary<string, string> GroupChildren { get; init; } = new Dictionary<string, string>();
 
         /// <summary>Client role mappings of a group, keyed by group id.</summary>
         public IReadOnlyDictionary<string, string> GroupMappings { get; init; } = new Dictionary<string, string>();
@@ -313,6 +529,36 @@ public sealed class KeycloakPermissionSyncServiceTests
                 return UserStatus == HttpStatusCode.OK
                     ? Json(HttpStatusCode.OK, UserJson)
                     : new HttpResponseMessage(UserStatus);
+            }
+
+            var path = Uri.UnescapeDataString(request.RequestUri!.AbsolutePath);
+            var clientRolesPath = $"{AdminPath}/clients/internal-id/roles";
+
+            if (request.Method == HttpMethod.Get && path == clientRolesPath)
+            {
+                return ClientRolesStatus == HttpStatusCode.OK
+                    ? Json(HttpStatusCode.OK, ClientRolesJson)
+                    : new HttpResponseMessage(ClientRolesStatus);
+            }
+
+            if (request.Method == HttpMethod.Get
+                && path.StartsWith($"{clientRolesPath}/", StringComparison.Ordinal)
+                && path[(clientRolesPath.Length + 1)..].Split('/') is [var roleName, var kind]
+                && (kind is "users" or "groups"))
+            {
+                var source = kind == "users" ? RoleUsers : RoleGroups;
+                return Json(HttpStatusCode.OK, source.TryGetValue(roleName, out var roleJson) ? roleJson : "[]");
+            }
+
+            var groupsPath = $"{AdminPath}/groups/";
+
+            if (request.Method == HttpMethod.Get
+                && path.StartsWith(groupsPath, StringComparison.Ordinal)
+                && path[groupsPath.Length..].Split('/') is [var groupId, var groupKind]
+                && (groupKind is "members" or "children"))
+            {
+                var source = groupKind == "members" ? GroupMembers : GroupChildren;
+                return Json(HttpStatusCode.OK, source.TryGetValue(groupId, out var groupJsonBody) ? groupJsonBody : "[]");
             }
 
             if (request.Method == HttpMethod.Get)

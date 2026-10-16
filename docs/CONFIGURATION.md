@@ -269,7 +269,7 @@ The current Auth0 endpoint reference documents these least-privilege Management 
   [Get a user's roles](https://auth0.com/docs/api/management/v2/users/get-user-roles), and
   [Get permissions granted by role](https://auth0.com/docs/api/management/v2/roles/get-role-permission)
   references.
-- Resolve approvers in `GetUsersWithPermissionAsync` with `read:roles` for
+- Resolve approvers in `GetUsersWithPermissionAsync` (Keycloak equivalent: see [Keycloak user lookup](KEYCLOAK.md#user-lookup)) with `read:roles` for
   `GET /api/v2/roles` and `/api/v2/roles/{id}/permissions`, `read:users read:roles read:role_members` for
   `GET /api/v2/roles/{id}/users`, and `read:users` for `GET /api/v2/users` and
   `/api/v2/users/{id}/permissions`. See Auth0's [Get roles](https://auth0.com/docs/api/management/v2/roles/get-roles),

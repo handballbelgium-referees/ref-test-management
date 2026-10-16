@@ -128,8 +128,15 @@ public static class HostingServiceCollectionExtensions
 
         // Permission sync follows the configured provider. The Auth0 registration stays
         // unconditional because the API's permission snapshot service also depends on it.
+        var useKeycloak = IdentityProviderName.Parse(configuration["Identity:Provider"]) == IdentityProviderName.Keycloak;
+
         services.AddTransient<IIdentityPermissionSync>(serviceProvider =>
-            IdentityProviderName.Parse(configuration["Identity:Provider"]) == IdentityProviderName.Keycloak
+            useKeycloak
+                ? serviceProvider.GetRequiredService<KeycloakPermissionSyncService>()
+                : serviceProvider.GetRequiredService<IAuth0ManagementService>());
+
+        services.AddTransient<IIdentityUserDirectory>(serviceProvider =>
+            useKeycloak
                 ? serviceProvider.GetRequiredService<KeycloakPermissionSyncService>()
                 : serviceProvider.GetRequiredService<IAuth0ManagementService>());
     }
