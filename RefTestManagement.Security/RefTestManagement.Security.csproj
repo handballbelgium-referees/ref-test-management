@@ -11,4 +11,9 @@
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
   </ItemGroup>
 
+  <ItemGroup>
+  <!-- Lets the unit test project exercise the internal permission matcher and live handler directly. -->
+  <InternalsVisibleTo Include="RefTestManagement.UnitTests" />
+  </ItemGroup>
+
 </Project>

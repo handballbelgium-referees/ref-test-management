@@ -15,7 +15,7 @@ namespace Handball.Belgium.RefTestManagement.Security;
 /// </summary>
 public sealed class TaskPermissionHandler : AuthorizationHandler<TaskPermissionRequirement>
 {
-    private const string PermissionClaimType = "permissions";
+    internal const string PermissionClaimType = "permissions";
 
     protected override Task HandleRequirementAsync(
         AuthorizationHandlerContext context,
@@ -26,29 +26,7 @@ public sealed class TaskPermissionHandler : AuthorizationHandler<TaskPermissionR
             .Select(c => c.Value)
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
-        if (permissions.Count == 0)
-            return Task.CompletedTask;
-
-        // Superadmin bypasses all checks
-        if (permissions.Contains(Permissions.Superadmin))
-        {
-            context.Succeed(requirement);
-            return Task.CompletedTask;
-        }
-
-        // Exact permission match
-        if (permissions.Contains(requirement.Permission))
-        {
-            context.Succeed(requirement);
-            return Task.CompletedTask;
-        }
-
-        // Namespace wildcard: "ref-tests:*" satisfies any "ref-tests:<action>"
-        var colonIndex = requirement.Permission.IndexOf(':');
-        if (colonIndex <= 0) return Task.CompletedTask;
-        
-        var ns = requirement.Permission[..colonIndex];
-        if (permissions.Contains($"{ns}:*"))
+        if (PermissionMatcher.IsSatisfied(permissions, requirement.Permission))
             context.Succeed(requirement);
 
         return Task.CompletedTask;

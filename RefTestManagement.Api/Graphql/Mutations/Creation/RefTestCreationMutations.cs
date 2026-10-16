@@ -33,7 +33,7 @@ public static partial class RefTestCreationMutations
     /// <param name="loggerFactory">Factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns>The result of the RefTest creation operation.</returns>
-    [Authorize(Policy = Permissions.RefTests.Create)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.Create)]
     public static async Task<CreateRefTestsResult> CreateRefTestsAsync(
         CreateRefTestsInput input,
         RefTestManagementContext context,
