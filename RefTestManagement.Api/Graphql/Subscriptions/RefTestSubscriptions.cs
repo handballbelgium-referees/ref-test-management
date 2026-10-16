@@ -7,8 +7,8 @@ using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
 using Handball.Belgium.RefTestManagement.Security;
 using HotChocolate.Authorization;
+using HotChocolate.Subscriptions;
 using Microsoft.EntityFrameworkCore;
-using MicrosoftAuthorizationService = Microsoft.AspNetCore.Authorization.IAuthorizationService;
 
 namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 
@@ -19,6 +19,8 @@ namespace Handball.Belgium.RefTestManagement.Api.Graphql.Subscriptions;
 public static partial class RefTestSubscriptions
 {
     private static readonly TimeSpan SessionLockRevalidationInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan SubscriptionPermissionRecheckInterval = TimeSpan.FromSeconds(30);
+    private static readonly TimeSpan SubscriptionEventRecheckThrottle = TimeSpan.FromSeconds(30);
 
     /// <summary>
     /// Subscribe to time extension events for a specific RefTest.
@@ -42,24 +44,11 @@ public static partial class RefTestSubscriptions
     /// <param name="id">The ID of the RefTest to monitor</param>
     /// <param name="message">The event message</param>
     /// <returns>The RefTest event</returns>
-    [Subscribe]
+    [Subscribe(With = nameof(SubscribeToRefTestUpdated))]
     [Authorize(Policy = Permissions.RefTests.ViewDetail)]
-    [Topic("{id}")]
-    public static async Task<IRefTestEvent> RefTestUpdated(
-        [ID<RefTestDto>] Guid id,
-        [EventMessage] RefTestSubscriptionMessage message,
-        ClaimsPrincipal user,
-        [Service] IPermissionSnapshotService permissionSnapshotService,
-        [Service] MicrosoftAuthorizationService authorizationService,
-        CancellationToken cancellationToken)
+    public static IRefTestEvent RefTestUpdated(
+        [EventMessage] RefTestSubscriptionMessage message)
     {
-        await ValidateCurrentPermissionAsync(
-            user,
-            Permissions.RefTests.ViewDetail,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken);
-
         return message.DeserializeEvent() switch
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
@@ -93,23 +82,11 @@ public static partial class RefTestSubscriptions
     /// </summary>
     /// <param name="message">The event message containing the RefTest ID and event data</param>
     /// <returns>The RefTest event</returns>
-    [Subscribe]
+    [Subscribe(With = nameof(SubscribeToRefTestsUpdated))]
     [Authorize(Policy = Permissions.RefTests.ViewList)]
-    [Topic(RefTestSubscriptionService.GlobalTopic)]
-    public static async Task<IRefTestEvent> RefTestsUpdated(
-        [EventMessage] RefTestSubscriptionMessage message,
-        ClaimsPrincipal user,
-        [Service] IPermissionSnapshotService permissionSnapshotService,
-        [Service] MicrosoftAuthorizationService authorizationService,
-        CancellationToken cancellationToken)
+    public static IRefTestEvent RefTestsUpdated(
+        [EventMessage] RefTestSubscriptionMessage message)
     {
-        await ValidateCurrentPermissionAsync(
-            user,
-            Permissions.RefTests.ViewList,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken);
-
         return message.DeserializeEvent() switch
         {
             RefTestStartedEvent e => new RefTestStarted(e.Id, e.Status, e.StartedAt),
@@ -135,27 +112,149 @@ public static partial class RefTestSubscriptions
         };
     }
 
-    private static async Task ValidateCurrentPermissionAsync(
+    /// <summary>
+    /// Source stream for <see cref="RefTestUpdated"/>: one RefTest topic, re-checked live.
+    /// </summary>
+    public static IAsyncEnumerable<RefTestSubscriptionMessage> SubscribeToRefTestUpdated(
+        [ID<RefTestDto>] Guid id,
         ClaimsPrincipal user,
-        string requiredPermission,
-        IPermissionSnapshotService permissionSnapshotService,
-        MicrosoftAuthorizationService authorizationService,
-        CancellationToken cancellationToken)
-    {
-        // Handshake authorization alone is not enough: a WebSocket can outlive the original principal.
-        var permissions = await permissionSnapshotService.GetCurrentPermissionsAsync(user, cancellationToken);
-        if (permissions is null)
-            throw new GraphQLException("The subscription permission could not be verified.");
+        [Service] ITopicEventReceiver topicEventReceiver,
+        [Service] ILivePermissionVerifier permissionVerifier,
+        [Service] TimeProvider timeProvider,
+        CancellationToken cancellationToken) =>
+        StreamWhilePermitted(
+            id.ToString(),
+            Permissions.RefTests.ViewDetail,
+            user,
+            topicEventReceiver,
+            permissionVerifier,
+            timeProvider,
+            SubscriptionPermissionRecheckInterval,
+            SubscriptionEventRecheckThrottle,
+            cancellationToken);
 
-        var freshPrincipal = new ClaimsPrincipal(new ClaimsIdentity(
-            permissions.Select(permission => new Claim("permissions", permission)),
-            "PermissionSnapshot"));
-        var result = await authorizationService.AuthorizeAsync(
-            freshPrincipal,
-            resource: null,
-            policyName: requiredPermission);
-        if (!result.Succeeded)
-            throw new GraphQLException("The subscription permission is no longer available.");
+    /// <summary>
+    /// Source stream for <see cref="RefTestsUpdated"/>: the global RefTest topic, re-checked live.
+    /// </summary>
+    public static IAsyncEnumerable<RefTestSubscriptionMessage> SubscribeToRefTestsUpdated(
+        ClaimsPrincipal user,
+        [Service] ITopicEventReceiver topicEventReceiver,
+        [Service] ILivePermissionVerifier permissionVerifier,
+        [Service] TimeProvider timeProvider,
+        CancellationToken cancellationToken) =>
+        StreamWhilePermitted(
+            RefTestSubscriptionService.GlobalTopic,
+            Permissions.RefTests.ViewList,
+            user,
+            topicEventReceiver,
+            permissionVerifier,
+            timeProvider,
+            SubscriptionPermissionRecheckInterval,
+            SubscriptionEventRecheckThrottle,
+            cancellationToken);
+
+    /// <summary>
+    /// Forwards topic events while the subscriber still holds <paramref name="permission"/>.
+    /// The stream ends when the permission is revoked, on a timer tick (even when idle) or
+    /// before an event whose last live check is older than the throttle. A failed or timed-out
+    /// live check ends the stream (fail closed).
+    /// </summary>
+    internal static async IAsyncEnumerable<RefTestSubscriptionMessage> StreamWhilePermitted(
+        string topic,
+        string permission,
+        ClaimsPrincipal user,
+        ITopicEventReceiver topicEventReceiver,
+        ILivePermissionVerifier permissionVerifier,
+        TimeProvider timeProvider,
+        TimeSpan recheckInterval,
+        TimeSpan eventRecheckThrottle,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        using var linkedSource = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        var token = linkedSource.Token;
+
+        await using var source = await topicEventReceiver.SubscribeAsync<RefTestSubscriptionMessage>(topic, token);
+        var events = source.ReadEventsAsync().GetAsyncEnumerator(token);
+        using var timer = new PeriodicTimer(recheckInterval, timeProvider);
+
+        if (!await permissionVerifier.HasPermissionAsync(user, permission, token))
+            yield break;
+
+        var lastCheckedAt = timeProvider.GetUtcNow();
+        Task<bool>? nextEvent = null;
+        Task<bool>? nextTick = null;
+        try
+        {
+            nextEvent = events.MoveNextAsync().AsTask();
+            nextTick = timer.WaitForNextTickAsync(token).AsTask();
+
+            while (true)
+            {
+                var completed = await Task.WhenAny(nextEvent, nextTick);
+                if (completed == nextTick)
+                {
+                    if (!await nextTick)
+                        yield break;
+
+                    nextTick = timer.WaitForNextTickAsync(token).AsTask();
+                    if (!await permissionVerifier.HasPermissionAsync(user, permission, token))
+                        yield break;
+
+                    lastCheckedAt = timeProvider.GetUtcNow();
+                    continue;
+                }
+
+                if (!await nextEvent)
+                    yield break;
+
+                var message = events.Current;
+                nextEvent = events.MoveNextAsync().AsTask();
+
+                var now = timeProvider.GetUtcNow();
+                if (now - lastCheckedAt >= eventRecheckThrottle)
+                {
+                    if (!await permissionVerifier.HasPermissionAsync(user, permission, token))
+                        yield break;
+
+                    lastCheckedAt = now;
+                }
+
+                yield return message;
+            }
+        }
+        finally
+        {
+            // Dispose the source first so pending reads complete even when it ignores cancellation.
+            linkedSource.Cancel();
+            try
+            {
+                await source.DisposeAsync();
+                await AwaitCancelledAsync(nextEvent);
+                await AwaitCancelledAsync(nextTick);
+            }
+            finally
+            {
+                await events.DisposeAsync();
+            }
+        }
+    }
+
+    /// <summary>
+    /// Waits for a pending read during teardown. Any fault is swallowed so it cannot replace
+    /// the exception that ended the stream; the stream is already being torn down.
+    /// </summary>
+    private static async Task AwaitCancelledAsync(Task<bool>? pending)
+    {
+        if (pending is null)
+            return;
+
+        try
+        {
+            await pending;
+        }
+        catch (Exception)
+        {
+        }
     }
 
     /// <summary>

@@ -34,7 +34,7 @@ public static partial class RefTestDeletionMutations
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
-    [Authorize(Policy = Permissions.RefTests.Delete)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.Delete)]
     public static async Task<DeleteRefTestsResult> DeleteRefTestsAsync(
         DeleteRefTestsInput input,
         RefTestManagementContext context,

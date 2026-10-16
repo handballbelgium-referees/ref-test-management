@@ -16,6 +16,8 @@ public static class SecurityServiceExtensions
         services.AddSingleton<IAuthorizationHandler, TaskPermissionHandler>();
         services.AddSingleton<IAuthorizationHandler, AnyTaskPermissionHandler>();
         services.AddSingleton<IAuthorizationPolicyProvider, TaskAuthorizationPolicyProvider>();
+        services.AddSingleton<ILivePermissionVerifier, LivePermissionVerifier>();
+        services.AddSingleton<IAuthorizationHandler, LivePermissionHandler>();
 
         var builder = services.AddAuthorizationBuilder();
         foreach (var permission in Permissions.All)

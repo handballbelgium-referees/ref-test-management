@@ -112,55 +112,14 @@ public sealed class AuthPermissionRefreshTests
     }
 
     [Fact]
-    public async Task AdminSubscriptionsRevalidatePermissionsBeforeEachEvent()
+    public void AdminResolversRejectUnsupportedEventMessages()
     {
-        var snapshots = new Queue<IReadOnlySet<string>?>(
-        [
-            Set(Permissions.RefTests.ViewList),
-            Set(),
-            Set(Permissions.RefTests.ViewDetail),
-            null
-        ]);
-        var snapshotService = new FakePermissionSnapshotService(
-            (_, _) => Task.FromResult(snapshots.Dequeue()));
-        using var provider = CreateAuthorizationProvider();
-        var authorizationService = provider.GetRequiredService<IAuthorizationService>();
-        var user = AuthenticatedUser();
         var unsupportedMessage = RefTestSubscriptionMessage.Create(new object());
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            RefTestSubscriptions.RefTestsUpdated(
-                unsupportedMessage,
-                user,
-                snapshotService,
-                authorizationService,
-                CancellationToken.None));
-        await Assert.ThrowsAsync<GraphQLException>(() =>
-            RefTestSubscriptions.RefTestsUpdated(
-                unsupportedMessage,
-                user,
-                snapshotService,
-                authorizationService,
-                CancellationToken.None));
-
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            RefTestSubscriptions.RefTestUpdated(
-                Guid.NewGuid(),
-                unsupportedMessage,
-                user,
-                snapshotService,
-                authorizationService,
-                CancellationToken.None));
-        await Assert.ThrowsAsync<GraphQLException>(() =>
-            RefTestSubscriptions.RefTestUpdated(
-                Guid.NewGuid(),
-                unsupportedMessage,
-                user,
-                snapshotService,
-                authorizationService,
-                CancellationToken.None));
-
-        Assert.Equal(4, snapshotService.Calls);
+        Assert.Throws<InvalidOperationException>(() =>
+            RefTestSubscriptions.RefTestsUpdated(unsupportedMessage));
+        Assert.Throws<InvalidOperationException>(() =>
+            RefTestSubscriptions.RefTestUpdated(unsupportedMessage));
     }
 
     private static ServiceProvider CreateCookieProvider(IPermissionSnapshotService snapshotService)
@@ -234,5 +193,10 @@ public sealed class AuthPermissionRefreshTests
             Interlocked.Increment(ref _calls);
             return getPermissions(principal, cancellationToken);
         }
+
+        public Task<IReadOnlySet<string>?> RefreshForSubjectAsync(
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken = default) =>
+            GetCurrentPermissionsAsync(principal, cancellationToken);
     }
 }

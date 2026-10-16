@@ -249,7 +249,7 @@ server-certificate validation.
 Auth0 API resource-server identifier sent during OIDC sign-in and validated on bearer tokens.
 `ManagementClientId` and `ManagementClientSecret` belong to a separate machine-to-machine app.
 
-The Management API credentials are used by `RefTestManagement.Auth0` to sync permissions shortly after startup (`PermissionSyncService`, running in the background), resolve approvers by permission, and refresh each user's effective permissions for authorization. The refresh uses the existing machine-to-machine client-credentials flow; it does not require or assume an end-user refresh token.
+The Management API credentials are used by `RefTestManagement.Auth0` to sync permissions shortly after startup (`PermissionSyncService`, running in the background), resolve approvers by permission, and refresh each user's effective permissions for authorization. The refresh uses the existing machine-to-machine client-credentials flow. End-user sign-in refreshes the user's token separately through the refresh-token flow described in [Identity permission freshness](#identity-permission-freshness).
 
 Startup permission sync skips with a sanitized warning when required Auth0 configuration is missing.
 Transient network errors, timeouts, circuit-breaker rejections, and HTTP 408/429/5xx responses
@@ -291,11 +291,35 @@ Successful permission snapshots are cached per user and API process for `Identit
 seconds (default `240`, must be positive). Shorter values pick up role changes sooner at the cost of more
 identity-provider API calls. Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most
 four simultaneous refreshes per API process. Expired snapshots are never reused after a refresh
-failure; authorization fails closed. Since permission grants are changed externally in the identity
-provider and there is no change-event callback for targeted invalidation, the revocation-latency objective is
-the next authentication validation after cache expiry, bounded by the configured lifetime per API process.
-Tenant/plan rate limits were not verified, and no quota figure is assumed. Monitor the Auth0
+failure; authorization fails closed. Tenant/plan rate limits were not verified, and no quota figure is assumed.
+Monitor the Auth0
 tenant's own rate-limit signals and verify its operational limits before rollout.
+
+### Identity permission freshness
+
+| Key                                               | Purpose                                                                                       | Default |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------- |
+| `Identity:LivePermissionTimeoutSeconds`           | Timeout for the live identity-provider check on `live:` mutation policies. Must be positive. | `2`     |
+
+- **Mutations** (`live:` policies) check the provider directly when the cache grants the permission, so a
+  revocation takes effect on the next write, bounded by this timeout. A timeout or provider failure denies the write.
+  Each write therefore adds one Management API (Auth0) or Admin API (Keycloak) call per user; the cache
+  limits this to users who already hold the permission.
+- **Subscriptions** re-check the live permission every 30 seconds (fixed constant, not configurable) and before
+  events that follow a check older than 30 seconds.
+- **Sign-in and token refresh** force a fresh permission snapshot, bypassing the cache. The authentication
+  cookie refreshes its access token when it is within 60 seconds of expiry (fixed).
+
+Refresh tokens are requested with `offline_access`, and both providers must issue them to the web client:
+
+- **Auth0:** enable the *Refresh Token* grant on the application (Application → Advanced Settings → Grant Types),
+  and include `offline_access` in the allowed scopes.   Rotation support is not verified against a live tenant;
+    confirm the tenant's rotation setting before rollout.
+- **Keycloak:** the `offline_access` client scope must be assigned to the client in use (documented as `reftest-beta` in [KEYCLOAK.md](KEYCLOAK.md)).
+  Confirm that the realm's SSO and offline session limits suit the expected session length.
+
+If the provider issues no refresh token, the access token cannot be renewed: the user is signed out when it nears
+expiry (60 seconds before) and must sign in again.
 
 ### EmailConfiguration
 

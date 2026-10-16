@@ -26,7 +26,7 @@ public static partial class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize(Policy = Permissions.RefTests.UpdateDetails)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.UpdateDetails)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> UpdateRefTestDetailsAsync(
@@ -51,7 +51,7 @@ public static partial class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize(Policy = Permissions.RefTests.UpdateConfiguration)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.UpdateConfiguration)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> UpdateRefTestConfigurationAsync(
@@ -87,7 +87,7 @@ public static partial class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize(Policy = Permissions.RefTests.ExtendTime)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.ExtendTime)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> ExtendRefTestTimeAsync(
@@ -113,7 +113,7 @@ public static partial class RefTestUpdateMutations
     /// <param name="cancellationToken"></param>
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
-    [Authorize(Policy = Permissions.RefTests.UpdateNotifications)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.UpdateNotifications)]
     [Error<RefTestNotFoundException>]
     public static async Task<RefTestDto> UpdateRefTestNotificationSettingsAsync(
         UpdateRefTestNotificationSettingsInput input,
@@ -137,7 +137,7 @@ public static partial class RefTestUpdateMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize(Policy = Permissions.RefTests.RegenerateToken)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.RegenerateToken)]
     [Error<RefTestNotFoundException>]
     [Error<InvalidRefTestStatusException>]
     public static async Task<RefTestDto> RegenerateRefTestTokenAsync(

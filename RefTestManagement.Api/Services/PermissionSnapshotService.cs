@@ -18,6 +18,14 @@ public interface IPermissionSnapshotService
     Task<IReadOnlySet<string>?> GetCurrentPermissionsAsync(
         ClaimsPrincipal principal,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Bypasses any cached or backed-off snapshot and fetches the user's permissions from the
+    /// identity provider. Used at interactive sign-in so a fresh login never reuses stale grants.
+    /// </summary>
+    Task<IReadOnlySet<string>?> RefreshForSubjectAsync(
+        ClaimsPrincipal principal,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
@@ -55,9 +63,21 @@ public sealed class PermissionSnapshotService(
     private readonly TimeSpan _snapshotLifetime = ReadSnapshotLifetime(configuration);
 
     /// <inheritdoc />
-    public async Task<IReadOnlySet<string>?> GetCurrentPermissionsAsync(
+    public Task<IReadOnlySet<string>?> GetCurrentPermissionsAsync(
         ClaimsPrincipal principal,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default) =>
+        ResolveAsync(principal, forceRefresh: false, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<IReadOnlySet<string>?> RefreshForSubjectAsync(
+        ClaimsPrincipal principal,
+        CancellationToken cancellationToken = default) =>
+        ResolveAsync(principal, forceRefresh: true, cancellationToken);
+
+    private async Task<IReadOnlySet<string>?> ResolveAsync(
+        ClaimsPrincipal principal,
+        bool forceRefresh,
+        CancellationToken cancellationToken)
     {
         if (!principal.Identities.Any(identity => identity.IsAuthenticated))
             return null;
@@ -79,7 +99,7 @@ public sealed class PermissionSnapshotService(
         TaskCompletionSource<IReadOnlySet<string>?>? refresh = null;
         lock (_inFlightLock)
         {
-            if (TryGetCachedPermissions(subjectKey, timeProvider.GetUtcNow(), out var cachedPermissions))
+            if (!forceRefresh && TryGetCachedPermissions(subjectKey, timeProvider.GetUtcNow(), out var cachedPermissions))
                 return cachedPermissions;
 
             if (_inFlight.TryGetValue(subjectKey, out var inFlight))

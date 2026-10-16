@@ -28,7 +28,7 @@ public static partial class RefTestApprovalMutations
     /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
     /// <param name="loggerFactory">Factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    [Authorize(Policy = Permissions.RefTests.Approve)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.Approve)]
     public static async Task<ApproveRefTestsResult> ApproveRefTestsAsync(
         ApproveRefTestsInput input,
         RefTestManagementContext context,
@@ -79,7 +79,7 @@ public static partial class RefTestApprovalMutations
     /// <param name="httpContextAccessor">Accessor for the current HTTP context.</param>
     /// <param name="loggerFactory">Factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
-    [Authorize(Policy = Permissions.RefTests.Approve)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.Approve)]
     public static async Task<RejectRefTestsResult> RejectRefTestsAsync(
         RejectRefTestsInput input,
         RefTestManagementContext context,

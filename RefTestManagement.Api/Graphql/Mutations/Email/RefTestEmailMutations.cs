@@ -27,7 +27,7 @@ public static partial class RefTestEmailMutations
     /// <param name="httpContextAccessor">The HTTP context accessor for accessing the current HTTP context.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns></returns>
-    [Authorize(Policy = Permissions.RefTests.SendInvitations)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.SendInvitations)]
     public static async Task<SendInvitationsResult> SendInvitationsAsync(
         SendInvitationsInput input,
         RefTestManagementContext context,
@@ -79,7 +79,7 @@ public static partial class RefTestEmailMutations
     /// <returns></returns>
     /// <exception cref="RefTestNotFoundException"></exception>
     /// <exception cref="InvalidRefTestStatusException"></exception>
-    [Authorize(Policy = Permissions.RefTests.SendResults)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.SendResults)]
     public static async Task<SendResultsResult> SendResultsAsync(
         SendResultsInput input,
         RefTestManagementContext context,
@@ -131,7 +131,7 @@ public static partial class RefTestEmailMutations
     /// <param name="httpContextAccessor">The HTTP context accessor for accessing the current HTTP context.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns></returns>
-    [Authorize(Policy = Permissions.RefTests.SendReport)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.SendReport)]
     public static async Task<SendReportResult> SendReportAsync(
         SendReportInput input,
         [Service] IRefTestReportDataSource reportDataSource,

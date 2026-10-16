@@ -35,92 +35,27 @@ public sealed class RefTestSubscriptionsTests
     }
 
     [Fact]
-    public async Task AdminResolversMapConsecutiveEventsAndRevalidateEachPermission()
+    public void AdminResolversMapConsecutiveEvents()
     {
-        var currentPermissions = PermissionSet(
-            Permissions.RefTests.ViewDetail,
-            Permissions.RefTests.ViewList);
-        var permissionSnapshotService = new FakePermissionSnapshotService(
-            currentPermissions,
-            currentPermissions,
-            currentPermissions,
-            currentPermissions);
-        var cancellationToken = TestContext.Current.CancellationToken;
-        using var authorizationProvider = CreateAuthorizationProvider();
-        var authorizationService = authorizationProvider.GetRequiredService<IAuthorizationService>();
-        var user = AuthenticatedUser();
         var refTestId = Guid.NewGuid();
         var firstAt = new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc);
         var secondAt = firstAt.AddMinutes(1);
 
-        var detailStarted = Assert.IsType<RefTestStarted>(await RefTestSubscriptions.RefTestUpdated(
-            refTestId,
+        var detailStarted = Assert.IsType<RefTestStarted>(RefTestSubscriptions.RefTestUpdated(
             RefTestSubscriptionMessage.Create(
-                new RefTestStartedEvent(refTestId, RefTestStatus.Pending, firstAt)),
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
-        var detailInvitation = Assert.IsType<RefTestInvitationSent>(await RefTestSubscriptions.RefTestUpdated(
-            refTestId,
-            RefTestSubscriptionMessage.Create(new RefTestInvitationSentEvent(refTestId, secondAt)),
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
-        var listExpired = Assert.IsType<RefTestExpired>(await RefTestSubscriptions.RefTestsUpdated(
+                new RefTestStartedEvent(refTestId, RefTestStatus.Pending, firstAt))));
+        var detailInvitation = Assert.IsType<RefTestInvitationSent>(RefTestSubscriptions.RefTestUpdated(
+            RefTestSubscriptionMessage.Create(new RefTestInvitationSentEvent(refTestId, secondAt))));
+        var listExpired = Assert.IsType<RefTestExpired>(RefTestSubscriptions.RefTestsUpdated(
             RefTestSubscriptionMessage.Create(
-                new RefTestExpiredEvent(refTestId, RefTestStatus.Expired, firstAt)),
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
-        var listResultSent = Assert.IsType<RefTestResultSent>(await RefTestSubscriptions.RefTestsUpdated(
-            RefTestSubscriptionMessage.Create(new RefTestResultSentEvent(refTestId, secondAt)),
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
+                new RefTestExpiredEvent(refTestId, RefTestStatus.Expired, firstAt))));
+        var listResultSent = Assert.IsType<RefTestResultSent>(RefTestSubscriptions.RefTestsUpdated(
+            RefTestSubscriptionMessage.Create(new RefTestResultSentEvent(refTestId, secondAt))));
 
         Assert.Equal(firstAt, detailStarted.StartedAt);
         Assert.Equal(secondAt, detailInvitation.SentAt);
         Assert.Equal(firstAt, listExpired.ExpiredAt);
         Assert.Equal(secondAt, listResultSent.SentAt);
-        Assert.Equal(4, permissionSnapshotService.Calls);
-    }
-
-    [Fact]
-    public async Task AdminResolverTerminatesWhenPermissionIsRevoked()
-    {
-        var permissionSnapshotService = new FakePermissionSnapshotService(
-            PermissionSet(Permissions.RefTests.ViewDetail),
-            PermissionSet());
-        using var authorizationProvider = CreateAuthorizationProvider();
-        var authorizationService = authorizationProvider.GetRequiredService<IAuthorizationService>();
-        var user = AuthenticatedUser();
-        var refTestId = Guid.NewGuid();
-        var cancellationToken = TestContext.Current.CancellationToken;
-        var message = RefTestSubscriptionMessage.Create(new RefTestStartedEvent(
-            refTestId,
-            RefTestStatus.Pending,
-            new DateTime(2026, 10, 5, 10, 0, 0, DateTimeKind.Utc)));
-
-        Assert.IsType<RefTestStarted>(await RefTestSubscriptions.RefTestUpdated(
-            refTestId,
-            message,
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
-        await Assert.ThrowsAsync<GraphQLException>(() => RefTestSubscriptions.RefTestUpdated(
-            refTestId,
-            message,
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
-
-        Assert.Equal(2, permissionSnapshotService.Calls);
     }
 
     [Fact]
@@ -310,41 +245,17 @@ public sealed class RefTestSubscriptionsTests
         Assert.Equal(selectedAnswerIds, detailCompletion.SelectedAnswerIds);
         Assert.Null(listCompletion.SelectedAnswerIds);
 
-        using var authorizationProvider = CreateAuthorizationProvider();
-        var authorizationService = authorizationProvider.GetRequiredService<IAuthorizationService>();
-        var permissionSnapshotService = new FakePermissionSnapshotService(
-            PermissionSet(Permissions.RefTests.ViewDetail),
-            PermissionSet(Permissions.RefTests.ViewList));
-        var user = AuthenticatedUser();
-        var detailEvent = Assert.IsType<RefTestCompleted>(await RefTestSubscriptions.RefTestUpdated(
-            refTestId,
-            RefTestSubscriptionMessage.Create(detailCompletion),
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
-        var listEvent = Assert.IsType<RefTestCompleted>(await RefTestSubscriptions.RefTestsUpdated(
-            RefTestSubscriptionMessage.Create(listCompletion),
-            user,
-            permissionSnapshotService,
-            authorizationService,
-            cancellationToken));
+        var detailEvent = Assert.IsType<RefTestCompleted>(RefTestSubscriptions.RefTestUpdated(
+            RefTestSubscriptionMessage.Create(detailCompletion)));
+        var listEvent = Assert.IsType<RefTestCompleted>(RefTestSubscriptions.RefTestsUpdated(
+            RefTestSubscriptionMessage.Create(listCompletion)));
         Assert.Equal(selectedAnswerIds, detailEvent.SelectedAnswerIds);
         Assert.Null(listEvent.SelectedAnswerIds);
 
-        var approvedDetailEvent = Assert.IsType<RefTestApproved>(await RefTestSubscriptions.RefTestUpdated(
-            refTestId,
-            RefTestSubscriptionMessage.Create(approved),
-            user,
-            new FakePermissionSnapshotService(PermissionSet(Permissions.RefTests.ViewDetail)),
-            authorizationService,
-            cancellationToken));
-        var approvedListEvent = Assert.IsType<RefTestApproved>(await RefTestSubscriptions.RefTestsUpdated(
-            RefTestSubscriptionMessage.Create(approved),
-            user,
-            new FakePermissionSnapshotService(PermissionSet(Permissions.RefTests.ViewList)),
-            authorizationService,
-            cancellationToken));
+        var approvedDetailEvent = Assert.IsType<RefTestApproved>(RefTestSubscriptions.RefTestUpdated(
+            RefTestSubscriptionMessage.Create(approved)));
+        var approvedListEvent = Assert.IsType<RefTestApproved>(RefTestSubscriptions.RefTestsUpdated(
+            RefTestSubscriptionMessage.Create(approved)));
         Assert.Equal(RefTestStatus.Rejected, approvedDetailEvent.OldStatus);
         Assert.Equal(RefTestStatus.Rejected, approvedListEvent.OldStatus);
     }
@@ -414,6 +325,11 @@ public sealed class RefTestSubscriptionsTests
             Calls++;
             return Task.FromResult(_snapshots.Dequeue());
         }
+
+        public Task<IReadOnlySet<string>?> RefreshForSubjectAsync(
+            ClaimsPrincipal user,
+            CancellationToken cancellationToken) =>
+            GetCurrentPermissionsAsync(user, cancellationToken);
     }
 
     [Fact]

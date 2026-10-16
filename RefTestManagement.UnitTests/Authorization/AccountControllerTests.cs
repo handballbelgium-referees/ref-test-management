@@ -127,5 +127,10 @@ public sealed class AccountControllerTests
             ClaimsPrincipal principal,
             CancellationToken cancellationToken = default) =>
             Task.FromResult<IReadOnlySet<string>?>(null);
+
+        public Task<IReadOnlySet<string>?> RefreshForSubjectAsync(
+            ClaimsPrincipal principal,
+            CancellationToken cancellationToken = default) =>
+            GetCurrentPermissionsAsync(principal, cancellationToken);
     }
 }

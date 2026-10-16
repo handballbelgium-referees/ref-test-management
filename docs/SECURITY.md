@@ -289,10 +289,22 @@ and shares one in-flight refresh per user; an internal limit of four concurrent 
 process bounds work without asserting an Auth0 tenant quota.
 
 Permission grants are changed outside this application, and the application has no permission-change
-event callback for targeted cache invalidation. A revocation is therefore observed at the next
-authentication validation after the cached snapshot expires, with a maximum four-minute snapshot
-age per API process. This is the permission-revocation latency objective; it is not an immediate
-revocation guarantee.
+event callback. Revocation is therefore handled in two layers:
+
+- **Mutations marked `live:` check the identity provider at call time.** Policies that use the
+  `live:` prefix (every GraphQL mutation that changes RefTest, approval, deletion, email, reset, or
+  update state) first consult the cached snapshot. If the cache denies the permission, the request is
+  denied without an identity-provider call. If the cache grants it, the API performs one live
+  Management API (Auth0) or Admin API (Keycloak) lookup for that user, bounded by
+  `Identity:LivePermissionTimeoutSeconds` (default `2`). A revoked grant is therefore rejected on the
+  next write, not after the cache expires. A timeout, provider error, or missing subject fails closed.
+- **Reads and UI visibility use the cache.** Queries and the `/Account/Permissions` snapshot use the
+  cached snapshot. A revocation there is observed at the next authentication validation after the
+  cached snapshot expires, with a maximum four-minute snapshot age per API process. The UI can still
+  show a control for up to that long; the mutation check above is what enforces it.
+
+Permissions are also refreshed without the cache at sign-in and when the session's tokens are
+refreshed, so a user who signs in again gets current grants immediately.
 
 When a snapshot expires, a Management API 429, outage, or other refresh failure never falls back to
 the cached grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable.
@@ -301,12 +313,22 @@ the endpoint returns an empty-body `503 Service Unavailable` rather than a permi
 failure during authentication can instead reject the cookie or bearer authentication before the
 controller runs. The UI treats any permissions-request error, including 503, as an empty permission
 set and retries on its next one-minute poll while still authenticated; callers can also request an
-immediate refresh after a role change. No refresh token is used or assumed.
+immediate refresh after a role change.
 
-Admin subscription resolvers check the current snapshot before mapping each event. Revoked or
-unverifiable permissions produce an authorization error without an event payload; the WebSocket
-may remain connected, but admin PII is not delivered. The effective-permission freshness bound is
-four minutes per API process, below the five-minute requirement.
+**Token refresh.** Interactive sign-in stores the provider's refresh token in the encrypted
+authentication cookie (`SaveTokens`, with the `offline_access` scope requested). When the access token
+is within 60 seconds of expiry, the cookie validator exchanges the refresh token at the provider's token
+endpoint (`OidcTokenRefresher`). Concurrent requests for the same session share one exchange, and a
+successful result is reused for 60 seconds. Any refresh failure, including a revoked refresh token,
+signs the user out. Provider prerequisites are listed in [CONFIGURATION.md](CONFIGURATION.md#identity-permission-freshness).
+Concurrent refreshes that land on different replicas are not coordinated; with rotating refresh tokens
+a race can end a session, which the user recovers by signing in again.
+
+**Subscriptions.** Admin subscriptions (`refTestUpdated`, `refTestsUpdated`) re-check the live permission
+every 30 seconds while a client is subscribed, even when no events arrive, and before each event that
+follows a check older than 30 seconds. A revoked or unverifiable permission ends the stream with an
+authorization error, and no further event payload is sent. Admin PII is therefore not delivered after
+the revocation is observed, within about 30 seconds of the change.
 
 ---
 

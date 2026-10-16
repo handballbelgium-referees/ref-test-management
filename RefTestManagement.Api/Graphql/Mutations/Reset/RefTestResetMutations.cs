@@ -26,7 +26,7 @@ public static partial class RefTestResetMutations
     /// <param name="loggerFactory">The logger factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns></returns>
-    [Authorize(Policy = Permissions.RefTests.Reset)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.Reset)]
     public static async Task<ResetRefTestsResult> ResetRefTestsAsync(
         ResetRefTestsInput input,
         RefTestManagementContext context,
@@ -81,7 +81,7 @@ public static partial class RefTestResetMutations
     /// <param name="loggerFactory">The logger factory for creating loggers.</param>
     /// <param name="cancellationToken">Token for cancellation of the operation.</param>
     /// <returns></returns>
-    [Authorize(Policy = Permissions.RefTests.Revive)]
+    [Authorize(Policy = "live:" + Permissions.RefTests.Revive)]
     public static async Task<ReviveRefTestsResult> ReviveRefTestsAsync(
         [ID<RefTestDto>] List<Guid> ids,
         RefTestManagementContext context,
