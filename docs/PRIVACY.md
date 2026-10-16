@@ -54,7 +54,7 @@ The public cookie policy lives on its own page (`/cookies`), with a summary and 
 
 | Cookie | Purpose | Set by | Attributes | Lifetime |
 |---|---|---|---|---|
-| `.AspNetCore.Cookies` | Authentication session | Management API (`SecurityStartup.cs`) | `HttpOnly`, `Secure`, `SameSite=Strict` | ASP.NET Core defaults (14-day sliding expiry); removed on sign-out |
+| `.AspNetCore.Cookies` | Authentication session | Management API (`RefTestManagement.Api/Identity/SecurityStartup.cs`) | `HttpOnly`, `Secure`, `SameSite=Strict` | ASP.NET Core defaults (14-day sliding expiry); removed on sign-out |
 | `.AspNetCore.Correlation.*` | OIDC sign-in correlation | Management API (OIDC handler) | ASP.NET Core defaults | Short-lived; sign-in only |
 | `.AspNetCore.OpenIdConnect.Nonce.*` | OIDC nonce replay protection | Management API (OIDC handler) | ASP.NET Core defaults | Short-lived; sign-in only |
 

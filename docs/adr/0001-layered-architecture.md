@@ -73,7 +73,7 @@ Rules:
 | Violation                                                                                                   | Why it stays                                                                                     |
 | ----------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | Participant start, save-progress and expire flows still run inline in `RefTestLifecycleMutations`           | Small, single-entity updates; move them when they gain logic                                     |
-| `ApprovalNotificationEmailJobHandler` stays in `Api/BackgroundServices/JobHandlers`                         | It needs Auth0 and `Permissions`, which Infrastructure may not reference                         |
+| `ApprovalNotificationEmailJobHandler` stays in `Hosting/BackgroundServices/JobHandlers`                        | It needs Auth0 and `Permissions`, which Infrastructure may not reference                         |
 | `IJobPersistenceContext`, `IJobEnqueueService` and `IJobHandler` are public interfaces in Infrastructure     | They expose EF Core `DbSet`s or are worker-internal; listed in the allow-list                    |
 
 ## Accepted trade-offs

@@ -58,7 +58,7 @@ Read the applicable scope before editing, even if the host does not attach it au
 ## Application invariants
 
 - Preserve XML documentation, JSDoc, and comments explaining why. Keep changes focused and update directly related documentation.
-- A GraphQL operation needs a permission constant in `RefTestManagement.Security/Permissions.cs`, `[Authorize(Policy = ...)]`, and a matching entry in `docs/SECURITY.md`. Preserve field-level policies and record security-relevant state changes in the audit log.
+- A GraphQL operation needs a permission constant in `RefTestManagement.Security/Authorization/Permissions.cs`, `[Authorize(Policy = ...)]`, and a matching entry in `docs/SECURITY.md`. Preserve field-level policies and record security-relevant state changes in the audit log.
 - An EF model change requires a same-named migration in all four provider projects. Follow `docs/CONFIGURATION.md`; do not substitute one provider's generated DDL for another.
 - Keep `[LoggerMessage]` methods in static partial classes. Never log participant PII, secrets, or unredacted exception data that may contain them. Do not put such values in artifacts, tests, reports, or prompts either.
 - Put user-visible UI text in all four locales: `en`, `nl`, `fr`, and `de`. Never hand-edit generated GraphQL code.

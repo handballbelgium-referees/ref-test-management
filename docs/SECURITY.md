@@ -279,7 +279,7 @@ services.AddSecurityConfiguration(configuration); // Auth0 OIDC + JWT Bearer
 services.AddTaskBasedAuthorization();             // task-based permission policies
 ```
 
-`SecurityStartup.cs` refreshes the principal's `permissions` claims from the current effective Management API grants during OIDC/JWT validation and cookie validation. Cookie claims are renewed when the grant set changes.
+`RefTestManagement.Api/Identity/SecurityStartup.cs` refreshes the principal's `permissions` claims from the current effective Management API grants during OIDC/JWT validation and cookie validation. Cookie claims are renewed when the grant set changes.
 
 ## Permission freshness and failure behavior
 

@@ -33,7 +33,7 @@ application, but the API performs the token exchange with the client secret.
 ### `reftest-api` (existing, permission roles)
 
 Client that owns the permission client roles. Its client ID is the audience. Create one client
-role per permission the application checks (see `RefTestManagement.Security/Permissions.cs`).
+role per permission the application checks (see `RefTestManagement.Security/Authorization/Permissions.cs`).
 Assign roles to users through the realm's client role mappings.
 
 ### `reftest-management-admin` (new, service account)
