@@ -99,6 +99,29 @@ public sealed class RefTestSubscriptionStreamTests
         Assert.Empty(received);
     }
 
+    [Fact]
+    public async Task TeardownFaultFromPendingReadDoesNotReplaceConsumerStop()
+    {
+        // The consumer stops after one message while a read is pending. Disposing the source
+        // faults that read. The fault must be swallowed, not thrown out of the consumer's loop.
+        var verifier = new ScriptedVerifier(_ => true);
+        var source = new FakeSource { DisposeFault = new InvalidOperationException("dispose failed") };
+
+        var received = await ConsumeAsync(
+            source,
+            verifier,
+            LongInterval,
+            TimeSpan.Zero,
+            take: 1,
+            feed: s =>
+            {
+                s.Pipe.Writer.TryWrite(Message(1));
+                return Task.CompletedTask;
+            });
+
+        Assert.Equal([1], received);
+    }
+
     private static RefTestSubscriptionMessage Message(int index) =>
         new("Test", JsonSerializer.SerializeToElement(new { Index = index }));
 
@@ -153,6 +176,9 @@ public sealed class RefTestSubscriptionStreamTests
         public Channel<RefTestSubscriptionMessage> Pipe { get; } =
             Channel.CreateUnbounded<RefTestSubscriptionMessage>();
 
+        /// <summary>When set, disposing the source faults any pending read with this exception.</summary>
+        public Exception? DisposeFault { get; init; }
+
         public async IAsyncEnumerable<RefTestSubscriptionMessage> ReadEventsAsync()
         {
             await foreach (var message in Pipe.Reader.ReadAllAsync())
@@ -167,7 +193,7 @@ public sealed class RefTestSubscriptionStreamTests
 
         public ValueTask DisposeAsync()
         {
-            Pipe.Writer.TryComplete();
+            Pipe.Writer.TryComplete(DisposeFault);
             return ValueTask.CompletedTask;
         }
     }

@@ -226,13 +226,23 @@ public static partial class RefTestSubscriptions
         {
             // Dispose the source first so pending reads complete even when it ignores cancellation.
             linkedSource.Cancel();
-            await source.DisposeAsync();
-            await AwaitCancelledAsync(nextEvent);
-            await AwaitCancelledAsync(nextTick);
-            await events.DisposeAsync();
+            try
+            {
+                await source.DisposeAsync();
+                await AwaitCancelledAsync(nextEvent);
+                await AwaitCancelledAsync(nextTick);
+            }
+            finally
+            {
+                await events.DisposeAsync();
+            }
         }
     }
 
+    /// <summary>
+    /// Waits for a pending read during teardown. Any fault is swallowed so it cannot replace
+    /// the exception that ended the stream; the stream is already being torn down.
+    /// </summary>
     private static async Task AwaitCancelledAsync(Task<bool>? pending)
     {
         if (pending is null)
@@ -242,7 +252,7 @@ public static partial class RefTestSubscriptions
         {
             await pending;
         }
-        catch (OperationCanceledException)
+        catch (Exception)
         {
         }
     }
