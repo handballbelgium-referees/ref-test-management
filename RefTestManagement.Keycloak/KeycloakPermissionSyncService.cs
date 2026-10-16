@@ -94,28 +94,163 @@ public sealed partial class KeycloakPermissionSyncService(
             }
         }
 
-        var mappingsUrl =
-            $"{context.AdminBase}/users/{Uri.EscapeDataString(userId)}/role-mappings/clients/{Uri.EscapeDataString(context.ClientInternalId)}";
+        var clientId = Uri.EscapeDataString(context.ClientInternalId);
+        var roles = new Dictionary<string, RoleReference>(StringComparer.Ordinal);
 
-        using var mappingsResponse = await SendAdminRequestAsync(HttpMethod.Get, mappingsUrl, context.AccessToken, null, cancellationToken)
-            .ConfigureAwait(false);
-        mappingsResponse.EnsureSuccessStatusCode();
+        await AddRoleMappingsAsync(
+            context,
+            $"{context.AdminBase}/users/{Uri.EscapeDataString(userId)}/role-mappings/clients/{clientId}",
+            roles,
+            cancellationToken).ConfigureAwait(false);
 
-        using var mappingsDocument = await JsonDocument.ParseAsync(
-            await mappingsResponse.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
-            cancellationToken: cancellationToken).ConfigureAwait(false);
-
-        var permissions = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var role in mappingsDocument.RootElement.EnumerateArray())
+        foreach (var groupId in await GetUserGroupIdsAsync(context, userId, cancellationToken).ConfigureAwait(false))
         {
-            if (role.TryGetProperty("name", out var name) && name.GetString() is { Length: > 0 } roleName)
+            await AddRoleMappingsAsync(
+                context,
+                $"{context.AdminBase}/groups/{Uri.EscapeDataString(groupId)}/role-mappings/clients/{clientId}",
+                roles,
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        await ExpandCompositesAsync(context, roles, cancellationToken).ConfigureAwait(false);
+
+        return roles.Values.Select(role => role.Name).ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Returns the user's direct group memberships plus their ancestor groups, because Keycloak
+    /// grants roles of parent groups to members of subgroups.
+    /// </summary>
+    private async Task<IReadOnlyList<string>> GetUserGroupIdsAsync(
+        AdminContext context,
+        string userId,
+        CancellationToken cancellationToken)
+    {
+        var groupIds = new HashSet<string>(StringComparer.Ordinal);
+
+        using var groupsDocument = await GetJsonAsync(
+            $"{context.AdminBase}/users/{Uri.EscapeDataString(userId)}/groups",
+            context,
+            cancellationToken).ConfigureAwait(false);
+
+        foreach (var group in groupsDocument.RootElement.EnumerateArray())
+        {
+            if (group.TryGetProperty("id", out var id) && id.GetString() is { Length: > 0 } groupId)
             {
-                permissions.Add(roleName);
+                groupIds.Add(groupId);
+            }
+
+            if (group.TryGetProperty("path", out var path) && path.GetString() is { Length: > 0 } groupPath)
+            {
+                await AddAncestorGroupIdsAsync(context, groupPath, groupIds, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        return permissions;
+        return groupIds.ToList();
     }
+
+    private async Task AddAncestorGroupIdsAsync(
+        AdminContext context,
+        string groupPath,
+        HashSet<string> groupIds,
+        CancellationToken cancellationToken)
+    {
+        var segments = groupPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+        for (var depth = segments.Length - 1; depth > 0; depth--)
+        {
+            var ancestorPath = string.Join('/', segments.Take(depth).Select(Uri.EscapeDataString));
+
+            using var ancestorDocument = await GetJsonAsync(
+                $"{context.AdminBase}/groups/group-by-path/{ancestorPath}",
+                context,
+                cancellationToken).ConfigureAwait(false);
+
+            if (ancestorDocument.RootElement.TryGetProperty("id", out var id) && id.GetString() is { Length: > 0 } ancestorId)
+            {
+                groupIds.Add(ancestorId);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Adds the client roles of a role-mappings endpoint. Keycloak returns only direct mappings for each subject.
+    /// </summary>
+    private async Task AddRoleMappingsAsync(
+        AdminContext context,
+        string url,
+        Dictionary<string, RoleReference> roles,
+        CancellationToken cancellationToken)
+    {
+        using var document = await GetJsonAsync(url, context, cancellationToken).ConfigureAwait(false);
+
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            if (ParseRole(element) is { } role)
+            {
+                roles.TryAdd(role.Id, role);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Expands composite client roles transitively. Each role is expanded once, so cycles terminate.
+    /// Only composites on the API client are followed; realm roles that contain API roles are not expanded.
+    /// </summary>
+    private async Task ExpandCompositesAsync(
+        AdminContext context,
+        Dictionary<string, RoleReference> roles,
+        CancellationToken cancellationToken)
+    {
+        var pending = new Queue<RoleReference>(roles.Values.Where(role => role.Composite));
+
+        while (pending.TryDequeue(out var parent))
+        {
+            var url =
+                $"{context.AdminBase}/roles-by-id/{Uri.EscapeDataString(parent.Id)}/composites/clients/{Uri.EscapeDataString(context.ClientInternalId)}";
+
+            using var document = await GetJsonAsync(url, context, cancellationToken).ConfigureAwait(false);
+
+            foreach (var element in document.RootElement.EnumerateArray())
+            {
+                if (ParseRole(element) is { } child && roles.TryAdd(child.Id, child) && child.Composite)
+                {
+                    pending.Enqueue(child);
+                }
+            }
+        }
+    }
+
+    private static RoleReference? ParseRole(JsonElement element)
+    {
+        if (!element.TryGetProperty("id", out var id) || id.GetString() is not { Length: > 0 } roleId)
+        {
+            return null;
+        }
+
+        if (!element.TryGetProperty("name", out var name) || name.GetString() is not { Length: > 0 } roleName)
+        {
+            return null;
+        }
+
+        var composite = element.TryGetProperty("composite", out var compositeElement)
+            && compositeElement.ValueKind == JsonValueKind.True;
+
+        return new RoleReference(roleId, roleName, composite);
+    }
+
+    private async Task<JsonDocument> GetJsonAsync(string url, AdminContext context, CancellationToken cancellationToken)
+    {
+        using var response = await SendAdminRequestAsync(HttpMethod.Get, url, context.AccessToken, null, cancellationToken)
+            .ConfigureAwait(false);
+        response.EnsureSuccessStatusCode();
+
+        return await JsonDocument.ParseAsync(
+            await response.Content.ReadAsStreamAsync(cancellationToken).ConfigureAwait(false),
+            cancellationToken: cancellationToken).ConfigureAwait(false);
+    }
+
+    private sealed record RoleReference(string Id, string Name, bool Composite);
 
     private async Task<AdminContext> GetAdminContextAsync(CancellationToken cancellationToken)
     {

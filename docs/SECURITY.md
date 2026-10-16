@@ -95,11 +95,10 @@ This section applies when `Identity:Provider` is `Keycloak`. Full setup is in [K
 
 Each permission string in the [Permission Reference](#permission-reference) is a client role on the
 `reftest-api` client, with the same name as the permission (for example `ref-tests:view-list`).
-Users receive permissions through direct client role mappings on that client. The API reads these
-mappings from the Keycloak Admin API and treats a disabled or missing user as unauthorized.
-
-Only direct mappings are read. Permissions granted through groups or composite roles are not
-currently included in the effective permission set.
+Users receive permissions through direct client role mappings, through group client role mappings
+(including the roles of ancestor groups), or through composite roles. The API reads these from the
+Keycloak Admin API, expands composite roles transitively, and treats a disabled or missing user as
+unauthorized.
 
 ---
 

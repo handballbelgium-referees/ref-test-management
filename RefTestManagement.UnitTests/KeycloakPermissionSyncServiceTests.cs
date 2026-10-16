@@ -103,7 +103,59 @@ public sealed class KeycloakPermissionSyncServiceTests
         var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
 
         Assert.Equal(["ref-tests:view-list", "superadmin"], permissions.Order());
-        Assert.Equal($"{AdminBase}/users/user-1/role-mappings/clients/internal-id", handler.Requests[^1].Url);
+        Assert.Contains(handler.Requests, r => r.Url == $"{AdminBase}/users/user-1/role-mappings/clients/internal-id");
+    }
+
+    [Fact]
+    public async Task ReadIncludesGroupRolesAndAncestorGroupRoles()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            GroupsJson = """[{"id":"g-sub","path":"/handball/referees/sub"}]""",
+            GroupsByPath = new Dictionary<string, string>
+            {
+                ["handball"] = """{"id":"g-root"}""",
+                ["handball/referees"] = """{"id":"g-mid"}""",
+            },
+            GroupMappings = new Dictionary<string, string>
+            {
+                ["g-sub"] = """[{"id":"role-edit","name":"ref-tests:edit"}]""",
+                ["g-root"] = """[{"id":"role-delete","name":"ref-tests:delete"}]""",
+            },
+        });
+        await using var provider = BuildProvider(handler);
+        var sync = provider.GetRequiredService<IIdentityPermissionSync>();
+
+        var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
+
+        Assert.Equal(
+            ["ref-tests:delete", "ref-tests:edit", "ref-tests:view-list", "superadmin"],
+            permissions.Order());
+        Assert.Contains(handler.Requests, r => r.Url == $"{AdminBase}/groups/g-root/role-mappings/clients/internal-id");
+        Assert.Contains(handler.Requests, r => r.Url == $"{AdminBase}/groups/g-mid/role-mappings/clients/internal-id");
+    }
+
+    [Fact]
+    public async Task ReadExpandsCompositeRolesAndStopsOnCycles()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var handler = new ScriptedHandler(new KeycloakResponses
+        {
+            CompositeRoles = new Dictionary<string, string>
+            {
+                ["role-super"] = """[{"id":"role-edit","name":"ref-tests:edit","composite":true},{"id":"role-x","name":"ref-tests:x"}]""",
+                ["role-edit"] = """[{"id":"role-super","name":"superadmin","composite":true}]""",
+            },
+        });
+        await using var provider = BuildProvider(handler);
+        var sync = provider.GetRequiredService<IIdentityPermissionSync>();
+
+        var permissions = await sync.GetUserPermissionsAsync("user-1", cancellationToken);
+
+        Assert.Equal(["ref-tests:edit", "ref-tests:view-list", "ref-tests:x", "superadmin"], permissions.Order());
+        Assert.Equal(1, handler.Requests.Count(r => r.Url.Contains("/roles-by-id/role-super/composites/", StringComparison.Ordinal)));
+        Assert.Equal(1, handler.Requests.Count(r => r.Url.Contains("/roles-by-id/role-edit/composites/", StringComparison.Ordinal)));
     }
 
     [Fact]
@@ -197,7 +249,18 @@ public sealed class KeycloakPermissionSyncServiceTests
         public HttpStatusCode MappingsStatus { get; init; } = HttpStatusCode.OK;
 
         public string MappingsJson { get; init; } =
-            """[{"name":"ref-tests:view-list"},{"name":"superadmin"}]""";
+            """[{"id":"role-view","name":"ref-tests:view-list"},{"id":"role-super","name":"superadmin","composite":true}]""";
+
+        public string GroupsJson { get; init; } = "[]";
+
+        /// <summary>Client role mappings of a group, keyed by group id.</summary>
+        public IReadOnlyDictionary<string, string> GroupMappings { get; init; } = new Dictionary<string, string>();
+
+        /// <summary>Group lookups by path, keyed by the escaped path after <c>group-by-path/</c>.</summary>
+        public IReadOnlyDictionary<string, string> GroupsByPath { get; init; } = new Dictionary<string, string>();
+
+        /// <summary>Client composite roles, keyed by parent role id.</summary>
+        public IReadOnlyDictionary<string, string> CompositeRoles { get; init; } = new Dictionary<string, string>();
 
         public HttpResponseMessage Respond(HttpRequestMessage request)
         {
@@ -213,11 +276,36 @@ public sealed class KeycloakPermissionSyncServiceTests
                 return Json(HttpStatusCode.OK, ClientsJson);
             }
 
+            if (url.Contains("/groups/", StringComparison.Ordinal) && url.Contains("/role-mappings/clients/", StringComparison.Ordinal))
+            {
+                var groupEntry = GroupMappings.FirstOrDefault(entry => url.Contains($"/groups/{entry.Key}/role-mappings/", StringComparison.Ordinal));
+                return Json(HttpStatusCode.OK, groupEntry.Value ?? "[]");
+            }
+
             if (url.Contains("/role-mappings/clients/", StringComparison.Ordinal))
             {
                 return MappingsStatus == HttpStatusCode.OK
                     ? Json(HttpStatusCode.OK, MappingsJson)
                     : new HttpResponseMessage(MappingsStatus);
+            }
+
+            if (url.Contains("/composites/clients/", StringComparison.Ordinal))
+            {
+                var compositeEntry = CompositeRoles.FirstOrDefault(entry => url.Contains($"/roles-by-id/{entry.Key}/composites/", StringComparison.Ordinal));
+                return Json(HttpStatusCode.OK, compositeEntry.Value ?? "[]");
+            }
+
+            if (url.Contains("/groups/group-by-path/", StringComparison.Ordinal))
+            {
+                var pathEntry = GroupsByPath.FirstOrDefault(entry => url.EndsWith($"/group-by-path/{entry.Key}", StringComparison.Ordinal));
+                return pathEntry.Value is { } groupJson
+                    ? Json(HttpStatusCode.OK, groupJson)
+                    : new HttpResponseMessage(HttpStatusCode.NotFound);
+            }
+
+            if (url.EndsWith("/users/user-1/groups", StringComparison.Ordinal))
+            {
+                return Json(HttpStatusCode.OK, GroupsJson);
             }
 
             if (url.StartsWith($"{AdminBase}/users/", StringComparison.Ordinal))

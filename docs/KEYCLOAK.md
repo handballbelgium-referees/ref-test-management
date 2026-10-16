@@ -85,8 +85,13 @@ dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "<secret>"
 
 - Sync writes permission roles to the `reftest-api` client. It only adds missing roles (409 is
   treated as success). It never deletes roles, so manual changes in Keycloak are kept.
-- Reads use `users/{id}/role-mappings/clients/{clientUuid}`. A disabled or missing user gets an
-  empty permission set (fail closed).
+- Reads collect the `reftest-api` client roles from the user's direct mappings
+  (`users/{id}/role-mappings/clients/{clientUuid}`), from the user's groups and their ancestor
+  groups (`groups/{id}/role-mappings/clients/{clientUuid}`), and from composite roles, which are
+  expanded transitively (`roles-by-id/{id}/composites/clients/{clientUuid}`). Cycles terminate.
+- A disabled or missing user gets an empty permission set (fail closed).
+- The admin client needs read access to users, groups, and roles in addition to the role-write
+  access used by sync.
 - Snapshots are held in memory, so a restart clears them and they are rebuilt on demand.
 - The `sub` claim is used as the Keycloak user ID. It must be the Keycloak user UUID.
 
