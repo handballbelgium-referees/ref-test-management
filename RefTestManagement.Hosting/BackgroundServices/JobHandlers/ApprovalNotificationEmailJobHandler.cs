@@ -1,6 +1,5 @@
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Jobs;
 using Handball.Belgium.RefTestManagement.Infrastructure.Logging;
@@ -9,11 +8,11 @@ using Handball.Belgium.RefTestManagement.Security;
 namespace Handball.Belgium.RefTestManagement.Hosting.BackgroundServices.JobHandlers;
 
 /// <summary>
-/// Notifies users with the approve permission on the configured Auth0 API audience when RefTests
-/// are waiting on them.
+/// Notifies users with the approve permission in the configured identity provider (Auth0 API audience
+/// or Keycloak client roles) when RefTests are waiting on them.
 /// </summary>
 public sealed class ApprovalNotificationEmailJobHandler(
-    IAuth0ManagementService auth0Service,
+    IIdentityUserDirectory userDirectory,
     IEmailService emailService,
     EmailConfiguration emailConfig,
     ILogger<ApprovalNotificationEmailJobHandler> logger) : IJobHandler
@@ -22,7 +21,7 @@ public sealed class ApprovalNotificationEmailJobHandler(
     {
         var payload = JobPayload.Deserialize<ApprovalNotificationEmailPayload>(job, logger);
 
-        var approvers = await auth0Service.GetUsersWithPermissionAsync(
+        var approvers = await userDirectory.GetUsersWithPermissionAsync(
             Permissions.RefTests.Approve, cancellationToken);
 
         if (approvers.Count == 0)

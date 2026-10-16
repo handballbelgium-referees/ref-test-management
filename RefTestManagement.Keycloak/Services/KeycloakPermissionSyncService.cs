@@ -2,20 +2,28 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
 using Handball.Belgium.RefTestManagement.Security;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
 namespace Handball.Belgium.RefTestManagement.Keycloak;
 
 /// <summary>
-/// Synchronises application permissions to Keycloak as client roles on the API client.
+/// Synchronises application permissions to Keycloak as client roles on the API client,
+/// and looks up the users who hold an application permission for approval notifications.
 /// The sync is additive: missing roles are created, existing roles and user assignments are untouched.
 /// </summary>
 public sealed partial class KeycloakPermissionSyncService(
     HttpClient httpClient,
     IOptions<KeycloakAdminConfiguration> options,
-    ILogger<KeycloakPermissionSyncService> logger) : IIdentityPermissionSync
+    ILogger<KeycloakPermissionSyncService> logger,
+    IMemoryCache approverCache) : IIdentityPermissionSync, IIdentityUserDirectory
 {
+    private const int MaximumApproverDiscoveryRequests = 128;
+    private const int PageSize = 100;
+    private static readonly SemaphoreSlim ApproverDiscoveryGate = new(1, 1);
+    private static readonly TimeSpan ApproverCacheLifetime = TimeSpan.FromMinutes(5);
+
     private readonly KeycloakAdminConfiguration _config = options.Value;
 
     /// <inheritdoc />
@@ -115,6 +123,253 @@ public sealed partial class KeycloakPermissionSyncService(
         await ExpandCompositesAsync(context, roles, cancellationToken).ConfigureAwait(false);
 
         return roles.Values.Select(role => role.Name).ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Matches the exact permission, the superadmin role, and the namespace wildcard (for example <c>ref-tests:*</c>),
+    /// the same rules as the Auth0 directory. Users reach a role directly, through a group, or through a
+    /// composite role that contains it; members of subgroups inherit their ancestors' roles.
+    /// Disabled users and users without an email address are omitted. Throws when the request budget is
+    /// exhausted or Keycloak fails, so a partial recipient list is never returned or cached.
+    /// </remarks>
+    public async Task<IReadOnlyList<IdentityUser>> GetUsersWithPermissionAsync(
+        string permission,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(permission);
+
+        if (!IsConfigured)
+        {
+            throw new InvalidOperationException("Keycloak permission sync is not configured.");
+        }
+
+        var cacheKey = $"KeycloakApproverDiscovery:{_config.Authority}:{_config.Audience}:{permission}";
+
+        if (approverCache.TryGetValue(cacheKey, out IReadOnlyList<IdentityUser>? cached) && cached is not null)
+        {
+            return cached;
+        }
+
+        await ApproverDiscoveryGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+
+        try
+        {
+            if (approverCache.TryGetValue(cacheKey, out cached) && cached is not null)
+            {
+                return cached;
+            }
+
+            var users = await DiscoverUsersWithPermissionAsync(permission, cancellationToken).ConfigureAwait(false);
+            approverCache.Set(cacheKey, users, ApproverCacheLifetime);
+            return users;
+        }
+        finally
+        {
+            ApproverDiscoveryGate.Release();
+        }
+    }
+
+    private async Task<IReadOnlyList<IdentityUser>> DiscoverUsersWithPermissionAsync(
+        string permission,
+        CancellationToken cancellationToken)
+    {
+        var context = await GetAdminContextAsync(cancellationToken).ConfigureAwait(false);
+        var budget = new DiscoveryBudget(MaximumApproverDiscoveryRequests);
+        var clientId = Uri.EscapeDataString(context.ClientInternalId);
+        var clientRolesUrl = $"{context.AdminBase}/clients/{clientId}/roles";
+
+        var allRoles = await ReadAllPagesAsync<RoleReference>(
+            clientRolesUrl, ParseRole, context, budget, cancellationToken).ConfigureAwait(false);
+
+        var wildcard = permission.Contains(':', StringComparison.Ordinal)
+            ? $"{permission[..permission.IndexOf(':', StringComparison.Ordinal)]}:*"
+            : null;
+
+        var seeds = allRoles.Where(role =>
+            role.Name == permission
+            || role.Name == Permissions.Superadmin
+            || (wildcard is not null && role.Name == wildcard)).ToList();
+
+        // Build the reverse composite graph (child -> parents) so every role that contains a matching role is granted too.
+        var parentsByChild = new Dictionary<string, List<RoleReference>>(StringComparer.Ordinal);
+
+        foreach (var parent in allRoles.Where(role => role.Composite))
+        {
+            var url = $"{context.AdminBase}/roles-by-id/{Uri.EscapeDataString(parent.Id)}/composites/clients/{clientId}";
+
+            using var document = await GetDiscoveryJsonAsync(url, context, budget, cancellationToken).ConfigureAwait(false);
+
+            foreach (var element in document.RootElement.EnumerateArray())
+            {
+                if (ParseRole(element) is { } child)
+                {
+                    if (!parentsByChild.TryGetValue(child.Id, out var parents))
+                    {
+                        parents = [];
+                        parentsByChild[child.Id] = parents;
+                    }
+
+                    parents.Add(parent);
+                }
+            }
+        }
+
+        var grantedRoles = new Dictionary<string, RoleReference>(StringComparer.Ordinal);
+        var pending = new Queue<RoleReference>(seeds);
+
+        while (pending.TryDequeue(out var role))
+        {
+            if (!grantedRoles.TryAdd(role.Id, role))
+            {
+                continue;
+            }
+
+            if (parentsByChild.TryGetValue(role.Id, out var parents))
+            {
+                foreach (var parent in parents)
+                {
+                    pending.Enqueue(parent);
+                }
+            }
+        }
+
+        var usersById = new Dictionary<string, IdentityUser>(StringComparer.Ordinal);
+        var groupIds = new HashSet<string>(StringComparer.Ordinal);
+
+        foreach (var role in grantedRoles.Values)
+        {
+            var roleUrl = $"{clientRolesUrl}/{Uri.EscapeDataString(role.Name)}";
+
+            foreach (var user in await ReadAllPagesAsync<DirectoryUser>(
+                $"{roleUrl}/users", ParseUser, context, budget, cancellationToken).ConfigureAwait(false))
+            {
+                usersById.TryAdd(user.Id, user.User);
+            }
+
+            foreach (var groupId in await ReadAllPagesAsync<string>(
+                $"{roleUrl}/groups", ParseGroupId, context, budget, cancellationToken).ConfigureAwait(false))
+            {
+                groupIds.Add(groupId);
+            }
+        }
+
+        var groupQueue = new Queue<string>(groupIds);
+        var visitedGroups = new HashSet<string>(groupIds, StringComparer.Ordinal);
+
+        while (groupQueue.TryDequeue(out var groupId))
+        {
+            var groupBase = $"{context.AdminBase}/groups/{Uri.EscapeDataString(groupId)}";
+
+            foreach (var user in await ReadAllPagesAsync<DirectoryUser>(
+                $"{groupBase}/members", ParseUser, context, budget, cancellationToken).ConfigureAwait(false))
+            {
+                usersById.TryAdd(user.Id, user.User);
+            }
+
+            foreach (var childGroupId in await ReadAllPagesAsync<string>(
+                $"{groupBase}/children", ParseGroupId, context, budget, cancellationToken).ConfigureAwait(false))
+            {
+                if (visitedGroups.Add(childGroupId))
+                {
+                    groupQueue.Enqueue(childGroupId);
+                }
+            }
+        }
+
+        return usersById.Values.OrderBy(user => user.Email, StringComparer.Ordinal).ToList();
+    }
+
+    private async Task<List<T>> ReadAllPagesAsync<T>(
+        string url,
+        Func<JsonElement, T?> parse,
+        AdminContext context,
+        DiscoveryBudget budget,
+        CancellationToken cancellationToken) where T : class
+    {
+        var items = new List<T>();
+
+        for (var first = 0; ; first += PageSize)
+        {
+            using var document = await GetDiscoveryJsonAsync(
+                $"{url}?first={first}&max={PageSize}", context, budget, cancellationToken).ConfigureAwait(false);
+
+            var count = 0;
+
+            foreach (var element in document.RootElement.EnumerateArray())
+            {
+                count++;
+
+                if (parse(element) is { } item)
+                {
+                    items.Add(item);
+                }
+            }
+
+            if (count < PageSize)
+            {
+                return items;
+            }
+        }
+    }
+
+    private async Task<JsonDocument> GetDiscoveryJsonAsync(
+        string url,
+        AdminContext context,
+        DiscoveryBudget budget,
+        CancellationToken cancellationToken)
+    {
+        budget.Take();
+        return await GetJsonAsync(url, context, cancellationToken).ConfigureAwait(false);
+    }
+
+    private static string? ParseGroupId(JsonElement element) =>
+        element.TryGetProperty("id", out var id) && id.GetString() is { Length: > 0 } groupId ? groupId : null;
+
+    private static DirectoryUser? ParseUser(JsonElement element)
+    {
+        if (!element.TryGetProperty("id", out var id) || id.GetString() is not { Length: > 0 } userId)
+        {
+            return null;
+        }
+
+        var enabled = element.TryGetProperty("enabled", out var enabledElement)
+            && enabledElement.ValueKind == JsonValueKind.True;
+
+        if (!enabled
+            || !element.TryGetProperty("email", out var emailElement)
+            || emailElement.GetString() is not { Length: > 0 } email)
+        {
+            return null;
+        }
+
+        var firstName = element.TryGetProperty("firstName", out var first) ? first.GetString() : null;
+        var lastName = element.TryGetProperty("lastName", out var last) ? last.GetString() : null;
+        var username = element.TryGetProperty("username", out var user) ? user.GetString() : null;
+
+        var fullName = $"{firstName} {lastName}".Trim();
+        var displayName = fullName.Length > 0 ? fullName : username ?? email;
+
+        return new DirectoryUser(userId, new IdentityUser(displayName, email));
+    }
+
+    private sealed record DirectoryUser(string Id, IdentityUser User);
+
+    /// <summary>Caps the admin API requests one discovery run may make, so a large realm fails closed instead of running unbounded.</summary>
+    private sealed class DiscoveryBudget(int limit)
+    {
+        private int _remaining = limit;
+
+        public void Take()
+        {
+            if (_remaining <= 0)
+            {
+                throw new InvalidOperationException(
+                    "Keycloak approver discovery exceeded its request budget; no partial recipient list was returned.");
+            }
+
+            _remaining--;
+        }
     }
 
     /// <summary>

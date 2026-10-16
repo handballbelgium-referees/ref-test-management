@@ -1,7 +1,6 @@
 using System.Net.Http.Json;
 using System.Text.Json.Serialization;
 using Handball.Belgium.RefTestManagement.Auth0.Configurations;
-using Handball.Belgium.RefTestManagement.Auth0.Models;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
@@ -84,12 +83,12 @@ internal sealed partial class Auth0ManagementService(
     // --- IAuth0ManagementService --------------------------------------------
 
     /// <inheritdoc />
-    public async Task<IReadOnlyList<Auth0User>> GetUsersWithPermissionAsync(
+    public async Task<IReadOnlyList<IdentityUser>> GetUsersWithPermissionAsync(
         string permission,
         CancellationToken cancellationToken = default)
     {
         var cacheKey = $"Auth0ApproverDiscovery:{_config.Domain}:{_config.Audience}:{permission}";
-        if (approverCache.TryGetValue(cacheKey, out IReadOnlyList<Auth0User>? cachedUsers))
+        if (approverCache.TryGetValue(cacheKey, out IReadOnlyList<IdentityUser>? cachedUsers))
             return cachedUsers!;
 
         // ponytail: Global serialization assumes one Auth0 tenant; use per-key gates if the app becomes multi-tenant.
@@ -107,7 +106,7 @@ internal sealed partial class Auth0ManagementService(
         }
     }
 
-    private async Task<IReadOnlyList<Auth0User>> DiscoverUsersWithPermissionAsync(
+    private async Task<IReadOnlyList<IdentityUser>> DiscoverUsersWithPermissionAsync(
         string permission,
         string cacheKey,
         CancellationToken cancellationToken)
@@ -199,7 +198,7 @@ internal sealed partial class Auth0ManagementService(
         if (matchingUserIds.Count == 0)
         {
             LogNoUsersFoundWithPermissionPermission(permission);
-            IReadOnlyList<Auth0User> noUsers = [];
+            IReadOnlyList<IdentityUser> noUsers = [];
             approverCache.Set(cacheKey, noUsers, ApproverCacheLifetime);
             return noUsers;
         }
@@ -209,12 +208,12 @@ internal sealed partial class Auth0ManagementService(
             .Where(u => u.UserId is not null)
             .ToDictionary(u => u.UserId!, StringComparer.OrdinalIgnoreCase);
 
-        var users = new List<Auth0User>(matchingUserIds.Count);
+        var users = new List<IdentityUser>(matchingUserIds.Count);
         foreach (var userId in matchingUserIds)
         {
             if (userMap.TryGetValue(userId, out var cached))
             {
-                users.Add(new Auth0User(cached.Name ?? cached.Email, cached.Email));
+                users.Add(new IdentityUser(cached.Name ?? cached.Email, cached.Email));
             }
             else
             {
@@ -229,7 +228,7 @@ internal sealed partial class Auth0ManagementService(
 
         LogFoundCountUserSWithPermissionPermission(users.Count, permission);
 
-        IReadOnlyList<Auth0User> discoveredUsers = users.ToArray();
+        IReadOnlyList<IdentityUser> discoveredUsers = users.ToArray();
         approverCache.Set(cacheKey, discoveredUsers, ApproverCacheLifetime);
         return discoveredUsers;
     }
@@ -431,7 +430,7 @@ internal sealed partial class Auth0ManagementService(
         return results;
     }
 
-    private async Task<Auth0User?> GetUserAsync(
+    private async Task<IdentityUser?> GetUserAsync(
         string userId,
         string token,
         ApiRequestBudget? requestBudget,
@@ -456,7 +455,7 @@ internal sealed partial class Auth0ManagementService(
         var user = await response.Content.ReadFromJsonAsync<UserResponse>(
             cancellationToken: cancellationToken);
 
-        return user is null ? null : new Auth0User(user.Name ?? user.Email, user.Email);
+        return user is null ? null : new IdentityUser(user.Name ?? user.Email, user.Email);
     }
 
     // --- Private response models --------------------------------------------

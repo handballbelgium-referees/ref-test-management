@@ -97,6 +97,19 @@ dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "<secret>"
 - The admin client needs read access to users, groups, and roles in addition to the role-write
   access used by sync.
 - Snapshots are held in memory, so a restart clears them and they are rebuilt on demand.
+
+## User lookup
+
+`GetUsersWithPermissionAsync` (used to notify approvers) follows the same rules as Auth0: a user
+matches a permission when they hold that exact role, `superadmin`, or the `ref-tests:*` wildcard.
+Users are collected from direct client-role mappings, group mappings (including subgroups), and
+users of composite parent roles. Results are cached in memory for 5 minutes per permission.
+
+- Only enabled users with an email address are returned. Disabled users are skipped.
+- Display name is first and last name, then username, then email.
+- Discovery is capped at 128 Admin API requests. Exceeding the cap, or any Keycloak HTTP error,
+  fails the call rather than returning a partial approver list.
+- Requires the `view-users` and `view-clients` roles already listed above.
 - The `sub` claim is used as the Keycloak user ID. It must be the Keycloak user UUID.
 
 ## Switching providers

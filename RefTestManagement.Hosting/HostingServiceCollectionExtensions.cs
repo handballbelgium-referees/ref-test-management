@@ -132,6 +132,11 @@ public static class HostingServiceCollectionExtensions
             IdentityProviderName.Parse(configuration["Identity:Provider"]) == IdentityProviderName.Keycloak
                 ? serviceProvider.GetRequiredService<KeycloakPermissionSyncService>()
                 : serviceProvider.GetRequiredService<IAuth0ManagementService>());
+
+        services.AddTransient<IIdentityUserDirectory>(serviceProvider =>
+            IdentityProviderName.Parse(configuration["Identity:Provider"]) == IdentityProviderName.Keycloak
+                ? serviceProvider.GetRequiredService<KeycloakPermissionSyncService>()
+                : serviceProvider.GetRequiredService<IAuth0ManagementService>());
     }
 
     private static AuditLogOptions AddAuditLogging(
