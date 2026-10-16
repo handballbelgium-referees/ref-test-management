@@ -93,17 +93,20 @@ URLs, override any matching User Secrets values. The launcher generates a provid
 database password; existing ignored `.env` files with `MSSQL_SA_PASSWORD` remain supported. Generated
 local credentials, the copied User Secrets file, and TLS certificates are ignored.
 
-The Auth0 Management M2M credentials allow permission refresh and approver lookup. The Worker also
-runs additive permission sync at startup: it may add missing application permissions to the
-resource server selected by `Identity:Auth0:Domain` and `Identity:Auth0:Audience`. Keep those settings pointed at the
-intended Auth0 tenant/API; the required Management API scopes are listed in
-[CONFIGURATION.md](CONFIGURATION.md#management-api-access-and-permission-freshness). The sync does
+The active provider is selected by `Identity:Provider` (`Auth0` or `Keycloak`). With `Auth0`, the
+Management M2M credentials allow permission refresh and approver lookup. The Worker also runs
+additive permission sync at startup: it may add missing application permissions to the resource
+server selected by `Identity:Auth0:Domain` and `Identity:Auth0:Audience`. Keep those settings
+pointed at the intended Auth0 tenant/API; the required Management API scopes are listed in
+[CONFIGURATION.md](CONFIGURATION.md#management-api-access-and-permission-freshness). With `Keycloak`,
+the API and Worker use the `Identity:Keycloak:*` service account to read user roles and add missing
+permission roles to the `reftest-api` client (see [KEYCLOAK.md](KEYCLOAK.md)). The sync does
 not assign user roles or modify user metadata. If the M2M client lacks the required read scopes,
 login permission refresh fails closed. If resource-server read or update scopes are missing,
 startup sync logs a sanitized failure and the app continues without syncing. Before building the
 stack, the launcher requires non-empty `Identity:Auth0:Domain`, `ClientId`, `ClientSecret`, `Audience`,
 `ManagementClientId`, and `ManagementClientSecret` values from the API project's User Secrets or
-environment overrides. Its error names missing keys without showing values.
+environment overrides, regardless of `Identity:Provider`. Its error names missing keys without showing values.
 
 Because the full API User Secrets store is loaded, the Worker may send pending email jobs through
 the configured Brevo account to the configured recipients, and the application may call the

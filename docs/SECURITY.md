@@ -89,6 +89,20 @@ tokens and scope the effective permissions resolved from Auth0.
 
 ---
 
+## Keycloak Setup
+
+This section applies when `Identity:Provider` is `Keycloak`. Full setup is in [KEYCLOAK.md](KEYCLOAK.md).
+
+Each permission string in the [Permission Reference](#permission-reference) is a client role on the
+`reftest-api` client, with the same name as the permission (for example `ref-tests:view-list`).
+Users receive permissions through direct client role mappings on that client. The API reads these
+mappings from the Keycloak Admin API and treats a disabled or missing user as unauthorized.
+
+Only direct mappings are read. Permissions granted through groups or composite roles are not
+currently included in the effective permission set.
+
+---
+
 ## Permission Reference
 
 ### Special Permissions

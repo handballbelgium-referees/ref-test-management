@@ -22,13 +22,13 @@ flowchart LR
     Jobs[("Jobs table")]
     RefTests[("RefTests table")]
     AuditEvents[("AuditEvents table")]
-    Auth0API[("Auth0 API resource")]
+    IdPAPI[("Identity provider API (Auth0 or Keycloak)")]
 
     BJS -->|processes| Jobs
     RES -->|enqueues jobs into| Jobs
     PRS -->|anonymizes| RefTests
     ALCS -->|soft-archives| AuditEvents
-    PSS -->|syncs permission list to| Auth0API
+    PSS -->|syncs permission list to| IdPAPI
 ```
 
 ## Hosting targets
@@ -99,14 +99,16 @@ stateDiagram-v2
 sequenceDiagram
     participant SPA as Angular SPA
     participant API as .NET API
-    participant Auth0 as Auth0
+    participant IdP as Identity provider (Auth0 or Keycloak)
 
+    Note over API: Identity:Provider selects the scheme, authority, and audience
     SPA->>API: GET /Account/Login
-    API->>Auth0: OIDC challenge (redirect)
-    Auth0-->>API: authorization code
-    API->>Auth0: exchange code for tokens
-    Auth0-->>API: JWT access token (permissions[] claim)
-    API->>API: OnTokenValidated copies permissions[] into cookie identity
+    API->>IdP: OIDC challenge (redirect)
+    IdP-->>API: authorization code
+    API->>IdP: exchange code for tokens
+    IdP-->>API: tokens (permissions[] for Auth0; realm/client roles for Keycloak)
+    API->>API: OnTokenValidated copies permission claims into cookie identity
+    API->>IdP: permission refresh (Management API or Admin API, cached)
     API-->>SPA: redirect, auth cookie set
 
     SPA->>API: GraphQL request (cookie or Bearer token)
@@ -117,7 +119,7 @@ sequenceDiagram
     API-->>SPA: 200 OK or 403 Forbidden
 ```
 
-See [SECURITY.md](SECURITY.md) for the full permission reference and Auth0 setup.
+See [SECURITY.md](SECURITY.md) for the full permission reference and the Auth0 and Keycloak setup.
 
 ## Approval Workflow
 
@@ -126,14 +128,14 @@ sequenceDiagram
     participant C as Creator (no ref-tests:approve)
     participant API as .NET API
     participant Job as BackgroundJobService
-    participant Auth0 as Auth0 Management API
+    participant IdP as Identity provider API (Auth0 Management or Keycloak Admin)
     participant Ap as Approver
 
     C->>API: createRefTests mutation
     API->>API: RefTest.Status = PendingApproval
     API->>Job: enqueue ApprovalNotificationEmail job
-    Job->>Auth0: GetUsersWithPermissionAsync("ref-tests:approve")
-    Auth0-->>Job: approver list
+    Job->>IdP: GetUsersWithPermissionAsync("ref-tests:approve")
+    IdP-->>Job: approver list
     Job->>Ap: email with link to the review queue
 
     alt approve
