@@ -37,6 +37,8 @@ PROVIDER_LABELS = {
     "SQLite": "SQLite",
     "MySQL": "MySQL",
 }
+IDENTITY_PROVIDER_DEFAULT = "Auth0"
+IDENTITY_PROVIDERS = ("Auth0", "Keycloak")
 AUTH0_KEYS = (
     "Domain",
     "ClientId",
@@ -44,6 +46,14 @@ AUTH0_KEYS = (
     "Audience",
     "ManagementClientId",
     "ManagementClientSecret",
+)
+KEYCLOAK_KEYS = (
+    "Authority",
+    "ClientId",
+    "ClientSecret",
+    "Audience",
+    "AdminClientId",
+    "AdminClientSecret",
 )
 ALL_COMPOSE_PROFILES = ("SqlServer", "PostgreSQL", "SQLite", "MySQL")
 WATCH_PROJECTS = (
@@ -658,10 +668,10 @@ class LocalStackLauncher:
             self.user_secrets_file.write_text("{}\n", encoding="utf-8")
         self._restrict_file_permissions(self.user_secrets_file)
 
-    def _ensure_required_auth0_settings(self) -> None:
+    def _ensure_required_identity_settings(self) -> None:
         output = self._output(
             ("dotnet", "user-secrets", "list", "--project", self.api_project),
-            error_message="Could not read the API project's User Secrets; required Auth0 settings were not displayed.",
+            error_message="Could not read the API project's User Secrets; required identity settings were not displayed.",
         )
         user_secrets: dict[str, str] = {}
         for line in output.splitlines():
@@ -669,21 +679,30 @@ class LocalStackLauncher:
             if separator:
                 user_secrets[key] = value
 
-        missing: list[str] = []
-        for key in AUTH0_KEYS:
-            environment_name = f"Identity__Auth0__{key}"
+        def setting(name: str) -> str:
+            environment_name = name.replace(":", "__")
             if environment_name in os.environ:
-                value = os.environ[environment_name]
-            elif environment_name in self.local_env:
-                value = self.local_env[environment_name]
-            else:
-                value = user_secrets.get(f"Identity:Auth0:{key}", "")
-            if not value.strip():
-                missing.append(f"Identity:Auth0:{key}")
+                return os.environ[environment_name]
+            if environment_name in self.local_env:
+                return self.local_env[environment_name]
+            return user_secrets.get(name, "")
+
+        provider = setting("Identity:Provider").strip() or IDENTITY_PROVIDER_DEFAULT
+        if provider not in IDENTITY_PROVIDERS:
+            raise LauncherError(
+                f"Identity:Provider must be one of {', '.join(IDENTITY_PROVIDERS)}; the configured value was not displayed."
+            )
+        keys = AUTH0_KEYS if provider == "Auth0" else KEYCLOAK_KEYS
+
+        missing = [
+            f"Identity:{provider}:{key}"
+            for key in keys
+            if not setting(f"Identity:{provider}:{key}").strip()
+        ]
         if missing:
             names = ", ".join(missing)
             raise LauncherError(
-                f"Required Auth0 settings are missing or empty: {names}. Set them in the API project's User Secrets or non-empty Identity__Auth0__<Key> environment overrides; values were not displayed."
+                f"Required {provider} settings are missing or empty: {names}. Set them in the API project's User Secrets or non-empty Identity__{provider}__<Key> environment overrides; values were not displayed."
             )
 
     def _ensure_local_https_certificate(self) -> None:
@@ -1023,7 +1042,7 @@ class LocalStackLauncher:
         self._ensure_local_https_certificate()
         self._write_local_environment()
         self._copy_api_user_secrets()
-        self._ensure_required_auth0_settings()
+        self._ensure_required_identity_settings()
         self._build_angular_assets()
         self._run(("dotnet", "restore", "RefTestManagement.slnx", "--locked-mode", "--nologo"))
         self._publish_images()

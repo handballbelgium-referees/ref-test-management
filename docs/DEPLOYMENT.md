@@ -104,9 +104,12 @@ permission roles to the `reftest-api` client (see [KEYCLOAK.md](KEYCLOAK.md)). T
 not assign user roles or modify user metadata. If the M2M client lacks the required read scopes,
 login permission refresh fails closed. If resource-server read or update scopes are missing,
 startup sync logs a sanitized failure and the app continues without syncing. Before building the
-stack, the launcher requires non-empty `Identity:Auth0:Domain`, `ClientId`, `ClientSecret`, `Audience`,
-`ManagementClientId`, and `ManagementClientSecret` values from the API project's User Secrets or
-environment overrides, regardless of `Identity:Provider`. Its error names missing keys without showing values.
+stack, the launcher requires non-empty values for the keys of the selected provider, from the API
+project's User Secrets or environment overrides. With `Auth0` (the default when `Identity:Provider` is unset)
+these are `Identity:Auth0:Domain`, `ClientId`, `ClientSecret`, `Audience`, `ManagementClientId`, and
+`ManagementClientSecret`. With `Keycloak` these are `Identity:Keycloak:Authority`, `ClientId`,
+`ClientSecret`, `Audience`, `AdminClientId`, and `AdminClientSecret`. Its error names missing keys without
+showing values.
 
 Because the full API User Secrets store is loaded, the Worker may send pending email jobs through
 the configured Brevo account to the configured recipients, and the application may call the
