@@ -36,16 +36,33 @@ public sealed class ApprovalNotificationEmailJobHandler(
             .Select(rt => ($"{rt.FirstName} {rt.LastName}", rt.Email, rt.ScheduledAt))
             .ToList();
 
+        // One approver's failed send must not stop the rest. The job retries after all sends are
+        // attempted; the provider's idempotency key keeps already-delivered messages from repeating.
+        var failures = new List<Exception>();
         foreach (var approver in approvers)
         {
-            await emailService.SendApprovalNotificationAsync(
-                approver.Name,
-                approver.Email,
-                payload.CreatorName,
-                payload.TitleValue,
-                items,
-                emailConfig.BaseUrl,
-                cancellationToken);
+            try
+            {
+                await emailService.SendApprovalNotificationAsync(
+                    approver.Name,
+                    approver.Email,
+                    payload.CreatorName,
+                    payload.TitleValue,
+                    items,
+                    emailConfig.BaseUrl,
+                    cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                failures.Add(ex);
+            }
+        }
+
+        if (failures.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"Approval notification failed for {failures.Count} of {approvers.Count} approvers; the job will retry.",
+                new AggregateException(failures));
         }
 
         ServiceLoggerMessages.LogApprovalNotificationSent(logger, approvers.Count, payload.RefTests.Count);

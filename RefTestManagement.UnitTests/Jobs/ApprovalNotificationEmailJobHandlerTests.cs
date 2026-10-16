@@ -38,28 +38,21 @@ public sealed class ApprovalNotificationEmailJobHandlerTests
 
         await handler.HandleAsync(job, TestContext.Current.CancellationToken);
 
-        var expected = new[]
-        {
-            "direct-target-exact@example.org",
-            "direct-target-superadmin@example.org",
-            "direct-target-wildcard@example.org",
-            "role-target-exact@example.org",
-            "role-target-superadmin@example.org",
-            "role-target-wildcard@example.org"
-        };
         Assert.Equal(
-            expected.OrderBy(email => email, StringComparer.Ordinal),
+            ExpectedApproverEmails.OrderBy(email => email, StringComparer.Ordinal),
             emailService.Recipients.OrderBy(email => email, StringComparer.Ordinal));
     }
 
     [Fact]
-    public async Task ProviderRejectionLeavesApprovalNotificationJobPendingForRetry()
+    public async Task FailedSendToOneApproverStillAttemptsEveryoneAndLeavesJobPendingForRetry()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         using var auth0Provider = Auth0ManagementTestServices.CreateProvider();
         using var database = SqliteTestDatabase.Create();
         await using var context = database.CreateContext();
-        var emailService = new RecordingEmailService(new EmailException("approver@example.org"));
+        var emailService = new RecordingEmailService(
+            new EmailException("direct-target-exact@example.org"),
+            failFor: "direct-target-exact@example.org");
         var handler = new ApprovalNotificationEmailJobHandler(
             auth0Provider.GetRequiredService<IAuth0ManagementService>(),
             emailService,
@@ -98,10 +91,22 @@ public sealed class ApprovalNotificationEmailJobHandlerTests
         Assert.Equal(JobStatus.Pending, retriedJob.Status);
         Assert.Equal(1, retriedJob.Attempts);
         Assert.Null(retriedJob.LockedUntil);
-        Assert.Single(emailService.Recipients);
+        Assert.Equal(
+            ExpectedApproverEmails.OrderBy(email => email, StringComparer.Ordinal),
+            emailService.Recipients.OrderBy(email => email, StringComparer.Ordinal));
     }
 
-    private sealed class RecordingEmailService(Exception? failure = null) : IEmailService
+    private static readonly string[] ExpectedApproverEmails =
+    [
+        "direct-target-exact@example.org",
+        "direct-target-superadmin@example.org",
+        "direct-target-wildcard@example.org",
+        "role-target-exact@example.org",
+        "role-target-superadmin@example.org",
+        "role-target-wildcard@example.org",
+    ];
+
+    private sealed class RecordingEmailService(Exception? failure = null, string? failFor = null) : IEmailService
     {
         public List<string> Recipients { get; } = [];
 
@@ -115,7 +120,8 @@ public sealed class ApprovalNotificationEmailJobHandlerTests
             CancellationToken cancellationToken)
         {
             Recipients.Add(approverEmail);
-            return failure is null ? Task.CompletedTask : Task.FromException(failure);
+            var shouldFail = failure is not null && (failFor is null || failFor == approverEmail);
+            return shouldFail ? Task.FromException(failure!) : Task.CompletedTask;
         }
 
         public Task<bool> SendRefTestInvitationAsync(

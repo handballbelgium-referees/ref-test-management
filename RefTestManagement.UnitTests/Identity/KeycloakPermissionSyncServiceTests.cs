@@ -373,7 +373,7 @@ public sealed class KeycloakPermissionSyncServiceTests
         await using var provider = BuildProvider(handler);
         var directory = provider.GetRequiredService<IIdentityUserDirectory>();
 
-        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+        await Assert.ThrowsAsync<KeycloakDiscoveryBudgetExceededException>(() =>
             directory.GetUsersWithPermissionAsync("ref-tests:view-list", cancellationToken));
     }
 

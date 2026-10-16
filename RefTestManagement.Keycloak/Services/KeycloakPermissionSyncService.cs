@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Net;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -21,7 +22,8 @@ public sealed partial class KeycloakPermissionSyncService(
 {
     private const int MaximumApproverDiscoveryRequests = 128;
     private const int PageSize = 100;
-    private static readonly SemaphoreSlim ApproverDiscoveryGate = new(1, 1);
+    // ponytail: per-permission gates keep unrelated permissions from queueing behind a slow Keycloak call; one gate per permission key is bounded by the permission constants.
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> ApproverDiscoveryGates = new(StringComparer.Ordinal);
     private static readonly TimeSpan ApproverCacheLifetime = TimeSpan.FromMinutes(5);
 
     private readonly KeycloakAdminConfiguration _config = options.Value;
@@ -151,7 +153,8 @@ public sealed partial class KeycloakPermissionSyncService(
             return cached;
         }
 
-        await ApproverDiscoveryGate.WaitAsync(cancellationToken).ConfigureAwait(false);
+        var gate = ApproverDiscoveryGates.GetOrAdd(cacheKey, _ => new SemaphoreSlim(1, 1));
+        await gate.WaitAsync(cancellationToken).ConfigureAwait(false);
 
         try
         {
@@ -166,7 +169,7 @@ public sealed partial class KeycloakPermissionSyncService(
         }
         finally
         {
-            ApproverDiscoveryGate.Release();
+            gate.Release();
         }
     }
 
@@ -364,7 +367,7 @@ public sealed partial class KeycloakPermissionSyncService(
         {
             if (_remaining <= 0)
             {
-                throw new InvalidOperationException(
+                throw new KeycloakDiscoveryBudgetExceededException(
                     "Keycloak approver discovery exceeded its request budget; no partial recipient list was returned.");
             }
 
