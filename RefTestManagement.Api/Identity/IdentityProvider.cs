@@ -63,10 +63,15 @@ public static class IdentityProviderSelector
     /// <summary>
     /// The provider logout endpoint. Keycloak uses the realm OIDC logout endpoint; Auth0 uses <c>/v2/logout</c>.
     /// </summary>
-    public static string LogoutUri(string authority, string clientId, IdentityProvider provider) =>
-        provider == IdentityProvider.Keycloak
-            ? $"{authority}/protocol/openid-connect/logout?client_id={clientId}"
-            : $"{authority}/v2/logout?client_id={clientId}";
+    public static string LogoutUri(string authority, string clientId, IdentityProvider provider)
+    {
+        var path = provider == IdentityProvider.Keycloak
+            ? "/protocol/openid-connect/logout"
+            : "/v2/logout";
+        return string.IsNullOrWhiteSpace(clientId)
+            ? authority + path
+            : $"{authority}{path}?client_id={Uri.EscapeDataString(clientId)}";
+    }
 
     /// <summary>
     /// Fails fast when a Keycloak deployment lacks settings needed for the confidential OpenID Connect login
@@ -87,6 +92,14 @@ public static class IdentityProviderSelector
         {
             throw new InvalidOperationException(
                 $"Identity provider 'Keycloak' is selected but these settings are missing: {string.Join(", ", missing)}.");
+        }
+
+        // Keycloak realm endpoints always live under /realms/{realm}; anything else is a misconfiguration.
+        var authority = configuration[$"{section}:Authority"]!;
+        if (!authority.Contains("/realms/", StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException(
+                $"{section}:Authority must be a Keycloak realm URL containing '/realms/'.");
         }
     }
 }

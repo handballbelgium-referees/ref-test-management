@@ -63,7 +63,11 @@ Identity:Keycloak:AdminClientSecret     = <ref-test-management-admin secret>
 ```
 
 `ValidateSettings` fails fast at startup when Authority, ClientId, ClientSecret, or Audience is
-blank for Keycloak. Admin credentials are validated when permission sync runs, not at startup.
+blank for Keycloak, and when Authority does not contain `/realms/`. Admin credentials are validated
+when permission sync runs, not at startup.
+
+Sign-out redirects to the realm's `protocol/openid-connect/logout` endpoint with `client_id` (URL-escaped).
+If `ClientId` is blank, the `client_id` parameter is omitted.
 
 Example:
 

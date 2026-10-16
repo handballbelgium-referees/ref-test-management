@@ -133,6 +133,39 @@ public sealed class IdentityProviderSelectorTests
             uri);
     }
 
+    [Fact]
+    public void LogoutUriEscapesClientId()
+    {
+        var uri = IdentityProviderSelector.LogoutUri(
+            "https://login.example.test/realms/test-realm", "a b&c", IdentityProvider.Keycloak);
+
+        Assert.Equal(
+            "https://login.example.test/realms/test-realm/protocol/openid-connect/logout?client_id=a%20b%26c",
+            uri);
+    }
+
+    [Fact]
+    public void LogoutUriOmitsClientIdWhenBlank()
+    {
+        var uri = IdentityProviderSelector.LogoutUri(
+            "https://login.example.test/realms/test-realm", string.Empty, IdentityProvider.Keycloak);
+
+        Assert.Equal("https://login.example.test/realms/test-realm/protocol/openid-connect/logout", uri);
+    }
+
+    [Fact]
+    public void ValidateSettingsRejectsKeycloakAuthorityWithoutRealm()
+    {
+        var settings = CompleteKeycloakSettings();
+        settings["Identity:Keycloak:Authority"] = "https://login.referees-handballbelgium.be";
+        var configuration = Build(settings);
+
+        var exception = Assert.Throws<InvalidOperationException>(
+            () => IdentityProviderSelector.ValidateSettings(configuration, IdentityProvider.Keycloak));
+
+        Assert.Contains("/realms/", exception.Message, StringComparison.Ordinal);
+    }
+
     private static Dictionary<string, string?> CompleteKeycloakSettings() => new()
     {
         ["Identity:Provider"] = "Keycloak",

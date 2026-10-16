@@ -37,6 +37,27 @@ public sealed class PermissionSnapshotServiceTests
         Assert.Equal(2, managementService.PermissionCalls);
     }
 
+    [Fact]
+    public async Task SameSubjectFromDifferentIssuersIsCachedSeparately()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
+            Task.FromResult(Set("ref-tests:view-list")));
+        using var provider = CreateProvider(managementService, clock);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+        const string subject = "shared-subject-id";
+
+        await permissionService.GetCurrentPermissionsAsync(
+            IssuedUser(subject, "Auth0"), cancellationToken);
+        await permissionService.GetCurrentPermissionsAsync(
+            IssuedUser(subject, "Keycloak"), cancellationToken);
+        await permissionService.GetCurrentPermissionsAsync(
+            IssuedUser(subject, "Keycloak"), cancellationToken);
+
+        Assert.Equal(2, managementService.PermissionCalls);
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.TooManyRequests)]
     [InlineData(HttpStatusCode.ServiceUnavailable)]
@@ -414,6 +435,9 @@ public sealed class PermissionSnapshotServiceTests
 
     private static ClaimsPrincipal AuthenticatedUser(string subject, params Claim[] additionalClaims) =>
         new(new ClaimsIdentity([new Claim("sub", subject), .. additionalClaims], "unit-test"));
+
+    private static ClaimsPrincipal IssuedUser(string subject, string issuer) =>
+        new(new ClaimsIdentity([new Claim("sub", subject, ClaimValueTypes.String, issuer)], "unit-test"));
 
     private static IReadOnlySet<string> Set(params string[] permissions) =>
         new HashSet<string>(permissions, StringComparer.OrdinalIgnoreCase);

@@ -57,23 +57,27 @@ public sealed class PermissionSnapshotService(
         if (!principal.Identities.Any(identity => identity.IsAuthenticated))
             return null;
 
-        var userId = principal.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(userId))
-            userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var subjectClaim = principal.FindFirst("sub");
+        if (subjectClaim is null || string.IsNullOrWhiteSpace(subjectClaim.Value))
+            subjectClaim = principal.FindFirst(ClaimTypes.NameIdentifier);
+        var userId = subjectClaim?.Value;
         if (string.IsNullOrWhiteSpace(userId))
         {
             PermissionSnapshotLogger.RefreshFailed(logger, "MissingSubject", null, null);
             return null;
         }
 
+        // Scoped by issuer so an identical subject from another provider never shares a snapshot.
+        var subjectKey = (subjectClaim?.Issuer ?? string.Empty) + "|" + userId;
+
         Task<IReadOnlySet<string>?>? refreshTask = null;
         TaskCompletionSource<IReadOnlySet<string>?>? refresh = null;
         lock (_inFlightLock)
         {
-            if (TryGetCachedPermissions(userId, timeProvider.GetUtcNow(), out var cachedPermissions))
+            if (TryGetCachedPermissions(subjectKey, timeProvider.GetUtcNow(), out var cachedPermissions))
                 return cachedPermissions;
 
-            if (_inFlight.TryGetValue(userId, out var inFlight))
+            if (_inFlight.TryGetValue(subjectKey, out var inFlight))
             {
                 refreshTask = inFlight.Task;
             }
@@ -81,7 +85,7 @@ public sealed class PermissionSnapshotService(
             {
                 refresh = new TaskCompletionSource<IReadOnlySet<string>?>(
                     TaskCreationOptions.RunContinuationsAsynchronously);
-                _inFlight.Add(userId, refresh);
+                _inFlight.Add(subjectKey, refresh);
                 refreshTask = refresh.Task;
             }
         }
@@ -93,18 +97,18 @@ public sealed class PermissionSnapshotService(
         }
 
         if (refresh is not null)
-            _ = RefreshAsync(userId, refresh);
+            _ = RefreshAsync(userId, subjectKey, refresh);
 
         return await refreshTask.WaitAsync(cancellationToken);
     }
 
     private bool TryGetCachedPermissions(
-        string userId,
+        string subjectKey,
         DateTimeOffset now,
         out IReadOnlySet<string>? permissions)
     {
         permissions = null;
-        var key = CacheKeyPrefix + userId;
+        var key = CacheKeyPrefix + subjectKey;
         if (!_cache.TryGetValue(key, out CachedPermissions? cached) || cached is null)
             return false;
 
@@ -122,6 +126,7 @@ public sealed class PermissionSnapshotService(
 
     private async Task RefreshAsync(
         string userId,
+        string subjectKey,
         TaskCompletionSource<IReadOnlySet<string>?> completion)
     {
         IReadOnlySet<string>? permissions = null;
@@ -184,7 +189,7 @@ public sealed class PermissionSnapshotService(
 
         var lifetime = permissions is null ? FailureBackoff : SnapshotLifetime;
         _cache.Set(
-            CacheKeyPrefix + userId,
+            CacheKeyPrefix + subjectKey,
             new CachedPermissions(permissions, timeProvider.GetUtcNow()),
             new MemoryCacheEntryOptions
             {
@@ -194,7 +199,7 @@ public sealed class PermissionSnapshotService(
 
         lock (_inFlightLock)
         {
-            _inFlight.Remove(userId);
+            _inFlight.Remove(subjectKey);
             completion.TrySetResult(permissions);
         }
     }

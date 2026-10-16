@@ -166,7 +166,7 @@ public static class SecurityStartup
                         postLogoutUri = request.Scheme + "://" + request.Host + request.PathBase + postLogoutUri;
                     }
 
-                    logoutUri += $"&{returnParameter}={Uri.EscapeDataString(postLogoutUri)}";
+                    logoutUri += $"{(logoutUri.Contains('?') ? '&' : '?')}{returnParameter}={Uri.EscapeDataString(postLogoutUri)}";
                 }
 
                 context.Response.Redirect(logoutUri);
