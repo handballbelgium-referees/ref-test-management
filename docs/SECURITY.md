@@ -275,14 +275,14 @@ the configured API audience. Each API process caches a user's successful snapsho
 and shares one in-flight refresh per user; an internal limit of four concurrent refreshes per
 process bounds work without asserting an Auth0 tenant quota.
 
-Auth0 grants are changed outside this application, and the application has no permission-change
+Permission grants are changed outside this application, and the application has no permission-change
 event callback for targeted cache invalidation. A revocation is therefore observed at the next
 authentication validation after the cached snapshot expires, with a maximum four-minute snapshot
 age per API process. This is the permission-revocation latency objective; it is not an immediate
 revocation guarantee.
 
 When a snapshot expires, a Management API 429, outage, or other refresh failure never falls back to
-the old grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable.
+the cached grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable.
 When an authenticated request reaches `/Account/Permissions` but no current snapshot is available,
 the endpoint returns an empty-body `503 Service Unavailable` rather than a permission list; a
 failure during authentication can instead reject the cookie or bearer authentication before the
@@ -367,9 +367,9 @@ mitigated rather than ignored:
 
 After acceptance or resuming, the UI exchanges the invitation token and replaces the URL with
 `/ref-test/take`. Only the expiring session credential is kept in browser history state for reload
-and resume. New invitation emails use `/ref-test?lang=<locale>#<invitation-token>`. The invitation
-fragment is moved into history state while the UI redirects to the tokenless welcome route; the
-former `/ref-test/:token` path format is no longer routed.
+and resume. Invitation emails use `/ref-test?lang=<locale>#<invitation-token>`. The invitation
+fragment is moved into history state while the UI redirects to the tokenless welcome route; tokens
+are not accepted in the path.
 
 | Risk                                       | Mitigation                                                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
@@ -381,9 +381,8 @@ former `/ref-test/:token` path format is no longer routed.
 | Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
 | Oversized or malformed token in a lookup   | Only 32 lowercase hex characters are accepted before hashing; the stored digest cannot be submitted as a credential. |
 
-Residual risk that is accepted: historical server access logs may retain tokens from any previously
-issued path-based invitation links, although that route is no longer supported. New invitation
-links use a fragment, but after the UI reads it the invitation token is temporarily kept in browser
+Residual risk that is accepted: server access logs may retain tokens from invitation links issued in
+any path-based format, and the path format is not routed. Invitation links use a fragment, but after the UI reads it the invitation token is temporarily kept in browser
 history state until the session exchange; same-origin scripts can read it. The session credential
 remains in browser history state on tokenless routes, and anyone who can read a still-valid
 credential can resume that one participant's test. Credential expiration and binding limit this

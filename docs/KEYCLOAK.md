@@ -102,5 +102,4 @@ dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "<secret>"
 
 ## Open items
 
-- The production UI client ID is not confirmed. The beta client is `reftest-beta`.
 - Keycloak version and Admin API behaviour are not yet verified against the live server.

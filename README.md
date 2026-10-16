@@ -270,7 +270,7 @@ dotnet user-secrets set "Identity:Auth0:ManagementClientId" "your-m2m-client-id"
 dotnet user-secrets set "Identity:Auth0:ManagementClientSecret" "your-m2m-client-secret"
 ```
 
-To use Keycloak instead of Auth0, set `Identity:Provider` to `Keycloak` and configure `Identity:Keycloak:*`. See [docs/KEYCLOAK.md](docs/KEYCLOAK.md).
+To use Keycloak, set `Identity:Provider` to `Keycloak` and configure `Identity:Keycloak:*`. See [docs/KEYCLOAK.md](docs/KEYCLOAK.md).
 
 Use a separate Machine-to-Machine application for the Management API credentials and grant only
 the endpoint-specific scopes needed for permission lookups and startup synchronization. See
