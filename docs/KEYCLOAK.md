@@ -60,7 +60,11 @@ Identity:Keycloak:ClientSecret          = <reftest-beta secret>
 Identity:Keycloak:Audience              = reftest-api
 Identity:Keycloak:AdminClientId         = reftest-management-admin
 Identity:Keycloak:AdminClientSecret     = <reftest-management-admin secret>
+Identity:PermissionCacheSeconds         = 240
 ```
+
+`Identity:PermissionCacheSeconds` sets how long a successful permission snapshot is reused (default `240`,
+must be positive). Lower it during local role testing, for example to `30`, to see role changes sooner.
 
 `ValidateSettings` fails fast at startup when Authority, ClientId, ClientSecret, or Audience is
 blank for Keycloak, and when Authority does not contain `/realms/`. Admin credentials are validated

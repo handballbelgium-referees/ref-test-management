@@ -2,6 +2,7 @@ using System.Collections.Frozen;
 using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;
 
@@ -25,7 +26,8 @@ public interface IPermissionSnapshotService
 public sealed class PermissionSnapshotService(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
-    ILogger<PermissionSnapshotService> logger)
+    ILogger<PermissionSnapshotService> logger,
+    IConfiguration configuration)
     : IPermissionSnapshotService
 {
     internal const int MaximumConcurrentRefreshes = 4;
@@ -34,7 +36,9 @@ public sealed class PermissionSnapshotService(
     // One size unit per subject keeps this cache bounded independently of other application caches.
     internal const int MaximumCachedSnapshots = 1_024;
 
-    private static readonly TimeSpan SnapshotLifetime = TimeSpan.FromMinutes(4);
+    internal const string PermissionCacheSecondsKey = "Identity:PermissionCacheSeconds";
+    internal const int DefaultPermissionCacheSeconds = 240;
+
     private static readonly TimeSpan FailureBackoff = TimeSpan.FromSeconds(30);
     // Includes semaphore queue time and the complete multi-request provider lookup.
     private static readonly TimeSpan RefreshTimeout = TimeSpan.FromSeconds(30);
@@ -48,6 +52,7 @@ public sealed class PermissionSnapshotService(
     private readonly Dictionary<string, TaskCompletionSource<IReadOnlySet<string>?>> _inFlight =
         new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _refreshLimit = new(MaximumConcurrentRefreshes);
+    private readonly TimeSpan _snapshotLifetime = ReadSnapshotLifetime(configuration);
 
     /// <inheritdoc />
     public async Task<IReadOnlySet<string>?> GetCurrentPermissionsAsync(
@@ -113,7 +118,7 @@ public sealed class PermissionSnapshotService(
             return false;
 
         var age = now - cached.StoredAt;
-        var lifetime = cached.Permissions is null ? FailureBackoff : SnapshotLifetime;
+        var lifetime = cached.Permissions is null ? FailureBackoff : _snapshotLifetime;
         if (age >= TimeSpan.Zero && age < lifetime)
         {
             permissions = cached.Permissions;
@@ -187,7 +192,7 @@ public sealed class PermissionSnapshotService(
                 _refreshLimit.Release();
         }
 
-        var lifetime = permissions is null ? FailureBackoff : SnapshotLifetime;
+        var lifetime = permissions is null ? FailureBackoff : _snapshotLifetime;
         _cache.Set(
             CacheKeyPrefix + subjectKey,
             new CachedPermissions(permissions, timeProvider.GetUtcNow()),
@@ -202,6 +207,16 @@ public sealed class PermissionSnapshotService(
             _inFlight.Remove(subjectKey);
             completion.TrySetResult(permissions);
         }
+    }
+
+    private static TimeSpan ReadSnapshotLifetime(IConfiguration configuration)
+    {
+        var seconds = configuration.GetValue(PermissionCacheSecondsKey, DefaultPermissionCacheSeconds);
+        if (seconds <= 0)
+            throw new InvalidOperationException(
+                $"{PermissionCacheSecondsKey} must be a positive number of seconds.");
+
+        return TimeSpan.FromSeconds(seconds);
     }
 
     private sealed record CachedPermissions(

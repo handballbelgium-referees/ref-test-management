@@ -2,6 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Handball.Belgium.RefTestManagement.Security;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -9,6 +10,54 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 
 public sealed class PermissionSnapshotServiceTests
 {
+    [Fact]
+    public async Task ConfiguredCacheLifetimeRefreshesAtConfiguredBoundary()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
+        IReadOnlySet<string> currentPermissions = Set("ref-tests:create");
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
+            Task.FromResult(currentPermissions));
+        using var provider = CreateProvider(managementService, clock, permissionCacheSeconds: 30);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+        var user = AuthenticatedUser("auth0|short-cache-test");
+
+        await permissionService.GetCurrentPermissionsAsync(user, cancellationToken);
+
+        currentPermissions = Set("ref-tests:view-list");
+        clock.Advance(TimeSpan.FromSeconds(30) - TimeSpan.FromTicks(1));
+        var stillFresh = await permissionService.GetCurrentPermissionsAsync(user, cancellationToken);
+        Assert.Contains("ref-tests:create", stillFresh!);
+        Assert.Equal(1, managementService.PermissionCalls);
+
+        clock.Advance(TimeSpan.FromTicks(1));
+        var refreshed = await permissionService.GetCurrentPermissionsAsync(user, cancellationToken);
+        Assert.Contains("ref-tests:view-list", refreshed!);
+        Assert.Equal(2, managementService.PermissionCalls);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-5")]
+    public void NonPositiveCacheLifetimeIsRejected(string value)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection([new KeyValuePair<string, string?>(
+                "Identity:PermissionCacheSeconds", value)])
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<TimeProvider>(new ManualTimeProvider(DateTimeOffset.UtcNow));
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddSingleton<IIdentityPermissionSync>(new FakeIdentityPermissionSync((_, _) =>
+            Task.FromResult(Set())));
+        services.AddSingleton<IPermissionSnapshotService, PermissionSnapshotService>();
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            provider.GetRequiredService<IPermissionSnapshotService>());
+    }
+
     [Fact]
     public async Task SnapshotRefreshesAtFourMinuteBoundaryAndPicksUpRevocation()
     {
@@ -420,13 +469,21 @@ public sealed class PermissionSnapshotServiceTests
     private static ServiceProvider CreateProvider(
         FakeIdentityPermissionSync? managementService,
         TimeProvider timeProvider,
-        ILogger<PermissionSnapshotService>? logger = null)
+        ILogger<PermissionSnapshotService>? logger = null,
+        int? permissionCacheSeconds = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
         if (logger is not null)
             services.AddSingleton(logger);
         services.AddSingleton<TimeProvider>(timeProvider);
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
+            .AddInMemoryCollection(permissionCacheSeconds is null
+                ? []
+                : [new KeyValuePair<string, string?>(
+                    "Identity:PermissionCacheSeconds",
+                    permissionCacheSeconds.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))])
+            .Build());
         if (managementService is not null)
             services.AddSingleton<IIdentityPermissionSync>(managementService);
         services.AddSingleton<IPermissionSnapshotService, PermissionSnapshotService>();

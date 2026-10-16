@@ -287,12 +287,13 @@ Management API access. The M2M scope grant in the target tenant was not inspecte
 application is authorized for the scopes above before deployment. If any are missing, an Auth0
 administrator must authorize them for the M2M application.
 
-Successful permission snapshots are cached per user and API process for at most four minutes.
-Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most
+Successful permission snapshots are cached per user and API process for `Identity:PermissionCacheSeconds`
+seconds (default `240`, must be positive). Shorter values pick up role changes sooner at the cost of more
+identity-provider API calls. Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most
 four simultaneous refreshes per API process. Expired snapshots are never reused after a refresh
 failure; authorization fails closed. Since permission grants are changed externally in the identity
 provider and there is no change-event callback for targeted invalidation, the revocation-latency objective is
-the next authentication validation after cache expiry, bounded by four minutes per API process.
+the next authentication validation after cache expiry, bounded by the configured lifetime per API process.
 Tenant/plan rate limits were not verified, and no quota figure is assumed. Monitor the Auth0
 tenant's own rate-limit signals and verify its operational limits before rollout.
 
