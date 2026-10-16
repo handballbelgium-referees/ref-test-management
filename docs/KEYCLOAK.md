@@ -36,12 +36,12 @@ Client that owns the permission client roles. Its client ID is the audience. Cre
 role per permission the application checks (see `RefTestManagement.Security/Permissions.cs`).
 Assign roles to users through the realm's client role mappings.
 
-### `ref-test-management-admin` (new, service account)
+### `reftest-management-admin` (new, service account)
 
 Used by the API to read and create client roles and to read user role mappings. It does not
 sign anyone in.
 
-1. Create client `ref-test-management-admin`, client authentication **On**, standard flow **Off**.
+1. Create client `reftest-management-admin`, client authentication **On**, standard flow **Off**.
 2. On the **Service account roles** tab, assign these roles from `realm-management`:
    `view-clients`, `view-users`, `manage-users`, and `manage-clients`.
    `manage-clients` is needed to create missing permission roles on `reftest-api`.
@@ -58,8 +58,8 @@ Identity:Keycloak:Authority             = https://login.referees-handballbelgium
 Identity:Keycloak:ClientId              = reftest-beta
 Identity:Keycloak:ClientSecret          = <reftest-beta secret>
 Identity:Keycloak:Audience              = reftest-api
-Identity:Keycloak:AdminClientId         = ref-test-management-admin
-Identity:Keycloak:AdminClientSecret     = <ref-test-management-admin secret>
+Identity:Keycloak:AdminClientId         = reftest-management-admin
+Identity:Keycloak:AdminClientSecret     = <reftest-management-admin secret>
 ```
 
 `ValidateSettings` fails fast at startup when Authority, ClientId, ClientSecret, or Audience is
@@ -77,7 +77,7 @@ dotnet user-secrets set "Identity:Keycloak:Authority" "https://login.referees-ha
 dotnet user-secrets set "Identity:Keycloak:ClientId" "reftest-beta"
 dotnet user-secrets set "Identity:Keycloak:ClientSecret" "<secret>"
 dotnet user-secrets set "Identity:Keycloak:Audience" "reftest-api"
-dotnet user-secrets set "Identity:Keycloak:AdminClientId" "ref-test-management-admin"
+dotnet user-secrets set "Identity:Keycloak:AdminClientId" "reftest-management-admin"
 dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "<secret>"
 ```
 
@@ -105,7 +105,7 @@ dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "<secret>"
 
 - [ ] `reftest-beta` redirect URI matches the environment.
 - [ ] Access token contains `aud: reftest-api`.
-- [ ] `ref-test-management-admin` has the four `realm-management` roles.
+- [ ] `reftest-management-admin` has the four `realm-management` roles.
 - [ ] Sign-in works and the user sees their permissions.
 - [ ] A disabled user loses access on the next snapshot refresh.
 

@@ -601,7 +601,7 @@ dotnet user-secrets set "Identity:Keycloak:Authority" "https://login.referees-ha
 dotnet user-secrets set "Identity:Keycloak:ClientId" "reftest-beta"
 dotnet user-secrets set "Identity:Keycloak:ClientSecret" "your-client-secret"
 dotnet user-secrets set "Identity:Keycloak:Audience" "reftest-api"
-dotnet user-secrets set "Identity:Keycloak:AdminClientId" "ref-test-management-admin"
+dotnet user-secrets set "Identity:Keycloak:AdminClientId" "reftest-management-admin"
 dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "your-admin-client-secret"
 ```
 

@@ -27,7 +27,7 @@ public sealed class KeycloakPermissionSyncServiceTests
         Assert.Equal($"{Authority}/protocol/openid-connect/token", handler.Requests[0].Url);
         Assert.Equal(HttpMethod.Post, handler.Requests[0].Method);
         Assert.Contains("grant_type=client_credentials", handler.Requests[0].Body);
-        Assert.Contains("client_id=ref-test-management-admin", handler.Requests[0].Body);
+        Assert.Contains("client_id=reftest-management-admin", handler.Requests[0].Body);
 
         Assert.Equal($"{AdminBase}/clients?clientId=reftest-api", handler.Requests[1].Url);
         Assert.Equal("Bearer test-token", handler.Requests[1].Authorization);
@@ -216,7 +216,7 @@ public sealed class KeycloakPermissionSyncServiceTests
                 ["Identity:Provider"] = "Keycloak",
                 ["Identity:Keycloak:Authority"] = Authority,
                 ["Identity:Keycloak:Audience"] = "reftest-api",
-                ["Identity:Keycloak:AdminClientId"] = "ref-test-management-admin",
+                ["Identity:Keycloak:AdminClientId"] = "reftest-management-admin",
                 ["Identity:Keycloak:AdminClientSecret"] = adminSecret,
             })
             .Build();
