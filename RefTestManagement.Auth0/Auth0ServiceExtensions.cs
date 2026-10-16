@@ -14,7 +14,7 @@ public static class Auth0ServiceExtensions
         services.Configure<Auth0ManagementConfiguration>(options =>
         {
             // Reuse the shared Auth0 section for Domain and Audience
-            var auth0Section = configuration.GetSection("Auth0");
+            var auth0Section = configuration.GetSection("Identity:Auth0");
             options.Domain = auth0Section["Domain"] ?? string.Empty;
             options.Audience = auth0Section["Audience"] ?? string.Empty;
             options.ManagementClientId = auth0Section["ManagementClientId"] ?? string.Empty;

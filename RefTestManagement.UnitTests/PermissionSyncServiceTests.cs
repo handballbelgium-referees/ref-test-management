@@ -1,10 +1,7 @@
 using System.Net;
 using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices;
-using Handball.Belgium.RefTestManagement.Auth0.Configurations;
-using Handball.Belgium.RefTestManagement.Auth0.Models;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 
 namespace Handball.Belgium.RefTestManagement.UnitTests;
 
@@ -47,21 +44,17 @@ public sealed class PermissionSyncServiceTests
         Assert.All(logger.Entries, entry => Assert.Null(entry.Exception));
     }
 
-    [Theory]
-    [InlineData("", "unit-test-secret")]
-    [InlineData("unit-test-client", "")]
-    public async Task MissingManagementCredentialsSkipSyncWithoutRetry(
-        string managementClientId,
-        string managementClientSecret)
+    [Fact]
+    public async Task UnconfiguredProviderSkipsSyncWithoutRetry()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var timeProvider = new ManualTimeProvider(DateTimeOffset.UnixEpoch);
-        var managementService = new FakeAuth0ManagementService((_, _) => Task.CompletedTask);
+        var managementService = new FakeAuth0ManagementService((_, _) => Task.CompletedTask)
+        {
+            IsConfigured = false
+        };
         var logger = new CapturingLogger();
-        var configuration = ConfiguredManagementApi();
-        configuration.ManagementClientId = managementClientId;
-        configuration.ManagementClientSecret = managementClientSecret;
-        using var service = CreateService(managementService, timeProvider, logger, configuration);
+        using var service = CreateService(managementService, timeProvider, logger);
 
         await service.StartAsync(cancellationToken);
         await service.ExecuteTask!.WaitAsync(cancellationToken);
@@ -71,8 +64,6 @@ public sealed class PermissionSyncServiceTests
         var warning = Assert.Single(logger.Entries);
         Assert.Equal(LogLevel.Warning, warning.Level);
         Assert.Contains("required configuration is missing", warning.Message);
-        Assert.DoesNotContain("unit-test-client", warning.Message);
-        Assert.DoesNotContain("unit-test-secret", warning.Message);
     }
 
     [Fact]
@@ -149,29 +140,18 @@ public sealed class PermissionSyncServiceTests
     private static PermissionSyncService CreateService(
         FakeAuth0ManagementService managementService,
         ManualTimeProvider timeProvider,
-        CapturingLogger logger,
-        Auth0ManagementConfiguration? configuration = null) =>
-        new(
-            managementService,
-            Options.Create(configuration ?? ConfiguredManagementApi()),
-            timeProvider,
-            logger);
-
-    private static Auth0ManagementConfiguration ConfiguredManagementApi() => new()
-    {
-        Domain = "unit-test.auth0.local",
-        Audience = "unit-test-api",
-        ManagementClientId = "unit-test-client",
-        ManagementClientSecret = "unit-test-secret"
-    };
+        CapturingLogger logger) =>
+        new(managementService, timeProvider, logger);
 
     private sealed class FakeAuth0ManagementService(
         Func<int, CancellationToken, Task> syncPermissions)
-        : IAuth0ManagementService
+        : IIdentityPermissionSync
     {
         private readonly object _gate = new();
         private TaskCompletionSource<bool> _callCountChanged = NewSignal();
         private int _callCount;
+
+        public bool IsConfigured { get; init; } = true;
 
         public int CallCount
         {
@@ -215,15 +195,10 @@ public sealed class PermissionSyncServiceTests
             return syncPermissions(attempt, cancellationToken);
         }
 
-        public Task<IReadOnlyList<Auth0User>> GetUsersWithPermissionAsync(
-            string permission,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
-
         public Task<IReadOnlySet<string>> GetUserPermissionsAsync(
             string userId,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
+            CancellationToken cancellationToken = default)
+            => throw new NotSupportedException("Permission reads are not used by sync tests.");
     }
 
     private sealed class ManualTimeProvider(DateTimeOffset utcNow) : TimeProvider

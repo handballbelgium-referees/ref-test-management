@@ -18,6 +18,7 @@
   <Project Path="RefTestManagement.Application/RefTestManagement.Application.csproj" />
   <Project Path="RefTestManagement.AuditLog/RefTestManagement.AuditLog.csproj" />
   <Project Path="RefTestManagement.Auth0/RefTestManagement.Auth0.csproj" />
+  <Project Path="RefTestManagement.Keycloak/RefTestManagement.Keycloak.csproj" />
   <Project Path="RefTestManagement.Domain/RefTestManagement.Domain.csproj" />
   <Project Path="RefTestManagement.Infrastructure/RefTestManagement.Infrastructure.csproj" />
   <Project Path="RefTestManagement.Hosting/RefTestManagement.Hosting.csproj" />

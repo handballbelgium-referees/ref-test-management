@@ -3,6 +3,7 @@ using Handball.Belgium.RefTestManagement.Application.Models;
 using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.AuditLog;
 using Handball.Belgium.RefTestManagement.Auth0;
+using Handball.Belgium.RefTestManagement.Auth0.Services;
 using Handball.Belgium.RefTestManagement.Domain.Jobs;
 using Handball.Belgium.RefTestManagement.Domain.RefTestTitles;
 using Handball.Belgium.RefTestManagement.Infrastructure.Extensions;
@@ -12,6 +13,8 @@ using Handball.Belgium.RefTestManagement.Hosting.BackgroundServices.JobHandlers;
 using Handball.Belgium.RefTestManagement.Hosting.Configurations;
 using Handball.Belgium.RefTestManagement.Hosting.Services;
 using Handball.Belgium.RefTestManagement.Infrastructure;
+using Handball.Belgium.RefTestManagement.Keycloak;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.AspNetCore.DataProtection;
 using QuestPDF.Infrastructure;
 
@@ -80,6 +83,7 @@ public static class HostingServiceCollectionExtensions
 
         services.AddInfrastructureServices();
         services.AddAuth0ManagementServices(configuration);
+        AddIdentityPermissionSync(services, configuration);
         services.AddMemoryCache();
 
         if (mode is HostingMode.All or HostingMode.Worker)
@@ -116,6 +120,18 @@ public static class HostingServiceCollectionExtensions
         AddAuditLogging(services, configuration);
         services.AddDatabaseProvider(configuration);
         return services;
+    }
+
+    private static void AddIdentityPermissionSync(IServiceCollection services, IConfiguration configuration)
+    {
+        services.AddKeycloakPermissionSync(configuration);
+
+        // Permission sync follows the configured provider. The Auth0 registration stays
+        // unconditional because the API's permission snapshot service also depends on it.
+        services.AddTransient<IIdentityPermissionSync>(serviceProvider =>
+            IdentityProviderName.Parse(configuration["Identity:Provider"]) == IdentityProviderName.Keycloak
+                ? serviceProvider.GetRequiredService<KeycloakPermissionSyncService>()
+                : serviceProvider.GetRequiredService<IAuth0ManagementService>());
     }
 
     private static AuditLogOptions AddAuditLogging(

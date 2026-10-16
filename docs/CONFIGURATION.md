@@ -17,13 +17,16 @@ Full reference for `RefTestManagement.Api/appsettings.json`. For local developme
   "ConnectionStrings": {
     "RefTestManagement": "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
   },
-  "Auth0": {
-    "Domain": "your-tenant.auth0.com",
-    "ClientId": "your-client-id",
-    "ClientSecret": "your-client-secret",
-    "Audience": "your-api-identifier",
-    "ManagementClientId": "your-m2m-client-id",
-    "ManagementClientSecret": "your-m2m-client-secret"
+  "Identity": {
+    "Provider": "Auth0",
+    "Auth0": {
+      "Domain": "your-tenant.auth0.com",
+      "ClientId": "your-client-id",
+      "ClientSecret": "your-client-secret",
+      "Audience": "your-api-identifier",
+      "ManagementClientId": "your-m2m-client-id",
+      "ManagementClientSecret": "your-m2m-client-secret"
+    }
   },
   "EmailConfiguration": {
     "BaseUrl": "https://localhost:7039",
@@ -126,8 +129,7 @@ session-lock lease, and the Redis privacy limiter. The endpoint is required when
 or the privacy limiter backend is `Redis`; it is otherwise optional. Provide it through the hosting
 environment or a secret reference, never source control. Use Redis 7.0 or later and a dedicated
 deployment/ACL namespace for this application; grant the limiter and session-lock commands plus
-`PUBLISH` and `SUBSCRIBE` for pub/sub. This replaces the former
-`PrivacyChallengeConfiguration:RedisEndpoint`, which is no longer read.
+`PUBLISH` and `SUBSCRIBE` for pub/sub.
 
 `Hosting:Provider` selects the host's Data Protection key-encryption adapter. It defaults to
 `Local` for development. The current values are `Local` and `Azure`; this setting
@@ -285,12 +287,13 @@ Management API access. The M2M scope grant in the target tenant was not inspecte
 application is authorized for the scopes above before deployment. If any are missing, an Auth0
 administrator must authorize them for the M2M application.
 
-Successful permission snapshots are cached per user and API process for at most four minutes.
-Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most
+Successful permission snapshots are cached per user and API process for `Identity:PermissionCacheSeconds`
+seconds (default `240`, must be positive). Shorter values pick up role changes sooner at the cost of more
+identity-provider API calls. Concurrent checks for one user share a snapshot refresh, and an internal limit permits at most
 four simultaneous refreshes per API process. Expired snapshots are never reused after a refresh
-failure; authorization fails closed. Since permission grants are changed externally in Auth0 and
-there is no change-event callback for targeted invalidation, the revocation-latency objective is
-the next authentication validation after cache expiry, bounded by four minutes per API process.
+failure; authorization fails closed. Since permission grants are changed externally in the identity
+provider and there is no change-event callback for targeted invalidation, the revocation-latency objective is
+the next authentication validation after cache expiry, bounded by the configured lifetime per API process.
 Tenant/plan rate limits were not verified, and no quota figure is assumed. Monitor the Auth0
 tenant's own rate-limit signals and verify its operational limits before rollout.
 
@@ -363,8 +366,7 @@ Controls public personal-data export and consent-withdrawal verification. For ex
 `PrivacyChallengeConfiguration:PrivacyChallengeKeyLifetimeHours` (environment variable
 `PrivacyChallengeConfiguration__PrivacyChallengeKeyLifetimeHours`) sets how long an emailed
 verification key remains valid for either flow. The API validates these values at startup and
-rejects invalid configuration. Deployments must use the `PrivacyChallengeConfiguration` section;
-the previous `PersonalDataExportConfiguration` section name is not supported.
+rejects invalid configuration. Deployments must use the `PrivacyChallengeConfiguration` section.
 
 | Key                                   | Description                                                         | Default | Validation                    |
 | ------------------------------------- | ------------------------------------------------------------------- | ------- | ----------------------------- |
@@ -580,13 +582,28 @@ dotnet ef migrations list \
 cd RefTestManagement.Api
 
 dotnet user-secrets set "ConnectionStrings:RefTestManagement" "Server=localhost;Database=RefTestManagement;Trusted_Connection=True;TrustServerCertificate=True;"
-dotnet user-secrets set "Auth0:Domain" "your-tenant.auth0.com"
-dotnet user-secrets set "Auth0:ClientId" "your-client-id"
-dotnet user-secrets set "Auth0:ClientSecret" "your-client-secret"
-dotnet user-secrets set "Auth0:Audience" "your-api-identifier"
-dotnet user-secrets set "Auth0:ManagementClientId" "your-m2m-client-id"
-dotnet user-secrets set "Auth0:ManagementClientSecret" "your-m2m-client-secret"
+dotnet user-secrets set "Identity:Auth0:Domain" "your-tenant.auth0.com"
+dotnet user-secrets set "Identity:Auth0:ClientId" "your-client-id"
+dotnet user-secrets set "Identity:Auth0:ClientSecret" "your-client-secret"
+dotnet user-secrets set "Identity:Auth0:Audience" "your-api-identifier"
+dotnet user-secrets set "Identity:Auth0:ManagementClientId" "your-m2m-client-id"
+dotnet user-secrets set "Identity:Auth0:ManagementClientSecret" "your-m2m-client-secret"
 dotnet user-secrets set "EmailConfiguration:BrevoApiKey" "your-brevo-api-key"
+```
+
+Auth0 settings live under `Identity:Auth0`. Secrets under a top-level `Auth0:*` path are not read.
+
+To use Keycloak, set `Identity:Provider` to `Keycloak` and configure `Identity:Keycloak:*`
+(see [KEYCLOAK.md](KEYCLOAK.md) for clients, roles, and the clean-slate switch):
+
+```bash
+dotnet user-secrets set "Identity:Provider" "Keycloak"
+dotnet user-secrets set "Identity:Keycloak:Authority" "https://login.referees-handballbelgium.be/realms/referees-handballbelgium-beta"
+dotnet user-secrets set "Identity:Keycloak:ClientId" "reftest-beta"
+dotnet user-secrets set "Identity:Keycloak:ClientSecret" "your-client-secret"
+dotnet user-secrets set "Identity:Keycloak:Audience" "reftest-api"
+dotnet user-secrets set "Identity:Keycloak:AdminClientId" "reftest-management-admin"
+dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "your-admin-client-secret"
 ```
 
 Any key from the sections above can be set the same way, using `:` to nest sections and array indices (e.g. `LanguageConfiguration:EnabledLanguages:0`).
@@ -603,12 +620,10 @@ either required App credential is missing, and there is no personal-access-token
    Issues/Pull requests permissions for semantic-release.
 2. Install the app on `handballbelgium-referees/ref-test-management`.
 3. Generate a private key for the app and download the `.pem`.
-4. Add the app to the branch protection bypass list for `main` and `release`, the same way
-   the former release credential's owner was.
+4. Add the app to the branch protection bypass list for `main` and `release`.
 5. In the repository settings add:
    - a **secret** `RELEASE_APP_CLIENT_ID` holding the app's numeric Client ID;
    - a **secret** `RELEASE_APP_PRIVATE_KEY` holding the full contents of the `.pem`.
 
-The former `GH_PAT` repository secret and its personal access token have already been deleted and
-revoked. Do not recreate that secret. Preserve the App's least-privilege permissions and keep the
+Do not create a `GH_PAT` repository secret or a personal access token for releases. Preserve the App's least-privilege permissions and keep the
 workflow action references SHA-pinned.

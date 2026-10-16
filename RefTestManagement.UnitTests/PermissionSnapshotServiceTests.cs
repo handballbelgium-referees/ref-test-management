@@ -1,8 +1,8 @@
 using System.Net;
 using System.Security.Claims;
 using Handball.Belgium.RefTestManagement.Api.Services;
-using Handball.Belgium.RefTestManagement.Auth0.Models;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
+using Handball.Belgium.RefTestManagement.Security;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
@@ -11,12 +11,60 @@ namespace Handball.Belgium.RefTestManagement.UnitTests;
 public sealed class PermissionSnapshotServiceTests
 {
     [Fact]
+    public async Task ConfiguredCacheLifetimeRefreshesAtConfiguredBoundary()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
+        IReadOnlySet<string> currentPermissions = Set("ref-tests:create");
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
+            Task.FromResult(currentPermissions));
+        using var provider = CreateProvider(managementService, clock, permissionCacheSeconds: 30);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+        var user = AuthenticatedUser("auth0|short-cache-test");
+
+        await permissionService.GetCurrentPermissionsAsync(user, cancellationToken);
+
+        currentPermissions = Set("ref-tests:view-list");
+        clock.Advance(TimeSpan.FromSeconds(30) - TimeSpan.FromTicks(1));
+        var stillFresh = await permissionService.GetCurrentPermissionsAsync(user, cancellationToken);
+        Assert.Contains("ref-tests:create", stillFresh!);
+        Assert.Equal(1, managementService.PermissionCalls);
+
+        clock.Advance(TimeSpan.FromTicks(1));
+        var refreshed = await permissionService.GetCurrentPermissionsAsync(user, cancellationToken);
+        Assert.Contains("ref-tests:view-list", refreshed!);
+        Assert.Equal(2, managementService.PermissionCalls);
+    }
+
+    [Theory]
+    [InlineData("0")]
+    [InlineData("-5")]
+    public void NonPositiveCacheLifetimeIsRejected(string value)
+    {
+        var configuration = new ConfigurationBuilder()
+            .AddInMemoryCollection([new KeyValuePair<string, string?>(
+                "Identity:PermissionCacheSeconds", value)])
+            .Build();
+        var services = new ServiceCollection();
+        services.AddLogging();
+        services.AddSingleton<TimeProvider>(new ManualTimeProvider(DateTimeOffset.UtcNow));
+        services.AddSingleton<IConfiguration>(configuration);
+        services.AddSingleton<IIdentityPermissionSync>(new FakeIdentityPermissionSync((_, _) =>
+            Task.FromResult(Set())));
+        services.AddSingleton<IPermissionSnapshotService, PermissionSnapshotService>();
+        using var provider = services.BuildServiceProvider();
+
+        Assert.Throws<InvalidOperationException>(() =>
+            provider.GetRequiredService<IPermissionSnapshotService>());
+    }
+
+    [Fact]
     public async Task SnapshotRefreshesAtFourMinuteBoundaryAndPicksUpRevocation()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
         IReadOnlySet<string> currentPermissions = Set("ref-tests:create");
-        var managementService = new FakeAuth0ManagementService((_, _) =>
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
             Task.FromResult(currentPermissions));
         using var provider = CreateProvider(managementService, clock);
         var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
@@ -38,6 +86,27 @@ public sealed class PermissionSnapshotServiceTests
         Assert.Equal(2, managementService.PermissionCalls);
     }
 
+    [Fact]
+    public async Task SameSubjectFromDifferentIssuersIsCachedSeparately()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
+            Task.FromResult(Set("ref-tests:view-list")));
+        using var provider = CreateProvider(managementService, clock);
+        var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
+        const string subject = "shared-subject-id";
+
+        await permissionService.GetCurrentPermissionsAsync(
+            IssuedUser(subject, "Auth0"), cancellationToken);
+        await permissionService.GetCurrentPermissionsAsync(
+            IssuedUser(subject, "Keycloak"), cancellationToken);
+        await permissionService.GetCurrentPermissionsAsync(
+            IssuedUser(subject, "Keycloak"), cancellationToken);
+
+        Assert.Equal(2, managementService.PermissionCalls);
+    }
+
     [Theory]
     [InlineData(HttpStatusCode.TooManyRequests)]
     [InlineData(HttpStatusCode.ServiceUnavailable)]
@@ -53,7 +122,7 @@ public sealed class PermissionSnapshotServiceTests
             "sentinel-exception-never-log https://sentinel.invalid/?access_token=sentinel-token-never-log";
         var logger = new CapturingLogger();
         var shouldFail = false;
-        var managementService = new FakeAuth0ManagementService((_, _) =>
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
             shouldFail
                 ? Task.FromException<IReadOnlySet<string>>(
                     new HttpRequestException(sentinelExceptionText, null, statusCode))
@@ -98,7 +167,7 @@ public sealed class PermissionSnapshotServiceTests
     public async Task MissingSubjectFailsClosedAndLogsOnlyTheFailureCategory()
     {
         var logger = new CapturingLogger();
-        var managementService = new FakeAuth0ManagementService((_, _) =>
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
             Task.FromResult(Set("ref-tests:view-list")));
         using var provider = CreateProvider(
             managementService,
@@ -118,7 +187,7 @@ public sealed class PermissionSnapshotServiceTests
     }
 
     [Fact]
-    public async Task MissingAuth0ManagementServiceFailsClosedAndLogsSpecificCategory()
+    public async Task MissingIdentityPermissionSyncFailsClosedAndLogsSpecificCategory()
     {
         const string sentinelSubject = "sentinel-unregistered-management-service";
         var logger = new CapturingLogger();
@@ -150,7 +219,7 @@ public sealed class PermissionSnapshotServiceTests
         Exception failure = useTaskCanceledException
             ? new TaskCanceledException(sentinelExceptionText)
             : new TimeoutException(sentinelExceptionText);
-        var managementService = new FakeAuth0ManagementService((_, _) =>
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
             Task.FromException<IReadOnlySet<string>>(failure));
         using var provider = CreateProvider(
             managementService,
@@ -178,7 +247,7 @@ public sealed class PermissionSnapshotServiceTests
         const string sentinelExceptionText = "sentinel-account-status-exception-never-log";
         var logger = new CapturingLogger();
         var accountStatusVerified = true;
-        var managementService = new FakeAuth0ManagementService((_, _) =>
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
             accountStatusVerified
                 ? Task.FromResult(Set("ref-tests:delete"))
                 : Task.FromException<IReadOnlySet<string>>(
@@ -213,7 +282,7 @@ public sealed class PermissionSnapshotServiceTests
         var started = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         var release = new TaskCompletionSource<IReadOnlySet<string>>(
             TaskCreationOptions.RunContinuationsAsynchronously);
-        var managementService = new FakeAuth0ManagementService((_, _) =>
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
         {
             started.TrySetResult(true);
             return release.Task;
@@ -243,7 +312,7 @@ public sealed class PermissionSnapshotServiceTests
         var release = new TaskCompletionSource<IReadOnlySet<string>>(
             TaskCreationOptions.RunContinuationsAsynchronously);
         var refreshCancellationToken = CancellationToken.None;
-        var managementService = new FakeAuth0ManagementService((_, token) =>
+        var managementService = new FakeIdentityPermissionSync((_, token) =>
         {
             refreshCancellationToken = token;
             started.TrySetResult(true);
@@ -278,7 +347,7 @@ public sealed class PermissionSnapshotServiceTests
         var started = new SemaphoreSlim(0);
         var firstCachedResponse = 0;
         var logger = new CapturingLogger();
-        var managementService = new FakeAuth0ManagementService((userId, _) =>
+        var managementService = new FakeIdentityPermissionSync((userId, _) =>
         {
             if (userId == cachedUserId && Interlocked.Exchange(ref firstCachedResponse, 1) == 0)
                 return Task.FromResult(Set("ref-tests:stale"));
@@ -325,7 +394,7 @@ public sealed class PermissionSnapshotServiceTests
             TaskCreationOptions.RunContinuationsAsynchronously);
         var activeRefreshes = 0;
         var maximumActiveRefreshes = 0;
-        var managementService = new FakeAuth0ManagementService(async (_, _) =>
+        var managementService = new FakeIdentityPermissionSync(async (_, _) =>
         {
             var active = Interlocked.Increment(ref activeRefreshes);
             while (true)
@@ -373,7 +442,7 @@ public sealed class PermissionSnapshotServiceTests
     {
         var cancellationToken = TestContext.Current.CancellationToken;
         var clock = new ManualTimeProvider(DateTimeOffset.Parse("2026-10-04T17:00:00Z"));
-        var managementService = new FakeAuth0ManagementService((_, _) =>
+        var managementService = new FakeIdentityPermissionSync((_, _) =>
             Task.FromResult(Set("ref-tests:view-list")));
         using var provider = CreateProvider(managementService, clock);
         var permissionService = provider.GetRequiredService<IPermissionSnapshotService>();
@@ -398,23 +467,34 @@ public sealed class PermissionSnapshotServiceTests
     }
 
     private static ServiceProvider CreateProvider(
-        FakeAuth0ManagementService? managementService,
+        FakeIdentityPermissionSync? managementService,
         TimeProvider timeProvider,
-        ILogger<PermissionSnapshotService>? logger = null)
+        ILogger<PermissionSnapshotService>? logger = null,
+        int? permissionCacheSeconds = null)
     {
         var services = new ServiceCollection();
         services.AddLogging();
         if (logger is not null)
             services.AddSingleton(logger);
         services.AddSingleton<TimeProvider>(timeProvider);
+        services.AddSingleton<IConfiguration>(new ConfigurationBuilder()
+            .AddInMemoryCollection(permissionCacheSeconds is null
+                ? []
+                : [new KeyValuePair<string, string?>(
+                    "Identity:PermissionCacheSeconds",
+                    permissionCacheSeconds.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))])
+            .Build());
         if (managementService is not null)
-            services.AddSingleton<IAuth0ManagementService>(managementService);
+            services.AddSingleton<IIdentityPermissionSync>(managementService);
         services.AddSingleton<IPermissionSnapshotService, PermissionSnapshotService>();
         return services.BuildServiceProvider();
     }
 
     private static ClaimsPrincipal AuthenticatedUser(string subject, params Claim[] additionalClaims) =>
         new(new ClaimsIdentity([new Claim("sub", subject), .. additionalClaims], "unit-test"));
+
+    private static ClaimsPrincipal IssuedUser(string subject, string issuer) =>
+        new(new ClaimsIdentity([new Claim("sub", subject, ClaimValueTypes.String, issuer)], "unit-test"));
 
     private static IReadOnlySet<string> Set(params string[] permissions) =>
         new HashSet<string>(permissions, StringComparer.OrdinalIgnoreCase);
@@ -428,13 +508,15 @@ public sealed class PermissionSnapshotServiceTests
         public void Advance(TimeSpan amount) => _now += amount;
     }
 
-    private sealed class FakeAuth0ManagementService(
+    private sealed class FakeIdentityPermissionSync(
         Func<string, CancellationToken, Task<IReadOnlySet<string>>> getPermissions)
-        : IAuth0ManagementService
+        : IIdentityPermissionSync
     {
         private int _permissionCalls;
 
         public int PermissionCalls => Volatile.Read(ref _permissionCalls);
+
+        public bool IsConfigured => true;
 
         public Task<IReadOnlySet<string>> GetUserPermissionsAsync(
             string userId,
@@ -443,11 +525,6 @@ public sealed class PermissionSnapshotServiceTests
             Interlocked.Increment(ref _permissionCalls);
             return getPermissions(userId, cancellationToken);
         }
-
-        public Task<IReadOnlyList<Auth0User>> GetUsersWithPermissionAsync(
-            string permission,
-            CancellationToken cancellationToken = default) =>
-            throw new NotSupportedException();
 
         public Task SyncPermissionsAsync(
             IReadOnlyList<string> permissions,

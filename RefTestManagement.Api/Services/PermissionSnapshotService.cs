@@ -1,12 +1,13 @@
 using System.Collections.Frozen;
 using System.Security.Claims;
-using Handball.Belgium.RefTestManagement.Auth0.Services;
+using Handball.Belgium.RefTestManagement.Security;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Configuration;
 
 namespace Handball.Belgium.RefTestManagement.Api.Services;
 
 /// <summary>
-/// Resolves a user's current effective permissions from Auth0.
+/// Resolves a user's current effective permissions from the configured identity provider.
 /// </summary>
 public interface IPermissionSnapshotService
 {
@@ -20,12 +21,13 @@ public interface IPermissionSnapshotService
 }
 
 /// <summary>
-/// Caches effective Auth0 permissions briefly and shares concurrent refreshes per user.
+/// Caches effective identity-provider permissions briefly and shares concurrent refreshes per user.
 /// </summary>
 public sealed class PermissionSnapshotService(
     IServiceScopeFactory scopeFactory,
     TimeProvider timeProvider,
-    ILogger<PermissionSnapshotService> logger)
+    ILogger<PermissionSnapshotService> logger,
+    IConfiguration configuration)
     : IPermissionSnapshotService
 {
     internal const int MaximumConcurrentRefreshes = 4;
@@ -34,11 +36,13 @@ public sealed class PermissionSnapshotService(
     // One size unit per subject keeps this cache bounded independently of other application caches.
     internal const int MaximumCachedSnapshots = 1_024;
 
-    private static readonly TimeSpan SnapshotLifetime = TimeSpan.FromMinutes(4);
+    internal const string PermissionCacheSecondsKey = "Identity:PermissionCacheSeconds";
+    internal const int DefaultPermissionCacheSeconds = 240;
+
     private static readonly TimeSpan FailureBackoff = TimeSpan.FromSeconds(30);
-    // Includes semaphore queue time and the complete multi-request Auth0 lookup.
+    // Includes semaphore queue time and the complete multi-request provider lookup.
     private static readonly TimeSpan RefreshTimeout = TimeSpan.FromSeconds(30);
-    private const string CacheKeyPrefix = "Auth0PermissionSnapshot:";
+    private const string CacheKeyPrefix = "PermissionSnapshot:";
 
     private readonly MemoryCache _cache = new(new MemoryCacheOptions
     {
@@ -48,6 +52,7 @@ public sealed class PermissionSnapshotService(
     private readonly Dictionary<string, TaskCompletionSource<IReadOnlySet<string>?>> _inFlight =
         new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _refreshLimit = new(MaximumConcurrentRefreshes);
+    private readonly TimeSpan _snapshotLifetime = ReadSnapshotLifetime(configuration);
 
     /// <inheritdoc />
     public async Task<IReadOnlySet<string>?> GetCurrentPermissionsAsync(
@@ -57,23 +62,27 @@ public sealed class PermissionSnapshotService(
         if (!principal.Identities.Any(identity => identity.IsAuthenticated))
             return null;
 
-        var userId = principal.FindFirst("sub")?.Value;
-        if (string.IsNullOrWhiteSpace(userId))
-            userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        var subjectClaim = principal.FindFirst("sub");
+        if (subjectClaim is null || string.IsNullOrWhiteSpace(subjectClaim.Value))
+            subjectClaim = principal.FindFirst(ClaimTypes.NameIdentifier);
+        var userId = subjectClaim?.Value;
         if (string.IsNullOrWhiteSpace(userId))
         {
             PermissionSnapshotLogger.RefreshFailed(logger, "MissingSubject", null, null);
             return null;
         }
 
+        // Scoped by issuer so an identical subject from another provider never shares a snapshot.
+        var subjectKey = (subjectClaim?.Issuer ?? string.Empty) + "|" + userId;
+
         Task<IReadOnlySet<string>?>? refreshTask = null;
         TaskCompletionSource<IReadOnlySet<string>?>? refresh = null;
         lock (_inFlightLock)
         {
-            if (TryGetCachedPermissions(userId, timeProvider.GetUtcNow(), out var cachedPermissions))
+            if (TryGetCachedPermissions(subjectKey, timeProvider.GetUtcNow(), out var cachedPermissions))
                 return cachedPermissions;
 
-            if (_inFlight.TryGetValue(userId, out var inFlight))
+            if (_inFlight.TryGetValue(subjectKey, out var inFlight))
             {
                 refreshTask = inFlight.Task;
             }
@@ -81,7 +90,7 @@ public sealed class PermissionSnapshotService(
             {
                 refresh = new TaskCompletionSource<IReadOnlySet<string>?>(
                     TaskCreationOptions.RunContinuationsAsynchronously);
-                _inFlight.Add(userId, refresh);
+                _inFlight.Add(subjectKey, refresh);
                 refreshTask = refresh.Task;
             }
         }
@@ -93,23 +102,23 @@ public sealed class PermissionSnapshotService(
         }
 
         if (refresh is not null)
-            _ = RefreshAsync(userId, refresh);
+            _ = RefreshAsync(userId, subjectKey, refresh);
 
         return await refreshTask.WaitAsync(cancellationToken);
     }
 
     private bool TryGetCachedPermissions(
-        string userId,
+        string subjectKey,
         DateTimeOffset now,
         out IReadOnlySet<string>? permissions)
     {
         permissions = null;
-        var key = CacheKeyPrefix + userId;
+        var key = CacheKeyPrefix + subjectKey;
         if (!_cache.TryGetValue(key, out CachedPermissions? cached) || cached is null)
             return false;
 
         var age = now - cached.StoredAt;
-        var lifetime = cached.Permissions is null ? FailureBackoff : SnapshotLifetime;
+        var lifetime = cached.Permissions is null ? FailureBackoff : _snapshotLifetime;
         if (age >= TimeSpan.Zero && age < lifetime)
         {
             permissions = cached.Permissions;
@@ -122,6 +131,7 @@ public sealed class PermissionSnapshotService(
 
     private async Task RefreshAsync(
         string userId,
+        string subjectKey,
         TaskCompletionSource<IReadOnlySet<string>?> completion)
     {
         IReadOnlySet<string>? permissions = null;
@@ -129,12 +139,12 @@ public sealed class PermissionSnapshotService(
         using var timeout = new CancellationTokenSource(RefreshTimeout);
         try
         {
-            // This application-side cap does not assume or represent an Auth0 tenant quota.
+            // This application-side cap does not assume or represent a provider quota.
             await _refreshLimit.WaitAsync(timeout.Token);
             hasRefreshPermit = true;
 
             using var scope = scopeFactory.CreateScope();
-            var managementService = scope.ServiceProvider.GetService<IAuth0ManagementService>();
+            var managementService = scope.ServiceProvider.GetService<IIdentityPermissionSync>();
             if (managementService is null)
             {
                 PermissionSnapshotLogger.RefreshFailed(
@@ -182,9 +192,9 @@ public sealed class PermissionSnapshotService(
                 _refreshLimit.Release();
         }
 
-        var lifetime = permissions is null ? FailureBackoff : SnapshotLifetime;
+        var lifetime = permissions is null ? FailureBackoff : _snapshotLifetime;
         _cache.Set(
-            CacheKeyPrefix + userId,
+            CacheKeyPrefix + subjectKey,
             new CachedPermissions(permissions, timeProvider.GetUtcNow()),
             new MemoryCacheEntryOptions
             {
@@ -194,9 +204,19 @@ public sealed class PermissionSnapshotService(
 
         lock (_inFlightLock)
         {
-            _inFlight.Remove(userId);
+            _inFlight.Remove(subjectKey);
             completion.TrySetResult(permissions);
         }
+    }
+
+    private static TimeSpan ReadSnapshotLifetime(IConfiguration configuration)
+    {
+        var seconds = configuration.GetValue(PermissionCacheSecondsKey, DefaultPermissionCacheSeconds);
+        if (seconds <= 0)
+            throw new InvalidOperationException(
+                $"{PermissionCacheSecondsKey} must be a positive number of seconds.");
+
+        return TimeSpan.FromSeconds(seconds);
     }
 
     private sealed record CachedPermissions(

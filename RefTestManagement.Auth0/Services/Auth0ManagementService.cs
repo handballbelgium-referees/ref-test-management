@@ -27,6 +27,13 @@ internal sealed partial class Auth0ManagementService(
     private static readonly TimeSpan ApproverCacheLifetime = TimeSpan.FromMinutes(5);
     private readonly Auth0ManagementConfiguration _config = options.Value;
 
+    /// <inheritdoc />
+    public bool IsConfigured =>
+        !string.IsNullOrWhiteSpace(_config.Domain)
+        && !string.IsNullOrWhiteSpace(_config.Audience)
+        && !string.IsNullOrWhiteSpace(_config.ManagementClientId)
+        && !string.IsNullOrWhiteSpace(_config.ManagementClientSecret);
+
     // --- Token acquisition --------------------------------------------------
 
     private async Task<string> GetAccessTokenAsync(CancellationToken cancellationToken)

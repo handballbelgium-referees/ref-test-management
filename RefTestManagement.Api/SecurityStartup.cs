@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using Handball.Belgium.RefTestManagement.Api.Identity;
 using Handball.Belgium.RefTestManagement.Api.Services;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -11,6 +12,13 @@ public static class SecurityStartup
 {
     internal static void AddSecurityConfiguration(this IServiceCollection services, IConfiguration configuration)
     {
+        var provider = IdentityProviderSelector.Resolve(configuration);
+        IdentityProviderSelector.ValidateSettings(configuration, provider);
+        var schemeName = IdentityProviderSelector.SchemeName(provider);
+        var issuer = IdentityProviderSelector.ClaimsIssuer(provider);
+        var authority = IdentityProviderSelector.Authority(configuration, provider);
+        var audience = configuration[$"{IdentityProviderSelector.SettingsPath(provider)}:Audience"];
+
         services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = CookieAuthenticationDefaults.AuthenticationScheme;
@@ -27,6 +35,7 @@ public static class SecurityStartup
                     var refresh = await RefreshPermissionClaimsAsync(
                         context.HttpContext,
                         context.Principal,
+                        issuer,
                         context.HttpContext.RequestAborted);
                     if (!refresh.Succeeded)
                     {
@@ -38,11 +47,11 @@ public static class SecurityStartup
                         context.ShouldRenew = true;
                 };
             })
-            .AddOpenIdConnect("Auth0", options => ConfigureOpenIdConnect(options, configuration))
+            .AddOpenIdConnect(schemeName, options => ConfigureOpenIdConnect(options, configuration, provider))
             .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
             {
-                options.Authority = $"https://{configuration["Auth0:Domain"]}";
-                options.Audience = configuration["Auth0:Audience"];
+                options.Authority = authority;
+                options.Audience = audience;
                 options.Events = new JwtBearerEvents
                 {
                     OnTokenValidated = async context =>
@@ -50,6 +59,7 @@ public static class SecurityStartup
                         var refresh = await RefreshPermissionClaimsAsync(
                             context.HttpContext,
                             context.Principal,
+                            issuer,
                             context.HttpContext.RequestAborted);
                         if (!refresh.Succeeded)
                             context.Fail("The current permissions could not be verified.");
@@ -61,6 +71,7 @@ public static class SecurityStartup
     private static async Task<PermissionRefreshResult> RefreshPermissionClaimsAsync(
         HttpContext httpContext,
         ClaimsPrincipal? principal,
+        string issuer,
         CancellationToken cancellationToken)
     {
         if (principal is null)
@@ -91,7 +102,7 @@ public static class SecurityStartup
             }
 
             foreach (var permission in permissions)
-                identity.AddClaim(new Claim("permissions", permission, ClaimValueTypes.String, "Auth0"));
+                identity.AddClaim(new Claim("permissions", permission, ClaimValueTypes.String, issuer));
 
             return new PermissionRefreshResult(true, true);
         }
@@ -101,11 +112,19 @@ public static class SecurityStartup
         }
     }
 
-    private static void ConfigureOpenIdConnect(OpenIdConnectOptions options, IConfiguration configuration)
+    private static void ConfigureOpenIdConnect(
+        OpenIdConnectOptions options,
+        IConfiguration configuration,
+        IdentityProvider provider)
     {
-        options.Authority = $"https://{configuration["Auth0:Domain"]}";
-        options.ClientId = configuration["Auth0:ClientId"];
-        options.ClientSecret = configuration["Auth0:ClientSecret"];
+        var section = IdentityProviderSelector.SettingsPath(provider);
+        var authority = IdentityProviderSelector.Authority(configuration, provider);
+        var clientId = configuration[$"{section}:ClientId"];
+        var issuer = IdentityProviderSelector.ClaimsIssuer(provider);
+
+        options.Authority = authority;
+        options.ClientId = clientId;
+        options.ClientSecret = configuration[$"{section}:ClientSecret"];
 
         options.ResponseType = OpenIdConnectResponseType.Code;
         options.ResponseMode = OpenIdConnectResponseMode.FormPost;
@@ -117,7 +136,7 @@ public static class SecurityStartup
 
         options.CallbackPath = new PathString("/callback");
 
-        options.ClaimsIssuer = "Auth0";
+        options.ClaimsIssuer = issuer;
 
         options.Events = new OpenIdConnectEvents
         {
@@ -126,6 +145,7 @@ public static class SecurityStartup
                 var refresh = await RefreshPermissionClaimsAsync(
                     context.HttpContext,
                     context.Principal,
+                    issuer,
                     context.HttpContext.RequestAborted);
                 if (!refresh.Succeeded)
                     context.Fail("The current permissions could not be verified.");
@@ -133,8 +153,8 @@ public static class SecurityStartup
 
             OnRedirectToIdentityProviderForSignOut = context =>
             {
-                var logoutUri =
-                    $"https://{configuration["Auth0:Domain"]}/v2/logout?client_id={configuration["Auth0:ClientId"]}";
+                var logoutUri = IdentityProviderSelector.LogoutUri(authority, clientId ?? string.Empty, provider);
+                var returnParameter = IdentityProviderSelector.LogoutReturnParameter(provider);
 
                 var postLogoutUri = context.Properties.RedirectUri;
                 if (!string.IsNullOrEmpty(postLogoutUri))
@@ -146,7 +166,7 @@ public static class SecurityStartup
                         postLogoutUri = request.Scheme + "://" + request.Host + request.PathBase + postLogoutUri;
                     }
 
-                    logoutUri += $"&returnTo={Uri.EscapeDataString(postLogoutUri)}";
+                    logoutUri += $"{(logoutUri.Contains('?') ? '&' : '?')}{returnParameter}={Uri.EscapeDataString(postLogoutUri)}";
                 }
 
                 context.Response.Redirect(logoutUri);
@@ -157,7 +177,10 @@ public static class SecurityStartup
 
             OnRedirectToIdentityProvider = context =>
             {
-                context.ProtocolMessage.SetParameter("audience", configuration["Auth0:Audience"]);
+                if (IdentityProviderSelector.SendsAudienceOnAuthorize(provider))
+                    context.ProtocolMessage.SetParameter(
+                        "audience",
+                        configuration[$"{IdentityProviderSelector.SettingsPath(provider)}:Audience"]);
                 return Task.CompletedTask;
             }
         };

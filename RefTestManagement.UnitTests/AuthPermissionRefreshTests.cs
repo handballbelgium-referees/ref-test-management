@@ -184,7 +184,7 @@ public sealed class AuthPermissionRefreshTests
     {
         var environment = Host.CreateApplicationBuilder().Environment;
         environment.EnvironmentName = Environments.Production;
-        var controller = new AccountController(snapshotService, environment)
+        var controller = new AccountController(snapshotService, environment, new ConfigurationBuilder().Build())
         {
             ControllerContext = new ControllerContext
             {

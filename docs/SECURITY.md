@@ -4,7 +4,7 @@ This document describes the task-based permission system used by the RefTest Man
 
 ## Overview
 
-The application uses **Auth0** for authentication and a **task-based permission system** for authorization. Every protected GraphQL operation maps 1:1 to a named permission. Effective permissions are refreshed from the Auth0 Management API and supplied to authorization as `permissions` claims.
+The application uses **Auth0** or **Keycloak** for authentication (selected by `Identity:Provider`) and a **task-based permission system** for authorization. Every protected GraphQL operation maps 1:1 to a named permission. Effective permissions are refreshed from the active provider (Auth0 Management API, or Keycloak client roles on `reftest-api`; see [KEYCLOAK.md](KEYCLOAK.md)) and supplied to authorization as `permissions` claims.
 
 The backend enforcement lives in the `RefTestManagement.Security` class library. The Angular frontend uses a `PermissionsService` and a `HasPermission` structural directive for reactive, signal-based UI control.
 
@@ -58,6 +58,8 @@ possible.
 
 ## Auth0 Setup
 
+This section applies when `Identity:Provider` is `Auth0`. For Keycloak, see [KEYCLOAK.md](KEYCLOAK.md).
+
 ### 1. Enable RBAC on your API
 
 1. Go to **Auth0 Dashboard → Applications → APIs**
@@ -84,6 +86,19 @@ Ensure the access token is a signed JWT for the API **audience** configured by t
 The OIDC `ClientId` identifies the browser application used for sign-in and sign-out; it is not
 the API audience. `Audience` identifies the API resource server and is used to validate bearer
 tokens and scope the effective permissions resolved from Auth0.
+
+---
+
+## Keycloak Setup
+
+This section applies when `Identity:Provider` is `Keycloak`. Full setup is in [KEYCLOAK.md](KEYCLOAK.md).
+
+Each permission string in the [Permission Reference](#permission-reference) is a client role on the
+`reftest-api` client, with the same name as the permission (for example `ref-tests:view-list`).
+Users receive permissions through direct client role mappings, through group client role mappings
+(including the roles of ancestor groups), or through composite roles. The API reads these from the
+Keycloak Admin API, expands composite roles transitively, and treats a disabled or missing user as
+unauthorized.
 
 ---
 
@@ -273,14 +288,14 @@ the configured API audience. Each API process caches a user's successful snapsho
 and shares one in-flight refresh per user; an internal limit of four concurrent refreshes per
 process bounds work without asserting an Auth0 tenant quota.
 
-Auth0 grants are changed outside this application, and the application has no permission-change
+Permission grants are changed outside this application, and the application has no permission-change
 event callback for targeted cache invalidation. A revocation is therefore observed at the next
 authentication validation after the cached snapshot expires, with a maximum four-minute snapshot
 age per API process. This is the permission-revocation latency objective; it is not an immediate
 revocation guarantee.
 
 When a snapshot expires, a Management API 429, outage, or other refresh failure never falls back to
-the old grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable.
+the cached grants. Cookie and bearer authentication fail closed if a fresh snapshot is unavailable.
 When an authenticated request reaches `/Account/Permissions` but no current snapshot is available,
 the endpoint returns an empty-body `503 Service Unavailable` rather than a permission list; a
 failure during authentication can instead reject the cookie or bearer authentication before the
@@ -365,9 +380,9 @@ mitigated rather than ignored:
 
 After acceptance or resuming, the UI exchanges the invitation token and replaces the URL with
 `/ref-test/take`. Only the expiring session credential is kept in browser history state for reload
-and resume. New invitation emails use `/ref-test?lang=<locale>#<invitation-token>`. The invitation
-fragment is moved into history state while the UI redirects to the tokenless welcome route; the
-former `/ref-test/:token` path format is no longer routed.
+and resume. Invitation emails use `/ref-test?lang=<locale>#<invitation-token>`. The invitation
+fragment is moved into history state while the UI redirects to the tokenless welcome route; tokens
+are not accepted in the path.
 
 | Risk                                       | Mitigation                                                                                                     |
 | ------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
@@ -379,9 +394,8 @@ former `/ref-test/:token` path format is no longer routed.
 | Token reused after a problem               | Operators can regenerate a token, which invalidates the previous link.                                           |
 | Oversized or malformed token in a lookup   | Only 32 lowercase hex characters are accepted before hashing; the stored digest cannot be submitted as a credential. |
 
-Residual risk that is accepted: historical server access logs may retain tokens from any previously
-issued path-based invitation links, although that route is no longer supported. New invitation
-links use a fragment, but after the UI reads it the invitation token is temporarily kept in browser
+Residual risk that is accepted: server access logs may retain tokens from invitation links issued in
+any path-based format, and the path format is not routed. Invitation links use a fragment, but after the UI reads it the invitation token is temporarily kept in browser
 history state until the session exchange; same-origin scripts can read it. The session credential
 remains in browser history state on tokenless routes, and anyone who can read a still-valid
 credential can resume that one participant's test. Credential expiration and binding limit this
