@@ -60,7 +60,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 ### Authentication & Permissions
 
-- Auth0 OIDC (browser) + JWT Bearer (API), with a task-based permission model — one named permission per GraphQL operation
+- Auth0 or Keycloak OIDC (browser) + JWT Bearer (API), with a task-based permission model — one named permission per GraphQL operation
 - `superadmin` bypass and `namespace:*` wildcards; OR-semantics via a dynamic `anyof:` policy provider
 - Permissions are auto-synced on startup, so nothing needs manual registration: to the Auth0 API resource (Auth0) or as client roles on the API client (Keycloak)
 - Full reference: [docs/SECURITY.md](docs/SECURITY.md)
@@ -169,6 +169,7 @@ flowchart TB
         Migrations["Migrations.*"]
         Security["Security"]
         Auth0Proj["Auth0 client"]
+        KeycloakProj["Keycloak client"]
     end
 
     subgraph External["External services"]
@@ -192,6 +193,7 @@ flowchart TB
     Hosting --> Application
     Hosting --> AuditLog
     Hosting --> Auth0Proj
+    Hosting --> KeycloakProj
     Hosting --> Security
     Api --> Security
     Api --> Auth0Proj
@@ -202,11 +204,13 @@ flowchart TB
     Application --> Domain
     AuditLog --> Domain
     Auth0Proj --> Security
-    Application -.->|"StrawberryShake client"| IHF
+    KeycloakProj --> Security
+    Infrastructure -.->|"StrawberryShake client"| IHF
     Infrastructure -.-> DB
     Infrastructure -.-> Brevo
     Infrastructure -.-> PDF
     Auth0Proj -.->|"Management API"| A0
+    KeycloakProj -.->|"Admin API"| KC
 ```
 
 | Project                            | Role                                                                                            |
@@ -273,7 +277,18 @@ dotnet user-secrets set "Identity:Auth0:ManagementClientId" "your-m2m-client-id"
 dotnet user-secrets set "Identity:Auth0:ManagementClientSecret" "your-m2m-client-secret"
 ```
 
-To use Keycloak, set `Identity:Provider` to `Keycloak` and configure `Identity:Keycloak:*`. See [docs/KEYCLOAK.md](docs/KEYCLOAK.md).
+To use Keycloak instead, set `Identity:Provider` to `Keycloak` and configure `Identity:Keycloak:*` with the same kind of values, for example:
+
+```bash
+dotnet user-secrets set "Identity:Provider" "Keycloak"
+dotnet user-secrets set "Identity:Keycloak:Authority" "https://your-keycloak-host/realms/your-realm"
+dotnet user-secrets set "Identity:Keycloak:ClientId" "your-client-id"
+dotnet user-secrets set "Identity:Keycloak:Audience" "your-api-audience"
+dotnet user-secrets set "Identity:Keycloak:AdminClientId" "your-admin-client-id"
+dotnet user-secrets set "Identity:Keycloak:AdminClientSecret" "your-admin-client-secret"
+```
+
+See [docs/KEYCLOAK.md](docs/KEYCLOAK.md) for the full setup.
 
 Use a separate Machine-to-Machine application for the Management API credentials and grant only
 the endpoint-specific scopes needed for permission lookups and startup synchronization. See
