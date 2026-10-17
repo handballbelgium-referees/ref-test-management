@@ -386,6 +386,7 @@ support development and do not provision cloud resources. See
 | [docs/adr/0001-layered-architecture.md](docs/adr/0001-layered-architecture.md) | Backend dependency rule, known violations                  |
 | [docs/adr/0002-multi-replica-state.md](docs/adr/0002-multi-replica-state.md)   | Redis-backed shared state, event delivery, email retries   |
 | [docs/adr/0003-container-hosting.md](docs/adr/0003-container-hosting.md)       | Provider-neutral combined/split container hosting          |
+| [docs/adr/0004-permission-revocation.md](docs/adr/0004-permission-revocation.md) | Permission revocation latency and cache invalidation       |
 
 ## License
 
