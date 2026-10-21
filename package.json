@@ -19,8 +19,8 @@
   },
   "homepage": "https://github.com/handballbelgium-referees/ref-test-management#readme",
   "devDependencies": {
-    "@commitlint/cli": "~21.2.3",
-    "@commitlint/config-conventional": "~21.2.3",
+    "@commitlint/cli": "~21.2.4",
+    "@commitlint/config-conventional": "~21.2.4",
     "@semantic-release/exec": "~7.1.0",
     "badge-maker": "~6.0.0",
     "husky": "~9.1.7",
