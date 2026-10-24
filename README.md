@@ -104,7 +104,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 | --- | --- | --- |
 | **.NET** | 10.0 | Runtime and framework for the Web API |
 | **Hot Chocolate** | 16.6.8 | GraphQL server with authorization, data loaders, and filtering |
-| **Entity Framework Core** | 10.0.12 | ORM for data access and migrations |
+| **Entity Framework Core** | 10.0.13 | ORM for data access and migrations |
 | **ClosedXML** | 0.105.1 | Excel report generation |
 | **QuestPDF** | 2026.9.1 | PDF report generation |
 | **Database** | – | SQL Server, PostgreSQL, SQLite, or MySQL (selectable via config) |
@@ -126,7 +126,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 | **ngx-translate** | 18.0.0 | i18n and localization |
 | **Tailwind CSS** | 4.3.3 | Utility-first styling |
 | **GraphQL Code Generator** | 7.4.6 | Generates TypeScript types from the GraphQL schema |
-| **Vitest** | 4.1.11 | Unit testing framework |
+| **Vitest** | 4.1.12 | Unit testing framework |
 | **RxJS** | 7.8.2 | Reactive programming |
 
 <!-- versions:frontend:end -->
