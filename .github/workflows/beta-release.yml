@@ -9,7 +9,6 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  DOTNET_VERSION: 10.0.401
   NODE_VERSION: 24.20.0
 
 jobs:
@@ -83,7 +82,7 @@ jobs:
       - name: ⚡ Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: global.json
 
       - name: 🔄 Restore .NET dependencies
         run: dotnet restore RefTestManagement.slnx --locked-mode -p:NuGetAuditMode=all -p:NuGetAuditLevel=low '-warnaserror:NU1901;NU1902;NU1903;NU1904'
@@ -292,7 +291,7 @@ jobs:
       - name: ⚡ Setup .NET
         uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          global-json-file: global.json
 
       - name: 🔄 Restore .NET dependencies
         run: dotnet restore RefTestManagement.slnx --locked-mode -p:NuGetAuditMode=all -p:NuGetAuditLevel=low '-warnaserror:NU1901;NU1902;NU1903;NU1904'

@@ -16,6 +16,7 @@ const WORKFLOWS = Object.fromEntries(
     'stable-release',
     'pr',
     'codeql',
+    'copilot-setup-steps',
   ].map((name) => {
     const path = join(ROOT, `.github/workflows/${name}.yml`);
     const source = readFileSync(path, 'utf8');
@@ -158,19 +159,25 @@ test('PR does not publish SDK container archives or require cloud credentials', 
   assert.doesNotMatch(source, /infra\/terraform|terraform .*apply/i);
 });
 
-test('CodeQL uses the release validation .NET SDK', () => {
-  const releaseSdkVersion = WORKFLOWS['stable-release'].workflow.env.DOTNET_VERSION;
-  const setupDotnet = WORKFLOWS.codeql.workflow.jobs.analyze.steps.find(
-    (step) => step.uses?.startsWith('actions/setup-dotnet@'),
-  );
-  for (const workflowName of ['beta-release', 'pr']) {
-    assert.equal(
-      WORKFLOWS[workflowName].workflow.env.DOTNET_VERSION,
-      releaseSdkVersion,
-      `${workflowName} must use the stable release .NET SDK`,
+test('all .NET SDK setup steps use the repository global.json', () => {
+  for (const [workflowName, { workflow }] of Object.entries(WORKFLOWS)) {
+    const setupSteps = Object.values(workflow.jobs ?? {}).flatMap((job) =>
+      (job.steps ?? []).filter((step) => step.uses?.startsWith('actions/setup-dotnet@')),
     );
+    assert.ok(setupSteps.length > 0, `${workflowName} must set up the .NET SDK`);
+    for (const step of setupSteps) {
+      assert.equal(
+        step.with?.['global-json-file'],
+        'global.json',
+        `${workflowName} must install the SDK declared by global.json`,
+      );
+      assert.equal(
+        step.with?.['dotnet-version'],
+        undefined,
+        `${workflowName} must not pin a separate SDK version`,
+      );
+    }
   }
-  assert.equal(setupDotnet.with['dotnet-version'], releaseSdkVersion);
 });
 
 test('all workflow actions stay pinned to full commit SHAs with version comments', () => {
