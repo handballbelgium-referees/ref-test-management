@@ -58,3 +58,14 @@ test('unrelated patch auto-merge behavior and manual lockfile maintenance remain
     assert.ok(!matchers.some((matcher) => matcher.test(packageName)), `${packageName} remains eligible`);
   }
 });
+
+test('vulnerability alerts are configured only at the top level', () => {
+  assert.equal(renovate.vulnerabilityAlerts.enabled, true);
+  assert.deepEqual(renovate.vulnerabilityAlerts.schedule, ['at any time']);
+  assert.equal(renovate.vulnerabilityAlerts.dependencyDashboardApproval, false);
+  assert.equal(renovate.vulnerabilityAlerts.automerge, false);
+  assert.ok(
+    renovate.packageRules.every((rule) => !Object.hasOwn(rule, 'vulnerabilityAlerts')),
+    'Renovate only permits vulnerabilityAlerts at the top level',
+  );
+});
