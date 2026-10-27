@@ -50,7 +50,7 @@ services:
 
   redis:
     container_name: redis
-    image: redis:8.10.2-alpine
+    image: redis:8.10.3-alpine
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Run uv run --script infra/local/start.py to generate local settings}
     command:
