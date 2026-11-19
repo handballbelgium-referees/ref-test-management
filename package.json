@@ -24,7 +24,7 @@
     "@semantic-release/exec": "~7.1.0",
     "badge-maker": "~6.0.0",
     "husky": "~9.1.7",
-    "semantic-release": "~25.0.9",
+    "semantic-release": "~26.0.1",
     "sharp": "~0.35.5"
   },
   "overrides": {
