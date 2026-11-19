@@ -19,8 +19,10 @@
   "commitMessageAction": "update",
   "commitMessageTopic": "dependency {{{lowercase depName}}}",
   "labels": ["dependencies"],
-  "dependencyDashboard": true,
-  "dependencyDashboardTitle": "Renovate Dependency Dashboard",
+  "dependencyDashboard": {
+    "enabled": true,
+    "title": "Renovate Dependency Dashboard"
+  },
   "vulnerabilityAlerts": {
     "enabled": true,
     "labels": ["security"],
