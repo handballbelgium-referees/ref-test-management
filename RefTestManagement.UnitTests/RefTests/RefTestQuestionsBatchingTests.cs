@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Security.Claims;
 using System.Text;
 using System.Text.Json;
+using Handball.Belgium.RefTestManagement.Api.Configurations;
 using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Models;
@@ -64,6 +65,7 @@ public sealed class RefTestQuestionsBatchingTests
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddTaskBasedAuthorization();
         builder.Services.AddSingleton(questions);
+        var graphQlLimits = new GraphQlLimitsConfiguration();
         builder.Services
             .AddGraphQLServer()
             .AddQueryType<Query>()
@@ -72,6 +74,14 @@ public sealed class RefTestQuestionsBatchingTests
             .AddType<AnswerType>()
             .AddDefaultNodeIdSerializer(useUrlSafeBase64: true)
             .AddGlobalObjectIdentification(false)
+            .ModifyCostOptions(options =>
+            {
+                options.EnforceCostLimits = graphQlLimits.EnforceCostLimits;
+                options.MaxFieldCost = graphQlLimits.MaxFieldCost;
+                options.MaxTypeCost = graphQlLimits.MaxTypeCost;
+                // The test query returns at most three RefTests, so estimate the fixture lists accordingly.
+                options.DefaultListSize = 3;
+            })
             .AddAuthorization();
 
         var app = builder.Build();
@@ -90,7 +100,12 @@ public sealed class RefTestQuestionsBatchingTests
     {
         using var content = new StringContent(JsonSerializer.Serialize(new { query }), Encoding.UTF8, "application/json");
         using var response = await client.PostAsync("/graphql", content, ct);
-        response.EnsureSuccessStatusCode();
+        if (!response.IsSuccessStatusCode)
+        {
+            var error = await response.Content.ReadAsStringAsync(ct);
+            throw new InvalidOperationException($"GraphQL request failed with {(int)response.StatusCode}: {error}");
+        }
+
         return await JsonDocument.ParseAsync(await response.Content.ReadAsStreamAsync(ct), cancellationToken: ct);
     }
 
