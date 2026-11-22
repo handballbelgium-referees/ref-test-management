@@ -124,7 +124,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 | **Apollo Client** | 4.3.5 | GraphQL client with normalized caching |
 | **apollo-angular** | 14.2.0 | Angular integration for Apollo Client |
 | **ngx-translate** | 18.0.0 | i18n and localization |
-| **Tailwind CSS** | 4.3.3 | Utility-first styling |
+| **Tailwind CSS** | 4.3.5 | Utility-first styling |
 | **GraphQL Code Generator** | 7.4.6 | Generates TypeScript types from the GraphQL schema |
 | **Vitest** | 4.1.12 | Unit testing framework |
 | **RxJS** | 7.8.2 | Reactive programming |
