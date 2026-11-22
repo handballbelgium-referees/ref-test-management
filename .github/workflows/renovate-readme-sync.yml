@@ -1,0 +1,75 @@
+name: Sync Renovate README versions
+
+on:
+  pull_request_target:
+    types: [opened, synchronize, reopened]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  sync:
+    if: >-
+      github.event.pull_request.user.login == 'renovate[bot]' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      startsWith(github.event.pull_request.head.ref, 'renovate/')
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: Check out the trusted generator
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.base.sha }}
+          persist-credentials: false
+
+      - name: Generate README from PR manifests
+        id: generate
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          inputs="${RUNNER_TEMP}/readme-sync"
+          mkdir -p "$inputs/RefTestManagement.Api" "$inputs/RefTestManagement.Ui"
+          for path in README.md Directory.Packages.props RefTestManagement.Api/RefTestManagement.Api.csproj RefTestManagement.Ui/package.json; do
+            gh api --method GET -H 'Accept: application/vnd.github.raw+json' \
+              "repos/$GITHUB_REPOSITORY/contents/$path" -f ref="$HEAD_SHA" > "$inputs/$path"
+          done
+          cp "$inputs/README.md" "$inputs/README.original.md"
+          node scripts/sync-readme-versions.mjs "$inputs"
+          if ! cmp -s "$inputs/README.original.md" "$inputs/README.md"; then
+            echo 'changed=true' >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Get a contents-only Release App token
+        if: steps.generate.outputs.changed == 'true'
+        id: app
+        uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3
+        with:
+          client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
+          private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+          permission-contents: write
+
+      - name: Commit README to the Renovate branch
+        if: steps.generate.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ steps.app.outputs.token }}
+          HEAD_BRANCH: ${{ github.event.pull_request.head.ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          query='mutation($input: CreateCommitOnBranchInput!) {
+            createCommitOnBranch(input: $input) { commit { oid } }
+          }'
+          base64 -w 0 "${RUNNER_TEMP}/readme-sync/README.md" |
+            jq -Rs --arg query "$query" --arg repo "$GITHUB_REPOSITORY" \
+              --arg branch "$HEAD_BRANCH" --arg sha "$HEAD_SHA" '{
+                query: $query,
+                variables: {input: {
+                  branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                  expectedHeadOid: $sha,
+                  message: {headline: "docs(deps): sync readme versions"},
+                  fileChanges: {additions: [{path: "README.md", contents: .}]}
+                }}
+              }' | gh api graphql --input -
