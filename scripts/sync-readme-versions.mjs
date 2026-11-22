@@ -5,7 +5,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
-const rootDir = join(dirname(fileURLToPath(import.meta.url)), '..');
+const rootDir = process.argv[2] ?? join(dirname(fileURLToPath(import.meta.url)), '..');
 
 function readText(relativePath) {
   return readFileSync(join(rootDir, relativePath), 'utf8');
@@ -46,7 +46,7 @@ function replaceBetweenMarkers(content, marker, table) {
   );
   if (!pattern.test(content))
     throw new Error(`Markers for "${marker}" not found in README.md`);
-  return content.replace(pattern, `$1${table}$2`);
+  return content.replace(pattern, (_match, start, end) => `${start}${table}${end}`);
 }
 
 const propsXml = readText('Directory.Packages.props');
