@@ -6,7 +6,7 @@ on:
     branches: [main]
 
 env:
-  NODE_VERSION: 24.20.0
+  NODE_VERSION: 26
 
 # Least privilege by default. No pull-request check needs to write to the repository.
 permissions:
