@@ -102,7 +102,7 @@ A web application for creating, distributing, and taking IHF (International Hand
 
 | Technology | Version | Purpose |
 | --- | --- | --- |
-| **.NET** | 10.0 | Runtime and framework for the Web API |
+| **.NET** | 11.0 | Runtime and framework for the Web API |
 | **Hot Chocolate** | 16.7.7 | GraphQL server with authorization, data loaders, and filtering |
 | **Entity Framework Core** | 11.0.0 | ORM for data access and migrations |
 | **ClosedXML** | 0.105.1 | Excel report generation |
@@ -150,12 +150,12 @@ flowchart TB
         KC["Keycloak: OIDC login + client roles"]
     end
 
-    subgraph Api["RefTestManagement.Api (.NET 10)"]
+    subgraph Api["RefTestManagement.Api (.NET 11)"]
         GQL["Hot Chocolate GraphQL server"]
         BG["Background services in All mode"]
     end
 
-    subgraph Worker["RefTestManagement.Worker (.NET 10)"]
+    subgraph Worker["RefTestManagement.Worker (.NET 11)"]
         WorkerBG["Background services in Worker mode"]
     end
 
