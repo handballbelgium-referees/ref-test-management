@@ -228,6 +228,11 @@ Valid values:
 For managed database services, use a provider connection string with TLS and full
 server-certificate validation.
 
+With Microsoft.Data.SqlClient 7 or later, Azure SQL connection strings that use
+`Authentication=Active Directory Default` require
+`Microsoft.Data.SqlClient.Extensions.Azure`. The SQL Server provider project
+includes this package for the API, worker, and migration tooling.
+
 ### ConnectionStrings
 
 | Key                 | Description                                                       | Required |
