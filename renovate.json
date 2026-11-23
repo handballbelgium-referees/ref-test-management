@@ -124,6 +124,23 @@
       "prPriority": -5
     },
     {
+      "description": "Group coordinated .NET platform and EF Core major updates",
+      "matchManagers": ["nuget"],
+      "matchUpdateTypes": ["major"],
+      "matchPackageNames": [
+        "dotnet-sdk",
+        "mcr.microsoft.com/dotnet/aspnet",
+        "/^Microsoft\\.AspNetCore\\./",
+        "/^Microsoft\\.EntityFrameworkCore(\\.|$)/",
+        "Npgsql.EntityFrameworkCore.PostgreSQL",
+        "MySql.EntityFrameworkCore"
+      ],
+      "groupName": ".NET platform major upgrades",
+      "groupSlug": "dotnet-platform-major",
+      "dependencyDashboardApproval": true,
+      "automerge": false
+    },
+    {
       "description": "Critical runtime packages — always require manual review, never automerge, even on minor/patch",
       "matchPackageNames": ["@angular/core", "@angular/cli", "Microsoft.NETCore.App"],
       "automerge": false,
