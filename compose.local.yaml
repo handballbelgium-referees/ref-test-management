@@ -20,7 +20,7 @@ services:
   postgresql:
     profiles: ['PostgreSQL']
     container_name: postgresql
-    image: postgres:18.7-alpine
+    image: postgres:19.0-alpine
     environment:
       POSTGRES_DB: RefTestManagement
       POSTGRES_USER: postgres
