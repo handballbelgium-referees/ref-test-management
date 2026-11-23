@@ -1654,7 +1654,7 @@
       "reftestmanagement.auth0": {
         "type": "Project",
         "dependencies": {
-          "Microsoft.Extensions.Http": "[10.0.15, )",
+          "Microsoft.Extensions.Http": "[11.0.0, )",
           "Microsoft.Extensions.Http.Resilience": "[11.0.1, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[11.0.0, )",
           "RefTestManagement.Security": "[1.0.0, )"
@@ -1710,7 +1710,7 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Extensions.Caching.Memory": "[10.0.15, )",
-          "Microsoft.Extensions.Http": "[10.0.15, )",
+          "Microsoft.Extensions.Http": "[11.0.0, )",
           "Microsoft.Extensions.Http.Resilience": "[11.0.1, )",
           "Microsoft.Extensions.Options.ConfigurationExtensions": "[11.0.0, )",
           "RefTestManagement.Security": "[1.0.0, )"
@@ -2016,16 +2016,16 @@
       },
       "Microsoft.Extensions.Http": {
         "type": "CentralTransitive",
-        "requested": "[10.0.15, )",
-        "resolved": "10.0.15",
-        "contentHash": "ha8VdL1mvHkRUbRyXBfhMwCfbl02YQvCzZe72jQRFrvrRCbW2riFha52Vb84j8YpAcn/ld/B/2oQAsDj9gvbyg==",
+        "requested": "[11.0.0, )",
+        "resolved": "11.0.0",
+        "contentHash": "Pa5xJYtE5weFzv8sRwei1yvqCc05PareJABDtUSigzyj0xmrnG7ZU5VBy0hf5tgh7HN3/psGiOQouw5PLaQD8w==",
         "dependencies": {
-          "Microsoft.Extensions.Configuration.Abstractions": "10.0.15",
-          "Microsoft.Extensions.DependencyInjection.Abstractions": "10.0.15",
-          "Microsoft.Extensions.Diagnostics": "10.0.15",
-          "Microsoft.Extensions.Logging": "10.0.15",
-          "Microsoft.Extensions.Logging.Abstractions": "10.0.15",
-          "Microsoft.Extensions.Options": "10.0.15"
+          "Microsoft.Extensions.Configuration.Abstractions": "11.0.0",
+          "Microsoft.Extensions.DependencyInjection.Abstractions": "11.0.0",
+          "Microsoft.Extensions.Diagnostics": "11.0.0",
+          "Microsoft.Extensions.Logging": "11.0.0",
+          "Microsoft.Extensions.Logging.Abstractions": "11.0.0",
+          "Microsoft.Extensions.Options": "11.0.0"
         }
       },
       "Microsoft.Extensions.Http.Resilience": {
