@@ -69,3 +69,36 @@ test('vulnerability alerts are configured only at the top level', () => {
     'Renovate only permits vulnerabilityAlerts at the top level',
   );
 });
+
+test('.NET platform major updates share a group and require manual approval', () => {
+  const genericMajor = renovate.packageRules.findIndex(
+    (rule) => rule.groupName === null && rule.matchUpdateTypes?.includes('major'),
+  );
+  const dotnetMajor = renovate.packageRules.findIndex(
+    (rule) => rule.groupSlug === 'dotnet-platform-major',
+  );
+  assert.ok(genericMajor >= 0 && dotnetMajor > genericMajor);
+
+  const rule = renovate.packageRules[dotnetMajor];
+  assert.equal(rule.groupName, '.NET platform major upgrades');
+  assert.deepEqual(rule.matchManagers, ['nuget']);
+  assert.deepEqual(rule.matchUpdateTypes, ['major']);
+  assert.equal(rule.dependencyDashboardApproval, true);
+  assert.equal(rule.automerge, false);
+
+  const matches = (name) => rule.matchPackageNames.some((pattern) =>
+    pattern.startsWith('/')
+      ? new RegExp(pattern.slice(1, -1), 'i').test(name)
+      : pattern.toLowerCase() === name.toLowerCase(),
+  );
+  for (const name of [
+    'dotnet-sdk', 'mcr.microsoft.com/dotnet/aspnet', 'Microsoft.AspNetCore.WebUtilities',
+    'Microsoft.EntityFrameworkCore', 'Microsoft.EntityFrameworkCore.SqlServer',
+    'Npgsql.EntityFrameworkCore.PostgreSQL', 'MySql.EntityFrameworkCore',
+  ]) {
+    assert.ok(matches(name), `${name} must share the group`);
+  }
+  for (const name of ['Microsoft.IdentityModel.Tokens', 'System.Text.Json', 'postgres']) {
+    assert.ok(!matches(name), `${name} must stay outside the group`);
+  }
+});

@@ -10,7 +10,7 @@ A high-level map of the repo — expand a project to see its top-level folders. 
 - **`scripts/`** — Repo automation (badges, README version sync)
 
 <details open>
-<summary><strong><code>RefTestManagement.Api/</code></strong> — 🔷 .NET Web API (.NET 10) — GraphQL endpoint and composition root</summary>
+<summary><strong><code>RefTestManagement.Api/</code></strong> — 🔷 .NET Web API (.NET 11) — GraphQL endpoint and composition root</summary>
 
 - `Controllers/` — Account endpoints (login, logout, current user, permissions, authentication status); provider-neutral, and the login challenge is chosen by `Identity:Provider`
 - `Graphql/` — Mutations, Queries, Subscriptions, Types, ReadModels

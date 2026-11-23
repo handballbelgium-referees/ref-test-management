@@ -1,0 +1,15 @@
+<Project>
+  <Target Name="PreferPackageLoggingGenerator" BeforeTargets="CoreCompile">
+    <ItemGroup>
+      <_TelemetryLoggingGenerator Include="@(Analyzer)"
+        Condition="'%(Analyzer.Filename)' == 'Microsoft.Gen.Logging' and
+                   '%(Analyzer.NuGetPackageId)' == 'Microsoft.Extensions.Telemetry.Abstractions'" />
+      <!-- The telemetry package also implements LoggerMessage methods. Keep its
+           generator when it overlaps with the ASP.NET Core targeting pack. -->
+      <Analyzer Remove="@(Analyzer)"
+        Condition="'@(_TelemetryLoggingGenerator)' != '' and
+                   '%(Analyzer.Filename)' == 'Microsoft.Extensions.Logging.Generators' and
+                   '%(Analyzer.FrameworkReferenceName)' == 'Microsoft.AspNetCore.App'" />
+    </ItemGroup>
+  </Target>
+</Project>
