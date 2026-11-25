@@ -14,6 +14,71 @@ const PRESET_TYPES = [
   { type: 'ci', effect: 'hidden' },
 ];
 
+const MAX_RELEASE_NOTES_LENGTH = 120_000;
+
+function formatCommit(context, commit, includeBody = true) {
+  const scope = commit.scope ? `**${commit.scope}:** ` : '';
+  const link =
+    commit.hash ?
+      ` ([${commit.shortHash}](${context.host}/${context.owner}/${context.repository}/commit/${commit.hash}))`
+    : '';
+  const body =
+    includeBody && commit.body ?
+      `\n\n  <details><summary>Details</summary>\n\n${commit.body}\n\n  </details>`
+    : '';
+  const notes =
+    commit.notes?.length ?
+      `\n\n${commit.notes.map(({ title, text }) => `### ${title}\n\n${text}`).join('\n\n')}`
+    : '';
+  return `* ${scope}${commit.subject ?? ''}${link}${body}${notes}`;
+}
+
+function renderReleaseNotes(context) {
+  const header = context.headerPartial(context);
+  const groups = context.commitGroups.map(({ title, commits }) => {
+    const heading = title ? `### ${title}` : '';
+    const entries = commits
+      .map((commit) => formatCommit(context, commit))
+      .join('\n\n');
+    return [heading, entries].filter(Boolean).join('\n\n');
+  });
+  const footer = context.footerPartial(context);
+  const fullNotes = [header, ...groups, footer].filter(Boolean).join('\n\n');
+
+  if (fullNotes.length <= MAX_RELEASE_NOTES_LENGTH) return fullNotes;
+
+  const compareUrl =
+    `${context.host}/${context.owner}/${context.repository}/compare/` +
+    `${encodeURIComponent(context.previousTag)}...${encodeURIComponent(context.currentTag)}`;
+  const notice =
+    `> Release notes were shortened to fit GitHub's character limit. ` +
+    `[View all commits in this release](${compareUrl}).`;
+  const parts = header ? [header] : [];
+
+  for (const { title, commits } of context.commitGroups) {
+    let headingAdded = false;
+    for (const commit of commits) {
+      const addition = [
+        !headingAdded && title ? `### ${title}` : '',
+        formatCommit(context, commit, false),
+      ].filter(Boolean);
+      if (`${[...parts, ...addition].join('\n\n')}\n\n${notice}`.length > MAX_RELEASE_NOTES_LENGTH)
+        break;
+
+      parts.push(...addition);
+      headingAdded = true;
+    }
+    if (`${parts.join('\n\n')}\n\n${notice}`.length >= MAX_RELEASE_NOTES_LENGTH) break;
+  }
+
+  const truncatedNotes = [...parts];
+  if (footer) truncatedNotes.push(footer);
+  if (`${truncatedNotes.join('\n\n')}\n\n${notice}`.length <= MAX_RELEASE_NOTES_LENGTH)
+    return `${truncatedNotes.join('\n\n')}\n\n${notice}`;
+
+  return `${parts.join('\n\n')}\n\n${notice}`;
+}
+
 function fixTableBody(body) {
   return (
     body
@@ -88,36 +153,8 @@ export default {
                 : commit.body,
             };
           },
-          template: (context) => {
-            const groups = context.commitGroups.map(({ title, commits }) => {
-              const heading = title ? `### ${title}` : '';
-              const entries = commits
-                .map((commit) => context.commitPartial(context, commit))
-                .join('\n\n');
-              return [heading, entries].filter(Boolean).join('\n\n');
-            });
-            return [
-              context.headerPartial(context),
-              ...groups,
-              context.footerPartial(context),
-            ].filter(Boolean).join('\n\n');
-          },
-          commitPartial: (context, commit) => {
-            const scope = commit.scope ? `**${commit.scope}:** ` : '';
-            const link =
-              commit.hash ?
-                ` ([${commit.shortHash}](${context.host}/${context.owner}/${context.repository}/commit/${commit.hash}))`
-              : '';
-            const body =
-              commit.body ?
-                `\n\n  <details><summary>Details</summary>\n\n${commit.body}\n\n  </details>`
-              : '';
-            const notes =
-              commit.notes?.length ?
-                `\n\n${commit.notes.map(({ title, text }) => `### ${title}\n\n${text}`).join('\n\n')}`
-              : '';
-            return `* ${scope}${commit.subject ?? ''}${link}${body}${notes}`;
-          },
+          template: renderReleaseNotes,
+          commitPartial: (context, commit) => formatCommit(context, commit),
         },
       },
     ],
