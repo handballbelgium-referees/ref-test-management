@@ -799,7 +799,7 @@
     "storageTitle": "Stockage du navigateur",
     "storageBody": "Nous enregistrons votre choix de langue (app-language) et si vous avez fermé cet avis sur les cookies (cookie-notice-acknowledged) dans le stockage local. Ces valeurs ne quittent jamais votre navigateur.",
     "thirdPartyTitle": "Fournisseur d’identité",
-    "thirdPartyBody": "La connexion est gérée par Auth0. Lorsque vous vous connectez, Auth0 peut définir ses propres cookies sur son domaine, selon sa propre politique. Nous ne contrôlons pas ces cookies."
+    "thirdPartyBody": "La connexion est gérée par {{ provider }}. Lors de la connexion, {{ provider }} peut définir ses propres cookies sur son domaine, selon sa propre politique. Nous ne contrôlons pas ces cookies."
   },
   "audit-logs": {
     "title": "Journal d'audit",

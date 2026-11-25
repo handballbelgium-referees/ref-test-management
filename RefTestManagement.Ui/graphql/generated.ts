@@ -664,6 +664,11 @@ export type GetEnabledLanguagesQueryVariables = Exact<{ [key: string]: never; }>
 
 export type GetEnabledLanguagesQuery = { enabledLanguages: Array<string> };
 
+export type GetIdentityProviderQueryVariables = Exact<{ [key: string]: never; }>;
+
+
+export type GetIdentityProviderQuery = { identityProvider: string };
+
 export type GetQuestionsByNumberQueryVariables = Exact<{
   numbers: Array<string> | string;
 }>;
@@ -1662,6 +1667,22 @@ export const GetEnabledLanguagesDocument = gql`
   })
   export class GetEnabledLanguagesGQL extends Apollo.Query<GetEnabledLanguagesQuery, GetEnabledLanguagesQueryVariables> {
     override document = GetEnabledLanguagesDocument;
+    
+    constructor(apollo: Apollo.Apollo) {
+      super(apollo);
+    }
+  }
+export const GetIdentityProviderDocument = gql`
+    query GetIdentityProvider {
+  identityProvider
+}
+    `;
+
+  @Injectable({
+    providedIn: 'root'
+  })
+  export class GetIdentityProviderGQL extends Apollo.Query<GetIdentityProviderQuery, GetIdentityProviderQueryVariables> {
+    override document = GetIdentityProviderDocument;
     
     constructor(apollo: Apollo.Apollo) {
       super(apollo);

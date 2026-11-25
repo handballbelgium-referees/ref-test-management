@@ -798,7 +798,7 @@
     "storageTitle": "Browseropslag",
     "storageBody": "Wij slaan uw taalkeuze (app-language) en of u deze cookiemelding heeft gesloten (cookie-notice-acknowledged) op in de lokale opslag. Deze waarden verlaten uw browser nooit.",
     "thirdPartyTitle": "Identity provider",
-    "thirdPartyBody": "Inloggen verloopt via Auth0. Bij het inloggen kan Auth0 eigen cookies op zijn domein plaatsen volgens eigen beleid. Die cookies vallen buiten onze controle."
+    "thirdPartyBody": "Inloggen verloopt via {{ provider }}. Bij het inloggen kan {{ provider }} eigen cookies op zijn domein plaatsen volgens het eigen beleid. Die cookies vallen buiten onze controle."
   },
   "audit-logs": {
     "title": "Auditlogboek",

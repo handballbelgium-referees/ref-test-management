@@ -2,7 +2,6 @@ using Handball.Belgium.RefTestManagement.Api.Graphql.ReadModels;
 using Handball.Belgium.RefTestManagement.Api.Graphql.Types;
 using Handball.Belgium.RefTestManagement.Application.Configurations;
 using Handball.Belgium.RefTestManagement.Application.Models;
-using Handball.Belgium.RefTestManagement.Application.Services;
 using Handball.Belgium.RefTestManagement.Domain.RefTests;
 using Handball.Belgium.RefTestManagement.Infrastructure;
 using Handball.Belgium.RefTestManagement.Infrastructure.Services;
@@ -172,30 +171,4 @@ public static partial class RefTestQueries
         [Service] IIhfRulesQuestionsService ihfRulesQuestionsService, CancellationToken cancellationToken)
         => ihfRulesQuestionsService.GetQuestionsByNumberAsync(numbers, cancellationToken);
 
-    /// <summary>
-    /// Get enabled languages from configuration
-    /// </summary>
-    /// <param name="languageConfiguration">The language configuration containing enabled languages.</param>
-    /// <returns>An array of enabled languages.</returns>
-    [CacheControl(MaxAge = 3600)]
-    public static string[] GetEnabledLanguages([Service] LanguageConfiguration languageConfiguration)
-        => languageConfiguration.EnabledLanguages;
-
-    /// <summary>
-    /// Get score configuration
-    /// </summary>
-    /// <param name="scoreConfiguration">The score configuration containing score settings.</param>
-    /// <returns>The score configuration.</returns>
-    [CacheControl(MaxAge = 3600)]
-    public static ScoreConfiguration GetScoreConfiguration([Service] ScoreConfiguration scoreConfiguration)
-        => scoreConfiguration;
-
-    /// <summary>
-    /// Get results mail scheduled delay minutes
-    /// </summary>
-    /// <param name="emailConfiguration">The email configuration containing scheduled delay settings.</param>
-    /// <returns>The scheduled delay minutes for results email.</returns>
-    [CacheControl(MaxAge = 3600)]
-    public static int GetResultsEmailDelayMinutes([Service] EmailConfiguration emailConfiguration)
-        => emailConfiguration.ScheduledDelayMinutes;
 }
