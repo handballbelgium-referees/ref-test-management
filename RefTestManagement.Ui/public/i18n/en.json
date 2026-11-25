@@ -798,7 +798,7 @@
     "storageTitle": "Browser storage",
     "storageBody": "We store your language choice (app-language) and whether you have dismissed this cookie notice (cookie-notice-acknowledged) in local storage. These values never leave your browser.",
     "thirdPartyTitle": "Identity provider",
-    "thirdPartyBody": "Sign-in is handled by Auth0. When you sign in, Auth0 may set its own cookies on its domain under its own policy. We do not control those cookies."
+    "thirdPartyBody": "Sign-in is handled by {{ provider }}. When you sign in, {{ provider }} may set its own cookies on its domain under its own policy. We do not control those cookies."
   },
   "audit-logs": {
     "title": "Audit Log",

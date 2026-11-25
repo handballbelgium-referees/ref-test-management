@@ -798,7 +798,7 @@
     "storageTitle": "Browser-Speicher",
     "storageBody": "Wir speichern Ihre Sprachauswahl (app-language) und ob Sie diesen Cookie-Hinweis geschlossen haben (cookie-notice-acknowledged) im lokalen Speicher. Diese Werte verlassen Ihren Browser nie.",
     "thirdPartyTitle": "Identitätsanbieter",
-    "thirdPartyBody": "Die Anmeldung wird von Auth0 bereitgestellt. Bei der Anmeldung kann Auth0 eigene Cookies auf seiner Domain setzen, gemäß seiner eigenen Richtlinie. Diese Cookies liegen nicht in unserer Kontrolle."
+    "thirdPartyBody": "Die Anmeldung wird von {{ provider }} bereitgestellt. Bei der Anmeldung kann {{ provider }} eigene Cookies auf seiner Domain gemäß der eigenen Richtlinie setzen. Diese Cookies liegen nicht in unserer Kontrolle."
   },
   "audit-logs": {
     "title": "Auditprotokoll",
